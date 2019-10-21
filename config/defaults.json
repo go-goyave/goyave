@@ -1,0 +1,17 @@
+{
+    "appName": "goyave",
+    "environment": "localhost",
+    "host": "127.0.0.1",
+    "port": "8080",
+    "protocol": "http",
+    "strictSlash": true,
+    "debug": true,
+    "timeout": 10,
+    "dbConnection": "mysql",
+    "dbHost": "127.0.0.1",
+    "dbPort": "3306",
+    "dbName": "goyave",
+    "dbUsername": "root",
+    "dbPassword": "root",
+    "dbOptions": "parseTime=true&loc=Local"
+}

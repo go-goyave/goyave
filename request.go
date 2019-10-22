@@ -28,7 +28,6 @@ func (r *Request) validate() map[string]interface{} {
 		RequiredDefault: false,
 	})
 
-	// TODO validate query params if method is GET
 	var errors url.Values
 	if r.httpRequest.Header.Get("Content-Type") == "application/json" {
 		errors = validator.ValidateJSON()

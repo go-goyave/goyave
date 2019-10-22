@@ -3,6 +3,8 @@ package goyave
 import (
 	"net/http"
 
+	"github.com/System-Glitch/goyave/middleware"
+
 	"github.com/System-Glitch/goyave/config"
 	"github.com/System-Glitch/goyave/helpers/response"
 	"github.com/gorilla/mux"
@@ -16,8 +18,9 @@ type Router struct {
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.Get("protocol").(string))
-	// TODO recover middleware
-	return &Router{muxRouter: muxRouter}
+	router := &Router{muxRouter: muxRouter}
+	router.Middleware(middleware.Recovery)
+	return router
 }
 
 // Subrouter create a new sub-router from this router.
@@ -28,13 +31,14 @@ func (r *Router) Subrouter(prefix string) *Router {
 
 // Middleware apply one or more middleware(s) to the route group.
 func (r *Router) Middleware(middlewares ...func(http.Handler) http.Handler) {
-	// TODO implement middleware
+	for _, middleware := range middlewares {
+		r.muxRouter.Use(middleware)
+	}
 }
 
 // Route register a new route.
 func (r *Router) Route(method string, endpoint string, handler func(http.ResponseWriter, *Request), requestGenerator func() *Request) {
 	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		// TODO handle url params
 		req, ok := requestHandler(w, r, requestGenerator)
 		if ok {
 			handler(w, req)

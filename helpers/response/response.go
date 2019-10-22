@@ -14,6 +14,11 @@ import (
 	"github.com/System-Glitch/goyave/helpers"
 )
 
+// Status write the given status code
+func Status(w http.ResponseWriter, status int) {
+	w.WriteHeader(status)
+}
+
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically
 func JSON(w http.ResponseWriter, responseCode int, data interface{}) {

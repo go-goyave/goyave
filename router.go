@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/helpers/response"
 	"github.com/gorilla/mux"
 )
 
@@ -15,6 +16,7 @@ type Router struct {
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.Get("protocol").(string))
+	// TODO recover middleware
 	return &Router{muxRouter: muxRouter}
 }
 
@@ -30,10 +32,36 @@ func (r *Router) Middleware(middlewares ...func(http.Handler) http.Handler) {
 }
 
 // Route register a new route.
-func (r *Router) Route(method string, endpoint string, handler func(http.ResponseWriter, *Request), request *Request) {
-	// TODO implement route
+func (r *Router) Route(method string, endpoint string, handler func(http.ResponseWriter, *Request), requestGenerator func() *Request) {
 	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		// TODO handle url params
-		handler(w, nil) // TODO handle request and pass param
+		req, ok := requestHandler(w, r, requestGenerator)
+		if ok {
+			handler(w, req)
+		}
 	}).Methods(method)
+}
+
+func requestHandler(w http.ResponseWriter, r *http.Request, requestGenerator func() *Request) (*Request, bool) {
+	var request *Request
+	if requestGenerator != nil {
+		request = requestGenerator()
+	} else {
+		request = &Request{}
+	}
+	request.httpRequest = r
+	errsBag := request.validate()
+	if errsBag == nil {
+		return request, true
+	}
+
+	var code int
+	if isRequestMalformed(errsBag) {
+		code = http.StatusBadRequest
+	} else {
+		code = http.StatusUnprocessableEntity
+	}
+	response.JSON(w, code, errsBag)
+
+	return nil, false
 }

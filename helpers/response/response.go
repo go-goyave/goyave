@@ -22,6 +22,12 @@ func JSON(w http.ResponseWriter, responseCode int, data interface{}) {
 	json.NewEncoder(w).Encode(data)
 }
 
+// String write a string as a response
+func String(w http.ResponseWriter, responseCode int, message string) {
+	w.WriteHeader(responseCode)
+	w.Write([]byte(message))
+}
+
 func writeFile(w http.ResponseWriter, file string, disposition string) {
 	mime, size, err := helpers.GetMimeType(file)
 	if err != nil {

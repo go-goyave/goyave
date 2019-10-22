@@ -1,4 +1,6 @@
 github.com/System-Glitch/govalidator v1.10.0 h1:bP+VaKaAafjAhH/GHyS/roB8mV8aX3vwVGWTWL3B+g4=
 github.com/System-Glitch/govalidator v1.10.0/go.mod h1:eNwfgg/kliAQkNfdATRDQaE9uMlBP7TJ38UHtkJQyiw=
+github.com/System-Glitch/govalidator v1.11.0 h1:Kkpj87wRDMYidIsCUC3v3T9s8cum8jTR3gEMLVU6L0A=
+github.com/System-Glitch/govalidator v1.11.0/go.mod h1:eNwfgg/kliAQkNfdATRDQaE9uMlBP7TJ38UHtkJQyiw=
 github.com/gorilla/mux v1.7.3 h1:gnP5JzjVOuiZD07fKKToCAOjS0yOpj/qPETTXCCS6hw=
 github.com/gorilla/mux v1.7.3/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=

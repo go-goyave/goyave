@@ -17,7 +17,7 @@ type Router struct {
 
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
-	muxRouter.Schemes(config.Get("protocol").(string))
+	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{muxRouter: muxRouter}
 	router.Middleware(middleware.Recovery)
 	return router

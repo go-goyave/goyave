@@ -68,7 +68,39 @@ func Get(key string) interface{} {
 	if ok {
 		return val
 	}
+
+	log.Panicf("Config entry %s doesn't exist", key)
 	return nil
+}
+
+// GetString a config entry as string
+func GetString(key string) string {
+	val, ok := config[key]
+	if ok {
+		str, ok := val.(string)
+		if !ok {
+			log.Panicf("Config entry %s is not a string", key)
+		}
+		return str
+	}
+
+	log.Panicf("Config entry %s doesn't exist", key)
+	return ""
+}
+
+// GetBool a config entry as bool
+func GetBool(key string) bool {
+	val, ok := config[key]
+	if ok {
+		b, ok := val.(bool)
+		if !ok {
+			log.Panicf("Config entry %s is not a bool", key)
+		}
+		return b
+	}
+
+	log.Panicf("Config entry %s doesn't exist", key)
+	return false
 }
 
 func loadDefaults() error {

@@ -65,7 +65,7 @@ func Download(w http.ResponseWriter, file string, fileName string) {
 // Error log the error and return it as error code 500
 // If debugging is enabled in the config, the error is also written in the response.
 func Error(w http.ResponseWriter, err interface{}) {
-	dbg := config.Get("debug").(bool)
+	dbg := config.GetBool("debug")
 	log.Println(err)
 	if dbg {
 		debug.PrintStack()

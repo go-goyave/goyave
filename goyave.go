@@ -35,7 +35,7 @@ func Start(routeRegistrer func(*Router)) {
 func startServer(router *Router) {
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	server := &http.Server{
-		Addr:         config.Get("host").(string) + ":" + strconv.FormatInt(int64(config.Get("port").(float64)), 10),
+		Addr:         config.GetString("host") + ":" + strconv.FormatInt(int64(config.Get("port").(float64)), 10),
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,

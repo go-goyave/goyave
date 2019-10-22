@@ -13,6 +13,6 @@
     "dbName": "goyave",
     "dbUsername": "root",
     "dbPassword": "root",
-    "dbOptions": "parseTime=true&loc=Local",
+    "dbOptions": "charset=utf8&parseTime=true&loc=Local",
     "dbAutoMigrate": true
 }

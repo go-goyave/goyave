@@ -19,7 +19,6 @@ var configValidation = map[string]reflect.Kind{
 	"host":          reflect.String,
 	"port":          reflect.Float64,
 	"protocol":      reflect.String,
-	"strictSlash":   reflect.Bool,
 	"debug":         reflect.Bool,
 	"timeout":       reflect.Float64,
 	"dbConnection":  reflect.String,

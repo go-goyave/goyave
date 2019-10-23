@@ -20,7 +20,6 @@ import (
 // 	    goyave.start(routes.RegisterRoutes)
 //  }
 func Start(routeRegistrer func(*Router)) {
-	// TODO implement start
 	err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)

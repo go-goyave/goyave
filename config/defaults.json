@@ -4,7 +4,6 @@
     "host": "127.0.0.1",
     "port": 8080,
     "protocol": "http",
-    "strictSlash": true,
     "debug": true,
     "timeout": 10,
     "dbConnection": "mysql",

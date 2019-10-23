@@ -6,9 +6,18 @@ import (
 )
 
 // FileExists returns true if the file at the given path exists and is readable.
+// Returns false if the given file is a directory
 func FileExists(file string) bool {
-	if _, err := os.Stat(file); err == nil {
-		return true
+	if stats, err := os.Stat(file); err == nil {
+		return !stats.IsDir()
+	}
+	return false
+}
+
+// IsDirectory returns true if the file at the given paht exists, is a directory and is readable.
+func IsDirectory(path string) bool {
+	if stats, err := os.Stat(path); err == nil {
+		return stats.IsDir()
 	}
 	return false
 }

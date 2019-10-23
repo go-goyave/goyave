@@ -3,7 +3,6 @@ package goyave
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/System-Glitch/goyave/helpers"
@@ -53,12 +52,22 @@ func (r *Router) Route(method string, endpoint string, handler func(http.Respons
 
 // Static serve a directory and its subdirectories of static resources.
 // Set the "download" attribute to true if you want the files to be sent as an attachment.
+//
+// If no file is given in the url, or if the given file is a directory, the handler will
+// send the "index.html" file if it exists.
 func (r *Router) Static(endpoint string, directory string, download bool) {
-	r.Route("GET", endpoint+"/{resource:.*}", func(w http.ResponseWriter, r *Request) {
-		separator := string(os.PathSeparator)
+	if endpoint == "/" {
+		endpoint = ""
+	}
+
+	r.Route("GET", endpoint+"{resource:.*}", func(w http.ResponseWriter, r *Request) {
 		file := r.Params["resource"]
-		path := fmt.Sprintf("%s%s%s", directory, separator, strings.Replace(file, "/", separator, -1))
-		if len(file) > 0 && helpers.FileExists(path) {
+		if strings.HasPrefix(file, "/") {
+			file = file[1:]
+		}
+		path := cleanStaticPath(directory, file)
+
+		if helpers.FileExists(path) {
 			if download {
 				response.Download(w, path, file[strings.LastIndex(file, "/")+1:])
 			} else {
@@ -68,6 +77,19 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 			response.Status(w, http.StatusNotFound)
 		}
 	}, nil)
+}
+
+func cleanStaticPath(directory string, file string) string {
+	path := fmt.Sprintf("%s/%s", directory, file)
+	if len(file) <= 0 || helpers.IsDirectory(path) {
+		if strings.HasSuffix(file, "/") {
+			file += "index.html"
+		} else {
+			file += "/index.html"
+		}
+		path = fmt.Sprintf("%s/%s", directory, file)
+	}
+	return path
 }
 
 func requestHandler(w http.ResponseWriter, r *http.Request, requestGenerator func() *Request) (*Request, bool) {

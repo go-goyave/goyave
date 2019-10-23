@@ -52,17 +52,21 @@ func writeFile(w http.ResponseWriter, file string, disposition string) {
 
 // File write a file as an inline element.
 // Automatically detects the file MIME type and sets the "Content-Type" header accordingly.
-// If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead
+// It is advised to call "helpers.FileExists()" before sending a file to avoid a panic and return a 404 error.
+//
+// If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
 func File(w http.ResponseWriter, file string) {
 	writeFile(w, file, "inline")
 }
 
 // Download write a file as an attachment element.
 // Automatically detects the file MIME type and sets the "Content-Type" header accordingly.
-// If you want the file to be sent as an inline element ("Content-Disposition: inline"), use the "File" function instead
+// It is advised to call "helpers.FileExists()" before sending a file to avoid a panic and return a 404 error.
 //
 // The "fileName" parameter defines the name the client will see. In other words, it sets the header "Content-Disposition" to
 // "attachment; filename="${fileName}""
+//
+// If you want the file to be sent as an inline element ("Content-Disposition: inline"), use the "File" function instead.
 func Download(w http.ResponseWriter, file string, fileName string) {
 	writeFile(w, file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }

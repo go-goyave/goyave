@@ -5,6 +5,14 @@ import (
 	"os"
 )
 
+// FileExists returns true if the file at the given path exists and is readable.
+func FileExists(file string) bool {
+	if _, err := os.Stat(file); err == nil {
+		return true
+	}
+	return false
+}
+
 // GetMimeType get the mime type and size of the given file.
 func GetMimeType(file string) (string, int64, error) {
 	f, err := os.Open(file)

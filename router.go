@@ -1,7 +1,12 @@
 package goyave
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
+
+	"github.com/System-Glitch/goyave/helpers"
 
 	"github.com/System-Glitch/goyave/middleware"
 
@@ -46,9 +51,23 @@ func (r *Router) Route(method string, endpoint string, handler func(http.Respons
 	}).Methods(method)
 }
 
-// Static serve a directory of static resources
-func (r *Router) Static(endpoint string, directory string) {
-	// TODO implement Static
+// Static serve a directory and its subdirectories of static resources.
+// Set the "download" attribute to true if you want the files to be sent as an attachment.
+func (r *Router) Static(endpoint string, directory string, download bool) {
+	r.Route("GET", endpoint+"/{resource:.*}", func(w http.ResponseWriter, r *Request) {
+		separator := string(os.PathSeparator)
+		file := r.Params["resource"]
+		path := fmt.Sprintf("%s%s%s", directory, separator, strings.Replace(file, "/", separator, -1))
+		if len(file) > 0 && helpers.FileExists(path) {
+			if download {
+				response.Download(w, path, file[strings.LastIndex(file, "/")+1:])
+			} else {
+				response.File(w, path)
+			}
+		} else {
+			response.Status(w, http.StatusNotFound)
+		}
+	}, nil)
 }
 
 func requestHandler(w http.ResponseWriter, r *http.Request, requestGenerator func() *Request) (*Request, bool) {

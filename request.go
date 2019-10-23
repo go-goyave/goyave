@@ -11,9 +11,28 @@ import (
 // Contains the validated body in the Data attribute if the route was defined with a request generator function
 type Request struct {
 	httpRequest *http.Request
+	cookies     []*http.Cookie
 	Rules       govalidator.MapData
 	Data        map[string]interface{}
 	Params      map[string]string
+}
+
+// Cookies returns the HTTP cookies sent with the request
+func (r *Request) Cookies(name string) []*http.Cookie {
+	if r.cookies == nil {
+		r.cookies = r.httpRequest.Cookies()
+	}
+	return r.cookies
+}
+
+// Referrer returns the referring URL, if sent in the request.
+func (r *Request) Referrer() string {
+	return r.httpRequest.Referer()
+}
+
+// UserAgent returns the client's User-Agent, if sent in the request.
+func (r *Request) UserAgent() string {
+	return r.httpRequest.UserAgent()
 }
 
 func (r *Request) validate() map[string]interface{} {

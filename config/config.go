@@ -14,21 +14,23 @@ import (
 var config map[string]interface{}
 
 var configValidation = map[string]reflect.Kind{
-	"appName":       reflect.String,
-	"environment":   reflect.String,
-	"host":          reflect.String,
-	"port":          reflect.Float64,
-	"protocol":      reflect.String,
-	"debug":         reflect.Bool,
-	"timeout":       reflect.Float64,
-	"dbConnection":  reflect.String,
-	"dbHost":        reflect.String,
-	"dbPort":        reflect.Float64,
-	"dbName":        reflect.String,
-	"dbUsername":    reflect.String,
-	"dbPassword":    reflect.String,
-	"dbOptions":     reflect.String,
-	"dbAutoMigrate": reflect.Bool,
+	"appName":              reflect.String,
+	"environment":          reflect.String,
+	"host":                 reflect.String,
+	"port":                 reflect.Float64,
+	"protocol":             reflect.String,
+	"debug":                reflect.Bool,
+	"timeout":              reflect.Float64,
+	"dbConnection":         reflect.String,
+	"dbHost":               reflect.String,
+	"dbPort":               reflect.Float64,
+	"dbName":               reflect.String,
+	"dbUsername":           reflect.String,
+	"dbPassword":           reflect.String,
+	"dbOptions":            reflect.String,
+	"dbMaxOpenConnections": reflect.Float64,
+	"dbMaxIdleConnections": reflect.Float64,
+	"dbAutoMigrate":        reflect.Bool,
 }
 
 var authorizedValues = map[string][]string{

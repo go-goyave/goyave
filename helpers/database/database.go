@@ -8,8 +8,29 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// New create a new DB connection
-func New() *gorm.DB {
+var dbConnection *gorm.DB
+
+// GetConnection returns the global database connection pool.
+// Creates a new connection pool if no connection is available.
+//
+// The connections will be closed automatically on server shutdown so you
+// don't need to call "Close()" when you're done with the database.
+func GetConnection() *gorm.DB {
+	if dbConnection == nil {
+		dbConnection = newConnection()
+	}
+	return dbConnection
+}
+
+// Close the database connections if they exist.
+func Close() {
+	if dbConnection != nil {
+		dbConnection.Close()
+		dbConnection = nil
+	}
+}
+
+func newConnection() *gorm.DB {
 	connection := config.GetString("dbConnection")
 	db, err := gorm.Open(connection, buildConnectionOptions(connection))
 	if err != nil {
@@ -17,6 +38,8 @@ func New() *gorm.DB {
 	}
 
 	db.LogMode(config.GetBool("debug"))
+	db.DB().SetMaxOpenConns(int(config.Get("dbMaxOpenConnections").(float64)))
+	db.DB().SetMaxIdleConns(int(config.Get("dbMaxIdleConnections").(float64)))
 	return db
 }
 

@@ -13,5 +13,7 @@
     "dbUsername": "root",
     "dbPassword": "root",
     "dbOptions": "charset=utf8&parseTime=true&loc=Local",
+    "dbMaxOpenConnections": 100,
+    "dbMaxIdleConnections": 20,
     "dbAutoMigrate": true
 }

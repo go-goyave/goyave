@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/helpers/database"
 )
 
 // Start starts the web server.
@@ -58,6 +59,7 @@ func startServer(router *Router) {
 	defer cancel()
 
 	server.Shutdown(ctx)
+	database.Close()
 }
 
 func loadDB() {

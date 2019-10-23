@@ -10,6 +10,8 @@ import (
 
 var dbConnection *gorm.DB
 
+var models []interface{}
+
 // GetConnection returns the global database connection pool.
 // Creates a new connection pool if no connection is available.
 //
@@ -27,6 +29,24 @@ func Close() {
 	if dbConnection != nil {
 		dbConnection.Close()
 		dbConnection = nil
+	}
+}
+
+// RegisterModel registers a model for auto-migration.
+// When writing a model file, you should always register it in the init() function.
+//  func init() {
+//		database.RegisterModel(&MyModel{})
+//  }
+func RegisterModel(model interface{}) {
+	models = append(models, model)
+}
+
+// Migrate migrates all registered models.
+func Migrate() {
+	db := GetConnection()
+	for _, model := range models {
+		// TODO test migrate
+		db.AutoMigrate(model)
 	}
 }
 

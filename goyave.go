@@ -27,13 +27,13 @@ func Start(routeRegistrer func(*Router)) {
 		return
 	}
 
+	if config.GetBool("dbAutoMigrate") {
+		database.Migrate()
+	}
+
 	router := newRouter()
 	routeRegistrer(router)
 	startServer(router)
-}
-
-func loadDB() {
-	// TODO implement loadDB
 }
 
 func getAddress(protocol string) string {

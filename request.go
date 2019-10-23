@@ -61,7 +61,9 @@ func (r *Request) validate() map[string]interface{} {
 		if err != nil {
 			panic(err)
 		}
-		r.Data = generateFlatMap(r.httpRequest, r.Rules)
+		if len(errors) == 0 {
+			r.Data = generateFlatMap(r.httpRequest, r.Rules)
+		}
 	}
 	if len(errors) > 0 {
 		return map[string]interface{}{"validationError": errors}

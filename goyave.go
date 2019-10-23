@@ -32,14 +32,31 @@ func Start(routeRegistrer func(*Router)) {
 	startServer(router)
 }
 
-func startServer(router *Router) {
+func loadDB() {
+	// TODO implement loadDB
+}
+
+func getAddress(protocol string) string {
+	var port string
+	if protocol == "https" {
+		port = "httpsPort"
+	} else {
+		port = "port"
+	}
+	return config.GetString("host") + ":" + strconv.FormatInt(int64(config.Get(port).(float64)), 10)
+}
+
+func startTLSRedirectServer() {
+	httpsAddress := getAddress("https")
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	server := &http.Server{
-		Addr:         config.GetString("host") + ":" + strconv.FormatInt(int64(config.Get("port").(float64)), 10),
+		Addr:         getAddress("http"),
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
-		Handler:      router.muxRouter,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "https://"+httpsAddress+r.RequestURI, http.StatusMovedPermanently)
+		}),
 	}
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
@@ -47,21 +64,48 @@ func startServer(router *Router) {
 		}
 	}()
 
-	// Process signals channel
-	sigChannel := make(chan os.Signal, 1)
+	registerShutdownHook(func(ctx context.Context) {
+		server.Shutdown(ctx)
+	})
+}
 
-	// Graceful shutdown via SIGINT
+func startServer(router *Router) {
+	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
+	protocol := config.GetString("protocol")
+	server := &http.Server{
+		Addr:         getAddress(protocol),
+		WriteTimeout: timeout,
+		ReadTimeout:  timeout,
+		IdleTimeout:  timeout * 2,
+		Handler:      router.muxRouter,
+	}
+	go func() {
+		if protocol == "https" {
+			go startTLSRedirectServer()
+			if err := server.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			if err := server.ListenAndServe(); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}()
+
+	registerShutdownHook(func(ctx context.Context) {
+		server.Shutdown(ctx)
+		database.Close()
+	})
+}
+
+func registerShutdownHook(hook func(context.Context)) {
+	sigChannel := make(chan os.Signal, 1)
 	signal.Notify(sigChannel, os.Interrupt)
 
 	<-sigChannel // Block until SIGINT received
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	server.Shutdown(ctx)
-	database.Close()
-}
-
-func loadDB() {
-	// TODO implement loadDB
+	hook(ctx)
 }

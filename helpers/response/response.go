@@ -89,3 +89,5 @@ func Error(w http.ResponseWriter, err interface{}) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
+
+// TODO helper redirect

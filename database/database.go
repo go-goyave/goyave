@@ -45,7 +45,6 @@ func RegisterModel(model interface{}) {
 func Migrate() {
 	db := GetConnection()
 	for _, model := range models {
-		// TODO test migrate
 		db.AutoMigrate(model)
 	}
 }

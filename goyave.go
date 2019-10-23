@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers/database"
+	"github.com/System-Glitch/goyave/database"
 )
 
 // Start starts the web server.

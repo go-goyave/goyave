@@ -46,6 +46,11 @@ func (r *Router) Route(method string, endpoint string, handler func(http.Respons
 	}).Methods(method)
 }
 
+// Static serve a directory of static resources
+func (r *Router) Static(endpoint string, directory string) {
+	// TODO implement Static
+}
+
 func requestHandler(w http.ResponseWriter, r *http.Request, requestGenerator func() *Request) (*Request, bool) {
 	var request *Request
 	if requestGenerator != nil {
@@ -54,6 +59,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request, requestGenerator fun
 		request = &Request{}
 	}
 	request.httpRequest = r
+	request.Params = mux.Vars(r)
 	errsBag := request.validate()
 	if errsBag == nil {
 		return request, true

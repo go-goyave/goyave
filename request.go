@@ -13,6 +13,7 @@ type Request struct {
 	httpRequest *http.Request
 	Rules       govalidator.MapData
 	Data        map[string]interface{}
+	Params      map[string]string
 }
 
 func (r *Request) validate() map[string]interface{} {

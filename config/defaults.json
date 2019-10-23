@@ -6,6 +6,7 @@
     "protocol": "http",
     "debug": true,
     "timeout": 10,
+    "maxUploadSize": 10,
     "dbConnection": "mysql",
     "dbHost": "127.0.0.1",
     "dbPort": 3306,

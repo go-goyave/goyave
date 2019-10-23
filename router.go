@@ -1,15 +1,13 @@
 package goyave
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/System-Glitch/goyave/helpers"
 
 	"github.com/System-Glitch/goyave/middleware"
 
 	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/helpers/filesystem"
 	"github.com/System-Glitch/goyave/helpers/response"
 	"github.com/gorilla/mux"
 )
@@ -67,7 +65,7 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 		}
 		path := cleanStaticPath(directory, file)
 
-		if helpers.FileExists(path) {
+		if filesystem.FileExists(path) {
 			if download {
 				response.Download(w, path, file[strings.LastIndex(file, "/")+1:])
 			} else {
@@ -80,14 +78,14 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 }
 
 func cleanStaticPath(directory string, file string) string {
-	path := fmt.Sprintf("%s/%s", directory, file)
-	if len(file) <= 0 || helpers.IsDirectory(path) {
+	path := directory + "/" + file
+	if len(file) <= 0 || filesystem.IsDirectory(path) {
 		if strings.HasSuffix(file, "/") {
 			file += "index.html"
 		} else {
 			file += "/index.html"
 		}
-		path = fmt.Sprintf("%s/%s", directory, file)
+		path = directory + "/" + file
 	}
 	return path
 }

@@ -21,6 +21,7 @@ var configValidation = map[string]reflect.Kind{
 	"protocol":             reflect.String,
 	"debug":                reflect.Bool,
 	"timeout":              reflect.Float64,
+	"maxUploadSize":        reflect.Float64,
 	"dbConnection":         reflect.String,
 	"dbHost":               reflect.String,
 	"dbPort":               reflect.Float64,
@@ -107,7 +108,7 @@ func GetBool(key string) bool {
 func loadDefaults() error {
 	_, filename, _, ok := runtime.Caller(1)
 	if ok {
-		confDefaults, err := readConfigFile(fmt.Sprintf("%s%s%s", path.Dir(filename), string(os.PathSeparator), "defaults.json"))
+		confDefaults, err := readConfigFile(path.Dir(filename) + string(os.PathSeparator) + "defaults.json")
 
 		if err == nil {
 			config = confDefaults

@@ -3,6 +3,10 @@ package goyave
 import (
 	"net/http"
 	"net/url"
+	"strings"
+
+	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/helpers/filesystem"
 
 	"github.com/System-Glitch/govalidator"
 )
@@ -53,8 +57,11 @@ func (r *Request) validate() map[string]interface{} {
 		errors = validator.ValidateJSON()
 	} else {
 		errors = validator.Validate()
-		r.httpRequest.ParseForm()
-		r.Data = generateFlatMap(r.httpRequest.Form)
+		err := r.httpRequest.ParseMultipartForm(int64(config.Get("maxUploadSize").(float64)) << 20)
+		if err != nil {
+			panic(err)
+		}
+		r.Data = generateFlatMap(r.httpRequest, r.Rules)
 	}
 	if len(errors) > 0 {
 		return map[string]interface{}{"validationError": errors}
@@ -63,10 +70,25 @@ func (r *Request) validate() map[string]interface{} {
 	return nil
 }
 
-func generateFlatMap(values url.Values) map[string]interface{} {
+func generateFlatMap(request *http.Request, rules govalidator.MapData) map[string]interface{} {
 	var flatMap map[string]interface{} = make(map[string]interface{})
-	for field, value := range values {
+	for field, value := range request.MultipartForm.Value {
 		flatMap[field] = value[0]
+	}
+
+	for field := range rules {
+		if strings.HasPrefix(field, "file:") {
+			name := field[5:]
+			f, h, err := request.FormFile(name)
+			if err != nil {
+				panic(err)
+			}
+			file := filesystem.File{
+				Header: h,
+				Data:   f,
+			}
+			flatMap[name] = file
+		}
 	}
 	return flatMap
 }

@@ -19,7 +19,7 @@ module.exports = {
                 lastUpdated: 'Last Updated',
                 nav: require('./nav/en'),
                 sidebar: {
-                    '/guide/': getGuideSidebar('Guide'),
+                    '/guide/': getGuideSidebar(),
                 }
             }
         }
@@ -33,20 +33,43 @@ module.exports = {
     
 }
 
-function getGuideSidebar (groupA) {
+function getGuideSidebar () {
     return [
         {
-            title: groupA,
-            collapsable: false,
+            title: 'Guide',
+            collapsable: true,
             children: [
                 '',
-                'getting-started',
-                'the-basics',
-                'authentication',
-                'database',
-                'testing',
+                'installation',
+                'upgrade-guide',
+                'configuration',
+                'contribution-guide',
+                'architecture-concepts',
                 'deployment',
-                // TODO add other pages
+            ]
+        },
+        {
+            title: 'The Basics',
+            collapsable: true,
+            children: [
+                'basics/routing',
+                'basics/middlewares',
+                'basics/requests',
+                'basics/controllers',
+                'basics/database',
+                'basics/responses',
+                'basics/validation',
+            ]
+        },
+        {
+            title: 'Advanced',
+            collapsable: true,
+            children: [
+                'advanced/helpers',
+                'advanced/authentication',
+                'advanced/localization',
+                'advanced/testing',
+                'advanced/plugins',
             ]
         }
     ]

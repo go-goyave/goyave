@@ -1,4 +1,4 @@
-package response
+package goyave
 
 import (
 	"encoding/json"
@@ -11,43 +11,53 @@ import (
 	"strconv"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers"
+	"github.com/System-Glitch/goyave/helpers/filesystem"
 )
 
+// Response represents a controller response.
+type Response struct {
+	writer http.ResponseWriter
+}
+
+// Header returns the header map that will be sent.
+func (r *Response) Header() http.Header {
+	return r.writer.Header()
+}
+
 // Status write the given status code
-func Status(w http.ResponseWriter, status int) {
-	w.WriteHeader(status)
+func (r *Response) Status(status int) {
+	r.writer.WriteHeader(status)
 }
 
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically
-func JSON(w http.ResponseWriter, responseCode int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(responseCode)
-	json.NewEncoder(w).Encode(data)
+func (r *Response) JSON(responseCode int, data interface{}) {
+	r.writer.Header().Set("Content-Type", "application/json")
+	r.writer.WriteHeader(responseCode)
+	json.NewEncoder(r.writer).Encode(data)
 }
 
 // String write a string as a response
-func String(w http.ResponseWriter, responseCode int, message string) {
-	w.WriteHeader(responseCode)
-	w.Write([]byte(message))
+func (r *Response) String(responseCode int, message string) {
+	r.writer.WriteHeader(responseCode)
+	r.writer.Write([]byte(message))
 }
 
-func writeFile(w http.ResponseWriter, file string, disposition string) {
-	mime, size, err := helpers.GetMimeType(file)
+func (r *Response) writeFile(file string, disposition string) {
+	mime, size, err := filesystem.GetMimeType(file)
 	if err != nil {
 		panic(err)
 	}
-	w.Header().Set("Content-Disposition", disposition)
-	w.Header().Set("Content-Type", mime)
-	w.Header().Set("Content-Length", strconv.FormatInt(size, 10))
+	r.writer.Header().Set("Content-Disposition", disposition)
+	r.writer.Header().Set("Content-Type", mime)
+	r.writer.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, err := os.Open(file)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
-	io.Copy(w, f)
+	io.Copy(r.writer, f)
 }
 
 // File write a file as an inline element.
@@ -55,8 +65,8 @@ func writeFile(w http.ResponseWriter, file string, disposition string) {
 // It is advised to call "helpers.FileExists()" before sending a file to avoid a panic and return a 404 error.
 //
 // If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
-func File(w http.ResponseWriter, file string) {
-	writeFile(w, file, "inline")
+func (r *Response) File(file string) {
+	r.writeFile(file, "inline")
 }
 
 // Download write a file as an attachment element.
@@ -67,13 +77,13 @@ func File(w http.ResponseWriter, file string) {
 // "attachment; filename="${fileName}""
 //
 // If you want the file to be sent as an inline element ("Content-Disposition: inline"), use the "File" function instead.
-func Download(w http.ResponseWriter, file string, fileName string) {
-	writeFile(w, file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+func (r *Response) Download(file string, fileName string) {
+	r.writeFile(file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }
 
 // Error log the error and return it as error code 500
 // If debugging is enabled in the config, the error is also written in the response.
-func Error(w http.ResponseWriter, err interface{}) {
+func (r *Response) Error(err interface{}) {
 	dbg := config.GetBool("debug")
 	log.Println(err)
 	if dbg {
@@ -84,8 +94,8 @@ func Error(w http.ResponseWriter, err interface{}) {
 		} else {
 			message = err
 		}
-		JSON(w, http.StatusInternalServerError, map[string]interface{}{"error": message})
+		r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
+		r.writer.WriteHeader(http.StatusInternalServerError)
 	}
 }

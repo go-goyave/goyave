@@ -5,24 +5,26 @@ import (
 	"strings"
 
 	"github.com/System-Glitch/govalidator"
-	"github.com/System-Glitch/goyave/middleware"
 
 	"github.com/System-Glitch/goyave/config"
 	"github.com/System-Glitch/goyave/helpers/filesystem"
-	"github.com/System-Glitch/goyave/helpers/response"
 	"github.com/gorilla/mux"
 )
 
 // Router registers routes to be matched and dispatches a handler.
 type Router struct {
-	muxRouter *mux.Router
+	muxRouter   *mux.Router
+	middlewares []Middleware
 }
+
+// Handler is a controller function
+type Handler func(Response, *Request)
 
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{muxRouter: muxRouter}
-	router.Middleware(middleware.Recovery)
+	router.Middleware(recoveryMiddleware, validateRequestMiddleware)
 	return router
 }
 
@@ -33,19 +35,14 @@ func (r *Router) Subrouter(prefix string) *Router {
 }
 
 // Middleware apply one or more middleware(s) to the route group.
-func (r *Router) Middleware(middlewares ...func(http.Handler) http.Handler) {
-	for _, middleware := range middlewares {
-		r.muxRouter.Use(middleware)
-	}
+func (r *Router) Middleware(middlewares ...Middleware) {
+	r.middlewares = append(r.middlewares, middlewares...)
 }
 
 // Route register a new route.
-func (r *Router) Route(method string, endpoint string, handler func(http.ResponseWriter, *Request), request govalidator.MapData) {
-	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		req, ok := requestHandler(w, r, request)
-		if ok {
-			handler(w, req)
-		}
+func (r *Router) Route(method string, endpoint string, handler Handler, validationRules govalidator.MapData) {
+	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, rawRequest *http.Request) {
+		r.requestHandler(w, rawRequest, Response{writer: w}, handler, validationRules)
 	}).Methods(method)
 }
 
@@ -59,7 +56,7 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 		endpoint = ""
 	}
 
-	r.Route("GET", endpoint+"{resource:.*}", func(w http.ResponseWriter, r *Request) {
+	r.Route("GET", endpoint+"{resource:.*}", func(response Response, r *Request) {
 		file := r.Params["resource"]
 		if strings.HasPrefix(file, "/") {
 			file = file[1:]
@@ -68,12 +65,12 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 
 		if filesystem.FileExists(path) {
 			if download {
-				response.Download(w, path, file[strings.LastIndex(file, "/")+1:])
+				response.Download(path, file[strings.LastIndex(file, "/")+1:])
 			} else {
-				response.File(w, path)
+				response.File(path)
 			}
 		} else {
-			response.Status(w, http.StatusNotFound)
+			response.Status(http.StatusNotFound)
 		}
 	}, nil)
 }
@@ -91,24 +88,16 @@ func cleanStaticPath(directory string, file string) string {
 	return path
 }
 
-func requestHandler(w http.ResponseWriter, r *http.Request, rules govalidator.MapData) (*Request, bool) {
+func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, response Response, handler Handler, rules govalidator.MapData) {
 	request := &Request{
-		httpRequest: r,
+		httpRequest: rawRequest,
 		Rules:       rules,
-		Params:      mux.Vars(r),
-	}
-	errsBag := request.validate()
-	if errsBag == nil {
-		return request, true
+		Params:      mux.Vars(rawRequest),
 	}
 
-	var code int
-	if isRequestMalformed(errsBag) {
-		code = http.StatusBadRequest
-	} else {
-		code = http.StatusUnprocessableEntity
+	for i := len(r.middlewares) - 1; i >= 0; i-- {
+		handler = r.middlewares[i](handler)
 	}
-	response.JSON(w, code, errsBag)
 
-	return nil, false
+	handler(response, request)
 }

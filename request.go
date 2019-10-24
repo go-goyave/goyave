@@ -144,8 +144,15 @@ func (r *Request) validate() map[string]interface{} {
 
 func generateFlatMap(request *http.Request, rules govalidator.MapData) map[string]interface{} {
 	var flatMap map[string]interface{} = make(map[string]interface{})
-	for field, value := range request.MultipartForm.Value {
-		flatMap[field] = value[0]
+	if request.MultipartForm != nil {
+		for field, value := range request.MultipartForm.Value {
+			flatMap[field] = value[0]
+		}
+	}
+	if request.Form != nil {
+		for field, value := range request.Form {
+			flatMap[field] = value[0]
+		}
 	}
 
 	for field := range rules {

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/System-Glitch/govalidator"
 	"github.com/System-Glitch/goyave/middleware"
 
 	"github.com/System-Glitch/goyave/config"
@@ -39,9 +40,9 @@ func (r *Router) Middleware(middlewares ...func(http.Handler) http.Handler) {
 }
 
 // Route register a new route.
-func (r *Router) Route(method string, endpoint string, handler func(http.ResponseWriter, *Request), requestGenerator func() *Request) {
+func (r *Router) Route(method string, endpoint string, handler func(http.ResponseWriter, *Request), request govalidator.MapData) {
 	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		req, ok := requestHandler(w, r, requestGenerator)
+		req, ok := requestHandler(w, r, request)
 		if ok {
 			handler(w, req)
 		}
@@ -90,15 +91,12 @@ func cleanStaticPath(directory string, file string) string {
 	return path
 }
 
-func requestHandler(w http.ResponseWriter, r *http.Request, requestGenerator func() *Request) (*Request, bool) {
-	var request *Request
-	if requestGenerator != nil {
-		request = requestGenerator()
-	} else {
-		request = &Request{}
+func requestHandler(w http.ResponseWriter, r *http.Request, rules govalidator.MapData) (*Request, bool) {
+	request := &Request{
+		httpRequest: r,
+		Rules:       rules,
+		Params:      mux.Vars(r),
 	}
-	request.httpRequest = r
-	request.Params = mux.Vars(r)
 	errsBag := request.validate()
 	if errsBag == nil {
 		return request, true

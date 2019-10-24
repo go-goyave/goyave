@@ -8,6 +8,8 @@ github.com/System-Glitch/govalidator v1.10.0 h1:bP+VaKaAafjAhH/GHyS/roB8mV8aX3vw
 github.com/System-Glitch/govalidator v1.10.0/go.mod h1:eNwfgg/kliAQkNfdATRDQaE9uMlBP7TJ38UHtkJQyiw=
 github.com/System-Glitch/govalidator v1.11.0 h1:Kkpj87wRDMYidIsCUC3v3T9s8cum8jTR3gEMLVU6L0A=
 github.com/System-Glitch/govalidator v1.11.0/go.mod h1:eNwfgg/kliAQkNfdATRDQaE9uMlBP7TJ38UHtkJQyiw=
+github.com/System-Glitch/govalidator v1.11.1 h1:qPMEMQuA5oWYBD05lqYw1Lx9VWCw0Sd806zzE/ahhC8=
+github.com/System-Glitch/govalidator v1.11.1/go.mod h1:eNwfgg/kliAQkNfdATRDQaE9uMlBP7TJ38UHtkJQyiw=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=

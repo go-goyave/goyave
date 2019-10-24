@@ -122,6 +122,7 @@ func (r *Request) validate() map[string]interface{} {
 		Request:         r.httpRequest,
 		Rules:           r.Rules,
 		Data:            &r.Data,
+		FormSize:        int64(config.Get("maxUploadSize").(float64)) << 20,
 		RequiredDefault: false,
 	})
 
@@ -130,10 +131,6 @@ func (r *Request) validate() map[string]interface{} {
 		errors = validator.ValidateJSON()
 	} else {
 		errors = validator.Validate()
-		err := r.httpRequest.ParseMultipartForm(int64(config.Get("maxUploadSize").(float64)) << 20)
-		if err != nil {
-			panic(err)
-		}
 		if len(errors) == 0 {
 			r.Data = generateFlatMap(r.httpRequest, r.Rules)
 		}

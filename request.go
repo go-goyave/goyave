@@ -3,12 +3,8 @@ package goyave
 import (
 	"net/http"
 	"net/url"
-	"strings"
 
-	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
-
-	"github.com/System-Glitch/govalidator"
+	"github.com/System-Glitch/goyave/validation"
 )
 
 // Request struct represents an http request.
@@ -16,7 +12,7 @@ import (
 type Request struct {
 	httpRequest *http.Request
 	cookies     []*http.Cookie
-	Rules       govalidator.MapData
+	Rules       validation.RuleSet
 	Data        map[string]interface{}
 	Params      map[string]string
 }
@@ -112,69 +108,15 @@ func (r *Request) TemporaryRedirect(w http.ResponseWriter, url string) {
 	http.Redirect(w, r.httpRequest, url, http.StatusTemporaryRedirect)
 }
 
-func (r *Request) validate() map[string]interface{} {
+func (r *Request) validate() map[string]validation.Errors {
 	if r.Rules == nil {
 		return nil
 	}
 
-	r.Data = make(map[string]interface{}, 0)
-	validator := govalidator.New(govalidator.Options{
-		Request:         r.httpRequest,
-		Rules:           r.Rules,
-		Data:            &r.Data,
-		FormSize:        int64(config.Get("maxUploadSize").(float64)) << 20,
-		RequiredDefault: false,
-	})
-
-	var errors url.Values
-	if r.httpRequest.Header.Get("Content-Type") == "application/json" {
-		errors = validator.ValidateJSON()
-	} else {
-		errors = validator.Validate()
-		if len(errors) == 0 {
-			r.Data = generateFlatMap(r.httpRequest, r.Rules)
-		}
-	}
+	errors := validation.Validate(r.httpRequest, r.Data, r.Rules)
 	if len(errors) > 0 {
-		return map[string]interface{}{"validationError": errors}
+		return map[string]validation.Errors{"validationError": errors}
 	}
 
 	return nil
-}
-
-func generateFlatMap(request *http.Request, rules govalidator.MapData) map[string]interface{} {
-	var flatMap map[string]interface{} = make(map[string]interface{})
-	if request.MultipartForm != nil {
-		for field, value := range request.MultipartForm.Value {
-			flatMap[field] = value[0]
-		}
-	}
-	if request.Form != nil {
-		for field, value := range request.Form {
-			flatMap[field] = value[0]
-		}
-	}
-
-	for field := range rules {
-		if strings.HasPrefix(field, "file:") {
-			name := field[5:]
-			f, h, err := request.FormFile(name)
-			if err != nil {
-				panic(err)
-			}
-			file := filesystem.File{
-				Header: h,
-				Data:   f,
-			}
-			flatMap[name] = file
-		}
-	}
-	return flatMap
-}
-
-// isRequestMalformed checks if the only error in the given errsBag is a unmarshal error.
-// Used to determine if a 400 Bad Request or 422 Unprocessable Entity should be returned.
-func isRequestMalformed(errsBag map[string]interface{}) bool {
-	_, ok := errsBag["validationError"].(url.Values)["_error"]
-	return ok
 }

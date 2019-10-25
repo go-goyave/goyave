@@ -4,10 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/System-Glitch/govalidator"
-
 	"github.com/System-Glitch/goyave/config"
 	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/validation"
 	"github.com/gorilla/mux"
 )
 
@@ -24,7 +23,7 @@ func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{muxRouter: muxRouter}
-	router.Middleware(recoveryMiddleware, validateRequestMiddleware)
+	router.Middleware(recoveryMiddleware, parseRequestMiddleware)
 	return router
 }
 
@@ -40,7 +39,7 @@ func (r *Router) Middleware(middlewares ...Middleware) {
 }
 
 // Route register a new route.
-func (r *Router) Route(method string, endpoint string, handler Handler, validationRules govalidator.MapData) {
+func (r *Router) Route(method string, endpoint string, handler Handler, validationRules validation.RuleSet) {
 	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, rawRequest *http.Request) {
 		r.requestHandler(w, rawRequest, Response{writer: w}, handler, validationRules)
 	}).Methods(method)
@@ -88,13 +87,17 @@ func cleanStaticPath(directory string, file string) string {
 	return path
 }
 
-func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, response Response, handler Handler, rules govalidator.MapData) {
+func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, response Response, handler Handler, rules validation.RuleSet) {
 	request := &Request{
 		httpRequest: rawRequest,
 		Rules:       rules,
 		Params:      mux.Vars(rawRequest),
 	}
 
+	// Validate last.
+	// Allows custom middlewares to be executed after core
+	// middlewares and before validation.
+	handler = validateRequestMiddleware(handler)
 	for i := len(r.middlewares) - 1; i >= 0; i-- {
 		handler = r.middlewares[i](handler)
 	}

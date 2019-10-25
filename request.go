@@ -15,6 +15,7 @@ type Request struct {
 	Rules       validation.RuleSet
 	Data        map[string]interface{}
 	Params      map[string]string
+	Lang        string
 }
 
 // Method specifies the HTTP method (GET, POST, PUT, etc.).

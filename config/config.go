@@ -22,7 +22,8 @@ var configValidation = map[string]reflect.Kind{
 	"protocol":             reflect.String,
 	"debug":                reflect.Bool,
 	"timeout":              reflect.Float64,
-	"maxUploadSize":        reflect.Float64,
+	"maxUploadSize":        reflect.Float64, // TODO document that it's max "in-memory" files
+	"defaultLanguage":      reflect.String,
 	"tlsCert":              reflect.String,
 	"tlsKey":               reflect.String,
 	"dbConnection":         reflect.String,
@@ -59,6 +60,8 @@ func LoadConfig() error {
 					config[key] = value
 				}
 			}
+		} else {
+			panic(err)
 		}
 	}
 
@@ -135,7 +138,7 @@ func readConfigFile(file string) (map[string]interface{}, error) {
 }
 
 func getConfigFilePath() string {
-	switch strings.ToLower(os.Getenv("GOYAVE_ENV")) {
+	switch strings.ToLower(os.Getenv("GOYAVE_ENV")) { // TODO document this
 	case "test":
 		return "config.test.json"
 	case "production":

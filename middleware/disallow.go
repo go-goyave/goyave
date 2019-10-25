@@ -3,6 +3,8 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/System-Glitch/goyave/lang"
+
 	"github.com/System-Glitch/goyave"
 	"github.com/System-Glitch/goyave/validation"
 )
@@ -16,7 +18,7 @@ func DisallowNonValidatedFields(next goyave.Handler) goyave.Handler {
 		nonValidated := validation.Errors{}
 		for field := range request.Data {
 			if _, exists := request.Rules[field]; !exists {
-				nonValidated[field] = append(nonValidated[field], "Non-validated fields are forbidden.") // TODO get lang message
+				nonValidated[field] = append(nonValidated[field], lang.Get(request.Lang, "disallow-non-validated-files"))
 			}
 		}
 

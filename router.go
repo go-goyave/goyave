@@ -23,7 +23,7 @@ func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{muxRouter: muxRouter}
-	router.Middleware(recoveryMiddleware, parseRequestMiddleware)
+	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/System-Glitch/goyave/config"
 	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/lang"
 )
 
 // Middleware function generating middleware handler function.
@@ -34,7 +35,7 @@ func recoveryMiddleware(next Handler) Handler {
 // If the parsing fails, the request's data is set to nil. If it succeeds
 // and there is no data, the request's data is set to an empty map.
 //
-// If the "Content-Type: application/json" header is present, the middleware
+// If the "Content-Type: application/json" header is set, the middleware
 // will attempt to unmarshal the request's body.
 func parseRequestMiddleware(next Handler) Handler {
 	return func(response Response, request *Request) {
@@ -59,15 +60,37 @@ func parseRequestMiddleware(next Handler) Handler {
 
 func generateFlatMap(request *http.Request) map[string]interface{} {
 	var flatMap map[string]interface{} = make(map[string]interface{})
+	// if request.Header()
 	err := request.ParseMultipartForm(int64(config.Get("maxUploadSize").(float64)) << 20)
 
 	if err != nil {
-		return nil
+		if err == http.ErrNotMultipart {
+			if request.ParseForm() != nil {
+				return nil
+			}
+		} else {
+			return nil
+		}
 	}
 
 	if request.MultipartForm != nil {
 		for field, value := range request.MultipartForm.Value {
 			flatMap[field] = value[0]
+		}
+
+		for field := range request.MultipartForm.File {
+			if fhs := request.MultipartForm.File[field]; len(fhs) > 0 {
+				f, err := fhs[0].Open()
+				if err != nil {
+					panic(err)
+				}
+
+				file := filesystem.File{
+					Header: fhs[0],
+					Data:   f,
+				}
+				flatMap[field] = file
+			}
 		}
 	}
 	if request.Form != nil {
@@ -76,20 +99,6 @@ func generateFlatMap(request *http.Request) map[string]interface{} {
 		}
 	}
 
-	for field := range request.MultipartForm.File {
-		if fhs := request.MultipartForm.File[field]; len(fhs) > 0 {
-			f, err := fhs[0].Open()
-			if err != nil {
-				panic(err)
-			}
-
-			file := filesystem.File{
-				Header: fhs[0],
-				Data:   f,
-			}
-			flatMap[field] = file
-		}
-	}
 	return flatMap
 }
 
@@ -110,5 +119,28 @@ func validateRequestMiddleware(next Handler) Handler {
 			code = http.StatusUnprocessableEntity
 		}
 		response.JSON(code, errsBag)
+	}
+}
+
+// languageMiddleware is a middleware that sets the language of a request.
+//
+// Uses the "Accept-Language" header to determine which language to use. If
+// the header is not set or the language is not available, uses the default
+// language as fallback.
+//
+// If "*" is provided, the default language will be used.
+// If multiple languages are given, the first available language will be used,
+// and if none are available, the default language will be used.
+// If no variant is given (for example "en"), the first available variant will be used.
+// For example, if "en-US" and "en-UK" are available and the request accepts "en",
+// "en-US" will be used.
+func languageMiddleware(next Handler) Handler {
+	return func(response Response, request *Request) {
+		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
+			request.Lang = lang.DetectLanguage(header)
+		} else {
+			request.Lang = config.GetString("defaultLanguage")
+		}
+		next(response, request)
 	}
 }

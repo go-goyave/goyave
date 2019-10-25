@@ -11,6 +11,7 @@ import (
 
 	"github.com/System-Glitch/goyave/config"
 	"github.com/System-Glitch/goyave/database"
+	"github.com/System-Glitch/goyave/lang"
 )
 
 // Start starts the web server.
@@ -26,6 +27,9 @@ func Start(routeRegistrer func(*Router)) {
 		log.Fatal(err)
 		return
 	}
+
+	lang.LoadDefault()
+	lang.LoadAllAvailableLanguages()
 
 	if config.GetBool("dbAutoMigrate") {
 		database.Migrate()

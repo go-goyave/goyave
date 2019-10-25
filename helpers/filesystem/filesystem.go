@@ -57,7 +57,7 @@ func FileExists(file string) bool {
 	return false
 }
 
-// IsDirectory returns true if the file at the given paht exists, is a directory and is readable.
+// IsDirectory returns true if the file at the given path exists, is a directory and is readable.
 func IsDirectory(path string) bool {
 	if stats, err := os.Stat(path); err == nil {
 		return stats.IsDir()

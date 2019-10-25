@@ -18,7 +18,7 @@ func DisallowNonValidatedFields(next goyave.Handler) goyave.Handler {
 		nonValidated := validation.Errors{}
 		for field := range request.Data {
 			if _, exists := request.Rules[field]; !exists {
-				nonValidated[field] = append(nonValidated[field], lang.Get(request.Lang, "disallow-non-validated-files"))
+				nonValidated[field] = append(nonValidated[field], lang.Get(request.Lang, "disallow-non-validated-fields"))
 			}
 		}
 

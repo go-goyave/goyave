@@ -114,7 +114,7 @@ func (r *Request) validate() map[string]validation.Errors {
 		return nil
 	}
 
-	errors := validation.Validate(r.httpRequest, r.Data, r.Rules)
+	errors := validation.Validate(r.httpRequest, r.Data, r.Rules, r.Lang)
 	if len(errors) > 0 {
 		return map[string]validation.Errors{"validationError": errors}
 	}

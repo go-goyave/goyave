@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/System-Glitch/goyave/lang"
 )
 
 var validationRules map[string]Rule = map[string]Rule{
@@ -28,7 +30,7 @@ func AddRule(name string, rule Rule) {
 
 // Validate the given request with the given rule set
 // If all validation rules pass, returns nil
-func Validate(request *http.Request, data map[string]interface{}, rules RuleSet) Errors {
+func Validate(request *http.Request, data map[string]interface{}, rules RuleSet, language string) Errors {
 	var malformedMessage string
 	if request.Header.Get("Content-Type") == "application/json" {
 		malformedMessage = "Malformed JSON"
@@ -39,16 +41,16 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet)
 		return map[string][]string{"_error": {malformedMessage}}
 	}
 
-	return validate(data, rules)
+	return validate(data, rules, language)
 }
 
-func validate(data map[string]interface{}, rules RuleSet) Errors {
+func validate(data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
 	for fieldName, field := range rules {
 		for _, rule := range field {
 			ruleName, params := parseRule(rule)
 			if !validationRules[ruleName](fieldName, data[fieldName], params, data) {
-				errors[fieldName] = append(errors[fieldName], "TODO get validation message and replace placeholders")
+				errors[fieldName] = append(errors[fieldName], lang.Get(language, "validation.rules."+ruleName))
 			}
 		}
 	}

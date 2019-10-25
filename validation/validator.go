@@ -8,15 +8,15 @@ import (
 	"github.com/System-Glitch/goyave/lang"
 )
 
-var validationRules map[string]Rule = map[string]Rule{
-	"string": validateString,
-}
-
 // RuleSet is a request rules definition. Each entry is a field in the request.
 type RuleSet map[string][]string
 
 // Errors is a map of validation errors with the field name as a key.
 type Errors map[string][]string
+
+var validationRules map[string]Rule = map[string]Rule{
+	"string": validateString,
+}
 
 // AddRule register a validation rule.
 // The rule will be usable in request validation by using the
@@ -50,7 +50,8 @@ func validate(data map[string]interface{}, rules RuleSet, language string) Error
 		for _, rule := range field {
 			ruleName, params := parseRule(rule)
 			if !validationRules[ruleName](fieldName, data[fieldName], params, data) {
-				errors[fieldName] = append(errors[fieldName], lang.Get(language, "validation.rules."+ruleName))
+				message := processPlaceholders(fieldName, ruleName, params, lang.Get(language, "validation.rules."+ruleName), language)
+				errors[fieldName] = append(errors[fieldName], message)
 			}
 		}
 	}

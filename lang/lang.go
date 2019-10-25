@@ -19,7 +19,15 @@ type validationLines struct {
 	rules map[string]string
 
 	// Attribute-specific rules messages
-	attributes map[string]map[string]string
+	attributes map[string]attribute
+}
+
+type attribute struct {
+	// The value with which the :field placeholder will be replaced
+	Name string `json:"name"`
+
+	// A custom message for when a rule doesn't pass with this attribute
+	Rules map[string]string `json:"rules"`
 }
 
 // language represents a full language
@@ -124,10 +132,15 @@ func mergeLang(dst language, src language) {
 	mergeMap(dst.validation.rules, src.validation.rules)
 
 	for key, value := range src.validation.attributes {
-		if _, exists := dst.validation.attributes[key]; !exists {
+		if attr, exists := dst.validation.attributes[key]; !exists {
 			dst.validation.attributes[key] = value
 		} else {
-			mergeMap(dst.validation.attributes[key], value)
+			attr.Name = value.Name
+			if attr.Rules == nil {
+				attr.Rules = make(map[string]string)
+			}
+			mergeMap(attr.Rules, value.Rules)
+			dst.validation.attributes[key] = attr
 		}
 	}
 }
@@ -168,19 +181,26 @@ func Get(lang string, line string) string {
 			}
 			return s
 		case "attributes":
-			if len(path) != 4 {
+			len := len(path)
+			attr := languages[lang].validation.attributes[path[2]]
+			if attr.Name == "" {
 				return line
 			}
-			sList := languages[lang].validation.attributes[path[2]]
-			if sList == nil {
+			if len == 4 {
+				s := attr.Rules[path[3]]
+				if s == "" {
+					return line
+				}
+				return s
+			} else if len == 3 {
+				s := attr.Name
+				if s == "" {
+					return line
+				}
+				return s
+			} else {
 				return line
 			}
-
-			s := sList[path[3]]
-			if s == "" {
-				return line
-			}
-			return s
 		default:
 			return line
 		}

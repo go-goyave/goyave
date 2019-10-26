@@ -31,7 +31,7 @@ func Start(routeRegistrer func(*Router)) {
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
 
-	if config.GetBool("dbAutoMigrate") {
+	if config.GetBool("dbAutoMigrate") && config.GetString("dbConnection") != "none" {
 		database.Migrate()
 	}
 

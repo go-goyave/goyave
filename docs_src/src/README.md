@@ -1,14 +1,10 @@
 ---
 home: true
-heroImage: /logo.svg
+heroImage: /goyave_512.png
 actionText: Get Started →
 actionLink: /guide/
 footer: MIT Licensed | Copyright © 2019 Jérémy LAMBERT (SystemGlitch)
 ---
-<div style="text-align: center">
-<i>Temporary logo</i>
-</div>
-
 <div class="features" style="text-align: center">
   <div class="feature">
     <h2>Clean</h2>

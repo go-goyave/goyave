@@ -16,6 +16,11 @@ import (
 
 // Response represents a controller response.
 type Response struct {
+	// Used to check if controller didn't write anything so
+	// core can write default 204 No Content.
+	// See RFC 7231, 6.3.5
+	empty bool
+
 	writer http.ResponseWriter
 }
 
@@ -26,12 +31,14 @@ func (r *Response) Header() http.Header {
 
 // Status write the given status code
 func (r *Response) Status(status int) {
+	r.empty = false
 	r.writer.WriteHeader(status)
 }
 
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically
 func (r *Response) JSON(responseCode int, data interface{}) {
+	r.empty = false
 	r.writer.Header().Set("Content-Type", "application/json")
 	r.writer.WriteHeader(responseCode)
 	json.NewEncoder(r.writer).Encode(data)
@@ -39,11 +46,13 @@ func (r *Response) JSON(responseCode int, data interface{}) {
 
 // String write a string as a response
 func (r *Response) String(responseCode int, message string) {
+	r.empty = false
 	r.writer.WriteHeader(responseCode)
 	r.writer.Write([]byte(message))
 }
 
 func (r *Response) writeFile(file string, disposition string) {
+	r.empty = false
 	mime, size, err := filesystem.GetMimeType(file)
 	if err != nil {
 		panic(err)
@@ -84,6 +93,7 @@ func (r *Response) Download(file string, fileName string) {
 // Error log the error and return it as error code 500
 // If debugging is enabled in the config, the error is also written in the response.
 func (r *Response) Error(err interface{}) {
+	r.empty = false
 	dbg := config.GetBool("debug")
 	log.Println(err)
 	if dbg {

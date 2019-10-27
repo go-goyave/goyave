@@ -17,7 +17,7 @@ type Router struct {
 }
 
 // Handler is a controller function
-type Handler func(Response, *Request)
+type Handler func(*Response, *Request)
 
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
@@ -41,7 +41,7 @@ func (r *Router) Middleware(middlewares ...Middleware) {
 // Route register a new route.
 func (r *Router) Route(method string, endpoint string, handler Handler, validationRules validation.RuleSet) {
 	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, rawRequest *http.Request) {
-		r.requestHandler(w, rawRequest, Response{writer: w}, handler, validationRules)
+		r.requestHandler(w, rawRequest, &Response{writer: w}, handler, validationRules)
 	}).Methods(method)
 }
 
@@ -55,7 +55,7 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 		endpoint = ""
 	}
 
-	r.Route("GET", endpoint+"{resource:.*}", func(response Response, r *Request) {
+	r.Route("GET", endpoint+"{resource:.*}", func(response *Response, r *Request) {
 		file := r.Params["resource"]
 		if strings.HasPrefix(file, "/") {
 			file = file[1:]
@@ -87,12 +87,13 @@ func cleanStaticPath(directory string, file string) string {
 	return path
 }
 
-func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, response Response, handler Handler, rules validation.RuleSet) {
+func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, response *Response, handler Handler, rules validation.RuleSet) {
 	request := &Request{
 		httpRequest: rawRequest,
 		Rules:       rules,
 		Params:      mux.Vars(rawRequest),
 	}
+	response.empty = true
 
 	// Validate last.
 	// Allows custom middlewares to be executed after core
@@ -103,4 +104,9 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 	}
 
 	handler(response, request)
+
+	// If the response is empty
+	if response.empty {
+		response.Status(http.StatusNoContent)
+	}
 }

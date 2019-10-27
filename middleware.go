@@ -19,7 +19,7 @@ type Middleware func(Handler) Handler
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
 // If debugging is enabled in the config, the error is also written in the response.
 func recoveryMiddleware(next Handler) Handler {
-	return func(response Response, r *Request) {
+	return func(response *Response, r *Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				response.Error(err)
@@ -38,7 +38,7 @@ func recoveryMiddleware(next Handler) Handler {
 // If the "Content-Type: application/json" header is set, the middleware
 // will attempt to unmarshal the request's body.
 func parseRequestMiddleware(next Handler) Handler {
-	return func(response Response, request *Request) {
+	return func(response *Response, request *Request) {
 		var data map[string]interface{}
 		if request.httpRequest.Header.Get("Content-Type") == "application/json" {
 			defer request.httpRequest.Body.Close()
@@ -105,7 +105,7 @@ func generateFlatMap(request *http.Request) map[string]interface{} {
 // validateRequestMiddleware is a middleware that validates the request and sends a 422 error code
 // if the validation rules are not met.
 func validateRequestMiddleware(next Handler) Handler {
-	return func(response Response, r *Request) {
+	return func(response *Response, r *Request) {
 		errsBag := r.validate()
 		if errsBag == nil {
 			next(response, r)
@@ -135,7 +135,7 @@ func validateRequestMiddleware(next Handler) Handler {
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
 func languageMiddleware(next Handler) Handler {
-	return func(response Response, request *Request) {
+	return func(response *Response, request *Request) {
 		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
 			request.Lang = lang.DetectLanguage(header)
 		} else {

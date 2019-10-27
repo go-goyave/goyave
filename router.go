@@ -105,7 +105,8 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 
 	handler(response, request)
 
-	// If the response is empty
+	// If the response is empty, return status 204 to
+	// comply with RFC 7231, 6.3.5
 	if response.empty {
 		response.Status(http.StatusNoContent)
 	}

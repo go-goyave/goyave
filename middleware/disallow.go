@@ -14,7 +14,7 @@ import (
 // Returns "422 Unprocessable Entity" and an error message if the user
 // has sent non-validated field(s).
 func DisallowNonValidatedFields(next goyave.Handler) goyave.Handler {
-	return func(response goyave.Response, request *goyave.Request) {
+	return func(response *goyave.Response, request *goyave.Request) {
 		nonValidated := validation.Errors{}
 		for field := range request.Data {
 			if _, exists := request.Rules[field]; !exists {

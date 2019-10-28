@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/System-Glitch/goyave/helpers"
+
 	"github.com/System-Glitch/goyave/lang"
 )
 
@@ -15,7 +17,8 @@ type RuleSet map[string][]string
 type Errors map[string][]string
 
 var validationRules map[string]Rule = map[string]Rule{
-	"string": validateString,
+	"required": validateRequired,
+	"string":   validateString,
 }
 
 // AddRule register a validation rule.
@@ -47,6 +50,10 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 func validate(data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
 	for fieldName, field := range rules {
+		// TODO document that if field is not required and is missing, don't check rules
+		if !isRequired(field) && !validateRequired(fieldName, data[fieldName], []string{}, data) {
+			continue
+		}
 		for _, rule := range field {
 			ruleName, params := parseRule(rule)
 			if !validationRules[ruleName](fieldName, data[fieldName], params, data) {
@@ -56,6 +63,10 @@ func validate(data map[string]interface{}, rules RuleSet, language string) Error
 		}
 	}
 	return errors
+}
+
+func isRequired(field []string) bool {
+	return helpers.Contains(field, "required")
 }
 
 func parseRule(rule string) (string, []string) {

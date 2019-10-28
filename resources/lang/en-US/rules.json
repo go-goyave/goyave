@@ -1,3 +1,4 @@
 {
+    "required": "The :field field is required.",
     "string": "The :field field must be a string."
 }

@@ -17,7 +17,77 @@ func validateRequired(field string, value interface{}, parameters []string, form
 	return ok
 }
 
+// -------------------------
+// Numeric
+
+// numeric
+// integer
+// between
+// min
+// max
+
+// greater_than + greater_than_equal
+// lower_than + lower_than_equal
+
+// -------------------------
+// Strings
+
 func validateString(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	_, ok := value.(string)
 	return ok
 }
+
+// digits
+// alpha
+// alpha_dash
+// alphanumeric
+// email
+// starts_with
+// ends_with
+
+// length
+// min
+// max
+
+// ip address
+// json
+// regex
+// timezone
+// url
+// uuid
+
+// -------------------------
+// Arrays
+
+// array
+// distinct
+
+// -------------------------
+// Dates
+
+// date:format
+
+// date before + before or equal
+// date after + after or equal
+// between + between or equal
+// date equals
+//
+
+// -------------------------
+// Files
+
+// file
+// mime
+// image
+// size
+// extension
+
+// -------------------------
+// Misc
+
+// boolean (accept 1, "on", "true", "yes")
+// different
+// in + not_in
+// in_array + not_in_array
+// nullable
+// confirmed

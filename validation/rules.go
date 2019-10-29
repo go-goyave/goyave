@@ -1,7 +1,16 @@
 package validation
 
+import (
+	"reflect"
+	"strconv"
+	"strings"
+)
+
 // Rule function defining a validation rule.
 // Passing rules should return true, false otherwise.
+//
+// Rules can modifiy the validated value if needed.
+// For example, the "numeric" rule converts the data to float64 if it's a string.
 type Rule func(string, interface{}, []string, map[string]interface{}) bool
 
 func validateRequired(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -20,7 +29,23 @@ func validateRequired(field string, value interface{}, parameters []string, form
 // -------------------------
 // Numeric
 
-// numeric
+func validateNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	rv := reflect.ValueOf(value)
+	kind := rv.Kind().String()
+	switch {
+	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr", strings.HasPrefix(kind, "float"):
+		return true
+	case kind == "string":
+		floatVal, err := strconv.ParseFloat(value.(string), 64)
+		if err == nil {
+			form[field] = floatVal
+		}
+		return err == nil
+	default:
+		return false
+	}
+}
+
 // integer
 // between
 // min

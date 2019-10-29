@@ -30,7 +30,11 @@ func newRouter() *Router {
 // Subrouter create a new sub-router from this router.
 // Use subrouters to create route groups and to apply middlewares to multiple routes.
 func (r *Router) Subrouter(prefix string) *Router {
-	return &Router{muxRouter: r.muxRouter.PathPrefix(prefix).Subrouter()}
+	router := &Router{muxRouter: r.muxRouter.PathPrefix(prefix).Subrouter()}
+
+	// Apply parent middlewares to subrouter
+	router.Middleware(r.middlewares...)
+	return router
 }
 
 // Middleware apply one or more middleware(s) to the route group.

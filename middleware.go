@@ -60,7 +60,6 @@ func parseRequestMiddleware(next Handler) Handler {
 
 func generateFlatMap(request *http.Request) map[string]interface{} {
 	var flatMap map[string]interface{} = make(map[string]interface{})
-	// if request.Header()
 	err := request.ParseMultipartForm(int64(config.Get("maxUploadSize").(float64)) << 20)
 
 	if err != nil {

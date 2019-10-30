@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/System-Glitch/goyave/helpers"
 )
 
 // Rule function defining a validation rule.
@@ -80,8 +82,54 @@ func validateInteger(field string, value interface{}, parameters []string, form 
 }
 
 // between
-// min
-// max
+
+func validateMin(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	min, err := strconv.ParseFloat(parameters[0], 64)
+	if err != nil {
+		panic(err)
+	}
+	switch getFieldType(value) {
+	case "numeric":
+		floatValue, err := helpers.ToFloat64(value)
+		if err != nil {
+			panic(err)
+		}
+		return floatValue >= min
+	case "string":
+		return len(value.(string)) >= int(min)
+	case "array":
+		list := reflect.ValueOf(value)
+		return list.Len() >= int(min)
+	case "file":
+		return false // TODO implement file min size
+	}
+
+	return true // Pass if field type cannot be checked (bool, dates, ...)
+}
+
+func validateMax(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	max, err := strconv.ParseFloat(parameters[0], 64)
+	if err != nil {
+		panic(err)
+	}
+	switch getFieldType(value) {
+	case "numeric":
+		floatValue, err := helpers.ToFloat64(value)
+		if err != nil {
+			panic(err)
+		}
+		return floatValue <= max
+	case "string":
+		return len(value.(string)) <= int(max)
+	case "array":
+		list := reflect.ValueOf(value)
+		return list.Len() <= int(max)
+	case "file":
+		return false // TODO implement file min size
+	}
+
+	return true // Pass if field type cannot be checked (bool, dates, ...)
+}
 
 // greater_than + greater_than_equal
 // lower_than + lower_than_equal

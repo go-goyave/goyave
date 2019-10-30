@@ -1,6 +1,10 @@
 package helpers
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+	"strconv"
+)
 
 // Contains check if a slice contains a value
 func Contains(slice interface{}, value interface{}) bool {
@@ -11,4 +15,9 @@ func Contains(slice interface{}, value interface{}) bool {
 		}
 	}
 	return false
+}
+
+// ToFloat64 convert a numeric value to float64
+func ToFloat64(value interface{}) (float64, error) {
+	return strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
 }

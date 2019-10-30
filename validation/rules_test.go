@@ -88,3 +88,47 @@ func TestValidateRequired(t *testing.T) {
 	assert.False(t, validateRequired("field", nil, []string{}, map[string]interface{}{"field": nil}))
 	assert.False(t, validateRequired("field", "", []string{}, map[string]interface{}{"field": ""}))
 }
+
+func TestValidateMin(t *testing.T) {
+	assert.True(t, validateMin("field", "not numeric", []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", "not numeric", []string{"20"}, map[string]interface{}{}))
+
+	assert.True(t, validateMin("field", 2, []string{"1"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", 10, []string{"20"}, map[string]interface{}{}))
+
+	assert.True(t, validateMin("field", 2.0, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", 10.0, []string{"20"}, map[string]interface{}{}))
+	assert.True(t, validateMin("field", 3.7, []string{"2.5"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", 10.0, []string{"20.4"}, map[string]interface{}{}))
+
+	assert.True(t, validateMin("field", []int{5, 4}, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", []int{5, 4, 3, 2}, []string{"20"}, map[string]interface{}{}))
+
+	assert.True(t, validateMin("field", []string{"5", "4"}, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", []string{"5", "4", "3", "2"}, []string{"20"}, map[string]interface{}{}))
+
+	assert.True(t, validateMin("field", true, []string{"2"}, map[string]interface{}{}))
+	assert.Panics(t, func() { validateMin("field", true, []string{"test"}, map[string]interface{}{}) })
+}
+
+func TestValidateMax(t *testing.T) {
+	assert.True(t, validateMax("field", "not numeric", []string{"12"}, map[string]interface{}{}))
+	assert.False(t, validateMax("field", "not numeric", []string{"5"}, map[string]interface{}{}))
+
+	assert.True(t, validateMax("field", 1, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMax("field", 20, []string{"10"}, map[string]interface{}{}))
+
+	assert.True(t, validateMax("field", 2.0, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMax("field", 10.0, []string{"5"}, map[string]interface{}{}))
+	assert.True(t, validateMax("field", 2.5, []string{"3.7"}, map[string]interface{}{}))
+	assert.False(t, validateMax("field", 20.4, []string{"10.0"}, map[string]interface{}{}))
+
+	assert.True(t, validateMax("field", []int{5, 4}, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMax("field", []int{5, 4, 3, 2}, []string{"3"}, map[string]interface{}{}))
+
+	assert.True(t, validateMax("field", []string{"5", "4"}, []string{"3"}, map[string]interface{}{}))
+	assert.False(t, validateMax("field", []string{"5", "4", "3", "2"}, []string{"2"}, map[string]interface{}{}))
+
+	assert.True(t, validateMax("field", true, []string{"2"}, map[string]interface{}{}))
+	assert.Panics(t, func() { validateMax("field", true, []string{"test"}, map[string]interface{}{}) })
+}

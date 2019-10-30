@@ -28,6 +28,10 @@ func processPlaceholders(field string, rule string, params []string, message str
 	return message
 }
 
+func simpleParameterPlaceholder(field string, rule string, parameters []string, language string) string {
+	return parameters[0]
+}
+
 func init() {
 	SetPlaceholder("field", func(field string, rule string, parameters []string, language string) string {
 		entry := "validation.fields." + field
@@ -37,5 +41,7 @@ func init() {
 		}
 		return attr
 	})
+	SetPlaceholder("min", simpleParameterPlaceholder)
+	SetPlaceholder("max", simpleParameterPlaceholder)
 	// TODO set more placeholders
 }

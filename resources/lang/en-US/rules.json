@@ -1,4 +1,14 @@
 {
-    "required": "The :field field is required.",
-    "string": "The :field field must be a string."
+    "required": "The :field is required.",
+    "numeric": "The :field must be numeric.",
+    "integer": "The :field must be an integer.",
+    "string": "The :field must be a string.",
+    "min.string": "The :field must be at least :min characters.",
+    "min.numeric": "The :field must be at least :min.",
+    "min.array": "The :field must have at least :min items.",
+    "min.file": "The :field must be at least :min KiB.",
+    "max.string": "The :field may not have more than :max characters.",
+    "max.numeric": "The :field may not be greater than :max.",
+    "max.array": "The :field may not have more than :max items.",
+    "max.file": "The :field may not be greater than :max KiB."
 }

@@ -15,3 +15,25 @@ func TestContains(t *testing.T) {
 	assert.False(t, Contains([]float64{1, 2, 3}, 2))
 	assert.False(t, Contains([]float64{1, 2, 3}, 4))
 }
+
+func TestToFloat64(t *testing.T) {
+	v, err := ToFloat64(1)
+	assert.Nil(t, err)
+	assert.Equal(t, 1.0, v)
+
+	v, err = ToFloat64("1")
+	assert.Nil(t, err)
+	assert.Equal(t, 1.0, v)
+
+	v, err = ToFloat64(uint(5))
+	assert.Nil(t, err)
+	assert.Equal(t, 5.0, v)
+
+	v, err = ToFloat64("1.58")
+	assert.Nil(t, err)
+	assert.Equal(t, 1.58, v)
+
+	v, err = ToFloat64(1.5)
+	assert.Nil(t, err)
+	assert.Equal(t, 1.5, v)
+}

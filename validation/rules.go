@@ -81,8 +81,6 @@ func validateInteger(field string, value interface{}, parameters []string, form 
 	}
 }
 
-// between
-
 func validateMin(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	min, err := strconv.ParseFloat(parameters[0], 64)
 	if err != nil {
@@ -124,6 +122,37 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 	case "array":
 		list := reflect.ValueOf(value)
 		return list.Len() <= int(max)
+	case "file":
+		return false // TODO implement file min size
+	}
+
+	return true // Pass if field type cannot be checked (bool, dates, ...)
+}
+
+func validateBetween(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	min, errMin := strconv.ParseFloat(parameters[0], 64)
+	max, errMax := strconv.ParseFloat(parameters[1], 64)
+	if errMin != nil {
+		panic(errMin)
+	}
+	if errMax != nil {
+		panic(errMax)
+	}
+
+	switch getFieldType(value) {
+	case "numeric":
+		floatValue, err := helpers.ToFloat64(value)
+		if err != nil {
+			panic(err)
+		}
+		return floatValue >= min && floatValue <= max
+	case "string":
+		length := len(value.(string))
+		return length >= int(min) && length <= int(max)
+	case "array":
+		list := reflect.ValueOf(value)
+		length := list.Len()
+		return length >= int(min) && length <= int(max)
 	case "file":
 		return false // TODO implement file min size
 	}

@@ -23,6 +23,7 @@ var validationRules map[string]Rule = map[string]Rule{
 	"integer":  validateInteger,
 	"min":      validateMin,
 	"max":      validateMax,
+	"between":  validateBetween,
 	"string":   validateString,
 }
 

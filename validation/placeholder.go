@@ -42,6 +42,12 @@ func init() {
 		return attr
 	})
 	SetPlaceholder("min", simpleParameterPlaceholder)
-	SetPlaceholder("max", simpleParameterPlaceholder)
+	SetPlaceholder("max", func(field string, rule string, parameters []string, language string) string {
+		index := 0
+		if rule == "between" {
+			index = 1
+		}
+		return parameters[index]
+	})
 	// TODO set more placeholders
 }

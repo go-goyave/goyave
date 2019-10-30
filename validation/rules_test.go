@@ -132,3 +132,37 @@ func TestValidateMax(t *testing.T) {
 	assert.True(t, validateMax("field", true, []string{"2"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateMax("field", true, []string{"test"}, map[string]interface{}{}) })
 }
+
+func TestValidateBetween(t *testing.T) {
+	assert.True(t, validateBetween("field", "not numeric", []string{"5", "12"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", "not numeric", []string{"12", "20"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", "not numeric", []string{"5", "6"}, map[string]interface{}{}))
+
+	assert.True(t, validateBetween("field", 1, []string{"0", "3"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", 20, []string{"5", "10"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", 20, []string{"21", "23"}, map[string]interface{}{}))
+
+	assert.True(t, validateBetween("field", 2.0, []string{"2", "5"}, map[string]interface{}{}))
+	assert.True(t, validateBetween("field", 2.0, []string{"1.0", "5.0"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", 10.0, []string{"5", "7"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", 10.0, []string{"15", "17"}, map[string]interface{}{}))
+	assert.True(t, validateBetween("field", 2.5, []string{"1.7", "3.7"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", 20.4, []string{"10.0", "14.7"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", 20.4, []string{"25.0", "54.7"}, map[string]interface{}{}))
+
+	assert.True(t, validateBetween("field", []int{5, 4}, []string{"1", "5"}, map[string]interface{}{}))
+	assert.True(t, validateBetween("field", []int{5, 4}, []string{"2.2", "5.7"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", []int{5, 4, 3, 2}, []string{"1", "3"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", []int{5, 4, 3, 2}, []string{"5", "7"}, map[string]interface{}{}))
+
+	assert.True(t, validateBetween("field", []string{"5", "4"}, []string{"1", "5"}, map[string]interface{}{}))
+	assert.True(t, validateBetween("field", []string{"5", "4"}, []string{"2.2", "5.7"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", []string{"5", "4", "3", "2"}, []string{"1", "3"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", []string{"5", "4", "3", "2"}, []string{"5", "7"}, map[string]interface{}{}))
+
+	assert.True(t, validateBetween("field", true, []string{"2", "3"}, map[string]interface{}{}))
+	assert.Panics(t, func() { validateBetween("field", true, []string{"test"}, map[string]interface{}{}) })
+	assert.Panics(t, func() { validateBetween("field", true, []string{"1"}, map[string]interface{}{}) })
+	assert.Panics(t, func() { validateBetween("field", true, []string{"test", "2"}, map[string]interface{}{}) })
+	assert.Panics(t, func() { validateBetween("field", true, []string{"2", "test"}, map[string]interface{}{}) })
+}

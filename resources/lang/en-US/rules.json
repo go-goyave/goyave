@@ -10,5 +10,9 @@
     "max.string": "The :field may not have more than :max characters.",
     "max.numeric": "The :field may not be greater than :max.",
     "max.array": "The :field may not have more than :max items.",
-    "max.file": "The :field may not be greater than :max KiB."
+    "max.file": "The :field may not be greater than :max KiB.",
+    "between.string": "The :field must be be between :min and :max characters.",
+    "between.numeric": "The :field must be between :min and :max.",
+    "between.array": "The :field must have between :min and :max items.",
+    "between.file": "The :field must be between :min and :max KiB."
 }

@@ -19,7 +19,7 @@ type validationLines struct {
 	rules map[string]string
 
 	// Attribute-specific rules messages
-	attributes map[string]attribute
+	fields map[string]attribute
 }
 
 type attribute struct {
@@ -102,7 +102,7 @@ func load(lang string, path string) {
 	sep := string(os.PathSeparator)
 	readLangFile(path+sep+"locale.json", &langStruct.lines)
 	readLangFile(path+sep+"rules.json", &langStruct.validation.rules)
-	readLangFile(path+sep+"attributes.json", &langStruct.validation.attributes)
+	readLangFile(path+sep+"fields.json", &langStruct.validation.fields)
 
 	if existingLang, exists := languages[lang]; exists {
 		mergeLang(existingLang, langStruct)
@@ -131,16 +131,16 @@ func mergeLang(dst language, src language) {
 	mergeMap(dst.lines, src.lines)
 	mergeMap(dst.validation.rules, src.validation.rules)
 
-	for key, value := range src.validation.attributes {
-		if attr, exists := dst.validation.attributes[key]; !exists {
-			dst.validation.attributes[key] = value
+	for key, value := range src.validation.fields {
+		if attr, exists := dst.validation.fields[key]; !exists {
+			dst.validation.fields[key] = value
 		} else {
 			attr.Name = value.Name
 			if attr.Rules == nil {
 				attr.Rules = make(map[string]string)
 			}
 			mergeMap(attr.Rules, value.Rules)
-			dst.validation.attributes[key] = attr
+			dst.validation.fields[key] = attr
 		}
 	}
 }
@@ -172,17 +172,17 @@ func Get(lang string, line string) string {
 
 		switch path[1] {
 		case "rules":
-			if len(path) != 3 {
+			if len(path) < 3 {
 				return line
 			}
-			s := languages[lang].validation.rules[path[2]]
+			s := languages[lang].validation.rules[strings.Join(path[2:], ".")]
 			if s == "" {
 				return line
 			}
 			return s
-		case "attributes":
+		case "fields":
 			len := len(path)
-			attr := languages[lang].validation.attributes[path[2]]
+			attr := languages[lang].validation.fields[path[2]]
 			if attr.Name == "" {
 				return line
 			}

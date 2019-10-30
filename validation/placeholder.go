@@ -30,7 +30,7 @@ func processPlaceholders(field string, rule string, params []string, message str
 
 func init() {
 	SetPlaceholder("field", func(field string, rule string, parameters []string, language string) string {
-		entry := "validation.attributes." + field
+		entry := "validation.fields." + field
 		attr := lang.Get(language, entry)
 		if attr == entry {
 			return field

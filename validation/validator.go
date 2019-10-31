@@ -42,6 +42,7 @@ var validationRules map[string]Rule = map[string]Rule{
 	"ends_with":          validateEndsWith,
 	"in":                 validateIn,
 	"not_in":             validateNotIn,
+	"timezone":           validateTimezone,
 }
 
 var typeDependentMessageRules []string = []string{

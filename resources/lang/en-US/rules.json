@@ -43,5 +43,6 @@
     "starts_with": "The :field must start with one of the following values: :array",
     "ends_with": "The :field must end with one of the following values: :array",
     "in": "The :field must have one of the following values: :array",
-    "not_in": "The :field must not have one of the following values: :array"
+    "not_in": "The :field must not have one of the following values: :array",
+    "timezone": "The :field must be a valid time zone."
 }

@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/System-Glitch/goyave/helpers"
 )
@@ -345,7 +346,18 @@ func validateRegex(field string, value interface{}, parameters []string, form ma
 	return false
 }
 
-// timezone
+func validateTimezone(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to *time.Timezone
+	tz, ok := value.(string)
+	if ok {
+		loc, err := time.LoadLocation(tz)
+		if err == nil {
+			form[field] = loc
+			return true
+		}
+	}
+	return false
+}
+
 // url
 // uuid
 

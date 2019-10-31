@@ -2,6 +2,7 @@ package validation
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -424,4 +425,26 @@ func TestValidateNotIn(t *testing.T) {
 
 	assert.False(t, validateNotIn("field", []string{"1"}, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateNotIn("field", "hi", []string{}, map[string]interface{}{}) })
+}
+
+func TestValidateTimezone(t *testing.T) {
+	assert.True(t, validateTimezone("field", "UTC", []string{}, map[string]interface{}{}))
+	assert.True(t, validateTimezone("field", "Europe/Paris", []string{}, map[string]interface{}{}))
+	assert.True(t, validateTimezone("field", "America/St_Thomas", []string{}, map[string]interface{}{}))
+	assert.True(t, validateTimezone("field", "GMT", []string{}, map[string]interface{}{}))
+	assert.False(t, validateTimezone("field", "GMT+2", []string{}, map[string]interface{}{}))
+	assert.False(t, validateTimezone("field", "UTC+2", []string{}, map[string]interface{}{}))
+	assert.False(t, validateTimezone("field", "here", []string{}, map[string]interface{}{}))
+	assert.False(t, validateTimezone("field", 1, []string{}, map[string]interface{}{}))
+	assert.False(t, validateTimezone("field", 1.5, []string{}, map[string]interface{}{}))
+	assert.False(t, validateTimezone("field", true, []string{}, map[string]interface{}{}))
+	assert.False(t, validateTimezone("field", []string{"UTC"}, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateTimezoneConvert(t *testing.T) {
+	form := map[string]interface{}{"field": "UTC"}
+	assert.True(t, validateTimezone("field", form["field"], []string{}, form))
+
+	_, ok := form["field"].(*time.Location)
+	assert.True(t, ok)
 }

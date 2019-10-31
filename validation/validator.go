@@ -40,6 +40,8 @@ var validationRules map[string]Rule = map[string]Rule{
 	"alpha_num":          validateAlphaNumeric,
 	"starts_with":        validateStartsWith,
 	"ends_with":          validateEndsWith,
+	"in":                 validateIn,
+	"not_in":             validateNotIn,
 }
 
 var typeDependentMessageRules []string = []string{

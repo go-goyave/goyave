@@ -288,5 +288,17 @@ func TestValidateArray(t *testing.T) {
 }
 
 func TestValidateDistinct(t *testing.T) {
-	// TODO implement test
+	assert.True(t, validateDistinct("field", []string{"test", "test2", "test3"}, []string{}, map[string]interface{}{}))
+	assert.True(t, validateDistinct("field", []int{1, 2, 3}, []string{}, map[string]interface{}{}))
+	assert.True(t, validateDistinct("field", []float64{1.2, 4.3, 2.4, 3.5, 4.5, 4.30001}, []string{}, map[string]interface{}{}))
+	assert.True(t, validateDistinct("field", []bool{true, false}, []string{}, map[string]interface{}{}))
+
+	assert.False(t, validateDistinct("field", []string{"test", "test2", "test3", "test2"}, []string{}, map[string]interface{}{}))
+	assert.False(t, validateDistinct("field", []int{1, 4, 2, 3, 4}, []string{}, map[string]interface{}{}))
+	assert.False(t, validateDistinct("field", []float64{1.2, 4.3, 2.4, 3.5, 4.5, 4.30001, 4.3}, []string{}, map[string]interface{}{}))
+
+	// Not array
+	assert.False(t, validateDistinct("field", 8, []string{}, map[string]interface{}{}))
+	assert.False(t, validateDistinct("field", 8.0, []string{}, map[string]interface{}{}))
+	assert.False(t, validateDistinct("field", "string", []string{}, map[string]interface{}{}))
 }

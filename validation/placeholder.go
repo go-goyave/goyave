@@ -28,18 +28,22 @@ func processPlaceholders(field string, rule string, params []string, message str
 	return message
 }
 
+func replaceField(field, language string) string {
+	entry := "validation.fields." + field
+	attr := lang.Get(language, entry)
+	if attr == entry {
+		return field
+	}
+	return attr
+}
+
 func simpleParameterPlaceholder(field string, rule string, parameters []string, language string) string {
 	return parameters[0]
 }
 
 func init() {
 	SetPlaceholder("field", func(field string, rule string, parameters []string, language string) string {
-		entry := "validation.fields." + field
-		attr := lang.Get(language, entry)
-		if attr == entry {
-			return field
-		}
-		return attr
+		return replaceField(field, language)
 	})
 	SetPlaceholder("min", simpleParameterPlaceholder)
 	SetPlaceholder("max", func(field string, rule string, parameters []string, language string) string {
@@ -48,6 +52,9 @@ func init() {
 			index = 1
 		}
 		return parameters[index]
+	})
+	SetPlaceholder("compared", func(field string, rule string, parameters []string, language string) string {
+		return replaceField(parameters[0], language)
 	})
 	// TODO set more placeholders
 }

@@ -88,10 +88,7 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 	}
 	switch getFieldType(value) {
 	case "numeric":
-		floatValue, err := helpers.ToFloat64(value)
-		if err != nil {
-			panic(err)
-		}
+		floatValue, _ := helpers.ToFloat64(value)
 		return floatValue >= min
 	case "string":
 		return len(value.(string)) >= int(min)
@@ -112,10 +109,7 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 	}
 	switch getFieldType(value) {
 	case "numeric":
-		floatValue, err := helpers.ToFloat64(value)
-		if err != nil {
-			panic(err)
-		}
+		floatValue, _ := helpers.ToFloat64(value)
 		return floatValue <= max
 	case "string":
 		return len(value.(string)) <= int(max)
@@ -123,7 +117,7 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 		list := reflect.ValueOf(value)
 		return list.Len() <= int(max)
 	case "file":
-		return false // TODO implement file min size
+		return false // TODO implement file max size
 	}
 
 	return true // Pass if field type cannot be checked (bool, dates, ...)
@@ -141,10 +135,7 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 
 	switch getFieldType(value) {
 	case "numeric":
-		floatValue, err := helpers.ToFloat64(value)
-		if err != nil {
-			panic(err)
-		}
+		floatValue, _ := helpers.ToFloat64(value)
 		return floatValue >= min && floatValue <= max
 	case "string":
 		length := len(value.(string))
@@ -154,14 +145,107 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 		length := list.Len()
 		return length >= int(min) && length <= int(max)
 	case "file":
-		return false // TODO implement file min size
+		return false // TODO implement file between size
 	}
 
 	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
-// greater_than + greater_than_equal
-// lower_than + lower_than_equal
+func validateGreaterThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	valueType := getFieldType(value)
+
+	compared, exists := form[parameters[0]]
+	if !exists || valueType != getFieldType(compared) {
+		return false // Can't compare two different types or missing field
+	}
+
+	switch valueType {
+	case "numeric":
+		floatValue, _ := helpers.ToFloat64(value)
+		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		return floatValue > comparedFloatValue
+	case "string":
+		return len(value.(string)) > len(compared.(string))
+	case "array":
+		return reflect.ValueOf(value).Len() > reflect.ValueOf(compared).Len()
+	case "file":
+		return false // TODO implement file greater than size
+	}
+
+	return false
+}
+
+func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	valueType := getFieldType(value)
+
+	compared, exists := form[parameters[0]]
+	if !exists || valueType != getFieldType(compared) {
+		return false // Can't compare two different types or missing field
+	}
+
+	switch valueType {
+	case "numeric":
+		floatValue, _ := helpers.ToFloat64(value)
+		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		return floatValue >= comparedFloatValue
+	case "string":
+		return len(value.(string)) >= len(compared.(string))
+	case "array":
+		return reflect.ValueOf(value).Len() >= reflect.ValueOf(compared).Len()
+	case "file":
+		return false // TODO implement file greater than size
+	}
+
+	return false
+}
+
+func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	valueType := getFieldType(value)
+
+	compared, exists := form[parameters[0]]
+	if !exists || valueType != getFieldType(compared) {
+		return false // Can't compare two different types or missing field
+	}
+
+	switch valueType {
+	case "numeric":
+		floatValue, _ := helpers.ToFloat64(value)
+		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		return floatValue < comparedFloatValue
+	case "string":
+		return len(value.(string)) < len(compared.(string))
+	case "array":
+		return reflect.ValueOf(value).Len() < reflect.ValueOf(compared).Len()
+	case "file":
+		return false // TODO implement file greater than size
+	}
+
+	return false
+}
+
+func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	valueType := getFieldType(value)
+
+	compared, exists := form[parameters[0]]
+	if !exists || valueType != getFieldType(compared) {
+		return false // Can't compare two different types or missing field
+	}
+
+	switch valueType {
+	case "numeric":
+		floatValue, _ := helpers.ToFloat64(value)
+		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		return floatValue <= comparedFloatValue
+	case "string":
+		return len(value.(string)) <= len(compared.(string))
+	case "array":
+		return reflect.ValueOf(value).Len() <= reflect.ValueOf(compared).Len()
+	case "file":
+		return false // TODO implement file greater than size
+	}
+
+	return false
+}
 
 // -------------------------
 // Strings
@@ -193,8 +277,27 @@ func validateString(field string, value interface{}, parameters []string, form m
 // -------------------------
 // Arrays
 
-// array
-// distinct
+func validateArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	return getFieldType(value) == "array"
+}
+
+func validateDistinct(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	if getFieldType(value) != "array" {
+		return false // Can't validate if not an array
+	}
+
+	found := []interface{}{}
+	list := reflect.ValueOf(value)
+	for i := 0; i < list.Len(); i++ {
+		v := list.Index(i).Interface()
+		if helpers.Contains(found, v) {
+			return false
+		}
+		found = append(found, v)
+	}
+
+	return true
+}
 
 // -------------------------
 // Dates

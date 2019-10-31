@@ -109,6 +109,8 @@ func TestValidateMin(t *testing.T) {
 
 	assert.True(t, validateMin("field", true, []string{"2"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateMin("field", true, []string{"test"}, map[string]interface{}{}) })
+
+	// TODO test files
 }
 
 func TestValidateMax(t *testing.T) {
@@ -131,6 +133,8 @@ func TestValidateMax(t *testing.T) {
 
 	assert.True(t, validateMax("field", true, []string{"2"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateMax("field", true, []string{"test"}, map[string]interface{}{}) })
+
+	// TODO test files
 }
 
 func TestValidateBetween(t *testing.T) {
@@ -165,4 +169,124 @@ func TestValidateBetween(t *testing.T) {
 	assert.Panics(t, func() { validateBetween("field", true, []string{"1"}, map[string]interface{}{}) })
 	assert.Panics(t, func() { validateBetween("field", true, []string{"test", "2"}, map[string]interface{}{}) })
 	assert.Panics(t, func() { validateBetween("field", true, []string{"2", "test"}, map[string]interface{}{}) })
+
+	// TODO test file
+}
+
+func TestValidateGreaterThan(t *testing.T) {
+	assert.True(t, validateGreaterThan("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 2}))
+	assert.False(t, validateGreaterThan("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 20}))
+
+	assert.True(t, validateGreaterThan("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 2.0}))
+	assert.False(t, validateGreaterThan("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 5.1}))
+
+	assert.True(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
+	assert.False(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
+
+	assert.True(t, validateGreaterThan("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1}}))
+	assert.False(t, validateGreaterThan("field", []int{6}, []string{"comparison"}, map[string]interface{}{"field": []int{6}, "comparison": []int{1, 2, 3}}))
+
+	// Different type
+	assert.False(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": 2}))
+
+	// Missing field
+	assert.False(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
+
+	test := "string"
+	assert.False(t, validateGreaterThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+}
+
+func TestValidateGreaterThanEqual(t *testing.T) {
+	assert.True(t, validateGreaterThanEqual("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 2}))
+	assert.True(t, validateGreaterThanEqual("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 5}))
+	assert.False(t, validateGreaterThanEqual("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 20}))
+	assert.False(t, validateGreaterThanEqual("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 5.1}))
+
+	assert.True(t, validateGreaterThanEqual("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 2.0}))
+	assert.True(t, validateGreaterThanEqual("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 5.0}))
+	assert.False(t, validateGreaterThanEqual("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 5.1}))
+
+	assert.True(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
+	assert.True(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "gnirts"}))
+	assert.False(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
+
+	assert.True(t, validateGreaterThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1}}))
+	assert.True(t, validateGreaterThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2}}))
+	assert.False(t, validateGreaterThanEqual("field", []int{6}, []string{"comparison"}, map[string]interface{}{"field": []int{6}, "comparison": []int{1, 2, 3}}))
+
+	// Different type
+	assert.False(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": 2}))
+
+	// Missing field
+	assert.False(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
+
+	test := "string"
+	assert.False(t, validateGreaterThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+}
+
+func TestValidateLowerThan(t *testing.T) {
+	assert.True(t, validateLowerThan("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 7}))
+	assert.False(t, validateLowerThan("field", 20, []string{"comparison"}, map[string]interface{}{"field": 20, "comparison": 5}))
+
+	assert.True(t, validateLowerThan("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 7.0}))
+	assert.False(t, validateLowerThan("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 4.9}))
+
+	assert.True(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
+	assert.False(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
+
+	assert.True(t, validateLowerThan("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2, 3}}))
+	assert.False(t, validateLowerThan("field", []int{6, 7, 8}, []string{"comparison"}, map[string]interface{}{"field": []int{6, 7, 8}, "comparison": []int{1, 2}}))
+
+	// Different type
+	assert.False(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": 2}))
+
+	// Missing field
+	assert.False(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
+
+	test := "string"
+	assert.False(t, validateLowerThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+}
+
+func TestValidateLowerThanEqual(t *testing.T) {
+	assert.True(t, validateLowerThanEqual("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 7}))
+	assert.True(t, validateLowerThanEqual("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 5}))
+	assert.False(t, validateLowerThanEqual("field", 20, []string{"comparison"}, map[string]interface{}{"field": 20, "comparison": 5}))
+	assert.False(t, validateLowerThanEqual("field", 5, []string{"comparison"}, map[string]interface{}{"field": 5, "comparison": 4.9}))
+
+	assert.True(t, validateLowerThanEqual("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 7.0}))
+	assert.True(t, validateLowerThanEqual("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 5.0}))
+	assert.False(t, validateLowerThanEqual("field", 5.0, []string{"comparison"}, map[string]interface{}{"field": 5.0, "comparison": 4.9}))
+
+	assert.True(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
+	assert.True(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "gnirts"}))
+	assert.False(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
+
+	assert.True(t, validateLowerThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2, 3}}))
+	assert.True(t, validateLowerThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2}}))
+	assert.False(t, validateLowerThanEqual("field", []int{6, 7, 8}, []string{"comparison"}, map[string]interface{}{"field": []int{6, 7, 8}, "comparison": []int{1, 2}}))
+
+	// Different type
+	assert.False(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": 2}))
+
+	// Missing field
+	assert.False(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
+
+	test := "string"
+	assert.False(t, validateLowerThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+}
+
+func TestValidateArray(t *testing.T) {
+	assert.True(t, validateArray("field", []string{"test"}, []string{}, map[string]interface{}{}))
+	assert.True(t, validateArray("field", []int{5}, []string{}, map[string]interface{}{}))
+	assert.True(t, validateArray("field", []float64{5.5}, []string{}, map[string]interface{}{}))
+	assert.True(t, validateArray("field", []bool{true}, []string{}, map[string]interface{}{}))
+	assert.False(t, validateArray("field", map[string]string{}, []string{}, map[string]interface{}{}))
+	assert.False(t, validateArray("field", "test", []string{}, map[string]interface{}{}))
+	assert.False(t, validateArray("field", 5, []string{}, map[string]interface{}{}))
+	assert.False(t, validateArray("field", 5.0, []string{}, map[string]interface{}{}))
+	assert.False(t, validateArray("field", true, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateDistinct(t *testing.T) {
+	// TODO implement test
 }

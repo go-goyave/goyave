@@ -18,16 +18,26 @@ type RuleSet map[string][]string
 type Errors map[string][]string
 
 var validationRules map[string]Rule = map[string]Rule{
-	"required": validateRequired,
-	"numeric":  validateNumeric,
-	"integer":  validateInteger,
-	"min":      validateMin,
-	"max":      validateMax,
-	"between":  validateBetween,
-	"string":   validateString,
+	"required":           validateRequired,
+	"numeric":            validateNumeric,
+	"integer":            validateInteger,
+	"min":                validateMin,
+	"max":                validateMax,
+	"between":            validateBetween,
+	"greater_than":       validateGreaterThan,
+	"greater_than_equal": validateGreaterThanEqual,
+	"lower_than":         validateLowerThan,
+	"lower_than_equal":   validateLowerThanEqual,
+	"string":             validateString,
+	"array":              validateArray,
+	"distinct":           validateDistinct,
 }
 
-var typeDependentMessageRules []string = []string{"min", "max"}
+var typeDependentMessageRules []string = []string{
+	"min", "max",
+	"greater_than", "greater_than_equal",
+	"lower_than", "lower_than_equal",
+}
 
 // AddRule register a validation rule.
 // The rule will be usable in request validation by using the

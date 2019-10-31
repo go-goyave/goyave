@@ -37,3 +37,12 @@ func TestToFloat64(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1.5, v)
 }
+
+func TestToString(t *testing.T) {
+	assert.Equal(t, "12", ToString(12))
+	assert.Equal(t, "-12", ToString(-12))
+	assert.Equal(t, "12.5", ToString(12.5))
+	assert.Equal(t, "-12.5", ToString(-12.5))
+	assert.Equal(t, "true", ToString(true))
+	assert.Equal(t, "[test]", ToString([]string{"test"}))
+}

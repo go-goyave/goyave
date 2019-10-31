@@ -19,5 +19,10 @@ func Contains(slice interface{}, value interface{}) bool {
 
 // ToFloat64 convert a numeric value to float64
 func ToFloat64(value interface{}) (float64, error) {
-	return strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+	return strconv.ParseFloat(ToString(value), 64)
+}
+
+// ToString convert a value to string
+func ToString(value interface{}) string {
+	return fmt.Sprintf("%v", value)
 }

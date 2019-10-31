@@ -2,6 +2,7 @@ package validation
 
 import (
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -32,6 +33,7 @@ func validateRequired(field string, value interface{}, parameters []string, form
 // Generic
 
 func validateMin(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("min", parameters, 1)
 	min, err := strconv.ParseFloat(parameters[0], 64)
 	if err != nil {
 		panic(err)
@@ -53,6 +55,7 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 }
 
 func validateMax(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("max", parameters, 1)
 	max, err := strconv.ParseFloat(parameters[0], 64)
 	if err != nil {
 		panic(err)
@@ -74,6 +77,7 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 }
 
 func validateBetween(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("between", parameters, 2)
 	min, errMin := strconv.ParseFloat(parameters[0], 64)
 	max, errMax := strconv.ParseFloat(parameters[1], 64)
 	if errMin != nil {
@@ -102,6 +106,7 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 }
 
 func validateGreaterThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("greater_than", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -126,6 +131,7 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 }
 
 func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("greater_than_equal", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -150,6 +156,7 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 }
 
 func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("lower_than", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -174,6 +181,7 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 }
 
 func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("lower_than_equal", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -258,21 +266,64 @@ func validateString(field string, value interface{}, parameters []string, form m
 	return ok
 }
 
-// digits
-// alpha
-// alpha_dash
-// alphanumeric
-// email
+func validateDigits(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	str, ok := value.(string)
+	if ok {
+		return regexDigits.FindAllString(str, 1) == nil
+	}
+	return false
+}
+
+func validateLength(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("length", parameters, 1)
+	length, err := strconv.Atoi(parameters[0])
+	if err != nil {
+		panic(err)
+	}
+
+	str, ok := value.(string)
+	if ok {
+		return len(str) == length
+	}
+	return false
+}
+
+func validateAlpha(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	parameters = []string{patternAlpha}
+	return validateRegex(field, value, parameters, form)
+}
+
+func validateAlphaDash(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	parameters = []string{patternAlphaDash}
+	return validateRegex(field, value, parameters, form)
+}
+
+func validateAlphaNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	parameters = []string{patternAlphaNumeric}
+	return validateRegex(field, value, parameters, form)
+}
+
+func validateEmail(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	parameters = []string{patternEmail}
+	return validateRegex(field, value, parameters, form)
+}
+
 // starts_with
 // ends_with
 
 // length
-// min
-// max
 
 // ip address
 // json
-// regex
+
+func validateRegex(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	str, ok := value.(string)
+	if ok {
+		return regexp.MustCompile(parameters[0]).MatchString(str)
+	}
+	return false
+}
+
 // timezone
 // url
 // uuid
@@ -302,6 +353,9 @@ func validateDistinct(field string, value interface{}, parameters []string, form
 	return true
 }
 
+// in + not_in
+// in_array + not_in_array
+
 // -------------------------
 // Dates
 
@@ -327,7 +381,5 @@ func validateDistinct(field string, value interface{}, parameters []string, form
 
 // boolean (accept 1, "on", "true", "yes")
 // different
-// in + not_in
-// in_array + not_in_array
 // nullable
 // confirmed

@@ -31,6 +31,13 @@ var validationRules map[string]Rule = map[string]Rule{
 	"string":             validateString,
 	"array":              validateArray,
 	"distinct":           validateDistinct,
+	"digits":             validateDigits,
+	"regex":              validateRegex,
+	"email":              validateEmail,
+	"length":             validateLength,
+	"alpha":              validateAlpha,
+	"alpha_dash":         validateAlphaDash,
+	"alpha_num":          validateAlphaNumeric,
 }
 
 var typeDependentMessageRules []string = []string{
@@ -134,7 +141,7 @@ func parseRule(rule string) (string, []string) {
 		ruleName = rule
 	} else {
 		ruleName = rule[:indexName]
-		params = strings.Split(rule[indexName+1:], ",")
+		params = strings.Split(rule[indexName+1:], ",") // TODO how to escape comma?
 	}
 
 	if _, exists := validationRules[ruleName]; !exists {
@@ -142,4 +149,10 @@ func parseRule(rule string) (string, []string) {
 	}
 
 	return ruleName, params
+}
+
+func requireParametersCount(rule string, params []string, count int) {
+	if len(params) != count {
+		panic(fmt.Errorf("Rule \"%s\" requires %d parameter(s)", rule, count))
+	}
 }

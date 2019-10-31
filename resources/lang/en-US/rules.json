@@ -32,5 +32,12 @@
     "lower_than_equal.numeric": "The :field must be lower or equal to the :compared.",
     "lower_than_equal.array": "The :field must have less or the same amount of items as the :compared.",
     "lower_than_equal.file": "The :field must be the same size or smaller than the :compared.",
-    "distinct": "The :field must have only distinct values."
+    "distinct": "The :field must have only distinct values.",
+    "digits": "The :field must be digits only.",
+    "regex": "The :field format is invalid.",
+    "email": "The :field must be a valid email address.",
+    "length": "The :field must be exactly :value characters long.",
+    "alpha": "The :field may only contain letters.",
+    "alpha_dash": "The :field may only contain letters, numbers, dashes and underscores.",
+    "alpha_num": "The :field may only contain letters and numbers."
 }

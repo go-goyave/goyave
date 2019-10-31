@@ -302,3 +302,88 @@ func TestValidateDistinct(t *testing.T) {
 	assert.False(t, validateDistinct("field", 8.0, []string{}, map[string]interface{}{}))
 	assert.False(t, validateDistinct("field", "string", []string{}, map[string]interface{}{}))
 }
+
+func TestValidateDigits(t *testing.T) {
+	assert.True(t, validateDigits("field", "123", []string{}, map[string]interface{}{}))
+	assert.True(t, validateDigits("field", "0123456789", []string{}, map[string]interface{}{}))
+	assert.False(t, validateDigits("field", "2.3", []string{}, map[string]interface{}{}))
+	assert.False(t, validateDigits("field", "-123", []string{}, map[string]interface{}{}))
+	assert.False(t, validateDigits("field", "abcd", []string{}, map[string]interface{}{}))
+	assert.False(t, validateDigits("field", "/*-&é\"'(-è_ç", []string{}, map[string]interface{}{}))
+
+	// Not string
+	assert.False(t, validateDigits("field", 1, []string{}, map[string]interface{}{}))
+	assert.False(t, validateDigits("field", 1.2, []string{}, map[string]interface{}{}))
+	assert.False(t, validateDigits("field", true, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateLength(t *testing.T) {
+	assert.True(t, validateLength("field", "123", []string{"3"}, map[string]interface{}{}))
+	assert.True(t, validateLength("field", "", []string{"0"}, map[string]interface{}{}))
+	assert.False(t, validateLength("field", "4567", []string{"5"}, map[string]interface{}{}))
+	assert.False(t, validateLength("field", "4567", []string{"2"}, map[string]interface{}{}))
+
+	assert.False(t, validateLength("field", 4567, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateLength("field", 4567.8, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateLength("field", true, []string{"2"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() { validateLength("field", "123", []string{"test"}, map[string]interface{}{}) })
+}
+
+func TestValidateRegex(t *testing.T) {
+	assert.True(t, validateRegex("field", "sghtyhg", []string{"t"}, map[string]interface{}{}))
+	assert.True(t, validateRegex("field", "sghtyhg", []string{"[^\\s]"}, map[string]interface{}{}))
+	assert.False(t, validateRegex("field", "sgh tyhg", []string{"^[^\\s]+$"}, map[string]interface{}{}))
+	assert.False(t, validateRegex("field", "48s9", []string{"^[^0-9]+$"}, map[string]interface{}{}))
+	assert.True(t, validateRegex("field", "489", []string{"^[0-9]+$"}, map[string]interface{}{}))
+	assert.False(t, validateRegex("field", 489, []string{"^[^0-9]+$"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() { validateRegex("field", "", []string{"doesn't compile \\"}, map[string]interface{}{}) })
+}
+
+func TestValidateEmail(t *testing.T) {
+	assert.True(t, validateEmail("field", "simple@example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "very.common@example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "disposable.style.email.with+symbol@example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "other.email-with-hyphen@example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "fully-qualified-domain@example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "user.name+tag+sorting@example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "x@example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "example-indeed@strange-example.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "admin@mailserver1", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "example@s.example", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "\" \"@example.org", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "\"john..doe\"@example.org", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "mailhost!username@example.org", []string{}, map[string]interface{}{}))
+	assert.True(t, validateEmail("field", "user%example.com@example.org", []string{}, map[string]interface{}{}))
+	assert.False(t, validateEmail("field", "Abc.example.com", []string{}, map[string]interface{}{}))
+	assert.False(t, validateEmail("field", "1234567890123456789012345678901234567890123456789012345678901234+x@example.com", []string{}, map[string]interface{}{}))
+}
+
+func TestValidateAlpha(t *testing.T) {
+	assert.True(t, validateAlpha("field", "helloworld", []string{}, map[string]interface{}{}))
+	assert.True(t, validateAlpha("field", "éèçàû", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlpha("field", "hello world", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlpha("field", "/+*(@)={}\"'", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlpha("field", "helloworld2", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlpha("field", 2, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateAlphaDash(t *testing.T) {
+	assert.True(t, validateAlphaDash("field", "helloworld", []string{}, map[string]interface{}{}))
+	assert.True(t, validateAlphaDash("field", "éèçàû_-", []string{}, map[string]interface{}{}))
+	assert.True(t, validateAlphaDash("field", "hello-world", []string{}, map[string]interface{}{}))
+	assert.True(t, validateAlphaDash("field", "hello-world_2", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlphaDash("field", "hello world", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlphaDash("field", "/+*(@)={}\"'", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlphaDash("field", 2, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateAlphaNumeric(t *testing.T) {
+	assert.True(t, validateAlphaNumeric("field", "helloworld2", []string{}, map[string]interface{}{}))
+	assert.True(t, validateAlphaNumeric("field", "éèçàû2", []string{}, map[string]interface{}{}))
+	assert.True(t, validateAlphaNumeric("field", "helloworld2", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlphaNumeric("field", "hello world", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlphaNumeric("field", "/+*(@)={}\"'", []string{}, map[string]interface{}{}))
+	assert.False(t, validateAlphaNumeric("field", 2, []string{}, map[string]interface{}{}))
+}

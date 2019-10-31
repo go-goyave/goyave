@@ -45,6 +45,7 @@ func init() {
 	SetPlaceholder("field", func(field string, rule string, parameters []string, language string) string {
 		return replaceField(field, language)
 	})
+	SetPlaceholder("value", simpleParameterPlaceholder)
 	SetPlaceholder("min", simpleParameterPlaceholder)
 	SetPlaceholder("max", func(field string, rule string, parameters []string, language string) string {
 		index := 0

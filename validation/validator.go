@@ -38,6 +38,8 @@ var validationRules map[string]Rule = map[string]Rule{
 	"alpha":              validateAlpha,
 	"alpha_dash":         validateAlphaDash,
 	"alpha_num":          validateAlphaNumeric,
+	"starts_with":        validateStartsWith,
+	"ends_with":          validateEndsWith,
 }
 
 var typeDependentMessageRules []string = []string{
@@ -152,7 +154,7 @@ func parseRule(rule string) (string, []string) {
 }
 
 func requireParametersCount(rule string, params []string, count int) {
-	if len(params) != count {
+	if len(params) < count {
 		panic(fmt.Errorf("Rule \"%s\" requires %d parameter(s)", rule, count))
 	}
 }

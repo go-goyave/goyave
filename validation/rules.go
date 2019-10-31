@@ -308,6 +308,32 @@ func validateEmail(field string, value interface{}, parameters []string, form ma
 	return validateRegex(field, value, parameters, form)
 }
 
+func validateStartsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("starts_with", parameters, 1)
+	str, ok := value.(string)
+	if ok {
+		for _, prefix := range parameters {
+			if strings.HasPrefix(str, prefix) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func validateEndsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("ends_with", parameters, 1)
+	str, ok := value.(string)
+	if ok {
+		for _, prefix := range parameters {
+			if strings.HasSuffix(str, prefix) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // starts_with
 // ends_with
 

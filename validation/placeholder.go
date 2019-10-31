@@ -57,5 +57,8 @@ func init() {
 	SetPlaceholder("compared", func(field string, rule string, parameters []string, language string) string {
 		return replaceField(parameters[0], language)
 	})
+	SetPlaceholder("array", func(field string, rule string, parameters []string, language string) string {
+		return strings.Join(parameters, ", ")
+	})
 	// TODO set more placeholders
 }

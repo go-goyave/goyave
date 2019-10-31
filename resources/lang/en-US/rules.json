@@ -39,5 +39,7 @@
     "length": "The :field must be exactly :value characters long.",
     "alpha": "The :field may only contain letters.",
     "alpha_dash": "The :field may only contain letters, numbers, dashes and underscores.",
-    "alpha_num": "The :field may only contain letters and numbers."
+    "alpha_num": "The :field may only contain letters and numbers.",
+    "starts_with": "The :field must start with one of the following values: :array",
+    "ends_with": "The :field must end with one of the following values: :array"
 }

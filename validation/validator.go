@@ -95,11 +95,22 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 func validate(data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
 	for fieldName, field := range rules {
+		if !isNullable(field) && data[fieldName] == nil { // TODO document nullable removes field
+			delete(data, fieldName)
+		}
+
 		// TODO document that if field is not required and is missing, don't check rules
 		if !isRequired(field) && !validateRequired(fieldName, data[fieldName], []string{}, data) {
 			continue
 		}
+
 		for _, rule := range field {
+			if rule == "nullable" {
+				if data[fieldName] == nil {
+					break
+				}
+				continue
+			}
 			ruleName, params := parseRule(rule)
 			if !validationRules[ruleName](fieldName, data[fieldName], params, data) {
 				message := processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, data[fieldName], language), language)
@@ -140,6 +151,10 @@ func isTypeDependent(rule string) bool {
 
 func isRequired(field []string) bool {
 	return helpers.Contains(field, "required")
+}
+
+func isNullable(field []string) bool {
+	return helpers.Contains(field, "nullable")
 }
 
 func parseRule(rule string) (string, []string) {

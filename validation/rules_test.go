@@ -13,7 +13,7 @@ func TestValidateRequired(t *testing.T) {
 	assert.True(t, validateRequired("field", []string{}, []string{}, map[string]interface{}{"field": []string{}}))
 	assert.True(t, validateRequired("field", []float64{}, []string{}, map[string]interface{}{"field": []float64{}}))
 	assert.True(t, validateRequired("field", 0, []string{}, map[string]interface{}{"field": 0}))
-	assert.False(t, validateRequired("field", nil, []string{}, map[string]interface{}{"field": nil}))
+	assert.True(t, validateRequired("field", nil, []string{}, map[string]interface{}{"field": nil}))
 	assert.False(t, validateRequired("field", "", []string{}, map[string]interface{}{"field": ""}))
 }
 

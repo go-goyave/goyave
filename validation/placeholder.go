@@ -23,7 +23,9 @@ func SetPlaceholder(placeholderName string, replacer Placeholder) {
 
 func processPlaceholders(field string, rule string, params []string, message string, language string) string {
 	for placeholder, replacer := range placeholders {
-		message = strings.ReplaceAll(message, placeholder, replacer(field, rule, params, language))
+		if strings.Contains(message, placeholder) {
+			message = strings.ReplaceAll(message, placeholder, replacer(field, rule, params, language))
+		}
 	}
 	return message
 }

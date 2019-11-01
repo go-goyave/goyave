@@ -49,6 +49,7 @@ var validationRules map[string]Rule = map[string]Rule{
 	"json":               validateJSON,
 	"url":                validateURL,
 	"uuid":               validateUUID,
+	"bool":               validateBool,
 }
 
 var typeDependentMessageRules []string = []string{

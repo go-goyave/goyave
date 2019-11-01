@@ -202,3 +202,47 @@ func TestValidateLowerThanEqual(t *testing.T) {
 	test := "string"
 	assert.False(t, validateLowerThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 }
+
+func TestValidateBool(t *testing.T) {
+	assert.True(t, validateBool("field", 1, []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", 0, []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", "on", []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", "off", []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", "true", []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", "false", []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", "yes", []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", "no", []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", true, []string{}, map[string]interface{}{}))
+	assert.True(t, validateBool("field", false, []string{}, map[string]interface{}{}))
+
+	assert.False(t, validateBool("field", 0.0, []string{}, map[string]interface{}{}))
+	assert.False(t, validateBool("field", 1.0, []string{}, map[string]interface{}{}))
+	assert.False(t, validateBool("field", []string{"true"}, []string{}, map[string]interface{}{}))
+	assert.False(t, validateBool("field", -1, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateBoolConvert(t *testing.T) {
+	form := map[string]interface{}{"field": "on"}
+	assert.True(t, validateBool("field", form["field"], []string{}, form))
+	b, ok := form["field"].(bool)
+	assert.True(t, ok)
+	assert.True(t, b)
+
+	form = map[string]interface{}{"field": "off"}
+	assert.True(t, validateBool("field", form["field"], []string{}, form))
+	b, ok = form["field"].(bool)
+	assert.True(t, ok)
+	assert.False(t, b)
+
+	form = map[string]interface{}{"field": 1}
+	assert.True(t, validateBool("field", form["field"], []string{}, form))
+	b, ok = form["field"].(bool)
+	assert.True(t, ok)
+	assert.True(t, b)
+
+	form = map[string]interface{}{"field": 0}
+	assert.True(t, validateBool("field", form["field"], []string{}, form))
+	b, ok = form["field"].(bool)
+	assert.True(t, ok)
+	assert.False(t, b)
+}

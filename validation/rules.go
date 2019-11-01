@@ -3,6 +3,7 @@ package validation
 import (
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/System-Glitch/goyave/helpers"
 )
@@ -200,10 +201,38 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 	return false
 }
 
+func validateBool(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document accepted values and convert
+	rv := reflect.ValueOf(value)
+	kind := rv.Kind().String()
+	switch {
+	case kind == "bool":
+		return true
+	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
+		v, _ := helpers.ToFloat64(value)
+		if v == 1 {
+			form[field] = true
+			return true
+		} else if v == 0 {
+			form[field] = false
+			return true
+		}
+	case kind == "string":
+		v, _ := value.(string)
+		switch v {
+		case "on", "true", "yes":
+			form[field] = true
+			return true
+		case "off", "false", "no":
+			form[field] = false
+			return true
+		}
+	}
+	return false
+}
+
 // -------------------------
 // Misc
 
-// boolean (accept 1, "on", "true", "yes")
 // different
 // nullable
 // confirmed

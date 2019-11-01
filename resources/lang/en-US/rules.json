@@ -50,5 +50,6 @@
     "ipv6": "The :field must be a valid IPv6 address.",
     "json": "The :field must be a valid JSON string.",
     "url": "The :field must be a valid URL.",
-    "uuid": "The :field must be a valid UUID:version."
+    "uuid": "The :field must be a valid UUID:version.",
+    "bool": "The :field must be a boolean."
 }

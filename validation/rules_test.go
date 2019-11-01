@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"net"
 	"testing"
 	"time"
 
@@ -447,4 +448,51 @@ func TestValidateTimezoneConvert(t *testing.T) {
 
 	_, ok := form["field"].(*time.Location)
 	assert.True(t, ok)
+}
+
+func TestValidateIP(t *testing.T) {
+	assert.True(t, validateIP("field", "127.0.0.1", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIP("field", "192.168.0.1", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIP("field", "88.88.88.88", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIP("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIP("field", "2001:db8:85a3::8a2e:370:7334", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIP("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIP("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIP("field", "::1", []string{}, map[string]interface{}{}))
+
+	assert.False(t, validateIP("field", "1", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIP("field", 1, []string{}, map[string]interface{}{}))
+	assert.False(t, validateIP("field", 1.2, []string{}, map[string]interface{}{}))
+	assert.False(t, validateIP("field", true, []string{}, map[string]interface{}{}))
+	assert.False(t, validateIP("field", []byte{}, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateIPConvert(t *testing.T) {
+	form := map[string]interface{}{"field": "127.0.0.1"}
+	assert.True(t, validateIP("field", form["field"], []string{}, form))
+
+	_, ok := form["field"].(net.IP)
+	assert.True(t, ok)
+}
+
+func TestValidateIPv4(t *testing.T) {
+	assert.True(t, validateIPv4("field", "127.0.0.1", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIPv4("field", "192.168.0.1", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIPv4("field", "88.88.88.88", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIPv4("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIPv4("field", "2001:db8:85a3::8a2e:370:7334", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIPv4("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIPv4("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIPv4("field", "::1", []string{}, map[string]interface{}{}))
+}
+
+func TestValidateIPv6(t *testing.T) {
+	assert.False(t, validateIPv6("field", "127.0.0.1", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIPv6("field", "192.168.0.1", []string{}, map[string]interface{}{}))
+	assert.False(t, validateIPv6("field", "88.88.88.88", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIPv6("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIPv6("field", "2001:db8:85a3::8a2e:370:7334", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIPv6("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIPv6("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, map[string]interface{}{}))
+	assert.True(t, validateIPv6("field", "::1", []string{}, map[string]interface{}{}))
 }

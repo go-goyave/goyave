@@ -43,6 +43,9 @@ var validationRules map[string]Rule = map[string]Rule{
 	"in":                 validateIn,
 	"not_in":             validateNotIn,
 	"timezone":           validateTimezone,
+	"ip":                 validateIP,
+	"ipv4":               validateIPv4,
+	"ipv6":               validateIPv6,
 }
 
 var typeDependentMessageRules []string = []string{

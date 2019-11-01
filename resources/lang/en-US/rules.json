@@ -44,5 +44,8 @@
     "ends_with": "The :field must end with one of the following values: :array",
     "in": "The :field must have one of the following values: :array",
     "not_in": "The :field must not have one of the following values: :array",
-    "timezone": "The :field must be a valid time zone."
+    "timezone": "The :field must be a valid time zone.",
+    "ip": "The :field must be a valid IP address.",
+    "ipv4": "The :field must be a valid IPv4 address.",
+    "ipv6": "The :field must be a valid IPv6 address."
 }

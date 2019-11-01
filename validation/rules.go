@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"net"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -335,7 +336,33 @@ func validateEndsWith(field string, value interface{}, parameters []string, form
 	return false
 }
 
-// ip address
+func validateIP(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	str, ok := value.(string)
+	if ok {
+		ip := net.ParseIP(str)
+		if ip != nil {
+			form[field] = ip
+			return true
+		}
+	}
+
+	return false
+}
+
+func validateIPv4(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	if validateIP(field, value, parameters, form) {
+		return form[field].(net.IP).To4() != nil
+	}
+	return false
+}
+
+func validateIPv6(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	if validateIP(field, value, parameters, form) {
+		return form[field].(net.IP).To4() == nil
+	}
+	return false
+}
+
 // json
 
 func validateRegex(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

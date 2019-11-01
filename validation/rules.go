@@ -1,11 +1,13 @@
 package validation
 
 import (
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/System-Glitch/goyave/helpers"
+	"github.com/System-Glitch/goyave/helpers/filesystem"
 )
 
 // Rule function defining a validation rule.
@@ -259,4 +261,32 @@ func validateDifferent(field string, value interface{}, parameters []string, for
 func validateConfirmed(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	parameters = []string{field + "_confirmation"}
 	return validateSame(field, value, parameters, form)
+}
+
+func validateSize(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("size", parameters, 1)
+	size, err := strconv.Atoi(parameters[0])
+	if err != nil {
+		panic(err)
+	}
+
+	switch getFieldType(value) {
+	case "numeric":
+		floatVal, _ := helpers.ToFloat64(value)
+		return floatVal == float64(size)
+	case "string":
+		return len(value.(string)) == size
+	case "array":
+		list := reflect.ValueOf(value)
+		return list.Len() == size
+	case "file":
+		files, _ := value.([]filesystem.File)
+		for _, file := range files {
+			if int64(math.Round(float64(file.Header.Size)/1024.0)) != int64(size) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }

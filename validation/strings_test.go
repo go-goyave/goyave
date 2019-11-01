@@ -32,19 +32,6 @@ func TestValidateDigits(t *testing.T) {
 	assert.False(t, validateDigits("field", true, []string{}, map[string]interface{}{}))
 }
 
-func TestValidateLength(t *testing.T) {
-	assert.True(t, validateLength("field", "123", []string{"3"}, map[string]interface{}{}))
-	assert.True(t, validateLength("field", "", []string{"0"}, map[string]interface{}{}))
-	assert.False(t, validateLength("field", "4567", []string{"5"}, map[string]interface{}{}))
-	assert.False(t, validateLength("field", "4567", []string{"2"}, map[string]interface{}{}))
-
-	assert.False(t, validateLength("field", 4567, []string{"2"}, map[string]interface{}{}))
-	assert.False(t, validateLength("field", 4567.8, []string{"2"}, map[string]interface{}{}))
-	assert.False(t, validateLength("field", true, []string{"2"}, map[string]interface{}{}))
-
-	assert.Panics(t, func() { validateLength("field", "123", []string{"test"}, map[string]interface{}{}) })
-}
-
 func TestValidateRegex(t *testing.T) {
 	assert.True(t, validateRegex("field", "sghtyhg", []string{"t"}, map[string]interface{}{}))
 	assert.True(t, validateRegex("field", "sghtyhg", []string{"[^\\s]"}, map[string]interface{}{}))

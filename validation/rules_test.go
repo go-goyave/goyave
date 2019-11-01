@@ -285,3 +285,26 @@ func TestValidateConfirmed(t *testing.T) {
 	assert.False(t, validateConfirmed("field", "no confirm", []string{}, map[string]interface{}{"field": "no confirm"}))
 	assert.False(t, validateConfirmed("field", []string{"one", "two"}, []string{}, map[string]interface{}{"field": []string{"one", "two"}, "field_confirmation": []string{"one", "two", "three"}}))
 }
+
+func TestValidateSize(t *testing.T) {
+	assert.True(t, validateSize("field", "123", []string{"3"}, map[string]interface{}{}))
+	assert.True(t, validateSize("field", "", []string{"0"}, map[string]interface{}{}))
+	assert.False(t, validateSize("field", "4567", []string{"5"}, map[string]interface{}{}))
+	assert.False(t, validateSize("field", "4567", []string{"2"}, map[string]interface{}{}))
+
+	assert.False(t, validateSize("field", 4567, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateSize("field", 4567.8, []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateSize("field", true, []string{"2"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() { validateSize("field", "123", []string{"test"}, map[string]interface{}{}) })
+
+	assert.True(t, validateSize("field", []string{"a", "b", "c"}, []string{"3"}, map[string]interface{}{}))
+	assert.False(t, validateSize("field", []string{"a", "b", "c", "d"}, []string{"3"}, map[string]interface{}{}))
+
+	assert.True(t, validateSize("field", 5, []string{"5"}, map[string]interface{}{}))
+	assert.False(t, validateSize("field", 3, []string{"5"}, map[string]interface{}{}))
+
+	assert.True(t, validateSize("file", createTestFiles(logoPath), []string{"1"}, map[string]interface{}{}))
+	assert.True(t, validateSize("file", createTestFiles(largeLogoPath), []string{"42"}, map[string]interface{}{}))
+	assert.False(t, validateSize("file", createTestFiles(logoPath), []string{"3"}, map[string]interface{}{}))
+}

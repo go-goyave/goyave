@@ -34,7 +34,7 @@ var validationRules map[string]Rule = map[string]Rule{
 	"digits":             validateDigits,
 	"regex":              validateRegex,
 	"email":              validateEmail,
-	"length":             validateLength,
+	"size":               validateSize,
 	"alpha":              validateAlpha,
 	"alpha_dash":         validateAlphaDash,
 	"alpha_num":          validateAlphaNumeric,
@@ -57,10 +57,12 @@ var validationRules map[string]Rule = map[string]Rule{
 	"confirmed":          validateConfirmed,
 	"file":               validateFile,
 	"mime":               validateMIME,
+	"image":              validateImage,
+	"extension":          validateExtension,
 }
 
 var typeDependentMessageRules []string = []string{
-	"min", "max",
+	"min", "max", "size",
 	"greater_than", "greater_than_equal",
 	"lower_than", "lower_than_equal",
 }
@@ -145,8 +147,10 @@ func getFieldType(value interface{}) string {
 	case kind == "string":
 		return "string"
 	case kind == "slice":
+		if rv.Type().String() == "[]filesystem.File" {
+			return "file"
+		}
 		return "array"
-	// TODO file field type
 	default:
 		return "unsupported"
 	}

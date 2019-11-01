@@ -25,20 +25,6 @@ func validateDigits(field string, value interface{}, parameters []string, form m
 	return false
 }
 
-func validateLength(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("length", parameters, 1)
-	length, err := strconv.Atoi(parameters[0])
-	if err != nil {
-		panic(err)
-	}
-
-	str, ok := value.(string)
-	if ok {
-		return len(str) == length
-	}
-	return false
-}
-
 func validateAlpha(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	parameters = []string{patternAlpha}
 	return validateRegex(field, value, parameters, form)

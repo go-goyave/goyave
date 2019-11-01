@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	logoPath      string = "resources/img/logo/goyave_16.png"
-	largeLogoPath string = "resources/img/logo/goyave_512.png"
-	configPath    string = "config/defaults.json"
+	logoPath       string = "resources/img/logo/goyave_16.png"
+	mediumLogoPath string = "resources/img/logo/goyave_128.png"
+	largeLogoPath  string = "resources/img/logo/goyave_512.png"
+	configPath     string = "config/defaults.json"
 )
 
 // TODO create test helpers to ease testing

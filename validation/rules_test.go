@@ -38,7 +38,10 @@ func TestValidateMin(t *testing.T) {
 	assert.True(t, validateMin("field", true, []string{"2"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateMin("field", true, []string{"test"}, map[string]interface{}{}) })
 
-	// TODO test files
+	assert.True(t, validateMin("file", createTestFiles(largeLogoPath), []string{"2"}, map[string]interface{}{}))
+	assert.True(t, validateMin("file", createTestFiles(mediumLogoPath, largeLogoPath), []string{"1"}, map[string]interface{}{}))
+	assert.False(t, validateMin("file", createTestFiles(logoPath), []string{"1"}, map[string]interface{}{}))
+	assert.False(t, validateMin("file", createTestFiles(logoPath, largeLogoPath), []string{"1"}, map[string]interface{}{}))
 }
 
 func TestValidateMax(t *testing.T) {
@@ -62,7 +65,10 @@ func TestValidateMax(t *testing.T) {
 	assert.True(t, validateMax("field", true, []string{"2"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateMax("field", true, []string{"test"}, map[string]interface{}{}) })
 
-	// TODO test files
+	assert.False(t, validateMax("file", createTestFiles(largeLogoPath), []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMax("file", createTestFiles(mediumLogoPath, largeLogoPath), []string{"1"}, map[string]interface{}{}))
+	assert.True(t, validateMax("file", createTestFiles(logoPath), []string{"1"}, map[string]interface{}{}))
+	assert.True(t, validateMax("file", createTestFiles(logoPath, configPath), []string{"1"}, map[string]interface{}{}))
 }
 
 func TestValidateBetween(t *testing.T) {
@@ -98,7 +104,10 @@ func TestValidateBetween(t *testing.T) {
 	assert.Panics(t, func() { validateBetween("field", true, []string{"test", "2"}, map[string]interface{}{}) })
 	assert.Panics(t, func() { validateBetween("field", true, []string{"2", "test"}, map[string]interface{}{}) })
 
-	// TODO test file
+	assert.True(t, validateBetween("file", createTestFiles(largeLogoPath), []string{"2", "50"}, map[string]interface{}{}))
+	assert.True(t, validateBetween("file", createTestFiles(mediumLogoPath, largeLogoPath), []string{"8", "42"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("file", createTestFiles(logoPath), []string{"5", "10"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("file", createTestFiles(logoPath, mediumLogoPath), []string{"5", "10"}, map[string]interface{}{}))
 }
 
 func TestValidateGreaterThan(t *testing.T) {
@@ -122,6 +131,11 @@ func TestValidateGreaterThan(t *testing.T) {
 
 	test := "string"
 	assert.False(t, validateGreaterThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+
+	files := createTestFiles(largeLogoPath)
+	otherFiles := createTestFiles(logoPath)
+	assert.True(t, validateGreaterThan("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+	assert.False(t, validateGreaterThan("file", otherFiles, []string{"file"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
 }
 
 func TestValidateGreaterThanEqual(t *testing.T) {
@@ -150,6 +164,15 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 
 	test := "string"
 	assert.False(t, validateGreaterThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+
+	files := createTestFiles(largeLogoPath)
+	otherFiles := createTestFiles(logoPath)
+	assert.True(t, validateGreaterThanEqual("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+	assert.False(t, validateGreaterThanEqual("file", otherFiles, []string{"file"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+
+	files = createTestFiles(logoPath)
+	otherFiles = createTestFiles(logoPath)
+	assert.True(t, validateGreaterThanEqual("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
 }
 
 func TestValidateLowerThan(t *testing.T) {
@@ -173,6 +196,11 @@ func TestValidateLowerThan(t *testing.T) {
 
 	test := "string"
 	assert.False(t, validateLowerThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+
+	files := createTestFiles(logoPath)
+	otherFiles := createTestFiles(largeLogoPath)
+	assert.True(t, validateLowerThan("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+	assert.False(t, validateLowerThan("file", otherFiles, []string{"file"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
 }
 
 func TestValidateLowerThanEqual(t *testing.T) {
@@ -201,6 +229,15 @@ func TestValidateLowerThanEqual(t *testing.T) {
 
 	test := "string"
 	assert.False(t, validateLowerThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+
+	files := createTestFiles(logoPath)
+	otherFiles := createTestFiles(largeLogoPath)
+	assert.True(t, validateLowerThanEqual("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+	assert.False(t, validateLowerThanEqual("file", otherFiles, []string{"file"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+
+	files = createTestFiles(logoPath)
+	otherFiles = createTestFiles(logoPath)
+	assert.True(t, validateLowerThanEqual("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
 }
 
 func TestValidateBool(t *testing.T) {

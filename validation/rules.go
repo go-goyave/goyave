@@ -43,7 +43,13 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 		list := reflect.ValueOf(value)
 		return list.Len() >= int(min)
 	case "file":
-		return false // TODO implement file min size
+		files, _ := value.([]filesystem.File)
+		for _, file := range files {
+			if file.Header.Size < int64(min)*1024 {
+				return false
+			}
+		}
+		return true
 	}
 
 	return true // Pass if field type cannot be checked (bool, dates, ...)
@@ -65,7 +71,13 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 		list := reflect.ValueOf(value)
 		return list.Len() <= int(max)
 	case "file":
-		return false // TODO implement file max size
+		files, _ := value.([]filesystem.File)
+		for _, file := range files {
+			if file.Header.Size > int64(max)*1024 {
+				return false
+			}
+		}
+		return true
 	}
 
 	return true // Pass if field type cannot be checked (bool, dates, ...)
@@ -94,7 +106,15 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 		length := list.Len()
 		return length >= int(min) && length <= int(max)
 	case "file":
-		return false // TODO implement file between size
+		files, _ := value.([]filesystem.File)
+		for _, file := range files {
+			minSize := int64(min) * 1024
+			maxSize := int64(max) * 1024
+			if file.Header.Size < minSize || file.Header.Size > maxSize {
+				return false
+			}
+		}
+		return true
 	}
 
 	return true // Pass if field type cannot be checked (bool, dates, ...)
@@ -119,7 +139,16 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 	case "array":
 		return reflect.ValueOf(value).Len() > reflect.ValueOf(compared).Len()
 	case "file":
-		return false // TODO implement file greater than size
+		files, _ := value.([]filesystem.File)
+		comparedFiles, _ := compared.([]filesystem.File)
+		for _, file := range files {
+			for _, comparedFile := range comparedFiles {
+				if file.Header.Size <= comparedFile.Header.Size {
+					return false
+				}
+			}
+		}
+		return true
 	}
 
 	return false
@@ -144,7 +173,16 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 	case "array":
 		return reflect.ValueOf(value).Len() >= reflect.ValueOf(compared).Len()
 	case "file":
-		return false // TODO implement file greater than size
+		files, _ := value.([]filesystem.File)
+		comparedFiles, _ := compared.([]filesystem.File)
+		for _, file := range files {
+			for _, comparedFile := range comparedFiles {
+				if file.Header.Size < comparedFile.Header.Size {
+					return false
+				}
+			}
+		}
+		return true
 	}
 
 	return false
@@ -169,7 +207,16 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 	case "array":
 		return reflect.ValueOf(value).Len() < reflect.ValueOf(compared).Len()
 	case "file":
-		return false // TODO implement file greater than size
+		files, _ := value.([]filesystem.File)
+		comparedFiles, _ := compared.([]filesystem.File)
+		for _, file := range files {
+			for _, comparedFile := range comparedFiles {
+				if file.Header.Size >= comparedFile.Header.Size {
+					return false
+				}
+			}
+		}
+		return true
 	}
 
 	return false
@@ -194,7 +241,16 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 	case "array":
 		return reflect.ValueOf(value).Len() <= reflect.ValueOf(compared).Len()
 	case "file":
-		return false // TODO implement file greater than size
+		files, _ := value.([]filesystem.File)
+		comparedFiles, _ := compared.([]filesystem.File)
+		for _, file := range files {
+			for _, comparedFile := range comparedFiles {
+				if file.Header.Size > comparedFile.Header.Size {
+					return false
+				}
+			}
+		}
+		return true
 	}
 
 	return false

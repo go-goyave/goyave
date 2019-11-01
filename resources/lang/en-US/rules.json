@@ -40,10 +40,10 @@
     "alpha": "The :field may only contain letters.",
     "alpha_dash": "The :field may only contain letters, numbers, dashes and underscores.",
     "alpha_num": "The :field may only contain letters and numbers.",
-    "starts_with": "The :field must start with one of the following values: :array",
-    "ends_with": "The :field must end with one of the following values: :array",
-    "in": "The :field must have one of the following values: :array",
-    "not_in": "The :field must not have one of the following values: :array",
+    "starts_with": "The :field must start with one of the following values: :values",
+    "ends_with": "The :field must end with one of the following values: :values",
+    "in": "The :field must have one of the following values: :values",
+    "not_in": "The :field must not have one of the following values: :values",
     "in_array": "The :field doesn't exist in the :other.",
     "not_in_array": "The :field exists in the :other.",
     "timezone": "The :field must be a valid time zone.",
@@ -56,5 +56,7 @@
     "bool": "The :field must be a boolean.",
     "same": "The :field and the :other must match.",
     "different": "The :field and the :other must be different.",
-    "confirmed": "The :field confirmation doesn't match."
+    "confirmed": "The :field confirmation doesn't match.",
+    "file": "The :field must be a file.",
+    "mime": "The :field must be a file of type: :values."
 }

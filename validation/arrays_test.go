@@ -70,6 +70,7 @@ func TestValidateInArray(t *testing.T) {
 	assert.False(t, validateInArray("field", 2.3, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []float64{1.1, 2.2, 3.3, 4.4, 5.5}}))
 	assert.False(t, validateInArray("field", false, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []bool{true}}))
 	assert.False(t, validateInArray("field", []string{"test"}, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []bool{true}}))
+	assert.False(t, validateInArray("field", []string{"test"}, []string{"other"}, map[string]interface{}{"field": "dolors", "other": 1}))
 }
 
 func TestValidateNotInArray(t *testing.T) {
@@ -77,6 +78,7 @@ func TestValidateNotInArray(t *testing.T) {
 	assert.False(t, validateNotInArray("field", 4, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []int{1, 2, 3, 4, 5}}))
 	assert.False(t, validateNotInArray("field", 2.2, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []float64{1.1, 2.2, 3.3, 4.4, 5.5}}))
 	assert.False(t, validateNotInArray("field", false, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []bool{true, false}}))
+	assert.False(t, validateNotInArray("field", []string{"test"}, []string{"other"}, map[string]interface{}{"field": "dolors", "other": 1}))
 
 	assert.True(t, validateNotInArray("field", "dolors", []string{"other"}, map[string]interface{}{"field": "dolors", "other": []string{"lorem", "ipsum", "sit", "dolor", "amet"}}))
 	assert.True(t, validateNotInArray("field", 1, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []string{"lorem", "ipsum", "sit", "dolor", "amet"}}))

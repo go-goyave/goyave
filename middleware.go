@@ -78,18 +78,7 @@ func generateFlatMap(request *http.Request) map[string]interface{} {
 		}
 
 		for field := range request.MultipartForm.File {
-			if fhs := request.MultipartForm.File[field]; len(fhs) > 0 {
-				f, err := fhs[0].Open()
-				if err != nil {
-					panic(err)
-				}
-
-				file := filesystem.File{
-					Header: fhs[0],
-					Data:   f,
-				}
-				flatMap[field] = file
-			}
+			flatMap[field] = filesystem.ParseMultipartFiles(request, field)
 		}
 	}
 	if request.Form != nil {

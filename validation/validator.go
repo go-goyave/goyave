@@ -55,6 +55,8 @@ var validationRules map[string]Rule = map[string]Rule{
 	"same":               validateSame,
 	"different":          validateDifferent,
 	"confirmed":          validateConfirmed,
+	"file":               validateFile,
+	"mime":               validateMIME,
 }
 
 var typeDependentMessageRules []string = []string{

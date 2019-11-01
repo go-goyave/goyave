@@ -12,8 +12,9 @@ import (
 
 // File represents a file received from client.
 type File struct {
-	Header *multipart.FileHeader
-	Data   multipart.File
+	Header   *multipart.FileHeader
+	MIMEType string
+	Data     multipart.File
 }
 
 // GetFileExtension returns the last part of a file name.
@@ -84,6 +85,46 @@ func Save(file File, path string, name string) string {
 	}
 	file.Data.Close()
 	return name
+}
+
+// Delete the file at the given path.
+//
+// To avoid panics, you should check if the file exists.
+func Delete(path string) {
+	err := os.Remove(path)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// ParseMultipartFiles parse a single file field in a request.
+func ParseMultipartFiles(request *http.Request, field string) []File {
+	files := []File{}
+	for _, fh := range request.MultipartForm.File[field] {
+		f, err := fh.Open()
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		fileHeader := make([]byte, 512)
+
+		if _, err := f.Read(fileHeader); err != nil {
+			panic(err)
+		}
+
+		if _, err := f.Seek(0, 0); err != nil {
+			panic(err)
+		}
+
+		file := File{
+			Header:   fh,
+			MIMEType: http.DetectContentType(fileHeader),
+			Data:     f,
+		}
+		files = append(files, file)
+	}
+	return files
 }
 
 func timestampFileName(name string) string {

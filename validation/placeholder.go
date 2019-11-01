@@ -59,7 +59,7 @@ func init() {
 	SetPlaceholder("other", func(field string, rule string, parameters []string, language string) string {
 		return replaceField(parameters[0], language)
 	})
-	SetPlaceholder("array", func(field string, rule string, parameters []string, language string) string {
+	SetPlaceholder("values", func(field string, rule string, parameters []string, language string) string {
 		return strings.Join(parameters, ", ")
 	})
 	SetPlaceholder("version", func(field string, rule string, parameters []string, language string) string {

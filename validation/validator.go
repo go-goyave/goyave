@@ -46,6 +46,9 @@ var validationRules map[string]Rule = map[string]Rule{
 	"ip":                 validateIP,
 	"ipv4":               validateIPv4,
 	"ipv6":               validateIPv6,
+	"json":               validateJSON,
+	"url":                validateURL,
+	"uuid":               validateUUID,
 }
 
 var typeDependentMessageRules []string = []string{

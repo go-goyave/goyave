@@ -2,9 +2,11 @@ package validation
 
 import (
 	"net"
+	"net/url"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -228,4 +230,68 @@ func TestValidateJSONConvert(t *testing.T) {
 	assert.True(t, validateJSON("field", form["field"], []string{}, form))
 	_, ok = form["field"].(map[string]interface{})
 	assert.True(t, ok)
+}
+
+func TestValidateURL(t *testing.T) {
+	assert.True(t, validateURL("field", "http://www.google.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateURL("field", "https://www.google.com", []string{}, map[string]interface{}{}))
+	assert.True(t, validateURL("field", "https://www.google.com?q=a%20surprise%20to%20be%20sure", []string{}, map[string]interface{}{}))
+	assert.True(t, validateURL("field", "https://www.google.com/#anchor", []string{}, map[string]interface{}{}))
+	assert.True(t, validateURL("field", "https://www.google.com?q=hmm#anchor", []string{}, map[string]interface{}{}))
+
+	assert.False(t, validateURL("field", "https://www.google.com#anchor", []string{}, map[string]interface{}{}))
+	assert.False(t, validateURL("field", "www.google.com", []string{}, map[string]interface{}{}))
+	assert.False(t, validateURL("field", "w-w.google.com", []string{}, map[string]interface{}{}))
+	assert.False(t, validateURL("field", 1, []string{}, map[string]interface{}{}))
+	assert.False(t, validateURL("field", 1.2, []string{}, map[string]interface{}{}))
+	assert.False(t, validateURL("field", []string{}, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateURLConvert(t *testing.T) {
+	form := map[string]interface{}{"field": "http://www.google.com"}
+	assert.True(t, validateURL("field", form["field"], []string{}, form))
+	_, ok := form["field"].(*url.URL)
+	assert.True(t, ok)
+}
+
+func TestValidateUUID(t *testing.T) {
+	assert.True(t, validateUUID("field", "123e4567-e89b-12d3-a456-426655440000", []string{}, map[string]interface{}{})) // V1
+	assert.True(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{}, map[string]interface{}{})) // V3
+	assert.True(t, validateUUID("field", "9125a8dc52ee365ba5aa81b0b3681cf6", []string{}, map[string]interface{}{}))     // V3 no hyphen
+	assert.True(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{}, map[string]interface{}{})) // V4
+	assert.True(t, validateUUID("field", "11bf5b37e0b842e08dcfdc8c4aefc000", []string{}, map[string]interface{}{}))     // V4 no hyphen
+	assert.True(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{}, map[string]interface{}{})) // V5
+	assert.True(t, validateUUID("field", "3bbcee75-cecc-5b56-8031-b6641c1ed1f1", []string{}, map[string]interface{}{})) // V5
+	assert.True(t, validateUUID("field", "3bbcee75cecc5b568031b6641c1ed1f1", []string{}, map[string]interface{}{}))     // V5 no hypen
+
+	assert.False(t, validateUUID("field", "hello", []string{}, map[string]interface{}{}))
+	assert.False(t, validateUUID("field", 1, []string{}, map[string]interface{}{}))
+	assert.False(t, validateUUID("field", 1.2, []string{}, map[string]interface{}{}))
+	assert.False(t, validateUUID("field", true, []string{}, map[string]interface{}{}))
+	assert.False(t, validateUUID("field", []byte{}, []string{}, map[string]interface{}{}))
+}
+
+func TestValidateUUIDConvert(t *testing.T) {
+	form := map[string]interface{}{"field": "123e4567-e89b-12d3-a456-426655440000"}
+	assert.True(t, validateUUID("field", form["field"], []string{}, form))
+	_, ok := form["field"].(uuid.UUID)
+	assert.True(t, ok)
+}
+
+func TestValidateUUIDv3(t *testing.T) {
+	assert.True(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"3"}, map[string]interface{}{}))  // V3
+	assert.False(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"3"}, map[string]interface{}{})) // V4
+	assert.False(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"3"}, map[string]interface{}{})) // V5
+}
+
+func TestValidateUUIDv4(t *testing.T) {
+	assert.False(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"4"}, map[string]interface{}{})) // V3
+	assert.True(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"4"}, map[string]interface{}{}))  // V4
+	assert.False(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"4"}, map[string]interface{}{})) // V5
+}
+
+func TestValidateUUIDv5(t *testing.T) {
+	assert.False(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"5"}, map[string]interface{}{})) // V3
+	assert.False(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"5"}, map[string]interface{}{})) // V4
+	assert.True(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"5"}, map[string]interface{}{}))  // V5
 }

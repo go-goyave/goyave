@@ -3,10 +3,13 @@ package validation
 import (
 	"encoding/json"
 	"net"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func validateString(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -109,7 +112,7 @@ func validateIPv6(field string, value interface{}, parameters []string, form map
 	return false
 }
 
-func validateJSON(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+func validateJSON(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to the parsed json type
 	str, ok := value.(string)
 	if ok {
 		var data interface{}
@@ -142,5 +145,32 @@ func validateTimezone(field string, value interface{}, parameters []string, form
 	return false
 }
 
-// url
-// uuid
+func validateURL(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to *url.URL
+	str, ok := value.(string)
+	if ok {
+		url, err := url.ParseRequestURI(str)
+		if err == nil {
+			form[field] = url
+			return true
+		}
+	}
+	return false
+}
+
+func validateUUID(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to uuid.UUID
+	str, ok := value.(string)
+	if ok {
+		id, err := uuid.Parse(str)
+		if err == nil {
+			if len(parameters) == 1 {
+				version, err := strconv.Atoi(parameters[0])
+				if err == nil && id.Version() != uuid.Version(version) {
+					return false
+				}
+			}
+			form[field] = id
+			return true
+		}
+	}
+	return false
+}

@@ -60,4 +60,10 @@ func init() {
 	SetPlaceholder("array", func(field string, rule string, parameters []string, language string) string {
 		return strings.Join(parameters, ", ")
 	})
+	SetPlaceholder("version", func(field string, rule string, parameters []string, language string) string {
+		if len(parameters) > 0 {
+			return "v" + parameters[0]
+		}
+		return ""
+	})
 }

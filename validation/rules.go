@@ -229,22 +229,22 @@ func validateBool(field string, value interface{}, parameters []string, form map
 
 func validateSame(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	requireParametersCount("same", parameters, 1)
-	confirmation, exists := form[parameters[0]]
+	other, exists := form[parameters[0]]
 	if exists {
 		valueType := getFieldType(value)
-		confirmationType := getFieldType(confirmation)
-		if valueType == confirmationType {
+		otherType := getFieldType(other)
+		if valueType == otherType {
 			switch valueType {
 			case "numeric":
 				f1, _ := helpers.ToFloat64(value)
-				f2, _ := helpers.ToFloat64(confirmation)
+				f2, _ := helpers.ToFloat64(other)
 				return f1 == f2
 			case "string":
 				s1, _ := value.(string)
-				s2, _ := confirmation.(string)
+				s2, _ := other.(string)
 				return s1 == s2
 			case "array":
-				return helpers.SliceEqual(value, confirmation)
+				return helpers.SliceEqual(value, other)
 			}
 			// Don't check files
 		}

@@ -52,7 +52,7 @@ func validateIn(field string, value interface{}, parameters []string, form map[s
 }
 
 func validateNotIn(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("in", parameters, 1)
+	requireParametersCount("not_in", parameters, 1)
 	switch getFieldType(value) {
 	case "numeric":
 		return !checkInNumeric(parameters, value)
@@ -63,5 +63,20 @@ func validateNotIn(field string, value interface{}, parameters []string, form ma
 	return false
 }
 
-// in_array
-// not_in_array
+func validateInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("in_array", parameters, 1)
+	other, exists := form[parameters[0]]
+	if exists && getFieldType(other) == "array" {
+		return helpers.Contains(other, value)
+	}
+	return false
+}
+
+func validateNotInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("not_in_array", parameters, 1)
+	other, exists := form[parameters[0]]
+	if exists && getFieldType(other) == "array" {
+		return !helpers.Contains(other, value)
+	}
+	return false
+}

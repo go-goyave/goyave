@@ -42,6 +42,8 @@ var validationRules map[string]Rule = map[string]Rule{
 	"ends_with":          validateEndsWith,
 	"in":                 validateIn,
 	"not_in":             validateNotIn,
+	"in_array":           validateInArray,
+	"not_in_array":       validateNotInArray,
 	"timezone":           validateTimezone,
 	"ip":                 validateIP,
 	"ipv4":               validateIPv4,

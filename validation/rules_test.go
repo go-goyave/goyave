@@ -247,6 +247,32 @@ func TestValidateBoolConvert(t *testing.T) {
 	assert.False(t, b)
 }
 
+func TestValidateSame(t *testing.T) {
+	assert.True(t, validateSame("field", "password", []string{"other"}, map[string]interface{}{"field": "password", "other": "password"}))
+	assert.True(t, validateSame("field", 1, []string{"other"}, map[string]interface{}{"field": 1, "other": 1}))
+	assert.True(t, validateSame("field", 1.2, []string{"other"}, map[string]interface{}{"field": 1.2, "other": 1.2}))
+	assert.True(t, validateSame("field", []string{"one", "two", "three"}, []string{"other"}, map[string]interface{}{"field": []string{"one", "two", "three"}, "other": []string{"one", "two", "three"}}))
+
+	assert.False(t, validateSame("field", 1, []string{"other"}, map[string]interface{}{"field": 1, "other": 2}))
+	assert.False(t, validateSame("field", 1.1, []string{"other"}, map[string]interface{}{"field": 1.1, "other": 1}))
+	assert.False(t, validateSame("field", "password", []string{"other"}, map[string]interface{}{"field": "password", "other": "not password"}))
+	assert.False(t, validateSame("field", "no other", []string{"other"}, map[string]interface{}{"field": "no other"}))
+	assert.False(t, validateSame("field", []string{"one", "two"}, []string{"other"}, map[string]interface{}{"field": []string{"one", "two"}, "other": []string{"one", "two", "three"}}))
+}
+
+func TestValidateDifferent(t *testing.T) {
+	assert.False(t, validateDifferent("field", "password", []string{"other"}, map[string]interface{}{"field": "password", "other": "password"}))
+	assert.False(t, validateDifferent("field", 1, []string{"other"}, map[string]interface{}{"field": 1, "other": 1}))
+	assert.False(t, validateDifferent("field", 1.2, []string{"other"}, map[string]interface{}{"field": 1.2, "other": 1.2}))
+	assert.False(t, validateDifferent("field", []string{"one", "two", "three"}, []string{"other"}, map[string]interface{}{"field": []string{"one", "two", "three"}, "other": []string{"one", "two", "three"}}))
+
+	assert.True(t, validateDifferent("field", 1, []string{"other"}, map[string]interface{}{"field": 1, "other": 2}))
+	assert.True(t, validateDifferent("field", 1.1, []string{"other"}, map[string]interface{}{"field": 1.1, "other": 1}))
+	assert.True(t, validateDifferent("field", "password", []string{"other"}, map[string]interface{}{"field": "password", "other": "not password"}))
+	assert.True(t, validateDifferent("field", "no other", []string{"other"}, map[string]interface{}{"field": "no other"}))
+	assert.True(t, validateDifferent("field", []string{"one", "two"}, []string{"other"}, map[string]interface{}{"field": []string{"one", "two"}, "other": []string{"one", "two", "three"}}))
+}
+
 func TestValidateConfirmed(t *testing.T) {
 	assert.True(t, validateConfirmed("field", "password", []string{}, map[string]interface{}{"field": "password", "field_confirmation": "password"}))
 	assert.True(t, validateConfirmed("field", 1, []string{}, map[string]interface{}{"field": 1, "field_confirmation": 1}))

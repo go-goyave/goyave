@@ -227,8 +227,9 @@ func validateBool(field string, value interface{}, parameters []string, form map
 	return false
 }
 
-func validateConfirmed(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	confirmation, exists := form[field+"_confirmation"]
+func validateSame(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("same", parameters, 1)
+	confirmation, exists := form[parameters[0]]
 	if exists {
 		valueType := getFieldType(value)
 		confirmationType := getFieldType(confirmation)
@@ -251,5 +252,11 @@ func validateConfirmed(field string, value interface{}, parameters []string, for
 	return false
 }
 
-// different
-// confirmed
+func validateDifferent(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	return !validateSame(field, value, parameters, form)
+}
+
+func validateConfirmed(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	parameters = []string{field + "_confirmation"}
+	return validateSame(field, value, parameters, form)
+}

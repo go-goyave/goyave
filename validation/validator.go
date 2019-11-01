@@ -50,6 +50,8 @@ var validationRules map[string]Rule = map[string]Rule{
 	"url":                validateURL,
 	"uuid":               validateUUID,
 	"bool":               validateBool,
+	"same":               validateSame,
+	"different":          validateDifferent,
 	"confirmed":          validateConfirmed,
 }
 

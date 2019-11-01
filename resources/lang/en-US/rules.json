@@ -52,5 +52,7 @@
     "url": "The :field must be a valid URL.",
     "uuid": "The :field must be a valid UUID:version.",
     "bool": "The :field must be a boolean.",
+    "same": "The :field and the :other must match.",
+    "different": "The :field and the :other must be different.",
     "confirmed": "The :field confirmation doesn't match."
 }

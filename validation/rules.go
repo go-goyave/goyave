@@ -227,9 +227,29 @@ func validateBool(field string, value interface{}, parameters []string, form map
 	return false
 }
 
-// -------------------------
-// Misc
+func validateConfirmed(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	confirmation, exists := form[field+"_confirmation"]
+	if exists {
+		valueType := getFieldType(value)
+		confirmationType := getFieldType(confirmation)
+		if valueType == confirmationType {
+			switch valueType {
+			case "numeric":
+				f1, _ := helpers.ToFloat64(value)
+				f2, _ := helpers.ToFloat64(confirmation)
+				return f1 == f2
+			case "string":
+				s1, _ := value.(string)
+				s2, _ := confirmation.(string)
+				return s1 == s2
+			case "array":
+				return helpers.SliceEqual(value, confirmation)
+			}
+			// Don't check files
+		}
+	}
+	return false
+}
 
 // different
-// nullable
 // confirmed

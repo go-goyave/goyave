@@ -246,3 +246,16 @@ func TestValidateBoolConvert(t *testing.T) {
 	assert.True(t, ok)
 	assert.False(t, b)
 }
+
+func TestValidateConfirmed(t *testing.T) {
+	assert.True(t, validateConfirmed("field", "password", []string{}, map[string]interface{}{"field": "password", "field_confirmation": "password"}))
+	assert.True(t, validateConfirmed("field", 1, []string{}, map[string]interface{}{"field": 1, "field_confirmation": 1}))
+	assert.True(t, validateConfirmed("field", 1.2, []string{}, map[string]interface{}{"field": 1.2, "field_confirmation": 1.2}))
+	assert.True(t, validateConfirmed("field", []string{"one", "two", "three"}, []string{}, map[string]interface{}{"field": []string{"one", "two", "three"}, "field_confirmation": []string{"one", "two", "three"}}))
+
+	assert.False(t, validateConfirmed("field", 1, []string{}, map[string]interface{}{"field": 1, "field_confirmation": 2}))
+	assert.False(t, validateConfirmed("field", 1.1, []string{}, map[string]interface{}{"field": 1.1, "field_confirmation": 1}))
+	assert.False(t, validateConfirmed("field", "password", []string{}, map[string]interface{}{"field": "password", "field_confirmation": "not password"}))
+	assert.False(t, validateConfirmed("field", "no confirm", []string{}, map[string]interface{}{"field": "no confirm"}))
+	assert.False(t, validateConfirmed("field", []string{"one", "two"}, []string{}, map[string]interface{}{"field": []string{"one", "two"}, "field_confirmation": []string{"one", "two", "three"}}))
+}

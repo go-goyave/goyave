@@ -46,3 +46,13 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, "true", ToString(true))
 	assert.Equal(t, "[test]", ToString([]string{"test"}))
 }
+
+func TestSliceEqual(t *testing.T) {
+	assert.True(t, SliceEqual([]string{"one", "two", "three"}, []string{"one", "two", "three"}))
+	assert.True(t, SliceEqual([]int{1, 2, 3}, []int{1, 2, 3}))
+	assert.True(t, SliceEqual([]float64{1.1, 2.2, 3.3}, []float64{1.1, 2.2, 3.3}))
+
+	assert.False(t, SliceEqual([]string{"one", "two", "three"}, []string{"one", "three", "two"}))
+	assert.False(t, SliceEqual([]string{"one", "two", "three"}, []string{"one"}))
+	assert.False(t, SliceEqual([]string{"one", "two", "three"}, []int{1, 2, 3}))
+}

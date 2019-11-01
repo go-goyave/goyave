@@ -50,6 +50,7 @@ var validationRules map[string]Rule = map[string]Rule{
 	"url":                validateURL,
 	"uuid":               validateUUID,
 	"bool":               validateBool,
+	"confirmed":          validateConfirmed,
 }
 
 var typeDependentMessageRules []string = []string{

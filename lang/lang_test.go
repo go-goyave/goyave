@@ -1,0 +1,116 @@
+package lang
+
+import (
+	"fmt"
+	"path"
+	"runtime"
+	"testing"
+
+	"github.com/System-Glitch/goyave/config"
+	"github.com/stretchr/testify/suite"
+)
+
+type LangTestSuite struct {
+	suite.Suite
+}
+
+func loadTestLang(lang string) {
+	_, filename, _, ok := runtime.Caller(1)
+	if !ok {
+		panic(fmt.Errorf("Runtime caller error"))
+	}
+	load(lang, path.Dir(filename)+"/../resources/lang/en-US")
+}
+
+func (suite *LangTestSuite) SetupSuite() {
+	LoadDefault()
+	LoadAllAvailableLanguages()
+	config.LoadConfig()
+	config.Set("defaultLanguage", "en-US")
+}
+
+func (suite *LangTestSuite) TestLang() {
+	suite.Equal("email address", Get("en-US", "validation.fields.email"))
+	suite.Equal("The :field is required.", Get("en-US", "validation.rules.required"))
+	suite.Equal("Non-validated fields are forbidden.", Get("en-US", "disallow-non-validated-fields"))
+	suite.Equal("doesn't.exist", Get("en-US", "doesn't.exist"))
+	suite.Equal("doesn'texist", Get("en-US", "doesn'texist"))
+	suite.Equal("validation.doesn't.exist", Get("en-US", "validation.doesn't.exist"))
+	suite.Equal("validation.rules", Get("en-US", "validation.rules"))
+	suite.Equal("validation.rules.doesn't.exist", Get("en-US", "validation.rules.doesn't.exist"))
+	suite.Equal("validation.fields.doesn't", Get("en-US", "validation.fields.doesn't"))
+	suite.Equal("validation.fields.doesn.t.", Get("en-US", "validation.fields.doesn.t."))
+
+	languages["en-US"].validation.fields["test"] = attribute{Rules: map[string]string{"required": "test is required"}}
+	suite.Equal("validation.fields.test", Get("en-US", "validation.fields.test"))
+	suite.Equal("test is required", Get("en-US", "validation.fields.test.required"))
+	suite.Equal("validation.fields.test.test", Get("en-US", "validation.fields.test.test"))
+
+	languages["en-US"].validation.fields["test2"] = attribute{}
+	suite.Equal("validation.fields.test2.required", Get("en-US", "validation.fields.test2.required"))
+
+	suite.Equal("validation.fields", Get("en-US", "validation.fields"))
+	suite.Equal("doesn't.exist", Get("not a language", "doesn't.exist"))
+}
+
+func (suite *LangTestSuite) TestDetectLanguage() {
+	loadTestLang("fr-FR")
+	loadTestLang("fr-FR") // Merge existing
+
+	suite.Equal("en-US", DetectLanguage("en"))
+	suite.Equal("en-US", DetectLanguage("en-US, fr"))
+	suite.Equal("fr-FR", DetectLanguage("fr-FR"))
+	suite.Equal("fr-FR", DetectLanguage("fr"))
+	suite.Equal("fr-FR", DetectLanguage("fr, en-US"))
+	suite.Equal("fr-FR", DetectLanguage("fr-FR, en-US;q=0.9"))
+	suite.Equal("en-US", DetectLanguage("*"))
+	suite.Equal("en-US", DetectLanguage("notalang"))
+}
+
+func (suite *LangTestSuite) TestMerge() {
+	dst := language{
+		lines: map[string]string{"line": "line 1"},
+		validation: validationLines{
+			rules: map[string]string{},
+			fields: map[string]attribute{
+				"test": attribute{
+					Name: "test field",
+				},
+			},
+		},
+	}
+	src := language{
+		lines: map[string]string{"other": "line 2"},
+		validation: validationLines{
+			rules: map[string]string{},
+			fields: map[string]attribute{
+				"email": attribute{
+					Name:  "email address",
+					Rules: map[string]string{"required": "The email address is required"},
+				},
+				"test": attribute{
+					Name:  "test field override",
+					Rules: map[string]string{"required": "The test field override is required"},
+				},
+			},
+		},
+	}
+
+	mergeLang(dst, src)
+	suite.Equal("line 1", dst.lines["line"])
+	suite.Equal("line 2", dst.lines["other"])
+
+	suite.Equal("email address", dst.validation.fields["email"].Name)
+	suite.Equal("The email address is required", dst.validation.fields["email"].Rules["required"])
+
+	suite.Equal("test field override", dst.validation.fields["test"].Name)
+	suite.Equal("The test field override is required", dst.validation.fields["test"].Rules["required"])
+}
+
+func (suite *LangTestSuite) TearDownAllSuite() {
+	languages = map[string]language{}
+}
+
+func TestLangTestSuite(t *testing.T) {
+	suite.Run(t, new(LangTestSuite))
+}

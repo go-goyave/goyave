@@ -42,13 +42,20 @@ var languages map[string]language = map[string]language{}
 // the default language provided in the config.
 // This function is intended for internal use only.
 func LoadDefault() {
-	_, filename, _, ok := runtime.Caller(1)
-	sep := string(os.PathSeparator)
+	var filename string
+	var ok bool
+	func() {
+		_, f, _, o := runtime.Caller(1)
+		filename = f
+		ok = o
+	}()
+
 	if !ok {
 		panic(fmt.Errorf("Runtime caller error"))
 	}
 
-	load("en-US", path.Dir(filename)+sep+"resources"+sep+"lang"+sep+"en-US")
+	sep := string(os.PathSeparator)
+	load("en-US", path.Dir(filename)+sep+".."+sep+"resources"+sep+"lang"+sep+"en-US")
 }
 
 // LoadAllAvailableLanguages loads every language directory
@@ -182,22 +189,24 @@ func Get(lang string, line string) string {
 			return s
 		case "fields":
 			len := len(path)
-			attr := languages[lang].validation.fields[path[2]]
-			if attr.Name == "" {
+			if len < 3 {
 				return line
 			}
+			attr := languages[lang].validation.fields[path[2]]
 			if len == 4 {
+				if attr.Rules == nil {
+					return line
+				}
 				s := attr.Rules[path[3]]
 				if s == "" {
 					return line
 				}
 				return s
 			} else if len == 3 {
-				s := attr.Name
-				if s == "" {
+				if attr.Name == "" {
 					return line
 				}
-				return s
+				return attr.Name
 			} else {
 				return line
 			}

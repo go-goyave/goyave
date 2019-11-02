@@ -81,6 +81,13 @@ func Get(key string) interface{} {
 	return nil
 }
 
+// Set a config entry
+//
+// The change is temporary and will not be saved for next boot.
+func Set(key string, value interface{}) {
+	config[key] = value
+}
+
 // GetString a config entry as string
 func GetString(key string) string {
 	val, ok := config[key]
@@ -112,7 +119,13 @@ func GetBool(key string) bool {
 }
 
 func loadDefaults() error {
-	_, filename, _, ok := runtime.Caller(1)
+	var filename string
+	var ok bool
+	func() {
+		_, f, _, o := runtime.Caller(1)
+		filename = f
+		ok = o
+	}()
 	if ok {
 		confDefaults, err := readConfigFile(path.Dir(filename) + string(os.PathSeparator) + "defaults.json")
 

@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -45,8 +46,9 @@ func simpleParameterPlaceholder(field string, rule string, parameters []string, 
 }
 
 func datePlaceholder(index int, parameters []string, language string) string {
-	_, err := time.Parse(parameters[index], "2006-01-02T03:04:05")
+	_, err := time.Parse("2006-01-02T15:04:05", parameters[index])
 	if err != nil {
+		fmt.Println(err)
 		// Not a date, may be a field
 		return replaceField(parameters[index], language)
 	}

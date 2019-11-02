@@ -63,5 +63,12 @@
     "file": "The :field must be a file.",
     "mime": "The :field must be a file of type: :values.",
     "image": "The :field must be an image.",
-    "extension": "The :field must be a file with one of the following extensions: :values."
+    "extension": "The :field must be a file with one of the following extensions: :values.",
+    "date": "The :field is not a valid date.",
+    "before": "The :field must be a date before :date.",
+    "before_equal": "The :field must be a date before or equal to :date.",
+    "after": "The :field must be a date after :date.",
+    "after_equal": "The :field must be a date after or equal to :date.",
+    "date_equals": "The :field must be a date equal to :date.",
+    "date_between": "The :field must be a date between :date and :max_date."
 }

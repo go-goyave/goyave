@@ -2,6 +2,7 @@ package validation
 
 import (
 	"strings"
+	"time"
 
 	"github.com/System-Glitch/goyave/lang"
 )
@@ -43,6 +44,15 @@ func simpleParameterPlaceholder(field string, rule string, parameters []string, 
 	return parameters[0]
 }
 
+func datePlaceholder(index int, parameters []string, language string) string {
+	_, err := time.Parse(parameters[index], "2006-01-02T03:04:05")
+	if err != nil {
+		// Not a date, may be a field
+		return replaceField(parameters[index], language)
+	}
+	return parameters[index]
+}
+
 func init() {
 	SetPlaceholder("field", func(field string, rule string, parameters []string, language string) string {
 		return replaceField(field, language)
@@ -67,5 +77,11 @@ func init() {
 			return "v" + parameters[0]
 		}
 		return ""
+	})
+	SetPlaceholder("date", func(field string, rule string, parameters []string, language string) string {
+		return datePlaceholder(0, parameters, language)
+	})
+	SetPlaceholder("max_date", func(field string, rule string, parameters []string, language string) string {
+		return datePlaceholder(1, parameters, language)
 	})
 }

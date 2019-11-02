@@ -59,6 +59,13 @@ var validationRules map[string]Rule = map[string]Rule{
 	"mime":               validateMIME,
 	"image":              validateImage,
 	"extension":          validateExtension,
+	"date":               validateDate,
+	"before":             validateBefore,
+	"before_equal":       validateBeforeEqual,
+	"after":              validateAfter,
+	"after_equal":        validateAfterEqual,
+	"date_equals":        validateDateEquals,
+	"date_between":       validateDateBetween,
 }
 
 var typeDependentMessageRules []string = []string{

@@ -2,8 +2,8 @@ package lang
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"runtime"
@@ -51,7 +51,7 @@ func LoadDefault() {
 	}()
 
 	if !ok {
-		panic(fmt.Errorf("Runtime caller error"))
+		log.Panicf("Runtime caller error")
 	}
 
 	sep := string(os.PathSeparator)
@@ -100,7 +100,7 @@ func Load(language string) {
 	if filesystem.IsDirectory(path) {
 		load(language, path)
 	} else {
-		panic(fmt.Errorf("Failed loading language \"%s\", directory \"%s\" doesn't exist", language, path))
+		log.Panicf("Failed loading language \"%s\", directory \"%s\" doesn't exist", language, path)
 	}
 }
 

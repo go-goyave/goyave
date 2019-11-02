@@ -1,7 +1,7 @@
 package lang
 
 import (
-	"fmt"
+	"log"
 	"path"
 	"runtime"
 	"testing"
@@ -17,7 +17,7 @@ type LangTestSuite struct {
 func loadTestLang(lang string) {
 	_, filename, _, ok := runtime.Caller(1)
 	if !ok {
-		panic(fmt.Errorf("Runtime caller error"))
+		log.Panicf("Runtime caller error")
 	}
 	load(lang, path.Dir(filename)+"/../resources/lang/en-US")
 }

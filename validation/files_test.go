@@ -2,8 +2,8 @@ package validation
 
 import (
 	"bytes"
-	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -40,7 +40,7 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 func createTestFiles(files ...string) []filesystem.File {
 	_, filename, _, ok := runtime.Caller(1)
 	if !ok {
-		panic(fmt.Errorf("Runtime caller error"))
+		log.Panicf("Runtime caller error")
 	}
 
 	body := &bytes.Buffer{}
@@ -66,7 +66,7 @@ func createTestFiles(files ...string) []filesystem.File {
 func createTestFileWithNoExtension() []filesystem.File {
 	_, filename, _, ok := runtime.Caller(1)
 	if !ok {
-		panic(fmt.Errorf("Runtime caller error"))
+		log.Panicf("Runtime caller error")
 	}
 
 	body := &bytes.Buffer{}

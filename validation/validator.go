@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -83,7 +83,7 @@ var typeDependentMessageRules []string = []string{
 // The language entry used will be "validation.rules.rulename.type"
 func AddRule(name string, typeDependentMessage bool, rule Rule) {
 	if _, exists := validationRules[name]; exists {
-		panic(fmt.Errorf("Rule %s already exists", name))
+		log.Panicf("Rule %s already exists", name)
 	}
 	validationRules[name] = rule
 
@@ -181,7 +181,7 @@ func parseRule(rule string) (string, []string) {
 	var ruleName string
 	if indexName == -1 {
 		if strings.Count(rule, ",") > 0 {
-			panic(fmt.Errorf("Invalid rule: \"%s\"", rule))
+			log.Panicf("Invalid rule: \"%s\"", rule)
 		}
 		ruleName = rule
 	} else {
@@ -190,7 +190,7 @@ func parseRule(rule string) (string, []string) {
 	}
 
 	if _, exists := validationRules[ruleName]; !exists {
-		panic(fmt.Errorf("Rule \"%s\" doesn't exist", ruleName))
+		log.Panicf("Rule \"%s\" doesn't exist", ruleName)
 	}
 
 	return ruleName, params
@@ -198,6 +198,6 @@ func parseRule(rule string) (string, []string) {
 
 func requireParametersCount(rule string, params []string, count int) {
 	if len(params) < count {
-		panic(fmt.Errorf("Rule \"%s\" requires %d parameter(s)", rule, count))
+		log.Panicf("Rule \"%s\" requires %d parameter(s)", rule, count)
 	}
 }

@@ -65,7 +65,9 @@ func LoadConfig() error {
 		}
 	}
 
-	validateConfig()
+	if !validateConfig() {
+		os.Exit(1)
+	}
 
 	return err
 }
@@ -85,6 +87,9 @@ func Get(key string) interface{} {
 //
 // The change is temporary and will not be saved for next boot.
 func Set(key string, value interface{}) {
+	if err := validateEntry(value, key); err != nil {
+		panic(err)
+	}
 	config[key] = value
 }
 
@@ -170,27 +175,30 @@ func inSlice(slice []string, value string) bool {
 	return false
 }
 
-func validateConfig() {
+func validateConfig() bool {
 	valid := true
 	for key, value := range config {
-		if v, ok := configValidation[key]; ok {
-			t := reflect.TypeOf(value)
-			if t.Kind() != v {
-				log.Println(fmt.Sprintf("Invalid config entry. %s type must be %s", key, v))
-				valid = false
-				continue
-			}
-
-			if v, ok := authorizedValues[key]; ok {
-				if !inSlice(v, value.(string)) {
-					log.Println(fmt.Sprintf("Invalid config entry. %s must have one of the following values: %s", key, strings.Join(v, ", ")))
-					valid = false
-				}
-			}
+		if err := validateEntry(value, key); err != nil {
+			fmt.Println(err)
+			valid = false
 		}
 	}
 
-	if !valid {
-		os.Exit(1)
+	return valid
+}
+
+func validateEntry(value interface{}, key string) error {
+	if v, ok := configValidation[key]; ok {
+		t := reflect.TypeOf(value)
+		if t.Kind() != v {
+			return fmt.Errorf("Invalid config entry. %s type must be %s", key, v)
+		}
+
+		if v, ok := authorizedValues[key]; ok {
+			if !inSlice(v, value.(string)) {
+				return fmt.Errorf("Invalid config entry. %s must have one of the following values: %s", key, strings.Join(v, ", "))
+			}
+		}
 	}
+	return nil
 }

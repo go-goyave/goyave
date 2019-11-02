@@ -53,7 +53,7 @@ func newConnection() *gorm.DB {
 	connection := config.GetString("dbConnection")
 
 	if connection == "none" {
-		panic(fmt.Errorf("Cannot create DB connection. Database is set to \"none\" in the config"))
+		log.Panicf("Cannot create DB connection. Database is set to \"none\" in the config")
 	}
 
 	db, err := gorm.Open(connection, buildConnectionOptions(connection))

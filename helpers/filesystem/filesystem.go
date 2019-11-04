@@ -28,7 +28,7 @@ func GetFileExtension(file string) string {
 }
 
 // GetMimeType get the mime type and size of the given file.
-func GetMimeType(file string) (string, int64, error) {
+func GetMimeType(file string) (string, int64) {
 	f, err := os.Open(file)
 	if err != nil {
 		panic(err)
@@ -46,7 +46,7 @@ func GetMimeType(file string) (string, int64, error) {
 		panic(errStat)
 	}
 
-	return http.DetectContentType(buffer), stat.Size(), nil
+	return http.DetectContentType(buffer), stat.Size()
 }
 
 // FileExists returns true if the file at the given path exists and is readable.

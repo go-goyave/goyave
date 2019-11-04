@@ -103,6 +103,6 @@ func buildConnectionOptions(connection string) string {
 		)
 	}
 
-	log.Fatalf("DB Connection %s not supported", connection)
+	log.Panicf("DB Connection %s not supported", connection)
 	return ""
 }

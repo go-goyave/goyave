@@ -53,10 +53,7 @@ func (r *Response) String(responseCode int, message string) {
 
 func (r *Response) writeFile(file string, disposition string) {
 	r.empty = false
-	mime, size, err := filesystem.GetMimeType(file)
-	if err != nil {
-		panic(err)
-	}
+	mime, size := filesystem.GetMimeType(file)
 	r.writer.Header().Set("Content-Disposition", disposition)
 	r.writer.Header().Set("Content-Type", mime)
 	r.writer.Header().Set("Content-Length", strconv.FormatInt(size, 10))

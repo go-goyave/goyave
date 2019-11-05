@@ -182,11 +182,7 @@ func Get(lang string, line string) string {
 			if len(path) < 3 {
 				return line
 			}
-			s := languages[lang].validation.rules[strings.Join(path[2:], ".")]
-			if s == "" {
-				return line
-			}
-			return s
+			return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")])
 		case "fields":
 			len := len(path)
 			if len < 3 {
@@ -197,16 +193,9 @@ func Get(lang string, line string) string {
 				if attr.Rules == nil {
 					return line
 				}
-				s := attr.Rules[path[3]]
-				if s == "" {
-					return line
-				}
-				return s
+				return convertEmptyLine(line, attr.Rules[path[3]])
 			} else if len == 3 {
-				if attr.Name == "" {
-					return line
-				}
-				return attr.Name
+				return convertEmptyLine(line, attr.Name)
 			} else {
 				return line
 			}
@@ -215,11 +204,14 @@ func Get(lang string, line string) string {
 		}
 	}
 
-	s := languages[lang].lines[line]
-	if s == "" {
-		return line
+	return convertEmptyLine(line, languages[lang].lines[line])
+}
+
+func convertEmptyLine(entry, line string) string {
+	if line == "" {
+		return entry
 	}
-	return s
+	return line
 }
 
 // IsAvailable returns true if the language is available.

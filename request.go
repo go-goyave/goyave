@@ -93,22 +93,6 @@ func (r *Request) UserAgent() string {
 	return r.httpRequest.UserAgent()
 }
 
-// Redirect send a permanent redirect response
-//
-// This method is not part of the response helpers to keep the original
-// request encapsulated.
-func (r *Request) Redirect(w http.ResponseWriter, url string) {
-	http.Redirect(w, r.httpRequest, url, http.StatusPermanentRedirect)
-}
-
-// TemporaryRedirect send a temporary redirect response
-//
-// This method is not part of the response helpers to keep the original
-// request encapsulated.
-func (r *Request) TemporaryRedirect(w http.ResponseWriter, url string) {
-	http.Redirect(w, r.httpRequest, url, http.StatusTemporaryRedirect)
-}
-
 func (r *Request) validate() map[string]validation.Errors {
 	if r.Rules == nil {
 		return nil

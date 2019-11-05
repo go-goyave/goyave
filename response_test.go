@@ -22,8 +22,9 @@ func (suite *ResponseTestSuite) SetupSuite() {
 
 func createTestResponse(rawRequest *http.Request) *Response {
 	response := &Response{
-		writer: httptest.NewRecorder(),
-		empty:  true,
+		writer:      httptest.NewRecorder(),
+		httpRequest: rawRequest,
+		empty:       true,
 	}
 
 	return response
@@ -36,6 +37,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	resp := response.writer.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(403, resp.StatusCode)
+	suite.False(response.empty)
 }
 
 func (suite *ResponseTestSuite) TestResponseHeader() {
@@ -47,6 +49,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
+	suite.False(response.empty)
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
@@ -60,6 +63,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	body, err := ioutil.ReadAll(resp.Body)
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
+	suite.False(response.empty)
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = createTestResponse(rawRequest)
@@ -71,6 +75,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	body, err = ioutil.ReadAll(resp.Body)
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
+	suite.False(response.empty)
 }
 
 func (suite *ResponseTestSuite) TestResponseFile() {
@@ -84,6 +89,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
 	suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	suite.Equal("546", resp.Header.Get("Content-Length"))
+	suite.False(response.empty)
 }
 
 func (suite *ResponseTestSuite) TestResponseFilePanic() {
@@ -106,6 +112,50 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
 	suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 	suite.Equal("546", resp.Header.Get("Content-Length"))
+	suite.False(response.empty)
+}
+
+func (suite *ResponseTestSuite) TestResponseRedirect() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := createTestResponse(rawRequest)
+
+	response.Redirect("https://www.google.com")
+	resp := response.writer.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(308, resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("<a href=\"https://www.google.com\">Permanent Redirect</a>.\n\n", string(body))
+	suite.False(response.empty)
+}
+
+func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := createTestResponse(rawRequest)
+
+	response.TemporaryRedirect("https://www.google.com")
+	resp := response.writer.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(307, resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("<a href=\"https://www.google.com\">Temporary Redirect</a>.\n\n", string(body))
+	suite.False(response.empty)
+}
+
+func (suite *ResponseTestSuite) TestResponseCookie() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := createTestResponse(rawRequest)
+	response.Cookie(&http.Cookie{
+		Name:  "cookie-name",
+		Value: "test",
+	})
+
+	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	cookies := resp.Cookies()
+	suite.Equal(1, len(cookies))
+	suite.Equal("cookie-name", cookies[0].Name)
+	suite.Equal("test", cookies[0].Value)
 }
 
 func TestResponseTestSuite(t *testing.T) {

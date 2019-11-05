@@ -21,7 +21,8 @@ type Response struct {
 	// See RFC 7231, 6.3.5
 	empty bool
 
-	writer http.ResponseWriter
+	httpRequest *http.Request
+	writer      http.ResponseWriter
 }
 
 // Header returns the header map that will be sent.
@@ -102,4 +103,23 @@ func (r *Response) Error(err interface{}) {
 	} else {
 		r.writer.WriteHeader(http.StatusInternalServerError)
 	}
+}
+
+// Cookie adds a Set-Cookie header to the response.
+// The provided cookie must have a valid Name. Invalid cookies may be
+// silently dropped.
+func (r *Response) Cookie(cookie *http.Cookie) {
+	http.SetCookie(r.writer, cookie)
+}
+
+// Redirect send a permanent redirect response
+func (r *Response) Redirect(url string) {
+	r.empty = false
+	http.Redirect(r.writer, r.httpRequest, url, http.StatusPermanentRedirect)
+}
+
+// TemporaryRedirect send a temporary redirect response
+func (r *Response) TemporaryRedirect(url string) {
+	r.empty = false
+	http.Redirect(r.writer, r.httpRequest, url, http.StatusTemporaryRedirect)
 }

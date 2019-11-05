@@ -102,7 +102,7 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 		malformedMessage = "Malformed request"
 	}
 	if data == nil {
-		return map[string][]string{"_error": {malformedMessage}}
+		return map[string][]string{"error": {malformedMessage}}
 	}
 
 	return validate(data, rules, language)

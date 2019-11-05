@@ -73,7 +73,7 @@ func (suite *LangTestSuite) TestMerge() {
 		validation: validationLines{
 			rules: map[string]string{},
 			fields: map[string]attribute{
-				"test": attribute{
+				"test": {
 					Name: "test field",
 				},
 			},
@@ -84,11 +84,11 @@ func (suite *LangTestSuite) TestMerge() {
 		validation: validationLines{
 			rules: map[string]string{},
 			fields: map[string]attribute{
-				"email": attribute{
+				"email": {
 					Name:  "email address",
 					Rules: map[string]string{"required": "The email address is required"},
 				},
-				"test": attribute{
+				"test": {
 					Name:  "test field override",
 					Rules: map[string]string{"required": "The test field override is required"},
 				},

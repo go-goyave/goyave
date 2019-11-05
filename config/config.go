@@ -39,8 +39,8 @@ var configValidation = map[string]reflect.Kind{
 }
 
 var authorizedValues = map[string][]string{
-	"protocol":     []string{"http", "https"},
-	"dbConnection": []string{"none", "mysql", "postgres", "sqlite3", "mssql"},
+	"protocol":     {"http", "https"},
+	"dbConnection": {"none", "mysql", "postgres", "sqlite3", "mssql"},
 }
 
 // LoadConfig loads the config.json file in the current working directory.

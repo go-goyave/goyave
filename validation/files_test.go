@@ -35,6 +35,9 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 		panic(err)
 	}
 	_, err = io.Copy(part, file)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createTestFiles(files ...string) []filesystem.File {

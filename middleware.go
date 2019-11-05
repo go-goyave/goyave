@@ -45,12 +45,12 @@ func parseRequestMiddleware(next Handler) Handler {
 			data = make(map[string]interface{})
 			err := json.NewDecoder(request.httpRequest.Body).Decode(&data)
 			if err != nil {
-				data = nil
+				data = make(map[string]interface{})
 			}
 		} else {
 			data = generateFlatMap(request.httpRequest)
 			if data == nil {
-				data = nil
+				data = make(map[string]interface{})
 			}
 		}
 		request.Data = data
@@ -72,6 +72,11 @@ func generateFlatMap(request *http.Request) map[string]interface{} {
 		}
 	}
 
+	if request.Form != nil {
+		for field, value := range request.Form {
+			flatMap[field] = value[0]
+		}
+	}
 	if request.MultipartForm != nil {
 		for field, value := range request.MultipartForm.Value {
 			flatMap[field] = value[0]
@@ -79,11 +84,6 @@ func generateFlatMap(request *http.Request) map[string]interface{} {
 
 		for field := range request.MultipartForm.File {
 			flatMap[field] = filesystem.ParseMultipartFiles(request, field)
-		}
-	}
-	if request.Form != nil {
-		for field, value := range request.Form {
-			flatMap[field] = value[0]
 		}
 	}
 

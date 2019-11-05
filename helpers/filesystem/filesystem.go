@@ -46,7 +46,7 @@ func GetMimeType(file string) (string, int64) {
 		panic(errStat)
 	}
 
-	return http.DetectContentType(buffer), stat.Size()
+	return http.DetectContentType(buffer), stat.Size() // TODO detect js and json
 }
 
 // FileExists returns true if the file at the given path exists and is readable.

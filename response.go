@@ -58,10 +58,7 @@ func (r *Response) writeFile(file string, disposition string) {
 	r.writer.Header().Set("Content-Type", mime)
 	r.writer.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 
-	f, err := os.Open(file)
-	if err != nil {
-		panic(err)
-	}
+	f, _ := os.Open(file)
 	defer f.Close()
 	io.Copy(r.writer, f)
 }

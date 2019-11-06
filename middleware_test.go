@@ -79,10 +79,11 @@ func createTestFileRequest(route string, files ...string) *http.Request {
 	return req
 }
 
-func testMiddleware(middleware Middleware, rawRequest *http.Request, handler func(*Response, *Request)) *http.Response {
+func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[string]interface{}, rules validation.RuleSet, handler func(*Response, *Request)) *http.Response {
 	request := &Request{
 		httpRequest: rawRequest,
-		Rules:       validation.RuleSet{},
+		Data:        data,
+		Rules:       rules,
 		Params:      map[string]string{},
 	}
 	response := &Response{
@@ -97,7 +98,7 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, handler fun
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicDebug() {
 	config.Set("debug", true)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, func(response *Response, r *Request) {
+	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		panic(fmt.Errorf("error message"))
 	})
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -108,7 +109,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicDebug() {
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicNoDebug() {
 	config.Set("debug", false)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, func(response *Response, r *Request) {
+	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		panic(fmt.Errorf("error message"))
 	})
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -119,7 +120,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicNoDebug() {
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, func(response *Response, r *Request) {
+	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		response.String(200, "message")
 	})
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -130,12 +131,12 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	rawRequest.Header.Set("Accept-Language", "en-US")
-	testMiddleware(languageMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal("en-US", r.Lang)
 	})
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	testMiddleware(languageMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal("en-US", r.Lang)
 	})
 }
@@ -143,7 +144,7 @@ func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {
 func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-	testMiddleware(parseRequestMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
 	})
@@ -151,7 +152,7 @@ func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
 
 func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {
 	rawRequest := httptest.NewRequest("GET", "/test-route?string=hello%20world&number=42", nil)
-	testMiddleware(parseRequestMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
 	})
@@ -160,7 +161,7 @@ func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {
 func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}"))
 	rawRequest.Header.Set("Content-Type", "application/json")
-	testMiddleware(parseRequestMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal(42.0, r.Data["number"])
 		slice, ok := r.Data["array"].([]interface{})
@@ -172,14 +173,14 @@ func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]")) // Missing closing braces
 	rawRequest.Header.Set("Content-Type", "application/json")
-	testMiddleware(parseRequestMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal(0, len(r.Data))
 	})
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 	rawRequest := createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
-	testMiddleware(parseRequestMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal(3, len(r.Data))
 		suite.Equal("hello", r.Data["test"])
 		suite.Equal("world", r.Data["field"])
@@ -191,7 +192,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 
 func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 	rawRequest := createTestFileRequest("/test-route?field=hello", "resources/img/logo/goyave_16.png")
-	testMiddleware(parseRequestMiddleware, rawRequest, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal(2, len(r.Data))
 		suite.Equal("world", r.Data["field"]) // TODO document that POST should have the priority
 		files, ok := r.Data["file"].([]filesystem.File)
@@ -200,7 +201,48 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 	})
 }
 
-// TODO test validate middleware
+func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
+	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
+	rawRequest.Header.Set("Content-Type", "application/json")
+	data := map[string]interface{}{
+		"string": "hello world",
+		"number": 42,
+	}
+	rules := validation.RuleSet{
+		"string": {"required", "string"},
+		"number": {"required", "numeric", "min:10"},
+	}
+	result := testMiddleware(validateRequestMiddleware, rawRequest, data, rules, func(response *Response, r *Request) {})
+	suite.Equal(200, result.StatusCode)
+
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
+	rawRequest.Header.Set("Content-Type", "application/json")
+	data = map[string]interface{}{
+		"string": "hello world",
+		"number": 42,
+	}
+	rules = validation.RuleSet{
+		"string": {"required", "string"},
+		"number": {"required", "numeric", "min:50"},
+	}
+	result = testMiddleware(validateRequestMiddleware, rawRequest, data, rules, func(response *Response, r *Request) {})
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(422, result.StatusCode)
+	suite.Equal("{\"validationError\":{\"number\":[\"validation.rules.min.numeric\"]}}\n", string(body))
+
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
+	rawRequest.Header.Set("Content-Type", "application/json")
+	result = testMiddleware(validateRequestMiddleware, rawRequest, nil, rules, func(response *Response, r *Request) {})
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(400, result.StatusCode)
+	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
+}
 
 func TestMiddlewareTestSuite(t *testing.T) {
 	suite.Run(t, new(MiddlewareTestSuite))

@@ -55,15 +55,12 @@ func (r *Router) Route(method string, endpoint string, handler Handler, validati
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
 func (r *Router) Static(endpoint string, directory string, download bool) {
-	if endpoint == "/" {
-		endpoint = ""
-	}
+	r.Route("GET", endpoint+"{resource:.*}", staticHandler(directory, download), nil)
+}
 
-	r.Route("GET", endpoint+"{resource:.*}", func(response *Response, r *Request) {
+func staticHandler(directory string, download bool) Handler {
+	return func(response *Response, r *Request) {
 		file := r.Params["resource"]
-		if strings.HasPrefix(file, "/") {
-			file = file[1:]
-		}
 		path := cleanStaticPath(directory, file)
 
 		if filesystem.FileExists(path) {
@@ -75,17 +72,19 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 		} else {
 			response.Status(http.StatusNotFound)
 		}
-	}, nil)
+	}
 }
 
 func cleanStaticPath(directory string, file string) string {
+	if strings.HasPrefix(file, "/") {
+		file = file[1:]
+	}
 	path := directory + "/" + file
 	if len(file) <= 0 || filesystem.IsDirectory(path) {
-		if strings.HasSuffix(file, "/") {
-			file += "index.html"
-		} else {
-			file += "/index.html"
+		if strings.Count(file, "/") > 0 && !strings.HasSuffix(file, "/") {
+			file += "/"
 		}
+		file += "index.html"
 		path = directory + "/" + file
 	}
 	return path

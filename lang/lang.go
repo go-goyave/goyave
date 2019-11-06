@@ -75,7 +75,7 @@ func LoadAllAvailableLanguages() {
 
 		for _, f := range files {
 			if f.IsDir() {
-				Load(f.Name())
+				Load(f.Name(), langDirectory)
 			}
 		}
 	}
@@ -90,13 +90,7 @@ func LoadAllAvailableLanguages() {
 //    |- attributes.json (contains the attribute-specific validation messages)
 //
 // Each file is optional.
-func Load(language string) {
-	sep := string(os.PathSeparator)
-	workingDir, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	path := workingDir + sep + "resources" + sep + "lang" + sep + language
+func Load(language, path string) {
 	if filesystem.IsDirectory(path) {
 		load(language, path)
 	} else {

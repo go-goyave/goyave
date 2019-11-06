@@ -77,4 +77,39 @@ func TestRequestCookies(t *testing.T) {
 	assert.Equal(t, "test", cookies[0].Value)
 }
 
-// TODO test request validate
+func TestRequestValidate(t *testing.T) {
+	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
+	rawRequest.Header.Set("Content-Type", "application/json")
+	request := createTestRequest(rawRequest)
+	request.Data = map[string]interface{}{
+		"string": "hello world",
+		"number": 42,
+	}
+	request.Rules = validation.RuleSet{
+		"string": {"required", "string"},
+		"number": {"required", "numeric", "min:10"},
+	}
+	errors := request.validate()
+	assert.Nil(t, errors)
+
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world"))
+	rawRequest.Header.Set("Content-Type", "application/json")
+	request = createTestRequest(rawRequest)
+	request.Data = map[string]interface{}{
+		"string": "hello world",
+	}
+	request.Rules = validation.RuleSet{
+		"string": {"required", "string"},
+		"number": {"required", "numeric", "min:50"},
+	}
+	errors = request.validate()
+	assert.NotNil(t, errors)
+	assert.Equal(t, 2, len(errors["validationError"]["number"]))
+
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
+	rawRequest.Header.Set("Content-Type", "application/json")
+	request = createTestRequest(rawRequest)
+	request.Rules = nil
+	errors = request.validate()
+	assert.Nil(t, errors)
+}

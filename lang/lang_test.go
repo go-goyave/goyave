@@ -67,6 +67,14 @@ func (suite *LangTestSuite) TestDetectLanguage() {
 	suite.Equal("en-US", DetectLanguage("notalang"))
 }
 
+func (suite *LangTestSuite) TestLoad() {
+	suite.Panics(func() {
+		Load("notalanguagedir", "notalanguagepath")
+	})
+
+	Load("en-US", "../resources/lang/en-US") // Is an override
+}
+
 func (suite *LangTestSuite) TestMerge() {
 	dst := language{
 		lines: map[string]string{"line": "line 1"},

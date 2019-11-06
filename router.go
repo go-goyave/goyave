@@ -16,7 +16,7 @@ type Router struct {
 	middlewares []Middleware
 }
 
-// Handler is a controller function
+// Handler is a controller or middleware function
 type Handler func(*Response, *Request)
 
 func newRouter() *Router {

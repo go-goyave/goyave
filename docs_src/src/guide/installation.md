@@ -32,7 +32,10 @@ Now that your project directory is set up and the dependencies are installed, le
 ``` go
 package main
 
-import "github.com/System-Glitch/goyave"
+import (
+    "routes"
+    "github.com/System-Glitch/goyave"
+)
 
 func main() {
     goyave.Start(routes.Register)
@@ -75,3 +78,5 @@ $ go run main
 $ curl http://localhost:8080/hello
 Hi!
 ```
+
+You should also create a config file for your application. Learn more [here](./configuration).

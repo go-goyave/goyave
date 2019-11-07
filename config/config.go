@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/System-Glitch/goyave/helpers"
 )
 
 var config map[string]interface{}
@@ -22,7 +24,7 @@ var configValidation = map[string]reflect.Kind{
 	"protocol":             reflect.String,
 	"debug":                reflect.Bool,
 	"timeout":              reflect.Float64,
-	"maxUploadSize":        reflect.Float64, // TODO document that it's max "in-memory" files
+	"maxUploadSize":        reflect.Float64,
 	"defaultLanguage":      reflect.String,
 	"tlsCert":              reflect.String,
 	"tlsKey":               reflect.String,
@@ -156,7 +158,7 @@ func readConfigFile(file string) (map[string]interface{}, error) {
 }
 
 func getConfigFilePath() string {
-	switch strings.ToLower(os.Getenv("GOYAVE_ENV")) { // TODO document this
+	switch strings.ToLower(os.Getenv("GOYAVE_ENV")) {
 	case "test":
 		return "config.test.json"
 	case "production":
@@ -164,15 +166,6 @@ func getConfigFilePath() string {
 	default:
 		return "config.json"
 	}
-}
-
-func inSlice(slice []string, value string) bool {
-	for _, v := range slice {
-		if v == value {
-			return true
-		}
-	}
-	return false
 }
 
 func validateConfig() bool {
@@ -195,7 +188,7 @@ func validateEntry(value interface{}, key string) error {
 		}
 
 		if v, ok := authorizedValues[key]; ok {
-			if !inSlice(v, value.(string)) {
+			if !helpers.Contains(v, value.(string)) {
 				return fmt.Errorf("Invalid config entry. %s must have one of the following values: %s", key, strings.Join(v, ", "))
 			}
 		}

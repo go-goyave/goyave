@@ -6,7 +6,7 @@ about: Ask for help installing your environment or using a specific feature
 
 ## Description
 
-**Branch:** [current branch]
+**Version:** [framework version]  
 **Commit:** [current commit hash]
 
 Describe what you are trying to achieve.

@@ -3,7 +3,9 @@
 Welcome to the Goyave documentation!  
 
 
-This documentation is both a guide and a reference for Goyave application building. You will find instructions covering the basics as well as more advanced topics, from project setup to deployment.
+This documentation is both a guide and a reference for Goyave application building. You will find instructions covering the basics as well as more advanced topics, from project setup to deployment. But first, let's talk about the framework itself.
+
+Goyave is a framework aiming at **cleanliness**, **speed** and **power**. Goyave applications stay clean and concise thanks to minimalist function calls and route handlers. The framework gives you all the tools to create an easily readable and maintainable web application, which let you concentrate on the business logic. Although Goyave handles many things for you, such as headers or marshaling, this characteristic doesn't compromise on your freedom of code. The framework benefits from the speed of a compiled language and uses the awesome Gorilla Mux router in the background.
 
 ::: warning
 The documentation is not complete yet and still being written. It is highly subject to change in the near future.

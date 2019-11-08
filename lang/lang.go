@@ -214,6 +214,21 @@ func IsAvailable(lang string) bool {
 	return exists
 }
 
+// GetAvailableLanguages returns a slice of all loaded languages.
+// This can be used to generate different routes for all languages
+// supported by your applications.
+//
+//  /en/products
+//  /fr/produits
+//  ...
+func GetAvailableLanguages() []string {
+	langs := []string{}
+	for lang := range languages {
+		langs = append(langs, lang)
+	}
+	return langs
+}
+
 // DetectLanguage detects the language to use based on the given lang string.
 //
 // If "*" is provided, the default language will be used.

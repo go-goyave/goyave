@@ -16,10 +16,13 @@ import (
 
 // Start starts the web server.
 // The routeRegistrer parameter is a function aimed at registering all your routes and middlewares.
-//  import "github.com/System-Glitch/goyave"
-//  import "routes"
+//  import (
+//      "github.com/System-Glitch/goyave"
+//      "routes"
+//  )
+//
 //  func main() {
-// 	    goyave.start(routes.RegisterRoutes)
+// 	    goyave.start(routes.Register)
 //  }
 func Start(routeRegistrer func(*Router)) {
 	err := config.LoadConfig()

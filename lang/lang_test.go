@@ -65,6 +65,11 @@ func (suite *LangTestSuite) TestDetectLanguage() {
 	suite.Equal("fr-FR", DetectLanguage("fr-FR, en-US;q=0.9"))
 	suite.Equal("en-US", DetectLanguage("*"))
 	suite.Equal("en-US", DetectLanguage("notalang"))
+
+	langs := GetAvailableLanguages()
+	suite.Equal(2, len(langs))
+	suite.Contains(langs, "en-US")
+	suite.Contains(langs, "fr-FR")
 }
 
 func (suite *LangTestSuite) TestLoad() {

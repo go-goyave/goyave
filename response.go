@@ -85,7 +85,7 @@ func (r *Response) Download(file string, fileName string) {
 	r.writeFile(file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }
 
-// Error log the error and return it as error code 500
+// Error log the error and return it as error code 500.
 // If debugging is enabled in the config, the error is also written in the response.
 func (r *Response) Error(err interface{}) {
 	r.empty = false

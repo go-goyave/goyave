@@ -16,6 +16,6 @@ footer: MIT Licensed | Copyright © 2019 Jérémy LAMBERT (SystemGlitch)
   </div>
   <div class="feature">
     <h2>Powerful</h2>
-    <p>Goyave provides many helpers and built-in functions to make your life easier.</p>
+    <p>Goyave provides many helpers and built-in functions to make your life easier and let you concentrate on the business logic.</p>
   </div>
 </div>

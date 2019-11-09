@@ -120,6 +120,31 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 	config.Set("protocol", "http")
 }
 
+func (suite *GoyaveTestSuite) TestStaticServing() {
+	suite.runServer(func(router *Router) {
+		router.Static("/resources", "resources", true)
+	}, func() {
+		netClient := createHTTPClient()
+		resp, err := netClient.Get("http://127.0.0.1:1235/resources/nothing")
+		suite.Nil(err)
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(404, resp.StatusCode)
+		}
+
+		resp, err = netClient.Get("http://127.0.0.1:1235/resources/lang/en-US/locale.json")
+		suite.Nil(err)
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(200, resp.StatusCode)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			suite.Nil(err)
+			suite.Equal("{\n    \"disallow-non-validated-fields\": \"Non-validated fields are forbidden.\"\n}", string(body))
+		}
+	})
+}
+
 func TestGoyaveTestSuite(t *testing.T) {
 	suite.Run(t, new(GoyaveTestSuite))
 }

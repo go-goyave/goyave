@@ -28,4 +28,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Plugins
 - CLI utility to help creating controllers, middlewares, etc
 - Email helpers
+- Server shutdown hooks (to gracefully close websocket connections for example)
+- Improve threading
 - And more!

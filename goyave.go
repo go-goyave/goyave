@@ -2,17 +2,43 @@ package goyave
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/System-Glitch/goyave/config"
 	"github.com/System-Glitch/goyave/database"
 	"github.com/System-Glitch/goyave/lang"
 )
+
+var server *http.Server = nil
+var redirectServer *http.Server = nil
+var sigChannel chan os.Signal
+
+var startupHooks []func()
+var ready bool = false
+var mutex = &sync.Mutex{}
+
+// IsReady returns true if the server has finished initializing and
+// is ready to serve incoming requests.
+func IsReady() bool {
+	return ready
+}
+
+// RegisterStartupHook to execute some code once the server is ready and running.
+func RegisterStartupHook(hook func()) {
+	startupHooks = append(startupHooks, hook)
+}
+
+// ClearStartupHooks removes all startup hooks.
+func ClearStartupHooks() {
+	startupHooks = []func(){}
+}
 
 // Start starts the web server.
 // The routeRegistrer parameter is a function aimed at registering all your routes and middlewares.
@@ -28,7 +54,6 @@ func Start(routeRegistrer func(*Router)) {
 	err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
 
 	lang.LoadDefault()
@@ -43,6 +68,35 @@ func Start(routeRegistrer func(*Router)) {
 	startServer(router)
 }
 
+// Stop gracefully shuts down the server without interrupting any
+// active connections.
+//
+// Make sure the program doesn't exit and waits instead for Stop to return.
+//
+// Stop does not attempt to close nor wait for hijacked
+// connections such as WebSockets. The caller of Stop should
+// separately notify such long-lived connections of shutdown and wait
+// for them to close, if desired.
+func Stop(ctx context.Context) {
+	sigChannel <- os.Interrupt
+}
+
+func stop(ctx context.Context) error {
+	mutex.Lock()
+	err := server.Shutdown(ctx)
+	database.Close()
+	server = nil
+	ready = false
+	if redirectServer != nil {
+		redirectServer.Shutdown(ctx)
+		redirectServer = nil
+	}
+	mutex.Unlock()
+	return err
+}
+
+// TODO add public shutdown hooks
+
 func getAddress(protocol string) string {
 	var port string
 	if protocol == "https" {
@@ -54,60 +108,74 @@ func getAddress(protocol string) string {
 }
 
 func startTLSRedirectServer() {
+	mutex.Lock()
 	httpsAddress := getAddress("https")
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
-	server := &http.Server{
+	redirectServer = &http.Server{
 		Addr:         getAddress("http"),
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "https://"+httpsAddress+r.RequestURI, http.StatusMovedPermanently)
+			http.Redirect(w, r, "https://"+httpsAddress+r.RequestURI, http.StatusPermanentRedirect)
 		}),
 	}
+	mutex.Unlock()
+
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			log.Fatal(err)
+		if err := redirectServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Println(err)
 		}
 	}()
-
-	registerShutdownHook(func(ctx context.Context) {
-		server.Shutdown(ctx)
-	})
 }
 
 func startServer(router *Router) {
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	protocol := config.GetString("protocol")
-	server := &http.Server{
+	mutex.Lock()
+	server = &http.Server{
 		Addr:         getAddress(protocol),
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
 		Handler:      router.muxRouter,
 	}
+	mutex.Unlock()
+
 	go func() {
 		if protocol == "https" {
 			go startTLSRedirectServer()
-			if err := server.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil {
-				log.Fatal(err)
+			runStartupHooks()
+			if err := server.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
+				fmt.Println(err)
 			}
 		} else {
-			if err := server.ListenAndServe(); err != nil {
-				log.Fatal(err)
+			runStartupHooks()
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				fmt.Println(err)
 			}
 		}
 	}()
 
 	registerShutdownHook(func(ctx context.Context) {
-		server.Shutdown(ctx)
-		database.Close()
+		stop(ctx)
 	})
 }
 
+func runStartupHooks() {
+	go func() {
+		ready = true
+		for _, hook := range startupHooks {
+			hook()
+		}
+	}()
+}
+
 func registerShutdownHook(hook func(context.Context)) {
-	sigChannel := make(chan os.Signal, 1)
+	mutex.Lock()
+	sigChannel = make(chan os.Signal, 1)
 	signal.Notify(sigChannel, os.Interrupt)
+	mutex.Unlock()
 
 	<-sigChannel // Block until SIGINT received
 

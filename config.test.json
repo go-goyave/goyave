@@ -1,0 +1,7 @@
+{
+    "environment": "test",
+    "protocol": "http",
+    "port": 1235,
+    "httpsPort": 1236,
+    "dbConnection": "none"
+}

@@ -51,27 +51,30 @@ var authorizedValues = map[string][]string{
 // - "test": "config.test.json"
 // - By default: "config.json"
 func LoadConfig() error {
-	err := loadDefaults()
-	if err == nil {
-		workingDir, err := os.Getwd()
+	if config == nil {
+		err := loadDefaults()
 		if err == nil {
-			path := getConfigFilePath()
-			conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
+			workingDir, err := os.Getwd()
 			if err == nil {
-				for key, value := range conf {
-					config[key] = value
+				path := getConfigFilePath()
+				conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
+				if err == nil {
+					for key, value := range conf {
+						config[key] = value
+					}
 				}
+			} else {
+				panic(err)
 			}
-		} else {
-			panic(err)
 		}
-	}
 
-	if !validateConfig() {
-		os.Exit(1)
-	}
+		if !validateConfig() {
+			os.Exit(1)
+		}
 
-	return err
+		return err
+	}
+	return nil
 }
 
 // Get a config entry

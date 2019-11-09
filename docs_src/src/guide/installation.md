@@ -42,6 +42,10 @@ func main() {
 }
 ```
 
+::: tip
+`goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background.
+:::
+
 Now we need to create the package in which we will register our routes. Create a new package `routes`:
 ```
 $ mkdir routes

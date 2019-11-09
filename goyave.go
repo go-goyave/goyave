@@ -23,6 +23,7 @@ var sigChannel chan os.Signal
 var startupHooks []func()
 var ready bool = false
 var mutex = &sync.Mutex{}
+var serverMutex = &sync.Mutex{}
 
 // IsReady returns true if the server has finished initializing and
 // is ready to serve incoming requests.
@@ -90,12 +91,14 @@ func stop(ctx context.Context) error {
 	mutex.Lock()
 	err := server.Shutdown(ctx)
 	database.Close()
+	serverMutex.Lock()
 	server = nil
 	ready = false
 	if redirectServer != nil {
 		redirectServer.Shutdown(ctx)
 		redirectServer = nil
 	}
+	serverMutex.Unlock()
 	mutex.Unlock()
 	return err
 }
@@ -137,7 +140,7 @@ func startTLSRedirectServer() {
 func startServer(router *Router) {
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	protocol := config.GetString("protocol")
-	mutex.Lock()
+	serverMutex.Lock()
 	server = &http.Server{
 		Addr:         getAddress(protocol),
 		WriteTimeout: timeout,
@@ -145,9 +148,10 @@ func startServer(router *Router) {
 		IdleTimeout:  timeout * 2,
 		Handler:      router.muxRouter,
 	}
-	mutex.Unlock()
+	serverMutex.Unlock()
 
 	go func() {
+		serverMutex.Lock()
 		if protocol == "https" {
 			go startTLSRedirectServer()
 			runStartupHooks()
@@ -160,6 +164,7 @@ func startServer(router *Router) {
 				fmt.Println(err)
 			}
 		}
+		serverMutex.Unlock()
 	}()
 
 	registerShutdownHook(func(ctx context.Context) {

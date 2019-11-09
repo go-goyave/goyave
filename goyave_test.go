@@ -3,6 +3,7 @@ package goyave
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -62,23 +63,23 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
 	proc, err := os.FindProcess(os.Getpid())
-	if err != nil {
-		suite.Fail("Couldn't find process PID")
+	if err == nil {
+		c := make(chan bool, 1)
+
+		RegisterStartupHook(func() {
+			suite.True(IsReady())
+			proc.Signal(os.Interrupt)
+			time.Sleep(500 * time.Millisecond)
+			suite.False(IsReady())
+			suite.Nil(server)
+			ClearStartupHooks()
+			c <- true
+		})
+		Start(func(router *Router) {})
+		<-c
+	} else {
+		fmt.Println("WARNING: Couldn't get process PID, skipping SIGINT test")
 	}
-
-	c := make(chan bool, 1)
-
-	RegisterStartupHook(func() {
-		suite.True(IsReady())
-		proc.Signal(os.Interrupt)
-		time.Sleep(500 * time.Millisecond)
-		suite.False(IsReady())
-		suite.Nil(server)
-		ClearStartupHooks()
-		c <- true
-	})
-	Start(func(router *Router) {})
-	<-c
 }
 
 func (suite *GoyaveTestSuite) TestTLSServer() {

@@ -123,3 +123,14 @@ func (r *Response) TemporaryRedirect(url string) {
 	r.empty = false
 	http.Redirect(r.writer, r.httpRequest, url, http.StatusTemporaryRedirect)
 }
+
+// CreateTestResponse create an empty response with the given response writer.
+// This function is aimed at making it easier to unit test Responses.
+//
+//  response := goyave.CreateTestResponse(httptest.NewRecorder())
+func CreateTestResponse(recorder http.ResponseWriter) *Response {
+	return &Response{
+		writer: recorder,
+		empty:  true,
+	}
+}

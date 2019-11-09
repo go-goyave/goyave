@@ -92,6 +92,10 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		netClient := createHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
 		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(308, resp.StatusCode)
@@ -108,6 +112,10 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		netClient := createHTTPClient()
 		resp, err := netClient.Get("https://127.0.0.1:1236/hello")
 		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)

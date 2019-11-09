@@ -27,7 +27,10 @@ var mutex = &sync.Mutex{}
 // IsReady returns true if the server has finished initializing and
 // is ready to serve incoming requests.
 func IsReady() bool {
-	return ready
+	mutex.Lock()
+	r := ready
+	mutex.Unlock()
+	return r
 }
 
 // RegisterStartupHook to execute some code once the server is ready and running.
@@ -78,7 +81,9 @@ func Start(routeRegistrer func(*Router)) {
 // separately notify such long-lived connections of shutdown and wait
 // for them to close, if desired.
 func Stop(ctx context.Context) {
+	mutex.Lock()
 	sigChannel <- os.Interrupt
+	mutex.Unlock()
 }
 
 func stop(ctx context.Context) error {

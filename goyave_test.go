@@ -1,7 +1,6 @@
 package goyave
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
@@ -46,9 +45,7 @@ func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback f
 
 	RegisterStartupHook(func() {
 		callback()
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		Stop(ctx)
+		Stop()
 		ClearStartupHooks()
 		c <- true
 	})

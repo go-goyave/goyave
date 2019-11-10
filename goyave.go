@@ -81,7 +81,7 @@ func Start(routeRegistrer func(*Router)) {
 // connections such as WebSockets. The caller of Stop should
 // separately notify such long-lived connections of shutdown and wait
 // for them to close, if desired.
-func Stop(ctx context.Context) {
+func Stop() {
 	mutex.Lock()
 	sigChannel <- os.Interrupt
 	mutex.Unlock()

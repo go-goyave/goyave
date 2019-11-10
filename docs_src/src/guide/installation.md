@@ -43,7 +43,7 @@ func main() {
 ```
 
 ::: tip
-`goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background.
+`goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background. See the [multi-services](./advanced/multi-services) section for more details.
 :::
 
 Now we need to create the package in which we will register our routes. Create a new package `routes`:

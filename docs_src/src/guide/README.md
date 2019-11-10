@@ -17,6 +17,10 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 ## Roadmap
 
+<p style="text-align: center">
+    <img src="/undraw_to_do_list_a49b.svg" height="150" alt="Roadmap">
+</p>
+
 ### Next release
 
 - Integrated testing functions

@@ -49,9 +49,9 @@ function getGuideSidebar () {
                 'installation',
                 'upgrade-guide',
                 'configuration',
-                'contribution-guide',
                 'architecture-concepts',
                 'deployment',
+                'contribution-guide',
             ]
         },
         {
@@ -76,6 +76,7 @@ function getGuideSidebar () {
                 'advanced/localization',
                 'advanced/testing',
                 'advanced/plugins',
+                'advanced/multi-services',
             ]
         }
     ]

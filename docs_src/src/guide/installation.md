@@ -9,6 +9,10 @@ This guide will walk you through the installation process. The rest of the guide
 
 ## Template project
 
+<p style="text-align: center">
+    <img src="/undraw_in_progress_ql66.svg" height="150" alt="In progress">
+</p>
+
 ::: warning
 The template project has not been implemented yet.
 :::

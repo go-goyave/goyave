@@ -22,6 +22,8 @@ Finally, the framework starts listening for incoming HTTP requests and serves th
 
 ### Requests
 
+When an incoming request is received, it's first passed through the Gorilla Mux router.
+
 ## Directory structure
 
 ## Database

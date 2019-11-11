@@ -5,19 +5,40 @@
     flex-basis 100% !important
     max-width 100% !important
     flex-direction row
-    align-items center
-    justify-content space-evenly
-    margin 2rem 1.5rem
+    flex-wrap wrap
     text-align center
-
-
-#feature-clean, #feature-powerful
-    flex-direction row
+    align-items center
+    justify-content center
+    margin 2rem 1.5rem
     img
-        margin-right 2.5rem
+        min-width 275px
 
-#feature-fast
-    flex-direction row-reverse
+    @media screen and (min-width 720px)
+        flex-wrap nowrap
+        justify-content left
+        text-align left
+        img
+            margin-right 2.5rem
 
-    img
-        margin-left 2.5rem
+.img-row
+    display flex
+    flex-wrap wrap
+    justify-content center
+    align-items center
+    margin-top 1.5rem
+    &.left
+        flex-direction row
+    &.right
+        flex-direction row-reverse
+    .row-content
+        flex-grow 1
+
+    @media screen and (min-width 960px)
+        flex-wrap nowrap
+        justify-content left
+        &.left
+            & > :first-child
+                margin-right 2.5rem
+        &.right
+            & > :first-child
+                margin-left 2.5rem

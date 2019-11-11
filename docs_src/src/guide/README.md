@@ -17,15 +17,13 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 ## Roadmap
 
-<p style="text-align: center">
-    <img src="/undraw_to_do_list_a49b.svg" height="150" alt="Roadmap">
-</p>
-
+::: img-row <img src="/undraw_to_do_list_a49b.svg" height="150" alt="Roadmap"/>
 ### Next release
 
 - Integrated testing functions
 - Improve threading
 - Maintenance mode (always return HTTP 503 when enabled)
+:::
 
 ### Ideas for future releases
 

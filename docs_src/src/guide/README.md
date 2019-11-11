@@ -23,6 +23,7 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Integrated testing functions
 - Improve threading
 - Maintenance mode (always return HTTP 503 when enabled)
+- String trimming middleware
 :::
 
 ### Ideas for future releases

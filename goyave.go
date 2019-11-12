@@ -83,23 +83,27 @@ func Start(routeRegistrer func(*Router)) {
 // separately notify such long-lived connections of shutdown and wait
 // for them to close, if desired.
 func Stop() {
-	mutex.Lock()
-	sigChannel <- syscall.SIGINT
-	mutex.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	stop(ctx)
+	sigChannel <- syscall.SIGINT // Clear shutdown hook
 }
 
 func stop(ctx context.Context) error {
+	var err error
 	mutex.Lock()
-	err := server.Shutdown(ctx)
-	database.Close()
-	serverMutex.Lock()
-	server = nil
-	ready = false
-	if redirectServer != nil {
-		redirectServer.Shutdown(ctx)
-		redirectServer = nil
+	if server != nil {
+		err = server.Shutdown(ctx)
+		serverMutex.Lock()
+		database.Close()
+		server = nil
+		ready = false
+		if redirectServer != nil {
+			redirectServer.Shutdown(ctx)
+			redirectServer = nil
+		}
+		serverMutex.Unlock()
 	}
-	serverMutex.Unlock()
 	mutex.Unlock()
 	return err
 }
@@ -129,13 +133,14 @@ func startTLSRedirectServer() {
 			http.Redirect(w, r, "https://"+httpsAddress+r.RequestURI, http.StatusPermanentRedirect)
 		}),
 	}
-	mutex.Unlock()
 
 	go func() {
 		if err := redirectServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Println(err)
 		}
 	}()
+
+	mutex.Unlock()
 }
 
 func startServer(router *Router) {
@@ -149,10 +154,8 @@ func startServer(router *Router) {
 		IdleTimeout:  timeout * 2,
 		Handler:      router.muxRouter,
 	}
-	serverMutex.Unlock()
 
 	go func() {
-		serverMutex.Lock()
 		if protocol == "https" {
 			go startTLSRedirectServer()
 			runStartupHooks()

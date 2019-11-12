@@ -43,12 +43,15 @@ func (suite *GoyaveTestSuite) SetupSuite() {
 }
 
 func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback func()) {
+	c := make(chan bool, 1)
 	RegisterStartupHook(func() {
 		callback()
 		Stop()
 		ClearStartupHooks()
+		c <- true
 	})
 	Start(routeRegistrer)
+	<-c
 }
 
 func (suite *GoyaveTestSuite) TestGetAddress() {
@@ -57,22 +60,25 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
-	if runtime.GOOS == "windows" {
-		fmt.Println("Testing on a windows machine. Cannot test proc signals")
-		return
-	}
-
 	proc, err := os.FindProcess(os.Getpid())
 	if err == nil {
+		c := make(chan bool, 1)
 		RegisterStartupHook(func() {
 			suite.True(IsReady())
-			proc.Signal(syscall.SIGTERM)
-			time.Sleep(500 * time.Millisecond)
+			if runtime.GOOS == "windows" {
+				fmt.Println("Testing on a windows machine. Cannot test proc signals")
+				Stop()
+			} else {
+				proc.Signal(syscall.SIGTERM)
+				time.Sleep(500 * time.Millisecond)
+			}
 			suite.False(IsReady())
 			suite.Nil(server)
 			ClearStartupHooks()
+			c <- true
 		})
 		Start(func(router *Router) {})
+		<-c
 	} else {
 		fmt.Println("WARNING: Couldn't get process PID, skipping SIGINT test")
 	}

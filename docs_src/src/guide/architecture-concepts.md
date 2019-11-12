@@ -1,5 +1,7 @@
 # Architecture Concepts
 
+[[toc]]
+
 ## Introduction
 
 Understanding your development tools and knowing what happens in the background is crucial. Mastering your tools and environment incredibily decreases the risk of errors, the ease of debugging and helps making your code work in harmony with the framework. The goal of this section is to give you an overview of the general functioning and design of the framework, to make you more comfortable and confident using it.
@@ -40,7 +42,7 @@ Then, if enabled, the automatic migrations are run, thus creating the [database]
 
 That is only now that [routes](./basics/routing) are registered using the route registrer provided to the `Start()` function. That means that at this registrer has already access to all the configuration and language features, which can be handy if you want to generate different routes based on the languages your application supports.
 
-Finally, the framework starts listening for incoming HTTP requests and serves them. The server also listens for interruption signals so it can finish serving ongoing requests before shutting down gracefully. In the next section, we will get into more details about the lifecycle of each request.
+Finally, the framework starts listening for incoming HTTP requests and serves them. The server also listens for interruption and termination signals so it can finish serving ongoing requests before shutting down gracefully. In the next section, we will get into more details about the lifecycle of each request.
 
 ### Requests
 

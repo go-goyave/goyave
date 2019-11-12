@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/System-Glitch/goyave/config"
@@ -83,7 +84,7 @@ func Start(routeRegistrer func(*Router)) {
 // for them to close, if desired.
 func Stop() {
 	mutex.Lock()
-	sigChannel <- os.Interrupt
+	sigChannel <- syscall.SIGINT
 	mutex.Unlock()
 }
 
@@ -187,10 +188,10 @@ func runStartupHooks() {
 func registerShutdownHook(hook func(context.Context)) {
 	mutex.Lock()
 	sigChannel = make(chan os.Signal, 1)
-	signal.Notify(sigChannel, os.Interrupt)
+	signal.Notify(sigChannel, syscall.SIGINT, syscall.SIGTERM)
 	mutex.Unlock()
 
-	<-sigChannel // Block until SIGINT received
+	<-sigChannel // Block until SIGINT or SIGTERM received
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

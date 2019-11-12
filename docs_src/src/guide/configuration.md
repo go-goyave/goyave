@@ -1,5 +1,7 @@
 # Configuration
 
+[[toc]]
+
 ## Introduction
 
 The Goyave framework lets you configure its core and your application.

@@ -75,7 +75,7 @@ func LoadAllAvailableLanguages() {
 
 		for _, f := range files {
 			if f.IsDir() {
-				Load(f.Name(), langDirectory)
+				load(f.Name(), langDirectory+sep+f.Name())
 			}
 		}
 	}

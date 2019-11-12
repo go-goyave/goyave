@@ -46,13 +46,30 @@ When an incoming request is received, it's first passed through the [Gorilla Mux
 
 Before executing the handler, the middlewares are executed. The framework features a few core middlewares, which are executed **first** and for all routes and all requests.
 
-1. The **recovery** middleware is executed. This middleware ensures that any unrecovered panic is handled. Instead of never returning a response in case of a panic, the server will then return an HTTP 500 Error. If debugging is enabled if the configuration, the response will contain the error message and the stacktrace will be printed in the console. It's important to keep this behavior in mind when handling errors in your handlers.
-2. The request is **parsed** by a second middleware. This middleware will automatically detect the request's body format based on the headers and attempt to parse it. If the request can't be parsed, the request's data is simply set to `nil`. This middleware supports JSON requests.
-3. The `Accept-Language` header is checked. If it's there, its value is parsed and the request's language attribute is set accordingly so localization is easy in the following handlers. If the header is missing, invalid, or asks for an unsupported language, the framework falls back to the default language defined in the configuration. Learn more [here](./advanced/localization).
-4. Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middlewares are already available in the framework. Learn more in the [middlewares](./basics/middlewares) section. At this moment, the request is not validated yet, so application middlewares can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
-5. The data is validated last. The validation middleware immediately passes if no rules have been defined for the current route, else, it check if the data parsing was successful. An automatic response is sent if that is not the case. The data is passed through the validator, which converts the data types and validates it. The request is stopped if the validation is not successful, and the validation errors are sent as a response. Be careful when working with unvalidated requests (which you should never do!) because if the request's parsing fails, `request.Data` will be `nil`. 
-6. Finally, if the request has not been stopped by a middleware, the controller handler is executed.
-7. If the controller handler didn't write anything as a response, an empty response with the HTTP status code 204 "No Content" is automatically sent, so you don't have to do it yourself.
+#### 1. Recovery
+
+The **recovery** middleware is executed. This middleware ensures that any unrecovered panic is handled. Instead of never returning a response in case of a panic, the server will then return an HTTP 500 Error. If debugging is enabled if the configuration, the response will contain the error message and the stacktrace will be printed in the console. It's important to keep this behavior in mind when handling errors in your handlers.
+
+#### 2. Parsing
+
+The request is **parsed** by a second middleware. This middleware will automatically detect the request's body format based on the headers and attempt to parse it. If the request can't be parsed, the request's data is simply set to `nil`. This middleware supports JSON requests.
+
+#### 3. Language
+
+The `Accept-Language` header is checked. If it's there, its value is parsed and the request's language attribute is set accordingly so localization is easy in the following handlers. If the header is missing, invalid, or asks for an unsupported language, the framework falls back to the default language defined in the configuration. Learn more [here](./advanced/localization).
+
+#### 4. Application middlewares
+
+Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middlewares are already available in the framework. Learn more in the [middlewares](./basics/middlewares) section. At this moment, the request is not validated yet, so application middlewares can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
+
+#### 5. Validation
+
+The data is validated last. The validation middleware immediately passes if no rules have been defined for the current route, else, it check if the data parsing was successful. An automatic response is sent if that is not the case. The data is passed through the validator, which converts the data types and validates it. The request is stopped if the validation is not successful, and the validation errors are sent as a response. Be careful when working with unvalidated requests (which you should never do!) because if the request's parsing fails, `request.Data` will be `nil`.
+
+#### 6. Controller handler
+
+Finally, if the request has not been stopped by a middleware, the controller handler is executed.
+If the controller handler didn't write anything as a response, an empty response with the HTTP status code 204 "No Content" is automatically sent, so you don't have to do it yourself.
 
 ## Directory structure
 

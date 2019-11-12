@@ -20,7 +20,7 @@ The template project has not been implemented yet.
 ## From scratch
 
 ::: warning
-Installing your project from scratch is not recommended as you will likely not use the same directory structure as the template project. Respecting the standard directory structure is important and helps keeping a consistent environment across the Goyave applications.
+Installing your project from scratch is not recommended as you will likely not use the same directory structure as the template project. Respecting the standard [directory structure](./architecture-concepts#directory-structure) is important and helps keeping a consistent environment across the Goyave applications.
 :::
 
 If you prefer to setup your project from scratch, for example if you don't plan on using some of the framework's features or if you want to use a different directory structure, you can!
@@ -32,7 +32,7 @@ $ go mod init my-project
 $ go get -u github.com/System-Glitch/goyave
 ```
 
-Now that your project directory is set up and the dependencies are installed, let's start with the program entry point, `main.go`:
+Now that your project directory is set up and the dependencies are installed, let's start with the program entry point, `kernel.go`:
 ``` go
 package main
 
@@ -52,10 +52,11 @@ func main() {
 
 Now we need to create the package in which we will register our routes. Create a new package `routes`:
 ```
-$ mkdir routes
+$ mkdir http
+$ mkdir http/routes
 ```
 
-Create `routes/routes.go`:
+Create `http/routes/routes.go`:
 ``` go
 package routes
 
@@ -75,7 +76,7 @@ func hello(response *goyave.Response, request *goyave.Request) {
 Here we registered a very simple route displaying "Hi!". Learn more about routing [here](./basics/routing).
 
 ::: tip
-Your routes definitions should be separated from the handler functions. Handlers should be defined in a `controllers` directory.
+Your routes definitions should be separated from the handler functions. Handlers should be defined in a `http/controllers` directory.
 :::
 
 Run your server and request your route:

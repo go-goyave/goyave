@@ -24,6 +24,8 @@ This section will briefly explain the technical words used in the following sect
 
 **Application**: A program using the Goyave framework as a library.
 
+**Model**: A structure reflecting a database table structure. An instance of a model is a single database record.
+
 ## Lifecycle
 
 ### Server
@@ -73,4 +75,88 @@ If the controller handler didn't write anything as a response, an empty response
 
 ## Directory structure
 
+Goyave follows the principle of "**Convention is better than configuration**". That means that the framework will attempt to automatically get the resources it needs from predefined directories.
+The typical and recommended directory structure for Goyave applications is as follows:
+
+:::vue
+.
+├── database
+│   └── models
+│       └── *...*
+├── http
+│   ├── controllers
+│   │   └── *...*
+│   ├── middlewares
+│   │   └── *...*
+│   ├── requests
+│   │   ├── placeholders.go (*optional*)
+│   │   ├── validation.go (*optional*)
+│   │   └── *...*
+│   └── routes
+│       └── routes.go
+│
+├── resources
+│   ├── lang
+│   │   └── en-US (*language name*)
+│   │       ├── fields.json (*optional*)
+│   │       ├── locale.json (*optional*)
+│   │       └── rules.json (*optional*)
+│   └── img (*optional*)
+│       └── *...*
+│ 
+├── .gitignore
+├── config.json
+├── go.mod
+└── kernel.go
+:::
+
+### Database directory
+
+The `database` directory stores the models. Each model should have its own file in the `models` package. This directory can also contain database-related code such as repositories, if you want to use this pattern.
+
+### HTTP directory
+
+The `http` directory contains all the HTTP-related code. This is where most of your code will be written.
+
+#### HTTP controllers
+
+The `http/controllers` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controllers/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project. Learn more [here](./basics/controllers).
+
+#### HTTP middlewares
+
+The `http/middlewares` directory contains the application middlewares. Each middleware should have its own file. Learn more [here](./basics/middlewares).
+    
+#### HTTP requests
+
+The `http/requests` directory contains the requests validation rule sets. You should have one file per feature, regrouping all requests handled by the same controller. You can also create one package per feature, just like controllers, if you so desire.
+
+This directory can also contain a `placeholders.go` file, which will define validation rule messages placeholders. Learn more [here](./basics/validation#placeholders).
+
+This directory can also contain a `validation.go` file, which will define custom validation rules. Learn more [here](./basics/validation).
+
+#### HTTP Routes
+
+The `http/routes` directory contains the routes définitions. By default, all routes are registered in the `routes.go` file, but for bigger projects, split the route definitions into multiple files.
+
+### Resources directory
+
+The `resources` directory is meant to store static resources such as images, HTML documents and language files. This directory shouldn't be used as a storage for dynamic content such as user profile pictures.
+
+#### Language resources directory
+
+The `resources/lang` directory contains your application's supported languages and translations. Each language has its own directory and should be named by an [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) language code. You can also append a variant to your languages: `en-US`, `en-UK`, `fr-FR`, `fr-CA`, ... **Case is important.**
+
+Each language directory contains three files. Each file is **optional**.
+- `fields.json`: field names translations and field-specific rule messages.
+- `locale.json`: all other language lines.
+- `rules.json`: validation rules messages.
+
+Learn more about localization [here](./advanced/localization).
+
 ## Database
+
+Database connections are managed by the framework and are long-lived. When the server shuts down, the database connections are closed automatically. So you don't have to worry about creating, closing or refreshing database connections in your application.
+
+If automatic migrations are enabled, all registered models at the time of startup will be auto-migrated. They must be registered before the server starts, ideally from an `init()` function next to each model definition.
+
+Learn more in the [database](./basics/database) section.

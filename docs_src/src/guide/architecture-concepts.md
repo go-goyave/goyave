@@ -64,7 +64,7 @@ The `Accept-Language` header is checked. If it's there, its value is parsed and 
 
 #### 4. Application middlewares
 
-Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middleware are already available in the framework. Learn more in the [middlewares](./basics/middleware) section. At this moment, the request is not validated yet, so application middleware can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
+Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middleware are already available in the framework. Learn more in the [middlewares](./basics/middleware) section. At this stage of the lifecycle, the request is not validated yet, so application middleware can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
 
 #### 5. Validation
 

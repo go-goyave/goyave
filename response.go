@@ -66,7 +66,9 @@ func (r *Response) writeFile(file string, disposition string) {
 
 // File write a file as an inline element.
 // Automatically detects the file MIME type and sets the "Content-Type" header accordingly.
-// It is advised to call "helpers.FileExists()" before sending a file to avoid a panic and return a 404 error.
+// It is advised to call "filesystem.FileExists()" before sending a file to avoid a panic and return a 404 error
+// if the file doesn't exist.
+// The given path can be relative or absolute.
 //
 // If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
 func (r *Response) File(file string) {
@@ -75,7 +77,9 @@ func (r *Response) File(file string) {
 
 // Download write a file as an attachment element.
 // Automatically detects the file MIME type and sets the "Content-Type" header accordingly.
-// It is advised to call "helpers.FileExists()" before sending a file to avoid a panic and return a 404 error.
+// It is advised to call "filesystem.FileExists()" before sending a file to avoid a panic and return a 404 error
+// if the file doesn't exist.
+// The given path can be relative or absolute.
 //
 // The "fileName" parameter defines the name the client will see. In other words, it sets the header "Content-Disposition" to
 // "attachment; filename="${fileName}""
@@ -85,8 +89,9 @@ func (r *Response) Download(file string, fileName string) {
 	r.writeFile(file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }
 
-// Error log the error and return it as error code 500.
-// If debugging is enabled in the config, the error is also written in the response.
+// Error print the error in the console and return it with an error code 500.
+// If debugging is enabled in the config, the error is also written in the response
+// and the stacktrace is printed in the console.
 func (r *Response) Error(err interface{}) {
 	r.empty = false
 	dbg := config.GetBool("debug")
@@ -105,7 +110,7 @@ func (r *Response) Error(err interface{}) {
 	}
 }
 
-// Cookie adds a Set-Cookie header to the response.
+// Cookie add a Set-Cookie header to the response.
 // The provided cookie must have a valid Name. Invalid cookies may be
 // silently dropped.
 func (r *Response) Cookie(cookie *http.Cookie) {
@@ -127,7 +132,11 @@ func (r *Response) TemporaryRedirect(url string) {
 // CreateTestResponse create an empty response with the given response writer.
 // This function is aimed at making it easier to unit test Responses.
 //
-//  response := goyave.CreateTestResponse(httptest.NewRecorder())
+//  writer := httptest.NewRecorder()
+//  response := goyave.CreateTestResponse(writer)
+//  response.Status(http.StatusNoContent)
+//  result := writer.Result()
+//  fmt.Println(result.StatusCode) // 204
 func CreateTestResponse(recorder http.ResponseWriter) *Response {
 	return &Response{
 		writer: recorder,

@@ -1,4 +1,6 @@
-![goyave](resources/img/logo/goyave_text.png)
+<p align="center">
+    <img src="resources/img/logo/goyave_text.png" alt="Goyave Logo" width="550"/>
+</p>
 
 <p align="center">
     <a href="https://travis-ci.com/System-Glitch/goyave"><img src="https://api.travis-ci.com/System-Glitch/goyave.svg" alt="Build Status"/></a>

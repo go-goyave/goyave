@@ -18,11 +18,11 @@ This section will briefly explain the technical words used in the following sect
 
 **Router**: The root-level handler responsible for the execution of the correct controller handler.
 
-**Route**: Also called "endpoint", an URL definition linked to a controller handler. If a request matches the definition, the router will execute the associated controller handler.
+**Route**: A URI definition linked to a controller handler. If a request matches the definition, the router will execute the associated controller handler.
 
 **Controller**: A source file implementing the business logic linked to a specific resource and associated routes.
 
-**Middleware**: A handler executed before controller handlers. Middlewares can intercept the request, modify its data, and send a response before the controller handler is reached.
+**Middleware**: A handler executed before controller handlers. Middleware can intercept the request, modify its data, and send a response before the controller handler is reached.
 
 **Application**: A program using the Goyave framework as a library.
 
@@ -46,9 +46,9 @@ Finally, the framework starts listening for incoming HTTP requests and serves th
 
 ### Requests
 
-When an incoming request is received, it's first passed through the [Gorilla Mux](https://github.com/gorilla/mux) router so your server knows which handler to execute when a user requests a specific URL. Then, the framework's internal handler creates a `goyave.Request` object and a `goyave.Response` object from the raw request. These two objects are fundamental features of the framework as you are going to use them to retrieve the requests' data and write your responses.
+When an incoming request is received, it's first passed through the [Gorilla Mux](https://github.com/gorilla/mux) router so your server knows which handler to execute when a user requests a specific URI. Then, the framework's internal handler creates a `goyave.Request` object and a `goyave.Response` object from the raw request. These two objects are fundamental features of the framework as you are going to use them to retrieve the requests' data and write your responses.
 
-Before executing the handler, the middlewares are executed. The framework features a few core middlewares, which are executed **first** and for all routes and all requests.
+Before executing the handler, the middleware are executed. The framework features a few core middleware, which are executed **first** and for all routes and all requests.
 
 #### 1. Recovery
 
@@ -64,7 +64,7 @@ The `Accept-Language` header is checked. If it's there, its value is parsed and 
 
 #### 4. Application middlewares
 
-Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middlewares are already available in the framework. Learn more in the [middlewares](./basics/middlewares) section. At this moment, the request is not validated yet, so application middlewares can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
+Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middleware are already available in the framework. Learn more in the [middlewares](./basics/middleware) section. At this moment, the request is not validated yet, so application middleware can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
 
 #### 5. Validation
 
@@ -88,7 +88,7 @@ The typical and recommended directory structure for Goyave applications is as fo
 ├── http
 │   ├── controllers
 │   │   └── *...*
-│   ├── middlewares
+│   ├── middleware
 │   │   └── *...*
 │   ├── requests
 │   │   ├── placeholders.go (*optional*)
@@ -124,9 +124,9 @@ The `http` directory contains all the HTTP-related code. This is where most of y
 
 The `http/controllers` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controllers/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project. Learn more [here](./basics/controllers).
 
-#### HTTP middlewares
+#### HTTP middleware
 
-The `http/middlewares` directory contains the application middlewares. Each middleware should have its own file. Learn more [here](./basics/middlewares).
+The `http/middleware` directory contains the application middleware. Each middleware should have its own file. Learn more [here](./basics/middleware).
     
 #### HTTP requests
 

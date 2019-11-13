@@ -42,22 +42,22 @@ func (suite *RouterTestSuite) SetupSuite() {
 func (suite *RouterTestSuite) TestNewRouter() {
 	router := newRouter()
 	suite.NotNil(router)
-	suite.Equal(3, len(router.middlewares))
+	suite.Equal(3, len(router.middleware))
 }
 
 func (suite *RouterTestSuite) TestRouterMiddleware() {
 	router := newRouter()
 	router.Middleware(suite.routerTestMiddleware)
-	suite.Equal(4, len(router.middlewares))
+	suite.Equal(4, len(router.middleware))
 }
 
 func (suite *RouterTestSuite) TestSubRouter() {
 	router := newRouter()
 	router.Middleware(suite.routerTestMiddleware)
-	suite.Equal(4, len(router.middlewares))
+	suite.Equal(4, len(router.middleware))
 
 	subrouter := router.Subrouter("/sub")
-	suite.Equal(4, len(subrouter.middlewares))
+	suite.Equal(4, len(subrouter.middleware))
 }
 
 func (suite *RouterTestSuite) TestCleanStaticPath() {
@@ -116,7 +116,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 }
 
 func (suite *RouterTestSuite) TestRequestHandler() {
-	rawRequest := httptest.NewRequest("GET", "/endpoint", nil)
+	rawRequest := httptest.NewRequest("GET", "/uri", nil)
 	writer := httptest.NewRecorder()
 	router := newRouter()
 	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {

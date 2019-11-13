@@ -35,4 +35,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Server shutdown hooks (to gracefully close websocket connections for example)
 - Queues/Scheduler system
 - Logging
+- Custom HTTP error handlers (for custom 404/500/... messages)
+- Named routes, mutliple methods, CORS
 - And more!

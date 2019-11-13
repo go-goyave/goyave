@@ -74,7 +74,7 @@ function getGuideSidebar () {
             collapsable: true,
             children: [
                 'basics/routing',
-                'basics/middlewares',
+                'basics/middleware',
                 'basics/requests',
                 'basics/controllers',
                 'basics/database',

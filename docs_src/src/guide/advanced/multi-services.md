@@ -2,7 +2,7 @@
 
 Sometimes you need to run several services in the same executable. For example if you are hosting a websocket server on top of your web API. Goyave can be run in a goroutine and stopped on-demand.
 
-All functions are features below require the `goyave` package to be imported.
+All functions below are features that require the `goyave` package to be imported.
 
 ``` go
 import "github.com/System-Glitch/goyave"

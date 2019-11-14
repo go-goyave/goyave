@@ -158,6 +158,17 @@ func (suite *ResponseTestSuite) TestResponseCookie() {
 	suite.Equal("test", cookies[0].Value)
 }
 
+func (suite *ResponseTestSuite) TestResponseWrite() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := createTestResponse(rawRequest)
+	response.Write([]byte("byte array"))
+	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("byte array", string(body))
+	suite.False(response.empty)
+}
+
 func TestResponseTestSuite(t *testing.T) {
 	suite.Run(t, new(ResponseTestSuite))
 }

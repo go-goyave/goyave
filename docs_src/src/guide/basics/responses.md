@@ -68,6 +68,19 @@ Write a string as a response.
 response.String(http.StatusOK, "Hello there!")
 ```
 
+#### Response.Write
+
+Write the data as a response. Can be used to write in-memory files. This method can be called successively.
+
+| Parameters    | Return |
+|---------------|--------|
+| `data []byte` | `void` |
+
+**Example:**
+``` go
+response.Write([]byte("Hello there!"))
+```
+
 #### Response.File
 
 Write a file as an inline element.

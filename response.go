@@ -89,6 +89,12 @@ func (r *Response) Download(file string, fileName string) {
 	r.writeFile(file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }
 
+// Write writes the data as a response.
+func (r *Response) Write(data []byte) {
+	r.empty = false
+	r.writer.Write(data)
+}
+
 // Error print the error in the console and return it with an error code 500.
 // If debugging is enabled in the config, the error is also written in the response
 // and the stacktrace is printed in the console.

@@ -77,8 +77,8 @@ function getGuideSidebar () {
                 'basics/middleware',
                 'basics/requests',
                 'basics/controllers',
-                'basics/database',
                 'basics/responses',
+                'basics/database',
                 'basics/validation',
             ]
         },

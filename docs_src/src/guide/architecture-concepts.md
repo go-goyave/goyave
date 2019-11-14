@@ -155,6 +155,10 @@ Each language directory contains three files. Each file is **optional**.
 
 Learn more about localization [here](./advanced/localization).
 
+### Custom directories
+
+You may add custom directories for your custom utilities, as they don't belong to any of the above directories. For example, if you develop a service manipulating images, the image processing code shouldn't be written in controller handlers, they are not part of the business logic. You would then create a `processing` directory, containing your code in `images.go` for example.
+
 ## Database
 
 Database connections are managed by the framework and are long-lived. When the server shuts down, the database connections are closed automatically. So you don't have to worry about creating, closing or refreshing database connections in your application.

@@ -45,13 +45,10 @@ func parseRequestMiddleware(next Handler) Handler {
 			data = make(map[string]interface{})
 			err := json.NewDecoder(request.httpRequest.Body).Decode(&data)
 			if err != nil {
-				data = make(map[string]interface{})
+				data = nil
 			}
 		} else {
 			data = generateFlatMap(request.httpRequest)
-			if data == nil {
-				data = make(map[string]interface{})
-			}
 		}
 		request.Data = data
 		next(response, request)

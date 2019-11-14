@@ -156,6 +156,11 @@ func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
 	})
+
+	rawRequest = httptest.NewRequest("GET", "/test-route?%9", nil)
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+		suite.Nil(r.Data)
+	})
 }
 
 func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {

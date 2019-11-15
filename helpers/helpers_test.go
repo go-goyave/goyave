@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,4 +56,37 @@ func TestSliceEqual(t *testing.T) {
 	assert.False(t, SliceEqual([]string{"one", "two", "three"}, []string{"one", "three", "two"}))
 	assert.False(t, SliceEqual([]string{"one", "two", "three"}, []string{"one"}))
 	assert.False(t, SliceEqual([]string{"one", "two", "three"}, []int{1, 2, 3}))
+}
+
+func TestParseMultiValuesHeader(t *testing.T) {
+	expected := []HeaderValue{
+		HeaderValue{Value: "text/html", Priority: 0.8},
+		HeaderValue{Value: "text/*", Priority: 0.8},
+		HeaderValue{Value: "*/*", Priority: 0.8},
+	}
+	result := ParseMultiValuesHeader("text/html;q=0.8,text/*;q=0.8,*/*;q=0.8")
+	assert.True(t, SliceEqual(expected, result))
+
+	result = ParseMultiValuesHeader("*/*;q=0.8,text/*;q=0.8,text/html;q=0.8")
+	assert.True(t, SliceEqual(expected, result))
+
+	expected = []HeaderValue{
+		HeaderValue{Value: "text/html", Priority: 1},
+		HeaderValue{Value: "*/*", Priority: 0.7},
+		HeaderValue{Value: "text/*", Priority: 0.5},
+	}
+	result = ParseMultiValuesHeader("text/html,text/*;q=0.5,*/*;q=0.7")
+	assert.True(t, SliceEqual(expected, result))
+
+	expected = []HeaderValue{
+		HeaderValue{Value: "fr", Priority: 1},
+		HeaderValue{Value: "fr-FR", Priority: 0.8},
+		HeaderValue{Value: "en-US", Priority: 0.5},
+		HeaderValue{Value: "en-*", Priority: 0.3},
+		HeaderValue{Value: "en", Priority: 0.3},
+		HeaderValue{Value: "*", Priority: 0.3},
+	}
+	result = ParseMultiValuesHeader("fr,fr-FR;q=0.8,en-US;q=0.5,*;q=0.3,en-*;q=0.3,en;q=0.3")
+	fmt.Println(result)
+	assert.True(t, SliceEqual(expected, result))
 }

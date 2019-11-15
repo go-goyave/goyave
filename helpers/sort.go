@@ -13,9 +13,9 @@ func (s byPriority) Swap(i, j int) {
 func (s byPriority) Less(i, j int) bool { // TODO sort by specificity
 	if s[j].Priority == s[i].Priority {
 		return specificity(s[j]) < specificity(s[i])
-	} else {
-		return s[j].Priority < s[i].Priority
 	}
+
+	return s[j].Priority < s[i].Priority
 }
 
 func specificity(value HeaderValue) int {

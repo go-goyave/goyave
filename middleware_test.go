@@ -179,7 +179,7 @@ func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]")) // Missing closing braces
 	rawRequest.Header.Set("Content-Type", "application/json")
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
-		suite.Equal(0, len(r.Data))
+		suite.Nil(r.Data)
 	})
 }
 

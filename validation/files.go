@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/System-Glitch/goyave/helpers"
@@ -50,5 +51,70 @@ func validateExtension(field string, value interface{}, parameters []string, for
 		}
 		return true
 	}
+	return false
+}
+
+func validateCount(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("count", parameters, 1)
+	files, ok := value.([]filesystem.File)
+	size, err := strconv.Atoi(parameters[0])
+	if err != nil {
+		panic(err)
+	}
+
+	if ok {
+		return len(files) == size
+	}
+
+	return false
+}
+
+func validateCountMin(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("count_min", parameters, 1)
+	files, ok := value.([]filesystem.File)
+	size, err := strconv.Atoi(parameters[0])
+	if err != nil {
+		panic(err)
+	}
+
+	if ok {
+		return len(files) >= size
+	}
+
+	return false
+}
+
+func validateCountMax(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("count_max", parameters, 1)
+	files, ok := value.([]filesystem.File)
+	size, err := strconv.Atoi(parameters[0])
+	if err != nil {
+		panic(err)
+	}
+
+	if ok {
+		return len(files) <= size
+	}
+
+	return false
+}
+
+func validateCountBetween(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	requireParametersCount("count_between", parameters, 1)
+	files, ok := value.([]filesystem.File)
+	min, errMin := strconv.Atoi(parameters[0])
+	max, errMax := strconv.Atoi(parameters[1])
+	if errMin != nil {
+		panic(errMin)
+	}
+	if errMax != nil {
+		panic(errMax)
+	}
+
+	if ok {
+		length := len(files)
+		return length >= min && length <= max
+	}
+
 	return false
 }

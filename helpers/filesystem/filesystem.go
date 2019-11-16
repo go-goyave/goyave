@@ -27,8 +27,11 @@ func GetFileExtension(file string) string {
 	return file[index+1:]
 }
 
-// GetMimeType get the mime type and size of the given file.
-func GetMimeType(file string) (string, int64) {
+// GetMIMEType get the mime type and size of the given file.
+//
+// If the file cannot be opened, panics. You should check if the
+// file exists, using "filesystem.FileExists()"", before calling this function.
+func GetMIMEType(file string) (string, int64) {
 	f, err := os.Open(file)
 	if err != nil {
 		panic(err)
@@ -72,7 +75,7 @@ func IsDirectory(path string) bool {
 // closed.
 //
 // Returns the actual path to the saved file.
-func Save(file File, path string, name string) string {
+func (file *File) Save(path string, name string) string {
 	name = timestampFileName(name)
 	writer, err := os.OpenFile(path+string(os.PathSeparator)+name, os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {

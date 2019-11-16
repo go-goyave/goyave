@@ -54,7 +54,7 @@ func (r *Response) String(responseCode int, message string) {
 
 func (r *Response) writeFile(file string, disposition string) {
 	r.empty = false
-	mime, size := filesystem.GetMimeType(file)
+	mime, size := filesystem.GetMIMEType(file)
 	r.writer.Header().Set("Content-Disposition", disposition)
 	r.writer.Header().Set("Content-Type", mime)
 	r.writer.Header().Set("Content-Length", strconv.FormatInt(size, 10))

@@ -71,15 +71,15 @@ func TestGetFileExtension(t *testing.T) {
 }
 
 func TestGetMIMEType(t *testing.T) {
-	mime, size := GetMimeType(toAbsolutePath("resources/img/logo/goyave_16.png"))
+	mime, size := GetMIMEType(toAbsolutePath("resources/img/logo/goyave_16.png"))
 	assert.Equal(t, "image/png", mime)
 	assert.Equal(t, int64(716), size)
 
-	mime, size = GetMimeType(toAbsolutePath("config/defaults.json"))
+	mime, size = GetMIMEType(toAbsolutePath("config/defaults.json"))
 	assert.Equal(t, "text/plain; charset=utf-8", mime)
 
 	assert.Panics(t, func() {
-		GetMimeType(toAbsolutePath("doesn't exist"))
+		GetMIMEType(toAbsolutePath("doesn't exist"))
 	})
 }
 
@@ -95,7 +95,7 @@ func TestIsDirectory(t *testing.T) {
 
 func TestSaveDelete(t *testing.T) {
 	file := createTestFiles("resources/img/logo/goyave_16.png")[0]
-	actualName := Save(file, toAbsolutePath("."), "saved.png")
+	actualName := file.Save(toAbsolutePath("."), "saved.png")
 	actualPath := toAbsolutePath(actualName)
 	assert.True(t, FileExists(actualPath))
 
@@ -103,7 +103,7 @@ func TestSaveDelete(t *testing.T) {
 	assert.False(t, FileExists(actualPath))
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
-	actualName = Save(file, toAbsolutePath("."), "saved")
+	actualName = file.Save(toAbsolutePath("."), "saved")
 	actualPath = toAbsolutePath(actualName)
 	assert.Equal(t, -1, strings.Index(actualName, "."))
 	assert.True(t, FileExists(actualPath))

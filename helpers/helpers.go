@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// Contains check if a slice contains a value
+// Contains check if a slice contains a value.
 func Contains(slice interface{}, value interface{}) bool {
 	list := reflect.ValueOf(slice)
 	length := list.Len()
@@ -21,7 +21,7 @@ func Contains(slice interface{}, value interface{}) bool {
 	return false
 }
 
-// SliceEqual check if a slice is the same as another one
+// SliceEqual check if two generic slices are the same.
 func SliceEqual(first interface{}, second interface{}) bool {
 	l1 := reflect.ValueOf(first)
 	l2 := reflect.ValueOf(second)
@@ -38,12 +38,12 @@ func SliceEqual(first interface{}, second interface{}) bool {
 	return true
 }
 
-// ToFloat64 convert a numeric value to float64
+// ToFloat64 convert a numeric value to float64.
 func ToFloat64(value interface{}) (float64, error) {
 	return strconv.ParseFloat(ToString(value), 64)
 }
 
-// ToString convert a value to string
+// ToString convert a value to string.
 func ToString(value interface{}) string {
 	return fmt.Sprintf("%v", value)
 }
@@ -55,9 +55,9 @@ func ToString(value interface{}) string {
 // See: https://developer.mozilla.org/en-US/docs/Glossary/Quality_values
 //
 // For the following header:
-//  "text/html;q=0.8,text/*;q=0.8,*/*;q=0.8"
+//  "text/html,text/*;q=0.5,*/*;q=0.7"
 // then
-//  ["text/html" "text/*" "*/*"]
+//  [{text/html 1} {*/* 0.7} {text/* 0.5}]
 func ParseMultiValuesHeader(header string) []HeaderValue {
 	values := []HeaderValue{}
 	regex := regexp.MustCompile("^q=([01]\\.[0-9]{1,3})$")

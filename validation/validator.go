@@ -122,7 +122,7 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 func validate(data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
 	for fieldName, field := range rules {
-		if !isNullable(field) && data[fieldName] == nil { // TODO document nullable removes field
+		if !isNullable(field) && data[fieldName] == nil {
 			delete(data, fieldName)
 		}
 

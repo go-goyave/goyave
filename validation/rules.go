@@ -249,7 +249,7 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 	return false
 }
 
-func validateBool(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document accepted values and convert
+func validateBool(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	switch {
@@ -267,10 +267,10 @@ func validateBool(field string, value interface{}, parameters []string, form map
 	case kind == "string":
 		v, _ := value.(string)
 		switch v {
-		case "on", "true", "yes":
+		case "1", "on", "true", "yes":
 			form[field] = true
 			return true
-		case "off", "false", "no":
+		case "0", "off", "false", "no":
 			form[field] = false
 			return true
 		}

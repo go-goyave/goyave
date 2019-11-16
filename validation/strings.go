@@ -71,7 +71,7 @@ func validateEndsWith(field string, value interface{}, parameters []string, form
 	return false
 }
 
-func validateIP(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document convert to net.IP
+func validateIP(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	str, ok := value.(string)
 	if ok {
 		ip := net.ParseIP(str)
@@ -98,7 +98,7 @@ func validateIPv6(field string, value interface{}, parameters []string, form map
 	return false
 }
 
-func validateJSON(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to the parsed json type
+func validateJSON(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	str, ok := value.(string)
 	if ok {
 		var data interface{}
@@ -120,9 +120,9 @@ func validateRegex(field string, value interface{}, parameters []string, form ma
 	return false
 }
 
-func validateTimezone(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to *time.Timezone
+func validateTimezone(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	tz, ok := value.(string)
-	if ok {
+	if ok && tz != "Local" {
 		loc, err := time.LoadLocation(tz)
 		if err == nil {
 			form[field] = loc
@@ -132,7 +132,7 @@ func validateTimezone(field string, value interface{}, parameters []string, form
 	return false
 }
 
-func validateURL(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to *url.URL
+func validateURL(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	str, ok := value.(string)
 	if ok {
 		url, err := url.ParseRequestURI(str)
@@ -144,7 +144,7 @@ func validateURL(field string, value interface{}, parameters []string, form map[
 	return false
 }
 
-func validateUUID(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document that it converts field to uuid.UUID
+func validateUUID(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	str, ok := value.(string)
 	if ok {
 		id, err := uuid.Parse(str)

@@ -16,6 +16,7 @@ module.exports = {
         editLinks: true,
         docsDir: 'docs_src/src',
         smoothScroll: true,
+        activeHeaderLinks: false,
         logo: '/goyave_64.png',
         locales: {
             '/': {

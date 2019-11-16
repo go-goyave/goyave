@@ -10,6 +10,8 @@ Incoming requests are validated using **rules set**, which associate rules with 
 
 Validation rules can **alter the raw data**. That means that when you validate a field to be number, if the validation passes, you are ensured that the data you'll be using in your controller handler is a `float64`. Or if you're validating an IP, you get a `net.IP` object.
 
+If a request contains a field with a `nil`/`null` value, and that this field doesn't have the `nullable` rule, the field is **removed** entirely from the request.
+
 Validation is automatic. You just have to define a rules set and assign it to a route. When the validation doesn't pass, the request is stopped and the validation errors messages are sent as a response, using the correct [language](../advanced/localization). The HTTP response code of failed validation is **422 "Unprocessable Entity"**, or **400 "Bad Request"** if the body could not be parsed.
 
 ::: tip
@@ -55,59 +57,363 @@ router.Route("POST", "/product", productController.Store, productRequests.Store)
 
 ::: table
 [Required](#required)
+[Nullable](#nullable)
 [Numeric](#numeric)
 [Integer](#integer)
-[Min](#min)
-[Max](#max)
-[Between](#between)
-[Greater than](#greater_than)
-[Greater than or equal](#greater_than_equal)
-[Lower than](#lower_than)
-[Lower than or equal](#lower_than_equal)
+[Min](#min-value)
+[Max](#max-value)
+[Between](#between-min-max)
+[Greater than](#greater-than-field)
+[Greater than or equal](#greater-than-equal-field)
+[Lower than](#lower-than-field)
+[Lower than or equal](#lower-than-equal-field)
 [String](#string)
 [Array](#array)
 [Distinct](#distinct)
 [Digits](#digits)
-[Regex](#regex)
+[Regex](#regex-pattern)
 [Email](#email)
-[Size](#size)
+[Size](#size-value)
 [Alpha](#alpha)
-[Alpha dash](#alpha_dash)
-[Alpha num](#alpha_num)
-[Starts with](#starts_with)
-[Ends with](#ends_with)
-[In](#in)
-[Not in](#not_in)
-[In array](#in_array)
-[Not in array](#not_in_array)
+[Alpha dash](#alpha-dash)
+[Alpha numeric](#alpha-num)
+[Starts with](#starts-with-value1)
+[Ends with](#ends-with-value1)
+[In](#in-value1-value2)
+[Not in](#not-in-value1-value2)
+[In array](#in-array-field)
+[Not in array](#not-in-array-field)
 [Timezone](#timezone)
 [IP](#ip)
 [IPv4](#ipv4)
 [IPv6](#ipv6)
 [JSON](#json)
 [URL](#url)
-[UUID](#uuid)
+[UUID](#uuid-version)
 [Bool](#bool)
-[Same](#same)
-[Different](#different)
+[Same](#same-field)
+[Different](#different-field)
 [Confirmed](#confirmed)
-[Dile](#file)
-[MIME](#mime)
+[File](#file)
+[MIME](#mime-foo)
 [Image](#image)
-[Extension](#extension)
-[Count](#count)
-[Count min](#count_min)
-[Count max](#count_max)
-[Count between](#count_between)
-[Date](#date)
-[Before](#before)
-[Before equal](#before_equal)
-[After](#after)
-[After equal](#after_equal)
-[Date equals](#date_equals)
-[Date between](#date_between)
-[Nullable](#nullable)
+[Extension](#extension-foo)
+[Count](#count-value)
+[Count min](#count-min-value)
+[Count max](#count-max-value)
+[Count between](#count-between-min-max)
+[Date](#date-format)
+[Before](#before-date)
+[Before or equal](#before-equal-date)
+[After](#after-date)
+[After or equal](#after-equal-date)
+[Date equals](#date-equals-date)
+[Date between](#date-between-date1-date2)
 :::
+
+#### required
+
+The field under validation must be present.
+
+If the field is a string, the string must not be empty. If a field is `null` and has the `nullable` rule, the `required` rules passes. As non-nullable fields are removed if they have a `null` value, the `required` rule doesn't pass if a field is `null` and doesn't have the `nullable` rule.
+
+#### nullable
+
+The field under validation can have a `nil`/`null` value. If this rule is missing from the rules set, the field will be **removed** if it is `null`. This rule is especially useful when working with JSON requests or with primitives that can contain null values.
+
+Be sure to check if your field is not null before using it in your handlers.
+``` go
+// In this example, field is numeric
+if val, exists := request.Data["field"]; exists && val != nil {
+    field, _ := request.Data["field"].(float64)
+}
+```
+
+#### numeric
+
+The field under validation must be numeric. Strings that can be converted to numbers are accepted.
+This rule converts the field to `float64` if it passes.
+
+#### integer
+
+The field under validation must be an integer. Strings that can be converted to an integer are accepted.
+This rule converts the field to `int` if it passes.
+
+#### min:value
+
+Depending on its type, the field under validation must be at least `min`.
+Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
+
+#### max:value
+
+Depending on its type, the field under validation must not be superior to `value`.
+Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
+
+#### between:min,max
+
+Depending on its type, the field under validation must be between `min` and `max`.
+Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
+
+#### greater_than:field
+
+The field under validation must be greater than the given `field`. The two fields must have the same type.
+Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
+
+#### greater_than_equal:field
+
+The field under validation must be greater or equal to the given `field`. The two fields must have the same type.
+Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
+
+#### lower_than:field
+
+The field under validation must be lower than the given `field`. The two fields must have the same type.
+Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
+
+#### lower_than_equal:field
+
+The field under validation must be lower or equal to the given `field`. The two fields must have the same type.
+Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
+
+#### string
+
+The field under validation must be a string.
+
+#### array
+
+The field under validation must be an array. In a handler, the data is get as a `[]interface{}`.
+
+#### distinct
+
+The field under validation must be an array and have distinct values.
+
+#### digits
+
+The field under validation must be a string and contain only digits.
+
+#### regex:pattern
+
+The field under validation must be a string and match the given `pattern`.
+
+#### email
+
+The field under validation must be a string and be an email address.
+
+::: warning
+This rule is not enough to properly validate email addresses. The only way to ensure an email address is valid is by sending a confirmation email.
+:::
+
+#### size:value
+
+Depending on its type, the field under validation must:
+- Strings: have a length of `value` characters.
+- Numerics: be equal to `value`.
+- Arrays: exactly have `value` items.
+- Files: weigth exactly `value` KiB. 
+    - *Note: for this rule only (not for `min`, `max`, etc), the size of the file under validation is **rounded** to the closest KiB.*
+    - When the field is a multi-files upload, the size of **all files** is checked.
+
+#### alpha
+
+The field under validation must be a string and be entirely alphabetic characters.
+
+#### alpha_dash
+
+The field under validation must be a string and be entirely alphabetic-numeric characters, dashes or underscores.
+
+#### alpha_num
+
+The field under validation must be a string and be entirely alphabetic-numeric characters.
+
+#### starts_with:value1,...
+
+The field under validation must be a string and start with of the given values.
+
+#### ends_with:value1,...
+
+The field under validation must be a string and end with one of the given values.
+
+#### in:value1,value2,...
+
+The field under validation must be a one of the given values. Only numerics and strings are checked.
+
+#### not_in:value1,value2,...
+
+The field under validation must not be a one of the given values. Only numerics and strings are checked.
+
+#### in_array:field
+
+The field under validation must be a one of the values in the given `field`. Only numerics and strings are checked, and the given `field` must be an array.
+
+#### not_in_array:field
+
+The field under validation must not be a one of the values in the given `field`. Only numerics and strings are checked, and the given `field` must be an array.
+
+#### timezone
+
+The field under validation must be a string and be a valid timezone. This rule converts the field to `*time.Timezone` if it passes.
+
+Valid timezones are:
+- UTC
+- Timezones from the IANA Time Zone database, such as `America/New_York`
+
+The time zone database needed by LoadLocation may not be present on all systems, especially non-Unix systems. The rules looks in the directory or uncompressed zip file
+named by the `ZONEINFO` environment variable, if any, then looks in known installation locations on Unix systems, and finally looks in `$GOROOT/lib/time/zoneinfo.zip`.
+
+#### ip
+
+The field under validation must be a string and be either an IPv4 address or an IPv6 address.
+This rule converts the field to `net.IP` if it passes.
+
+#### ipv4
+
+The field under validation must be a string and be an IPv4 address.
+This rule converts the field to `net.IP` if it passes.
+
+#### ipv6
+
+The field under validation must be a string and be an IPv6 address.
+This rule converts the field to `net.IP` if it passes.
+
+#### json
+
+The field under validation must be a valid JSON string. This rule unmarshals the string and sets the field value to the unmarshalled result.
+
+#### url
+
+The field under validation must be a valid URL.
+This rule converts the field to `*url.URL` if it passes.
+
+#### uuid:version
+
+The field under validation must be a string and a valid UUID.
+
+The `version` parameter is **optional**.
+- If a `version` is given (`uuid:3`,`uuid:4`,`uuid:5`), the rule will pass only if the version of the UUID matches.  
+- If no `version` is given, any UUID version is accepted.
+
+This rule converts the field to `uuid.UUID` if it passes.
+
+#### bool
+
+The field under validation must be a boolean or one of the following values:
+- `1`/`0`
+- `"1"`/`"0"`
+- `"on"`/`"off"`
+- `"true"`/`"false"`
+- `"yes"`/`"no"`
+
+This rule converts the field to `bool` if it passes.
+
+#### same:field
+
+The field under validation must have the same value as the given `field`. For arrays, the two fields must have the same values in the same order.
+
+The two fields must have the same type. Files are not checked.
+
+#### different:field
+
+The field under validation must have a different value from the given `field`. For arrays, the two fields must have different values or not be in the same order.
+
+The two fields must have the same type. Files are not checked.
+
+#### confirmed
+
+The field under validation must have a matching `foo_confirmation`. This rule validate equality in the same way as the [`same`](#same-field) rule.
+
+For example, if the field under validation is `password`, a matching `password_confirmation` field must be present in the input.
+
+#### file
+
+The field under validation must be a file. Multi-files are supported.
+This rule converts the field to `[]filesystem.File` if it passes.
+
+#### mime:foo,...
+
+The field under validation must be a file and match one of the given MIME types. If the field is a multi-files, all files must satisfy this rule.
+
+#### image
+
+The field under validation must be a file and match one of the following MIME types:
+- `image/jpeg`
+- `image/png`
+- `image/gif`
+- `image/bmp`
+- `image/svg+xml`
+- `image/webp`
+
+If the field is a multi-files, all files must satisfy this rule.
+
+#### extension:foo,...
+
+The field under validation must be a file and match one of the given extensions. If the field is a multi-files, all files must satisfy this rule.
+
+#### count:value
+
+The field under validation must be a multi-file and contain `value` files.
+
+#### count_min:value
+
+The field under validation must be a multi-file and contain at least `value` files.
+
+#### count_max:value
+
+The field under validation must be a multi-file and may not contain more than `value` files.
+
+#### count_between:min,max
+
+The field under validation must be a multi-file and contain between `min` and `max` files.
+
+#### date:format
+
+The field under validation must be a string representing a date. The `format` is optional. If no format is given, the `2006-01-02` format is used.
+
+This rule converts the field to `time.Time` if it passes.
+
+::: tip
+See the [Golang datetime format](https://golang.org/src/time/format.go).
+:::
+
+::: warning
+When validating dates by comparing them together, the order of the declaration of the fields in the request is important. For example, if you want to validate that an end date is after a start date, the start date should be decalred **before** the end date in the rules set.
+
+If a date has not been validated and converted yet, the date comparison rules will attempt to parse the dates using the following format: `2006-01-02`.
+:::
+
+#### before:date
+
+The field under validation must be a value preceding the given date. The `date` must be written using following format: `2006-01-02T15:04:05`.
+
+If the name of another field is given as a `date`, then the two fields must be a date and the field under validation must be preceding the given field.
+
+#### before_equal:date
+
+The field under validation must be a value preceding or equal to the given date. The `date` must be written using following format: `2006-01-02T15:04:05`.
+
+If the name of another field is given as a `date`, then the two fields must be a date and the field under validation must be preceding or equal to given field.
+
+#### after:date
+
+The field under validation must be a value after the given date. The `date` must be written using following format: `2006-01-02T15:04:05`.
+
+If the name of another field is given as a `date`, then the two fields must be a date and the field under validation must be preceding the given field.
+
+#### after_equal:date
+
+The field under validation must be a value after or equal to the given date. The `date` must be written using following format: `2006-01-02T15:04:05`.
+
+If the name of another field is given as a `date`, then the two fields must be a date and the field under validation must be after or equal to given field.
+
+#### date_equals:date
+
+The field under validation must be a value equal to the given date. The `date` must be written using following format: `2006-01-02T15:04:05`.
+
+If the name of another field is given as a `date`, then the two fields must be a date and the field under validation must be equal to given field.
+
+#### date_between:date1,date2
+
+The field under validation must be a value between or equal to the given dates. The given dates must be written using following format: `2006-01-02T15:04:05`.
+
+If the name of another field is given as a date, then all the fields must be a date and the field under validation must be between or equal to given fields.
 
 ## Custom rules
 

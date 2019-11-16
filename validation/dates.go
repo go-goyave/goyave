@@ -49,7 +49,7 @@ func getDates(value interface{}, parameters []string, form map[string]interface{
 	return dates, fmt.Errorf("Value is not a date")
 }
 
-func validateDate(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document convert to time.Time
+func validateDate(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	if len(parameters) == 0 {
 		parameters = append(parameters, "2006-01-02")
 	}
@@ -62,7 +62,7 @@ func validateDate(field string, value interface{}, parameters []string, form map
 	return false
 }
 
-func validateBefore(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document takes date at format 2006-01-02T15:04:05 or other field
+func validateBefore(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("before", parameters, 1)
 
 	dates, err := getDates(value, parameters, form)

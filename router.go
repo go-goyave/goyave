@@ -44,10 +44,16 @@ func (r *Router) Middleware(middleware ...Middleware) {
 }
 
 // Route register a new route.
-func (r *Router) Route(method string, uri string, handler Handler, validationRules validation.RuleSet) {
+//
+// Multiple methods can be passed using a pipe-separated string.
+//  "PUT|PATCH"
+//
+// The validation rules set is optional. If you don't want your route
+// to be validated, pass "nil".
+func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet) {
 	r.muxRouter.HandleFunc(uri, func(w http.ResponseWriter, rawRequest *http.Request) {
 		r.requestHandler(w, rawRequest, handler, validationRules)
-	}).Methods(method)
+	}).Methods(strings.Split(methods, "|")...)
 }
 
 // Static serve a directory and its subdirectories of static resources.

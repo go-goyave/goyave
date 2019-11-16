@@ -32,11 +32,12 @@ router.Route("GET", "/hello", func(response *goyave.Response, r *goyave.Request)
 
 #### Router.Route
 
-Register a new route.
+Register a new route.  
+Multiple methods can be passed using a pipe-separated string.
 
 | Parameters                           | Return |
 |--------------------------------------|--------|
-| `method string`                      | `void` |
+| `methods string`                     | `void` |
 | `uri string`                         |        |
 | `handler goyave.Handler`             |        |
 | `validationRules validation.RuleSet` |        |
@@ -45,11 +46,12 @@ Register a new route.
 ``` go
 router.Route("GET", "/hello", myHandlerFunction, nil)
 router.Route("POST", "/user", userController.Register, userRequests.Register)
+router.Route("PUT|PATCH", "/user", userController.Update, userRequests.Update)
 ```
 
 ::: tip
 - `goyave.Handler` is an alias for `func(*goyave.Response, *goyave.Request)`.
-- Learn more about validation and rule sets [here](./validation).
+- Learn more about validation and rules sets [here](./validation).
 :::
 
 ## Route parameters
@@ -79,7 +81,7 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 
 ## Validation
 
-You can assign a validation rule set to each route. Learn more in the dedicated [section](./validation). You should always validate incoming requests.
+You can assign a validation rules set to each route. Learn more in the dedicated [section](./validation). You should always validate incoming requests.
 
 ``` go
 router.Route("POST", "/products", productsController.Create, validation.RuleSet{
@@ -89,7 +91,7 @@ router.Route("POST", "/products", productsController.Create, validation.RuleSet{
 ```
 
 ::: tip
-It's not recommended to define rule set directly in the route definition. You should define rule sets in the `http/requests` directory and have one file per feature, regrouping all requests handled by the same controller. You can also create one package per feature, just like controllers, if you so desire.
+It's not recommended to define rules set directly in the route definition. You should define rules sets in the `http/requests` directory and have one file per feature, regrouping all requests handled by the same controller. You can also create one package per feature, just like controllers, if you so desire.
 :::
 
 If you don't want your route to be validated, or if validation is not necessary, just pass `nil` as the last parameter.

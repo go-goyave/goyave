@@ -130,7 +130,7 @@ The `http/middleware` directory contains the application middleware. Each middle
     
 #### HTTP requests
 
-The `http/requests` directory contains the requests validation rule sets. You should have one file per feature, regrouping all requests handled by the same controller. You can also create one package per feature, just like controllers, if you so desire.
+The `http/requests` directory contains the requests validation rules sets. You should have one file per feature, regrouping all requests handled by the same controller. You can also create one package per feature, just like controllers, if you so desire.
 
 This directory can also contain a `placeholders.go` file, which will define validation rule messages placeholders. Learn more [here](./basics/validation#placeholders).
 

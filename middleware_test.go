@@ -199,7 +199,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 	rawRequest := createTestFileRequest("/test-route?field=hello", "resources/img/logo/goyave_16.png")
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
 		suite.Equal(2, len(r.Data))
-		suite.Equal("world", r.Data["field"]) // TODO document that POST should have the priority
+		suite.Equal("world", r.Data["field"])
 		files, ok := r.Data["file"].([]filesystem.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))

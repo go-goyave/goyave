@@ -46,7 +46,7 @@ func validateEmail(field string, value interface{}, parameters []string, form ma
 }
 
 func validateStartsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("starts_with", parameters, 1)
+	RequireParametersCount("starts_with", parameters, 1)
 	str, ok := value.(string)
 	if ok {
 		for _, prefix := range parameters {
@@ -59,7 +59,7 @@ func validateStartsWith(field string, value interface{}, parameters []string, fo
 }
 
 func validateEndsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("ends_with", parameters, 1)
+	RequireParametersCount("ends_with", parameters, 1)
 	str, ok := value.(string)
 	if ok {
 		for _, prefix := range parameters {
@@ -71,7 +71,7 @@ func validateEndsWith(field string, value interface{}, parameters []string, form
 	return false
 }
 
-func validateIP(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+func validateIP(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document convert to net.IP
 	str, ok := value.(string)
 	if ok {
 		ip := net.ParseIP(str)
@@ -112,6 +112,7 @@ func validateJSON(field string, value interface{}, parameters []string, form map
 }
 
 func validateRegex(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	RequireParametersCount("regex", parameters, 1)
 	str, ok := value.(string)
 	if ok {
 		return regexp.MustCompile(parameters[0]).MatchString(str)

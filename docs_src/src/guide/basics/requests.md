@@ -157,7 +157,7 @@ The validation rule set associated with this request. See the [validation](./val
 
 #### Request.Data
 
-A `map[string]interface{}` containing the request's data. The key is the name of the field.
+A `map[string]interface{}` containing the request's data. The key is the name of the field. This map contains the data from the request's body **and** the URL query string values. The request's body parameters takes precedence over the URL query string values.
 
 For the given JSON request:
 ```json

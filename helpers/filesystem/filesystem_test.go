@@ -110,4 +110,8 @@ func TestSaveDelete(t *testing.T) {
 
 	Delete(actualPath)
 	assert.False(t, FileExists(actualPath))
+
+	assert.Panics(t, func() {
+		Delete(actualPath)
+	})
 }

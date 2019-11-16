@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -17,7 +16,7 @@ var placeholders map[string]Placeholder = map[string]Placeholder{}
 // SetPlaceholder sets the replacer function for the given placeholder.
 // If a placeholder with this name already exists, the latter will be overridden.
 //  validation.SetPlaceholder("min", func(field string, rule string, parameters []string, language string) string {
-//  	return parameters[1] // Replace ":min" by the second parameter in the rule definition
+//  	return parameters[0] // Replace ":min" by the first parameter in the rule definition
 //  })
 func SetPlaceholder(placeholderName string, replacer Placeholder) {
 	placeholders[":"+placeholderName] = replacer
@@ -48,7 +47,6 @@ func simpleParameterPlaceholder(field string, rule string, parameters []string, 
 func datePlaceholder(index int, parameters []string, language string) string {
 	_, err := time.Parse("2006-01-02T15:04:05", parameters[index])
 	if err != nil {
-		fmt.Println(err)
 		// Not a date, may be a field
 		return replaceField(parameters[index], language)
 	}
@@ -63,7 +61,7 @@ func init() {
 	SetPlaceholder("min", simpleParameterPlaceholder)
 	SetPlaceholder("max", func(field string, rule string, parameters []string, language string) string {
 		index := 0
-		if rule == "between" {
+		if strings.Contains(rule, "between") {
 			index = 1
 		}
 		return parameters[index]

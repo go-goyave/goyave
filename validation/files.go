@@ -14,7 +14,7 @@ func validateFile(field string, value interface{}, parameters []string, form map
 }
 
 func validateMIME(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("mime", parameters, 1)
+	RequireParametersCount("mime", parameters, 1)
 	files, ok := value.([]filesystem.File)
 	if ok {
 		for _, file := range files {
@@ -37,7 +37,7 @@ func validateImage(field string, value interface{}, parameters []string, form ma
 }
 
 func validateExtension(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("extension", parameters, 1)
+	RequireParametersCount("extension", parameters, 1)
 	files, ok := value.([]filesystem.File)
 	if ok {
 		for _, file := range files {
@@ -55,7 +55,7 @@ func validateExtension(field string, value interface{}, parameters []string, for
 }
 
 func validateCount(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("count", parameters, 1)
+	RequireParametersCount("count", parameters, 1)
 	files, ok := value.([]filesystem.File)
 	size, err := strconv.Atoi(parameters[0])
 	if err != nil {
@@ -70,7 +70,7 @@ func validateCount(field string, value interface{}, parameters []string, form ma
 }
 
 func validateCountMin(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("count_min", parameters, 1)
+	RequireParametersCount("count_min", parameters, 1)
 	files, ok := value.([]filesystem.File)
 	size, err := strconv.Atoi(parameters[0])
 	if err != nil {
@@ -85,7 +85,7 @@ func validateCountMin(field string, value interface{}, parameters []string, form
 }
 
 func validateCountMax(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("count_max", parameters, 1)
+	RequireParametersCount("count_max", parameters, 1)
 	files, ok := value.([]filesystem.File)
 	size, err := strconv.Atoi(parameters[0])
 	if err != nil {
@@ -100,7 +100,7 @@ func validateCountMax(field string, value interface{}, parameters []string, form
 }
 
 func validateCountBetween(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("count_between", parameters, 1)
+	RequireParametersCount("count_between", parameters, 1)
 	files, ok := value.([]filesystem.File)
 	min, errMin := strconv.Atoi(parameters[0])
 	max, errMax := strconv.Atoi(parameters[1])

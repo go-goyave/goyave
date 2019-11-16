@@ -10,13 +10,6 @@ import (
 	"github.com/System-Glitch/goyave/helpers/filesystem"
 )
 
-// Rule function defining a validation rule.
-// Passing rules should return true, false otherwise.
-//
-// Rules can modifiy the validated value if needed.
-// For example, the "numeric" rule converts the data to float64 if it's a string.
-type Rule func(string, interface{}, []string, map[string]interface{}) bool
-
 func validateRequired(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	val, ok := form[field]
 	if ok {
@@ -28,7 +21,7 @@ func validateRequired(field string, value interface{}, parameters []string, form
 }
 
 func validateMin(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("min", parameters, 1)
+	RequireParametersCount("min", parameters, 1)
 	min, err := strconv.ParseFloat(parameters[0], 64)
 	if err != nil {
 		panic(err)
@@ -56,7 +49,7 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 }
 
 func validateMax(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("max", parameters, 1)
+	RequireParametersCount("max", parameters, 1)
 	max, err := strconv.ParseFloat(parameters[0], 64)
 	if err != nil {
 		panic(err)
@@ -84,7 +77,7 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 }
 
 func validateBetween(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("between", parameters, 2)
+	RequireParametersCount("between", parameters, 2)
 	min, errMin := strconv.ParseFloat(parameters[0], 64)
 	max, errMax := strconv.ParseFloat(parameters[1], 64)
 	if errMin != nil {
@@ -121,7 +114,7 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 }
 
 func validateGreaterThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("greater_than", parameters, 1)
+	RequireParametersCount("greater_than", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -155,7 +148,7 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 }
 
 func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("greater_than_equal", parameters, 1)
+	RequireParametersCount("greater_than_equal", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -189,7 +182,7 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 }
 
 func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("lower_than", parameters, 1)
+	RequireParametersCount("lower_than", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -223,7 +216,7 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 }
 
 func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("lower_than_equal", parameters, 1)
+	RequireParametersCount("lower_than_equal", parameters, 1)
 	valueType := getFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -286,7 +279,7 @@ func validateBool(field string, value interface{}, parameters []string, form map
 }
 
 func validateSame(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("same", parameters, 1)
+	RequireParametersCount("same", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists {
 		valueType := getFieldType(value)
@@ -320,7 +313,7 @@ func validateConfirmed(field string, value interface{}, parameters []string, for
 }
 
 func validateSize(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	requireParametersCount("size", parameters, 1)
+	RequireParametersCount("size", parameters, 1)
 	size, err := strconv.Atoi(parameters[0])
 	if err != nil {
 		panic(err)

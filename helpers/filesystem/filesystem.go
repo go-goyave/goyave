@@ -1,21 +1,12 @@
 package filesystem
 
 import (
-	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
-
-// File represents a file received from client.
-type File struct {
-	Header   *multipart.FileHeader
-	MIMEType string
-	Data     multipart.File
-}
 
 // GetFileExtension returns the last part of a file name.
 // If the file doesn't have an extension, returns an empty string.
@@ -67,27 +58,6 @@ func IsDirectory(path string) bool {
 		return stats.IsDir()
 	}
 	return false
-}
-
-// Save writes the given file on the disk.
-// Appends a timestamp to the given file name to avoid duplicate file names.
-// The file is not readable anymore once saved as its FileReader has already been
-// closed.
-//
-// Returns the actual path to the saved file.
-func (file *File) Save(path string, name string) string {
-	name = timestampFileName(name)
-	writer, err := os.OpenFile(path+string(os.PathSeparator)+name, os.O_WRONLY|os.O_CREATE, 0660)
-	if err != nil {
-		panic(err)
-	}
-	defer writer.Close()
-	_, errCopy := io.Copy(writer, file.Data)
-	if errCopy != nil {
-		panic(errCopy)
-	}
-	file.Data.Close()
-	return name
 }
 
 // Delete the file at the given path.

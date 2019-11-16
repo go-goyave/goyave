@@ -10,7 +10,7 @@ func (s byPriority) Len() int {
 func (s byPriority) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
-func (s byPriority) Less(i, j int) bool { // TODO sort by specificity
+func (s byPriority) Less(i, j int) bool {
 	if s[j].Priority == s[i].Priority {
 		return specificity(s[j]) < specificity(s[i])
 	}

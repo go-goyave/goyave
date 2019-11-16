@@ -46,6 +46,11 @@ module.exports = {
             type: 'vue',
             before: '<pre class="vue-container"><code>',
             after: '</code></pre>',
+        }],
+        ['vuepress-plugin-container', {
+            type: 'table',
+            before: '<div class="table">',
+            after: '</div>',
         }]
     ],
     extraWatchFiles: [

@@ -78,9 +78,9 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 			// Priority set to 0 if the quality value cannot be parsed
 			val.Priority = priority
 
-			val.Value = v[:i]
+			val.Value = strings.Trim(v[:i], " ")
 		} else {
-			val.Value = v
+			val.Value = strings.Trim(v, " ")
 			val.Priority = 1
 		}
 

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/helpers"
 
 	"github.com/System-Glitch/goyave/helpers/filesystem"
 )
@@ -85,9 +86,9 @@ func LoadAllAvailableLanguages() {
 //
 // Directory structure of a language directory:
 //  en-UK
-//    |- locale.json     (contains the normal language lines)
-//    |- rules.json      (contains the validation messages)
-//    |- attributes.json (contains the attribute-specific validation messages)
+//    ├─ locale.json     (contains the normal language lines)
+//    ├─ rules.json      (contains the validation messages)
+//    └─ attributes.json (contains the attribute-specific validation messages)
 //
 // Each file is optional.
 func Load(language, path string) {
@@ -152,11 +153,12 @@ func mergeMap(dst map[string]string, src map[string]string) {
 	}
 }
 
-// Get a language entry.
+// Get a language line.
 //
 // For validation rules and attributes messages, use a dot-separated path:
 // - "validation.rules.<rule_name>"
-// - "validation.attributes.<attribute_name>.<rule_name>"
+// - "validation.fields.<field_name>"
+// - "validation.fields.<field_name>.<rule_name>"
 // For normal lines, just use the name of the line. Note that if you have
 // a line called "validation", it won't conflict with the dot-separated paths.
 //
@@ -230,6 +232,7 @@ func GetAvailableLanguages() []string {
 }
 
 // DetectLanguage detects the language to use based on the given lang string.
+// The given lang string can use the HTTP "Accept-Language" header format.
 //
 // If "*" is provided, the default language will be used.
 // If multiple languages are given, the first available language will be used,
@@ -238,30 +241,20 @@ func GetAvailableLanguages() []string {
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
 func DetectLanguage(lang string) string {
-	switch {
-	case lang == "*":
-		return config.GetString("defaultLanguage")
-	case strings.Count(lang, ",") != 0: // Multiple languages
-		if i := strings.Index(lang, ";"); i != -1 {
-			lang = lang[:i]
+	values := helpers.ParseMultiValuesHeader(lang)
+	for _, l := range values {
+		if l.Value == "*" { // Accept anything, so return default language
+			break
 		}
-		for _, l := range strings.Split(lang, ",") {
-			for key := range languages {
-				if strings.HasPrefix(key, l) {
-					return key
-				}
-			}
+		if IsAvailable(l.Value) {
+			return l.Value
 		}
-	case strings.Count(lang, "-") == 0: // No variant
 		for key := range languages {
-			if strings.HasPrefix(key, lang) {
+			if strings.HasPrefix(key, l.Value) {
 				return key
 			}
 		}
 	}
 
-	if IsAvailable(lang) {
-		return lang
-	}
 	return config.GetString("defaultLanguage")
 }

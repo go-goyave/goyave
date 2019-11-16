@@ -146,7 +146,7 @@ The `resources` directory is meant to store static resources such as images, HTM
 
 #### Language resources directory
 
-The `resources/lang` directory contains your application's supported languages and translations. Each language has its own directory and should be named by an [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) language code. You can also append a variant to your languages: `en-US`, `en-UK`, `fr-FR`, `fr-CA`, ... **Case is important.**
+The `resources/lang` directory contains your application's supported languages and translations. Each language has its own directory and should be named with an [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) language code. You can also append a variant to your languages: `en-US`, `en-UK`, `fr-FR`, `fr-CA`, ... **Case is important.**
 
 Each language directory contains three files. Each file is **optional**.
 - `fields.json`: field names translations and field-specific rule messages.

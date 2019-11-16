@@ -86,7 +86,7 @@ func TestParseMultiValuesHeader(t *testing.T) {
 		HeaderValue{Value: "en", Priority: 0.3},
 		HeaderValue{Value: "*", Priority: 0.3},
 	}
-	result = ParseMultiValuesHeader("fr,fr-FR;q=0.8,en-US;q=0.5,*;q=0.3,en-*;q=0.3,en;q=0.3")
+	result = ParseMultiValuesHeader("fr , fr-FR;q=0.8, en-US ;q=0.5, *;q=0.3, en-*;q=0.3, en;q=0.3")
 	fmt.Println(result)
 	assert.True(t, SliceEqual(expected, result))
 }

@@ -38,4 +38,5 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Logging
 - Custom HTTP error handlers (for custom 404/500/... messages)
 - Named routes, mutliple methods, CORS
+- Placeholders in language lines and pluralization
 - And more!

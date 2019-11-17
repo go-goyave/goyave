@@ -9,12 +9,39 @@ This guide will walk you through the installation process. The rest of the guide
 
 ## Template project
 
-<p style="text-align: center">
-    <img src="/undraw_in_progress_ql66.svg" height="150" alt="In progress">
-</p>
+You can bootstrap your project using the **[Goyave template project](https://github.com/System-Glitch/goyave_template)**.
+
+First, download the template and unzip it:
+```
+$ curl -LOk https://github.com/System-Glitch/goyave_template/archive/master.zip && unzip master.zip && rm master.zip
+```
+
+Rename `goyave_template-master` to the name of our project (`my-project` in our example), then `cd` into it and init a git repository.
+```
+$ mv goyave_template-master my-project
+$ cd my-project
+$ git init
+```
+
+Copy `config.example.json` into a new file `config.json`. Update the configuration to make it fit your needs. See the [configuration](./configuration) section for more details.
+
+::: tip
+It is a good practice to ignore the actual config to prevent it being added to the version control system. Each developer may have different settings for their environment.
+:::
+
+Finally, you'll have to replace all references to `goyave_template` with the name of your project. You can use the following command:
+```
+$ find ./ -type f \( -iname \*.go -o -iname \*.mod \) -exec sed -i "s/goyave_template/my-project/g" {} \;
+```
+
+Run `go run my-project` to start the server, then try to request the `hello` route.
+```
+$ curl http://localhost:8080/hello
+Hi!
+```
 
 ::: warning
-The template project has not been implemented yet.
+The template project setup will be more streamlined in the future to make it easier to setup projects.
 :::
 
 ## From scratch
@@ -37,7 +64,7 @@ Now that your project directory is set up and the dependencies are installed, le
 package main
 
 import (
-    "routes"
+    "my-project/http/routes"
     "github.com/System-Glitch/goyave"
 )
 
@@ -50,7 +77,7 @@ func main() {
 `goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background. See the [multi-services](./advanced/multi-services) section for more details.
 :::
 
-Now we need to create the package in which we will register our routes. Create a new package `routes`:
+Now we need to create the package in which we will register our routes. Create a new package `http/routes`:
 ```
 $ mkdir http
 $ mkdir http/routes

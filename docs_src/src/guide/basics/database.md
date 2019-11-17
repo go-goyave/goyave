@@ -8,10 +8,13 @@ Most web applications use a database. In this section, we are going to see how G
 
 Database connections are managed by the framework and are long-lived. When the server shuts down, the database connections are closed automatically. So you don't have to worry about creating, closing or refreshing database connections in your application.
 
-All functions below require the `database` package to be imported.
+All functions below require the `database` and the `gorm` packages to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/database"
+import (
+  "github.com/System-Glitch/goyave/database"
+  "github.com/jinzhu/gorm"
+)
 ```
 
 ## Configuration
@@ -100,7 +103,7 @@ Models are usually just normal Golang structs, basic Go types, or pointers of th
 
 ```go
 func init() {
-    goyave.RegisterModel(&User{})
+    database.RegisterModel(&User{})
 }
 
 type User struct {

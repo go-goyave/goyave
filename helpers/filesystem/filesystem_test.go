@@ -27,6 +27,9 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 		panic(err)
 	}
 	_, err = io.Copy(part, file)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createTestFiles(files ...string) []File {
@@ -75,7 +78,7 @@ func TestGetMIMEType(t *testing.T) {
 	assert.Equal(t, "image/png", mime)
 	assert.Equal(t, int64(716), size)
 
-	mime, size = GetMIMEType(toAbsolutePath("config/defaults.json"))
+	mime, _ = GetMIMEType(toAbsolutePath("config/defaults.json"))
 	assert.Equal(t, "text/plain; charset=utf-8", mime)
 
 	assert.Panics(t, func() {

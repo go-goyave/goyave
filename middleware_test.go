@@ -61,6 +61,9 @@ func createTestFileRequest(route string, files ...string) *http.Request {
 		addFileToRequest(writer, fp, "file", filepath.Base(fp))
 	}
 	field, err := writer.CreateFormField("field")
+	if err != nil {
+		panic(err)
+	}
 	_, err = io.Copy(field, strings.NewReader("world"))
 	if err != nil {
 		panic(err)

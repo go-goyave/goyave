@@ -54,12 +54,12 @@ StartLimitIntervalSec=0
 [Service]
 Environment=GOYAVE_ENV=production
 WorkingDirectory=/path/to/goyave-application
-ExecStart=/path/to/goyave-application
+ExecStart=/path/to/goyave-application/executable
 
 # Process management
 ####################
 
-Type=forking
+Type=simple
 
 # Can be changed to "on-failure"
 Restart=always

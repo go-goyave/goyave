@@ -17,8 +17,8 @@ import (
 	"github.com/System-Glitch/goyave/lang"
 )
 
-var server *http.Server = nil
-var redirectServer *http.Server = nil
+var server *http.Server
+var redirectServer *http.Server
 var sigChannel chan os.Signal
 
 var startupHooks []func()

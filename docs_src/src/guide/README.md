@@ -17,7 +17,7 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 ## Roadmap
 
-::: img-row <img src="/undraw_to_do_list_a49b.svg" height="150" alt="Roadmap"/>
+::: img-row <img :src="$withBase('/undraw_to_do_list_a49b.svg')" height="150" alt="Roadmap"/>
 ### Next release
 
 - Integrated testing functions

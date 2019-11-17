@@ -9,16 +9,16 @@ This guide will walk you through the installation process. The rest of the guide
 
 ## Template project
 
-You can bootstrap your project using the **[Goyave template project](https://github.com/System-Glitch/goyave_template)**.
+You can bootstrap your project using the **[Goyave template project](https://github.com/System-Glitch/goyave-template)**.
 
 First, download the template and unzip it:
 ```
-$ curl -LOk https://github.com/System-Glitch/goyave_template/archive/master.zip && unzip master.zip && rm master.zip
+$ curl -LOk https://github.com/System-Glitch/goyave-template/archive/master.zip && unzip master.zip && rm master.zip
 ```
 
-Rename `goyave_template-master` to the name of our project (`my-project` in our example), then `cd` into it and init a git repository.
+Rename `goyave-template-master` to the name of our project (`my-project` in our example), then `cd` into it and init a git repository.
 ```
-$ mv goyave_template-master my-project
+$ mv goyave-template-master my-project
 $ cd my-project
 $ git init
 ```

@@ -12,21 +12,21 @@ Goyave is a progressive and accessible web application framework, aimed at makin
 
 <div class="features">
   <div class="feature" id="feature-clean">
-    <img src="/undraw_code_typing_7jnv.svg" width="275" alt="Clean">
+    <img :src="$withBase('/undraw_code_typing_7jnv.svg')" width="275" alt="Clean">
     <div>
       <h2>Clean</h2>
       <p>Goyave has an expressive and elegant syntax. Minimalist calls and reduced redundancy are among the Goyave's core principles.</p>
     </div>
   </div>
   <div class="feature" id="feature-fast">
-    <img src="/undraw_speed_test_wxl0.svg" width="275" alt="Fast">
+    <img :src="$withBase('/undraw_speed_test_wxl0.svg')" width="275" alt="Fast">
     <div>
       <h2>Fast</h2>
       <p>Develop faster thanks to concise and clear syntax. Low complexity functions allow for better performance.</p>
     </div>
   </div>
   <div class="feature" id="feature-powerful">
-    <img src="/undraw_upgrade_06a0.svg" width="275" alt="Powerful">
+    <img :src="$withBase('/undraw_upgrade_06a0.svg')" width="275" alt="Powerful">
     <div>
       <h2>Powerful</h2>
       <p>Goyave is accessible, yet powerful, and provides many helpers and built-in functions to make your life easier and let you concentrate on the business logic.</p>

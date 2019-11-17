@@ -1,7 +1,7 @@
 # Plugins
 
 <p style="text-align: center">
-    <img src="/undraw_in_progress_ql66.svg" height="150" alt="In progress">
+    <img :src="$withBase('/undraw_in_progress_ql66.svg')" height="150" alt="In progress">
 </p>
 
 ::: warning

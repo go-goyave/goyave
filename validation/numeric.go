@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func validateNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document convert string to float
+func validateNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	switch {
@@ -23,7 +23,7 @@ func validateNumeric(field string, value interface{}, parameters []string, form 
 	}
 }
 
-func validateInteger(field string, value interface{}, parameters []string, form map[string]interface{}) bool { // TODO document convert to int
+func validateInteger(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	switch {

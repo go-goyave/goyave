@@ -23,23 +23,23 @@ func (r *Request) Method() string {
 	return r.httpRequest.Method
 }
 
-// Protocol the protocol used by this request, "HTTP/1.0" for example
+// Protocol the protocol used by this request, "HTTP/1.1" for example.
 func (r *Request) Protocol() string {
 	return r.httpRequest.Proto
 }
 
-// URL specifies either the URI being requested (for server
-// requests) or the URL to access (for client requests).
+// URL specifies the URI being requested.
 // Use this if you absolutely need the raw query params, url, etc.
-// Otherwise use the provided methods and fields of the "goyave.Request"
+// Otherwise use the provided methods and fields of the "goyave.Request".
 func (r *Request) URL() *url.URL {
 	return r.httpRequest.URL
 }
 
 // Header contains the request header fields either received
 // by the server or to be sent by the client.
+// Header names are case-insensitive.
 //
-// If a server received a request with header lines,
+// If the raw request has the following header lines,
 //
 //	Host: example.com
 //	accept-encoding: gzip, deflate
@@ -47,18 +47,13 @@ func (r *Request) URL() *url.URL {
 //	fOO: Bar
 //	foo: two
 //
-// then
+// then the header map will look like this:
 //
 //	Header = map[string][]string{
 //		"Accept-Encoding": {"gzip, deflate"},
 //		"Accept-Language": {"en-us"},
 //		"Foo": {"Bar", "two"},
 //	}
-//
-// HTTP defines that header names are case-insensitive. The
-// request parser implements this by using CanonicalHeaderKey,
-// making the first character and any characters following a
-// hyphen uppercase and the rest lowercase.
 func (r *Request) Header() http.Header {
 	return r.httpRequest.Header
 }
@@ -75,7 +70,7 @@ func (r *Request) RemoteAddress() string {
 	return r.httpRequest.RemoteAddr
 }
 
-// Cookies returns the HTTP cookies sent with the request
+// Cookies returns the HTTP cookies sent with the request.
 func (r *Request) Cookies(name string) []*http.Cookie {
 	if r.cookies == nil {
 		r.cookies = r.httpRequest.Cookies()
@@ -91,22 +86,6 @@ func (r *Request) Referrer() string {
 // UserAgent returns the client's User-Agent, if sent in the request.
 func (r *Request) UserAgent() string {
 	return r.httpRequest.UserAgent()
-}
-
-// Redirect send a permanent redirect response
-//
-// This method is not part of the response helpers to keep the original
-// request encapsulated.
-func (r *Request) Redirect(w http.ResponseWriter, url string) {
-	http.Redirect(w, r.httpRequest, url, http.StatusPermanentRedirect)
-}
-
-// TemporaryRedirect send a temporary redirect response
-//
-// This method is not part of the response helpers to keep the original
-// request encapsulated.
-func (r *Request) TemporaryRedirect(w http.ResponseWriter, url string) {
-	http.Redirect(w, r.httpRequest, url, http.StatusTemporaryRedirect)
 }
 
 func (r *Request) validate() map[string]validation.Errors {

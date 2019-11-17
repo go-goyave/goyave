@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/helpers"
 
 	"github.com/System-Glitch/goyave/helpers/filesystem"
 )
@@ -75,7 +76,7 @@ func LoadAllAvailableLanguages() {
 
 		for _, f := range files {
 			if f.IsDir() {
-				Load(f.Name())
+				load(f.Name(), langDirectory+sep+f.Name())
 			}
 		}
 	}
@@ -85,18 +86,12 @@ func LoadAllAvailableLanguages() {
 //
 // Directory structure of a language directory:
 //  en-UK
-//    |- locale.json     (contains the normal language lines)
-//    |- rules.json      (contains the validation messages)
-//    |- attributes.json (contains the attribute-specific validation messages)
+//    ├─ locale.json     (contains the normal language lines)
+//    ├─ rules.json      (contains the validation messages)
+//    └─ attributes.json (contains the attribute-specific validation messages)
 //
 // Each file is optional.
-func Load(language string) {
-	sep := string(os.PathSeparator)
-	workingDir, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	path := workingDir + sep + "resources" + sep + "lang" + sep + language
+func Load(language, path string) {
 	if filesystem.IsDirectory(path) {
 		load(language, path)
 	} else {
@@ -158,11 +153,12 @@ func mergeMap(dst map[string]string, src map[string]string) {
 	}
 }
 
-// Get a language entry.
+// Get a language line.
 //
 // For validation rules and attributes messages, use a dot-separated path:
 // - "validation.rules.<rule_name>"
-// - "validation.attributes.<attribute_name>.<rule_name>"
+// - "validation.fields.<field_name>"
+// - "validation.fields.<field_name>.<rule_name>"
 // For normal lines, just use the name of the line. Note that if you have
 // a line called "validation", it won't conflict with the dot-separated paths.
 //
@@ -182,11 +178,7 @@ func Get(lang string, line string) string {
 			if len(path) < 3 {
 				return line
 			}
-			s := languages[lang].validation.rules[strings.Join(path[2:], ".")]
-			if s == "" {
-				return line
-			}
-			return s
+			return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")])
 		case "fields":
 			len := len(path)
 			if len < 3 {
@@ -197,16 +189,9 @@ func Get(lang string, line string) string {
 				if attr.Rules == nil {
 					return line
 				}
-				s := attr.Rules[path[3]]
-				if s == "" {
-					return line
-				}
-				return s
+				return convertEmptyLine(line, attr.Rules[path[3]])
 			} else if len == 3 {
-				if attr.Name == "" {
-					return line
-				}
-				return attr.Name
+				return convertEmptyLine(line, attr.Name)
 			} else {
 				return line
 			}
@@ -215,11 +200,14 @@ func Get(lang string, line string) string {
 		}
 	}
 
-	s := languages[lang].lines[line]
-	if s == "" {
-		return line
+	return convertEmptyLine(line, languages[lang].lines[line])
+}
+
+func convertEmptyLine(entry, line string) string {
+	if line == "" {
+		return entry
 	}
-	return s
+	return line
 }
 
 // IsAvailable returns true if the language is available.
@@ -228,7 +216,23 @@ func IsAvailable(lang string) bool {
 	return exists
 }
 
+// GetAvailableLanguages returns a slice of all loaded languages.
+// This can be used to generate different routes for all languages
+// supported by your applications.
+//
+//  /en/products
+//  /fr/produits
+//  ...
+func GetAvailableLanguages() []string {
+	langs := []string{}
+	for lang := range languages {
+		langs = append(langs, lang)
+	}
+	return langs
+}
+
 // DetectLanguage detects the language to use based on the given lang string.
+// The given lang string can use the HTTP "Accept-Language" header format.
 //
 // If "*" is provided, the default language will be used.
 // If multiple languages are given, the first available language will be used,
@@ -237,30 +241,20 @@ func IsAvailable(lang string) bool {
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
 func DetectLanguage(lang string) string {
-	switch {
-	case lang == "*":
-		return config.GetString("defaultLanguage")
-	case strings.Count(lang, ",") != 0: // Multiple languages
-		if i := strings.Index(lang, ";"); i != -1 {
-			lang = lang[:i]
+	values := helpers.ParseMultiValuesHeader(lang)
+	for _, l := range values {
+		if l.Value == "*" { // Accept anything, so return default language
+			break
 		}
-		for _, l := range strings.Split(lang, ",") {
-			for key := range languages {
-				if strings.HasPrefix(key, l) {
-					return key
-				}
-			}
+		if IsAvailable(l.Value) {
+			return l.Value
 		}
-	case strings.Count(lang, "-") == 0: // No variant
 		for key := range languages {
-			if strings.HasPrefix(key, lang) {
+			if strings.HasPrefix(key, l.Value) {
 				return key
 			}
 		}
 	}
 
-	if IsAvailable(lang) {
-		return lang
-	}
 	return config.GetString("defaultLanguage")
 }

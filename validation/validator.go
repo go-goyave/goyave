@@ -11,6 +11,13 @@ import (
 	"github.com/System-Glitch/goyave/lang"
 )
 
+// Rule function defining a validation rule.
+// Passing rules should return true, false otherwise.
+//
+// Rules can modifiy the validated value if needed.
+// For example, the "numeric" rule converts the data to float64 if it's a string.
+type Rule func(string, interface{}, []string, map[string]interface{}) bool
+
 // RuleSet is a request rules definition. Each entry is a field in the request.
 type RuleSet map[string][]string
 
@@ -59,6 +66,10 @@ var validationRules map[string]Rule = map[string]Rule{
 	"mime":               validateMIME,
 	"image":              validateImage,
 	"extension":          validateExtension,
+	"count":              validateCount,
+	"count_min":          validateCountMin,
+	"count_max":          validateCountMax,
+	"count_between":      validateCountBetween,
 	"date":               validateDate,
 	"before":             validateBefore,
 	"before_equal":       validateBeforeEqual,
@@ -102,7 +113,7 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 		malformedMessage = "Malformed request"
 	}
 	if data == nil {
-		return map[string][]string{"_error": {malformedMessage}}
+		return map[string][]string{"error": {malformedMessage}}
 	}
 
 	return validate(data, rules, language)
@@ -111,11 +122,10 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 func validate(data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
 	for fieldName, field := range rules {
-		if !isNullable(field) && data[fieldName] == nil { // TODO document nullable removes field
+		if !isNullable(field) && data[fieldName] == nil {
 			delete(data, fieldName)
 		}
 
-		// TODO document that if field is not required and is missing, don't check rules
 		if !isRequired(field) && !validateRequired(fieldName, data[fieldName], []string{}, data) {
 			continue
 		}
@@ -196,7 +206,11 @@ func parseRule(rule string) (string, []string) {
 	return ruleName, params
 }
 
-func requireParametersCount(rule string, params []string, count int) {
+// RequireParametersCount checks if the given parameters slice has at least "count" elements.
+// If this is not the case, panics.
+//
+// Use this to make sure your validation rules are correctly used.
+func RequireParametersCount(rule string, params []string, count int) {
 	if len(params) < count {
 		log.Panicf("Rule \"%s\" requires %d parameter(s)", rule, count)
 	}

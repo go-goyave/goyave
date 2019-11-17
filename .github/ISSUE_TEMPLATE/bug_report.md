@@ -6,8 +6,7 @@ about: Report a bug, improperly working feature or code
 
 ## Description
 
-**Branch:** [current branch or tag]  
-**Commit:** [current commit hash or tag]  
+**Version:** [framework version]  
 **Environment:** [Operating system, Go version]  
 **Reproduces:** [always|sometimes|once|every second time|...]  
 

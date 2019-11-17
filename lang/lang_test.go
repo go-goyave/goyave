@@ -61,10 +61,25 @@ func (suite *LangTestSuite) TestDetectLanguage() {
 	suite.Equal("en-US", DetectLanguage("en-US, fr"))
 	suite.Equal("fr-FR", DetectLanguage("fr-FR"))
 	suite.Equal("fr-FR", DetectLanguage("fr"))
-	suite.Equal("fr-FR", DetectLanguage("fr, en-US"))
-	suite.Equal("fr-FR", DetectLanguage("fr-FR, en-US;q=0.9"))
+	suite.Equal("en-US", DetectLanguage("fr, en-US"))
+	suite.Equal("fr-FR", DetectLanguage("fr-FR, en-US"))
+	suite.Equal("fr-FR", DetectLanguage("fr, en-US;q=0.9"))
+	suite.Equal("en-US", DetectLanguage("en, fr-FR;q=0.9"))
 	suite.Equal("en-US", DetectLanguage("*"))
 	suite.Equal("en-US", DetectLanguage("notalang"))
+
+	langs := GetAvailableLanguages()
+	suite.Equal(2, len(langs))
+	suite.Contains(langs, "en-US")
+	suite.Contains(langs, "fr-FR")
+}
+
+func (suite *LangTestSuite) TestLoad() {
+	suite.Panics(func() {
+		Load("notalanguagedir", "notalanguagepath")
+	})
+
+	Load("en-US", "../resources/lang/en-US") // Is an override
 }
 
 func (suite *LangTestSuite) TestMerge() {
@@ -73,7 +88,7 @@ func (suite *LangTestSuite) TestMerge() {
 		validation: validationLines{
 			rules: map[string]string{},
 			fields: map[string]attribute{
-				"test": attribute{
+				"test": {
 					Name: "test field",
 				},
 			},
@@ -84,11 +99,11 @@ func (suite *LangTestSuite) TestMerge() {
 		validation: validationLines{
 			rules: map[string]string{},
 			fields: map[string]attribute{
-				"email": attribute{
+				"email": {
 					Name:  "email address",
 					Rules: map[string]string{"required": "The email address is required"},
 				},
-				"test": attribute{
+				"test": {
 					Name:  "test field override",
 					Rules: map[string]string{"required": "The test field override is required"},
 				},

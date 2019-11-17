@@ -12,15 +12,16 @@ import (
 
 // Router registers routes to be matched and dispatches a handler.
 type Router struct {
-	muxRouter   *mux.Router
-	middlewares []Middleware
+	muxRouter  *mux.Router
+	middleware []Middleware
 }
 
-// Handler is a controller function
+// Handler is a controller or middleware function
 type Handler func(*Response, *Request)
 
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
+	// TODO restrict to host
 	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{muxRouter: muxRouter}
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
@@ -28,42 +29,46 @@ func newRouter() *Router {
 }
 
 // Subrouter create a new sub-router from this router.
-// Use subrouters to create route groups and to apply middlewares to multiple routes.
+// Use subrouters to create route groups and to apply middleware to multiple routes.
 func (r *Router) Subrouter(prefix string) *Router {
 	router := &Router{muxRouter: r.muxRouter.PathPrefix(prefix).Subrouter()}
 
-	// Apply parent middlewares to subrouter
-	router.Middleware(r.middlewares...)
+	// Apply parent middleware to subrouter
+	router.Middleware(r.middleware...)
 	return router
 }
 
 // Middleware apply one or more middleware(s) to the route group.
-func (r *Router) Middleware(middlewares ...Middleware) {
-	r.middlewares = append(r.middlewares, middlewares...)
+func (r *Router) Middleware(middleware ...Middleware) {
+	r.middleware = append(r.middleware, middleware...)
 }
 
 // Route register a new route.
-func (r *Router) Route(method string, endpoint string, handler Handler, validationRules validation.RuleSet) {
-	r.muxRouter.HandleFunc(endpoint, func(w http.ResponseWriter, rawRequest *http.Request) {
-		r.requestHandler(w, rawRequest, &Response{writer: w}, handler, validationRules)
-	}).Methods(method)
+//
+// Multiple methods can be passed using a pipe-separated string.
+//  "PUT|PATCH"
+//
+// The validation rules set is optional. If you don't want your route
+// to be validated, pass "nil".
+func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet) {
+	r.muxRouter.HandleFunc(uri, func(w http.ResponseWriter, rawRequest *http.Request) {
+		r.requestHandler(w, rawRequest, handler, validationRules)
+	}).Methods(strings.Split(methods, "|")...)
 }
 
 // Static serve a directory and its subdirectories of static resources.
-// Set the "download" attribute to true if you want the files to be sent as an attachment.
+// Set the "download" parameter to true if you want the files to be sent as an attachment
+// instead of an inline element.
 //
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
-func (r *Router) Static(endpoint string, directory string, download bool) {
-	if endpoint == "/" {
-		endpoint = ""
-	}
+func (r *Router) Static(uri string, directory string, download bool) {
+	r.Route("GET", uri+"{resource:.*}", staticHandler(directory, download), nil)
+}
 
-	r.Route("GET", endpoint+"{resource:.*}", func(response *Response, r *Request) {
+func staticHandler(directory string, download bool) Handler {
+	return func(response *Response, r *Request) {
 		file := r.Params["resource"]
-		if strings.HasPrefix(file, "/") {
-			file = file[1:]
-		}
 		path := cleanStaticPath(directory, file)
 
 		if filesystem.FileExists(path) {
@@ -75,36 +80,42 @@ func (r *Router) Static(endpoint string, directory string, download bool) {
 		} else {
 			response.Status(http.StatusNotFound)
 		}
-	}, nil)
+	}
 }
 
 func cleanStaticPath(directory string, file string) string {
+	if strings.HasPrefix(file, "/") {
+		file = file[1:]
+	}
 	path := directory + "/" + file
 	if len(file) <= 0 || filesystem.IsDirectory(path) {
-		if strings.HasSuffix(file, "/") {
-			file += "index.html"
-		} else {
-			file += "/index.html"
+		if strings.Count(file, "/") > 0 && !strings.HasSuffix(file, "/") {
+			file += "/"
 		}
+		file += "index.html"
 		path = directory + "/" + file
 	}
 	return path
 }
 
-func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, response *Response, handler Handler, rules validation.RuleSet) {
+func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, handler Handler, rules validation.RuleSet) {
 	request := &Request{
 		httpRequest: rawRequest,
 		Rules:       rules,
 		Params:      mux.Vars(rawRequest),
 	}
-	response.empty = true
+	response := &Response{
+		httpRequest: rawRequest,
+		writer:      w,
+		empty:       true,
+	}
 
 	// Validate last.
-	// Allows custom middlewares to be executed after core
-	// middlewares and before validation.
+	// Allows custom middleware to be executed after core
+	// middleware and before validation.
 	handler = validateRequestMiddleware(handler)
-	for i := len(r.middlewares) - 1; i >= 0; i-- {
-		handler = r.middlewares[i](handler)
+	for i := len(r.middleware) - 1; i >= 0; i-- {
+		handler = r.middleware[i](handler)
 	}
 
 	handler(response, request)

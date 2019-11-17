@@ -16,6 +16,7 @@ module.exports = {
         editLinks: true,
         docsDir: 'docs_src/src',
         smoothScroll: true,
+        activeHeaderLinks: false,
         logo: '/goyave_64.png',
         locales: {
             '/': {
@@ -32,6 +33,26 @@ module.exports = {
     },
     plugins: [
         ['@vuepress/back-to-top', true],
+        ['vuepress-plugin-container', {
+            type: 'img-row',
+            before: (img) => `<div class="img-row left">${img}<div class="row-content">`,
+            after: '</div></div>',
+        }],
+        ['vuepress-plugin-container', {
+            type: 'img-row-right',
+            before: (img) => `<div class="img-row right">${img}<div class="row-content">`,
+            after: '</div></div>',
+        }],
+        ['vuepress-plugin-container', {
+            type: 'vue',
+            before: '<pre class="vue-container"><code>',
+            after: '</code></pre>',
+        }],
+        ['vuepress-plugin-container', {
+            type: 'table',
+            before: '<div class="table">',
+            after: '</div>',
+        }]
     ],
     extraWatchFiles: [
         '.vuepress/nav/en.js',
@@ -49,9 +70,9 @@ function getGuideSidebar () {
                 'installation',
                 'upgrade-guide',
                 'configuration',
-                'contribution-guide',
                 'architecture-concepts',
                 'deployment',
+                'contribution-guide',
             ]
         },
         {
@@ -59,11 +80,11 @@ function getGuideSidebar () {
             collapsable: true,
             children: [
                 'basics/routing',
-                'basics/middlewares',
+                'basics/middleware',
                 'basics/requests',
                 'basics/controllers',
-                'basics/database',
                 'basics/responses',
+                'basics/database',
                 'basics/validation',
             ]
         },
@@ -76,6 +97,7 @@ function getGuideSidebar () {
                 'advanced/localization',
                 'advanced/testing',
                 'advanced/plugins',
+                'advanced/multi-services',
             ]
         }
     ]

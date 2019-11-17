@@ -1,21 +1,12 @@
 package filesystem
 
 import (
-	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
-
-// File represents a file received from client.
-type File struct {
-	Header   *multipart.FileHeader
-	MIMEType string
-	Data     multipart.File
-}
 
 // GetFileExtension returns the last part of a file name.
 // If the file doesn't have an extension, returns an empty string.
@@ -27,8 +18,11 @@ func GetFileExtension(file string) string {
 	return file[index+1:]
 }
 
-// GetMimeType get the mime type and size of the given file.
-func GetMimeType(file string) (string, int64, error) {
+// GetMIMEType get the mime type and size of the given file.
+//
+// If the file cannot be opened, panics. You should check if the
+// file exists, using "filesystem.FileExists()"", before calling this function.
+func GetMIMEType(file string) (string, int64) {
 	f, err := os.Open(file)
 	if err != nil {
 		panic(err)
@@ -46,7 +40,7 @@ func GetMimeType(file string) (string, int64, error) {
 		panic(errStat)
 	}
 
-	return http.DetectContentType(buffer), stat.Size(), nil
+	return http.DetectContentType(buffer), stat.Size() // TODO detect js and json
 }
 
 // FileExists returns true if the file at the given path exists and is readable.
@@ -64,27 +58,6 @@ func IsDirectory(path string) bool {
 		return stats.IsDir()
 	}
 	return false
-}
-
-// Save writes the given file on the disk.
-// Appends a timestamp to the given file name to avoid duplicate file names.
-// The file is not readable anymore once saved as its FileReader has already been
-// closed.
-//
-// Returns the actual path to the saved file.
-func Save(file File, path string, name string) string {
-	name = timestampFileName(name)
-	writer, err := os.OpenFile(path+string(os.PathSeparator)+name, os.O_WRONLY|os.O_CREATE, 0660)
-	if err != nil {
-		panic(err)
-	}
-	defer writer.Close()
-	_, errCopy := io.Copy(writer, file.Data)
-	if errCopy != nil {
-		panic(errCopy)
-	}
-	file.Data.Close()
-	return name
 }
 
 // Delete the file at the given path.

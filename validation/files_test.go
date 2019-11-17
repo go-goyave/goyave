@@ -35,6 +35,9 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 		panic(err)
 	}
 	_, err = io.Copy(part, file)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createTestFiles(files ...string) []filesystem.File {
@@ -119,4 +122,39 @@ func TestValidateExtension(t *testing.T) {
 	assert.False(t, validateExtension("file", createTestFiles(logoPath, configPath), []string{"png"}, map[string]interface{}{}))
 	assert.False(t, validateExtension("file", createTestFileWithNoExtension(), []string{"png"}, map[string]interface{}{}))
 	assert.False(t, validateExtension("file", "test", []string{"png"}, map[string]interface{}{}))
+}
+
+func TestValidateCount(t *testing.T) {
+	assert.True(t, validateCount("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateCount("file", createTestFiles(logoPath, configPath), []string{"3"}, map[string]interface{}{}))
+
+	assert.False(t, validateCount("file", "test", []string{"3"}, map[string]interface{}{}))
+	assert.Panics(t, func() { validateCount("file", true, []string{"test"}, map[string]interface{}{}) })
+}
+
+func TestValidateCountMin(t *testing.T) {
+	assert.True(t, validateCountMin("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateCountMin("file", createTestFiles(logoPath, configPath), []string{"3"}, map[string]interface{}{}))
+
+	assert.False(t, validateCountMin("file", "test", []string{"3"}, map[string]interface{}{}))
+	assert.Panics(t, func() { validateCountMin("file", true, []string{"test"}, map[string]interface{}{}) })
+}
+
+func TestValidateCountMax(t *testing.T) {
+	assert.True(t, validateCountMax("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateCountMax("file", createTestFiles(logoPath, configPath), []string{"1"}, map[string]interface{}{}))
+
+	assert.False(t, validateCountMax("file", "test", []string{"3"}, map[string]interface{}{}))
+	assert.Panics(t, func() { validateCountMax("file", true, []string{"test"}, map[string]interface{}{}) })
+}
+
+func TestValidateCountBetween(t *testing.T) {
+	assert.True(t, validateCountBetween("file", createTestFiles(logoPath, configPath), []string{"1", "5"}, map[string]interface{}{}))
+	assert.False(t, validateCountBetween("file", createTestFiles(logoPath, largeLogoPath, configPath), []string{"1", "2"}, map[string]interface{}{}))
+	assert.False(t, validateCountBetween("file", createTestFiles(logoPath, configPath), []string{"3", "5"}, map[string]interface{}{}))
+
+	assert.False(t, validateCountBetween("file", "test", []string{"3", "4"}, map[string]interface{}{}))
+	assert.Panics(t, func() { validateCountBetween("file", true, []string{"test", "2"}, map[string]interface{}{}) })
+	assert.Panics(t, func() { validateCountBetween("file", true, []string{"2", "test"}, map[string]interface{}{}) })
+	assert.Panics(t, func() { validateCountBetween("file", true, []string{"test", "test"}, map[string]interface{}{}) })
 }

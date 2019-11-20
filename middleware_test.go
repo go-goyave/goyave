@@ -209,6 +209,19 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 	})
 }
 
+func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
+	rawRequest := httptest.NewRequest("GET", "/test-route?arr=hello&arr=world", nil)
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+		arr, ok := r.Data["arr"].([]string)
+		suite.True(ok)
+		if ok {
+			suite.Equal(2, len(arr))
+			suite.Equal("hello", arr[0])
+			suite.Equal("world", arr[1])
+		}
+	})
+}
+
 func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/json")

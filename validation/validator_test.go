@@ -32,6 +32,11 @@ func (suite *ValidatorTestSuite) TestIsNullable() {
 	suite.False(isNullable([]string{"string", "min:5", "required"}))
 }
 
+func (suite *ValidatorTestSuite) TestIsArray() {
+	suite.True(isArray([]string{"array", "required", "nullable", "min:5"}))
+	suite.False(isArray([]string{"string", "min:5", "required"}))
+}
+
 func (suite *ValidatorTestSuite) TestParseRule() {
 	rule, params := parseRule("required")
 	suite.Equal("required", rule)
@@ -137,6 +142,20 @@ func (suite *ValidatorTestSuite) TestValidate() {
 	_, exists = data["nullField"]
 	suite.True(exists)
 	suite.Equal(1, len(errors))
+}
+
+func (suite *ValidatorTestSuite) TestValidateWithArray() {
+	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello"))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	data := map[string]interface{}{
+		"string": "hello",
+	}
+	errors := Validate(rawRequest, data, RuleSet{
+		"string": {"required", "array"},
+	}, "en-US")
+	suite.Equal("array", getFieldType(data["string"]))
+	suite.Equal("hello", data["string"].([]string)[0])
+	suite.Equal(0, len(errors))
 }
 
 func TestValidatorTestSuite(t *testing.T) {

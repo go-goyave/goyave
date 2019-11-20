@@ -173,7 +173,7 @@ fmt.Println(request.Data["tags"]) // "[tag1 tag2]" ([]string)
 
 You would obtain the same result for the following url-encoded request:
 ```
-name=John%20Doe&tags[]=tag1&tags[]=tag2
+name=John%20Doe&tags=tag1&tags=tag2
 ```
 
 Because the `Data` attribute can hold any type of data, you will likely need type assertion. If you validated your request, checking for type assertion errors is not necessary.

@@ -116,10 +116,10 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 		return map[string][]string{"error": {malformedMessage}}
 	}
 
-	return validate(data, rules, language)
+	return validate(request, data, rules, language)
 }
 
-func validate(data map[string]interface{}, rules RuleSet, language string) Errors {
+func validate(request *http.Request, data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
 	for fieldName, field := range rules {
 		if !isNullable(field) && data[fieldName] == nil {
@@ -129,6 +129,8 @@ func validate(data map[string]interface{}, rules RuleSet, language string) Error
 		if !isRequired(field) && !validateRequired(fieldName, data[fieldName], []string{}, data) {
 			continue
 		}
+
+		convertArray(request, fieldName, field, data) // Convert single value arrays in url-encoded requests
 
 		for _, rule := range field {
 			if rule == "nullable" {
@@ -145,6 +147,18 @@ func validate(data map[string]interface{}, rules RuleSet, language string) Error
 		}
 	}
 	return errors
+}
+
+func convertArray(request *http.Request, fieldName string, field []string, data map[string]interface{}) {
+	val := data[fieldName]
+	rv := reflect.ValueOf(val)
+	kind := rv.Kind().String()
+	if request.Header.Get("Content-Type") != "application/json" && isArray(field) && kind != "slice" {
+		rt := reflect.TypeOf(val)
+		slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
+		slice = reflect.Append(slice, rv)
+		data[fieldName] = slice.Interface()
+	}
 }
 
 func getMessage(rule string, value interface{}, language string) string {
@@ -183,6 +197,10 @@ func isRequired(field []string) bool {
 
 func isNullable(field []string) bool {
 	return helpers.Contains(field, "nullable")
+}
+
+func isArray(field []string) bool {
+	return helpers.Contains(field, "array")
 }
 
 func parseRule(rule string) (string, []string) {

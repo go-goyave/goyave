@@ -71,12 +71,20 @@ func generateFlatMap(request *http.Request) map[string]interface{} {
 
 	if request.Form != nil {
 		for field, value := range request.Form {
-			flatMap[field] = value[0]
+			if len(value) > 1 {
+				flatMap[field] = value
+			} else {
+				flatMap[field] = value[0]
+			}
 		}
 	}
 	if request.MultipartForm != nil {
 		for field, value := range request.MultipartForm.Value {
-			flatMap[field] = value[0]
+			if len(value) > 1 {
+				flatMap[field] = value
+			} else {
+				flatMap[field] = value[0]
+			}
 		}
 
 		for field := range request.MultipartForm.File {

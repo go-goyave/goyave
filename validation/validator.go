@@ -121,6 +121,8 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 
 func validate(request *http.Request, data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
+	isJSON := request.Header.Get("Content-Type") == "application/json"
+
 	for fieldName, field := range rules {
 		if !isNullable(field) && data[fieldName] == nil {
 			delete(data, fieldName)
@@ -130,7 +132,7 @@ func validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 			continue
 		}
 
-		convertArray(request, fieldName, field, data) // Convert single value arrays in url-encoded requests
+		convertArray(isJSON, fieldName, field, data) // Convert single value arrays in url-encoded requests
 
 		for _, rule := range field {
 			if rule == "nullable" {
@@ -149,15 +151,17 @@ func validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 	return errors
 }
 
-func convertArray(request *http.Request, fieldName string, field []string, data map[string]interface{}) {
-	val := data[fieldName]
-	rv := reflect.ValueOf(val)
-	kind := rv.Kind().String()
-	if request.Header.Get("Content-Type") != "application/json" && isArray(field) && kind != "slice" {
-		rt := reflect.TypeOf(val)
-		slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
-		slice = reflect.Append(slice, rv)
-		data[fieldName] = slice.Interface()
+func convertArray(isJSON bool, fieldName string, field []string, data map[string]interface{}) {
+	if !isJSON {
+		val := data[fieldName]
+		rv := reflect.ValueOf(val)
+		kind := rv.Kind().String()
+		if isArray(field) && kind != "slice" {
+			rt := reflect.TypeOf(val)
+			slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
+			slice = reflect.Append(slice, rv)
+			data[fieldName] = slice.Interface()
+		}
 	}
 }
 

@@ -119,6 +119,10 @@ All files received in a requests are stored in the `filesystem.File` structure. 
 | `MIMEType` | `string`                |
 | `Data`     | `multipart.File`        |
 
+::: warning
+The data in `file.Header` come from the client and **shouldn't be trusted**. The filename is always optional and must not be used blindly by the application: path information should be stripped, and conversion to the server file system rules should be done. You cannot rely on the size given in the header neither.
+:::
+
 #### filesystem.File.Save
 
 Writes the given file on the disk.
@@ -138,10 +142,11 @@ image := request.Data["image"].([]filesystem.File)[0]
 // As file fields can be multi-files uploads, a file field
 // is always a slice.
 
+name := request.Data["name"].(string)
 product := model.Product{
-    Name: request.Data["name"].(string),
+    Name: name,
     Price: request.Data["price"].(float64),
-    Image: image.Save("storage/img", image.Header.Filename)
+    Image: image.Save("storage/img", name)
 }
 database.GetConnection().Create(&product)
 ```

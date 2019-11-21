@@ -183,6 +183,10 @@ If a user requests `http://yourdomain.com/js/index.js`, the corresponding file w
 
 If no file is given (`http://yourdomain.com/`), or if the request URI is a directory (`http://yourdomain.com/img`), Goyave will look for a `index.html` file and send it if it exists. An error 404 Not Found is otherwise returned.
 
+::: tip
+This method is especially useful to serve Single Page Applications from your API. (Angular, Vue.js, React applications)
+:::
+
 #### Router.Static
 
 Static serve a directory and its subdirectories of static resources.

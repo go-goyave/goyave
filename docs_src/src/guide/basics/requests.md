@@ -40,9 +40,9 @@ The protocol used by this request, "HTTP/1.1" for example.
 fmt.Println(request.Protocol()) // "HTTP/1.1"
 ```
 
-#### Request.URL
+#### Request.URI
 
-URL specifies the URI being requested. Use this if you absolutely need the raw query params, url, etc. Otherwise use the provided methods and fields of the `goyave.Request`.
+URI specifies the URI being requested. Use this if you absolutely need the raw query params, url, etc. Otherwise use the provided methods and fields of the `goyave.Request`.
 
 | Parameters | Return     |
 |------------|------------|
@@ -147,6 +147,155 @@ UserAgent returns the client's User-Agent, if sent in the request.
 **Example:**
 ``` go
 fmt.Println(request.UserAgent()) // "Mozilla/5.0 ..."
+```
+
+### Accessors
+
+Accessors are helper functions to retrieve request data without having to write the type assertion. This is helpful to make your controllers cleaner. You shouldn't use these accessors in middlewares because they assume the data has been converted by the validation already. Data can still be accessed through the `Data` attribute. There is currently no accessor for slices.
+
+#### Request.Has
+
+Check if the given field exists in the request data.
+
+| Parameters     | Return |
+|----------------|--------|
+| `field string` | `bool` |
+
+**Example:**
+``` go
+fmt.Println(request.Has("name")) // true
+```
+
+#### Request.String
+
+Get a string field from the request data. Panics if the field is not a string or doesn't exist.
+
+| Parameters     | Return   |
+|----------------|----------|
+| `field string` | `string` |
+
+**Example:**
+``` go
+fmt.Println(request.String("name")) // "JohnDoe"
+```
+
+#### Request.Numeric
+
+Get a numeric field from the request data. Panics if the field is not numeric or doesn't exist.
+
+| Parameters     | Return    |
+|----------------|-----------|
+| `field string` | `float64` |
+
+**Example:**
+``` go
+fmt.Println(request.Numeric("price")) // 42.3
+```
+
+#### Request.Integer
+
+Get an integer field from the request data. Panics if the field is not an integer or doesn't exist.
+
+| Parameters     | Return |
+|----------------|--------|
+| `field string` | `int`  |
+
+**Example:**
+``` go
+fmt.Println(request.Integer("age")) // 32
+```
+
+#### Request.Bool
+
+Get a bool field from the request data. Panics if the field is not a bool or doesn't exist.
+
+| Parameters     | Return |
+|----------------|--------|
+| `field string` | `bool` |
+
+**Example:**
+``` go
+fmt.Println(request.Bool("EULA")) // true
+```
+
+#### Request.File
+
+Get a file field from the request data. Panics if the field is not a file or doesn't exist.
+
+| Parameters     | Return              |
+|----------------|---------------------|
+| `field string` | `[]filesystem.File` |
+
+**Example:**
+``` go
+for _, f := range request.File("images") {
+    fmt.Println(f.Header.Filename)
+}
+```
+
+#### Request.Timezone
+
+Get a timezone field from the request data. Panics if the field is not a timezone or doesn't exist.
+
+| Parameters     | Return           |
+|----------------|------------------|
+| `field string` | `*time.Location` |
+
+**Example:**
+``` go
+fmt.Println(request.Timezone("tz").String()) // "America/New_York"
+```
+
+#### Request.IP
+
+Get an IP field from the request data. Panics if the field is not an IP or doesn't exist.
+
+| Parameters     | Return   |
+|----------------|----------|
+| `field string` | `net.IP` |
+
+**Example:**
+``` go
+fmt.Println(request.IP("host").String()) // "127.0.0.1"
+```
+
+#### Request.URL
+
+Get an URL field from the request data. Panics if the field is not an URL or doesn't exist.
+
+| Parameters     | Return     |
+|----------------|------------|
+| `field string` | `*url.URL` |
+
+**Example:**
+``` go
+fmt.Println(request.URL("link").String()) // "https://google.com"
+```
+
+#### Request.UUID
+
+Get a UUID field from the request data. Panics if the field is not a UUID or doesn't exist.
+
+| Parameters     | Return      |
+|----------------|-------------|
+| `field string` | `uuid.UUID` |
+
+**Example:**
+``` go
+fmt.Println(request.UUID("id").String()) // "3bbcee75-cecc-5b56-8031-b6641c1ed1f1"
+```
+
+#### Request.Date
+
+Get a date field from the request data. Panics if the field is not a date or doesn't exist.
+
+| Parameters     | Return      |
+|----------------|-------------|
+| `field string` | `time.Time` |
+
+**Example:**
+``` go
+fmt.Println(request.Date("birthdate").String()) // "2019-11-21 00:00:00 +0000 UTC"
 ```
 
 ## Attributes

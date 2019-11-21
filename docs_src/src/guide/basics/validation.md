@@ -250,7 +250,7 @@ The field under validation must not be a one of the values in the given `field`.
 
 #### timezone
 
-The field under validation must be a string and be a valid timezone. This rule converts the field to `*time.Timezone` if it passes.
+The field under validation must be a string and be a valid timezone. This rule converts the field to `*time.Location` if it passes.
 
 Valid timezones are:
 - UTC

@@ -29,7 +29,7 @@ Goyave is a progressive and accessible web application framework, aimed at makin
     <img :src="$withBase('/undraw_upgrade_06a0.svg')" width="275" alt="Powerful">
     <div>
       <h2>Powerful functionalities</h2>
-      <p>Goyave is accessible, yet powerful. The frameworks includes request parsing, validation, localization, and more!</p>
+      <p>Goyave is accessible, yet powerful. The frameworks includes routing, request parsing, validation, localization, and more!</p>
     </div>
   </div>
 </div>

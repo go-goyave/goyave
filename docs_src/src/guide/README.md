@@ -7,9 +7,7 @@ This documentation is both a guide and a reference for Goyave application buildi
 
 Goyave is a framework aiming at **cleanliness**, **speed** and **power**. Goyave applications stay clean and concise thanks to minimalist function calls and route handlers. The framework gives you all the tools to create an easily readable and maintainable web application, which let you concentrate on the business logic. Although Goyave handles many things for you, such as headers or marshaling, this characteristic doesn't compromise on your freedom of code.
 
-::: warning
-The documentation is not complete yet and still being written. It is highly subject to change in the near future.
-:::
+Most golang frameworks for web development don't have a strong directory structure nor conventions to make applications have a uniform architecture and limit redundancy. This makes it difficult to work with them on different projects. In companies, having a well-defined and documented architecture helps new developers integrate projects faster, and reduces the time needed for maintaining them. For open source projets, it helps newcomers understanding the project and makes it easier to contribute.
 
 ::: tip Note
 Please feel free to sudgest changes, ask for more details, report grammar errors, or notice of uncovered scenarios by [creating an issue](https://github.com/System-Glitch/goyave/issues/new/choose) with the proposal template.
@@ -21,9 +19,8 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 ### Next release
 
 - Integrated testing functions
-- Improve threading
 - Maintenance mode (always return HTTP 503 when enabled)
-- Improved Gorm integration
+- Native handlers
 - String trimming middleware
 :::
 
@@ -31,6 +28,7 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 - Direct support for authentication
 - Plugins
+- Improved Gorm integration
 - CLI utility to help creating controllers, middlewares, etc
 - Email helpers
 - Server shutdown hooks (to gracefully close websocket connections for example)

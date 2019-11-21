@@ -9,7 +9,7 @@
     "timeout": 10,
     "maxUploadSize": 10,
     "defaultLanguage": "en-US",
-    "dbConnection": "mysql",
+    "dbConnection": "none",
     "dbHost": "127.0.0.1",
     "dbPort": 3306,
     "dbName": "goyave",
@@ -18,5 +18,5 @@
     "dbOptions": "charset=utf8&parseTime=true&loc=Local",
     "dbMaxOpenConnections": 100,
     "dbMaxIdleConnections": 20,
-    "dbAutoMigrate": true
+    "dbAutoMigrate": false
 }

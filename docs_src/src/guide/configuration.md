@@ -97,7 +97,7 @@ The core of the framework contains default values covering most cases, but you c
 | timeout              | `float64` | any                                             | `10`                                    | Timeout in seconds                                                                                             |
 | maxUploadSize        | `float64` | any                                             | `10`                                    | Max **in-memory** files sent in the request, in MiB                                                            |
 | defaultLanguage      | `string`  | any                                             | "en-US"                                 | See the [Localization](./advanced/localization) guide                                                          |
-| dbConnection         | `string`  | "none", "mysql", "postgres", "sqlite3", "mssql" | "mysql"                                 | See the [Database](./basics/database) guide                                                                    |
+| dbConnection         | `string`  | "none", "mysql", "postgres", "sqlite3", "mssql" | "none"                                  | See the [Database](./basics/database) guide                                                                    |
 | dbHost               | `string`  | any                                             | "127.0.0.1"                             |                                                                                                                |
 | dbPort               | `float64` | any                                             | `3306`                                  |                                                                                                                |
 | dbName               | `string`  | any                                             | "goyave"                                |                                                                                                                |
@@ -106,7 +106,7 @@ The core of the framework contains default values covering most cases, but you c
 | dbOptions            | `string`  | any                                             | "charset=utf8&parseTime=true&loc=Local" |                                                                                                                |
 | dbMaxOpenConnections | `float64` | any                                             | `100`                                   |                                                                                                                |
 | dbMaxIdleConnections | `float64` | any                                             | `20`                                    |                                                                                                                |
-| dbAutoMigrate        | `bool`    | `true`, `false`                                 | `true`                                  | When activated, migrate all registered models at startup                                                       |
+| dbAutoMigrate        | `bool`    | `true`, `false`                                 | `false`                                 | When activated, migrate all registered models at startup                                                       |
 
 ::: tip Note
 Numeric values are parsed as `float64` even if they are supposed to be integers so it covers the potential use-case of floats in the config.

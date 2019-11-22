@@ -21,7 +21,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Integrated testing functions
 - Maintenance mode (always return HTTP 503 when enabled)
 - Native handlers
-- String trimming middleware
 :::
 
 ### Ideas for future releases
@@ -35,7 +34,7 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Queues/Scheduler system
 - Logging
 - Custom HTTP error handlers (for custom 404/500/... messages)
-- Named routes, mutliple methods, CORS
+- Named routes, CORS
 - Placeholders in language lines and pluralization
 - Array validation
 - And more!

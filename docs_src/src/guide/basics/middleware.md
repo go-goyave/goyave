@@ -53,7 +53,7 @@ When a middleware stops a request, following middlewares are **not** executed ei
 
 ## Included middleware
 
-At the moment, there is only one included middleware in the Goyave framework, but more are to come. Included middleware are located in the `middleware` package.
+Included middleware are located in the `middleware` package.
 ``` go
 import "github.com/System-Glitch/goyave/middleware"
 ```
@@ -68,4 +68,14 @@ The returned error message can be customized using the entry `disallow-non-valid
 
 ```go
 router.Middleware(middleware.DisallowNonValidatedFields)
+```
+
+### Trim
+
+Trim removes all leading and trailing white space from string fields.
+
+For example, `" \t  trimmed\n  \t"` will be transformed to `"trimmed"`.
+
+```go
+router.Middleware(middleware.Trim)
 ```

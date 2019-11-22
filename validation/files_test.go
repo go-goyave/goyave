@@ -12,7 +12,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 	"github.com/stretchr/testify/assert"
 )
 

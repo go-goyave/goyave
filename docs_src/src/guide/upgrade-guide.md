@@ -4,7 +4,11 @@ Although Goyave is developed with backwards compatibility, breaking changes can 
 
 [[toc]]
 
-## v1.0.0 to v1.1.0
+## v1.0.0 to v2.0.0
+
+This first update comes with refactoring and package renaming to better fit the Go conventions.
 
 - `goyave.Request.URL()` has been renamed to `goyave.Request.URI()`.
     - `goyave.Request.URL()` is now a data accessor for URL fields.
+- The `helpers` package has been renamed to `helper`.
+    - The `filesystem` package thus has a different path: `github.com/System-Glitch/goyave/helper/filesystem`

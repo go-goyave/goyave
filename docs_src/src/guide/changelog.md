@@ -2,10 +2,12 @@
 
 [[toc]]
 
-## v1.1.0
+## v2.0.0
 
 - Documentation and README improvements.
 - In the configuration:
     - The default value of `dbConnection` has been changed to `none`.
     - The default value of `dbAutoMigrate` has been changed to `false`.
 - Added [request data accessors](./basics/requests#accessors).
+- Some refactoring and package renaming have been done to better respect the Go conventions.
+    - The `helpers` package have been renamed to `helper`

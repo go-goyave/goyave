@@ -18,11 +18,17 @@ Validation is automatic. You just have to define a rules set and assign it to a 
 You can customize the validation error messages by editing `resources/lang/<language>/rules.json`. Learn more in the [localization](../advanced/localization) section.
 :::
 
+The following features require the `validation` package to be imported.
+
+``` go
+import "github.com/System-Glitch/goyave/validation"
+```
+
 ## Rules sets
 
-The `http/requests` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>Requests`.
+The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>request`.
 
-**Example:** (`http/request/productRequests/product.go`)
+**Example:** (`http/request/productrequest/product.go`)
 ``` go
 var (
 	Store validation.RuleSet = validation.RuleSet{
@@ -50,7 +56,7 @@ If a field is not **required** and is missing from the request, **no rules are c
 Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition. Learn more about routing in the [dedicated section](./routing).
 
 ``` go
-router.Route("POST", "/product", productController.Store, productRequests.Store)
+router.Route("POST", "/product", product.Store, productrequest.Store)
 ```
 
 ## Available validation rules

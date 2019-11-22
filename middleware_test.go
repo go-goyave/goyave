@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 	"github.com/System-Glitch/goyave/lang"
 	"github.com/System-Glitch/goyave/validation"
 	"github.com/stretchr/testify/suite"

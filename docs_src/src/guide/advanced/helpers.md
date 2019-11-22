@@ -6,13 +6,13 @@ The Goyave framework offers a collection of helpers to ease development.
 
 ## General
 
-The helpers require the `helpers` package to be imported.
+The helpers require the `helper` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/helpers"
+import "github.com/System-Glitch/goyave/helper"
 ```
 
-#### helpers.Contains
+#### helper.Contains
 
 Check if a generic slice contains the given value.
 
@@ -24,10 +24,10 @@ Check if a generic slice contains the given value.
 **Example:**
 ``` go
 slice := []string{"Avogado", "Goyave", "Pear", "Apple"}
-fmt.Println(helpers.Contains(slice, "Goyave")) // true
+fmt.Println(helper.Contains(slice, "Goyave")) // true
 ```
 
-#### helpers.SliceEqual
+#### helper.SliceEqual
 
 Check if two generic slices are the same.
 
@@ -40,10 +40,10 @@ Check if two generic slices are the same.
 ``` go
 first := []string{"Avogado", "Goyave", "Pear", "Apple"}
 second := []string{"Goyave", "Avogado", "Pear", "Apple"}
-fmt.Println(helpers.SliceEqual(first, second)) // false
+fmt.Println(helper.SliceEqual(first, second)) // false
 ```
 
-#### helpers.ToFloat64
+#### helper.ToFloat64
 
 Check if two generic slices are the same.
 
@@ -54,14 +54,14 @@ Check if two generic slices are the same.
 
 **Examples:**
 ``` go
-fmt.Println(helpers.ToFloat64(1.42)) // 1.42 nil
-fmt.Println(helpers.ToFloat64(1)) // 1.0 nil
-fmt.Println(helpers.ToFloat64("1.42")) // 1.42 nil
-fmt.Println(helpers.ToFloat64("NaN")) // 0 nil
-fmt.Println(helpers.ToFloat64([]string{})) // 0 nil
+fmt.Println(helper.ToFloat64(1.42)) // 1.42 nil
+fmt.Println(helper.ToFloat64(1)) // 1.0 nil
+fmt.Println(helper.ToFloat64("1.42")) // 1.42 nil
+fmt.Println(helper.ToFloat64("NaN")) // 0 nil
+fmt.Println(helper.ToFloat64([]string{})) // 0 nil
 ```
 
-#### helpers.ToString
+#### helper.ToString
 
 Convert a generic value to string.
 
@@ -71,13 +71,13 @@ Convert a generic value to string.
 
 **Examples:**
 ``` go
-fmt.Println(helpers.ToString(1.42)) // "1.42"
-fmt.Println(helpers.ToString(nil)) // "nil"
-fmt.Println(helpers.ToString("hello")) // "hello"
-fmt.Println(helpers.ToString([]string{})) // "[]"
+fmt.Println(helper.ToString(1.42)) // "1.42"
+fmt.Println(helper.ToString(nil)) // "nil"
+fmt.Println(helper.ToString("hello")) // "hello"
+fmt.Println(helper.ToString([]string{})) // "[]"
 ```
 
-#### helpers.ParseMultiValuesHeader
+#### helper.ParseMultiValuesHeader
 
 Parses multi-values HTTP headers, taking the quality values into account. The result is a slice of values sorted according to the order of priority.
 
@@ -96,10 +96,10 @@ See: [https://developer.mozilla.org/en-US/docs/Glossary/Quality_values](https://
 
 **Examples:**
 ``` go
-fmt.Println(helpers.ParseMultiValuesHeader("text/html,text/*;q=0.5,*/*;q=0.7"))
+fmt.Println(helper.ParseMultiValuesHeader("text/html,text/*;q=0.5,*/*;q=0.7"))
 // [{text/html 1} {*/* 0.7} {text/* 0.5}]
 
-fmt.Println(helpers.ParseMultiValuesHeader("text/html;q=0.8,text/*;q=0.8,*/*;q=0.8"))
+fmt.Println(helper.ParseMultiValuesHeader("text/html;q=0.8,text/*;q=0.8,*/*;q=0.8"))
 // [{text/html 0.8} {text/* 0.8} {*/* 0.8}]
 ```
 
@@ -108,7 +108,7 @@ fmt.Println(helpers.ParseMultiValuesHeader("text/html;q=0.8,text/*;q=0.8,*/*;q=0
 The filesystem helpers require the `filesystem`  package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/helpers/filesystem"
+import "github.com/System-Glitch/goyave/helper/filesystem"
 ```
 
 All files received in a requests are stored in the `filesystem.File` structure. This structres gives all the information you need on a file and its content, as well as a helper function to save it easily.

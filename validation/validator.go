@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/System-Glitch/goyave/helpers"
+	"github.com/System-Glitch/goyave/helper"
 
 	"github.com/System-Glitch/goyave/lang"
 )
@@ -192,19 +192,19 @@ func getFieldType(value interface{}) string {
 }
 
 func isTypeDependent(rule string) bool {
-	return helpers.Contains(typeDependentMessageRules, rule)
+	return helper.Contains(typeDependentMessageRules, rule)
 }
 
 func isRequired(field []string) bool {
-	return helpers.Contains(field, "required")
+	return helper.Contains(field, "required")
 }
 
 func isNullable(field []string) bool {
-	return helpers.Contains(field, "nullable")
+	return helper.Contains(field, "nullable")
 }
 
 func isArray(field []string) bool {
-	return helpers.Contains(field, "array")
+	return helper.Contains(field, "array")
 }
 
 func parseRule(rule string) (string, []string) {

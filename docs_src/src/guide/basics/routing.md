@@ -45,8 +45,8 @@ Multiple methods can be passed using a pipe-separated string.
 **Examples:**
 ``` go
 router.Route("GET", "/hello", myHandlerFunction, nil)
-router.Route("POST", "/user", userController.Register, userRequests.Register)
-router.Route("PUT|PATCH", "/user", userController.Update, userRequests.Update)
+router.Route("POST", "/user", user.Register, userrequest.Register)
+router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
 ```
 
 ::: tip
@@ -60,14 +60,14 @@ URIs can have parameters, defined using the format `{name}` or `{name:pattern}`.
 
 **Example:**
 ``` go
-router.Route("GET", "/products/{key}", productsController.Show, nil)
-router.Route("GET", "/products/{id:[0-9]+}", productsController.ShowById, nil)
-router.Route("GET", "/categories/{category}/{id:[0-9]+}", categoryController.Show, nil)
+router.Route("GET", "/products/{key}", product.Show, nil)
+router.Route("GET", "/products/{id:[0-9]+}", product.ShowById, nil)
+router.Route("GET", "/categories/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Regex groups can be used inside patterns, as long as they are non-capturing (`(?:re)`). For example:
 ``` go
-router.Route("GET", "/categories/{category}/{sort:(?:asc|desc|new)}", categoryController.ShowSorted, nil)
+router.Route("GET", "/categories/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -84,7 +84,7 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 You can assign a validation rules set to each route. Learn more in the dedicated [section](./validation). You should always validate incoming requests.
 
 ``` go
-router.Route("POST", "/products", productsController.Create, validation.RuleSet{
+router.Route("POST", "/products", product.Create, validation.RuleSet{
 	"Name":  []string{"required", "string", "min:4"},
 	"Price": []string{"required", "numeric"},
 })
@@ -96,7 +96,7 @@ It's not recommended to define rules set directly in the route definition. You s
 
 If you don't want your route to be validated, or if validation is not necessary, just pass `nil` as the last parameter.
 ``` go
-router.Route("GET", "/products/{id}", productsController.Show, nil)
+router.Route("GET", "/products/{id}", product.Show, nil)
 ```
 
 ## Groups and sub-routers
@@ -110,13 +110,13 @@ userRouter := router.Subrouter("/user")
 
 In our application, user profiles are public: anyone can see the user profiles without being authenticated. However, only authenticated users can modify their information and delete their account. We don't want to add some redundancy and apply the authentication middleware for each route needing it, so we are going to create another sub-router.
 ```go
-userRouter.Route("GET", "/{username}", userController.Show, nil)
-userRouter.Route("POST", "/", userController.Register, userRequests.Register)
+userRouter.Route("GET", "/{username}", user.Show, nil)
+userRouter.Route("POST", "/", user.Register, userrequest.Register)
 
 authUserRouter := userRouter.Subrouter("/") // Don't add a prefix
 authUserRouter.Middleware(authenticationMiddleware)
-authUserRouter.Route("PUT", "/", userController.Update, userRequests.Update)
-authUserRouter.Route("DELETE", "/", userController.Delete, nil)
+authUserRouter.Route("PUT", "/", user.Update, userrequest.Update)
+authUserRouter.Route("DELETE", "/", user.Delete, nil)
 ```
 
 To improve your routes definition readability, you should create a new route registrer for each feature. In our example, our definitions would look like this:

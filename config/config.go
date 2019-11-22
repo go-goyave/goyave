@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/System-Glitch/goyave/helpers"
+	"github.com/System-Glitch/goyave/helper"
 )
 
 var config map[string]interface{}
@@ -191,7 +191,7 @@ func validateEntry(value interface{}, key string) error {
 		}
 
 		if v, ok := authorizedValues[key]; ok {
-			if !helpers.Contains(v, value.(string)) {
+			if !helper.Contains(v, value.(string)) {
 				return fmt.Errorf("Invalid config entry. %s must have one of the following values: %s", key, strings.Join(v, ", "))
 			}
 		}

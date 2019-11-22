@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/System-Glitch/goyave/helpers"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 )
 
 func validateRequired(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -28,7 +28,7 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 	}
 	switch getFieldType(value) {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
+		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min
 	case "string":
 		return len(value.(string)) >= int(min)
@@ -56,7 +56,7 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 	}
 	switch getFieldType(value) {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
+		floatValue, _ := helper.ToFloat64(value)
 		return floatValue <= max
 	case "string":
 		return len(value.(string)) <= int(max)
@@ -89,7 +89,7 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 
 	switch getFieldType(value) {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
+		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min && floatValue <= max
 	case "string":
 		length := len(value.(string))
@@ -124,8 +124,8 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue > comparedFloatValue
 	case "string":
 		return len(value.(string)) > len(compared.(string))
@@ -158,8 +158,8 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue >= comparedFloatValue
 	case "string":
 		return len(value.(string)) >= len(compared.(string))
@@ -192,8 +192,8 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue < comparedFloatValue
 	case "string":
 		return len(value.(string)) < len(compared.(string))
@@ -226,8 +226,8 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue <= comparedFloatValue
 	case "string":
 		return len(value.(string)) <= len(compared.(string))
@@ -256,7 +256,7 @@ func validateBool(field string, value interface{}, parameters []string, form map
 	case kind == "bool":
 		return true
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
-		v, _ := helpers.ToFloat64(value)
+		v, _ := helper.ToFloat64(value)
 		if v == 1 {
 			form[field] = true
 			return true
@@ -287,15 +287,15 @@ func validateSame(field string, value interface{}, parameters []string, form map
 		if valueType == otherType {
 			switch valueType {
 			case "numeric":
-				f1, _ := helpers.ToFloat64(value)
-				f2, _ := helpers.ToFloat64(other)
+				f1, _ := helper.ToFloat64(value)
+				f2, _ := helper.ToFloat64(other)
 				return f1 == f2
 			case "string":
 				s1, _ := value.(string)
 				s2, _ := other.(string)
 				return s1 == s2
 			case "array":
-				return helpers.SliceEqual(value, other)
+				return helper.SliceEqual(value, other)
 			}
 			// Don't check files
 		}
@@ -321,7 +321,7 @@ func validateSize(field string, value interface{}, parameters []string, form map
 
 	switch getFieldType(value) {
 	case "numeric":
-		floatVal, _ := helpers.ToFloat64(value)
+		floatVal, _ := helper.ToFloat64(value)
 		return floatVal == float64(size)
 	case "string":
 		return len(value.(string)) == size

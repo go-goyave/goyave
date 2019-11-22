@@ -11,7 +11,7 @@ import (
 	"strconv"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 )
 
 // Response represents a controller response.

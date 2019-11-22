@@ -3,7 +3,7 @@ package validation
 import (
 	"reflect"
 
-	"github.com/System-Glitch/goyave/helpers"
+	"github.com/System-Glitch/goyave/helper"
 )
 
 func validateArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -19,7 +19,7 @@ func validateDistinct(field string, value interface{}, parameters []string, form
 	list := reflect.ValueOf(value)
 	for i := 0; i < list.Len(); i++ {
 		v := list.Index(i).Interface()
-		if helpers.Contains(found, v) {
+		if helper.Contains(found, v) {
 			return false
 		}
 		found = append(found, v)
@@ -30,8 +30,8 @@ func validateDistinct(field string, value interface{}, parameters []string, form
 
 func checkInNumeric(parameters []string, value interface{}) bool {
 	for _, v := range parameters {
-		floatVal, _ := helpers.ToFloat64(value)
-		other, err := helpers.ToFloat64(v)
+		floatVal, _ := helper.ToFloat64(value)
+		other, err := helper.ToFloat64(v)
 		if err == nil && floatVal == other { // Compare only values of the same type
 			return true
 		}
@@ -45,7 +45,7 @@ func validateIn(field string, value interface{}, parameters []string, form map[s
 	case "numeric":
 		return checkInNumeric(parameters, value)
 	case "string":
-		return helpers.Contains(parameters, value)
+		return helper.Contains(parameters, value)
 	}
 	// Don't check arrays and files
 	return false
@@ -57,7 +57,7 @@ func validateNotIn(field string, value interface{}, parameters []string, form ma
 	case "numeric":
 		return !checkInNumeric(parameters, value)
 	case "string":
-		return !helpers.Contains(parameters, value)
+		return !helper.Contains(parameters, value)
 	}
 	// Don't check arrays and files
 	return false
@@ -67,7 +67,7 @@ func validateInArray(field string, value interface{}, parameters []string, form 
 	RequireParametersCount("in_array", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists && getFieldType(other) == "array" {
-		return helpers.Contains(other, value)
+		return helper.Contains(other, value)
 	}
 	return false
 }
@@ -76,7 +76,7 @@ func validateNotInArray(field string, value interface{}, parameters []string, fo
 	RequireParametersCount("not_in_array", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists && getFieldType(other) == "array" {
-		return !helpers.Contains(other, value)
+		return !helper.Contains(other, value)
 	}
 	return false
 }

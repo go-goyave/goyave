@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers"
+	"github.com/System-Glitch/goyave/helper"
 
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 )
 
 type validationLines struct {
@@ -241,7 +241,7 @@ func GetAvailableLanguages() []string {
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
 func DetectLanguage(lang string) string {
-	values := helpers.ParseMultiValuesHeader(lang)
+	values := helper.ParseMultiValuesHeader(lang)
 	for _, l := range values {
 		if l.Value == "*" { // Accept anything, so return default language
 			break

@@ -64,12 +64,12 @@ Now that your project directory is set up and the dependencies are installed, le
 package main
 
 import (
-    "my-project/http/routes"
+    "my-project/http/route"
     "github.com/System-Glitch/goyave"
 )
 
 func main() {
-    goyave.Start(routes.Register)
+    goyave.Start(route.Register)
 }
 ```
 
@@ -77,13 +77,13 @@ func main() {
 `goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background. See the [multi-services](./advanced/multi-services) section for more details.
 :::
 
-Now we need to create the package in which we will register our routes. Create a new package `http/routes`:
+Now we need to create the package in which we will register our routes. Create a new package `http/route`:
 ```
 $ mkdir http
-$ mkdir http/routes
+$ mkdir http/route
 ```
 
-Create `http/routes/routes.go`:
+Create `http/route/route.go`:
 ``` go
 package routes
 
@@ -103,7 +103,7 @@ func hello(response *goyave.Response, request *goyave.Request) {
 Here we registered a very simple route displaying "Hi!". Learn more about routing [here](./basics/routing).
 
 ::: tip
-Your routes definitions should be separated from the handler functions. Handlers should be defined in a `http/controllers` directory.
+Your routes definitions should be separated from the handler functions. Handlers should be defined in a `http/controller` directory.
 :::
 
 Run your server and request your route:

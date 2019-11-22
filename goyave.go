@@ -136,6 +136,7 @@ func startTLSRedirectServer() {
 
 	go func() {
 		if err := redirectServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Println("The TLS redirect server encountered an error:")
 			fmt.Println(err)
 		}
 	}()
@@ -161,11 +162,13 @@ func startServer(router *Router) {
 			runStartupHooks()
 			if err := server.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
 				fmt.Println(err)
+				// TODO shutdown server on error
 			}
 		} else {
 			runStartupHooks()
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				fmt.Println(err)
+				// TODO shutdown server on error
 			}
 		}
 		serverMutex.Unlock()

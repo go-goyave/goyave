@@ -80,7 +80,7 @@ var validationRules map[string]Rule = map[string]Rule{
 }
 
 var typeDependentMessageRules []string = []string{
-	"min", "max", "size",
+	"min", "max", "between", "size",
 	"greater_than", "greater_than_equal",
 	"lower_than", "lower_than_equal",
 }

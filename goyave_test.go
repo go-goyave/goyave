@@ -72,13 +72,11 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 	config.Clear()
 	proc, err := os.FindProcess(os.Getpid())
 	if err == nil {
-		fmt.Println("start")
 		c := make(chan bool, 1)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		RegisterStartupHook(func() {
-			fmt.Println("hook")
 			suite.True(IsReady())
 			if runtime.GOOS == "windows" {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
@@ -87,13 +85,10 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				proc.Signal(syscall.SIGTERM)
 				time.Sleep(500 * time.Millisecond)
 			}
-			fmt.Println("after stop")
 			c <- true
 		})
 		go func() {
-			fmt.Println("before start")
 			Start(func(router *Router) {})
-			fmt.Println("after start")
 		}()
 
 		select {
@@ -107,11 +102,9 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 	} else {
 		fmt.Println("WARNING: Couldn't get process PID, skipping SIGINT test")
 	}
-	fmt.Println("end")
 }
 
 func (suite *GoyaveTestSuite) TestTLSServer() {
-	fmt.Println("start")
 	suite.loadConfig()
 	config.Set("protocol", "https")
 	suite.runServer(func(router *Router) {
@@ -155,11 +148,9 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 	})
 
 	config.Set("protocol", "http")
-	fmt.Println("end")
 }
 
 func (suite *GoyaveTestSuite) TestStaticServing() {
-	fmt.Println("start")
 	suite.runServer(func(router *Router) {
 		router.Static("/resources", "resources", true)
 	}, func() {
@@ -182,7 +173,6 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal("{\n    \"disallow-non-validated-fields\": \"Non-validated fields are forbidden.\"\n}", string(body))
 		}
 	})
-	fmt.Println("end")
 }
 
 func (suite *GoyaveTestSuite) TestServerError() {
@@ -192,7 +182,6 @@ func (suite *GoyaveTestSuite) TestServerError() {
 }
 
 func (suite *GoyaveTestSuite) testServerError(protocol string) {
-	fmt.Println("start")
 	c := make(chan bool)
 	c2 := make(chan bool)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -237,7 +226,6 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 	defer cancel()
 	blockingServer.Shutdown(ctx)
 	<-c2
-	fmt.Println("end")
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

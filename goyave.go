@@ -191,14 +191,16 @@ func startServer(router *Router) {
 func runStartupHooks() {
 	go func() {
 		time.Sleep(100 * time.Millisecond) // TODO improve startup hooks
-		if server != nil {                 // DATA race here
-			mutex.Lock()
+		mutex.Lock()
+		if server != nil {
 			ready = true
 			mutex.Unlock()
 			for _, hook := range startupHooks {
 				hook()
 			}
+			return
 		}
+		mutex.Unlock()
 	}()
 }
 

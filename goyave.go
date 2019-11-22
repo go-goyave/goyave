@@ -162,13 +162,17 @@ func startServer(router *Router) {
 			runStartupHooks()
 			if err := server.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
 				fmt.Println(err)
-				// TODO shutdown server on error
+				serverMutex.Unlock()
+				Stop()
+				return
 			}
 		} else {
 			runStartupHooks()
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				fmt.Println(err)
-				// TODO shutdown server on error
+				serverMutex.Unlock()
+				Stop()
+				return
 			}
 		}
 		serverMutex.Unlock()

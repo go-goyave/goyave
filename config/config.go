@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/System-Glitch/goyave/helper"
 )
@@ -44,42 +45,59 @@ var authorizedValues = map[string][]string{
 	"protocol":     {"http", "https"},
 	"dbConnection": {"none", "mysql", "postgres", "sqlite3", "mssql"},
 }
+var mutex = &sync.Mutex{}
 
-// LoadConfig loads the config.json file in the current working directory.
+// Load loads the config.json file in the current working directory.
 // If the "GOYAVE_ENV" env variable is set, the config file will be picked like so:
 // - "production": "config.production.json"
 // - "test": "config.test.json"
 // - By default: "config.json"
-func LoadConfig() error {
-	if config == nil {
-		err := loadDefaults()
+func Load() error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	err := loadDefaults()
+	if err == nil {
+		workingDir, err := os.Getwd()
 		if err == nil {
-			workingDir, err := os.Getwd()
+			path := getConfigFilePath()
+			conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
 			if err == nil {
-				path := getConfigFilePath()
-				conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
-				if err == nil {
-					for key, value := range conf {
-						config[key] = value
-					}
+				for key, value := range conf {
+					config[key] = value
 				}
-			} else {
-				panic(err)
 			}
+		} else {
+			panic(err)
 		}
-
-		if !validateConfig() {
-			os.Exit(1)
-		}
-
-		return err
 	}
-	return nil
+
+	if !validateConfig() {
+		return fmt.Errorf("Invalid config")
+	}
+
+	return err
+}
+
+// IsLoaded returns true if the config have been loaded.
+func IsLoaded() bool {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return config != nil
+}
+
+// Clear unloads the config.
+// DANGEROUS, should only be used for testing.
+func Clear() {
+	mutex.Lock()
+	config = nil
+	mutex.Unlock()
 }
 
 // Get a config entry
 func Get(key string) interface{} {
+	mutex.Lock()
 	val, ok := config[key]
+	mutex.Unlock()
 	if ok {
 		return val
 	}
@@ -95,12 +113,16 @@ func Set(key string, value interface{}) {
 	if err := validateEntry(value, key); err != nil {
 		panic(err)
 	}
+	mutex.Lock()
 	config[key] = value
+	mutex.Unlock()
 }
 
 // GetString a config entry as string
 func GetString(key string) string {
+	mutex.Lock()
 	val, ok := config[key]
+	mutex.Unlock()
 	if ok {
 		str, ok := val.(string)
 		if !ok {
@@ -115,7 +137,9 @@ func GetString(key string) string {
 
 // GetBool a config entry as bool
 func GetBool(key string) bool {
+	mutex.Lock()
 	val, ok := config[key]
+	mutex.Unlock()
 	if ok {
 		b, ok := val.(bool)
 		if !ok {
@@ -161,14 +185,11 @@ func readConfigFile(file string) (map[string]interface{}, error) {
 }
 
 func getConfigFilePath() string {
-	switch strings.ToLower(os.Getenv("GOYAVE_ENV")) {
-	case "test":
-		return "config.test.json"
-	case "production":
-		return "config.production.json"
-	default:
+	env := strings.ToLower(os.Getenv("GOYAVE_ENV"))
+	if env == "local" || env == "localhost" || env == "" {
 		return "config.json"
 	}
+	return "config." + env + ".json"
 }
 
 func validateConfig() bool {

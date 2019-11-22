@@ -40,7 +40,12 @@ func createHTTPClient() *http.Client {
 
 func (suite *GoyaveTestSuite) SetupSuite() {
 	os.Setenv("GOYAVE_ENV", "test")
-	config.LoadConfig()
+}
+
+func (suite *GoyaveTestSuite) loadConfig() {
+	if err := config.Load(); err != nil {
+		suite.FailNow(err.Error())
+	}
 	config.Set("tlsKey", "resources/server.key")
 	config.Set("tlsCert", "resources/server.crt")
 }
@@ -58,18 +63,22 @@ func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback f
 }
 
 func (suite *GoyaveTestSuite) TestGetAddress() {
+	suite.loadConfig()
 	suite.Equal("127.0.0.1:1235", getAddress("http"))
 	suite.Equal("127.0.0.1:1236", getAddress("https"))
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
+	config.Clear()
 	proc, err := os.FindProcess(os.Getpid())
 	if err == nil {
+		fmt.Println("start")
 		c := make(chan bool, 1)
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		RegisterStartupHook(func() {
+			fmt.Println("hook")
 			suite.True(IsReady())
 			if runtime.GOOS == "windows" {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
@@ -78,26 +87,32 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				proc.Signal(syscall.SIGTERM)
 				time.Sleep(500 * time.Millisecond)
 			}
-			suite.False(IsReady())
-			suite.Nil(server)
-			ClearStartupHooks()
+			fmt.Println("after stop")
 			c <- true
 		})
 		go func() {
+			fmt.Println("before start")
 			Start(func(router *Router) {})
+			fmt.Println("after start")
 		}()
 
 		select {
 		case <-ctx.Done():
 			suite.Fail("Timeout exceeded in server start/stop test")
-		case <-c: // OK
+		case <-c:
+			suite.False(IsReady())
+			suite.Nil(server)
+			ClearStartupHooks()
 		}
 	} else {
 		fmt.Println("WARNING: Couldn't get process PID, skipping SIGINT test")
 	}
+	fmt.Println("end")
 }
 
-func (suite *GoyaveTestSuite) TestTLSServer() {
+func (suite *GoyaveTestSuite) testTLSServer() {
+	fmt.Println("start")
+	suite.loadConfig()
 	config.Set("protocol", "https")
 	suite.runServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler, nil)
@@ -140,9 +155,11 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 	})
 
 	config.Set("protocol", "http")
+	fmt.Println("end")
 }
 
-func (suite *GoyaveTestSuite) TestStaticServing() {
+func (suite *GoyaveTestSuite) testStaticServing() {
+	fmt.Println("start")
 	suite.runServer(func(router *Router) {
 		router.Static("/resources", "resources", true)
 	}, func() {
@@ -165,17 +182,20 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal("{\n    \"disallow-non-validated-fields\": \"Non-validated fields are forbidden.\"\n}", string(body))
 		}
 	})
+	fmt.Println("end")
 }
 
 func (suite *GoyaveTestSuite) TestServerError() {
+	suite.loadConfig()
 	suite.testServerError("http")
 	suite.testServerError("https")
 }
 
 func (suite *GoyaveTestSuite) testServerError(protocol string) {
-	config.Set("protocol", protocol)
+	fmt.Println("start")
 	c := make(chan bool)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	c2 := make(chan bool)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	blockingServer := &http.Server{
@@ -184,7 +204,9 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 	}
 
 	go func() {
+		config.Set("protocol", protocol)
 		Start(func(router *Router) {})
+		config.Set("protocol", "http")
 		c <- true
 	}()
 	go func() {
@@ -200,6 +222,7 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 				suite.Fail(err.Error())
 			}
 		}
+		c2 <- true
 	}()
 
 	select {
@@ -210,11 +233,11 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		suite.Nil(server)
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	blockingServer.Shutdown(ctx)
-
-	config.Set("protocol", "http")
+	<-c2
+	fmt.Println("end")
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

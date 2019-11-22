@@ -17,7 +17,7 @@ type ResponseTestSuite struct {
 }
 
 func (suite *ResponseTestSuite) SetupSuite() {
-	config.LoadConfig()
+	config.Load()
 }
 
 func createTestResponse(rawRequest *http.Request) *Response {

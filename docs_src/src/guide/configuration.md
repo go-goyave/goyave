@@ -14,11 +14,14 @@ See the [configuration reference](#configuration-reference) for more details.
 
 Most projects need different configuration values based on the environment. For example, you won't connect to the same database if you're in local development, in a testing environment inside continuous integration pipelines, or in production. Goyave supports multiple configurations and will pick the appropriate one depending on the environment variable `GOYAVE_ENV`.
 
-| GOYAVE_ENV    | Config file              |
-| ------------- | ------------------------ |
-| test          | `config.test.json`       |
-| production    | `config.production.json` |
-| *any*         | `config.json`            |
+Since `v2.0.0`, you can use custom environments.
+
+| GOYAVE_ENV                    | Config file              |
+|-------------------------------|--------------------------|
+| test                          | `config.test.json`       |
+| production                    | `config.production.json` |
+| *custom_env*                  | `config.custom_env.json` |
+| local / localhost / *not set* | `config.json`            |
 
 ## Using the configuration
 
@@ -27,15 +30,28 @@ Before being able to use the config, import the config package:
 import "github.com/System-Glitch/goyave/config"
 ```
 
+The configuration is loaded automatically when the server starts, but you can reload it manually if needed.
+
+#### config.Load
+
+| Parameters | Return  |
+|------------|---------|
+|            | `error` |
+
+**Example:**
+``` go
+config.Load()
+```
+
 ### Getting a value
 
 #### config.Get
 
 Get a generic config entry. You may need to type-assert it before being able to use it. You can do so safely as the config values and types are validated. Panics if the entry doesn't exist.
 
-| Parameters    | Return                 |
-| ------------- | ---------------------- |
-| `key string`  | `interface{}` or panic |
+| Parameters   | Return                 |
+|--------------|------------------------|
+| `key string` | `interface{}` or panic |
 
 **Example:**
 ``` go
@@ -46,9 +62,9 @@ config.Get("appName") // "goyave"
 
 Get a string config entry. Panics if the entry doesn't exist or is not a string.
 
-| Parameters    | Return                 |
-| ------------- | ---------------------- |
-| `key string`  | `string` or panic      |
+| Parameters   | Return            |
+|--------------|-------------------|
+| `key string` | `string` or panic |
 
 **Example:**
 ``` go
@@ -59,9 +75,9 @@ config.GetString("protocol") // "http"
 
 Get a bool config entry. Panics if the entry doesn't exist or is not a bool.
 
-| Parameters    | Return                 |
-| ------------- | ---------------------- |
-| `key string`  | `bool` or panic        |
+| Parameters   | Return          |
+|--------------|-----------------|
+| `key string` | `bool` or panic |
 
 **Example:**
 ``` go
@@ -70,7 +86,14 @@ config.GetBool("debug") // true
 
 ### Setting a value
 
-You can set a config value at runtime with the `config.Set(key, value)` function. Bear in mind that this change **temporary** and will be lost after your application restarts. This function is mainly used for testing purposes. Values set using this function are still being validated, and your application will panic if the validation doesn't pass.
+You can set a config value at runtime with the `config.Set(key, value)` function. Bear in mind that this change **temporary** and will be lost after your application restarts or if the config is reloaded. This function is mainly used for testing purposes. Values set using this function are still being validated, and your application will panic if the validation doesn't pass.
+
+#### config.Set
+
+| Parameters          | Return          |
+|---------------------|-----------------|
+| `key string`        | `void` or panic |
+| `value interface{}` |                 |
 
 **Example:**
 ``` go

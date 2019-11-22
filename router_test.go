@@ -36,7 +36,7 @@ func (suite *RouterTestSuite) routerTestMiddleware(handler Handler) Handler {
 }
 
 func (suite *RouterTestSuite) SetupSuite() {
-	config.LoadConfig()
+	config.Load()
 }
 
 func (suite *RouterTestSuite) TestNewRouter() {

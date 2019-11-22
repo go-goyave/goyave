@@ -8,7 +8,7 @@ There are some important details to think about before deploying your Goyave app
 
 ## Application configuration
 
-Be sure to deploy your application with a `config.production.json` config file containing the correct values for your production environment.
+Be sure to deploy your application with a `config.production.json` config file containing the correct values for your production environment and **set the `GOYAVE_ENV` environment variable to `production`.**
 
 1. Ensure that the `environment` entry is `production`.
 2. The `host` entry should be `0.0.0.0` or your domain name.

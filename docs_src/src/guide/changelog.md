@@ -13,3 +13,5 @@
     - The `helpers` package have been renamed to `helper`
 - The server now shuts down when it encounters an error.
 - New [`validation.GetFieldType`](./basics/validation#validation-getfieldtype) function.
+- Config is now protected with a `sync.Mutex` to avoid race conditions in multi-threaded environments.
+- Config can now be reloaded manually.

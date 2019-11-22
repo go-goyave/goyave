@@ -12,7 +12,7 @@ type DatabaseTestSuite struct {
 }
 
 func (suite *DatabaseTestSuite) SetupSuite() {
-	config.LoadConfig()
+	config.Load()
 }
 
 func (suite *DatabaseTestSuite) TestBuildConnectionOptions() {

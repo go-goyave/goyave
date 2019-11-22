@@ -28,7 +28,7 @@ type MiddlewareTestSuite struct {
 }
 
 func (suite *MiddlewareTestSuite) SetupSuite() {
-	config.LoadConfig()
+	config.Load()
 	lang.LoadDefault()
 }
 

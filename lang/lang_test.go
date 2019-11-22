@@ -25,7 +25,7 @@ func loadTestLang(lang string) {
 func (suite *LangTestSuite) SetupSuite() {
 	LoadDefault()
 	LoadAllAvailableLanguages()
-	config.LoadConfig()
+	config.Load()
 	config.Set("defaultLanguage", "en-US")
 }
 

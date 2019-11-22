@@ -15,11 +15,21 @@ type ConfigTestSuite struct {
 func (suite *ConfigTestSuite) SetupSuite() {
 	suite.previousEnv = os.Getenv("GOYAVE_ENV")
 	os.Setenv("GOYAVE_ENV", "test")
-	LoadConfig()
+	if err := Load(); err != nil {
+		suite.FailNow(err.Error())
+	}
+	suite.True(IsLoaded())
 }
 
 func (suite *ConfigTestSuite) TestLocalOverride() {
+	os.Setenv("GOYAVE_ENV", "test")
+	config = nil
+	if err := Load(); err != nil {
+		suite.FailNow(err.Error())
+	}
 	suite.Equal("test", Get("environment"))
+	Set("environment", "test_override")
+	suite.Equal("test_override", Get("environment"))
 }
 
 func (suite *ConfigTestSuite) TestGet() {
@@ -72,12 +82,16 @@ func (suite *ConfigTestSuite) TestInvalidConfig() {
 	suite.Panics(func() {
 		Set("protocol", "ftp") // Unsupported protocol
 	})
+
+	os.Setenv("GOYAVE_ENV", "test_invalid")
+	config = nil
+	suite.NotNil(Load())
+	os.Setenv("GOYAVE_ENV", "test")
 }
 
 func (suite *ConfigTestSuite) TearDownAllSuite() {
 	config = map[string]interface{}{}
 	os.Setenv("GOYAVE_ENV", suite.previousEnv)
-
 }
 
 func TestConfigTestSuite(t *testing.T) {

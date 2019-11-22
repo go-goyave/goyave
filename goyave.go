@@ -3,6 +3,7 @@ package goyave
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -73,7 +74,6 @@ func Start(routeRegistrer func(*Router)) {
 
 	router := newRouter()
 	routeRegistrer(router)
-	mutex.Unlock()
 	startServer(router)
 }
 
@@ -91,7 +91,9 @@ func Stop() {
 	defer cancel()
 	mutex.Lock()
 	stop(ctx)
-	sigChannel <- syscall.SIGINT // Clear shutdown hook
+	if sigChannel != nil {
+		sigChannel <- syscall.SIGINT // Clear shutdown hook
+	}
 	mutex.Unlock()
 }
 
@@ -123,7 +125,6 @@ func getAddress(protocol string) string {
 }
 
 func startTLSRedirectServer() {
-	mutex.Lock()
 	httpsAddress := getAddress("https")
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	redirectServer = &http.Server{
@@ -136,19 +137,10 @@ func startTLSRedirectServer() {
 		}),
 	}
 
-	go func() {
-		mutex.Lock()
-		ok := server != nil
-		mutex.Unlock()
-		if ok {
-			if err := redirectServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				fmt.Println("The TLS redirect server encountered an error:")
-				fmt.Println(err)
-			}
-		}
-	}()
-
-	mutex.Unlock()
+	if err := redirectServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		fmt.Println("The TLS redirect server encountered an error:")
+		fmt.Println(err)
+	}
 }
 
 func startServer(router *Router) {
@@ -162,46 +154,46 @@ func startServer(router *Router) {
 		Handler:      router.muxRouter,
 	}
 
-	go func() {
-		if protocol == "https" {
-			go startTLSRedirectServer()
-			runStartupHooks()
-			if err := server.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
-				fmt.Println(err)
-				Stop()
-				return
-			}
-		} else {
-			runStartupHooks()
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				fmt.Println(err)
-				Stop()
-				return
-			}
-		}
-	}()
-
-	registerShutdownHook(func(ctx context.Context) {
+	ln, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		fmt.Println(err)
+		mutex.Unlock()
+		Stop()
+		return
+	}
+	defer ln.Close()
+	go registerShutdownHook(func(ctx context.Context) {
 		mutex.Lock()
 		stop(ctx)
 		mutex.Unlock()
 	})
+	mutex.Unlock()
+	if protocol == "https" {
+		go startTLSRedirectServer()
+		go runStartupHooks()
+		if err := server.ServeTLS(ln, config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
+			fmt.Println(err)
+			Stop()
+			return
+		}
+	} else {
+		go runStartupHooks()
+		if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
+			fmt.Println(err)
+			Stop()
+			return
+		}
+	}
 }
 
 func runStartupHooks() {
-	go func() {
-		time.Sleep(100 * time.Millisecond) // TODO improve startup hooks
-		mutex.Lock()
-		if server != nil {
-			ready = true
-			mutex.Unlock()
-			for _, hook := range startupHooks {
-				hook()
-			}
-			return
-		}
-		mutex.Unlock()
-	}()
+	time.Sleep(100 * time.Millisecond)
+	mutex.Lock()
+	ready = true
+	mutex.Unlock()
+	for _, hook := range startupHooks {
+		hook()
+	}
 }
 
 func registerShutdownHook(hook func(context.Context)) {

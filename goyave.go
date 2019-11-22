@@ -89,13 +89,14 @@ func Start(routeRegistrer func(*Router)) {
 func Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	mutex.Lock()
 	stop(ctx)
 	sigChannel <- syscall.SIGINT // Clear shutdown hook
+	mutex.Unlock()
 }
 
 func stop(ctx context.Context) error {
 	var err error
-	mutex.Lock()
 	if server != nil {
 		err = server.Shutdown(ctx)
 		database.Close()
@@ -106,7 +107,6 @@ func stop(ctx context.Context) error {
 			redirectServer = nil
 		}
 	}
-	mutex.Unlock()
 	return err
 }
 
@@ -182,14 +182,16 @@ func startServer(router *Router) {
 	}()
 
 	registerShutdownHook(func(ctx context.Context) {
+		mutex.Lock()
 		stop(ctx)
+		mutex.Unlock()
 	})
 }
 
 func runStartupHooks() {
 	go func() {
 		time.Sleep(100 * time.Millisecond) // TODO improve startup hooks
-		if server != nil {
+		if server != nil {                 // DATA race here
 			mutex.Lock()
 			ready = true
 			mutex.Unlock()

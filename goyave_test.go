@@ -110,7 +110,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 	fmt.Println("end")
 }
 
-func (suite *GoyaveTestSuite) testTLSServer() {
+func (suite *GoyaveTestSuite) TestTLSServer() {
 	fmt.Println("start")
 	suite.loadConfig()
 	config.Set("protocol", "https")
@@ -158,7 +158,7 @@ func (suite *GoyaveTestSuite) testTLSServer() {
 	fmt.Println("end")
 }
 
-func (suite *GoyaveTestSuite) testStaticServing() {
+func (suite *GoyaveTestSuite) TestStaticServing() {
 	fmt.Println("start")
 	suite.runServer(func(router *Router) {
 		router.Static("/resources", "resources", true)

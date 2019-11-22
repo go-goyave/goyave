@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
@@ -40,6 +41,8 @@ func createHTTPClient() *http.Client {
 func (suite *GoyaveTestSuite) SetupSuite() {
 	os.Setenv("GOYAVE_ENV", "test")
 	config.LoadConfig()
+	config.Set("tlsKey", "resources/server.key")
+	config.Set("tlsCert", "resources/server.crt")
 }
 
 func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback func()) {
@@ -63,6 +66,9 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 	proc, err := os.FindProcess(os.Getpid())
 	if err == nil {
 		c := make(chan bool, 1)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
 		RegisterStartupHook(func() {
 			suite.True(IsReady())
 			if runtime.GOOS == "windows" {
@@ -77,8 +83,15 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 			ClearStartupHooks()
 			c <- true
 		})
-		Start(func(router *Router) {})
-		<-c
+		go func() {
+			Start(func(router *Router) {})
+		}()
+
+		select {
+		case <-ctx.Done():
+			suite.Fail("Timeout exceeded in server start/stop test")
+		case <-c: // OK
+		}
 	} else {
 		fmt.Println("WARNING: Couldn't get process PID, skipping SIGINT test")
 	}
@@ -86,8 +99,6 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 
 func (suite *GoyaveTestSuite) TestTLSServer() {
 	config.Set("protocol", "https")
-	config.Set("tlsKey", "resources/server.key")
-	config.Set("tlsCert", "resources/server.crt")
 	suite.runServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler, nil)
 	}, func() {
@@ -154,6 +165,56 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal("{\n    \"disallow-non-validated-fields\": \"Non-validated fields are forbidden.\"\n}", string(body))
 		}
 	})
+}
+
+func (suite *GoyaveTestSuite) TestServerError() {
+	suite.testServerError("http")
+	suite.testServerError("https")
+}
+
+func (suite *GoyaveTestSuite) testServerError(protocol string) {
+	config.Set("protocol", protocol)
+	c := make(chan bool)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	blockingServer := &http.Server{
+		Addr:    getAddress(protocol),
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
+	}
+
+	go func() {
+		Start(func(router *Router) {})
+		c <- true
+	}()
+	go func() {
+		// Run a server using the same port as Goyave, so Goyave fails to bind.
+		if protocol == "https" {
+			err := blockingServer.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey"))
+			if err != http.ErrServerClosed {
+				suite.Fail(err.Error())
+			}
+		} else {
+			err := blockingServer.ListenAndServe()
+			if err != http.ErrServerClosed {
+				suite.Fail(err.Error())
+			}
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		suite.Fail("Timeout exceeded in server error test")
+	case <-c:
+		suite.False(IsReady())
+		suite.Nil(server)
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	blockingServer.Shutdown(ctx)
+
+	config.Set("protocol", "http")
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

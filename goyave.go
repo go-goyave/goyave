@@ -185,12 +185,14 @@ func startServer(router *Router) {
 
 func runStartupHooks() {
 	go func() {
-		time.Sleep(100 * time.Millisecond)
-		mutex.Lock()
-		ready = true
-		mutex.Unlock()
-		for _, hook := range startupHooks {
-			hook()
+		time.Sleep(100 * time.Millisecond) // TODO improve startup hooks
+		if server != nil {
+			mutex.Lock()
+			ready = true
+			mutex.Unlock()
+			for _, hook := range startupHooks {
+				hook()
+			}
 		}
 	}()
 }

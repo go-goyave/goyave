@@ -168,12 +168,20 @@ func convertArray(isJSON bool, fieldName string, field []string, data map[string
 func getMessage(rule string, value interface{}, language string) string {
 	langEntry := "validation.rules." + rule
 	if isTypeDependent(rule) {
-		langEntry = langEntry + "." + getFieldType(value)
+		langEntry = langEntry + "." + GetFieldType(value)
 	}
 	return lang.Get(language, langEntry)
 }
 
-func getFieldType(value interface{}) string {
+// GetFieldType returns the non-technical type of the given "value" interface.
+// This is used by validation rules to know if the input data is a candidate
+// for validation or not and is especially useful for type-dependent rules.
+// - "numeric" if the value is an int, uint or a float
+// - "string" if the value is a string
+// - "array" if the value is a slice
+// - "file" if the value is a slice of "filesystem.File"
+// - "unsupported" otherwise
+func GetFieldType(value interface{}) string {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	switch {

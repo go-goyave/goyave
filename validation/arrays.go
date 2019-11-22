@@ -7,11 +7,11 @@ import (
 )
 
 func validateArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	return getFieldType(value) == "array"
+	return GetFieldType(value) == "array"
 }
 
 func validateDistinct(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	if getFieldType(value) != "array" {
+	if GetFieldType(value) != "array" {
 		return false // Can't validate if not an array
 	}
 
@@ -41,7 +41,7 @@ func checkInNumeric(parameters []string, value interface{}) bool {
 
 func validateIn(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("in", parameters, 1)
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
 		return checkInNumeric(parameters, value)
 	case "string":
@@ -53,7 +53,7 @@ func validateIn(field string, value interface{}, parameters []string, form map[s
 
 func validateNotIn(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("not_in", parameters, 1)
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
 		return !checkInNumeric(parameters, value)
 	case "string":
@@ -66,7 +66,7 @@ func validateNotIn(field string, value interface{}, parameters []string, form ma
 func validateInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("in_array", parameters, 1)
 	other, exists := form[parameters[0]]
-	if exists && getFieldType(other) == "array" {
+	if exists && GetFieldType(other) == "array" {
 		return helper.Contains(other, value)
 	}
 	return false
@@ -75,7 +75,7 @@ func validateInArray(field string, value interface{}, parameters []string, form 
 func validateNotInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("not_in_array", parameters, 1)
 	other, exists := form[parameters[0]]
-	if exists && getFieldType(other) == "array" {
+	if exists && GetFieldType(other) == "array" {
 		return !helper.Contains(other, value)
 	}
 	return false

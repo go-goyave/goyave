@@ -153,7 +153,7 @@ func (suite *ValidatorTestSuite) TestValidateWithArray() {
 	errors := Validate(rawRequest, data, RuleSet{
 		"string": {"required", "array"},
 	}, "en-US")
-	suite.Equal("array", getFieldType(data["string"]))
+	suite.Equal("array", GetFieldType(data["string"]))
 	suite.Equal("hello", data["string"].([]string)[0])
 	suite.Equal(0, len(errors))
 }

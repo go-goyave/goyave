@@ -26,7 +26,7 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 	if err != nil {
 		panic(err)
 	}
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
 		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min
@@ -54,7 +54,7 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 	if err != nil {
 		panic(err)
 	}
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
 		floatValue, _ := helper.ToFloat64(value)
 		return floatValue <= max
@@ -87,7 +87,7 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 		panic(errMax)
 	}
 
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
 		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min && floatValue <= max
@@ -115,10 +115,10 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 
 func validateGreaterThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("greater_than", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
@@ -149,10 +149,10 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 
 func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("greater_than_equal", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
@@ -183,10 +183,10 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 
 func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("lower_than", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
@@ -217,10 +217,10 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 
 func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("lower_than_equal", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
@@ -282,8 +282,8 @@ func validateSame(field string, value interface{}, parameters []string, form map
 	RequireParametersCount("same", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists {
-		valueType := getFieldType(value)
-		otherType := getFieldType(other)
+		valueType := GetFieldType(value)
+		otherType := GetFieldType(other)
 		if valueType == otherType {
 			switch valueType {
 			case "numeric":
@@ -319,7 +319,7 @@ func validateSize(field string, value interface{}, parameters []string, form map
 		panic(err)
 	}
 
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
 		floatVal, _ := helper.ToFloat64(value)
 		return floatVal == float64(size)

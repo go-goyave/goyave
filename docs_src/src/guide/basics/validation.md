@@ -486,6 +486,29 @@ Use this to make sure your validation rules are correctly used.
 validation.RequireParametersCount("custom_format", parameters, 1)
 ```
 
+#### validation.GetFieldType
+
+returns the non-technical type of the given `value` interface.
+This is used by validation rules to know if the input data is a candidate
+for validation or not and is especially useful for type-dependent rules.
+- `numeric` if the value is an int, uint or a float
+- `string` if the value is a string
+- `array` if the value is a slice
+- `file` if the value is a slice of `filesystem.File`
+- `unsupported` otherwise
+
+| Parameters          | Return   |
+|---------------------|----------|
+| `value interface{}` | `string` |
+
+**Example:**
+``` go
+validation.GetFieldType("foo") // "string"
+validation.GetFieldType(2) // "numeric"
+validation.GetFieldType(2.4) // "numeric"
+validation.GetFieldType([]int{1,2}) // "array"
+```
+
 ## Placeholders
 
 Validation messages can use placeholders to inject dynamic values in the validation error message. For example, in the `rules.json` language file:

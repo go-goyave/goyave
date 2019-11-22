@@ -12,3 +12,4 @@
 - Some refactoring and package renaming have been done to better respect the Go conventions.
     - The `helpers` package have been renamed to `helper`
 - The server now shuts down when it encounters an error.
+- New [`validation.GetFieldType`](./basics/validation#validation-getfieldtype) function.

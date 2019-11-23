@@ -165,10 +165,14 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	}
 
 	go func() {
+		<-c2
+		fmt.Println("start tls")
 		startTLSRedirectServer()
 		c <- true
 	}()
 	go func() {
+		c2 <- true
+		fmt.Println("start blocking")
 		// Run a server using the same port.
 		err := blockingServer.ListenAndServe()
 		if err != http.ErrServerClosed {
@@ -240,6 +244,7 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 	}
 
 	go func() {
+		<-c2
 		config.Set("protocol", protocol)
 		if protocol == "https" {
 			// Invalid certificates
@@ -252,6 +257,7 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		c <- true
 	}()
 	go func() {
+		c2 <- true
 		// Run a server using the same port as Goyave, so Goyave fails to bind.
 		if protocol != "https" {
 			err := blockingServer.ListenAndServe()

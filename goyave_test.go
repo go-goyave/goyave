@@ -153,6 +153,44 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 	config.Set("protocol", "http")
 }
 
+func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
+	suite.loadConfig()
+	c := make(chan bool)
+	c2 := make(chan bool)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	blockingServer := &http.Server{
+		Addr:    getAddress("http"),
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
+	}
+
+	go func() {
+		startTLSRedirectServer()
+		c <- true
+	}()
+	go func() {
+		// Run a server using the same port.
+		err := blockingServer.ListenAndServe()
+		if err != http.ErrServerClosed {
+			suite.Fail(err.Error())
+		}
+		c2 <- true
+	}()
+
+	select {
+	case <-ctx.Done():
+		suite.Fail("Timeout exceeded in redirect server error test")
+	case <-c:
+		suite.False(IsReady())
+		suite.Nil(server)
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	blockingServer.Shutdown(ctx)
+	<-c2
+}
+
 func (suite *GoyaveTestSuite) TestStaticServing() {
 	suite.runServer(func(router *Router) {
 		router.Static("/resources", "resources", true)

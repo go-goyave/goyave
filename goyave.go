@@ -141,8 +141,7 @@ func startTLSRedirectServer() {
 
 	ln, err := net.Listen("tcp", redirectServer.Addr)
 	if err != nil {
-		fmt.Println("The TLS redirect server encountered an error:")
-		fmt.Println(err)
+		fmt.Println(fmt.Errorf("The TLS redirect server encountered an error: %s", err.Error()))
 		return
 	}
 
@@ -153,8 +152,7 @@ func startTLSRedirectServer() {
 		mutex.RUnlock()
 		if ok && r != nil {
 			if err := r.Serve(ln); err != nil && err != http.ErrServerClosed {
-				fmt.Println("The TLS redirect server encountered an error:")
-				fmt.Println(err)
+				fmt.Println(fmt.Errorf("The TLS redirect server encountered an error: %s", err.Error()))
 			}
 		}
 		ln.Close()
@@ -192,7 +190,6 @@ func startServer(router *Router) {
 		if err := s.ServeTLS(ln, config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
 			fmt.Println(err)
 			Stop()
-			return
 		}
 	} else {
 
@@ -202,7 +199,6 @@ func startServer(router *Router) {
 		if err := s.Serve(ln); err != nil && err != http.ErrServerClosed {
 			fmt.Println(err)
 			Stop()
-			return
 		}
 	}
 }

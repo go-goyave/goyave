@@ -165,20 +165,18 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	}
 
 	go func() {
+		go func() {
+			c2 <- true
+			// Run a server using the same port.
+			err := blockingServer.ListenAndServe()
+			if err != http.ErrServerClosed {
+				suite.Fail(err.Error())
+			}
+			c2 <- true
+		}()
 		<-c2
-		fmt.Println("start tls")
 		startTLSRedirectServer()
 		c <- true
-	}()
-	go func() {
-		c2 <- true
-		fmt.Println("start blocking")
-		// Run a server using the same port.
-		err := blockingServer.ListenAndServe()
-		if err != http.ErrServerClosed {
-			suite.Fail(err.Error())
-		}
-		c2 <- true
 	}()
 
 	select {
@@ -244,6 +242,17 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 	}
 
 	go func() {
+		go func() {
+			c2 <- true
+			// Run a server using the same port as Goyave, so Goyave fails to bind.
+			if protocol != "https" {
+				err := blockingServer.ListenAndServe()
+				if err != http.ErrServerClosed {
+					suite.Fail(err.Error())
+				}
+			}
+			c2 <- true
+		}()
 		<-c2
 		config.Set("protocol", protocol)
 		if protocol == "https" {
@@ -255,17 +264,6 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		Start(func(router *Router) {})
 		config.Set("protocol", "http")
 		c <- true
-	}()
-	go func() {
-		c2 <- true
-		// Run a server using the same port as Goyave, so Goyave fails to bind.
-		if protocol != "https" {
-			err := blockingServer.ListenAndServe()
-			if err != http.ErrServerClosed {
-				suite.Fail(err.Error())
-			}
-		}
-		c2 <- true
 	}()
 
 	select {

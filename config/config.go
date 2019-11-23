@@ -45,7 +45,7 @@ var authorizedValues = map[string][]string{
 	"protocol":     {"http", "https"},
 	"dbConnection": {"none", "mysql", "postgres", "sqlite3", "mssql"},
 }
-var mutex = &sync.Mutex{}
+var mutex = &sync.RWMutex{}
 
 // Load loads the config.json file in the current working directory.
 // If the "GOYAVE_ENV" env variable is set, the config file will be picked like so:
@@ -80,8 +80,8 @@ func Load() error {
 
 // IsLoaded returns true if the config have been loaded.
 func IsLoaded() bool {
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutex.RLock()
+	defer mutex.RUnlock()
 	return config != nil
 }
 
@@ -95,9 +95,9 @@ func Clear() {
 
 // Get a config entry
 func Get(key string) interface{} {
-	mutex.Lock()
+	mutex.RLock()
 	val, ok := config[key]
-	mutex.Unlock()
+	mutex.RUnlock()
 	if ok {
 		return val
 	}
@@ -120,9 +120,9 @@ func Set(key string, value interface{}) {
 
 // GetString a config entry as string
 func GetString(key string) string {
-	mutex.Lock()
+	mutex.RLock()
 	val, ok := config[key]
-	mutex.Unlock()
+	mutex.RUnlock()
 	if ok {
 		str, ok := val.(string)
 		if !ok {
@@ -137,9 +137,9 @@ func GetString(key string) string {
 
 // GetBool a config entry as bool
 func GetBool(key string) bool {
-	mutex.Lock()
+	mutex.RLock()
 	val, ok := config[key]
-	mutex.Unlock()
+	mutex.RUnlock()
 	if ok {
 		b, ok := val.(bool)
 		if !ok {

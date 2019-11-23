@@ -52,14 +52,24 @@ func (suite *GoyaveTestSuite) loadConfig() {
 
 func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback func()) {
 	c := make(chan bool, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	RegisterStartupHook(func() {
 		callback()
 		Stop()
 		ClearStartupHooks()
 		c <- true
 	})
-	Start(routeRegistrer)
-	<-c
+
+	go Start(routeRegistrer)
+
+	select {
+	case <-ctx.Done():
+		suite.Fail("Timeout exceeded in runServer")
+	case <-c:
+		fmt.Println("Shutdown OK")
+	}
 }
 
 func (suite *GoyaveTestSuite) TestGetAddress() {
@@ -87,9 +97,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 			}
 			c <- true
 		})
-		go func() {
-			Start(func(router *Router) {})
-		}()
+		go Start(func(router *Router) {})
 
 		select {
 		case <-ctx.Done():
@@ -125,13 +133,8 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello\">Permanent Redirect</a>.\n\n", string(body))
 		}
-	})
 
-	suite.runServer(func(router *Router) {
-		router.Route("GET", "/hello", helloHandler, nil)
-	}, func() {
-		netClient := createHTTPClient()
-		resp, err := netClient.Get("https://127.0.0.1:1236/hello")
+		resp, err = netClient.Get("https://127.0.0.1:1236/hello")
 		suite.Nil(err)
 		if err != nil {
 			fmt.Println(err)
@@ -150,6 +153,44 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 	config.Set("protocol", "http")
 }
 
+func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
+	suite.loadConfig()
+	c := make(chan bool)
+	c2 := make(chan bool)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	blockingServer := &http.Server{
+		Addr:    getAddress("http"),
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
+	}
+
+	go func() {
+		startTLSRedirectServer()
+		c <- true
+	}()
+	go func() {
+		// Run a server using the same port.
+		err := blockingServer.ListenAndServe()
+		if err != http.ErrServerClosed {
+			suite.Fail(err.Error())
+		}
+		c2 <- true
+	}()
+
+	select {
+	case <-ctx.Done():
+		suite.Fail("Timeout exceeded in redirect server error test")
+	case <-c:
+		suite.False(IsReady())
+		suite.Nil(server)
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	blockingServer.Shutdown(ctx)
+	<-c2
+}
+
 func (suite *GoyaveTestSuite) TestStaticServing() {
 	suite.runServer(func(router *Router) {
 		router.Static("/resources", "resources", true)
@@ -157,6 +198,9 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 		netClient := createHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/resources/nothing")
 		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(404, resp.StatusCode)
@@ -164,6 +208,9 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 
 		resp, err = netClient.Get("http://127.0.0.1:1235/resources/lang/en-US/locale.json")
 		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
@@ -194,18 +241,19 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 
 	go func() {
 		config.Set("protocol", protocol)
+		if protocol == "https" {
+			// Invalid certificates
+			config.Set("tlsKey", "doesntexist")
+			config.Set("tlsCert", "doesntexist")
+		}
+
 		Start(func(router *Router) {})
 		config.Set("protocol", "http")
 		c <- true
 	}()
 	go func() {
 		// Run a server using the same port as Goyave, so Goyave fails to bind.
-		if protocol == "https" {
-			err := blockingServer.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey"))
-			if err != http.ErrServerClosed {
-				suite.Fail(err.Error())
-			}
-		} else {
+		if protocol != "https" {
 			err := blockingServer.ListenAndServe()
 			if err != http.ErrServerClosed {
 				suite.Fail(err.Error())

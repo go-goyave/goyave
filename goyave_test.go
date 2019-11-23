@@ -203,18 +203,19 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 
 	go func() {
 		config.Set("protocol", protocol)
+		if protocol == "https" {
+			// Invalid certificates
+			config.Set("tlsKey", "doesntexist")
+			config.Set("tlsCert", "doesntexist")
+		}
+
 		Start(func(router *Router) {})
 		config.Set("protocol", "http")
 		c <- true
 	}()
 	go func() {
 		// Run a server using the same port as Goyave, so Goyave fails to bind.
-		if protocol == "https" {
-			err := blockingServer.ListenAndServeTLS(config.GetString("tlsCert"), config.GetString("tlsKey"))
-			if err != http.ErrServerClosed {
-				suite.Fail(err.Error())
-			}
-		} else {
+		if protocol != "https" {
 			err := blockingServer.ListenAndServe()
 			if err != http.ErrServerClosed {
 				suite.Fail(err.Error())

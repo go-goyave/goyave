@@ -22,9 +22,9 @@ func (suite *ResponseTestSuite) SetupSuite() {
 
 func createTestResponse(rawRequest *http.Request) *Response {
 	response := &Response{
-		writer:      httptest.NewRecorder(),
-		httpRequest: rawRequest,
-		empty:       true,
+		ResponseWriter: httptest.NewRecorder(),
+		httpRequest:    rawRequest,
+		empty:          true,
 	}
 
 	return response
@@ -34,7 +34,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := createTestResponse(rawRequest)
 	response.Status(403)
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(403, resp.StatusCode)
 	suite.False(response.empty)
@@ -45,7 +45,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 	response := createTestResponse(rawRequest)
 	response.Header().Set("Content-Type", "application/json")
 	response.Status(200)
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
@@ -56,7 +56,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := createTestResponse(rawRequest)
 	response.Error(fmt.Errorf("random error"))
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(500, resp.StatusCode)
 
@@ -68,7 +68,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = createTestResponse(rawRequest)
 	response.Error("random error")
-	resp = response.writer.(*httptest.ResponseRecorder).Result()
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(500, resp.StatusCode)
 
@@ -83,7 +83,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	response := createTestResponse(rawRequest)
 
 	response.File("config/defaults.json")
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
@@ -106,7 +106,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	response := createTestResponse(rawRequest)
 
 	response.Download("config/defaults.json", "config.json")
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
@@ -120,7 +120,7 @@ func (suite *ResponseTestSuite) TestResponseRedirect() {
 	response := createTestResponse(rawRequest)
 
 	response.Redirect("https://www.google.com")
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(308, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -134,7 +134,7 @@ func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 	response := createTestResponse(rawRequest)
 
 	response.TemporaryRedirect("https://www.google.com")
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(307, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -151,7 +151,7 @@ func (suite *ResponseTestSuite) TestResponseCookie() {
 		Value: "test",
 	})
 
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 	cookies := resp.Cookies()
 	suite.Equal(1, len(cookies))
 	suite.Equal("cookie-name", cookies[0].Name)
@@ -162,7 +162,7 @@ func (suite *ResponseTestSuite) TestResponseWrite() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := createTestResponse(rawRequest)
 	response.Write([]byte("byte array"))
-	resp := response.writer.(*httptest.ResponseRecorder).Result()
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 	body, err := ioutil.ReadAll(resp.Body)
 	suite.Nil(err)
 	suite.Equal("byte array", string(body))

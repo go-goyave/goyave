@@ -105,9 +105,9 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 		Params:      mux.Vars(rawRequest),
 	}
 	response := &Response{
-		httpRequest: rawRequest,
-		writer:      w,
-		empty:       true,
+		httpRequest:    rawRequest,
+		ResponseWriter: w,
+		empty:          true,
 	}
 
 	// Validate last.

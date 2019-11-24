@@ -49,6 +49,8 @@ func parseRequestMiddleware(next Handler) Handler {
 			}
 		} else {
 			data = generateFlatMap(request.httpRequest)
+			// TODO free memory by clearing the Form data from the request?
+			// Would probably break native handlers.
 		}
 		request.Data = data
 		next(response, request)

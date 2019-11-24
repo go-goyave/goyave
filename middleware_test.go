@@ -90,12 +90,12 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 		Params:      map[string]string{},
 	}
 	response := &Response{
-		writer: httptest.NewRecorder(),
-		empty:  true,
+		ResponseWriter: httptest.NewRecorder(),
+		empty:          true,
 	}
 	middleware(handler)(response, request)
 
-	return response.writer.(*httptest.ResponseRecorder).Result()
+	return response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 }
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicDebug() {

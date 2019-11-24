@@ -1,8 +1,10 @@
 # Responses
 
-Handlers receive a `goyave.Response` and a `goyave.Request` as parameters. This section is a technical reference of the `Response` object. This object brings a number of methods to write HTTP responses.
+Handlers receive a `goyave.Response` and a `goyave.Request` as parameters. This section is a technical reference of the `Response` object.
 
-If you don't write anything before the request lifecycle ends, `204 No Content` is automatically written.
+`goyave.Response` implements `http.ResponseWriter`. This object brings a number of convenient methods to write HTTP responses.
+
+If you didn't write anything before the request lifecycle ends, `204 No Content` is automatically written.
 
 All functions below require the `goyave` package to be imported.
 
@@ -41,10 +43,10 @@ response.Status(http.StatusOK)
 
 Write JSON data as a response. This method automatically sets the `Content-Type` header.
 
-| Parameters         | Return |
-|--------------------|--------|
-| `responseCode int` | `void` |
-| `data interface{}` |        |
+| Parameters         | Return  |
+|--------------------|---------|
+| `responseCode int` | `error` |
+| `data interface{}` |         |
 
 **Example:**
 ``` go
@@ -58,10 +60,10 @@ response.JSON(http.StatusOK, map[string]interface{}{
 
 Write a string as a response.
 
-| Parameters         | Return |
-|--------------------|--------|
-| `responseCode int` | `void` |
-| `message string`   |        |
+| Parameters         | Return  |
+|--------------------|---------|
+| `responseCode int` | `error` |
+| `message string`   |         |
 
 **Example:**
 ``` go
@@ -72,9 +74,12 @@ response.String(http.StatusOK, "Hello there!")
 
 Write the data as a response. Can be used to write in-memory files. This method can be called successively.
 
-| Parameters    | Return |
-|---------------|--------|
-| `data []byte` | `void` |
+Returns the number of bytes written.
+
+| Parameters    | Return  |
+|---------------|---------|
+| `data []byte` | `int`   |
+|               | `error` |
 
 **Example:**
 ``` go
@@ -89,9 +94,9 @@ Automatically detects the file MIME type and sets the "Content-Type" header acco
 
 If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
 
-| Parameters    | Return |
-|---------------|--------|
-| `file string` | `void` |
+| Parameters    | Return  |
+|---------------|---------|
+| `file string` | `error` |
 
 **Example:**
 ``` go
@@ -106,10 +111,10 @@ Automatically detects the file MIME type and sets the "Content-Type" header acco
 
 If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
 
-| Parameters        | Return |
-|-------------------|--------|
-| `file string`     | `void` |
-| `fileName string` | `void` |
+| Parameters        | Return  |
+|-------------------|---------|
+| `file string`     | `error` |
+| `fileName string` |         |
 
 **Example:**
 ``` go
@@ -119,9 +124,9 @@ response.Download("/path/to/file", "awesome.txt")
 
 Print the error in the console and return it with an error code 500. If debugging is enabled in the config, the error is also written in the response using the JSON format, and the stacktrace is printed in the console.
 
-| Parameters        | Return |
-|-------------------|--------|
-| `err interface{}` | `void` |
+| Parameters        | Return  |
+|-------------------|---------|
+| `err interface{}` | `error` |
 
 **Example:**
 ``` go

@@ -17,3 +17,5 @@
 - Greatly improve concurrency.
 - Config can now be reloaded manually.
 - Added the [`Trim`](./basics/middleware#trim) middleware.
+- `goyave.Response` now implements `http.ResponseWriter`.
+    - All writing functions can now return an error.

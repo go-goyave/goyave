@@ -189,7 +189,7 @@ This method is especially useful to serve Single Page Applications from your API
 
 #### Router.Static
 
-Static serve a directory and its subdirectories of static resources.
+Static serve a directory and its sub-directories of static resources.
 Set the `download` parameter to true if you want the files to be sent as an attachment instead of an inline element.
 
 The `directory` parameter can be a relative or an absolute path.

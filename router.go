@@ -88,12 +88,11 @@ func cleanStaticPath(directory string, file string) string {
 		file = file[1:]
 	}
 	path := directory + "/" + file
-	if len(file) <= 0 || filesystem.IsDirectory(path) {
-		if strings.Count(file, "/") > 0 && !strings.HasSuffix(file, "/") {
-			file += "/"
+	if filesystem.IsDirectory(path) {
+		if !strings.HasSuffix(path, "/") {
+			path += "/"
 		}
-		file += "index.html"
-		path = directory + "/" + file
+		path += "index.html"
 	}
 	return path
 }

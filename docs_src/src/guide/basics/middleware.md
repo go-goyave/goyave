@@ -72,6 +72,8 @@ router.Middleware(middleware.DisallowNonValidatedFields)
 
 ### Trim
 
+<p><Badge text="Since v2.0.0"/></p>
+
 Trim removes all leading and trailing white space from string fields.
 
 For example, `" \t  trimmed\n  \t"` will be transformed to `"trimmed"`.

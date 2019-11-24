@@ -204,3 +204,55 @@ The `directory` parameter can be a relative or an absolute path.
 ``` go
 router.Static("/public", "/path/to/static/dir", false)
 ```
+
+## Native handlers
+
+<p><Badge text="Since v2.0.0"/></p>
+
+#### goyave.NativeHandler
+
+NativeHandler is an adapter function for `http.Handler`. With this adapter, you can plug non-Goyave handlers to your application.
+
+If the request is a JSON request, the native handler will not be able to read the body, as it has already been parsed by the framework and is stored in the `goyave.Request` object. However, form data can be accessed as usual. Just remember that it contains the raw data, which haven't been validated nor converted. This means that **native handlers are not guaranteed to work**.
+
+The actual response writer passed to the native handler is a `goyave.Response`.
+
+::: warning
+This feature is a compatibility layer with the rest of the Golang web ecosystem. Prefer using Goyave handlers if possible.
+:::
+
+
+| Parameters             | Return           |
+|------------------------|------------------|
+| `handler http.Handler` | `goyave.Handler` |
+
+**Example:**
+``` go
+httpHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Hello world"))
+})
+router.Route("GET", "/user", goyave.NativeHandler(httpHandler), nil)
+```
+
+#### goyave.NativeMiddleware
+
+NativeMiddleware is an adapter function `mux.MiddlewareFunc`. With this adapter, you can plug [Gorilla Mux middleware](https://github.com/gorilla/mux#middleware) to your application.
+
+Native middleware work like native handlers. See [`NativeHandler`](#goyave-nativehandler) for more details.
+
+| Parameters                      | Return              |
+|---------------------------------|---------------------|
+| `middleware mux.MiddlewareFunc` | `goyave.Middelware` |
+
+**Example:**
+``` go
+middleware := goyave.NativeMiddleware(func(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte("Hello world"))
+        next.ServeHTTP(w, r) // Don't call "next" if your middleware is blocking.
+    })
+})
+router.Middleware(middleware)
+```
+
+

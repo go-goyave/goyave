@@ -19,3 +19,4 @@
 - Added the [`Trim`](./basics/middleware#trim) middleware.
 - `goyave.Response` now implements `http.ResponseWriter`.
     - All writing functions can now return an error.
+- Added the [`NativeHandler`](./basics/routing#native-handlers) compatibility layer.

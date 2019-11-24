@@ -151,6 +151,8 @@ fmt.Println(request.UserAgent()) // "Mozilla/5.0 ..."
 
 ### Accessors
 
+<p><Badge text="Since v2.0.0"/></p>
+
 Accessors are helper functions to retrieve request data without having to write the type assertion. This is helpful to make your controllers cleaner. You shouldn't use these accessors in middlewares because they assume the data has been converted by the validation already. Data can still be accessed through the `Data` attribute. There is currently no accessor for slices.
 
 #### Request.Has

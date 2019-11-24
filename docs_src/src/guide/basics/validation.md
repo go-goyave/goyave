@@ -488,6 +488,8 @@ validation.RequireParametersCount("custom_format", parameters, 1)
 
 #### validation.GetFieldType
 
+<p><Badge text="Since v2.0.0"/></p>
+
 returns the non-technical type of the given `value` interface.
 This is used by validation rules to know if the input data is a candidate
 for validation or not and is especially useful for type-dependent rules.

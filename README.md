@@ -52,7 +52,7 @@ Hi!
 
 ### Hello world from scratch
 
-The example belows shows a basic `Hello world` application using Goyave.
+The example below shows a basic `Hello world` application using Goyave.
 
 ``` go
 import "github.com/System-Glitch/goyave"

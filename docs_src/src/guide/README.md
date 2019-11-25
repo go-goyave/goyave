@@ -39,3 +39,9 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Support for gzip compression
 - Direct support for the OPTIONS method
 - And more!
+
+## Contributors
+
+A big "Thank you" to the Goyave contributors:
+
+- [Kuinox](https://github.com/Kuinox) (Powershell install script)

@@ -42,6 +42,7 @@ echo -e "\e[1mSetup...\e[0m"
 mv goyave-template-master $1
 cd $1
 find ./ -type f \( -iname \*.go -o -iname \*.mod -o -iname \*.json \) -exec sed -i "s/goyave_template/$1/g" {} \;
+cp config.example.json config.json
 echo -e "\e[1mInitializing git...\e[0m"
 git init > /dev/null
 git add . > /dev/null

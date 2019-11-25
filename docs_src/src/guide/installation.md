@@ -11,38 +11,16 @@ This guide will walk you through the installation process. The rest of the guide
 
 You can bootstrap your project using the **[Goyave template project](https://github.com/System-Glitch/goyave-template)**.
 
-First, download the template and unzip it:
+Run the install script:
 ```
-$ curl -LOk https://github.com/System-Glitch/goyave-template/archive/master.zip && unzip master.zip && rm master.zip
-```
-
-Rename `goyave-template-master` to the name of our project (`my-project` in our example), then `cd` into it and init a git repository.
-```
-$ mv goyave-template-master my-project
-$ cd my-project
-$ git init
+$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s my-project
 ```
 
-Copy `config.example.json` into a new file `config.json`. Update the configuration to make it fit your needs. See the [configuration](./configuration) section for more details.
-
-::: tip
-It is a good practice to ignore the actual config to prevent it being added to the version control system. Each developer may have different settings for their environment.
-:::
-
-Finally, you'll have to replace all references to `goyave_template` with the name of your project. You can use the following command:
-```
-$ find ./ -type f \( -iname \*.go -o -iname \*.mod \) -exec sed -i "s/goyave_template/my-project/g" {} \;
-```
-
-Run `go run my-project` to start the server, then try to request the `hello` route.
+Run `go run my-project` in your project's directory to start the server, then try to request the `hello` route.
 ```
 $ curl http://localhost:8080/hello
 Hi!
 ```
-
-::: warning
-The template project setup will be more streamlined in the future to make it easier to setup projects.
-:::
 
 ## From scratch
 
@@ -108,7 +86,7 @@ Your routes definitions should be separated from the handler functions. Handlers
 
 Run your server and request your route:
 ```
-$ go run main
+$ go run my-project
 
 # In another terminal:
 $ curl http://localhost:8080/hello
@@ -116,3 +94,5 @@ Hi!
 ```
 
 You should also create a config file for your application. Learn more [here](./configuration).
+
+It is a good practice to ignore the actual config to prevent it being added to the version control system. Each developer may have different settings for their environment. To do so, add `config.json` to your `.gitignore`.

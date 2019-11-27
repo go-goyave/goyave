@@ -45,3 +45,4 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 A big "Thank you" to the Goyave contributors:
 
 - [Kuinox](https://github.com/Kuinox) (Powershell install script)
+- [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)

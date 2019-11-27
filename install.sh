@@ -9,11 +9,11 @@ if [ $# -ne 1 ]; then
 fi
 
 if [ -d $1 ]; then
-  echo -e "\e[31m\e[1mError: \e[0mdirectory \"\e[37m$1\e[0m\" already exists."
+  echo -e "\033[31m\033[1mError: \033[0mdirectory \"\033[37m$1\033[0m\" already exists."
   exit 1
 fi
 
-echo -e "\e[36m\e[1m                                                             
+echo -e "\033[36m\033[1m                                                             
   ,ad8888ba,                                                                  
  d8\"'    \`\"8b                                                                 
 d8'                                                                           
@@ -24,31 +24,31 @@ Y8,        88  8b       d8   \`8b   d8'   ,adPPPPP88   \`8b   d8'   8PP\"\"\"\"\
   \`\"Y88888P\"    \`\"YbbdP\"'       Y88'     \`\"8bbdP\"Y8      \"8\"       \`\"Ybbd8\"'  
                                 d8'                                           
                                d8'                                            
-\e[0m"
-echo -e "\e[37m------------------------------------------------------------------------------\n"
+\033[0m"
+echo -e "\033[37m------------------------------------------------------------------------------\n"
 
-echo -e "\e[92m\e[1mThank you for using Goyave!\e[0m"
-echo -e "If you like the framework, please consider supporting me on Patreon:\n\e[37mhttps://www.patreon.com/bePatron?u=25997573\e[0m\n"
+echo -e "\033[92m\033[1mThank you for using Goyave!\033[0m"
+echo -e "If you like the framework, please consider supporting me on Patreon:\n\033[37mhttps://www.patreon.com/bePatron?u=25997573\033[0m\n"
 
-echo -e "\e[37m------------------------------------------------------------------------------\n"
+echo -e "\033[37m------------------------------------------------------------------------------\n"
 
-echo -e "\e[1mDownloading template project...\e[0m"
+echo -e "\033[1mDownloading template project...\033[0m"
 curl -LOk https://github.com/System-Glitch/goyave-template/archive/master.zip
 
-echo -e "\e[1mUnzipping...\e[0m"
+echo -e "\033[1mUnzipping...\033[0m"
 unzip -q master.zip
 rm master.zip
-echo -e "\e[1mSetup...\e[0m"
+echo -e "\033[1mSetup...\033[0m"
 mv goyave-template-master $1
 cd $1
-find ./ -type f \( -iname \*.go -o -iname \*.mod -o -iname \*.json \) -exec sed -i "s/goyave_template/$1/g" {} \;
+find ./ -type f \( -iname \*.go -o -iname \*.mod -o -iname \*.json \) -exec sed -i.bak "s/goyave_template/$1/g" {} \; -exec rm {}.bak \;
 cp config.example.json config.json
-echo -e "\e[1mInitializing git...\e[0m"
+echo -e "\033[1mInitializing git...\033[0m"
 git init > /dev/null
 git add . > /dev/null
 git commit -m "Init" > /dev/null
 
-echo -e "\n\e[37m------------------------------------------------------------------------------\n"
+echo -e "\n\033[37m------------------------------------------------------------------------------\n"
 
-echo -e "\e[92m\e[1mProject setup successful!\e[0m"
+echo -e "\033[92m\033[1mProject setup successful!\033[0m"
 echo -e "Happy coding!\n"

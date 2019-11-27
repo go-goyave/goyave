@@ -39,10 +39,19 @@ Most golang frameworks for web development don't have a strong directory structu
 
 You can bootstrap your project using the [Goyave template project](https://github.com/System-Glitch/goyave-template). This project has a complete directory structure already set up for you.
 
-Run the install script:
+#### Linux / MacOS
+
 ```
 $ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s my-project
 ```
+
+#### Windows (Powershell)
+
+```
+> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -projectName my-project
+```
+
+---
 
 Run `go run my-project` in your project's directory to start the server, then try to request the `hello` route.
 ```

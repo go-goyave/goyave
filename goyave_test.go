@@ -52,6 +52,7 @@ func (suite *GoyaveTestSuite) loadConfig() {
 
 func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback func()) {
 	c := make(chan bool, 1)
+	c2 := make(chan bool, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -62,7 +63,10 @@ func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback f
 		c <- true
 	})
 
-	go Start(routeRegistrer)
+	go func() {
+		Start(routeRegistrer)
+		c2 <- true
+	}()
 
 	select {
 	case <-ctx.Done():
@@ -70,6 +74,7 @@ func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback f
 	case <-c:
 		fmt.Println("Shutdown OK")
 	}
+	<-c2
 }
 
 func (suite *GoyaveTestSuite) TestGetAddress() {
@@ -83,6 +88,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 	proc, err := os.FindProcess(os.Getpid())
 	if err == nil {
 		c := make(chan bool, 1)
+		c2 := make(chan bool, 1)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
@@ -93,11 +99,14 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				Stop()
 			} else {
 				proc.Signal(syscall.SIGTERM)
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 			}
 			c <- true
 		})
-		go Start(func(router *Router) {})
+		go func() {
+			Start(func(router *Router) {})
+			c2 <- true
+		}()
 
 		select {
 		case <-ctx.Done():
@@ -105,8 +114,10 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 		case <-c:
 			suite.False(IsReady())
 			suite.Nil(server)
+			suite.Nil(hookChannel)
 			ClearStartupHooks()
 		}
+		<-c2
 	} else {
 		fmt.Println("WARNING: Couldn't get process PID, skipping SIGINT test")
 	}
@@ -175,7 +186,9 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 			c2 <- true
 		}()
 		<-c2
-		startTLSRedirectServer()
+		config.Set("protocol", "https")
+		suite.runServer(func(router *Router) {}, func() {})
+		config.Set("protocol", "http")
 		c <- true
 	}()
 
@@ -184,7 +197,8 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 		suite.Fail("Timeout exceeded in redirect server error test")
 	case <-c:
 		suite.False(IsReady())
-		suite.Nil(server)
+		suite.Nil(redirectServer)
+		suite.Nil(stopChannel)
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)

@@ -21,6 +21,8 @@ var (
 	server         *http.Server
 	redirectServer *http.Server
 	sigChannel     chan os.Signal
+	stopChannel    chan bool
+	hookChannel    chan bool
 
 	startupHooks []func()
 	ready        bool = false
@@ -94,9 +96,13 @@ func Stop() {
 	defer cancel()
 	stop(ctx)
 	if sigChannel != nil {
-		sigChannel <- syscall.SIGINT // Clear shutdown hook
+		hookChannel <- true // Clear shutdown hook
+		<-hookChannel
+		hookChannel = nil
+		sigChannel = nil
 	}
 	mutex.Unlock()
+	fmt.Println("Stop return")
 }
 
 func stop(ctx context.Context) error {
@@ -108,7 +114,9 @@ func stop(ctx context.Context) error {
 		ready = false
 		if redirectServer != nil {
 			redirectServer.Shutdown(ctx)
+			<-stopChannel
 			redirectServer = nil
+			stopChannel = nil
 		}
 	}
 	return err
@@ -142,20 +150,29 @@ func startTLSRedirectServer() {
 	ln, err := net.Listen("tcp", redirectServer.Addr)
 	if err != nil {
 		fmt.Println(fmt.Errorf("The TLS redirect server encountered an error: %s", err.Error()))
+		redirectServer = nil
 		return
 	}
 
+	stopChannel = make(chan bool, 1)
+
+	ok := ready
+	r := redirectServer
+
 	go func() {
-		mutex.RLock()
-		ok := ready
-		r := redirectServer
-		mutex.RUnlock()
 		if ok && r != nil {
 			if err := r.Serve(ln); err != nil && err != http.ErrServerClosed {
 				fmt.Println(fmt.Errorf("The TLS redirect server encountered an error: %s", err.Error()))
+				mutex.Lock()
+				redirectServer = nil
+				stopChannel = nil
+				ln.Close()
+				mutex.Unlock()
+				return
 			}
 		}
 		ln.Close()
+		stopChannel <- true
 	}()
 }
 
@@ -179,6 +196,7 @@ func startServer(router *Router) {
 	}
 	defer ln.Close()
 	registerShutdownHook(stop)
+	<-hookChannel
 
 	ready = true
 	if protocol == "https" {
@@ -210,17 +228,25 @@ func runStartupHooks() {
 }
 
 func registerShutdownHook(hook func(context.Context) error) {
+	hookChannel = make(chan bool, 1)
 	sigChannel = make(chan os.Signal, 1)
 	signal.Notify(sigChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		<-sigChannel // Block until SIGINT or SIGTERM received
+		hookChannel <- true
+		select {
+		case <-hookChannel:
+			hookChannel <- true
+			return
+		case <-sigChannel: // Block until SIGINT or SIGTERM received
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		mutex.Lock()
-		hook(ctx)
-		mutex.Unlock()
+			mutex.Lock()
+			hookChannel = nil
+			sigChannel = nil
+			hook(ctx)
+			mutex.Unlock()
+		}
 	}()
 }

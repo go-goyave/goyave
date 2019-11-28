@@ -102,7 +102,6 @@ func Stop() {
 		sigChannel = nil
 	}
 	mutex.Unlock()
-	fmt.Println("Stop return")
 }
 
 func stop(ctx context.Context) error {
@@ -149,7 +148,7 @@ func startTLSRedirectServer() {
 
 	ln, err := net.Listen("tcp", redirectServer.Addr)
 	if err != nil {
-		fmt.Println(fmt.Errorf("The TLS redirect server encountered an error: %s", err.Error()))
+		fmt.Printf("The TLS redirect server encountered an error: %s\n", err.Error())
 		redirectServer = nil
 		return
 	}
@@ -162,7 +161,7 @@ func startTLSRedirectServer() {
 	go func() {
 		if ok && r != nil {
 			if err := r.Serve(ln); err != nil && err != http.ErrServerClosed {
-				fmt.Println(fmt.Errorf("The TLS redirect server encountered an error: %s", err.Error()))
+				fmt.Printf("The TLS redirect server encountered an error: %s\n", err.Error())
 				mutex.Lock()
 				redirectServer = nil
 				stopChannel = nil

@@ -269,8 +269,9 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 					suite.Fail(err.Error())
 				}
 				c2 <- true
+			} else {
+				c2 <- true
 			}
-			c2 <- true
 			c2 <- true
 		}()
 		<-c2

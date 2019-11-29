@@ -22,8 +22,8 @@ func createRouterTestRequest(url string) (*Request, *Response) {
 		Params:      map[string]string{"resource": url},
 	}
 	response := &Response{
-		writer: httptest.NewRecorder(),
-		empty:  true,
+		ResponseWriter: httptest.NewRecorder(),
+		empty:          true,
 	}
 	return request, response
 }
@@ -36,7 +36,7 @@ func (suite *RouterTestSuite) routerTestMiddleware(handler Handler) Handler {
 }
 
 func (suite *RouterTestSuite) SetupSuite() {
-	config.LoadConfig()
+	config.Load()
 }
 
 func (suite *RouterTestSuite) TestNewRouter() {
@@ -68,13 +68,15 @@ func (suite *RouterTestSuite) TestCleanStaticPath() {
 	suite.Equal("resources/lang/en-US/locale.json", cleanStaticPath("resources", "/lang/en-US/locale.json"))
 	suite.Equal("resources/lang/en-US/index.html", cleanStaticPath("resources", "lang/en-US"))
 	suite.Equal("resources/lang/en-US/index.html", cleanStaticPath("resources", "lang/en-US/"))
+	suite.Equal("resources/lang/index.html", cleanStaticPath("resources", "lang"))
+	suite.Equal("resources/lang/index.html", cleanStaticPath("resources", "lang/"))
 }
 
 func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response := createRouterTestRequest("/config.test.json")
 	handler := staticHandler("config", false)
 	handler(response, request)
-	result := response.writer.(*httptest.ResponseRecorder).Result()
+	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("application/octet-stream", result.Header.Get("Content-Type"))
 	suite.Equal("inline", result.Header.Get("Content-Disposition"))
@@ -89,7 +91,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response = createRouterTestRequest("/doesn'texist")
 	handler = staticHandler("config", false)
 	handler(response, request)
-	result = response.writer.(*httptest.ResponseRecorder).Result()
+	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(404, result.StatusCode)
 
 	body, err = ioutil.ReadAll(result.Body)
@@ -102,7 +104,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response = createRouterTestRequest("/config.test.json")
 	handler = staticHandler("config", true)
 	handler(response, request)
-	result = response.writer.(*httptest.ResponseRecorder).Result()
+	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("application/octet-stream", result.Header.Get("Content-Type"))
 	suite.Equal("attachment; filename=\"config.test.json\"", result.Header.Get("Content-Disposition"))

@@ -67,6 +67,7 @@ function getGuideSidebar () {
             collapsable: true,
             children: [
                 '',
+                'changelog',
                 'installation',
                 'upgrade-guide',
                 'configuration',

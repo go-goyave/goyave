@@ -45,8 +45,8 @@ goyave.ClearStartupHooks()
 #### goyave.Start
 
 Starts the server. This functions needs a route registrer function as a parameter. Learn more in the [routing](../basics/routing) section.  
-The configuration is not reloaded if you call `Start` multiple times. Only the first startup loads the config files and they are kept in memory until the program exits.
-This operation is **blocking**. 
+The configuration is not reloaded if you call `Start` multiple times. You can still reload the configuration with `config.Load()` if you need it.
+This operation is **blocking**. Triggers a panic if the server is already running.
 
 | Parameters                            | Return |
 |---------------------------------------|--------|

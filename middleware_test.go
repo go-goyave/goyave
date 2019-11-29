@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 	"github.com/System-Glitch/goyave/lang"
 	"github.com/System-Glitch/goyave/validation"
 	"github.com/stretchr/testify/suite"
@@ -28,7 +28,7 @@ type MiddlewareTestSuite struct {
 }
 
 func (suite *MiddlewareTestSuite) SetupSuite() {
-	config.LoadConfig()
+	config.Load()
 	lang.LoadDefault()
 }
 
@@ -90,12 +90,12 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 		Params:      map[string]string{},
 	}
 	response := &Response{
-		writer: httptest.NewRecorder(),
-		empty:  true,
+		ResponseWriter: httptest.NewRecorder(),
+		empty:          true,
 	}
 	middleware(handler)(response, request)
 
-	return response.writer.(*httptest.ResponseRecorder).Result()
+	return response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 }
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicDebug() {
@@ -206,6 +206,60 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 		files, ok := r.Data["file"].([]filesystem.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))
+	})
+}
+
+func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
+	rawRequest := httptest.NewRequest("GET", "/test-route?arr=hello&arr=world", nil)
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+		arr, ok := r.Data["arr"].([]string)
+		suite.True(ok)
+		if ok {
+			suite.Equal(2, len(arr))
+			suite.Equal("hello", arr[0])
+			suite.Equal("world", arr[1])
+		}
+	})
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	field, err := writer.CreateFormField("field")
+	if err != nil {
+		panic(err)
+	}
+	_, err = io.Copy(field, strings.NewReader("hello"))
+	if err != nil {
+		panic(err)
+	}
+
+	field, err = writer.CreateFormField("field")
+	if err != nil {
+		panic(err)
+	}
+	_, err = io.Copy(field, strings.NewReader("world"))
+	if err != nil {
+		panic(err)
+	}
+
+	err = writer.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	rawRequest, err = http.NewRequest("POST", "/test-route", body)
+	if err != nil {
+		panic(err)
+	}
+	rawRequest.Header.Set("Content-Type", writer.FormDataContentType())
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+		suite.Equal(1, len(r.Data))
+		arr, ok := r.Data["field"].([]string)
+		suite.True(ok)
+		if ok {
+			suite.Equal(2, len(arr))
+			suite.Equal("hello", arr[0])
+			suite.Equal("world", arr[1])
+		}
 	})
 }
 

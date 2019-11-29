@@ -83,18 +83,18 @@ The typical and recommended directory structure for Goyave applications is as fo
 :::vue
 .
 ├── database
-│   └── models
+│   └── model
 │       └── *...*
 ├── http
-│   ├── controllers
+│   ├── controller
 │   │   └── *...*
 │   ├── middleware
 │   │   └── *...*
-│   ├── requests
+│   ├── request
 │   │   ├── placeholders.go (*optional*)
 │   │   ├── validation.go (*optional*)
 │   │   └── *...*
-│   └── routes
+│   └── route
 │       └── routes.go
 │
 ├── resources
@@ -122,15 +122,15 @@ The `http` directory contains all the HTTP-related code. This is where most of y
 
 #### HTTP controllers
 
-The `http/controllers` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controllers/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project. Learn more [here](./basics/controllers).
+The `http/controller` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project. Learn more [here](./basics/controllers).
 
 #### HTTP middleware
 
 The `http/middleware` directory contains the application middleware. Each middleware should have its own file. Learn more [here](./basics/middleware).
     
-#### HTTP requests
+#### HTTP request
 
-The `http/requests` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller.
+The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller.
 
 This directory can also contain a `placeholders.go` file, which will define validation rule messages placeholders. Learn more [here](./basics/validation#placeholders).
 
@@ -138,7 +138,7 @@ This directory can also contain a `validation.go` file, which will define custom
 
 #### HTTP Routes
 
-The `http/routes` directory contains the routes définitions. By default, all routes are registered in the `routes.go` file, but for bigger projects, split the route definitions into multiple files.
+The `http/route` directory contains the routes définitions. By default, all routes are registered in the `route.go` file, but for bigger projects, split the route definitions into multiple files.
 
 ### Resources directory
 

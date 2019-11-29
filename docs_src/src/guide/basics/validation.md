@@ -18,11 +18,17 @@ Validation is automatic. You just have to define a rules set and assign it to a 
 You can customize the validation error messages by editing `resources/lang/<language>/rules.json`. Learn more in the [localization](../advanced/localization) section.
 :::
 
+The following features require the `validation` package to be imported.
+
+``` go
+import "github.com/System-Glitch/goyave/validation"
+```
+
 ## Rules sets
 
-The `http/requests` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>Requests`.
+The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>request`.
 
-**Example:** (`http/request/productRequests/product.go`)
+**Example:** (`http/request/productrequest/product.go`)
 ``` go
 var (
 	Store validation.RuleSet = validation.RuleSet{
@@ -50,7 +56,7 @@ If a field is not **required** and is missing from the request, **no rules are c
 Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition. Learn more about routing in the [dedicated section](./routing).
 
 ``` go
-router.Route("POST", "/product", productController.Store, productRequests.Store)
+router.Route("POST", "/product", product.Store, productrequest.Store)
 ```
 
 ## Available validation rules
@@ -250,7 +256,7 @@ The field under validation must not be a one of the values in the given `field`.
 
 #### timezone
 
-The field under validation must be a string and be a valid timezone. This rule converts the field to `*time.Timezone` if it passes.
+The field under validation must be a string and be a valid timezone. This rule converts the field to `*time.Location` if it passes.
 
 Valid timezones are:
 - UTC
@@ -478,6 +484,31 @@ Use this to make sure your validation rules are correctly used.
 **Example:**
 ``` go
 validation.RequireParametersCount("custom_format", parameters, 1)
+```
+
+#### validation.GetFieldType
+
+<p><Badge text="Since v2.0.0"/></p>
+
+returns the non-technical type of the given `value` interface.
+This is used by validation rules to know if the input data is a candidate
+for validation or not and is especially useful for type-dependent rules.
+- `numeric` if the value is an int, uint or a float
+- `string` if the value is a string
+- `array` if the value is a slice
+- `file` if the value is a slice of `filesystem.File`
+- `unsupported` otherwise
+
+| Parameters          | Return   |
+|---------------------|----------|
+| `value interface{}` | `string` |
+
+**Example:**
+``` go
+validation.GetFieldType("foo") // "string"
+validation.GetFieldType(2) // "numeric"
+validation.GetFieldType(2.4) // "numeric"
+validation.GetFieldType([]int{1,2}) // "array"
 ```
 
 ## Placeholders

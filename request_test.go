@@ -1,12 +1,17 @@
 package goyave
 
 import (
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/System-Glitch/goyave/helper/filesystem"
 	"github.com/System-Glitch/goyave/validation"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +53,7 @@ func TestRequestProtocol(t *testing.T) {
 func TestRequestURL(t *testing.T) {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	request := createTestRequest(rawRequest)
-	assert.Equal(t, "/test-route", request.URL().Path)
+	assert.Equal(t, "/test-route", request.URI().Path)
 }
 
 func TestRequestReferrer(t *testing.T) {
@@ -112,4 +117,77 @@ func TestRequestValidate(t *testing.T) {
 	request.Rules = nil
 	errors = request.validate()
 	assert.Nil(t, errors)
+}
+
+func TestRequestAccessors(t *testing.T) {
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		panic(err)
+	}
+
+	uid, err := uuid.Parse("3bbcee75-cecc-5b56-8031-b6641c1ed1f1")
+	if err != nil {
+		panic(err)
+	}
+
+	date, err := time.Parse("2006-01-02", "2019-11-21")
+	if err != nil {
+		panic(err)
+	}
+
+	url, err := url.ParseRequestURI("https://google.com")
+	if err != nil {
+		panic(err)
+	}
+
+	request := createTestRequest(httptest.NewRequest("POST", "/test-route", nil))
+	request.Data = map[string]interface{}{
+		"string":   "hello world",
+		"integer":  42,
+		"numeric":  42.3,
+		"bool":     true,
+		"file":     []filesystem.File{{MIMEType: "image/png"}},
+		"timezone": loc,
+		"ip":       net.ParseIP("127.0.0.1"),
+		"uuid":     uid,
+		"date":     date,
+		"url":      url,
+	}
+
+	assert.Equal(t, "hello world", request.String("string"))
+	assert.Equal(t, 42, request.Integer("integer"))
+	assert.Equal(t, 42.3, request.Numeric("numeric"))
+	assert.True(t, request.Bool("bool"))
+
+	files := request.File("file")
+	assert.Len(t, files, 1)
+	assert.Equal(t, "image/png", files[0].MIMEType)
+
+	assert.Equal(t, "America/New_York", request.Timezone("timezone").String())
+	assert.Equal(t, "127.0.0.1", request.IP("ip").String())
+	assert.Equal(t, "3bbcee75-cecc-5b56-8031-b6641c1ed1f1", request.UUID("uuid").String())
+	assert.Equal(t, "2019-11-21 00:00:00 +0000 UTC", request.Date("date").String())
+	assert.Equal(t, "https://google.com", request.URL("url").String())
+
+	assert.Panics(t, func() { request.String("integer") })
+	assert.Panics(t, func() { request.Integer("string") })
+	assert.Panics(t, func() { request.Numeric("string") })
+	assert.Panics(t, func() { request.Bool("string") })
+	assert.Panics(t, func() { request.File("string") })
+	assert.Panics(t, func() { request.Timezone("string") })
+	assert.Panics(t, func() { request.IP("string") })
+	assert.Panics(t, func() { request.UUID("string") })
+	assert.Panics(t, func() { request.Date("string") })
+	assert.Panics(t, func() { request.URL("string") })
+	assert.Panics(t, func() { request.String("doesn't exist") })
+}
+
+func TestRequestHas(t *testing.T) {
+	request := createTestRequest(httptest.NewRequest("POST", "/test-route", nil))
+	request.Data = map[string]interface{}{
+		"string": "hello world",
+	}
+
+	assert.True(t, request.Has("string"))
+	assert.False(t, request.Has("not_in_request"))
 }

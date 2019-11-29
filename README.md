@@ -12,32 +12,76 @@
 
 <h2 align="center">An Elegant Golang Web Framework</h2>
 
-> **Note:** This repository contains the core code of the Goyave framework. If you want to build a Goyave application, visit the [Goyave Template Project repository](https://github.com/System-Glitch/goyave-template).
-
 Goyave is a progressive and accessible web application framework, aimed at making development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
 
 <table>
     <tr>
         <td valign="top">
-            <h3>Clean</h3>
-            <p>Goyave has an expressive and elegant syntax. Minimalist calls and reduced redundancy are among the Goyave's core principles.</p>
+            <h3>Clean Code</h3>
+            <p>Goyave has an expressive, elegant syntax, a robust structure and conventions. Minimalist calls and reduced redundancy are among the Goyave's core principles.</p>
         </td>
         <td valign="top">
-            <h3>Fast</h3>
-            <p>Develop faster thanks to concise and clear syntax. Low complexity functions allow for better performance.</p>
+            <h3>Fast Development</h3>
+            <p>Develop faster and concentrate on the business logic of your application thanks to the many helpers and built-in functions.</p>
         </td>
         <td valign="top">
-            <h3>Powerful</h3>
-            <p>Goyave is accessible, yet powerful, and provides many helpers and built-in functions to make your life easier and let you concentrate on the business logic.</p>
+            <h3>Powerful functionalities</h3>
+            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, and more!</p>
         </td>
     </tr>
 </table>
+
+Most golang frameworks for web development don't have a strong directory structure nor conventions to make applications have a uniform architecture and limit redundancy. This makes it difficult to work with them on different projects. In companies, having a well-defined and documented architecture helps new developers integrate projects faster, and reduces the time needed for maintaining them. For open source projects, it helps newcomers understanding the project and makes it easier to contribute.
+
+## Getting Started
+
+### Install using the template project
+
+You can bootstrap your project using the [Goyave template project](https://github.com/System-Glitch/goyave-template). This project has a complete directory structure already set up for you.
+
+#### Linux / MacOS
+
+```
+$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s my-project
+```
+
+#### Windows (Powershell)
+
+```
+> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -projectName my-project
+```
+
+---
+
+Run `go run my-project` in your project's directory to start the server, then try to request the `hello` route.
+```
+$ curl http://localhost:8080/hello
+Hi!
+```
+
+### Hello world from scratch
+
+The example below shows a basic `Hello world` application using Goyave.
+
+``` go
+import "github.com/System-Glitch/goyave"
+
+func registerRoutes(router *goyave.Router) {
+	router.Route("GET", "/hello", func(response *goyave.Response, request *goyave.Request) {
+	    response.String(http.StatusOK, "Hello world!")
+    }, nil)
+}
+
+func main() {
+	goyave.Start(registerRoutes)
+}
+```
 
 ## Learning Goyave
 
 The Goyave framework has an extensive documentation covering in-depth subjects and teaching you how to run a project using Goyave from setup to deployment.
 
-<a href="https://system-glitch.github.io/goyave/"><h3 align="center">Read the documentation</h3></a>
+<a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
 
 ## Requirements
 
@@ -46,7 +90,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 ## Contributing
 
-Thank you for considering contributing to the Goyave framework! You can find the contribution guide in the [documentation](https://system-glitch.github.io/goyave/contribution-guide.html).
+Thank you for considering contributing to the Goyave framework! You can find the contribution guide in the [documentation](https://system-glitch.github.io/goyave/guide/contribution-guide.html).
 
 I have many ideas for the future of Goyave. I would be infinitely grateful to whoever want to support me and let me continue working on Goyave and making it better and better.
 
@@ -55,6 +99,13 @@ You can support also me on Patreon:
 <a href="https://www.patreon.com/bePatron?u=25997573">
 	<img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
+
+### Contributors
+
+A big "Thank you" to the Goyave contributors:
+
+- [Kuinox](https://github.com/Kuinox) (Powershell install script)
+- [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)
 
 ## License
 

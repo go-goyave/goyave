@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/System-Glitch/goyave/helpers"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 )
 
 func validateRequired(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -26,9 +26,9 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 	if err != nil {
 		panic(err)
 	}
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
+		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min
 	case "string":
 		return len(value.(string)) >= int(min)
@@ -54,9 +54,9 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 	if err != nil {
 		panic(err)
 	}
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
+		floatValue, _ := helper.ToFloat64(value)
 		return floatValue <= max
 	case "string":
 		return len(value.(string)) <= int(max)
@@ -87,9 +87,9 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 		panic(errMax)
 	}
 
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
+		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min && floatValue <= max
 	case "string":
 		length := len(value.(string))
@@ -115,17 +115,17 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 
 func validateGreaterThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("greater_than", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue > comparedFloatValue
 	case "string":
 		return len(value.(string)) > len(compared.(string))
@@ -149,17 +149,17 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 
 func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("greater_than_equal", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue >= comparedFloatValue
 	case "string":
 		return len(value.(string)) >= len(compared.(string))
@@ -183,17 +183,17 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 
 func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("lower_than", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue < comparedFloatValue
 	case "string":
 		return len(value.(string)) < len(compared.(string))
@@ -217,17 +217,17 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 
 func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	RequireParametersCount("lower_than_equal", parameters, 1)
-	valueType := getFieldType(value)
+	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
-	if !exists || valueType != getFieldType(compared) {
+	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helpers.ToFloat64(value)
-		comparedFloatValue, _ := helpers.ToFloat64(compared)
+		floatValue, _ := helper.ToFloat64(value)
+		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue <= comparedFloatValue
 	case "string":
 		return len(value.(string)) <= len(compared.(string))
@@ -256,7 +256,7 @@ func validateBool(field string, value interface{}, parameters []string, form map
 	case kind == "bool":
 		return true
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
-		v, _ := helpers.ToFloat64(value)
+		v, _ := helper.ToFloat64(value)
 		if v == 1 {
 			form[field] = true
 			return true
@@ -282,20 +282,20 @@ func validateSame(field string, value interface{}, parameters []string, form map
 	RequireParametersCount("same", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists {
-		valueType := getFieldType(value)
-		otherType := getFieldType(other)
+		valueType := GetFieldType(value)
+		otherType := GetFieldType(other)
 		if valueType == otherType {
 			switch valueType {
 			case "numeric":
-				f1, _ := helpers.ToFloat64(value)
-				f2, _ := helpers.ToFloat64(other)
+				f1, _ := helper.ToFloat64(value)
+				f2, _ := helper.ToFloat64(other)
 				return f1 == f2
 			case "string":
 				s1, _ := value.(string)
 				s2, _ := other.(string)
 				return s1 == s2
 			case "array":
-				return helpers.SliceEqual(value, other)
+				return helper.SliceEqual(value, other)
 			}
 			// Don't check files
 		}
@@ -319,9 +319,9 @@ func validateSize(field string, value interface{}, parameters []string, form map
 		panic(err)
 	}
 
-	switch getFieldType(value) {
+	switch GetFieldType(value) {
 	case "numeric":
-		floatVal, _ := helpers.ToFloat64(value)
+		floatVal, _ := helper.ToFloat64(value)
 		return floatVal == float64(size)
 	case "string":
 		return len(value.(string)) == size

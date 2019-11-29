@@ -14,7 +14,7 @@ type PlaceholderTestSuite struct {
 
 func (suite *PlaceholderTestSuite) SetupSuite() {
 	lang.LoadDefault()
-	config.LoadConfig()
+	config.Load()
 	config.Set("defaultLanguage", "en-US")
 }
 

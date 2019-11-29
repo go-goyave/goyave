@@ -45,8 +45,8 @@ Multiple methods can be passed using a pipe-separated string.
 **Examples:**
 ``` go
 router.Route("GET", "/hello", myHandlerFunction, nil)
-router.Route("POST", "/user", userController.Register, userRequests.Register)
-router.Route("PUT|PATCH", "/user", userController.Update, userRequests.Update)
+router.Route("POST", "/user", user.Register, userrequest.Register)
+router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
 ```
 
 ::: tip
@@ -60,14 +60,14 @@ URIs can have parameters, defined using the format `{name}` or `{name:pattern}`.
 
 **Example:**
 ``` go
-router.Route("GET", "/products/{key}", productsController.Show, nil)
-router.Route("GET", "/products/{id:[0-9]+}", productsController.ShowById, nil)
-router.Route("GET", "/categories/{category}/{id:[0-9]+}", categoryController.Show, nil)
+router.Route("GET", "/products/{key}", product.Show, nil)
+router.Route("GET", "/products/{id:[0-9]+}", product.ShowById, nil)
+router.Route("GET", "/categories/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Regex groups can be used inside patterns, as long as they are non-capturing (`(?:re)`). For example:
 ``` go
-router.Route("GET", "/categories/{category}/{sort:(?:asc|desc|new)}", categoryController.ShowSorted, nil)
+router.Route("GET", "/categories/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -84,7 +84,7 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 You can assign a validation rules set to each route. Learn more in the dedicated [section](./validation). You should always validate incoming requests.
 
 ``` go
-router.Route("POST", "/products", productsController.Create, validation.RuleSet{
+router.Route("POST", "/products", product.Create, validation.RuleSet{
 	"Name":  []string{"required", "string", "min:4"},
 	"Price": []string{"required", "numeric"},
 })
@@ -96,7 +96,7 @@ It's not recommended to define rules set directly in the route definition. You s
 
 If you don't want your route to be validated, or if validation is not necessary, just pass `nil` as the last parameter.
 ``` go
-router.Route("GET", "/products/{id}", productsController.Show, nil)
+router.Route("GET", "/products/{id}", product.Show, nil)
 ```
 
 ## Groups and sub-routers
@@ -110,13 +110,13 @@ userRouter := router.Subrouter("/user")
 
 In our application, user profiles are public: anyone can see the user profiles without being authenticated. However, only authenticated users can modify their information and delete their account. We don't want to add some redundancy and apply the authentication middleware for each route needing it, so we are going to create another sub-router.
 ```go
-userRouter.Route("GET", "/{username}", userController.Show, nil)
-userRouter.Route("POST", "/", userController.Register, userRequests.Register)
+userRouter.Route("GET", "/{username}", user.Show, nil)
+userRouter.Route("POST", "/", user.Register, userrequest.Register)
 
 authUserRouter := userRouter.Subrouter("/") // Don't add a prefix
 authUserRouter.Middleware(authenticationMiddleware)
-authUserRouter.Route("PUT", "/", userController.Update, userRequests.Update)
-authUserRouter.Route("DELETE", "/", userController.Delete, nil)
+authUserRouter.Route("PUT", "/", user.Update, userrequest.Update)
+authUserRouter.Route("DELETE", "/", user.Delete, nil)
 ```
 
 To improve your routes definition readability, you should create a new route registrer for each feature. In our example, our definitions would look like this:
@@ -183,9 +183,13 @@ If a user requests `http://yourdomain.com/js/index.js`, the corresponding file w
 
 If no file is given (`http://yourdomain.com/`), or if the request URI is a directory (`http://yourdomain.com/img`), Goyave will look for a `index.html` file and send it if it exists. An error 404 Not Found is otherwise returned.
 
+::: tip
+This method is especially useful to serve Single Page Applications from your API. (Angular, Vue.js, React applications)
+:::
+
 #### Router.Static
 
-Static serve a directory and its subdirectories of static resources.
+Static serve a directory and its sub-directories of static resources.
 Set the `download` parameter to true if you want the files to be sent as an attachment instead of an inline element.
 
 The `directory` parameter can be a relative or an absolute path.
@@ -200,3 +204,55 @@ The `directory` parameter can be a relative or an absolute path.
 ``` go
 router.Static("/public", "/path/to/static/dir", false)
 ```
+
+## Native handlers
+
+<p><Badge text="Since v2.0.0"/></p>
+
+#### goyave.NativeHandler
+
+NativeHandler is an adapter function for `http.Handler`. With this adapter, you can plug non-Goyave handlers to your application.
+
+If the request is a JSON request, the native handler will not be able to read the body, as it has already been parsed by the framework and is stored in the `goyave.Request` object. However, form data can be accessed as usual. Just remember that it contains the raw data, which haven't been validated nor converted. This means that **native handlers are not guaranteed to work**.
+
+The actual response writer passed to the native handler is a `goyave.Response`.
+
+::: warning
+This feature is a compatibility layer with the rest of the Golang web ecosystem. Prefer using Goyave handlers if possible.
+:::
+
+
+| Parameters             | Return           |
+|------------------------|------------------|
+| `handler http.Handler` | `goyave.Handler` |
+
+**Example:**
+``` go
+httpHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("Hello world"))
+})
+router.Route("GET", "/user", goyave.NativeHandler(httpHandler), nil)
+```
+
+#### goyave.NativeMiddleware
+
+NativeMiddleware is an adapter function `mux.MiddlewareFunc`. With this adapter, you can plug [Gorilla Mux middleware](https://github.com/gorilla/mux#middleware) to your application.
+
+Native middleware work like native handlers. See [`NativeHandler`](#goyave-nativehandler) for more details.
+
+| Parameters                      | Return              |
+|---------------------------------|---------------------|
+| `middleware mux.MiddlewareFunc` | `goyave.Middelware` |
+
+**Example:**
+``` go
+middleware := goyave.NativeMiddleware(func(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte("Hello world"))
+        next.ServeHTTP(w, r) // Don't call "next" if your middleware is blocking.
+    })
+})
+router.Middleware(middleware)
+```
+
+

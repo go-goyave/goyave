@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/System-Glitch/goyave/helpers"
+	"github.com/System-Glitch/goyave/helper"
 
 	"github.com/System-Glitch/goyave/lang"
 )
@@ -80,7 +80,7 @@ var validationRules map[string]Rule = map[string]Rule{
 }
 
 var typeDependentMessageRules []string = []string{
-	"min", "max", "size",
+	"min", "max", "between", "size",
 	"greater_than", "greater_than_equal",
 	"lower_than", "lower_than_equal",
 }
@@ -116,11 +116,13 @@ func Validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 		return map[string][]string{"error": {malformedMessage}}
 	}
 
-	return validate(data, rules, language)
+	return validate(request, data, rules, language)
 }
 
-func validate(data map[string]interface{}, rules RuleSet, language string) Errors {
+func validate(request *http.Request, data map[string]interface{}, rules RuleSet, language string) Errors {
 	errors := Errors{}
+	isJSON := request.Header.Get("Content-Type") == "application/json"
+
 	for fieldName, field := range rules {
 		if !isNullable(field) && data[fieldName] == nil {
 			delete(data, fieldName)
@@ -129,6 +131,8 @@ func validate(data map[string]interface{}, rules RuleSet, language string) Error
 		if !isRequired(field) && !validateRequired(fieldName, data[fieldName], []string{}, data) {
 			continue
 		}
+
+		convertArray(isJSON, fieldName, field, data) // Convert single value arrays in url-encoded requests
 
 		for _, rule := range field {
 			if rule == "nullable" {
@@ -147,15 +151,37 @@ func validate(data map[string]interface{}, rules RuleSet, language string) Error
 	return errors
 }
 
+func convertArray(isJSON bool, fieldName string, field []string, data map[string]interface{}) {
+	if !isJSON {
+		val := data[fieldName]
+		rv := reflect.ValueOf(val)
+		kind := rv.Kind().String()
+		if isArray(field) && kind != "slice" {
+			rt := reflect.TypeOf(val)
+			slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
+			slice = reflect.Append(slice, rv)
+			data[fieldName] = slice.Interface()
+		}
+	}
+}
+
 func getMessage(rule string, value interface{}, language string) string {
 	langEntry := "validation.rules." + rule
 	if isTypeDependent(rule) {
-		langEntry = langEntry + "." + getFieldType(value)
+		langEntry = langEntry + "." + GetFieldType(value)
 	}
 	return lang.Get(language, langEntry)
 }
 
-func getFieldType(value interface{}) string {
+// GetFieldType returns the non-technical type of the given "value" interface.
+// This is used by validation rules to know if the input data is a candidate
+// for validation or not and is especially useful for type-dependent rules.
+// - "numeric" if the value is an int, uint or a float
+// - "string" if the value is a string
+// - "array" if the value is a slice
+// - "file" if the value is a slice of "filesystem.File"
+// - "unsupported" otherwise
+func GetFieldType(value interface{}) string {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	switch {
@@ -174,15 +200,19 @@ func getFieldType(value interface{}) string {
 }
 
 func isTypeDependent(rule string) bool {
-	return helpers.Contains(typeDependentMessageRules, rule)
+	return helper.Contains(typeDependentMessageRules, rule)
 }
 
 func isRequired(field []string) bool {
-	return helpers.Contains(field, "required")
+	return helper.Contains(field, "required")
 }
 
 func isNullable(field []string) bool {
-	return helpers.Contains(field, "nullable")
+	return helper.Contains(field, "nullable")
+}
+
+func isArray(field []string) bool {
+	return helper.Contains(field, "array")
 }
 
 func parseRule(rule string) (string, []string) {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 	"github.com/System-Glitch/goyave/lang"
 )
 
@@ -49,6 +49,8 @@ func parseRequestMiddleware(next Handler) Handler {
 			}
 		} else {
 			data = generateFlatMap(request.httpRequest)
+			// TODO free memory by clearing the Form data from the request?
+			// Would probably break native handlers.
 		}
 		request.Data = data
 		next(response, request)
@@ -71,12 +73,20 @@ func generateFlatMap(request *http.Request) map[string]interface{} {
 
 	if request.Form != nil {
 		for field, value := range request.Form {
-			flatMap[field] = value[0]
+			if len(value) > 1 {
+				flatMap[field] = value
+			} else {
+				flatMap[field] = value[0]
+			}
 		}
 	}
 	if request.MultipartForm != nil {
 		for field, value := range request.MultipartForm.Value {
-			flatMap[field] = value[0]
+			if len(value) > 1 {
+				flatMap[field] = value
+			} else {
+				flatMap[field] = value[0]
+			}
 		}
 
 		for field := range request.MultipartForm.File {

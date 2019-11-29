@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helpers/filesystem"
+	"github.com/System-Glitch/goyave/helper/filesystem"
 	"github.com/System-Glitch/goyave/validation"
 	"github.com/gorilla/mux"
 )
@@ -88,12 +88,11 @@ func cleanStaticPath(directory string, file string) string {
 		file = file[1:]
 	}
 	path := directory + "/" + file
-	if len(file) <= 0 || filesystem.IsDirectory(path) {
-		if strings.Count(file, "/") > 0 && !strings.HasSuffix(file, "/") {
-			file += "/"
+	if filesystem.IsDirectory(path) {
+		if !strings.HasSuffix(path, "/") {
+			path += "/"
 		}
-		file += "index.html"
-		path = directory + "/" + file
+		path += "index.html"
 	}
 	return path
 }
@@ -105,9 +104,9 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 		Params:      mux.Vars(rawRequest),
 	}
 	response := &Response{
-		httpRequest: rawRequest,
-		writer:      w,
-		empty:       true,
+		httpRequest:    rawRequest,
+		ResponseWriter: w,
+		empty:          true,
 	}
 
 	// Validate last.

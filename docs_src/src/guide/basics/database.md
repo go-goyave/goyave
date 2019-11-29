@@ -95,7 +95,7 @@ database.Close()
 
 ## Models
 
-A model is a structure reflecting a database table structure. An instance of a model is a single database record. Each model is defined in its own file inside the `database/models` directory.
+A model is a structure reflecting a database table structure. An instance of a model is a single database record. Each model is defined in its own file inside the `database/model` directory.
 
 ### Defining a model
 
@@ -124,7 +124,7 @@ type User struct {
 All models should be **registered** in an `init()` function inside their model file. To ensure the `init()` functions are executed before the server starts, import the `models` package in your `kernel.go`.
 
 ``` go
-import _ "database/models"
+import _ "database/model"
 ```
 :::
 

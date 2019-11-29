@@ -9,40 +9,27 @@ This guide will walk you through the installation process. The rest of the guide
 
 ## Template project
 
-You can bootstrap your project using the **[Goyave template project](https://github.com/System-Glitch/goyave-template)**.
+You can bootstrap your project using the **[Goyave template project](https://github.com/System-Glitch/goyave-template)**. This project has a complete directory structure already set up for you.
 
-First, download the template and unzip it:
-```
-$ curl -LOk https://github.com/System-Glitch/goyave-template/archive/master.zip && unzip master.zip && rm master.zip
-```
+#### Linux / MacOS
 
-Rename `goyave-template-master` to the name of our project (`my-project` in our example), then `cd` into it and init a git repository.
 ```
-$ mv goyave-template-master my-project
-$ cd my-project
-$ git init
+$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s my-project
 ```
 
-Copy `config.example.json` into a new file `config.json`. Update the configuration to make it fit your needs. See the [configuration](./configuration) section for more details.
+#### Windows (Powershell)
 
-::: tip
-It is a good practice to ignore the actual config to prevent it being added to the version control system. Each developer may have different settings for their environment.
-:::
-
-Finally, you'll have to replace all references to `goyave_template` with the name of your project. You can use the following command:
 ```
-$ find ./ -type f \( -iname \*.go -o -iname \*.mod \) -exec sed -i "s/goyave_template/my-project/g" {} \;
+> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -projectName my-project
 ```
 
-Run `go run my-project` to start the server, then try to request the `hello` route.
+---
+
+Run `go run my-project` in your project's directory to start the server, then try to request the `hello` route.
 ```
 $ curl http://localhost:8080/hello
 Hi!
 ```
-
-::: warning
-The template project setup will be more streamlined in the future to make it easier to setup projects.
-:::
 
 ## From scratch
 
@@ -64,12 +51,12 @@ Now that your project directory is set up and the dependencies are installed, le
 package main
 
 import (
-    "my-project/http/routes"
+    "my-project/http/route"
     "github.com/System-Glitch/goyave"
 )
 
 func main() {
-    goyave.Start(routes.Register)
+    goyave.Start(route.Register)
 }
 ```
 
@@ -77,13 +64,13 @@ func main() {
 `goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background. See the [multi-services](./advanced/multi-services) section for more details.
 :::
 
-Now we need to create the package in which we will register our routes. Create a new package `http/routes`:
+Now we need to create the package in which we will register our routes. Create a new package `http/route`:
 ```
 $ mkdir http
-$ mkdir http/routes
+$ mkdir http/route
 ```
 
-Create `http/routes/routes.go`:
+Create `http/route/route.go`:
 ``` go
 package routes
 
@@ -103,12 +90,12 @@ func hello(response *goyave.Response, request *goyave.Request) {
 Here we registered a very simple route displaying "Hi!". Learn more about routing [here](./basics/routing).
 
 ::: tip
-Your routes definitions should be separated from the handler functions. Handlers should be defined in a `http/controllers` directory.
+Your routes definitions should be separated from the handler functions. Handlers should be defined in a `http/controller` directory.
 :::
 
 Run your server and request your route:
 ```
-$ go run main
+$ go run my-project
 
 # In another terminal:
 $ curl http://localhost:8080/hello
@@ -116,3 +103,5 @@ Hi!
 ```
 
 You should also create a config file for your application. Learn more [here](./configuration).
+
+It is a good practice to ignore the actual config to prevent it being added to the version control system. Each developer may have different settings for their environment. To do so, add `config.json` to your `.gitignore`.

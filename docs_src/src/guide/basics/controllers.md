@@ -4,15 +4,15 @@
 
 ## Defining controllers
 
-Controllers are files containing a collection of Handlers related to a specific feature. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controllers/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project.
+Controllers are files containing a collection of Handlers related to a specific feature. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project.
 
 Let's take a very simple CRUD as an example for a controller definition:
 **http/controllers/product/product.go**:
 ``` go
 func Store(response *goyave.Response, request *goyave.Request) {
     product := model.Product{
-        Name: request.Data["name"].(string),
-        Price: request.Data["price"].(float64),
+        Name: request.String("name"),
+        Price: request.Numeric("price"),
     }
     database.GetConnection().Create(&product)
     response.Status(http.StatusCreated)
@@ -35,7 +35,7 @@ func Update(response *goyave.Response, request *goyave.Request) {
     if db.Select("id").First(&product, id).RecordNotFound() {
         response.Status(http.StatusNotFound)
     } else {
-        db.Model(&product).Update("name", request.Data["name"].(string))
+        db.Model(&product).Update("name", request.String("name"))
     }
 }
 
@@ -66,8 +66,7 @@ Controller handlers contain the business logic of your application. They should 
 ``` go
 // This handler receives an image, optimizes it and sends the result back.
 func OptimizeImage(response *goyave.Response, request *goyave.Request) {
-    files := request.Data["image"].([]filesystem.File)
-    optimizedImg := processing.OptimizeImage(files[0])
+    optimizedImg := processing.OptimizeImage(request.File("image")[0])
     response.Write(http.StatusOK, optimizedImg)
 }
 ```

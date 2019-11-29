@@ -3,6 +3,7 @@ package goyave
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -61,7 +62,13 @@ func ClearStartupHooks() {
 //  func main() {
 // 	    goyave.start(route.Register)
 //  }
+//
+// Panic if the server is already running.
 func Start(routeRegistrer func(*Router)) {
+	if IsReady() {
+		log.Panicf("Server is already running.")
+	}
+
 	mutex.Lock()
 	if !config.IsLoaded() {
 		if err := config.Load(); err != nil {

@@ -21,3 +21,4 @@
     - All writing functions can now return an error.
 - Added the [`NativeHandler`](./basics/routing#native-handlers) compatibility layer.
 - Fixed a bug preventing the static resources handler to find `index.html` if a directory with a depth of one was requested without a trailing slash.
+- Now panics when calling `Start()` while the server is already running.

@@ -294,6 +294,15 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 	<-c2
 }
 
+func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
+	suite.loadConfig()
+	suite.runServer(func(router *Router) {}, func() {
+		suite.Panics(func() {
+			Start(func(router *Router) {})
+		})
+	})
+}
+
 func TestGoyaveTestSuite(t *testing.T) {
 	suite.Run(t, new(GoyaveTestSuite))
 }

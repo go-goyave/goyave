@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/database"
-	"github.com/System-Glitch/goyave/lang"
+	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/System-Glitch/goyave/v2/lang"
 )
 
 var (
@@ -55,7 +55,7 @@ func ClearStartupHooks() {
 // Start starts the web server.
 // The routeRegistrer parameter is a function aimed at registering all your routes and middlewares.
 //  import (
-//      "github.com/System-Glitch/goyave"
+//      "github.com/System-Glitch/goyave/v2"
 //      "my-project/route"
 //  )
 //

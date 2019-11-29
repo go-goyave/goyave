@@ -10,8 +10,8 @@ import (
 	"runtime/debug"
 	"strconv"
 
-	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helper/filesystem"
+	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 )
 
 // Response represents a controller response.

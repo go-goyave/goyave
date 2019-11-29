@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helper/filesystem"
-	"github.com/System-Glitch/goyave/validation"
+	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v2/validation"
 	"github.com/gorilla/mux"
 )
 

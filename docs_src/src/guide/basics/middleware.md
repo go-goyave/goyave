@@ -55,7 +55,7 @@ When a middleware stops a request, following middlewares are **not** executed ei
 
 Included middleware are located in the `middleware` package.
 ``` go
-import "github.com/System-Glitch/goyave/middleware"
+import "github.com/System-Glitch/goyave/v2/middleware"
 ```
 
 ### DisallowNonValidatedFields

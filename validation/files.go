@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/System-Glitch/goyave/helper"
-	"github.com/System-Glitch/goyave/helper/filesystem"
+	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 )
 
 func validateFile(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

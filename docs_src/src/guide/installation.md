@@ -43,7 +43,7 @@ In a terminal, run:
 ```
 $ mkdir myproject && cd myproject
 $ go mod init my-project
-$ go get -u github.com/System-Glitch/goyave
+$ go get -u github.com/System-Glitch/goyave/v2
 ```
 
 Now that your project directory is set up and the dependencies are installed, let's start with the program entry point, `kernel.go`:
@@ -52,7 +52,7 @@ package main
 
 import (
     "my-project/http/route"
-    "github.com/System-Glitch/goyave"
+    "github.com/System-Glitch/goyave/v2"
 )
 
 func main() {
@@ -74,7 +74,7 @@ Create `http/route/route.go`:
 ``` go
 package routes
 
-import "github.com/System-Glitch/goyave"
+import "github.com/System-Glitch/goyave/v2"
 
 // Register all the routes
 func Register(router *goyave.Router) {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/jinzhu/gorm"
 )
 

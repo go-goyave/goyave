@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/System-Glitch/goyave/helper"
+	"github.com/System-Glitch/goyave/v2/helper"
 )
 
 var config map[string]interface{}

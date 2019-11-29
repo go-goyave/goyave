@@ -27,7 +27,7 @@ Since `v2.0.0`, you can use custom environments.
 
 Before being able to use the config, import the config package:
 ``` go
-import "github.com/System-Glitch/goyave/config"
+import "github.com/System-Glitch/goyave/v2/config"
 ```
 
 The configuration is loaded automatically when the server starts, but you can reload it manually if needed.

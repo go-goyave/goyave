@@ -122,7 +122,7 @@ When an incoming request enters your application, the core language middleware c
 
 To use the localization feature, import the `lang` package:
 ``` go
-import "github.com/System-Glitch/goyave/lang"
+import "github.com/System-Glitch/goyave/v2/lang"
 ```
 
 The main function of the localization feature is `lang.Get(language, line string)`. This function lets you retrieve a language entry.

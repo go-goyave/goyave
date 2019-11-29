@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/validation"
+	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/validation"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -8,6 +8,7 @@ import (
 	"path"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/System-Glitch/goyave/config"
 	"github.com/System-Glitch/goyave/helper"
@@ -38,11 +39,14 @@ type language struct {
 }
 
 var languages map[string]language = map[string]language{}
+var mutex = &sync.RWMutex{}
 
 // LoadDefault load the fallback language ("en-US") and, if needed,
 // the default language provided in the config.
 // This function is intended for internal use only.
 func LoadDefault() {
+	mutex.Lock()
+	defer mutex.Unlock()
 	var filename string
 	var ok bool
 	func() {
@@ -62,6 +66,8 @@ func LoadDefault() {
 // LoadAllAvailableLanguages loads every language directory
 // in the "resources/lang" directory if it exists.
 func LoadAllAvailableLanguages() {
+	mutex.Lock()
+	defer mutex.Unlock()
 	sep := string(os.PathSeparator)
 	workingDir, err := os.Getwd()
 	if err != nil {
@@ -92,6 +98,8 @@ func LoadAllAvailableLanguages() {
 //
 // Each file is optional.
 func Load(language, path string) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if filesystem.IsDirectory(path) {
 		load(language, path)
 	} else {
@@ -167,6 +175,9 @@ func Get(lang string, line string) string {
 	if !IsAvailable(lang) {
 		return line
 	}
+
+	mutex.RLock()
+	defer mutex.RUnlock()
 	if strings.Count(line, ".") > 0 {
 		path := strings.Split(line, ".")
 		if path[0] != "validation" {
@@ -212,6 +223,8 @@ func convertEmptyLine(entry, line string) string {
 
 // IsAvailable returns true if the language is available.
 func IsAvailable(lang string) bool {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	_, exists := languages[lang]
 	return exists
 }
@@ -224,6 +237,8 @@ func IsAvailable(lang string) bool {
 //  /fr/produits
 //  ...
 func GetAvailableLanguages() []string {
+	mutex.RLock()
+	defer mutex.RUnlock()
 	langs := []string{}
 	for lang := range languages {
 		langs = append(langs, lang)

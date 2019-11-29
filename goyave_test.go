@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -98,9 +99,12 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
 				Stop()
 			} else {
+				fmt.Println("send sig")
 				proc.Signal(syscall.SIGTERM)
-				for IsReady() {
+				time.Sleep(10 * time.Millisecond)
+				for IsReady() { // TODO: Ready is still true (may be ok)
 					time.Sleep(10 * time.Millisecond)
+					proc.Signal(syscall.SIGTERM)
 				}
 			}
 			c <- true
@@ -252,21 +256,21 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	blockingServer := &http.Server{
-		Addr:    getAddress(protocol),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
-	}
+	var ln net.Listener
 
 	go func() {
 		go func() {
-			c2 <- true
+
 			// Run a server using the same port as Goyave, so Goyave fails to bind.
 			if protocol != "https" {
-				err := blockingServer.ListenAndServe()
-				if err != http.ErrServerClosed {
+				var err error
+				ln, err = net.Listen("tcp", getAddress(protocol))
+				if err != nil {
 					suite.Fail(err.Error())
 				}
+				c2 <- true
 			}
+			c2 <- true
 			c2 <- true
 		}()
 		<-c2
@@ -277,7 +281,8 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 			config.Set("tlsCert", "doesntexist")
 		}
 
-		Start(func(router *Router) {})
+		fmt.Println("test server error " + protocol)
+		Start(func(router *Router) {}) // TODO: server already running
 		config.Set("protocol", "http")
 		c <- true
 	}()
@@ -290,9 +295,9 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		suite.Nil(server)
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	blockingServer.Shutdown(ctx)
+	if protocol != "https" {
+		ln.Close()
+	}
 	<-c2
 }
 

@@ -196,9 +196,12 @@ func startServer(router *Router) {
 	ln, err := net.Listen("tcp", server.Addr)
 	if err != nil {
 		fmt.Println(err)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		stop(ctx)
 		mutex.Unlock()
-		Stop()
 		return
+		// TODO sig channel run on http error ?
 	}
 	defer ln.Close()
 	registerShutdownHook(stop)
@@ -234,8 +237,8 @@ func runStartupHooks() {
 }
 
 func registerShutdownHook(hook func(context.Context) error) {
-	hookChannel = make(chan bool, 1)
-	sigChannel = make(chan os.Signal, 1)
+	hookChannel = make(chan bool)
+	sigChannel = make(chan os.Signal)
 	signal.Notify(sigChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
@@ -243,7 +246,6 @@ func registerShutdownHook(hook func(context.Context) error) {
 		select {
 		case <-hookChannel:
 			hookChannel <- true
-			return
 		case <-sigChannel: // Block until SIGINT or SIGTERM received
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()

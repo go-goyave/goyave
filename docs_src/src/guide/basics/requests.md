@@ -14,6 +14,18 @@ import "github.com/System-Glitch/goyave"
 
 ## Methods
 
+::: table
+[Method](#request-method)
+[Protocol](#request-protocol)
+[URI](#request-uri)
+[Header](#request-header)
+[ContentLength](#request-contentlength)
+[RemoteAddress](#request-remoteaddress)
+[Cookies](#request-cookies)
+[Referrer](#request-referrer)
+[UserAgent](#request-useragent)
+:::
+
 #### Request.Method
 
 The HTTP method (GET, POST, PUT, etc.).
@@ -154,6 +166,20 @@ fmt.Println(request.UserAgent()) // "Mozilla/5.0 ..."
 <p><Badge text="Since v2.0.0"/></p>
 
 Accessors are helper functions to retrieve request data without having to write the type assertion. This is helpful to make your controllers cleaner. You shouldn't use these accessors in middlewares because they assume the data has been converted by the validation already. Data can still be accessed through the `Data` attribute. There is currently no accessor for slices.
+
+::: table
+[Has](#request-has)
+[String](#request-string)
+[Numeric](#request-numeric)
+[Integer](#request-integer)
+[Bool](#request-bool)
+[File](#request-file)
+[Timezone](#request-timezone)
+[IP](#request-ip)
+[URL](#request-url)
+[UUID](#request-uuid)
+[Date](#request-date)
+:::
 
 #### Request.Has
 
@@ -301,6 +327,13 @@ fmt.Println(request.Date("birthdate").String()) // "2019-11-21 00:00:00 +0000 UT
 ```
 
 ## Attributes
+
+::: table
+[Rules](#request-rules)
+[Data](#request-data)
+[Params](#request-params)
+[Lang](#request-lang)
+:::
 
 #### Request.Rules
 

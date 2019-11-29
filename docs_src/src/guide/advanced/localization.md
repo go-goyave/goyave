@@ -147,6 +147,14 @@ func ControllerHandler(response *goyave.Response, request *goyave.Request) {
 
 ### Localization reference
 
+::: table
+[Get](#lang-get)
+[Load](#lang-load)
+[IsAvailable](#lang-isavailable)
+[GetAvailableLanguages](#lang-getavailablelanguages)
+[DetectLanguage](#lang-detectlanguage)
+:::
+
 #### lang.Get
 
 Get a language line.

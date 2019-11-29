@@ -12,6 +12,15 @@ The helpers require the `helper` package to be imported.
 import "github.com/System-Glitch/goyave/helper"
 ```
 
+**List of general helpers**:
+::: table
+[Contains](#helper-contains)
+[SliceEqual](#helper-sliceequal)
+[ToFloat64](#helper-tofloat64)
+[ToString](#helper-tostring)
+[ParseMultiValuesHeader](#helper-parsemultivaluesheader)
+:::
+
 #### helper.Contains
 
 Check if a generic slice contains the given value.
@@ -123,6 +132,16 @@ All files received in a requests are stored in the `filesystem.File` structure. 
 The data in `file.Header` come from the client and **shouldn't be trusted**. The filename is always optional and must not be used blindly by the application: path information should be stripped, and conversion to the server file system rules should be done. You cannot rely on the size given in the header neither.
 :::
 
+**List of filesystem helpers**:
+::: table
+[File.Save](#filesystem-file-save)
+[GetFileExtension](#filesystem-getfileextension)
+[GetMIMEType](#filesystem-getmimetype)
+[FileExists](#filesystem-fileexists)
+[IsDirectory](#filesystem-isdirectory)
+[Delete](#filesystem-delete)
+:::
+
 #### filesystem.File.Save
 
 Writes the given file on the disk.
@@ -208,7 +227,7 @@ fmt.Println(filesystem.IsDirectory("README.md")) // false
 fmt.Println(filesystem.IsDirectory("resources")) // true
 ```
 
-#### filesystem.FileExists
+#### filesystem.Delete
 
 Delete the file at the given path. Panics if the file cannot be deleted.
 

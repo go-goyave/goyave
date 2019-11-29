@@ -12,6 +12,22 @@ All functions below require the `goyave` package to be imported.
 import "github.com/System-Glitch/goyave"
 ```
 
+**List of response methods**:
+::: table
+[Header](#response-header)
+[Status](#response-status)
+[JSON](#response-json)
+[String](#response-string)
+[Write](#response-write)
+[File](#response-file)
+[Download](#response-download)
+[Error](#response-error)
+[Cookie](#response-cookie)
+[Redirect](#response-redirect)
+[TemporaryRedirect](#response-temporaryredirect)
+[CreateTestResponse](#response-createtestresponse)
+:::
+
 #### Response.Header
 
 Returns the Header map that will be sent.
@@ -120,6 +136,7 @@ If you want the file to be sent as a download ("Content-Disposition: attachment"
 ``` go
 response.Download("/path/to/file", "awesome.txt")
 ```
+
 #### Response.Error
 
 Print the error in the console and return it with an error code 500. If debugging is enabled in the config, the error is also written in the response using the JSON format, and the stacktrace is printed in the console.

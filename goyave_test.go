@@ -99,7 +99,9 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				Stop()
 			} else {
 				proc.Signal(syscall.SIGTERM)
-				time.Sleep(10 * time.Millisecond)
+				for IsReady() {
+					time.Sleep(10 * time.Millisecond)
+				}
 			}
 			c <- true
 		})

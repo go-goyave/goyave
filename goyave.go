@@ -249,6 +249,7 @@ func registerShutdownHook(hook func(context.Context) error) {
 			defer cancel()
 
 			mutex.Lock()
+			close(hookChannel)
 			hookChannel = nil
 			sigChannel = nil
 			hook(ctx)

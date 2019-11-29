@@ -16,7 +16,6 @@ before_script:
   - go get github.com/mattn/goveralls
 
 script:
-  - go test -race -count=20 .
   - go test -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
   - goveralls -coverprofile coverage.txt -service=travis-ci
   - golint -set_exit_status $(go list ./...)

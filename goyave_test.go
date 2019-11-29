@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/config"
+	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/stretchr/testify/suite"
 )
 

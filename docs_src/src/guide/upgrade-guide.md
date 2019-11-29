@@ -11,4 +11,10 @@ This first update comes with refactoring and package renaming to better fit the 
 - `goyave.Request.URL()` has been renamed to `goyave.Request.URI()`.
     - `goyave.Request.URL()` is now a data accessor for URL fields.
 - The `helpers` package has been renamed to `helper`.
-    - The `filesystem` package thus has a different path: `github.com/System-Glitch/goyave/helper/filesystem`
+    - The `filesystem` package thus has a different path: `github.com/System-Glitch/goyave/v2/helper/filesystem`.
+
+::: tip
+Because this version contains breaking changes. Goyave had to move to `v2.0.0`. You need to change the path of your imports to upgrade.
+
+Change `github.com/System-Glitch/goyave` to `github.com/System-Glitch/goyave/v2`.
+:::

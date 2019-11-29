@@ -12,7 +12,7 @@ All functions below require the `database` and the `gorm` packages to be importe
 
 ``` go
 import (
-  "github.com/System-Glitch/goyave/database"
+  "github.com/System-Glitch/goyave/v2/database"
   "github.com/jinzhu/gorm"
 )
 ```

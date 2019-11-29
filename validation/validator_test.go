@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/lang"
+	"github.com/System-Glitch/goyave/v2/lang"
 	"github.com/stretchr/testify/suite"
 )
 

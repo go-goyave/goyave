@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/System-Glitch/goyave/config"
-	"github.com/System-Glitch/goyave/helper/filesystem"
-	"github.com/System-Glitch/goyave/lang"
+	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v2/lang"
 )
 
 // Middleware function generating middleware handler function.

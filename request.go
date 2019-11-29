@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/System-Glitch/goyave/helper/filesystem"
-	"github.com/System-Glitch/goyave/validation"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v2/validation"
 	"github.com/google/uuid"
 )
 

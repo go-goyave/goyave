@@ -3,7 +3,7 @@ package validation
 import (
 	"reflect"
 
-	"github.com/System-Glitch/goyave/helper"
+	"github.com/System-Glitch/goyave/v2/helper"
 )
 
 func validateArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

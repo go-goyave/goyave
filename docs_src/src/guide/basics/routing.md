@@ -9,7 +9,7 @@ Routing is an essential part of any Goyave application. Routes definition is the
 All features below require the `goyave` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave"
+import "github.com/System-Glitch/goyave/v2"
 ```
 
 Routes are defined in **routes registrer functions**. The main route registrer is passed to `goyave.Start()` and is executed automatically with a newly created root-level **router**.

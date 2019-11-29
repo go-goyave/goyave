@@ -9,7 +9,7 @@ If you didn't write anything before the request lifecycle ends, `204 No Content`
 All functions below require the `goyave` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave"
+import "github.com/System-Glitch/goyave/v2"
 ```
 
 **List of response methods**:

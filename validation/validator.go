@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/System-Glitch/goyave/helper"
+	"github.com/System-Glitch/goyave/v2/helper"
 
-	"github.com/System-Glitch/goyave/lang"
+	"github.com/System-Glitch/goyave/v2/lang"
 )
 
 // Rule function defining a validation rule.

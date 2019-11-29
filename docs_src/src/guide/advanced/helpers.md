@@ -9,7 +9,7 @@ The Goyave framework offers a collection of helpers to ease development.
 The helpers require the `helper` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/helper"
+import "github.com/System-Glitch/goyave/v2/helper"
 ```
 
 **List of general helpers**:
@@ -117,7 +117,7 @@ fmt.Println(helper.ParseMultiValuesHeader("text/html;q=0.8,text/*;q=0.8,*/*;q=0.
 The filesystem helpers require the `filesystem`  package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/helper/filesystem"
+import "github.com/System-Glitch/goyave/v2/helper/filesystem"
 ```
 
 All files received in a requests are stored in the `filesystem.File` structure. This structres gives all the information you need on a file and its content, as well as a helper function to save it easily.

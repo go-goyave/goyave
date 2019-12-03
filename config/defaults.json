@@ -1,6 +1,7 @@
 {
     "appName": "goyave",
     "environment": "localhost",
+    "maintenance": false,
     "host": "127.0.0.1",
     "port": 8080,
     "httpsPort": 8081,

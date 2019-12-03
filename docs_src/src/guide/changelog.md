@@ -5,6 +5,9 @@
 ## v2.1.0
 
 - `filesystem.GetMIMEType` now detects `css`, `js`, `json` and `jsonld` files based on their extension.
+- Added maintenance mode.
+    - Can be [toggled at runtime](./advanced/multi-services#maintenance-mode).
+    - The server can be started in maintenance mode using the `maintenance` config option. (Defaults to `false`)
 
 ## v2.0.0
 

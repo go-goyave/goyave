@@ -19,6 +19,7 @@ var config map[string]interface{}
 var configValidation = map[string]reflect.Kind{
 	"appName":              reflect.String,
 	"environment":          reflect.String,
+	"maintenance":          reflect.Bool,
 	"host":                 reflect.String,
 	"port":                 reflect.Float64,
 	"httpsPort":            reflect.Float64,

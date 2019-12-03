@@ -311,6 +311,79 @@ func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 	})
 }
 
+func (suite *GoyaveTestSuite) TestMaintenanceMode() {
+	suite.loadConfig()
+	suite.runServer(func(router *Router) {
+		router.Route("GET", "/hello", helloHandler, nil)
+	}, func() {
+		EnableMaintenanceMode()
+
+		netClient := createHTTPClient()
+		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(503, resp.StatusCode)
+		}
+
+		DisableMaintenanceMode()
+
+		resp, err = netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(200, resp.StatusCode)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			suite.Nil(err)
+			suite.Equal("Hi!", string(body))
+		}
+	})
+
+	config.Set("maintenance", true)
+	suite.runServer(func(router *Router) {
+		router.Route("GET", "/hello", helloHandler, nil)
+	}, func() {
+		netClient := createHTTPClient()
+		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(503, resp.StatusCode)
+		}
+
+		DisableMaintenanceMode()
+
+		resp, err = netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(200, resp.StatusCode)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			suite.Nil(err)
+			suite.Equal("Hi!", string(body))
+		}
+	})
+	config.Set("maintenance", false)
+}
+
 func TestGoyaveTestSuite(t *testing.T) {
 	suite.Run(t, new(GoyaveTestSuite))
 }

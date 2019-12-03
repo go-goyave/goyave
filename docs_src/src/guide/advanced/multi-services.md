@@ -107,3 +107,33 @@ if goyave.IsReady() {
     fmt.Println("Server is ready")
 }
 ```
+
+## Maintenance mode
+
+On top of being able to start the server in maintenance mode using the `maintenance` configuration entry, you can enable and disable this mode at runtime.
+
+#### goyave.EnableMaintenanceMode
+
+Replace the main server handler with the "Service Unavailable" handler.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
+**Example:**
+``` go
+goyave.EnableMaintenanceMode()
+```
+
+#### goyave.DisableMaintenanceMode
+
+Replace the main server handler with the original router.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
+**Example:**
+``` go
+goyave.DisableMaintenanceMode()
+```

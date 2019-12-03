@@ -19,15 +19,18 @@ import (
 )
 
 var (
-	server         *http.Server
-	redirectServer *http.Server
-	sigChannel     chan os.Signal
-	stopChannel    chan bool
-	hookChannel    chan bool
+	server             *http.Server
+	redirectServer     *http.Server
+	router             *Router
+	maintenanceHandler http.Handler
+	sigChannel         chan os.Signal
+	stopChannel        chan bool
+	hookChannel        chan bool
 
 	startupHooks []func()
 	ready        bool = false
 	mutex             = &sync.RWMutex{}
+	once         sync.Once
 )
 
 // IsReady returns true if the server has finished initializing and
@@ -83,9 +86,32 @@ func Start(routeRegistrer func(*Router)) {
 		database.Migrate()
 	}
 
-	router := newRouter()
+	router = newRouter()
 	routeRegistrer(router)
 	startServer(router)
+}
+
+// EnableMaintenanceMode replace the main server handler with the "Service Unavailable" handler.
+func EnableMaintenanceMode() {
+	mutex.Lock()
+	server.Handler = getMaintenanceHandler()
+	mutex.Unlock()
+}
+
+// DisableMaintenanceMode replace the main server handler with the original router.
+func DisableMaintenanceMode() {
+	mutex.Lock()
+	server.Handler = router.muxRouter
+	mutex.Unlock()
+}
+
+func getMaintenanceHandler() http.Handler {
+	once.Do(func() {
+		maintenanceHandler = http.HandlerFunc(func(resp http.ResponseWriter, request *http.Request) {
+			resp.WriteHeader(http.StatusServiceUnavailable)
+		})
+	})
+	return maintenanceHandler
 }
 
 // Stop gracefully shuts down the server without interrupting any
@@ -117,6 +143,7 @@ func stop(ctx context.Context) error {
 		err = server.Shutdown(ctx)
 		database.Close()
 		server = nil
+		router = nil
 		ready = false
 		if redirectServer != nil {
 			redirectServer.Shutdown(ctx)
@@ -191,6 +218,10 @@ func startServer(router *Router) {
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
 		Handler:      router.muxRouter,
+	}
+
+	if config.GetBool("maintenance") {
+		server.Handler = getMaintenanceHandler()
 	}
 
 	ln, err := net.Listen("tcp", server.Addr)

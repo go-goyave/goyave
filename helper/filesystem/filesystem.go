@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+var contentTypeByExtension map[string]string = map[string]string{
+	".jsonld": "application/ld+json",
+	".json":   "application/json",
+	".js":     "application/javascript",
+	".css":    "text/css",
+}
+
 // GetFileExtension returns the last part of a file name.
 // If the file doesn't have an extension, returns an empty string.
 func GetFileExtension(file string) string {
@@ -40,7 +47,22 @@ func GetMIMEType(file string) (string, int64) {
 		panic(errStat)
 	}
 
-	return http.DetectContentType(buffer), stat.Size() // TODO detect js and json
+	contentType := http.DetectContentType(buffer)
+
+	if strings.HasPrefix(contentType, "application/octet-stream") || strings.HasPrefix(contentType, "text/plain") {
+		for ext, t := range contentTypeByExtension {
+			if strings.HasSuffix(file, ext) {
+				tmp := t
+				if i := strings.Index(contentType, ";"); i != -1 {
+					tmp = t + contentType[i:]
+				}
+				contentType = tmp
+				break
+			}
+		}
+	}
+
+	return contentType, stat.Size()
 }
 
 // FileExists returns true if the file at the given path exists and is readable.

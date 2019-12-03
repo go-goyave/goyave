@@ -87,7 +87,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
-	suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+	suite.Equal("application/json; charset=utf-8", resp.Header.Get("Content-Type"))
 	suite.Equal("546", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 }
@@ -110,7 +110,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
-	suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+	suite.Equal("application/json; charset=utf-8", resp.Header.Get("Content-Type"))
 	suite.Equal("546", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 }

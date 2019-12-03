@@ -78,7 +78,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	handler(response, request)
 	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
-	suite.Equal("application/octet-stream", result.Header.Get("Content-Type"))
+	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("inline", result.Header.Get("Content-Disposition"))
 
 	body, err := ioutil.ReadAll(result.Body)
@@ -106,7 +106,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	handler(response, request)
 	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
-	suite.Equal("application/octet-stream", result.Header.Get("Content-Type"))
+	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("attachment; filename=\"config.test.json\"", result.Header.Get("Content-Disposition"))
 
 	body, err = ioutil.ReadAll(result.Body)

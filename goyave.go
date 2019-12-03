@@ -201,7 +201,6 @@ func startServer(router *Router) {
 		stop(ctx)
 		mutex.Unlock()
 		return
-		// TODO sig channel run on http error ?
 	}
 	defer ln.Close()
 	registerShutdownHook(stop)

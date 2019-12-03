@@ -102,7 +102,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				fmt.Println("send sig")
 				proc.Signal(syscall.SIGTERM)
 				time.Sleep(10 * time.Millisecond)
-				for IsReady() { // TODO: Ready is still true (may be ok)
+				for IsReady() {
 					time.Sleep(10 * time.Millisecond)
 					proc.Signal(syscall.SIGTERM)
 				}
@@ -283,7 +283,7 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		}
 
 		fmt.Println("test server error " + protocol)
-		Start(func(router *Router) {}) // TODO: server already running
+		Start(func(router *Router) {})
 		config.Set("protocol", "http")
 		c <- true
 	}()

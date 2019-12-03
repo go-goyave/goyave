@@ -2,6 +2,10 @@
 
 [[toc]]
 
+## v2.1.0
+
+- `filesystem.GetMIMEType` now detects `css`, `js`, `json` and `jsonld` files based on their extension.
+
 ## v2.0.0
 
 - Documentation and README improvements.

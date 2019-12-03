@@ -110,6 +110,8 @@ if goyave.IsReady() {
 
 ## Maintenance mode
 
+<p><Badge text="Since v2.1.0"/></p>
+
 On top of being able to start the server in maintenance mode using the `maintenance` configuration entry, you can enable and disable this mode at runtime.
 
 #### goyave.EnableMaintenanceMode

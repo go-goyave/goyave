@@ -27,10 +27,11 @@ var (
 	stopChannel        chan bool
 	hookChannel        chan bool
 
-	startupHooks []func()
-	ready        bool = false
-	mutex             = &sync.RWMutex{}
-	once         sync.Once
+	startupHooks       []func()
+	ready              bool = false
+	maintenanceEnabled bool = false
+	mutex                   = &sync.RWMutex{}
+	once               sync.Once
 )
 
 // IsReady returns true if the server has finished initializing and
@@ -91,18 +92,27 @@ func Start(routeRegistrer func(*Router)) {
 	startServer(router)
 }
 
-// EnableMaintenanceMode replace the main server handler with the "Service Unavailable" handler.
-func EnableMaintenanceMode() {
+// EnableMaintenance replace the main server handler with the "Service Unavailable" handler.
+func EnableMaintenance() {
 	mutex.Lock()
 	server.Handler = getMaintenanceHandler()
+	maintenanceEnabled = true
 	mutex.Unlock()
 }
 
-// DisableMaintenanceMode replace the main server handler with the original router.
-func DisableMaintenanceMode() {
+// DisableMaintenance replace the main server handler with the original router.
+func DisableMaintenance() {
 	mutex.Lock()
 	server.Handler = router.muxRouter
+	maintenanceEnabled = false
 	mutex.Unlock()
+}
+
+// IsMaintenanceEnabled return true if the server is currently in maintenance mode.
+func IsMaintenanceEnabled() bool {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return maintenanceEnabled
 }
 
 func getMaintenanceHandler() http.Handler {
@@ -145,6 +155,7 @@ func stop(ctx context.Context) error {
 		server = nil
 		router = nil
 		ready = false
+		maintenanceEnabled = false
 		if redirectServer != nil {
 			redirectServer.Shutdown(ctx)
 			<-stopChannel
@@ -222,6 +233,7 @@ func startServer(router *Router) {
 
 	if config.GetBool("maintenance") {
 		server.Handler = getMaintenanceHandler()
+		maintenanceEnabled = true
 	}
 
 	ln, err := net.Listen("tcp", server.Addr)

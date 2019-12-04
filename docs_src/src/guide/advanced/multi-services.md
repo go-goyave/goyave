@@ -114,7 +114,13 @@ if goyave.IsReady() {
 
 On top of being able to start the server in maintenance mode using the `maintenance` configuration entry, you can enable and disable this mode at runtime.
 
-#### goyave.EnableMaintenanceMode
+::: table
+[EnableMaintenance](#goyave-enablemaintenance)
+[DisableMaintenance](#goyave-disablemaintenance)
+[IsMaintenanceEnabled](#goyave-ismaintenanceenabled)
+:::
+
+#### goyave.EnableMaintenance
 
 Replace the main server handler with the "Service Unavailable" handler.
 
@@ -124,10 +130,10 @@ Replace the main server handler with the "Service Unavailable" handler.
 
 **Example:**
 ``` go
-goyave.EnableMaintenanceMode()
+goyave.EnableMaintenance()
 ```
 
-#### goyave.DisableMaintenanceMode
+#### goyave.DisableMaintenance
 
 Replace the main server handler with the original router.
 
@@ -137,5 +143,18 @@ Replace the main server handler with the original router.
 
 **Example:**
 ``` go
-goyave.DisableMaintenanceMode()
+goyave.DisableMaintenance()
+```
+
+#### goyave.IsMaintenanceEnabled
+
+Returns true if the server is currently in maintenance mode.
+
+| Parameters | Return |
+|------------|--------|
+|            | `bool` |
+
+**Example:**
+``` go
+fmt.Println(goyave.IsMaintenanceEnabled()) // false
 ```

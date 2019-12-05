@@ -2,6 +2,7 @@ package validation
 
 import (
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -37,12 +38,17 @@ func (suite *ValidatorTestSuite) TestIsArray() {
 	suite.False(isArray([]string{"string", "min:5", "required"}))
 }
 
+func (suite *ValidatorTestSuite) TestArrayType() {
+	suite.True(isArrayType("integer"))
+	suite.False(isArrayType("file"))
+}
+
 func (suite *ValidatorTestSuite) TestParseRule() {
-	rule, params := parseRule("required")
+	rule, _, params := parseRule("required")
 	suite.Equal("required", rule)
 	suite.Equal(0, len(params))
 
-	rule, params = parseRule("min:5")
+	rule, _, params = parseRule("min:5")
 	suite.Equal("min", rule)
 	suite.Equal(1, len(params))
 	suite.Equal("5", params[0])
@@ -54,11 +60,18 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 	suite.Panics(func() {
 		parseRule("invalidrule")
 	})
+
+	rule, validatesArray, params := parseRule(">min:3")
+	suite.Equal("min", rule)
+	suite.Equal(1, len(params))
+	suite.Equal("3", params[0])
+	suite.True(validatesArray)
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {
-	suite.Equal("The :field is required.", getMessage("required", "test", "en-US"))
-	suite.Equal("The :field must be at least :min.", getMessage("min", 42, "en-US"))
+	suite.Equal("The :field is required.", getMessage("required", reflect.ValueOf("test"), "en-US", false))
+	suite.Equal("The :field must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", false))
+	suite.Equal("The :field values must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", true)) // TODO add all validation messages
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {
@@ -156,6 +169,32 @@ func (suite *ValidatorTestSuite) TestValidateWithArray() {
 	suite.Equal("array", GetFieldType(data["string"]))
 	suite.Equal("hello", data["string"].([]string)[0])
 	suite.Equal(0, len(errors))
+}
+
+func (suite *ValidatorTestSuite) TestValidateArrayValues() {
+	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello&string=world"))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	data := map[string]interface{}{
+		"string": []string{"hello", "world"},
+	}
+	errors := Validate(rawRequest, data, RuleSet{
+		"string": {"required", "array", ">min:3"},
+	}, "en-US")
+	suite.Equal(0, len(errors))
+
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hi&string=world"))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	data = map[string]interface{}{
+		"string": []string{"hi", ",", "there"},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"string": {"required", "array", ">min:3"},
+	}, "en-US")
+	suite.Equal(1, len(errors))
+
+	suite.Panics(func() {
+		validateRuleInArray("required", "string", map[string]interface{}{"string": "hi"}, []string{})
+	})
 }
 
 func TestValidatorTestSuite(t *testing.T) {

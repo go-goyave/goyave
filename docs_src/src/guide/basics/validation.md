@@ -214,7 +214,7 @@ Depending on its type, the field under validation must:
 - Strings: have a length of `value` characters.
 - Numerics: be equal to `value`.
 - Arrays: exactly have `value` items.
-- Files: weigth exactly `value` KiB. 
+- Files: weight exactly `value` KiB. 
     - *Note: for this rule only (not for `min`, `max`, etc), the size of the file under validation is **rounded** to the closest KiB.*
     - When the field is a multi-files upload, the size of **all files** is checked.
 

@@ -2,7 +2,6 @@ package validation
 
 import (
 	"log"
-	"net/http"
 	"reflect"
 	"strings"
 
@@ -119,25 +118,26 @@ func AddRule(name string, typeDependentMessage bool, rule Rule) {
 	}
 }
 
-// Validate the given request with the given rule set
-// If all validation rules pass, returns nil
-func Validate(request *http.Request, data map[string]interface{}, rules RuleSet, language string) Errors {
+// Validate the given data with the given rule set.
+// If all validation rules pass, returns an empty "validation.Errors".
+// Third parameter tells the function if the data comes from a JSON request.
+// Last parameter sets the language of the validation error messages.
+func Validate(data map[string]interface{}, rules RuleSet, isJSON bool, language string) Errors {
 	var malformedMessage string
-	if request.Header.Get("Content-Type") == "application/json" {
-		malformedMessage = "Malformed JSON"
+	if isJSON {
+		malformedMessage = lang.Get(language, "malformed-json")
 	} else {
-		malformedMessage = "Malformed request"
+		malformedMessage = lang.Get(language, "malformed-request")
 	}
 	if data == nil {
 		return map[string][]string{"error": {malformedMessage}}
 	}
 
-	return validate(request, data, rules, language)
+	return validate(data, isJSON, rules, language)
 }
 
-func validate(request *http.Request, data map[string]interface{}, rules RuleSet, language string) Errors {
+func validate(data map[string]interface{}, isJSON bool, rules RuleSet, language string) Errors {
 	errors := Errors{}
-	isJSON := request.Header.Get("Content-Type") == "application/json"
 
 	for fieldName, field := range rules {
 		if !isNullable(field) && data[fieldName] == nil {

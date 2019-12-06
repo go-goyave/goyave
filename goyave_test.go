@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -228,7 +229,12 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal(404, resp.StatusCode)
 		}
 
-		resp, err = netClient.Get("http://127.0.0.1:1235/resources/lang/en-US/locale.json")
+		err = ioutil.WriteFile("resources/lang/en-US/test-file.txt", []byte("test-content"), 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer filesystem.Delete("resources/lang/en-US/test-file.txt")
+		resp, err = netClient.Get("http://127.0.0.1:1235/resources/lang/en-US/test-file.txt")
 		suite.Nil(err)
 		if err != nil {
 			fmt.Println(err)
@@ -239,7 +245,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 
 			body, err := ioutil.ReadAll(resp.Body)
 			suite.Nil(err)
-			suite.Equal("{\n    \"disallow-non-validated-fields\": \"Non-validated fields are forbidden.\"\n}", string(body))
+			suite.Equal("test-content", string(body))
 		}
 	})
 }

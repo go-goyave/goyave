@@ -656,3 +656,51 @@ For example, for the `UUID:4` rule, the result would be `v4`.
 #### :max_date
 
 `:max_date` is replaced by the second parameter of the rule definition. If the second parameter is a field name, `:max_date` will be replaced with the name of the field in the same way as the `:other` placeholder.
+
+## Manual validation
+
+<p><Badge text="Since v2.1.0"/></p>
+
+You may need to validate some data manually as part of your business logic. You can use the Goyave validator to do so.
+
+#### validation.Validate
+
+Validate the given data with the given rule set. If all validation rules pass, returns an empty `validation.Errors`.
+
+The third parameter (`isJSON`) tells the function if the data comes from a JSON request. This is used to return the correct message if the given data is `nil` and to correctly handle arrays in url-encoded requests.
+
+The last parameter (`language`) sets the language of the validation error messages.
+
+| Parameters                    | Return              |
+|-------------------------------|---------------------|
+| `data map[string]interface{}` | `validation.Errors` |
+| `rules RuleSet`               |                     |
+| `isJSON bool`                 |                     |
+| `language string`             |                     |
+
+::: tip
+`validation.Errors` is an alias for `map[string][]string`. The key represents the field name and the associated slice contains all already translated validation error messages for this field.
+:::
+
+**Example:**
+``` go
+func Store(response *goyave.Response, request *goyave.Request) {
+    data := map[string]interface{}{
+		"string": "hello world",
+		"number": 42,
+	}
+
+	errors := validation.Validate(data, validation.RuleSet{
+		"string": {"required", "string"},
+		"number": {"required", "numeric", "min:10"},
+	}, true, request.Lang)
+
+	if len(errors) > 0 {
+		response.JSON(http.StatusUnprocessableEntity, map[string]validation.Errors{"validationError": errors})
+		return
+	}
+
+	// data can be safely used from here
+	// ...
+}
+```

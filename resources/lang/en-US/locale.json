@@ -1,3 +1,5 @@
 {
-    "disallow-non-validated-fields": "Non-validated fields are forbidden."
+    "disallow-non-validated-fields": "Non-validated fields are forbidden.",
+    "malformed-request": "Malformed request",
+    "malformed-json": "Malformed JSON"
 }

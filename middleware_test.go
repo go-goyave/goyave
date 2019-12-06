@@ -87,6 +87,7 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 		httpRequest: rawRequest,
 		Data:        data,
 		Rules:       rules,
+		Lang:        "en-US",
 		Params:      map[string]string{},
 	}
 	response := &Response{
@@ -293,9 +294,9 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		panic(err)
 	}
 	suite.Equal(422, result.StatusCode)
-	suite.Equal("{\"validationError\":{\"number\":[\"validation.rules.min.numeric\"]}}\n", string(body))
+	suite.Equal("{\"validationError\":{\"number\":[\"The number must be at least 50.\"]}}\n", string(body))
 
-	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
+	rawRequest = httptest.NewRequest("POST", "/test-route", nil)
 	rawRequest.Header.Set("Content-Type", "application/json")
 	result = testMiddleware(validateRequestMiddleware, rawRequest, nil, rules, func(response *Response, r *Request) {})
 	body, err = ioutil.ReadAll(result.Body)
@@ -303,7 +304,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		panic(err)
 	}
 	suite.Equal(400, result.StatusCode)
-	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
+	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body)) // TODO fail here
 }
 
 func TestMiddlewareTestSuite(t *testing.T) {

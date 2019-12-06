@@ -160,7 +160,7 @@ func validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 			ruleName, validatesArray, params := parseRule(rule)
 
 			if validatesArray {
-				if errorValue := validateRuleInArray(ruleName, fieldName, data, params); errorValue != nil {
+				if ok, errorValue := validateRuleInArray(ruleName, fieldName, data, params); !ok {
 					errors[fieldName] = append(
 						errors[fieldName],
 						processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, *errorValue, language, validatesArray), language),
@@ -177,24 +177,42 @@ func validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 	return errors
 }
 
-func validateRuleInArray(ruleName, fieldName string, data map[string]interface{}, params []string) *reflect.Value {
+func validateRuleInArray(ruleName, fieldName string, data map[string]interface{}, params []string) (bool, *reflect.Value) { // TODO document array validation (and two-dimensional array validation)
 	if t := GetFieldType(data[fieldName]); t != "array" {
 		log.Panicf("Cannot validate array values on non-array field %s of type %s", fieldName, t)
 	}
 
+	converted := false
+	var convertedArr reflect.Value
 	list := reflect.ValueOf(data[fieldName])
 	length := list.Len()
+	if length == 0 {
+		return false, &reflect.Value{}
+	}
 	for i := 0; i < length; i++ {
 		v := list.Index(i)
 		value := v.Interface()
 		tmpData := map[string]interface{}{fieldName: value}
 		if !validationRules[ruleName](fieldName, value, params, tmpData) {
-			return &v
+			return false, &v
 		}
+
 		// Update original array if value has been modified.
-		v.Set(reflect.ValueOf(tmpData[fieldName]))
+		if ruleName == "array" {
+			if !converted { // Ensure field is a two dimensional array of the correct type
+				convertedArr = reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(tmpData[fieldName])), 0, length)
+				converted = true
+			}
+			convertedArr = reflect.Append(convertedArr, reflect.ValueOf(tmpData[fieldName]))
+		} else {
+			v.Set(reflect.ValueOf(tmpData[fieldName]))
+		}
 	}
-	return nil
+
+	if converted {
+		data[fieldName] = convertedArr.Interface()
+	}
+	return true, nil
 }
 
 func convertArray(isJSON bool, fieldName string, field []string, data map[string]interface{}) {
@@ -291,6 +309,12 @@ func parseRule(rule string) (string, bool, []string) {
 	if ruleName[0] == '>' {
 		ruleName = ruleName[1:]
 		validatesArray = true
+
+		switch ruleName {
+		case "confirmed", "file", "mime", "image", "extension", "count",
+			"count_min", "count_max", "count_between":
+			log.Panicf("Cannot use rule \"%s\" in array validation", ruleName)
+		}
 	}
 
 	if _, exists := validationRules[ruleName]; !exists {

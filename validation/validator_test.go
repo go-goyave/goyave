@@ -66,6 +66,10 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 	suite.Equal(1, len(params))
 	suite.Equal("3", params[0])
 	suite.True(validatesArray)
+
+	suite.Panics(func() {
+		parseRule(">file")
+	})
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {
@@ -195,6 +199,39 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 	suite.Panics(func() {
 		validateRuleInArray("required", "string", map[string]interface{}{"string": "hi"}, []string{})
 	})
+
+	// Empty array
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader(""))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	data = map[string]interface{}{
+		"string": []string{},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"string": {"array", ">uuid:5"},
+	}, "en-US")
+	suite.Equal(1, len(errors))
+}
+
+func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
+	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader(""))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	data := map[string]interface{}{
+		"values": [][]interface{}{{"0.5", 1.42}, {0.6, 7}},
+	}
+	errors := Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array:numeric"},
+	}, "en-US")
+	suite.Equal(0, len(errors))
+
+	arr, ok := data["values"].([][]float64)
+	suite.True(ok)
+	if ok {
+		suite.Equal(2, len(arr))
+		suite.Equal(0.5, arr[0][0])
+		suite.Equal(1.42, arr[0][1])
+		suite.Equal(0.6, arr[1][0])
+		suite.Equal(7.0, arr[1][1])
+	}
 }
 
 func TestValidatorTestSuite(t *testing.T) {

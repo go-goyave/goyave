@@ -19,7 +19,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 ### Next release
 
 - Integrated testing functions
-- Array validation
 :::
 
 ### Ideas for future releases

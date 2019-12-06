@@ -177,7 +177,7 @@ func validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 	return errors
 }
 
-func validateRuleInArray(ruleName, fieldName string, arrayDimensions uint8, data map[string]interface{}, params []string) (bool, *reflect.Value) { // TODO document array validation (and two-dimensional array validation)
+func validateRuleInArray(ruleName, fieldName string, arrayDimensions uint8, data map[string]interface{}, params []string) (bool, *reflect.Value) {
 	if t := GetFieldType(data[fieldName]); t != "array" {
 		log.Panicf("Cannot validate array values on non-array field %s of type %s", fieldName, t)
 	}

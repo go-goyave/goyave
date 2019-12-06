@@ -202,6 +202,14 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 	}, "en-US")
 	suite.Equal(1, len(errors))
 
+	data = map[string]interface{}{
+		"string": []string{"johndoe@example.org", "foobar@example.org"},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"string": {"required", "array:string", ">email"},
+	}, "en-US")
+	suite.Equal(0, len(errors))
+
 	suite.Panics(func() {
 		validateRuleInArray("required", "string", 1, map[string]interface{}{"string": "hi"}, []string{})
 	})

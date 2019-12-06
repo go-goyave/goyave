@@ -74,7 +74,7 @@ router.Route("POST", "/product", product.Store, productrequest.Store)
 [Lower than](#lower-than-field)
 [Lower than or equal](#lower-than-equal-field)
 [String](#string)
-[Array](#array)
+[Array](#array-type)
 [Distinct](#distinct)
 [Digits](#digits)
 [Regex](#regex-pattern)
@@ -184,9 +184,28 @@ Strings, numerics, array, and files are evaluated using the same method as the [
 
 The field under validation must be a string.
 
-#### array
+#### array:type
 
-The field under validation must be an array. In a handler, the data is get as a `[]interface{}`.
+The field under validation must be an array. The `type` parameter is **optional**.
+
+If no type is provided, the field has the type `[]interface{}` after validation. If a type is provided, the array is converted to a slice of the correct type, and all values in the array are validated in the same way as standard fields.
+
+For example, with the rule `array:url`, all values must be valid URLs and the field will be converted to `[]*url.URL`.
+
+**Available types:**
+- `string`
+- `numeric`
+- `integer`
+- `timezone`
+- `ip`, `ipv4`, `ipv6`
+- `url`
+- `uuid`
+- `bool`
+- `date`
+
+::: tip
+For the `uuid` and `date` types, you can pass a second parameter: `array:date,02-01-2006`
+:::
 
 #### distinct
 
@@ -509,6 +528,40 @@ validation.GetFieldType("foo") // "string"
 validation.GetFieldType(2) // "numeric"
 validation.GetFieldType(2.4) // "numeric"
 validation.GetFieldType([]int{1,2}) // "array"
+```
+
+## Validating arrays
+
+<p><Badge text="Since v2.1.0"/><Badge text="BETA" type="warn"/></p>
+
+Validating arrays is easy. All the validation rules, **except the file-related rules and the `confirmed` rule**, can be applied to array values using the prefix `>`. When array values are validated, **all of them** must pass the validation.
+
+**Example:**
+``` go
+var arrayValidation = goyave.RuleSet{
+    "array": {"required", "array:string", "between:1,5", ">email", ">max:128"},
+}
+```
+In this example, we are validating an array of one to five email addresses, which can't be longer than 128 characters.
+
+### N-dimensional arrays
+
+You can validate n-dimensional arrays. 
+
+**Example:**
+``` go
+var arrayValidation = RuleSet{
+    "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+}
+```
+In this example, we are validating a three-dimensional array of numeric values. The second dimension must be made of arrays with a size of 3 or less. The third dimensions must contain numbers inferior to 4. The following JSON input passes the validation:
+```json
+{
+    "array": [
+        [[0.5, 1.42], [0.6, 4, 3]],
+        [[0.6, 1.43], [], [2]]
+    ]
+}
 ```
 
 ## Placeholders

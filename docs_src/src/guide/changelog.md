@@ -8,6 +8,7 @@
 - Added maintenance mode.
     - Can be [toggled at runtime](./advanced/multi-services#maintenance-mode).
     - The server can be started in maintenance mode using the `maintenance` config option. (Defaults to `false`)
+- Added [advanced array validation](./basics/validation#validating-arrays), with support for n-dimensional arrays.<Badge text="BETA" type="warn"/>
 
 ## v2.0.0
 

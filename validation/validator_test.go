@@ -65,17 +65,23 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 	suite.Equal("min", rule)
 	suite.Equal(1, len(params))
 	suite.Equal("3", params[0])
-	suite.True(validatesArray)
+	suite.Equal(uint8(1), validatesArray)
 
 	suite.Panics(func() {
 		parseRule(">file")
 	})
+
+	rule, validatesArray, params = parseRule(">>max:5")
+	suite.Equal("max", rule)
+	suite.Equal(1, len(params))
+	suite.Equal("5", params[0])
+	suite.Equal(uint8(2), validatesArray)
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {
-	suite.Equal("The :field is required.", getMessage("required", reflect.ValueOf("test"), "en-US", false))
-	suite.Equal("The :field must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", false))
-	suite.Equal("The :field values must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", true)) // TODO add all validation messages
+	suite.Equal("The :field is required.", getMessage("required", reflect.ValueOf("test"), "en-US", 0))
+	suite.Equal("The :field must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", 0))
+	suite.Equal("The :field values must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", 1)) // TODO add all validation messages
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {
@@ -197,7 +203,7 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 	suite.Equal(1, len(errors))
 
 	suite.Panics(func() {
-		validateRuleInArray("required", "string", map[string]interface{}{"string": "hi"}, []string{})
+		validateRuleInArray("required", "string", 1, map[string]interface{}{"string": "hi"}, []string{})
 	})
 
 	// Empty array
@@ -209,7 +215,7 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 	errors = Validate(rawRequest, data, RuleSet{
 		"string": {"array", ">uuid:5"},
 	}, "en-US")
-	suite.Equal(1, len(errors))
+	suite.Equal(0, len(errors))
 }
 
 func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
@@ -232,6 +238,91 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 		suite.Equal(0.6, arr[1][0])
 		suite.Equal(7.0, arr[1][1])
 	}
+
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader(""))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	data = map[string]interface{}{
+		"values": [][]float64{{5, 8}, {0.6, 7}},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array:numeric", ">min:3"},
+	}, "en-US")
+	suite.Equal(1, len(errors))
+
+	_, ok = data["values"].([][]float64)
+	suite.True(ok)
+
+	data = map[string]interface{}{
+		"values": [][]float64{{5, 8, 6}, {0.6, 7, 9}},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array:numeric", ">min:3"},
+	}, "en-US")
+	suite.Equal(0, len(errors))
+
+	data = map[string]interface{}{
+		"values": [][]float64{{5, 8}, {3, 7}},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array:numeric", ">>min:3"},
+	}, "en-US")
+	suite.Equal(0, len(errors))
+
+	data = map[string]interface{}{
+		"values": [][]float64{{5, 8}, {0.6, 7}},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array:numeric", ">>min:3"},
+	}, "en-US")
+	suite.Equal(1, len(errors))
+}
+
+func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
+	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader(""))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	data := map[string]interface{}{
+		"values": [][][]interface{}{
+			{{"0.5", 1.42}, {0.6, 4, 3}},
+			{{"0.6", "1.43"}, {}, {2}},
+		},
+	}
+	errors := Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+	}, "en-US")
+	suite.Equal(0, len(errors))
+
+	arr, ok := data["values"].([][][]float64)
+	suite.True(ok)
+	if ok {
+		suite.Equal(2, len(arr))
+		suite.Equal(2, len(arr[0]))
+		suite.Equal(3, len(arr[1]))
+		suite.Equal(0.5, arr[0][0][0])
+		suite.Equal(1.42, arr[0][0][1])
+		suite.Equal(2.0, arr[1][2][0])
+	}
+
+	data = map[string]interface{}{
+		"values": [][][]interface{}{
+			{{"0.5", 1.42}, {0.6, 4, 3}},
+			{{"0.6", "1.43"}, {}, {2}, {4}},
+		},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+	}, "en-US")
+	suite.Equal(1, len(errors))
+
+	data = map[string]interface{}{
+		"values": [][][]interface{}{
+			{{"0.5", 1.42}, {0.6, 9, 3}},
+			{{"0.6", "1.43"}, {}, {2}},
+		},
+	}
+	errors = Validate(rawRequest, data, RuleSet{
+		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+	}, "en-US")
+	suite.Equal(1, len(errors))
 }
 
 func TestValidatorTestSuite(t *testing.T) {

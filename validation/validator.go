@@ -157,19 +157,19 @@ func validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 				}
 				continue
 			}
-			ruleName, validatesArray, params := parseRule(rule)
+			ruleName, arrayDimensions, params := parseRule(rule)
 
-			if validatesArray {
-				if ok, errorValue := validateRuleInArray(ruleName, fieldName, data, params); !ok {
+			if arrayDimensions > 0 {
+				if ok, errorValue := validateRuleInArray(ruleName, fieldName, arrayDimensions, data, params); !ok {
 					errors[fieldName] = append(
 						errors[fieldName],
-						processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, *errorValue, language, validatesArray), language),
+						processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, *errorValue, language, arrayDimensions), language),
 					)
 				}
 			} else if !validationRules[ruleName](fieldName, data[fieldName], params, data) {
 				errors[fieldName] = append(
 					errors[fieldName],
-					processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, reflect.ValueOf(data[fieldName]), language, validatesArray), language),
+					processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, reflect.ValueOf(data[fieldName]), language, arrayDimensions), language),
 				)
 			}
 		}
@@ -177,7 +177,7 @@ func validate(request *http.Request, data map[string]interface{}, rules RuleSet,
 	return errors
 }
 
-func validateRuleInArray(ruleName, fieldName string, data map[string]interface{}, params []string) (bool, *reflect.Value) { // TODO document array validation (and two-dimensional array validation)
+func validateRuleInArray(ruleName, fieldName string, arrayDimensions uint8, data map[string]interface{}, params []string) (bool, *reflect.Value) { // TODO document array validation (and two-dimensional array validation)
 	if t := GetFieldType(data[fieldName]); t != "array" {
 		log.Panicf("Cannot validate array values on non-array field %s of type %s", fieldName, t)
 	}
@@ -186,14 +186,16 @@ func validateRuleInArray(ruleName, fieldName string, data map[string]interface{}
 	var convertedArr reflect.Value
 	list := reflect.ValueOf(data[fieldName])
 	length := list.Len()
-	if length == 0 {
-		return false, &reflect.Value{}
-	}
 	for i := 0; i < length; i++ {
 		v := list.Index(i)
 		value := v.Interface()
 		tmpData := map[string]interface{}{fieldName: value}
-		if !validationRules[ruleName](fieldName, value, params, tmpData) {
+		if arrayDimensions > 1 {
+			ok, errorValue := validateRuleInArray(ruleName, fieldName, arrayDimensions-1, tmpData, params)
+			if !ok {
+				return false, errorValue
+			}
+		} else if !validationRules[ruleName](fieldName, value, params, tmpData) {
 			return false, &v
 		}
 
@@ -229,13 +231,13 @@ func convertArray(isJSON bool, fieldName string, field []string, data map[string
 	}
 }
 
-func getMessage(rule string, value reflect.Value, language string, inArray bool) string {
+func getMessage(rule string, value reflect.Value, language string, arrayDimensions uint8) string {
 	langEntry := "validation.rules." + rule
 	if isTypeDependent(rule) {
 		langEntry += "." + getFieldType(value)
 	}
 
-	if inArray {
+	if arrayDimensions > 0 {
 		langEntry += ".array"
 	}
 
@@ -291,10 +293,10 @@ func isArray(field []string) bool {
 	return helper.Contains(field, "array")
 }
 
-func parseRule(rule string) (string, bool, []string) {
+func parseRule(rule string) (string, uint8, []string) {
 	indexName := strings.Index(rule, ":")
 	params := []string{}
-	validatesArray := false
+	validatesArray := uint8(0)
 	var ruleName string
 	if indexName == -1 {
 		if strings.Count(rule, ",") > 0 {
@@ -307,14 +309,17 @@ func parseRule(rule string) (string, bool, []string) {
 	}
 
 	if ruleName[0] == '>' {
-		ruleName = ruleName[1:]
-		validatesArray = true
+		for ruleName[0] == '>' {
+			ruleName = ruleName[1:]
+			validatesArray++
+		}
 
 		switch ruleName {
 		case "confirmed", "file", "mime", "image", "extension", "count",
 			"count_min", "count_max", "count_between":
 			log.Panicf("Cannot use rule \"%s\" in array validation", ruleName)
 		}
+
 	}
 
 	if _, exists := validationRules[ruleName]; !exists {

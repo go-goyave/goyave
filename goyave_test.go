@@ -16,6 +16,8 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/stretchr/testify/suite"
+
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 type GoyaveTestSuite struct {
@@ -394,6 +396,15 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		}
 	})
 	config.Set("maintenance", false)
+}
+
+func (suite *GoyaveTestSuite) TestAutoMigrate() {
+	suite.loadConfig()
+	config.Set("dbConnection", "mysql")
+	config.Set("dbAutoMigrate", true)
+	suite.runServer(func(router *Router) {}, func() {})
+	config.Set("dbAutoMigrate", false)
+	config.Set("dbConnection", "none")
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

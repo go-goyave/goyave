@@ -67,6 +67,7 @@ func (suite *DatabaseTestSuite) TestGetConnectionPanic() { // TODO re-enable tes
 }
 
 func (suite *DatabaseTestSuite) TestModelAndMigrate() {
+	models = []interface{}{}
 	RegisterModel(&User{})
 	suite.Equal(1, len(models))
 
@@ -85,6 +86,7 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 		rows.Scan(&name)
 		suite.Equal("users", name)
 	}
+	models = []interface{}{}
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

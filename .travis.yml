@@ -19,9 +19,9 @@ before_script:
   - GO_FILES=$(find . -iname '*.go' -type f)
   - go get golang.org/x/lint/golint
   - go get github.com/mattn/goveralls
-  - mysql -e 'CREATE DATABASE goyave CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
-  - mysql -e 'CREATE USER "goyave"@"%" IDENTIFIED BY "secret"'
-  - mysql -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
+  - sudo mysql -e 'CREATE DATABASE goyave CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+  - sudo mysql -e 'CREATE USER "goyave"@"%" IDENTIFIED BY "secret"'
+  - sudo mysql -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
 
 script:
   - go test -race -count=20 .

@@ -3,5 +3,14 @@
     "protocol": "http",
     "port": 1235,
     "httpsPort": 1236,
-    "dbConnection": "none"
+    "dbConnection": "none",
+    "dbHost": "127.0.0.1",
+    "dbPort": 3306,
+    "dbName": "goyave",
+    "dbUsername": "goyave",
+    "dbPassword": "secret",
+    "dbOptions": "charset=utf8&parseTime=true&loc=Local",
+    "dbMaxOpenConnections": 100,
+    "dbMaxIdleConnections": 20,
+    "dbAutoMigrate": false
 }

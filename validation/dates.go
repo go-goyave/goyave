@@ -27,7 +27,7 @@ func getDates(value interface{}, parameters []string, form map[string]interface{
 			if exists {
 				otherDate, ok := other.(time.Time)
 				if !ok {
-					t, err := parseDate(other, "2006-01-02") // TODO document that if date has not been validated yet (order), will try to validate using format 2006-01-02
+					t, err := parseDate(other, "2006-01-02")
 					if err != nil {
 						return dates, fmt.Errorf("Cannot parse date in other field")
 					}

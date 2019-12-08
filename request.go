@@ -204,7 +204,7 @@ func (r *Request) validate() map[string]validation.Errors {
 		return nil
 	}
 
-	errors := validation.Validate(r.httpRequest, r.Data, r.Rules, r.Lang)
+	errors := validation.Validate(r.Data, r.Rules, r.httpRequest.Header.Get("Content-Type") == "application/json", r.Lang)
 	if len(errors) > 0 {
 		return map[string]validation.Errors{"validationError": errors}
 	}

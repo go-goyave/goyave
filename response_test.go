@@ -82,13 +82,13 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := createTestResponse(rawRequest)
 
-	response.File("config/defaults.json")
+	response.File("config/config.test.json")
 	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
-	suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
-	suite.Equal("546", resp.Header.Get("Content-Length"))
+	suite.Equal("application/json", resp.Header.Get("Content-Type"))
+	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 }
 
@@ -105,13 +105,13 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := createTestResponse(rawRequest)
 
-	response.Download("config/defaults.json", "config.json")
+	response.Download("config/config.test.json", "config.json")
 	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
-	suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
-	suite.Equal("546", resp.Header.Get("Content-Length"))
+	suite.Equal("application/json", resp.Header.Get("Content-Type"))
+	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 }
 

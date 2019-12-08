@@ -1,8 +1,12 @@
 package validation
 
 import (
+	"net"
+	"net/url"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,6 +20,109 @@ func TestValidateArray(t *testing.T) {
 	assert.False(t, validateArray("field", 5, []string{}, map[string]interface{}{}))
 	assert.False(t, validateArray("field", 5.0, []string{}, map[string]interface{}{}))
 	assert.False(t, validateArray("field", true, []string{}, map[string]interface{}{}))
+
+	// With type validation
+	assert.Panics(t, func() {
+		validateArray("field", []float64{5.5}, []string{"file"}, map[string]interface{}{})
+	})
+	assert.False(t, validateArray("field", []string{"0.5", "not numeric"}, []string{"numeric"}, map[string]interface{}{}))
+
+	data := map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"0.5", "1.42"}, []string{"numeric"}, data))
+	arr, ok := data["field"].([]float64)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, 0.5, arr[0])
+		assert.Equal(t, 1.42, arr[1])
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []float64{0.5, 1.42}, []string{"numeric"}, data))
+	arr, ok = data["field"].([]float64)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, 0.5, arr[0])
+		assert.Equal(t, 1.42, arr[1])
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"12", "42"}, []string{"integer"}, data))
+	arrInt, ok := data["field"].([]int)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, 12, arrInt[0])
+		assert.Equal(t, 42, arrInt[1])
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"UTC", "America/New_York"}, []string{"timezone"}, data))
+	arrLoc, ok := data["field"].([]*time.Location)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, time.UTC, arrLoc[0])
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"127.0.0.1", "::1"}, []string{"ip"}, data))
+	arrIP, ok := data["field"].([]net.IP)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, "127.0.0.1", arrIP[0].String())
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"5", "{\"test\":\"string\"}"}, []string{"json"}, data))
+	arrJSON, ok := data["field"].([]interface{})
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, 5.0, arrJSON[0])
+		mp, okMap := arrJSON[1].(map[string]interface{})
+		assert.True(t, okMap)
+		assert.Equal(t, "string", mp["test"])
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"http://google.com", "https://systemglitch.me"}, []string{"url"}, data))
+	arrURL, ok := data["field"].([]*url.URL)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, "http://google.com", arrURL[0].String())
+		assert.Equal(t, "https://systemglitch.me", arrURL[1].String())
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"fdda765f-fc57-5604-a269-52a7df8164ec"}, []string{"uuid", "5"}, data))
+	arrUUID, ok := data["field"].([]uuid.UUID)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, "fdda765f-fc57-5604-a269-52a7df8164ec", arrUUID[0].String())
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []interface{}{"yes", true, false}, []string{"bool"}, data))
+	arrBool, ok := data["field"].([]bool)
+	assert.True(t, ok)
+	if ok {
+		assert.True(t, arrBool[0])
+		assert.True(t, arrBool[1])
+		assert.False(t, arrBool[2])
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"2019-12-05"}, []string{"date"}, data))
+	arrDate, ok := data["field"].([]time.Time)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, "2019-12-05 00:00:00 +0000 UTC", arrDate[0].String())
+	}
+
+	data = map[string]interface{}{}
+	assert.True(t, validateArray("field", []string{"test"}, []string{"string"}, data))
+	arrStr, ok := data["field"].([]string)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, "test", arrStr[0])
+	}
 }
 
 func TestValidateDistinct(t *testing.T) {

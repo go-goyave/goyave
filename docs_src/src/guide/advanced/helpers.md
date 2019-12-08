@@ -196,7 +196,7 @@ Get the MIME type and size of the given file. If the file cannot be opened, pani
 **Examples:**
 ``` go
 fmt.Println(filesystem.GetMIMEType("logo.png")) // "image/png"
-fmt.Println(filesystem.GetFileExtension("LICENSE")) // "application/octet-stream"
+fmt.Println(filesystem.GetFileExtension("config.json")) // "application/json; charset=utf-8"
 fmt.Println(filesystem.GetFileExtension("index.html")) // "text/html; charset=utf-8"
 ```
 

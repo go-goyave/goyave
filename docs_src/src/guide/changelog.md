@@ -2,6 +2,16 @@
 
 [[toc]]
 
+## v2.1.0
+
+- `filesystem.GetMIMEType` now detects `css`, `js`, `json` and `jsonld` files based on their extension.
+- Added maintenance mode.
+    - Can be [toggled at runtime](./advanced/multi-services#maintenance-mode).
+    - The server can be started in maintenance mode using the `maintenance` config option. (Defaults to `false`)
+- Added [advanced array validation](./basics/validation#validating-arrays), with support for n-dimensional arrays.<Badge text="BETA" type="warn"/>
+- Malformed request messages can now be localized. (`malformed-request` and `malformed-json` entries in `locale.json`)
+- Modified the validator to allow [manual validation](./basics/validation#manual-validation).
+
 ## v2.0.0
 
 - Documentation and README improvements.

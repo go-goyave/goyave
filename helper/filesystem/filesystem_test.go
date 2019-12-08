@@ -3,6 +3,7 @@ package filesystem
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -78,8 +79,26 @@ func TestGetMIMEType(t *testing.T) {
 	assert.Equal(t, "image/png", mime)
 	assert.Equal(t, int64(716), size)
 
-	mime, _ = GetMIMEType(toAbsolutePath("config/defaults.json"))
+	mime, _ = GetMIMEType(toAbsolutePath("install.sh"))
 	assert.Equal(t, "text/plain; charset=utf-8", mime)
+
+	mime, _ = GetMIMEType(toAbsolutePath(".gitignore"))
+	assert.Equal(t, "application/octet-stream", mime)
+
+	mime, _ = GetMIMEType(toAbsolutePath("config/defaults.json"))
+	assert.Equal(t, "application/json; charset=utf-8", mime)
+
+	mime, _ = GetMIMEType(toAbsolutePath("docs_src/src/.vuepress/config.js"))
+	assert.Equal(t, "application/javascript; charset=utf-8", mime)
+
+	cssPath := toAbsolutePath("helper/filesystem/test.css")
+	err := ioutil.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)
+	if err != nil {
+		panic(err)
+	}
+	mime, _ = GetMIMEType(cssPath)
+	assert.Equal(t, "text/css", mime)
+	Delete(cssPath)
 
 	assert.Panics(t, func() {
 		GetMIMEType(toAbsolutePath("doesn't exist"))
@@ -94,6 +113,7 @@ func TestFileExists(t *testing.T) {
 func TestIsDirectory(t *testing.T) {
 	assert.True(t, IsDirectory(toAbsolutePath("resources/img/logo")))
 	assert.False(t, IsDirectory(toAbsolutePath("resources/img/logo/goyave_16.png")))
+	assert.False(t, IsDirectory(toAbsolutePath("doesn't exist")))
 }
 
 func TestSaveDelete(t *testing.T) {

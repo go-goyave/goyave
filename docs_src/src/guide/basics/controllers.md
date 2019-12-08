@@ -83,9 +83,7 @@ Setting the `Content-Type` header is not necessary. `response.Write` automatical
 | Method           | URI                  | Handler name | Description                    |
 |------------------|----------------------|--------------|--------------------------------|
 | `GET`            | `/product`           | `Index()`    | Get the products list          |
-| `GET`            | `/product/create`    | `Create()`   | Show the product creation form |
 | `POST`           | `/product`           | `Store()`    | Create a product               |
 | `GET`            | `/product/{id}`      | `Show()`     | Show a product                 |
-| `GET`            | `/product/{id}/edit` | `Edit()`     | Show the product update form   |
 | `PUT` or `PATCH` | `/product/{id}`      | `Update()`   | Update a product               |
 | `DELETE`         | `/product/{id}`      | `Destroy()`  | Delete a product               |

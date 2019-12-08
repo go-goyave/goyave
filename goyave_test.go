@@ -14,7 +14,10 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/stretchr/testify/suite"
+
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 type GoyaveTestSuite struct {
@@ -102,7 +105,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				fmt.Println("send sig")
 				proc.Signal(syscall.SIGTERM)
 				time.Sleep(10 * time.Millisecond)
-				for IsReady() { // TODO: Ready is still true (may be ok)
+				for IsReady() {
 					time.Sleep(10 * time.Millisecond)
 					proc.Signal(syscall.SIGTERM)
 				}
@@ -228,7 +231,12 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal(404, resp.StatusCode)
 		}
 
-		resp, err = netClient.Get("http://127.0.0.1:1235/resources/lang/en-US/locale.json")
+		err = ioutil.WriteFile("resources/lang/en-US/test-file.txt", []byte("test-content"), 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer filesystem.Delete("resources/lang/en-US/test-file.txt")
+		resp, err = netClient.Get("http://127.0.0.1:1235/resources/lang/en-US/test-file.txt")
 		suite.Nil(err)
 		if err != nil {
 			fmt.Println(err)
@@ -239,7 +247,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 
 			body, err := ioutil.ReadAll(resp.Body)
 			suite.Nil(err)
-			suite.Equal("{\n    \"disallow-non-validated-fields\": \"Non-validated fields are forbidden.\"\n}", string(body))
+			suite.Equal("test-content", string(body))
 		}
 	})
 }
@@ -269,8 +277,9 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 					suite.Fail(err.Error())
 				}
 				c2 <- true
+			} else {
+				c2 <- true
 			}
-			c2 <- true
 			c2 <- true
 		}()
 		<-c2
@@ -282,7 +291,7 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		}
 
 		fmt.Println("test server error " + protocol)
-		Start(func(router *Router) {}) // TODO: server already running
+		Start(func(router *Router) {})
 		config.Set("protocol", "http")
 		c <- true
 	}()
@@ -308,6 +317,94 @@ func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 			Start(func(router *Router) {})
 		})
 	})
+}
+
+func (suite *GoyaveTestSuite) TestMaintenanceMode() {
+	suite.loadConfig()
+	suite.runServer(func(router *Router) {
+		router.Route("GET", "/hello", helloHandler, nil)
+	}, func() {
+		EnableMaintenance()
+		suite.True(IsMaintenanceEnabled())
+
+		netClient := createHTTPClient()
+		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(503, resp.StatusCode)
+		}
+
+		DisableMaintenance()
+		suite.False(IsMaintenanceEnabled())
+
+		resp, err = netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(200, resp.StatusCode)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			suite.Nil(err)
+			suite.Equal("Hi!", string(body))
+		}
+	})
+
+	config.Set("maintenance", true)
+	suite.runServer(func(router *Router) {
+		router.Route("GET", "/hello", helloHandler, nil)
+	}, func() {
+		suite.True(IsMaintenanceEnabled())
+
+		netClient := createHTTPClient()
+		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(503, resp.StatusCode)
+		}
+
+		DisableMaintenance()
+
+		suite.False(IsMaintenanceEnabled())
+
+		resp, err = netClient.Get("http://127.0.0.1:1235/hello")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(200, resp.StatusCode)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			suite.Nil(err)
+			suite.Equal("Hi!", string(body))
+		}
+	})
+	config.Set("maintenance", false)
+}
+
+func (suite *GoyaveTestSuite) TestAutoMigrate() {
+	suite.loadConfig()
+	config.Set("dbConnection", "mysql")
+	config.Set("dbAutoMigrate", true)
+	suite.runServer(func(router *Router) {}, func() {})
+	config.Set("dbAutoMigrate", false)
+	config.Set("dbConnection", "none")
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

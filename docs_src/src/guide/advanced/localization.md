@@ -82,7 +82,7 @@ The `rules.json` file contains the validation rules messages. These messages can
 }
 ```
 
----
+#### Type-dependent rules
 
 The following rules have **type-dependent** messages. That means that their message is different depending on the type of the validated data.
 
@@ -107,6 +107,20 @@ Type-dependent rules must have a language line for the four following types:
     "min.numeric": "The :field must be at least :min.",
     "min.array": "The :field must have at least :min items.",
     "min.file": "The :field must be at least :min KiB."
+}
+```
+
+#### Array validation
+
+Each rule, except the file-related rules and the `confirmed` rule, can be used to validate array values. If a rule is used to validate an array value and doesn't pass, the rule message `validation.rules.<rule_name>.array` (or `validation.rules.<rule_name>.<type>.array` if the rule is type-dependent) is returned.
+
+**Example:**
+```json
+{
+    "min.string.array": "The :field values must be at least :min characters.",
+    "min.numeric.array": "The :field values must be at least :min.",
+    "min.array.array": "The :field values must have at least :min items.",
+    "digits.array": "The :field values must be digits only."
 }
 ```
 

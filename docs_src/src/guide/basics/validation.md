@@ -74,7 +74,7 @@ router.Route("POST", "/product", product.Store, productrequest.Store)
 [Lower than](#lower-than-field)
 [Lower than or equal](#lower-than-equal-field)
 [String](#string)
-[Array](#array)
+[Array](#array-type)
 [Distinct](#distinct)
 [Digits](#digits)
 [Regex](#regex-pattern)
@@ -184,9 +184,28 @@ Strings, numerics, array, and files are evaluated using the same method as the [
 
 The field under validation must be a string.
 
-#### array
+#### array:type
 
-The field under validation must be an array. In a handler, the data is get as a `[]interface{}`.
+The field under validation must be an array. The `type` parameter is **optional**.
+
+If no type is provided, the field has the type `[]interface{}` after validation. If a type is provided, the array is converted to a slice of the correct type, and all values in the array are validated in the same way as standard fields.
+
+For example, with the rule `array:url`, all values must be valid URLs and the field will be converted to `[]*url.URL`.
+
+**Available types:**
+- `string`
+- `numeric`
+- `integer`
+- `timezone`
+- `ip`, `ipv4`, `ipv6`
+- `url`
+- `uuid`
+- `bool`
+- `date`
+
+::: tip
+For the `uuid` and `date` types, you can pass a second parameter: `array:date,02-01-2006`
+:::
 
 #### distinct
 
@@ -214,7 +233,7 @@ Depending on its type, the field under validation must:
 - Strings: have a length of `value` characters.
 - Numerics: be equal to `value`.
 - Arrays: exactly have `value` items.
-- Files: weigth exactly `value` KiB. 
+- Files: weight exactly `value` KiB. 
     - *Note: for this rule only (not for `min`, `max`, etc), the size of the file under validation is **rounded** to the closest KiB.*
     - When the field is a multi-files upload, the size of **all files** is checked.
 
@@ -511,6 +530,40 @@ validation.GetFieldType(2.4) // "numeric"
 validation.GetFieldType([]int{1,2}) // "array"
 ```
 
+## Validating arrays
+
+<p><Badge text="Since v2.1.0"/><Badge text="BETA" type="warn"/></p>
+
+Validating arrays is easy. All the validation rules, **except the file-related rules and the `confirmed` rule**, can be applied to array values using the prefix `>`. When array values are validated, **all of them** must pass the validation.
+
+**Example:**
+``` go
+var arrayValidation = goyave.RuleSet{
+    "array": {"required", "array:string", "between:1,5", ">email", ">max:128"},
+}
+```
+In this example, we are validating an array of one to five email addresses, which can't be longer than 128 characters.
+
+### N-dimensional arrays
+
+You can validate n-dimensional arrays. 
+
+**Example:**
+``` go
+var arrayValidation = RuleSet{
+    "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+}
+```
+In this example, we are validating a three-dimensional array of numeric values. The second dimension must be made of arrays with a size of 3 or less. The third dimensions must contain numbers inferior to 4. The following JSON input passes the validation:
+```json
+{
+    "array": [
+        [[0.5, 1.42], [0.6, 4, 3]],
+        [[0.6, 1.43], [], [2]]
+    ]
+}
+```
+
 ## Placeholders
 
 Validation messages can use placeholders to inject dynamic values in the validation error message. For example, in the `rules.json` language file:
@@ -603,3 +656,51 @@ For example, for the `UUID:4` rule, the result would be `v4`.
 #### :max_date
 
 `:max_date` is replaced by the second parameter of the rule definition. If the second parameter is a field name, `:max_date` will be replaced with the name of the field in the same way as the `:other` placeholder.
+
+## Manual validation
+
+<p><Badge text="Since v2.1.0"/></p>
+
+You may need to validate some data manually as part of your business logic. You can use the Goyave validator to do so.
+
+#### validation.Validate
+
+Validate the given data with the given rule set. If all validation rules pass, returns an empty `validation.Errors`.
+
+The third parameter (`isJSON`) tells the function if the data comes from a JSON request. This is used to return the correct message if the given data is `nil` and to correctly handle arrays in url-encoded requests.
+
+The last parameter (`language`) sets the language of the validation error messages.
+
+| Parameters                    | Return              |
+|-------------------------------|---------------------|
+| `data map[string]interface{}` | `validation.Errors` |
+| `rules RuleSet`               |                     |
+| `isJSON bool`                 |                     |
+| `language string`             |                     |
+
+::: tip
+`validation.Errors` is an alias for `map[string][]string`. The key represents the field name and the associated slice contains all already translated validation error messages for this field.
+:::
+
+**Example:**
+``` go
+func Store(response *goyave.Response, request *goyave.Request) {
+    data := map[string]interface{}{
+		"string": "hello world",
+		"number": 42,
+	}
+
+	errors := validation.Validate(data, validation.RuleSet{
+		"string": {"required", "string"},
+		"number": {"required", "numeric", "min:10"},
+	}, true, request.Lang)
+
+	if len(errors) > 0 {
+		response.JSON(http.StatusUnprocessableEntity, map[string]validation.Errors{"validationError": errors})
+		return
+	}
+
+	// data can be safely used from here
+	// ...
+}
+```

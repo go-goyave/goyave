@@ -554,7 +554,7 @@ var arrayValidation = RuleSet{
     "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
 }
 ```
-In this example, we are validating a three-dimensional array of numeric values. The second dimension must be made of arrays with a size of 3 or less. The third dimensions must contain numbers inferior or equal to 4. The following JSON input passes the validation:
+In this example, we are validating a three-dimensional array of numeric values. The second dimension must be made of arrays with a size of 3 or less. The third dimension must contain numbers inferior or equal to 4. The following JSON input passes the validation:
 ```json
 {
     "array": [

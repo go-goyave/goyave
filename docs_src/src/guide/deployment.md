@@ -13,7 +13,7 @@ Be sure to deploy your application with a `config.production.json` config file c
 1. Ensure that the `environment` entry is `production`.
 2. The `host` entry should be `0.0.0.0` or your domain name.
 3. The `port` and `httpsPort` will very likely require a change. Most of the time, you need `80` and `443` respectively.
-4. If you use `https`, be sure to provide the paths to your `tlsCert` and `tlsKey`. Learn more [here](./configuration#setting-up-https).
+4. If you use `https`, be sure to provide the paths to your `tlsCert` and `tlsKey`. Learn more [here](./configuration.html#setting-up-https).
 5. `debug` **must** be set do `false`. You don't want anyone to get important information about your internal errors and therefore your code when an error occurs.
 6. Change your database connection credentials. `dbAutoMigrate` should be set to `false`.
 

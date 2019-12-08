@@ -51,7 +51,7 @@ router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
 
 ::: tip
 - `goyave.Handler` is an alias for `func(*goyave.Response, *goyave.Request)`.
-- Learn more about validation and rules sets [here](./validation).
+- Learn more about validation and rules sets [here](./validation.html).
 :::
 
 ## Route parameters
@@ -81,7 +81,7 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 
 ## Validation
 
-You can assign a validation rules set to each route. Learn more in the dedicated [section](./validation). You should always validate incoming requests.
+You can assign a validation rules set to each route. Learn more in the dedicated [section](./validation.html). You should always validate incoming requests.
 
 ``` go
 router.Route("POST", "/products", product.Create, validation.RuleSet{
@@ -135,7 +135,7 @@ func Register(router *goyave.Router) {
 
 ## Middleware
 
-Middleware are handlers executed before the controller handler. Learn more in the dedicated [section](./middleware).
+Middleware are handlers executed before the controller handler. Learn more in the dedicated [section](./middleware.html).
 
 Middleware are applied to a router or a sub-router **before the routes definition**. Therefore, all routes in that router and its sub-routers will execute them before executing their associated handler.
 

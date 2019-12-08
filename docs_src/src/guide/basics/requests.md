@@ -337,7 +337,7 @@ fmt.Println(request.Date("birthdate").String()) // "2019-11-21 00:00:00 +0000 UT
 
 #### Request.Rules
 
-The validation rule set associated with this request. See the [validation](./validation) section for more information.
+The validation rule set associated with this request. See the [validation](./validation.html) section for more information.
 
 #### Request.Data
 
@@ -385,7 +385,7 @@ fmt.Println(request.Params["product_id"]) // "5"
 
 `Lang` indicates the language desired by the user. This attribute is automatically set by a core middleware, based on the `Accept-Language` header, if present. If the desired language is not available, the default language is used.
 
-Learn more in the [localization](../advanced/localization) section.
+Learn more in the [localization](../advanced/localization.html) section.
 
 ``` go
 fmt.Println(request.Lang) // "en-US"

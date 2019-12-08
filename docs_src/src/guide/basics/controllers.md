@@ -59,7 +59,7 @@ Learn how to handle database errors [here](https://gorm.io/docs/error_handling.h
 
 A `Handler` is a `func(*goyave.Response, *goyave.Request)`. The first parameter lets you write a response, and the second contains all the information extracted from the raw incoming request.
 
-Read about the available request information in the [Requests](./requests) section.
+Read about the available request information in the [Requests](./requests.html) section.
 
 Controller handlers contain the business logic of your application. They should be concise and focused on what matters for this particular feature in your application. For example, if you develop a service manipulating images, the image processing code shouldn't be written in controller handlers. In that case, the controller handler would simply pass the correct parameters to your image processor and write a response.
 

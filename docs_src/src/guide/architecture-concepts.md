@@ -34,13 +34,13 @@ This section will briefly explain the technical words used in the following sect
 
 The very first step of the server lifecycle is the **server setup**, taking place when you call `goyave.Start(route.Register)` in your application's main function.
 
-Goyave starts by loading the [configuration](./configuration) file from the core of the framework. The application's configuration file is then loaded, overriding the default values.
+Goyave starts by loading the [configuration](./configuration.html) file from the core of the framework. The application's configuration file is then loaded, overriding the default values.
 
-The second step of the initialization takes a very similar approach to load the [language](./advanced/localization) files. The `en-US` language is available by default inside the framework and is used as the default language. When it's loaded, the framework will look for custom language files inside the working directory and will override the `en-US` language entries if needed.
+The second step of the initialization takes a very similar approach to load the [language](./advanced/localization.hmtl) files. The `en-US` language is available by default inside the framework and is used as the default language. When it's loaded, the framework will look for custom language files inside the working directory and will override the `en-US` language entries if needed.
 
-Then, if enabled, the automatic migrations are run, thus creating the [database](./basics/database) connection pool. If the automatic migrations are not enabled, no connection to the database will be established until the application requires one.
+Then, if enabled, the automatic migrations are run, thus creating the [database](./basics/database.html) connection pool. If the automatic migrations are not enabled, no connection to the database will be established until the application requires one.
 
-That is only now that [routes](./basics/routing) are registered using the route registrer provided to the `Start()` function. That means that at this registrer has already access to all the configuration and language features, which can be handy if you want to generate different routes based on the languages your application supports.
+That is only now that [routes](./basics/routing.html) are registered using the route registrer provided to the `Start()` function. That means that at this registrer has already access to all the configuration and language features, which can be handy if you want to generate different routes based on the languages your application supports.
 
 Finally, the framework starts listening for incoming HTTP requests and serves them. The server also listens for interruption and termination signals so it can finish serving ongoing requests before shutting down gracefully. In the next section, we will get into more details about the lifecycle of each request.
 
@@ -60,11 +60,11 @@ The request is **parsed** by a second middleware. This middleware will automatic
 
 #### 3. Language
 
-The `Accept-Language` header is checked. If it's there, its value is parsed and the request's language attribute is set accordingly so localization is easy in the following handlers. If the header is missing, invalid, or asks for an unsupported language, the framework falls back to the default language defined in the configuration. Learn more [here](./advanced/localization).
+The `Accept-Language` header is checked. If it's there, its value is parsed and the request's language attribute is set accordingly so localization is easy in the following handlers. If the header is missing, invalid, or asks for an unsupported language, the framework falls back to the default language defined in the configuration. Learn more [here](./advanced/localization.html).
 
 #### 4. Application middlewares
 
-Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middleware are already available in the framework. Learn more in the [middlewares](./basics/middleware) section. At this stage of the lifecycle, the request is not validated yet, so application middleware can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
+Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middleware are already available in the framework. Learn more in the [middlewares](./basics/middleware.html) section. At this stage of the lifecycle, the request is not validated yet, so application middleware can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
 
 #### 5. Validation
 
@@ -122,19 +122,19 @@ The `http` directory contains all the HTTP-related code. This is where most of y
 
 #### HTTP controllers
 
-The `http/controller` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project. Learn more [here](./basics/controllers).
+The `http/controller` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project. Learn more [here](./basics/controllers.html).
 
 #### HTTP middleware
 
-The `http/middleware` directory contains the application middleware. Each middleware should have its own file. Learn more [here](./basics/middleware).
+The `http/middleware` directory contains the application middleware. Each middleware should have its own file. Learn more [here](./basics/middleware.html).
     
 #### HTTP request
 
 The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller.
 
-This directory can also contain a `placeholders.go` file, which will define validation rule messages placeholders. Learn more [here](./basics/validation#placeholders).
+This directory can also contain a `placeholders.go` file, which will define validation rule messages placeholders. Learn more [here](./basics/validation.html#placeholders).
 
-This directory can also contain a `validation.go` file, which will define custom validation rules. Learn more [here](./basics/validation#custom-rules).
+This directory can also contain a `validation.go` file, which will define custom validation rules. Learn more [here](./basics/validation.html#custom-rules).
 
 #### HTTP Routes
 
@@ -153,7 +153,7 @@ Each language directory contains three files. Each file is **optional**.
 - `locale.json`: all other language lines.
 - `rules.json`: validation rules messages.
 
-Learn more about localization [here](./advanced/localization).
+Learn more about localization [here](./advanced/localization.html).
 
 ### Custom directories
 
@@ -165,4 +165,4 @@ Database connections are managed by the framework and are long-lived. When the s
 
 If automatic migrations are enabled, all registered models at the time of startup will be auto-migrated. They must be registered before the server starts, ideally from an `init()` function next to each model definition.
 
-Learn more in the [database](./basics/database) section.
+Learn more in the [database](./basics/database.html) section.

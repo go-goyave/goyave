@@ -19,7 +19,7 @@ import (
 
 ## Configuration
 
-Very few code is required to get started with databases. There are some [configuration](../configuration#configuration-reference) options that you need to change though:
+Very few code is required to get started with databases. There are some [configuration](../configuration.html#configuration-reference) options that you need to change though:
 - `dbConnection`
 - `dbHost`
 - `dbPort`

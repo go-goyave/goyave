@@ -36,7 +36,13 @@ while [ $health -ne 0 ]; do
 done
 
 echo -e "\033[92m\033[1mDatabase ready. Running tests...\033[0m"
-gotest -v -race -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+gcc --version
+if [ $? -ne 0 ]; then
+	echo -e "\033[31mgcc is missing. Running tests without data race checking.\033[0m"
+	gotest -v -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+else
+	gotest -v -race -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+fi
 test_result=$?
 
 echo -e "\033[1mStopping database container...\033[0m"

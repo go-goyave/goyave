@@ -304,7 +304,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		panic(err)
 	}
 	suite.Equal(400, result.StatusCode)
-	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body)) // TODO fail here
+	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
 }
 
 func TestMiddlewareTestSuite(t *testing.T) {

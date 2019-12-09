@@ -41,7 +41,7 @@ func (suite *DatabaseTestSuite) TestBuildConnectionOptions() {
 	})
 }
 
-func (suite *DatabaseTestSuite) TestGetConnection() { // TODO re-enable test
+func (suite *DatabaseTestSuite) TestGetConnection() {
 	db := GetConnection()
 	suite.NotNil(db)
 	suite.NotNil(dbConnection)
@@ -50,7 +50,7 @@ func (suite *DatabaseTestSuite) TestGetConnection() { // TODO re-enable test
 	suite.Nil(dbConnection)
 }
 
-func (suite *DatabaseTestSuite) TestGetConnectionPanic() { // TODO re-enable test
+func (suite *DatabaseTestSuite) TestGetConnectionPanic() {
 	tmpConnection := config.Get("dbConnection")
 	config.Set("dbConnection", "none")
 	suite.Panics(func() {

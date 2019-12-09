@@ -66,6 +66,8 @@ func Load() error {
 				for key, value := range conf {
 					config[key] = value
 				}
+			} else {
+				return err
 			}
 		} else {
 			panic(err)
@@ -175,9 +177,9 @@ func loadDefaults() error {
 func readConfigFile(file string) (map[string]interface{}, error) {
 	conf := map[string]interface{}{}
 	configFile, err := os.Open(file)
-	defer configFile.Close()
 
 	if err == nil {
+		defer configFile.Close()
 		jsonParser := json.NewDecoder(configFile)
 		jsonParser.Decode(&conf)
 	}

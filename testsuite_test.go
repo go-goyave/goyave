@@ -50,13 +50,16 @@ func (suite *CustomTestSuite) TestRunServer() {
 	})
 }
 
-func (suite *CustomTestSuite) testRunServerTimeout() { // TOTO re-enable this test
+func (suite *CustomTestSuite) TestRunServerTimeout() {
 	suite.SetTimeout(time.Second)
+	oldT := suite.T()
+	suite.SetT(new(testing.T))
 	suite.RunServer(func(router *Router) {}, func() {
 		time.Sleep(suite.Timeout() + 1*time.Second)
-		suite.True(suite.T().Failed()) // TODO How to un-fail this test? Or run in fake testing.T
+		suite.True(suite.T().Failed())
 	})
 	suite.SetTimeout(5 * time.Second)
+	suite.SetT(oldT)
 }
 
 func TestTestSuite(t *testing.T) {

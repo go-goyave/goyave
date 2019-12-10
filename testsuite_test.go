@@ -57,8 +57,8 @@ func (suite *CustomTestSuite) TestRunServerTimeout() {
 	suite.SetT(new(testing.T))
 	suite.RunServer(func(router *Router) {}, func() {
 		time.Sleep(suite.Timeout() + 1*time.Second)
-		assert.True(oldT, suite.T().Failed())
 	})
+	assert.True(oldT, suite.T().Failed())
 	suite.SetTimeout(5 * time.Second)
 	suite.SetT(oldT)
 }

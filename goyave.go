@@ -175,6 +175,7 @@ func getAddress(protocol string) string {
 	} else {
 		port = "port"
 	}
+	// TODO don't show port if it's standard port for protocol
 	return config.GetString("host") + ":" + strconv.FormatInt(int64(config.Get(port).(float64)), 10)
 }
 

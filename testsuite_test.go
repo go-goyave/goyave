@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +23,12 @@ type FailingTestSuite struct {
 	TestSuite
 }
 
+func genericHandler(message string) func(response *Response, request *Request) {
+	return func(response *Response, request *Request) {
+		response.String(http.StatusOK, message)
+	}
+}
+
 func (suite *CustomTestSuite) TestEnv() {
 	suite.Equal("test", os.Getenv("GOYAVE_ENV"))
 	suite.Equal("test", config.GetString("environment"))
@@ -34,7 +41,7 @@ func (suite *CustomTestSuite) TestRunServer() {
 			response.String(http.StatusOK, "Hi!")
 		}, nil)
 	}, func() {
-		resp, err := suite.getHTTPClient().Get("http://127.0.0.1:1235/hello") // TODO will be replace with helpers Get/Post/...
+		resp, err := suite.Get("/hello", nil)
 		suite.Nil(err)
 		if err != nil {
 			fmt.Println(err)
@@ -79,6 +86,63 @@ func (suite *CustomTestSuite) TestMiddleware() {
 	})
 
 	suite.Equal(418, result.StatusCode)
+}
+
+func (suite *CustomTestSuite) TestRequests() {
+	suite.RunServer(func(router *Router) {
+		router.Route("GET", "/get", genericHandler("get"), nil)
+		router.Route("POST", "/post", genericHandler("post"), nil)
+		router.Route("PUT", "/put", genericHandler("put"), nil)
+		router.Route("PATCH", "/patch", genericHandler("patch"), nil)
+		router.Route("DELETE", "/delete", genericHandler("delete"), nil)
+		router.Route("GET", "/headers", func(response *Response, request *Request) {
+			response.String(http.StatusOK, request.Header().Get("Accept-Language"))
+		}, nil)
+	}, func() {
+		resp, err := suite.Get("/get", nil)
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal("get", string(suite.GetBody(resp)))
+		}
+		resp, err = suite.Get("/post", nil)
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal(http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+		resp, err = suite.Post("/post", nil, strings.NewReader("field=value"))
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal("post", string(suite.GetBody(resp)))
+		}
+		resp, err = suite.Put("/put", nil, strings.NewReader("field=value"))
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal("put", string(suite.GetBody(resp)))
+		}
+		resp, err = suite.Patch("/patch", nil, strings.NewReader("field=value"))
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal("patch", string(suite.GetBody(resp)))
+		}
+		resp, err = suite.Delete("/delete", nil, strings.NewReader("field=value"))
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal("delete", string(suite.GetBody(resp)))
+		}
+
+		// Headers
+		resp, err = suite.Get("/headers", map[string]string{"Accept-Language": "en-US"})
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal("en-US", string(suite.GetBody(resp)))
+		}
+
+		// Errors
+		resp, err = suite.Get("invalid", nil)
+		suite.NotNil(err)
+		suite.Nil(resp)
+
+	})
 }
 
 func TestTestSuite(t *testing.T) {

@@ -3,6 +3,8 @@ package goyave
 import (
 	"context"
 	"crypto/tls"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -28,11 +30,20 @@ type ITestSuite interface {
 	Timeout() time.Duration
 	SetTimeout(time.Duration)
 	Middleware(Middleware, *Request, Handler) *http.Response
+
+	Get(string, map[string]string) (*http.Response, error)
+	Post(string, map[string]string, io.Reader) (*http.Response, error)
+	Put(string, map[string]string, io.Reader) (*http.Response, error)
+	Patch(string, map[string]string, io.Reader) (*http.Response, error)
+	Delete(string, map[string]string, io.Reader) (*http.Response, error)
+	ExecuteRequest(string, string, map[string]string, io.Reader) (*http.Response, error)
+
 	T() *testing.T
 	SetT(*testing.T)
 
-	CreateTestRequest(rawRequest *http.Request) *Request
-	CreateTestResponse(recorder http.ResponseWriter) *Response
+	GetBody(*http.Response) []byte
+	CreateTestRequest(*http.Request) *Request
+	CreateTestResponse(http.ResponseWriter) *Response
 	getHTTPClient() *http.Client
 }
 
@@ -137,6 +148,62 @@ func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedur
 	return recorder.Result()
 }
 
+// Get execute a GET request on the given route.
+// Headers are optional.
+func (s *TestSuite) Get(route string, headers map[string]string) (*http.Response, error) {
+	return s.ExecuteRequest("GET", route, headers, nil)
+}
+
+// Post execute a POST request on the given route.
+// Headers and body are optional.
+func (s *TestSuite) Post(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	return s.ExecuteRequest("POST", route, headers, body)
+}
+
+// Put execute a PUT request on the given route.
+// Headers and body are optional.
+func (s *TestSuite) Put(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	return s.ExecuteRequest("PUT", route, headers, body)
+}
+
+// Patch execute a PATCH request on the given route.
+// Headers and body are optional.
+func (s *TestSuite) Patch(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	return s.ExecuteRequest("PATCH", route, headers, body)
+}
+
+// Delete execute a DELETE request on the given route.
+// Headers and body are optional.
+func (s *TestSuite) Delete(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	return s.ExecuteRequest("DELETE", route, headers, body)
+}
+
+// ExecuteRequest execute a request on the given route.
+// Headers and body are optional.
+func (s *TestSuite) ExecuteRequest(method, route string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	protocol := config.GetString("protocol")
+	req, err := http.NewRequest(method, protocol+"://"+getAddress(protocol)+route, body)
+	if err != nil {
+		return nil, err
+	}
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
+	return s.getHTTPClient().Do(req)
+}
+
+// GetBody read the whole body of a response.
+// If read failed, test fails and return empty byte slice.
+func (s *TestSuite) GetBody(response *http.Response) []byte {
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		s.Fail("Couldn't read response body", err)
+	}
+	return body
+}
+
 // getHTTPClient get suite's http client or create it if it doesn't exist yet.
 // The HTTP client is created with a timeout, disabled redirect and disabled TLS cert checking.
 func (s *TestSuite) getHTTPClient() *http.Client {
@@ -156,6 +223,8 @@ func (s *TestSuite) getHTTPClient() *http.Client {
 // RunTest run a test suite with prior initialization of a test environment.
 // The GOYAVE_ENV environment variable is automatically set to "test" and restored
 // to its original value at the end of the test run.
+// All tests are run using your project's root as a working directory. This directory is determined
+// by the presence of a "go.mod" file.
 func RunTest(t *testing.T, suite ITestSuite) bool {
 	if suite.Timeout() == 0 {
 		suite.SetTimeout(5 * time.Second)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -49,10 +48,7 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 }
 
 func createTestFileRequest(route string, files ...string) *http.Request {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		log.Panicf("Runtime caller error")
-	}
+	_, filename, _, _ := runtime.Caller(1)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)

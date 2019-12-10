@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -60,6 +61,24 @@ func (suite *CustomTestSuite) TestRunServerTimeout() {
 	})
 	suite.SetTimeout(5 * time.Second)
 	suite.SetT(oldT)
+}
+
+func (suite *CustomTestSuite) TestMiddleware() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", nil)
+	rawRequest.Header.Set("Content-Type", "application/json")
+	request := suite.CreateTestRequest(rawRequest)
+
+	result := suite.Middleware(func(next Handler) Handler {
+		return func(response *Response, request *Request) {
+			response.Status(http.StatusTeapot)
+			next(response, request)
+		}
+	}, request, func(response *Response, request *Request) {
+		suite.Equal("application/json", request.Header().Get("Content-Type"))
+		// TODO example if middleware passed: Fail
+	})
+
+	suite.Equal(418, result.StatusCode)
 }
 
 func TestTestSuite(t *testing.T) {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -34,10 +33,7 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 }
 
 func createTestFiles(files ...string) []File {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		log.Panicf("Runtime caller error")
-	}
+	_, filename, _, _ := runtime.Caller(1)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -60,11 +56,7 @@ func createTestFiles(files ...string) []File {
 }
 
 func toAbsolutePath(relativePath string) string {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		log.Panicf("Runtime caller error")
-	}
-
+	_, filename, _, _ := runtime.Caller(1)
 	return path.Dir(filename) + "/../../" + relativePath
 }
 

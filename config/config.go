@@ -156,22 +156,13 @@ func GetBool(key string) bool {
 }
 
 func loadDefaults() error {
-	var filename string
-	var ok bool
-	func() {
-		_, f, _, o := runtime.Caller(1)
-		filename = f
-		ok = o
-	}()
-	if ok {
-		confDefaults, err := readConfigFile(path.Dir(filename) + string(os.PathSeparator) + "defaults.json")
+	_, filename, _, _ := runtime.Caller(0)
+	confDefaults, err := readConfigFile(path.Dir(filename) + string(os.PathSeparator) + "defaults.json")
 
-		if err == nil {
-			config = confDefaults
-		}
-		return err
+	if err == nil {
+		config = confDefaults
 	}
-	return fmt.Errorf("Runtime caller error")
+	return err
 }
 
 func readConfigFile(file string) (map[string]interface{}, error) {

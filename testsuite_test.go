@@ -1,11 +1,14 @@
 package goyave
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -205,6 +208,38 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 	assert.True(oldT, suite.T().Failed())
 	suite.SetT(oldT)
 	suite.Equal(0, len(files))
+}
+
+func (suite *CustomTestSuite) TestFileUpload() {
+	err := ioutil.WriteFile("test-file.txt", []byte("test-content"), 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer filesystem.Delete("test-file.txt")
+
+	suite.RunServer(func(router *Router) {
+		router.Route("POST", "/post", func(response *Response, request *Request) {
+			content, err := ioutil.ReadAll(request.File("file")[0].Data)
+			if err != nil {
+				panic(err)
+			}
+			response.String(http.StatusOK, string(content))
+		}, nil)
+	}, func() {
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		path := "test-file.txt"
+		suite.AddFileToRequest(writer, path, "file", filepath.Base(path))
+		err := writer.Close()
+		if err != nil {
+			panic(err)
+		}
+		resp, err := suite.Post("/post", map[string]string{"Content-Type": writer.FormDataContentType()}, body) // TODO document Content-Type header
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal("test-content", string(suite.GetBody(resp)))
+		}
+	})
 }
 
 func TestTestSuite(t *testing.T) {

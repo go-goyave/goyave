@@ -229,7 +229,7 @@ func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, p := range paths {
-		s.addFileToRequest(writer, p, "file", filepath.Base(p))
+		s.AddFileToRequest(writer, p, "file", filepath.Base(p))
 	}
 	err := writer.Close()
 	if err != nil {
@@ -242,14 +242,16 @@ func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
 	return filesystem.ParseMultipartFiles(req, "file")
 }
 
-func (s *TestSuite) addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
+// AddFileToRequest write a file to the given writer.
+// This function is handy for file upload testing.
+func (s *TestSuite) AddFileToRequest(writer *multipart.Writer, path, fieldName, fileName string) {
 	file, err := os.Open(path)
 	if err != nil {
 		s.Fail(err.Error())
 		return
 	}
 	defer file.Close()
-	part, err := writer.CreateFormFile(name, fileName)
+	part, err := writer.CreateFormFile(fieldName, fileName)
 	if err != nil {
 		s.Fail(err.Error())
 		return

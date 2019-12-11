@@ -1,15 +1,18 @@
 package goyave
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"testing"
@@ -44,6 +47,7 @@ type ITestSuite interface {
 
 	GetBody(*http.Response) []byte
 	GetJSONBody(*http.Response) interface{}
+	CreateTestFiles(paths ...string) []filesystem.File
 	CreateTestRequest(*http.Request) *Request
 	CreateTestResponse(http.ResponseWriter) *Response
 	getHTTPClient() *http.Client
@@ -216,6 +220,44 @@ func (s *TestSuite) GetJSONBody(response *http.Response) interface{} {
 		data = nil
 	}
 	return data
+}
+
+// CreateTestFiles create a slice of "filesystem.File" from the given paths.
+// Files are passed to a temporary http request and parsed as Multipart form,
+// to reproduce the way files are obtained in real scenarios.
+func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	for _, p := range paths {
+		s.addFileToRequest(writer, p, "file", filepath.Base(p))
+	}
+	err := writer.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	req, _ := http.NewRequest("POST", "/test-route", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.ParseMultipartForm(10 << 20)
+	return filesystem.ParseMultipartFiles(req, "file")
+}
+
+func (s *TestSuite) addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
+	file, err := os.Open(path)
+	if err != nil {
+		s.Fail(err.Error())
+		return
+	}
+	defer file.Close()
+	part, err := writer.CreateFormFile(name, fileName)
+	if err != nil {
+		s.Fail(err.Error())
+		return
+	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		s.Fail(err.Error())
+	}
 }
 
 // getHTTPClient get suite's http client or create it if it doesn't exist yet.

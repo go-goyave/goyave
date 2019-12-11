@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/lang"
 	"github.com/stretchr/testify/assert"
 )
@@ -181,6 +182,29 @@ func (suite *CustomTestSuite) TestJSON() {
 			suite.Nil(json)
 		}
 	})
+}
+
+func (suite *CustomTestSuite) TestCreateTestFiles() {
+	err := ioutil.WriteFile("test-file.txt", []byte("test-content"), 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer filesystem.Delete("test-file.txt")
+	files := suite.CreateTestFiles("test-file.txt")
+	suite.Equal(1, len(files))
+	suite.Equal("test-file.txt", files[0].Header.Filename)
+	body, err := ioutil.ReadAll(files[0].Data)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal("test-content", string(body))
+
+	oldT := suite.T()
+	suite.SetT(new(testing.T))
+	files = suite.CreateTestFiles("doesn't exist")
+	assert.True(oldT, suite.T().Failed())
+	suite.SetT(oldT)
+	suite.Equal(0, len(files))
 }
 
 func TestTestSuite(t *testing.T) {

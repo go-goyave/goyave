@@ -40,7 +40,7 @@ type ITestSuite interface {
 	Put(string, map[string]string, io.Reader) (*http.Response, error)
 	Patch(string, map[string]string, io.Reader) (*http.Response, error)
 	Delete(string, map[string]string, io.Reader) (*http.Response, error)
-	ExecuteRequest(string, string, map[string]string, io.Reader) (*http.Response, error)
+	Request(string, string, map[string]string, io.Reader) (*http.Response, error)
 
 	T() *testing.T
 	SetT(*testing.T)
@@ -157,36 +157,36 @@ func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedur
 // Get execute a GET request on the given route.
 // Headers are optional.
 func (s *TestSuite) Get(route string, headers map[string]string) (*http.Response, error) {
-	return s.ExecuteRequest("GET", route, headers, nil)
+	return s.Request("GET", route, headers, nil)
 }
 
 // Post execute a POST request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Post(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.ExecuteRequest("POST", route, headers, body)
+	return s.Request("POST", route, headers, body)
 }
 
 // Put execute a PUT request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Put(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.ExecuteRequest("PUT", route, headers, body)
+	return s.Request("PUT", route, headers, body)
 }
 
 // Patch execute a PATCH request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Patch(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.ExecuteRequest("PATCH", route, headers, body)
+	return s.Request("PATCH", route, headers, body)
 }
 
 // Delete execute a DELETE request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Delete(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.ExecuteRequest("DELETE", route, headers, body)
+	return s.Request("DELETE", route, headers, body)
 }
 
-// ExecuteRequest execute a request on the given route.
+// Request execute a request on the given route.
 // Headers and body are optional.
-func (s *TestSuite) ExecuteRequest(method, route string, headers map[string]string, body io.Reader) (*http.Response, error) {
+func (s *TestSuite) Request(method, route string, headers map[string]string, body io.Reader) (*http.Response, error) {
 	protocol := config.GetString("protocol")
 	req, err := http.NewRequest(method, protocol+"://"+getAddress(protocol)+route, body)
 	if err != nil {

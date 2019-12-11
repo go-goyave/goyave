@@ -54,10 +54,7 @@ func (suite *CustomTestSuite) TestRunServer() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
-
-			body, err := ioutil.ReadAll(resp.Body)
-			suite.Nil(err)
-			suite.Equal("Hi!", string(body))
+			suite.Equal("Hi!", string(suite.GetBody(resp)))
 		}
 	})
 }

@@ -3,6 +3,7 @@ package goyave
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -42,6 +43,7 @@ type ITestSuite interface {
 	SetT(*testing.T)
 
 	GetBody(*http.Response) []byte
+	GetJSONBody(*http.Response) interface{}
 	CreateTestRequest(*http.Request) *Request
 	CreateTestResponse(http.ResponseWriter) *Response
 	getHTTPClient() *http.Client
@@ -202,6 +204,18 @@ func (s *TestSuite) GetBody(response *http.Response) []byte {
 		s.Fail("Couldn't read response body", err)
 	}
 	return body
+}
+
+// GetJSONBody read the whole body of a response and decode it as JSON.
+// If read or decode failed, test fails and return nil.
+func (s *TestSuite) GetJSONBody(response *http.Response) interface{} {
+	var data interface{}
+	err := json.NewDecoder(response.Body).Decode(&data)
+	if err != nil {
+		s.Fail("Couldn't read response body as JSON", err)
+		data = nil
+	}
+	return data
 }
 
 // getHTTPClient get suite's http client or create it if it doesn't exist yet.

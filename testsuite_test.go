@@ -145,6 +145,44 @@ func (suite *CustomTestSuite) TestRequests() {
 	})
 }
 
+func (suite *CustomTestSuite) TestJSON() {
+	suite.RunServer(func(router *Router) {
+		router.Route("GET", "/invalid", genericHandler("get"), nil)
+		router.Route("GET", "/get", func(response *Response, request *Request) {
+			response.JSON(http.StatusOK, map[string]interface{}{
+				"field":  "value",
+				"number": 42,
+			})
+		}, nil)
+	}, func() {
+		resp, err := suite.Get("/get", nil)
+		suite.Nil(err)
+		if err == nil {
+			json := suite.GetJSONBody(resp)
+			suite.NotNil(json)
+			if json != nil {
+				json, ok := json.(map[string]interface{})
+				suite.True(ok)
+				if ok {
+					suite.Equal("value", json["field"])
+					suite.Equal(float64(42), json["number"])
+				}
+			}
+		}
+
+		resp, err = suite.Get("/invalid", nil)
+		suite.Nil(err)
+		if err == nil {
+			oldT := suite.T()
+			suite.SetT(new(testing.T))
+			json := suite.GetJSONBody(resp)
+			assert.True(oldT, suite.T().Failed())
+			suite.SetT(oldT)
+			suite.Nil(json)
+		}
+	})
+}
+
 func TestTestSuite(t *testing.T) {
 	suite := new(CustomTestSuite)
 	RunTest(t, suite)

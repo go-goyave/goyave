@@ -7,7 +7,7 @@
 Goyave provides an API to ease the unit and functional testing of your application. This API is an extension of [testify](https://github.com/stretchr/testify). `goyave.TestSuite` inherits from testify's `suite.Suite`, and sets up the environment for you. That means:
 
 - `GOYAVE_ENV` environment variable is set to `test` and restored to its original value when the suite is done.
-- All tests are run using your project's root as a working directory. This directory is determined by the presence of a `go.mod` file.
+- All tests are run using your project's root as working directory. This directory is determined by the presence of a `go.mod` file.
 - Config and language files are loaded before the tests start. As the environment is set to `test`, you **need** a `config.test.json` in the root directory of your project.
 
 This setup is done by the function `goyave.RunTest`, so you shouldn't run your test suites using testify's `suite.Run()` function.
@@ -187,6 +187,225 @@ suite.Middleware(middleware.Auth, request, func(response *Response, request *Req
 ```
 
 ## TestSuite reference
+
+::: table
+[RunServer](#testsuite-runserver)
+[Timeout](#testsuite-timeout)
+[SetTimeout](#testsuite-settimeout)
+[Middleware](#testsuite-middleware)
+[Get](#testsuite-get)
+[Post](#testsuite-post)
+[Put](#testsuite-put)
+[Patch](#testsuite-patch)
+[Delete](#testsuite-delete)
+[Request](#testsuite-request)
+[GetBody](#testsuite-getbody)
+[GetJSONBody](#testsuite-getjsonbody)
+[CreateTestFiles](#testsuite-createtestfiles)
+[CreateTestRequest](#testsuite-createtestrequest)
+[CreateTestResponse](#testsuite-createtestResponse)
+[WriteFile](#testsuite-writefile)
+[WriteField](#testsuite-writefield)
+[RunTest](#goyave-runtest)
+:::
+
+#### TestSuite.RunServer
+
+RunServer start the application and run the given functional test procedure.
+
+This function is the equivalent of `goyave.Start()`.  
+The test fails if the suite's timeout is exceeded.  
+The server automatically shuts down when the function ends.  
+This function is synchronized, that means that the server is properly stopped when the function returns.
+
+
+| Parameters                            | Return |
+|---------------------------------------|--------|
+| `routeRegistrer func(*goyave.Router)` | `void` |
+| `procedure func()`                    |        |
+
+#### TestSuite.Timeout
+
+Get the timeout for test failure when using RunServer or requests.
+
+| Parameters | Return          |
+|------------|-----------------|
+|            | `time.Duration` |
+
+#### TestSuite.SetTimeout
+
+Set the timeout for test failure when using RunServer or requests.
+
+| Parameters      | Return |
+|-----------------|--------|
+| `time.Duration` |        |
+
+
+#### TestSuite.Middleware
+
+Executes the given middleware and returns the HTTP response. Core middleware (recovery, parsing and language) is not executed.
+
+| Parameters                     | Return           |
+|--------------------------------|------------------|
+| `middleware goyave.Middleware` | `*http.Response` |
+| `request *goyave.Request`      |                  |
+| `procedure goyave.Handler`     |                  |
+
+#### TestSuite.Get
+
+Execute a GET request on the given route. Headers are optional.
+
+| Parameters                  | Return           |
+|-----------------------------|------------------|
+| `route string`              | `*http.Response` |
+| `headers map[string]string` | `error`          |
+
+#### TestSuite.Post
+
+Execute a POST request on the given route. Headers and body are optional.
+
+| Parameters                  | Return           |
+|-----------------------------|------------------|
+| `route string`              | `*http.Response` |
+| `headers map[string]string` | `error`          |
+| `body io.Reader`            |                  |
+
+#### TestSuite.Put
+
+Execute a PUT request on the given route. Headers and body are optional.
+
+| Parameters                  | Return           |
+|-----------------------------|------------------|
+| `route string`              | `*http.Response` |
+| `headers map[string]string` | `error`          |
+| `body io.Reader`            |                  |
+
+#### TestSuite.Patch
+
+Execute a PATCH request on the given route. Headers and body are optional.
+
+| Parameters                  | Return           |
+|-----------------------------|------------------|
+| `route string`              | `*http.Response` |
+| `headers map[string]string` | `error`          |
+| `body io.Reader`            |                  |
+
+#### TestSuite.Delete
+
+Execute a DELETE request on the given route. Headers and body are optional.
+
+| Parameters                  | Return           |
+|-----------------------------|------------------|
+| `route string`              | `*http.Response` |
+| `headers map[string]string` | `error`          |
+| `body io.Reader`            |                  |
+
+#### TestSuite.Request
+
+Execute a request on the given route. Headers and body are optional.
+
+| Parameters                  | Return           |
+|-----------------------------|------------------|
+| `method string`             | `*http.Response` |
+| `route string`              | `error`          |
+| `headers map[string]string` |                  |
+| `body io.Reader`            |                  |
+
+#### TestSuite.GetBody
+
+Read the whole body of a response. If read failed, test fails and return empty byte slice.
+
+| Parameters                | Return   |
+|---------------------------|----------|
+| `response *http.Response` | `[]byte` |
+
+#### TestSuite.GetJSONBody
+
+Read the whole body of a response and decode it as JSON. If read or decode failed, test fails and return nil.
+
+| Parameters                | Return        |
+|---------------------------|---------------|
+| `response *http.Response` | `interface{}` |
+
+#### TestSuite.CreateTestFiles
+
+Create a slice of `filesystem.File` from the given paths. Files are passed to a temporary http request and parsed as Multipart form, to reproduce the way files are obtained in real scenarios.
+
+| Parameters        | Return              |
+|-------------------|---------------------|
+| `paths ...string` | `[]filesystem.File` |
+
+#### TestSuite.CreateTestRequest
+
+Create a `*goyave.Request` from the given raw request. This function is aimed at making it easier to unit test Requests.
+
+| Parameters                 | Return            |
+|----------------------------|-------------------|
+| `rawRequest *http.Request` | `*goyave.Request` |
+
+**Example:**
+``` go
+rawRequest := httptest.NewRequest("GET", "/test-route", nil)
+rawRequest.Header.Set("Content-Type", "application/json")
+request := goyave.CreateTestRequest(rawRequest)
+request.Lang = "en-US"
+request.Data = map[string]interface{}{"field": "value"}
+```
+
+#### TestSuite.CreateTestResponse
+
+Create an empty response with the given response writer. This function is aimed at making it easier to unit test Responses.
+
+| Parameters                     | Return             |
+|--------------------------------|--------------------|
+| `recorder http.ResponseWriter` | `*goyave.Response` |
+
+**Example:**
+``` go
+writer := httptest.NewRecorder()
+response := goyave.CreateTestResponse(writer)
+response.Status(http.StatusNoContent)
+result := writer.Result()
+fmt.Println(result.StatusCode) // 204
+```
+
+#### TestSuite.WriteFile
+
+Write a file to the given writer. This function is handy for file upload testing. The test fails if an error occurred.
+
+| Parameters                | Return |
+|---------------------------|--------|
+| `write *multipart.Writer` | `void` |
+| `path string`             |        |
+| `fieldName string`        |        |
+| `fileName string`         |        |
+
+#### TestSuite.WriteField
+
+Create and write a new multipart form field. The test fails if the field couldn't be written.
+
+| Parameters                | Return |
+|---------------------------|--------|
+| `write *multipart.Writer` | `void` |
+| `fieldName string`        |        |
+| `value string`            |        |
+
+#### goyave.RunTest
+
+Run a test suite with prior initialization of a test environment. The GOYAVE_ENV environment variable is automatically set to "test" and restored to its original value at the end of the test run.
+
+All tests are run using your project's root as working directory. This directory is determined by the presence of a `go.mod` file.
+
+The function returns true if the test passed.
+
+| Parameters                | Return |
+|---------------------------|--------|
+| `t *testing.T` | `bool` |
+| `suite ITestSuite`        |        |
+
+::: tip
+`ITestSuite` is the interface `TestSuite` is implementing.
+:::
 
 ## Database testing
 

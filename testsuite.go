@@ -65,14 +65,14 @@ type TestSuite struct {
 	mu          sync.Mutex
 }
 
-// Timeout get the timeout for test failure when using RunServer.
+// Timeout get the timeout for test failure when using RunServer or requests.
 func (s *TestSuite) Timeout() time.Duration {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.timeout
 }
 
-// SetTimeout set the timeout for test failure when using RunServer.
+// SetTimeout set the timeout for test failure when using RunServer or requests.
 func (s *TestSuite) SetTimeout(timeout time.Duration) {
 	s.mu.Lock()
 	s.timeout = timeout
@@ -292,7 +292,7 @@ func (s *TestSuite) getHTTPClient() *http.Client {
 // RunTest run a test suite with prior initialization of a test environment.
 // The GOYAVE_ENV environment variable is automatically set to "test" and restored
 // to its original value at the end of the test run.
-// All tests are run using your project's root as a working directory. This directory is determined
+// All tests are run using your project's root as working directory. This directory is determined
 // by the presence of a "go.mod" file.
 func RunTest(t *testing.T, suite ITestSuite) bool {
 	if suite.Timeout() == 0 {

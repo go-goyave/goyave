@@ -74,7 +74,7 @@ There are helper functions for the following HTTP methods:
 
 *Note*: The `Get` function doesn't have a third parameter as GET requests shouldn't have a body. The headers and body are optional, and can be `nil`.
 
-The response body can be retrieved easily using `suite.GetBody(response)`.
+The response body can be retrieved easily using [`suite.GetBody(response)`](#suite-getbody).
 
 ``` go 
 resp, err := suite.Get("/get", nil)
@@ -86,10 +86,10 @@ if err == nil {
 
 ``` go
 headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded; param=value"}
-resp, err = suite.Post("/post", headers, strings.NewReader("field=value"))
+resp, err = suite.Post("/product", headers, strings.NewReader("field=value"))
 suite.Nil(err)
 if err == nil {
-    suite.Equal("post", string(suite.GetBody(resp)))
+    suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
 
@@ -106,7 +106,58 @@ suite.SetTimeout(10 * time.Second)
 
 ### Testing JSON reponses
 
-### File upload
+It is very likely that you will need to check the content of a JSON response when testing your application. Instead of unmarshaling the JSON yourself, Goyave provides the [`suite.GetJSONBody`](#suite-getjsonbody) function. This function decodes the raw body of the request. If the data cannot be decoded, or is invalid JSON, the test fails and the function retuns `nil`.
+
+``` go
+suite.RunServer(route.Register, func() {
+	resp, err := suite.Get("/product", nil)
+	suite.Nil(err)
+	if err == nil {
+		json := suite.GetJSONBody(resp)
+		suite.NotNil(json)
+		if json != nil {
+			// You should always check type assertion before continuing.
+			json, ok := json.(map[string]interface{})
+			suite.True(ok)
+			if ok {
+				suite.Equal("value", json["field"])
+				suite.Equal(float64(42), json["number"])
+			}
+		}
+	}
+})
+```
+
+### Multipart and file upload
+
+You may need to test requests requiring file uploads. The best way to do this is using Go's `multipart.Writer`. Goyave provides functions to help you create a Multipart form.
+
+``` go
+suite.RunServer(route.Register, func() {
+	const path = "profile.png"
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	suite.WriteField(writer, "email", "johndoe@example.org")
+	suite.WriteFile(writer, path, "profile_picture", filepath.Base(path))
+	err := writer.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	// Don't forget to set the "Content-Type" header!
+	headers := map[string]string{"Content-Type": writer.FormDataContentType()}
+
+	resp, err := suite.Post("/register", headers, body)
+	suite.Nil(err)
+	if err == nil {
+		suite.Equal("Welcome!", string(suite.GetBody(resp)))
+	}
+})
+```
+
+::: tip
+You can write a multi-file upload by calling `suite.WriteFile` successively using the same field name.
+:::
 
 ## Testing middleware
 

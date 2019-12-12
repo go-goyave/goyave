@@ -22,7 +22,6 @@ const (
 	configPath     string = "config/defaults.json"
 )
 
-// TODO create test helpers to ease testing
 func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 	file, err := os.Open(path)
 	if err != nil {

@@ -207,12 +207,13 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 	suite.Equal(0, len(files))
 }
 
-func (suite *CustomTestSuite) TestFileUpload() {
-	err := ioutil.WriteFile("test-file.txt", []byte("test-content"), 0644)
+func (suite *CustomTestSuite) TestMultipartForm() {
+	const path = "test-file.txt"
+	err := ioutil.WriteFile(path, []byte("test-content"), 0644)
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete("test-file.txt")
+	defer filesystem.Delete(path)
 
 	suite.RunServer(func(router *Router) {
 		router.Route("POST", "/post", func(response *Response, request *Request) {
@@ -220,21 +221,34 @@ func (suite *CustomTestSuite) TestFileUpload() {
 			if err != nil {
 				panic(err)
 			}
-			response.String(http.StatusOK, string(content))
+			response.JSON(http.StatusOK, map[string]interface{}{
+				"file":  string(content),
+				"field": request.String("field"),
+			})
 		}, nil)
 	}, func() {
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
-		path := "test-file.txt"
-		suite.AddFileToRequest(writer, path, "file", filepath.Base(path))
+
+		suite.WriteFile(writer, path, "file", filepath.Base(path))
+		suite.WriteField(writer, "field", "hello world")
 		err := writer.Close()
 		if err != nil {
 			panic(err)
 		}
-		resp, err := suite.Post("/post", map[string]string{"Content-Type": writer.FormDataContentType()}, body) // TODO document Content-Type header
+		resp, err := suite.Post("/post", map[string]string{"Content-Type": writer.FormDataContentType()}, body)
 		suite.Nil(err)
 		if err == nil {
-			suite.Equal("test-content", string(suite.GetBody(resp)))
+			json := suite.GetJSONBody(resp)
+			suite.NotNil(json)
+			if json != nil {
+				json, ok := json.(map[string]interface{})
+				suite.True(ok)
+				if ok {
+					suite.Equal("test-content", json["file"])
+					suite.Equal("hello world", json["field"])
+				}
+			}
 		}
 	})
 }

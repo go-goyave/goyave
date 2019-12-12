@@ -48,6 +48,7 @@ type ITestSuite interface {
 	GetBody(*http.Response) []byte
 	GetJSONBody(*http.Response) interface{}
 	CreateTestFiles(paths ...string) []filesystem.File
+	WriteFile(writer *multipart.Writer, path, fieldName, fileName string)
 	CreateTestRequest(*http.Request) *Request
 	CreateTestResponse(http.ResponseWriter) *Response
 	getHTTPClient() *http.Client
@@ -229,7 +230,7 @@ func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, p := range paths {
-		s.AddFileToRequest(writer, p, "file", filepath.Base(p))
+		s.WriteFile(writer, p, "file", filepath.Base(p))
 	}
 	err := writer.Close()
 	if err != nil {
@@ -242,9 +243,10 @@ func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
 	return filesystem.ParseMultipartFiles(req, "file")
 }
 
-// AddFileToRequest write a file to the given writer.
+// WriteFile write a file to the given writer.
 // This function is handy for file upload testing.
-func (s *TestSuite) AddFileToRequest(writer *multipart.Writer, path, fieldName, fileName string) {
+// The test fails if an error occurred.
+func (s *TestSuite) WriteFile(writer *multipart.Writer, path, fieldName, fileName string) {
 	file, err := os.Open(path)
 	if err != nil {
 		s.Fail(err.Error())
@@ -258,6 +260,14 @@ func (s *TestSuite) AddFileToRequest(writer *multipart.Writer, path, fieldName, 
 	}
 	_, err = io.Copy(part, file)
 	if err != nil {
+		s.Fail(err.Error())
+	}
+}
+
+// WriteField create and write a new multipart form field.
+// The test fails if the field couldn't be written.
+func (s *TestSuite) WriteField(writer *multipart.Writer, fieldName, value string) {
+	if err := writer.WriteField(fieldName, value); err != nil {
 		s.Fail(err.Error())
 	}
 }

@@ -48,7 +48,8 @@ type ITestSuite interface {
 	GetBody(*http.Response) []byte
 	GetJSONBody(*http.Response) interface{}
 	CreateTestFiles(paths ...string) []filesystem.File
-	WriteFile(writer *multipart.Writer, path, fieldName, fileName string)
+	WriteFile(*multipart.Writer, string, string, string)
+	WriteField(*multipart.Writer, string, string)
 	CreateTestRequest(*http.Request) *Request
 	CreateTestResponse(http.ResponseWriter) *Response
 	getHTTPClient() *http.Client

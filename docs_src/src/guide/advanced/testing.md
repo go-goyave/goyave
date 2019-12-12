@@ -161,6 +161,31 @@ You can write a multi-file upload by calling `suite.WriteFile` successively usin
 
 ## Testing middleware
 
+You can unit-test middleware using the [`suite.Middleware`](#suite-middleware) function. This function passes a `*goyave.Request` to your middlware and returns the `*http.Response`. This function also takes a test procedure function as a parameter. This function will simulate a **controller handler**, so you can test if the middleware alters the request.
+
+``` go
+rawRequest := httptest.NewRequest("GET", "/test-route", nil)
+rawRequest.Header.Set("Content-Type", "application/json")
+request := suite.CreateTestRequest(rawRequest)
+request.Data = map[string]interface{}{"text": "  \n  test  \t"}
+
+result := suite.Middleware(middleware.Trim, request, func(response *Response, request *Request) {
+	suite.Equal("application/json", request.Header().Get("Content-Type"))
+	suite.Equal("test", request.String("text"))
+})
+
+suite.Equal(200, result.StatusCode)
+```
+
+If you want to test a blocking middleware, flag the test as failed in the test procedure. Indeed, the procedure shouldn't be executed if your middleware doesn't pass to the next handler.
+
+``` go
+request := suite.CreateTestRequest(nil)
+suite.Middleware(middleware.Auth, request, func(response *Response, request *Request) {
+	suite.Fail("Auth middleware passed")
+})
+```
+
 ## TestSuite reference
 
 ## Database testing

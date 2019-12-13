@@ -39,7 +39,7 @@ func TestCustomSuite(t *testing.T) {
 }
 ```
 
-We will explain in more details what this test does in the following sections, but in short, this test runs the server, registers all your application routes and executes the second parameter as a server startup hook. The test requests the `/hello` route with the method `GET` and checks the content of the response. The server automatically shuts down after the hook is executed and before `RunServer` returns.
+We will explain in more details what this test does in the following sections, but in short, this test runs the server, registers all your application routes and executes the second parameter as a server startup hook. The test requests the `/hello` route with the method `GET` and checks the content of the response. The server automatically shuts down after the hook is executed and before `RunServer` returns. See the available assertions in the [testify's documentation](https://godoc.org/github.com/stretchr/testify).
 
 ::: warning
 You cannot run Goyave test suites in parallel.

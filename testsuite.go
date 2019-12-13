@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/System-Glitch/goyave/v2/database"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -309,6 +310,8 @@ func RunTest(t *testing.T, suite ITestSuite) bool {
 	lang.LoadAllAvailableLanguages()
 
 	testify.Run(t, suite)
+
+	database.Close()
 	return !t.Failed()
 }
 

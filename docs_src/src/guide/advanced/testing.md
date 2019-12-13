@@ -422,15 +422,23 @@ You may need to test features interacting with your database. Goyave provides a 
 
 **All registered models records are automatically deleted from the database when each test suite completes.**
 
-::: tip
 It is a good practice to use a separate database dedicated for testing, named `myapp_test` for example. Don't forget to change the database information in your `config.test.json` file.
-:::
 
 All functions below require the `database`package to be imported.
 
 ``` go
 import "github.com/System-Glitch/goyave/v2/database"
 ```
+
+::: tip
+You may want to use a clean database for each of your tests. You can clear your database before each test using [`suite.SetupTest()`](https://godoc.org/github.com/stretchr/testify/suite#SetupTestSuite).
+
+``` go
+func (suite *CustomTestSuite) SetupTest() {
+	suite.ClearDatabase()
+}
+```
+:::
 
 ### Generators
 
@@ -455,6 +463,21 @@ func UserGenerator() interface{} {
 - Generator functions should be declared in the same file as the model it is generating.
 :::
 
+Generators can also create associated records. Associated records should be generated using their respective generators. In the following example, we are generating users for an application allowing users to write blog posts.
+
+``` go
+func UserGenerator() interface{} {
+	user := &User{}
+	// ... Generate users fields ...
+
+	// Generate between 0 and 10 blog posts
+	rand.Seed(time.Now().UnixNano())
+	user.Posts = database.NewFactory(PostGenerator).Generate(rand.Intn(10))
+
+	return user
+}
+```
+
 ### Using factories
 
 You can create a factory from any `database.Generator`.
@@ -470,6 +493,8 @@ insertedRecords := factory.Save(5)
 ```
 
 Note that generated records will not have an ID if they are not inserted into the database.
+
+Associated records created by the generator will also be inserted on `factory.Save`.
 
 #### Overrides
 
@@ -539,35 +564,5 @@ import (
 
 func User() {
 	database.NewFactory(model.UserGenerator).Save(10)
-}
-```
-
-### Tips
-
-You may want to use a clean database for each of your test. You can clear your database before each test using `suite.SetupTest()`.
-
-``` go
-func (suite *CustomTestSuite) SetupTest() {
-	suite.ClearDatabase()
-}
-```
-
----
-
-If you're writing a seeder that needs to also create some relations, you can loop on each record created and generate some related records.
-
-In the following example, we are seeding a database for an application allowing users to write blog posts.
-
-``` go
-rand.Seed(time.Now().UnixNano())
-userFactory := database.NewFactory(model.UserGenerator)
-postFactory := database.NewFactory(model.PostGenerator)
-
-for _, record := range factory.Save(5) {
-	// Generate between 0 and 10 blog posts for each user.
-	o := &Post{
-		UserID: record.(*model.User).ID,
-	}
-	postFactory.Override(o).Save(rand.Intn(10))
 }
 ```

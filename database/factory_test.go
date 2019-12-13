@@ -84,7 +84,11 @@ func (suite *FactoryTestSuite) TestSave() {
 	db.AutoMigrate(&User{})
 	defer db.Exec("DROP TABLE users;")
 
-	NewFactory(userGenerator).Save(2)
+	records := NewFactory(userGenerator).Save(2)
+	suite.Equal(2, len(records))
+	for i := uint(0); i < 2; i++ {
+		suite.Equal(i+1, records[i].(*User).ID)
+	}
 
 	users := make([]*User, 0, 2)
 	db.Find(&users)

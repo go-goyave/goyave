@@ -24,6 +24,7 @@ func NewFactory(generator Generator) *Factory {
 // Values present in the override model will replace the ones
 // in the generated records.
 // This function expects a struct pointer as parameter.
+// Returns the same instance of `Factory` so this method can be chained.
 func (f *Factory) Override(override interface{}) *Factory {
 	f.override = override
 	return f
@@ -44,14 +45,16 @@ func (f *Factory) Generate(count uint) []interface{} {
 	return records
 }
 
-// Save generate a number of records using the given factory and return
-func (f *Factory) Save(count uint) {
+// Save generate a number of records using the given factory and return the inserted records.
+func (f *Factory) Save(count uint) []interface{} {
 	// TODO bulk insert for better performance
 	// Bulk insert would require a lot of work to support
 	// all standard Gorm dialects.
 
 	db := GetConnection()
-	for _, record := range f.Generate(count) {
+	records := f.Generate(count)
+	for _, record := range records {
 		db.Create(record)
 	}
+	return records
 }

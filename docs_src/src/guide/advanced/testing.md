@@ -420,8 +420,154 @@ The function returns true if the test passed.
 
 You may need to test features interacting with your database. Goyave provides a handy way to generate and save records in your database: **factories**.
 
+**All registered models records are automatically deleted from the database when each test suite completes.**
+
 ::: tip
 It is a good practice to use a separate database dedicated for testing, named `myapp_test` for example. Don't forget to change the database information in your `config.test.json` file.
-
-**All registered models records are automatically deleted from the database when each test suite completes.**
 :::
+
+All functions below require the `database`package to be imported.
+
+``` go
+import "github.com/System-Glitch/goyave/v2/database"
+```
+
+### Generators
+
+Factories need a **generator function**. These functions generate a single random record. You can use the faking library of your choice, but in this example we are going to use [`github.com/bxcodec/faker`](https://github.com/bxcodec/faker).
+
+```go
+import "github.com/bxcodec/faker/v3"
+
+func UserGenerator() interface{} {
+	user := &User{}
+	user.Name = faker.Name()
+
+	faker.SetGenerateUniqueValues(true)
+	user.Email = faker.Email()
+	faker.SetGenerateUniqueValues(false)
+	return user
+}
+```
+
+::: tip
+- `database.Generator` is an alias for `func() interface{}`.
+- Generator functions should be declared in the same file as the model it is generating.
+:::
+
+### Using factories
+
+You can create a factory from any `database.Generator`.
+
+``` go
+factory := database.NewFactory(model.UserGenerator)
+
+// Generate 5 random users
+records := factory.Generate(5)
+
+// Generate and insert 5 random users into the database
+insertedRecords := factory.Save(5)
+```
+
+Note that generated records will not have an ID if they are not inserted into the database.
+
+#### Overrides
+
+It is possible to override some of the generated data if needed, for example if you need to test the behavior of a function with a specific value. All generated structures will be merged with the override.
+
+``` go
+override := &model.User{
+	Name: "Jérémy",
+}
+records := factory.Override(override).Generate(10)
+// All generated records will have the same name: "Jérémy"
+```
+
+#### Factory reference
+
+::: table
+[NewFactory](#database-newfactory)
+[Override](#factory-override)
+:::
+
+#### database.NewFactory
+
+Create a new Factory. The given generator function will be used to generate records.
+
+| Parameters                     | Return             |
+|--------------------------------|--------------------|
+| `generator database.Generator` | `database.Factory` |
+
+#### Factory.Override
+
+Set an override model for generated records. Values present in the override model will replace the ones in the generated records. This function expects a struct **pointer** as parameter. This function returns the same instance of `Factory` so this method can be chained.
+
+| Parameters             | Return             |
+|------------------------|--------------------|
+| `override interface{}` | `database.Factory` |
+
+#### Factory.Generate
+
+Generate a number of records using the given factory.
+
+| Parameters   | Return          |
+|--------------|-----------------|
+| `count uint` | `[]interface{}` |
+
+#### Factory.Save
+
+Generate a number of records using the given factory and return the inserted records.
+
+| Parameters   | Return          |
+|--------------|-----------------|
+| `count uint` | `[]interface{}` |
+
+
+### Seeders
+
+Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. That means that seeders are also responsible of creating relationships between records. Seeders are written in the `database/seeder` package.
+
+Each seeder should have its own file. A seeder's responsabilities are limited to a single table or model. For example, the `seeder.User` should only seed the `users` table. Moreover, seeders should have the same name as the model they are using.
+
+``` go
+package seeder
+
+import (
+	"my-project/database/model"
+	"github.com/System-Glitch/goyave/v2/database"
+)
+
+func User() {
+	database.NewFactory(model.UserGenerator).Save(10)
+}
+```
+
+### Tips
+
+You may want to use a clean database for each of your test. You can clear your database before each test using `suite.SetupTest()`.
+
+``` go
+func (suite *CustomTestSuite) SetupTest() {
+	suite.ClearDatabase()
+}
+```
+
+---
+
+If you're writing a seeder that needs to also create some relations, you can loop on each record created and generate some related records.
+
+In the following example, we are seeding a database for an application allowing users to write blog posts.
+
+``` go
+rand.Seed(time.Now().UnixNano())
+userFactory := database.NewFactory(model.UserGenerator)
+postFactory := database.NewFactory(model.PostGenerator)
+
+for _, record := range factory.Save(5) {
+	// Generate between 0 and 10 blog posts for each user.
+	o := &Post{
+		UserID: record.(*model.User).ID,
+	}
+	postFactory.Override(o).Save(rand.Intn(10))
+}
+```

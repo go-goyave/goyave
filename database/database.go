@@ -41,6 +41,13 @@ func RegisterModel(model interface{}) {
 	models = append(models, model)
 }
 
+// GetRegisteredModels get the registered models.
+// The returned slice is a copy of the original, so it
+// cannot be modified.
+func GetRegisteredModels() []interface{} {
+	return append(make([]interface{}, 0, len(models)), models...)
+}
+
 // Migrate migrates all registered models.
 func Migrate() {
 	db := GetConnection()

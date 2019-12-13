@@ -206,6 +206,7 @@ suite.Middleware(middleware.Auth, request, func(response *Response, request *Req
 [CreateTestResponse](#testsuite-createtestResponse)
 [WriteFile](#testsuite-writefile)
 [WriteField](#testsuite-writefield)
+[ClearDatabase](#testsuite-cleardatabase)
 [RunTest](#goyave-runtest)
 :::
 
@@ -390,6 +391,14 @@ Create and write a new multipart form field. The test fails if the field couldn'
 | `fieldName string`        |        |
 | `value string`            |        |
 
+#### TestSuite.ClearDatabase
+
+delete all records in all tables. This function only clears the tables of registered models.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
 #### goyave.RunTest
 
 Run a test suite with prior initialization of a test environment. The GOYAVE_ENV environment variable is automatically set to "test" and restored to its original value at the end of the test run.
@@ -398,10 +407,10 @@ All tests are run using your project's root as working directory. This directory
 
 The function returns true if the test passed.
 
-| Parameters                | Return |
-|---------------------------|--------|
-| `t *testing.T` | `bool` |
-| `suite ITestSuite`        |        |
+| Parameters         | Return |
+|--------------------|--------|
+| `t *testing.T`     | `bool` |
+| `suite ITestSuite` |        |
 
 ::: tip
 `ITestSuite` is the interface `TestSuite` is implementing.
@@ -409,16 +418,10 @@ The function returns true if the test passed.
 
 ## Database testing
 
-<p style="text-align: center">
-    <img :src="$withBase('/undraw_in_progress_ql66.svg')" height="150" alt="In progress">
-</p>
+You may need to test features interacting with your database. Goyave provides a handy way to generate and save records in your database: **factories**.
 
-::: warning
-This feature is not implemented yet and is coming in a future release.
+::: tip
+It is a good practice to use a separate database dedicated for testing, named `myapp_test` for example. Don't forget to change the database information in your `config.test.json` file.
 
-[Watch](https://github.com/System-Glitch/goyave) the github repository to stay updated.
+**All registered models records are automatically deleted from the database when each test suite completes.**
 :::
-
-### Factories
-
-### Seeders

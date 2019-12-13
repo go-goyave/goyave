@@ -47,6 +47,8 @@ func (f *Factory) Generate(count uint) []interface{} {
 // Save generate a number of records using the given factory and return
 func (f *Factory) Save(count uint) {
 	// TODO bulk insert for better performance
+	// Bulk insert would require a lot of work to support
+	// all standard Gorm dialects.
 
 	db := GetConnection()
 	for _, record := range f.Generate(count) {

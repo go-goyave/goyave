@@ -14,7 +14,7 @@ import (
 type User struct {
 	gorm.Model
 	Name  string `gorm:"type:varchar(100)"`
-	Email string `gorm:"type:varchar(100);unique_index"`
+	Email string `gorm:"type:varchar(100)"`
 }
 
 type DatabaseTestSuite struct {

@@ -14,8 +14,10 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/database"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,6 +27,11 @@ type CustomTestSuite struct {
 
 type FailingTestSuite struct {
 	TestSuite
+}
+
+type TestModel struct {
+	gorm.Model
+	Name string `gorm:"type:varchar(100)"`
 }
 
 func genericHandler(message string) func(response *Response, request *Request) {
@@ -251,6 +258,28 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 			}
 		}
 	})
+}
+
+func (suite *CustomTestSuite) TestClearDatabase() {
+	config.Set("dbConnection", "mysql")
+	database.RegisterModel(&TestModel{})
+	db := database.GetConnection()
+	db.AutoMigrate(&TestModel{})
+
+	for i := 0; i < 5; i++ {
+		db.Create(&TestModel{Name: fmt.Sprintf("Test %d", i)})
+	}
+	count := 0
+	db.Model(&TestModel{}).Count(&count)
+	suite.Equal(5, count)
+
+	suite.ClearDatabase()
+
+	db.Model(&TestModel{}).Count(&count)
+	suite.Equal(0, count)
+
+	db.Exec("DROP TABLE test_models;")
+	config.Set("dbConnection", "none")
 }
 
 func TestTestSuite(t *testing.T) {

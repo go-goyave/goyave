@@ -508,6 +508,10 @@ records := factory.Override(override).Generate(10)
 // All generated records will have the same name: "Jérémy"
 ```
 
+::: warning
+Overrides must be of the **same type** as the generated record.
+:::
+
 #### Factory reference
 
 ::: table

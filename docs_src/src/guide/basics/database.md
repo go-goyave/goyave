@@ -151,7 +151,7 @@ Get the registered models. The returned slice is a copy of the original, so it c
 If the `dbAutoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.
 
 ::: warning
-Automatic migrations **only creates** tables. Missing columns and indexes won't be created, modified columns won't be changed and unused columns won't be deleted.
+Automatic migrations **only create** tables, missing columns and missing indexes. They **wont't change** existing column’s type or delete unused columns.
 :::
 
 If you would like to know more about migrations using Gorm, read their [documentation](https://gorm.io/docs/migration.html).

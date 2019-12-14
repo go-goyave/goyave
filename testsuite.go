@@ -128,9 +128,11 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 
 	RegisterStartupHook(func() {
 		procedure()
-		Stop()
-		ClearStartupHooks()
-		c <- true
+		if ctx.Err() == nil {
+			Stop()
+			ClearStartupHooks()
+			c <- true
+		}
 	})
 
 	go func() {
@@ -143,7 +145,8 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 		s.Fail("Timeout exceeded in goyave.TestSuite.RunServer")
 		Stop()
 		ClearStartupHooks()
-	case <-c:
+	case sig := <-c:
+		s.True(sig)
 	}
 	<-c2
 }

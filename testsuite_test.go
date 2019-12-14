@@ -17,7 +17,6 @@ import (
 	"github.com/System-Glitch/goyave/v2/database"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/lang"
-	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +29,7 @@ type FailingTestSuite struct {
 }
 
 type TestModel struct {
-	gorm.Model
+	ID   uint   `gorm:"primary_key"`
 	Name string `gorm:"type:varchar(100)"`
 }
 

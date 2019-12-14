@@ -49,10 +49,10 @@ func (f *Factory) Generate(count uint) []interface{} {
 func (f *Factory) Save(count uint) []interface{} {
 	db := GetConnection()
 	records := f.Generate(count)
-	db.Begin()
 	for _, record := range records {
-		db.Create(record)
+		db.Create(record) // TODO batch insert for better performance
+		// Batch insert would require a lot of work to be made available
+		// for all supported databases.
 	}
-	db.Commit()
 	return records
 }

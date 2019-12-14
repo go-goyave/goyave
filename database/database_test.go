@@ -7,12 +7,11 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 type User struct {
-	gorm.Model
+	ID    uint   `gorm:"primary_key"`
 	Name  string `gorm:"type:varchar(100)"`
 	Email string `gorm:"type:varchar(100)"`
 }

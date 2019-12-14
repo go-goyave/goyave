@@ -130,6 +130,22 @@ import _ "database/model"
 
 Learn more about model declaration in the [Gorm documentation](https://gorm.io/docs/models.html).
 
+#### database.RegisterModel
+
+Registers a model for auto-migration.
+
+| Parameters          | Return |
+|---------------------|--------|
+| `model interface{}` | `void` |
+
+#### database.GetRegisteredModels
+
+Get the registered models. The returned slice is a copy of the original, so it cannot be modified.
+
+| Parameters | Return          |
+|------------|-----------------|
+|            | `[]interface{}` |
+
 ### Automatic migrations
 
 If the `dbAutoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.

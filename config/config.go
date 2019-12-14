@@ -66,6 +66,8 @@ func Load() error {
 				for key, value := range conf {
 					config[key] = value
 				}
+			} else {
+				return err
 			}
 		} else {
 			panic(err)
@@ -154,30 +156,21 @@ func GetBool(key string) bool {
 }
 
 func loadDefaults() error {
-	var filename string
-	var ok bool
-	func() {
-		_, f, _, o := runtime.Caller(1)
-		filename = f
-		ok = o
-	}()
-	if ok {
-		confDefaults, err := readConfigFile(path.Dir(filename) + string(os.PathSeparator) + "defaults.json")
+	_, filename, _, _ := runtime.Caller(0)
+	confDefaults, err := readConfigFile(path.Dir(filename) + string(os.PathSeparator) + "defaults.json")
 
-		if err == nil {
-			config = confDefaults
-		}
-		return err
+	if err == nil {
+		config = confDefaults
 	}
-	return fmt.Errorf("Runtime caller error")
+	return err
 }
 
 func readConfigFile(file string) (map[string]interface{}, error) {
 	conf := map[string]interface{}{}
 	configFile, err := os.Open(file)
-	defer configFile.Close()
 
 	if err == nil {
+		defer configFile.Close()
 		jsonParser := json.NewDecoder(configFile)
 		jsonParser.Decode(&conf)
 	}

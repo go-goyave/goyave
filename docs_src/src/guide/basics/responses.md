@@ -25,7 +25,6 @@ import "github.com/System-Glitch/goyave/v2"
 [Cookie](#response-cookie)
 [Redirect](#response-redirect)
 [TemporaryRedirect](#response-temporaryredirect)
-[CreateTestResponse](#response-createtestresponse)
 :::
 
 #### Response.Header
@@ -192,21 +191,4 @@ Send a temporary redirect response. (HTTP 307)
 **Example:**
 ``` go
 response.TemporaryRedirect("/maintenance")
-```
-
-#### Response.CreateTestResponse
-
-Create an empty response with the given response writer. This function is aimed at making it easier to unit test Responses.
-
-| Parameters                     | Return |
-|--------------------------------|--------|
-| `recorder http.ResponseWriter` | `void` |
-
-**Example:**
-``` go
-writer := httptest.NewRecorder()
-response := goyave.CreateTestResponse(writer)
-response.Status(http.StatusNoContent)
-result := writer.Result()
-fmt.Println(result.StatusCode) // 204
 ```

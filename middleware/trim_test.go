@@ -1,23 +1,23 @@
 package middleware
 
 import (
-	"net/http/httptest"
 	"testing"
 
 	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/validation"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestTrimMiddleware(t *testing.T) {
-	request := &goyave.Request{
-		Data:   map[string]interface{}{"text": " \t  trimmed\n  \t"},
-		Rules:  validation.RuleSet{},
-		Params: map[string]string{},
-	}
-	recorder := httptest.NewRecorder()
-	response := goyave.CreateTestResponse(recorder)
-	Trim(func(response *goyave.Response, r *goyave.Request) {
-		assert.Equal(t, "trimmed", r.String("text"))
-	})(response, request)
+type TrimMiddlewareTestSuite struct {
+	goyave.TestSuite
+}
+
+func (suite *TrimMiddlewareTestSuite) TestTrimMiddleware() {
+	request := suite.CreateTestRequest(nil)
+	request.Data = map[string]interface{}{"text": " \t  trimmed\n  \t"}
+	suite.Middleware(Trim, request, func(response *goyave.Response, r *goyave.Request) {
+		suite.Equal("trimmed", r.String("text"))
+	})
+}
+
+func TestTrimMiddlewareTestSuite(t *testing.T) {
+	goyave.RunTest(t, new(TrimMiddlewareTestSuite))
 }

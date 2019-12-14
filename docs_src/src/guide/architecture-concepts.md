@@ -28,6 +28,8 @@ This section will briefly explain the technical words used in the following sect
 
 **Model**: A structure reflecting a database table structure. An instance of a model is a single database record.
 
+**Seeder**: A function which creates a number of random records in the database.
+
 ## Lifecycle
 
 ### Server
@@ -83,7 +85,9 @@ The typical and recommended directory structure for Goyave applications is as fo
 :::vue
 .
 ├── database
-│   └── model
+│   ├── model
+│   |   └── *...*
+│   └── seeder
 │       └── *...*
 ├── http
 │   ├── controller
@@ -114,7 +118,11 @@ The typical and recommended directory structure for Goyave applications is as fo
 
 ### Database directory
 
-The `database` directory stores the models. Each model should have its own file in the `models` package. This directory can also contain database-related code such as repositories, if you want to use this pattern.
+The `database` directory stores source files related to the database. If you don't want to use auto-migrations, you can also store SQL scripts there. This directory can also contain database-related code such as repositories, if you want to use this pattern.
+
+Each model should have its own file in the `model` package.
+
+Each seeder should have its own file in the `seeder` package.
 
 ### HTTP directory
 

@@ -2,7 +2,6 @@ package goyave
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -15,31 +14,16 @@ import (
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/stretchr/testify/suite"
 
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 type GoyaveTestSuite struct {
-	suite.Suite
+	TestSuite
 }
 
 func helloHandler(response *Response, request *Request) {
 	response.String(http.StatusOK, "Hi!")
-}
-
-func createHTTPClient() *http.Client {
-	config := &tls.Config{
-		InsecureSkipVerify: true, // TODO add test self-signed certificate to rootCA pool
-	}
-
-	return &http.Client{
-		Timeout:   time.Second * 5,
-		Transport: &http.Transport{TLSClientConfig: config},
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
 }
 
 func (suite *GoyaveTestSuite) SetupSuite() {
@@ -52,33 +36,6 @@ func (suite *GoyaveTestSuite) loadConfig() {
 	}
 	config.Set("tlsKey", "resources/server.key")
 	config.Set("tlsCert", "resources/server.crt")
-}
-
-func (suite *GoyaveTestSuite) runServer(routeRegistrer func(*Router), callback func()) {
-	c := make(chan bool, 1)
-	c2 := make(chan bool, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	RegisterStartupHook(func() {
-		callback()
-		Stop()
-		ClearStartupHooks()
-		c <- true
-	})
-
-	go func() {
-		Start(routeRegistrer)
-		c2 <- true
-	}()
-
-	select {
-	case <-ctx.Done():
-		suite.Fail("Timeout exceeded in runServer")
-	case <-c:
-		fmt.Println("Shutdown OK")
-	}
-	<-c2
 }
 
 func (suite *GoyaveTestSuite) TestGetAddress() {
@@ -135,10 +92,10 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 func (suite *GoyaveTestSuite) TestTLSServer() {
 	suite.loadConfig()
 	config.Set("protocol", "https")
-	suite.runServer(func(router *Router) {
+	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler, nil)
 	}, func() {
-		netClient := createHTTPClient()
+		netClient := suite.getHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
 		suite.Nil(err)
 		if err != nil {
@@ -196,7 +153,7 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 		}()
 		<-c2
 		config.Set("protocol", "https")
-		suite.runServer(func(router *Router) {}, func() {})
+		suite.RunServer(func(router *Router) {}, func() {})
 		config.Set("protocol", "http")
 		c <- true
 	}()
@@ -217,10 +174,10 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 }
 
 func (suite *GoyaveTestSuite) TestStaticServing() {
-	suite.runServer(func(router *Router) {
+	suite.RunServer(func(router *Router) {
 		router.Static("/resources", "resources", true)
 	}, func() {
-		netClient := createHTTPClient()
+		netClient := suite.getHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/resources/nothing")
 		suite.Nil(err)
 		if err != nil {
@@ -312,7 +269,7 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 
 func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 	suite.loadConfig()
-	suite.runServer(func(router *Router) {}, func() {
+	suite.RunServer(func(router *Router) {}, func() {
 		suite.Panics(func() {
 			Start(func(router *Router) {})
 		})
@@ -321,13 +278,13 @@ func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 
 func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 	suite.loadConfig()
-	suite.runServer(func(router *Router) {
+	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler, nil)
 	}, func() {
 		EnableMaintenance()
 		suite.True(IsMaintenanceEnabled())
 
-		netClient := createHTTPClient()
+		netClient := suite.getHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
 		suite.Nil(err)
 		if err != nil {
@@ -359,12 +316,12 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 	})
 
 	config.Set("maintenance", true)
-	suite.runServer(func(router *Router) {
+	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler, nil)
 	}, func() {
 		suite.True(IsMaintenanceEnabled())
 
-		netClient := createHTTPClient()
+		netClient := suite.getHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
 		suite.Nil(err)
 		if err != nil {
@@ -402,11 +359,11 @@ func (suite *GoyaveTestSuite) TestAutoMigrate() {
 	suite.loadConfig()
 	config.Set("dbConnection", "mysql")
 	config.Set("dbAutoMigrate", true)
-	suite.runServer(func(router *Router) {}, func() {})
+	suite.RunServer(func(router *Router) {}, func() {})
 	config.Set("dbAutoMigrate", false)
 	config.Set("dbConnection", "none")
 }
 
 func TestGoyaveTestSuite(t *testing.T) {
-	suite.Run(t, new(GoyaveTestSuite))
+	RunTest(t, new(GoyaveTestSuite))
 }

@@ -26,7 +26,7 @@ Goyave is a progressive and accessible web application framework, aimed at makin
         </td>
         <td valign="top">
             <h3>Powerful functionalities</h3>
-            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, and more!</p>
+            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, and more!</p>
         </td>
     </tr>
 </table>

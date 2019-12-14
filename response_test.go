@@ -169,6 +169,15 @@ func (suite *ResponseTestSuite) TestResponseWrite() {
 	suite.False(response.empty)
 }
 
+func (suite *ResponseTestSuite) TestCreateTestResponse() {
+	recorder := httptest.NewRecorder()
+	response := CreateTestResponse(recorder)
+	suite.NotNil(response)
+	if response != nil {
+		suite.Equal(recorder, response.ResponseWriter)
+	}
+}
+
 func TestResponseTestSuite(t *testing.T) {
 	suite.Run(t, new(ResponseTestSuite))
 }

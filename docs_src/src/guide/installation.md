@@ -31,6 +31,12 @@ $ curl http://localhost:8080/hello
 Hi!
 ```
 
+There is also an `echo` route, with basic validation of query parameters.
+```
+$ curl http://localhost:8080/echo?text=abc%20123
+abc 123
+```
+
 ## From scratch
 
 ::: warning

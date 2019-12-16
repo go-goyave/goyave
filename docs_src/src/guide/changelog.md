@@ -6,6 +6,7 @@
 
 - Added [testing API](./advanced/testing.md).
 - Fixed links in documentation.
+- Fixed `models` package in template project. (Changed to `model`)
 
 ## v2.1.0
 

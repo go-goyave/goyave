@@ -165,15 +165,12 @@ func (suite *CustomTestSuite) TestJSON() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
 		if err == nil {
-			json := suite.GetJSONBody(resp)
-			suite.NotNil(json)
-			if json != nil {
-				json, ok := json.(map[string]interface{})
-				suite.True(ok)
-				if ok {
-					suite.Equal("value", json["field"])
-					suite.Equal(float64(42), json["number"])
-				}
+			json := map[string]interface{}{}
+			err := suite.GetJSONBody(resp, &json)
+			suite.Nil(err)
+			if err == nil {
+				suite.Equal("value", json["field"])
+				suite.Equal(float64(42), json["number"])
 			}
 		}
 
@@ -182,10 +179,11 @@ func (suite *CustomTestSuite) TestJSON() {
 		if err == nil {
 			oldT := suite.T()
 			suite.SetT(new(testing.T))
-			json := suite.GetJSONBody(resp)
+			json := map[string]interface{}{}
+			err := suite.GetJSONBody(resp, &json)
 			assert.True(oldT, suite.T().Failed())
 			suite.SetT(oldT)
-			suite.Nil(json)
+			suite.NotNil(err)
 		}
 	})
 }
@@ -245,15 +243,12 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 		resp, err := suite.Post("/post", map[string]string{"Content-Type": writer.FormDataContentType()}, body)
 		suite.Nil(err)
 		if err == nil {
-			json := suite.GetJSONBody(resp)
-			suite.NotNil(json)
-			if json != nil {
-				json, ok := json.(map[string]interface{})
-				suite.True(ok)
-				if ok {
-					suite.Equal("test-content", json["file"])
-					suite.Equal("hello world", json["field"])
-				}
+			json := map[string]interface{}{}
+			err := suite.GetJSONBody(resp, &json)
+			suite.Nil(err)
+			if err == nil {
+				suite.Equal("test-content", json["file"])
+				suite.Equal("hello world", json["field"])
 			}
 		}
 	})

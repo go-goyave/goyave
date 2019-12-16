@@ -12,6 +12,8 @@ Goyave provides an API to ease the unit and functional testing of your applicati
 
 This setup is done by the function `goyave.RunTest`, so you shouldn't run your test suites using testify's `suite.Run()` function.
 
+The following example is a **functional** test and would be located in the `test` package.
+
 ``` go
 import (
     "my-project/http/route"
@@ -22,7 +24,7 @@ type CustomTestSuite struct {
 	goyave.TestSuite
 }
 
-func (suite *CustomTestSuite) TestBasicTest() {
+func (suite *CustomTestSuite) TestHello() {
     suite.RunServer(route.Register, func() {
 		resp, err := suite.Get("/hello", nil)
 		suite.Nil(err)
@@ -40,6 +42,8 @@ func TestCustomSuite(t *testing.T) {
 ```
 
 We will explain in more details what this test does in the following sections, but in short, this test runs the server, registers all your application routes and executes the second parameter as a server startup hook. The test requests the `/hello` route with the method `GET` and checks the content of the response. The server automatically shuts down after the hook is executed and before `RunServer` returns. See the available assertions in the [testify's documentation](https://godoc.org/github.com/stretchr/testify).
+
+This test is a **functional** test. Therefore, it requires route registration and should be located in the `test` package.
 
 ::: warning
 You cannot run Goyave test suites in parallel.
@@ -113,16 +117,12 @@ suite.RunServer(route.Register, func() {
 	resp, err := suite.Get("/product", nil)
 	suite.Nil(err)
 	if err == nil {
-		json := suite.GetJSONBody(resp)
-		suite.NotNil(json)
-		if json != nil {
-			// You should always check type assertion before continuing.
-			json, ok := json.(map[string]interface{})
-			suite.True(ok)
-			if ok {
-				suite.Equal("value", json["field"])
-				suite.Equal(float64(42), json["number"])
-			}
+		json := map[string]interface{}{}
+		err := suite.GetJSONBody(resp, &json)
+		suite.Nil(err)
+		if err == nil { // You should always check parsing error before continuing.
+			suite.Equal("value", json["field"])
+			suite.Equal(float64(42), json["number"])
 		}
 	}
 })
@@ -322,11 +322,12 @@ Read the whole body of a response. If read failed, test fails and return empty b
 
 #### TestSuite.GetJSONBody
 
-Read the whole body of a response and decode it as JSON. If read or decode failed, test fails and return nil.
+Read the whole body of a response and decode it as JSON. If read or decode failed, test fails. The `data` parameter should be a pointer.
 
-| Parameters                | Return        |
-|---------------------------|---------------|
-| `response *http.Response` | `interface{}` |
+| Parameters                | Return  |
+|---------------------------|---------|
+| `response *http.Response` | `error` |
+| `data interface{}`        |         |
 
 #### TestSuite.CreateTestFiles
 

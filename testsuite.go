@@ -47,7 +47,7 @@ type ITestSuite interface {
 	SetT(*testing.T)
 
 	GetBody(*http.Response) []byte
-	GetJSONBody(*http.Response) interface{}
+	GetJSONBody(*http.Response, interface{}) error
 	CreateTestFiles(paths ...string) []filesystem.File
 	WriteFile(*multipart.Writer, string, string, string)
 	WriteField(*multipart.Writer, string, string)
@@ -217,15 +217,14 @@ func (s *TestSuite) GetBody(response *http.Response) []byte {
 }
 
 // GetJSONBody read the whole body of a response and decode it as JSON.
-// If read or decode failed, test fails and return nil.
-func (s *TestSuite) GetJSONBody(response *http.Response) interface{} {
-	var data interface{}
+// If read or decode failed, test fails.
+func (s *TestSuite) GetJSONBody(response *http.Response, data interface{}) error {
 	err := json.NewDecoder(response.Body).Decode(&data)
 	if err != nil {
 		s.Fail("Couldn't read response body as JSON", err)
-		data = nil
+		return err
 	}
-	return data
+	return nil
 }
 
 // CreateTestFiles create a slice of "filesystem.File" from the given paths.

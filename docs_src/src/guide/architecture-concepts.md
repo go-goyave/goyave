@@ -109,7 +109,10 @@ The typical and recommended directory structure for Goyave applications is as fo
 │   │       └── rules.json (*optional*)
 │   └── img (*optional*)
 │       └── *...*
-│ 
+│
+├── test
+|   └── *...*
+|
 ├── .gitignore
 ├── config.json
 ├── go.mod
@@ -162,6 +165,10 @@ Each language directory contains three files. Each file is **optional**.
 - `rules.json`: validation rules messages.
 
 Learn more about localization [here](./advanced/localization.html).
+
+### Test directory
+
+This directory is a package for **functional** tests. Functional tests test your application from an outside perspective. That means that your functional tests will make direct HTTP requests to your application and check the result. Unit tests should be located next to your source files. 
 
 ### Custom directories
 

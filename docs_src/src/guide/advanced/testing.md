@@ -35,7 +35,7 @@ func (suite *CustomTestSuite) TestBasicTest() {
 }
 
 func TestCustomSuite(t *testing.T) {
-	RunTest(t, new(CustomTestSuite))
+	goyave.RunTest(t, new(CustomTestSuite))
 }
 ```
 

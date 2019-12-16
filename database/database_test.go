@@ -66,12 +66,13 @@ func (suite *DatabaseTestSuite) TestGetConnectionPanic() {
 }
 
 func (suite *DatabaseTestSuite) TestModelAndMigrate() {
-	models = []interface{}{}
+	ClearRegisteredModels()
 	RegisterModel(&User{})
 	suite.Equal(1, len(models))
 
 	Migrate()
-	models = []interface{}{}
+	ClearRegisteredModels()
+	suite.Equal(0, len(models))
 
 	db := GetConnection()
 	defer db.Exec("DROP TABLE users;")

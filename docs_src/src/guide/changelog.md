@@ -7,6 +7,7 @@
 - Added [testing API](./advanced/testing.md).
 - Fixed links in documentation.
 - Fixed `models` package in template project. (Changed to `model`)
+- Added [`database.ClearRegisteredModels`](./basics/database.html#database-clearregisteredmodels)
 
 ## v2.1.0
 

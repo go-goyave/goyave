@@ -266,7 +266,9 @@ func (suite *CustomTestSuite) TestClearDatabase() {
 	db.Model(&TestModel{}).Count(&count)
 	suite.Equal(5, count)
 
+	database.RegisterModel(&TestModel{})
 	suite.ClearDatabase()
+	database.ClearRegisteredModels()
 
 	db.Model(&TestModel{}).Count(&count)
 	suite.Equal(0, count)

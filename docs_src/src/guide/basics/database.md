@@ -146,6 +146,14 @@ Get the registered models. The returned slice is a copy of the original, so it c
 |------------|-----------------|
 |            | `[]interface{}` |
 
+#### database.ClearRegisteredModels
+
+Unregister all models.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
 ### Automatic migrations
 
 If the `dbAutoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.

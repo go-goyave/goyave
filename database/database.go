@@ -48,6 +48,11 @@ func GetRegisteredModels() []interface{} {
 	return append(make([]interface{}, 0, len(models)), models...)
 }
 
+// ClearRegisteredModels unregister all models.
+func ClearRegisteredModels() {
+	models = []interface{}{}
+}
+
 // Migrate migrates all registered models.
 func Migrate() {
 	db := GetConnection()

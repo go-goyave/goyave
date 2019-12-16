@@ -298,7 +298,7 @@ func (s *TestSuite) getHTTPClient() *http.Client {
 func (s *TestSuite) ClearDatabase() {
 	db := database.GetConnection()
 	for _, m := range database.GetRegisteredModels() {
-		db.Delete(m)
+		db.Unscoped().Delete(m)
 	}
 }
 

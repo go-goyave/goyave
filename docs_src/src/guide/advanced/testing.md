@@ -555,7 +555,7 @@ Generate a number of records using the given factory and return the inserted rec
 
 ### Seeders
 
-Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. That means that seeders are also responsible of creating relationships between records. Seeders are written in the `database/seeder` package.
+Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. Seeders are written in the `database/seeder` package.
 
 Each seeder should have its own file. A seeder's responsabilities are limited to a single table or model. For example, the `seeder.User` should only seed the `users` table. Moreover, seeders should have the same name as the model they are using.
 

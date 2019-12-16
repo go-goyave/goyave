@@ -256,7 +256,6 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 
 func (suite *CustomTestSuite) TestClearDatabase() {
 	config.Set("dbConnection", "mysql")
-	database.RegisterModel(&TestModel{})
 	db := database.GetConnection()
 	db.AutoMigrate(&TestModel{})
 

@@ -71,6 +71,7 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 	suite.Equal(1, len(models))
 
 	Migrate()
+	models = []interface{}{}
 
 	db := GetConnection()
 	defer db.Exec("DROP TABLE users;")
@@ -85,7 +86,6 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 		rows.Scan(&name)
 		suite.Equal("users", name)
 	}
-	models = []interface{}{}
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

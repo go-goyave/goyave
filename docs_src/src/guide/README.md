@@ -18,17 +18,14 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 ::: img-row <img :src="$withBase('/undraw_to_do_list_a49b.svg')" height="150" alt="Roadmap"/>
 ### Next release
 
-- Integrated testing functions
+- Direct support for authentication
 :::
 
 ### Ideas for future releases
 
-- Direct support for authentication
 - Plugins
-- Improved Gorm integration
 - CLI utility to help creating controllers, middlewares, etc
 - Email helpers
-- Server shutdown hooks (to gracefully close websocket connections for example)
 - Queues/Scheduler system
 - Logging
 - Custom HTTP error handlers (for custom 404/500/... messages)

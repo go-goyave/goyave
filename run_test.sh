@@ -4,7 +4,11 @@
 # setup a brand new database for every run, as the first initialization takes a
 # long time.
 
-# This script requires gotest: https://github.com/rakyll/gotest
+# This script requires:
+# - docker
+# - gotest: https://github.com/rakyll/gotest
+# - mysql client
+# - gcc (for race detection, recommended but optional)
 
 echo -e "\033[1mStarting database containers...\033[0m"
 if [ ! "$(docker ps -a | grep goyave-mariadb)" ]; then
@@ -17,8 +21,6 @@ if [ $? -ne 0 ]; then
 	echo -e "\033[31mError: couldn't start database container.\033[0m"
 	exit $?
 fi
-
-echo $container
 
 health=1
 tries=0
@@ -36,10 +38,16 @@ while [ $health -ne 0 ]; do
 done
 
 echo -e "\033[92m\033[1mDatabase ready. Running tests...\033[0m"
-gotest -v -race -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+gcc --version >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo -e "\033[33mgcc is missing. Running tests without data race checking.\033[0m"
+	gotest -v -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+else
+	gotest -v -race -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+fi
 test_result=$?
 
 echo -e "\033[1mStopping database container...\033[0m"
-docker stop $container
+docker stop $container >/dev/null
 
 exit $test_result

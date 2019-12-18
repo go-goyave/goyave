@@ -31,10 +31,16 @@ $ curl http://localhost:8080/hello
 Hi!
 ```
 
+There is also an `echo` route, with basic validation of query parameters.
+```
+$ curl http://localhost:8080/echo?text=abc%20123
+abc 123
+```
+
 ## From scratch
 
 ::: warning
-Installing your project from scratch is not recommended as you will likely not use the same directory structure as the template project. Respecting the standard [directory structure](./architecture-concepts#directory-structure) is important and helps keeping a consistent environment across the Goyave applications.
+Installing your project from scratch is not recommended as you will likely not use the same directory structure as the template project. Respecting the standard [directory structure](./architecture-concepts.html#directory-structure) is important and helps keeping a consistent environment across the Goyave applications.
 :::
 
 If you prefer to setup your project from scratch, for example if you don't plan on using some of the framework's features or if you want to use a different directory structure, you can!
@@ -61,7 +67,7 @@ func main() {
 ```
 
 ::: tip
-`goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background. See the [multi-services](./advanced/multi-services) section for more details.
+`goyave.Start()` is blocking. You can run it in a goroutine if you want to process other things in the background. See the [multi-services](./advanced/multi-services.html) section for more details.
 :::
 
 Now we need to create the package in which we will register our routes. Create a new package `http/route`:
@@ -87,7 +93,7 @@ func hello(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
-Here we registered a very simple route displaying "Hi!". Learn more about routing [here](./basics/routing).
+Here we registered a very simple route displaying "Hi!". Learn more about routing [here](./basics/routing.html).
 
 ::: tip
 Your routes definitions should be separated from the handler functions. Handlers should be defined in a `http/controller` directory.
@@ -102,6 +108,6 @@ $ curl http://localhost:8080/hello
 Hi!
 ```
 
-You should also create a config file for your application. Learn more [here](./configuration).
+You should also create a config file for your application. Learn more [here](./configuration.html).
 
 It is a good practice to ignore the actual config to prevent it being added to the version control system. Each developer may have different settings for their environment. To do so, add `config.json` to your `.gitignore`.

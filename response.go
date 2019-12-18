@@ -149,6 +149,8 @@ func (r *Response) TemporaryRedirect(url string) {
 // CreateTestResponse create an empty response with the given response writer.
 // This function is aimed at making it easier to unit test Responses.
 //
+// Deprecated: Use goyave.TestSuite.CreateTestResponse instead.
+//
 //  writer := httptest.NewRecorder()
 //  response := goyave.CreateTestResponse(writer)
 //  response.Status(http.StatusNoContent)

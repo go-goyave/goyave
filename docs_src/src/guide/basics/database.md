@@ -19,7 +19,7 @@ import (
 
 ## Configuration
 
-Very few code is required to get started with databases. There are some [configuration](../configuration#configuration-reference) options that you need to change though:
+Very few code is required to get started with databases. There are some [configuration](../configuration.html#configuration-reference) options that you need to change though:
 - `dbConnection`
 - `dbHost`
 - `dbPort`
@@ -130,12 +130,36 @@ import _ "database/model"
 
 Learn more about model declaration in the [Gorm documentation](https://gorm.io/docs/models.html).
 
+#### database.RegisterModel
+
+Registers a model for auto-migration.
+
+| Parameters          | Return |
+|---------------------|--------|
+| `model interface{}` | `void` |
+
+#### database.GetRegisteredModels
+
+Get the registered models. The returned slice is a copy of the original, so it cannot be modified.
+
+| Parameters | Return          |
+|------------|-----------------|
+|            | `[]interface{}` |
+
+#### database.ClearRegisteredModels
+
+Unregister all models.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
 ### Automatic migrations
 
 If the `dbAutoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.
 
 ::: warning
-Automatic migrations **only creates** tables. Missing columns and indexes won't be created, modified columns won't be changed and unused columns won't be deleted.
+Automatic migrations **only create** tables, missing columns and missing indexes. They **wont't change** existing column’s type or delete unused columns.
 :::
 
 If you would like to know more about migrations using Gorm, read their [documentation](https://gorm.io/docs/migration.html).

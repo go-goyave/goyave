@@ -26,7 +26,7 @@ Goyave is a progressive and accessible web application framework, aimed at makin
         </td>
         <td valign="top">
             <h3>Powerful functionalities</h3>
-            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, and more!</p>
+            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, and more!</p>
         </td>
     </tr>
 </table>
@@ -57,6 +57,12 @@ Run `go run my-project` in your project's directory to start the server, then tr
 ```
 $ curl http://localhost:8080/hello
 Hi!
+```
+
+There is also an `echo` route, with basic validation of query parameters.
+```
+$ curl http://localhost:8080/echo?text=abc%20123
+abc 123
 ```
 
 ### Hello world from scratch

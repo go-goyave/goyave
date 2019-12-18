@@ -3,7 +3,6 @@ package validation
 import (
 	"bytes"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -23,7 +22,6 @@ const (
 	configPath     string = "config/defaults.json"
 )
 
-// TODO create test helpers to ease testing
 func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -41,10 +39,7 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 }
 
 func createTestFiles(files ...string) []filesystem.File {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		log.Panicf("Runtime caller error")
-	}
+	_, filename, _, _ := runtime.Caller(1)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -67,10 +62,7 @@ func createTestFiles(files ...string) []filesystem.File {
 }
 
 func createTestFileWithNoExtension() []filesystem.File {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		log.Panicf("Runtime caller error")
-	}
+	_, filename, _, _ := runtime.Caller(1)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)

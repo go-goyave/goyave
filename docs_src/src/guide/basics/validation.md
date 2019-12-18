@@ -12,10 +12,10 @@ Validation rules can **alter the raw data**. That means that when you validate a
 
 If a request contains a field with a `nil`/`null` value, and that this field doesn't have the `nullable` rule, the field is **removed** entirely from the request.
 
-Validation is automatic. You just have to define a rules set and assign it to a route. When the validation doesn't pass, the request is stopped and the validation errors messages are sent as a response, using the correct [language](../advanced/localization). The HTTP response code of failed validation is **422 "Unprocessable Entity"**, or **400 "Bad Request"** if the body could not be parsed.
+Validation is automatic. You just have to define a rules set and assign it to a route. When the validation doesn't pass, the request is stopped and the validation errors messages are sent as a response, using the correct [language](../advanced/localization.html). The HTTP response code of failed validation is **422 "Unprocessable Entity"**, or **400 "Bad Request"** if the body could not be parsed.
 
 ::: tip
-You can customize the validation error messages by editing `resources/lang/<language>/rules.json`. Learn more in the [localization](../advanced/localization) section.
+You can customize the validation error messages by editing `resources/lang/<language>/rules.json`. Learn more in the [localization](../advanced/localization.html) section.
 :::
 
 The following features require the `validation` package to be imported.
@@ -53,7 +53,7 @@ If a field is not **required** and is missing from the request, **no rules are c
 
 ---
 
-Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition. Learn more about routing in the [dedicated section](./routing).
+Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition. Learn more about routing in the [dedicated section](./routing.html).
 
 ``` go
 router.Route("POST", "/product", product.Store, productrequest.Store)
@@ -554,7 +554,7 @@ var arrayValidation = RuleSet{
     "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
 }
 ```
-In this example, we are validating a three-dimensional array of numeric values. The second dimension must be made of arrays with a size of 3 or less. The third dimensions must contain numbers inferior to 4. The following JSON input passes the validation:
+In this example, we are validating a three-dimensional array of numeric values. The second dimension must be made of arrays with a size of 3 or less. The third dimension must contain numbers inferior or equal to 4. The following JSON input passes the validation:
 ```json
 {
     "array": [

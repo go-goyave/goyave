@@ -7,14 +7,13 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 type User struct {
-	gorm.Model
+	ID    uint   `gorm:"primary_key"`
 	Name  string `gorm:"type:varchar(100)"`
-	Email string `gorm:"type:varchar(100);unique_index"`
+	Email string `gorm:"type:varchar(100)"`
 }
 
 type DatabaseTestSuite struct {
@@ -41,7 +40,7 @@ func (suite *DatabaseTestSuite) TestBuildConnectionOptions() {
 	})
 }
 
-func (suite *DatabaseTestSuite) TestGetConnection() { // TODO re-enable test
+func (suite *DatabaseTestSuite) TestGetConnection() {
 	db := GetConnection()
 	suite.NotNil(db)
 	suite.NotNil(dbConnection)
@@ -50,7 +49,7 @@ func (suite *DatabaseTestSuite) TestGetConnection() { // TODO re-enable test
 	suite.Nil(dbConnection)
 }
 
-func (suite *DatabaseTestSuite) TestGetConnectionPanic() { // TODO re-enable test
+func (suite *DatabaseTestSuite) TestGetConnectionPanic() {
 	tmpConnection := config.Get("dbConnection")
 	config.Set("dbConnection", "none")
 	suite.Panics(func() {
@@ -67,11 +66,13 @@ func (suite *DatabaseTestSuite) TestGetConnectionPanic() { // TODO re-enable tes
 }
 
 func (suite *DatabaseTestSuite) TestModelAndMigrate() {
-	models = []interface{}{}
+	ClearRegisteredModels()
 	RegisterModel(&User{})
 	suite.Equal(1, len(models))
 
 	Migrate()
+	ClearRegisteredModels()
+	suite.Equal(0, len(models))
 
 	db := GetConnection()
 	defer db.Exec("DROP TABLE users;")
@@ -86,7 +87,6 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 		rows.Scan(&name)
 		suite.Equal("users", name)
 	}
-	models = []interface{}{}
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

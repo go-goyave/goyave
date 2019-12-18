@@ -1,5 +1,9 @@
 # Multi-services
 
+[[toc]]
+
+## Introduction
+
 Sometimes you need to run several services in the same executable. For example if you are hosting a websocket server on top of your web API. Goyave can be run in a goroutine and stopped on-demand.
 
 All functions below are features that require the `goyave` package to be imported.
@@ -44,7 +48,7 @@ goyave.ClearStartupHooks()
 
 #### goyave.Start
 
-Starts the server. This functions needs a route registrer function as a parameter. Learn more in the [routing](../basics/routing) section.  
+Starts the server. This functions needs a route registrer function as a parameter. Learn more in the [routing](../basics/routing.html) section.  
 The configuration is not reloaded if you call `Start` multiple times. You can still reload the configuration with `config.Load()` if you need it.
 This operation is **blocking**. Triggers a panic if the server is already running.
 

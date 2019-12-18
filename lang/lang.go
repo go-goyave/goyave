@@ -47,18 +47,7 @@ var mutex = &sync.RWMutex{}
 func LoadDefault() {
 	mutex.Lock()
 	defer mutex.Unlock()
-	var filename string
-	var ok bool
-	func() {
-		_, f, _, o := runtime.Caller(1)
-		filename = f
-		ok = o
-	}()
-
-	if !ok {
-		log.Panicf("Runtime caller error")
-	}
-
+	_, filename, _, _ := runtime.Caller(0)
 	sep := string(os.PathSeparator)
 	load("en-US", path.Dir(filename)+sep+".."+sep+"resources"+sep+"lang"+sep+"en-US")
 }

@@ -79,7 +79,7 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 func (suite *ValidatorTestSuite) TestGetMessage() {
 	suite.Equal("The :field is required.", getMessage("required", reflect.ValueOf("test"), "en-US", 0))
 	suite.Equal("The :field must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", 0))
-	suite.Equal("The :field values must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", 1)) // TODO add all validation messages
+	suite.Equal("The :field values must be at least :min.", getMessage("min", reflect.ValueOf(42), "en-US", 1))
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {

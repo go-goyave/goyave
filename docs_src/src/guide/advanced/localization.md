@@ -50,7 +50,7 @@ The `fields.json` file contains the field names translations and their rule-spec
 This `fields.json` file will change the validation message of the `required` validation rule to `You must provide an email address`.
 
 ::: tip
-Learn more about validation messages placeholders in the [validation](../basics/validation) section.
+Learn more about validation messages placeholders in the [validation](../basics/validation.html) section.
 :::
 
 ### Locale
@@ -70,7 +70,7 @@ It is a good practice to use **dot-separated** names for language lines to help 
 
 ### Rules
 
-The `rules.json` file contains the validation rules messages. These messages can have **[placeholders](../basics/validation#placeholders)**, which will be replaced by dynamic valuesautomatically by the validator. If you write custom validation rules, their messages shall be written in this file.
+The `rules.json` file contains the validation rules messages. These messages can have **[placeholders](../basics/validation.html#placeholders)**, which will be replaced by dynamic valuesautomatically by the validator. If you write custom validation rules, their messages shall be written in this file.
 
 **Example:**
 

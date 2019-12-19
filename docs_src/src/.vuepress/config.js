@@ -1,6 +1,9 @@
+const title = 'Goyave'
+const description = 'An Elegant Golang Web Framework'
+
 module.exports = {
-    title: 'Goyave',
-    description: 'An Elegant Golang Web Framework',
+    title: title,
+    description: description,
     dest: '../docs',
     base: '/goyave/',
     head: [
@@ -10,6 +13,15 @@ module.exports = {
         ['link', { rel: 'icon', type: "image/png", sizes: "128x128", href: `/goyave_128.png` }],
         ['link', { rel: 'icon', type: "image/png", sizes: "256x256", href: `/goyave_256.png` }],
         ['link', { rel: 'icon', type: "image/png", sizes: "512x512", href: `/goyave_512.png` }],
+        ['meta', { property: 'twitter:title', content: title }],
+        ['meta', { property: 'twitter:description', content: description }],
+        ['meta', { property: 'twitter:image:src', content: `/goyave_banner.png` }],
+        ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
+        ['meta', { property: 'og:title', content: title }],
+        ['meta', { property: 'og:type', content: 'website' }],
+        ['meta', { property: 'og:description', content: description }],
+        ['meta', { property: 'og:image', content: `/goyave_banner.png` }],
+        ['meta', { property: 'og:site_name', content: "Goyave" }],
     ],
     themeConfig: {
         repo: 'System-Glitch/goyave',

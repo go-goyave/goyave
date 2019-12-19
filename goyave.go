@@ -76,6 +76,7 @@ func Start(routeRegistrer func(*Router)) {
 	mutex.Lock()
 	if !config.IsLoaded() {
 		if err := config.Load(); err != nil {
+			fmt.Println(err)
 			return
 		}
 	}
@@ -166,29 +167,50 @@ func stop(ctx context.Context) error {
 	return err
 }
 
-// TODO add public shutdown hooks
-
-func getAddress(protocol string) string {
+func getHost(protocol string) string {
 	var port string
 	if protocol == "https" {
 		port = "httpsPort"
 	} else {
 		port = "port"
 	}
-	// TODO don't show port if it's standard port for protocol
 	return config.GetString("host") + ":" + strconv.FormatInt(int64(config.Get(port).(float64)), 10)
+}
+
+func getAddress(protocol string) string {
+	shouldShowPort := false
+	var port string
+	if protocol == "https" {
+		p := int64(config.Get("httpsPort").(float64))
+		port = strconv.FormatInt(p, 10)
+		shouldShowPort = p != 443
+	} else {
+		p := int64(config.Get("port").(float64))
+		port = strconv.FormatInt(p, 10)
+		shouldShowPort = p != 80
+	}
+	host := config.GetString("domain")
+	if len(host) == 0 {
+		host = config.GetString("host")
+	}
+
+	if shouldShowPort {
+		host += ":" + port
+	}
+
+	return protocol + "://" + host
 }
 
 func startTLSRedirectServer() {
 	httpsAddress := getAddress("https")
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	redirectServer = &http.Server{
-		Addr:         getAddress("http"),
+		Addr:         getHost("http"),
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "https://"+httpsAddress+r.RequestURI, http.StatusPermanentRedirect)
+			http.Redirect(w, r, httpsAddress+r.RequestURI, http.StatusPermanentRedirect)
 		}),
 	}
 
@@ -225,7 +247,7 @@ func startServer(router *Router) {
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	protocol := config.GetString("protocol")
 	server = &http.Server{
-		Addr:         getAddress(protocol),
+		Addr:         getHost(protocol),
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,

@@ -21,6 +21,7 @@ var configValidation = map[string]reflect.Kind{
 	"environment":          reflect.String,
 	"maintenance":          reflect.Bool,
 	"host":                 reflect.String,
+	"domain":               reflect.String,
 	"port":                 reflect.Float64,
 	"httpsPort":            reflect.Float64,
 	"protocol":             reflect.String,

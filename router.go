@@ -21,7 +21,6 @@ type Handler func(*Response, *Request)
 
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
-	// TODO restrict to host
 	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{muxRouter: muxRouter}
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)

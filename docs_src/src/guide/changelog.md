@@ -2,6 +2,11 @@
 
 [[toc]]
 
+## v2.2.1
+
+- Added `domain` config entry. This entry is used for url generation, especially for the TLS redirect.
+- Don't show port in TLS redirect response if ports are standard (80 for HTTP, 443 for HTTPS).
+
 ## v2.2.0
 
 - Added [testing API](./advanced/testing.md).

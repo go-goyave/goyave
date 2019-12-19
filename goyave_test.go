@@ -38,10 +38,25 @@ func (suite *GoyaveTestSuite) loadConfig() {
 	config.Set("tlsCert", "resources/server.crt")
 }
 
+func (suite *GoyaveTestSuite) TestGetHost() {
+	suite.loadConfig()
+	suite.Equal("127.0.0.1:1235", getHost("http"))
+	suite.Equal("127.0.0.1:1236", getHost("https"))
+}
+
 func (suite *GoyaveTestSuite) TestGetAddress() {
 	suite.loadConfig()
-	suite.Equal("127.0.0.1:1235", getAddress("http"))
-	suite.Equal("127.0.0.1:1236", getAddress("https"))
+	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
+	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
+
+	config.Set("domain", "test.system-glitch.me")
+	suite.Equal("http://test.system-glitch.me:1235", getAddress("http"))
+	suite.Equal("https://test.system-glitch.me:1236", getAddress("https"))
+
+	config.Set("port", 80.0)
+	config.Set("httpsPort", 443.0)
+	suite.Equal("http://test.system-glitch.me", getAddress("http"))
+	suite.Equal("https://test.system-glitch.me", getAddress("https"))
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
@@ -137,7 +152,7 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	blockingServer := &http.Server{
-		Addr:    getAddress("http"),
+		Addr:    getHost("http"),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
 	}
 
@@ -229,7 +244,7 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 			// Run a server using the same port as Goyave, so Goyave fails to bind.
 			if protocol != "https" {
 				var err error
-				ln, err = net.Listen("tcp", getAddress(protocol))
+				ln, err = net.Listen("tcp", getHost(protocol))
 				if err != nil {
 					suite.Fail(err.Error())
 				}

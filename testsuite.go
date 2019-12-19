@@ -194,7 +194,7 @@ func (s *TestSuite) Delete(route string, headers map[string]string, body io.Read
 // Headers and body are optional.
 func (s *TestSuite) Request(method, route string, headers map[string]string, body io.Reader) (*http.Response, error) {
 	protocol := config.GetString("protocol")
-	req, err := http.NewRequest(method, protocol+"://"+getAddress(protocol)+route, body)
+	req, err := http.NewRequest(method, getAddress(protocol)+route, body)
 	if err != nil {
 		return nil, err
 	}

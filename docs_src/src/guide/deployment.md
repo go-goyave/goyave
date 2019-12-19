@@ -12,14 +12,42 @@ Be sure to deploy your application with a `config.production.json` config file c
 
 1. Ensure that the `environment` entry is `production`.
 2. The `host` entry should be `0.0.0.0` if you want let open access to your service. If you're using Apache or Nginx as a proxy on the same machine, keep it at `127.0.0.1` so the server will only be accessible through the proxy.
-3. The `port` and `httpsPort` will very likely require a change. Most of the time, you need `80` and `443` respectively.
-4. If you use `https`, be sure to provide the paths to your `tlsCert` and `tlsKey`. Learn more [here](./configuration.html#setting-up-https).
-5. `debug` **must** be set do `false`. You don't want anyone to get important information about your internal errors and therefore your code when an error occurs.
-6. Change your database connection credentials. `dbAutoMigrate` should be set to `false`.
+3. Change the `domain` entry to your domain name, if you use one.
+4. The `port` and `httpsPort` will very likely require a change. Most of the time, you need `80` and `443` respectively.
+5. If you use `https`, be sure to provide the paths to your `tlsCert` and `tlsKey`. Learn more [here](./configuration.html#setting-up-https).
+6. `debug` **must** be set do `false`. You don't want anyone to get important information about your internal errors and therefore your code when an error occurs.
+7. Change your database connection credentials. `dbAutoMigrate` should be set to `false`.
 
 ## Build
 
 Of course, don't run your application with `go run` in production. Build your application using `go build` and deploy the executable, alongside the config files and resources directory.
+
+The framework requires its default language and config files, so you need to ensure that the library's directory is present in your production environment.
+
+The following Dockerfile is an example of a goyave application called `docker-goyave`:
+``` dockerfile
+FROM golang:alpine as builder
+
+WORKDIR /app
+
+COPY . .
+
+RUN go build
+
+FROM alpine:3.9
+
+WORKDIR /app
+
+COPY --from=builder /go/pkg/mod/github.com/!system-!glitch/goyave/ /go/pkg/mod/github.com/!system-!glitch/goyave/
+COPY --from=builder /app/docker-goyave ./docker-goyave
+COPY resources /app/resources
+COPY config.production.json ./config.production.json
+
+EXPOSE 80
+ENV GOYAVE_ENV=production
+
+ENTRYPOINT [ "./docker-goyave" ]
+```
 
 ## Deamon
 

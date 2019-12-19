@@ -76,6 +76,7 @@ func Start(routeRegistrer func(*Router)) {
 	mutex.Lock()
 	if !config.IsLoaded() {
 		if err := config.Load(); err != nil {
+			fmt.Println(err)
 			return
 		}
 	}

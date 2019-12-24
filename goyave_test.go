@@ -160,15 +160,17 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 				suite.Fail(err.Error())
 				return
 			}
-			defer ln.Close()
 			c2 <- true
 			<-c2
+			ln.Close()
+			c2 <- true
 		}()
 		<-c2
 		config.Set("protocol", "https")
 		suite.RunServer(func(router *Router) {}, func() {})
 		config.Set("protocol", "http")
 		c2 <- true
+		<-c2
 		c <- true
 	}()
 

@@ -24,7 +24,7 @@ func (o *Options) Middleware() goyave.Middleware {
 				} else {
 					response.WriteHeader(http.StatusNoContent)
 				}
-			} else if o.handleRequest(response, request) {
+			} else {
 				next(response, request)
 			}
 		}
@@ -32,7 +32,6 @@ func (o *Options) Middleware() goyave.Middleware {
 }
 
 func (o *Options) configureCommon(response *goyave.Response, request *goyave.Request) {
-	// TODO stop if not allowed in actual request?
 	o.configureOrigin(response, request)
 	o.configureCredentials(response)
 	o.configureExposedHeaders(response, request)
@@ -87,36 +86,8 @@ func (o *Options) handlePreflight(response *goyave.Response, request *goyave.Req
 	o.configureMaxAge(response, request)
 }
 
-func (o *Options) handleRequest(response *goyave.Response, request *goyave.Request) bool {
-
-	if !o.validateOrigin(request) {
-		response.Status(http.StatusForbidden)
-		return false
-	}
-
-	return true
-}
-
 func (o *Options) validateOrigin(request *goyave.Request) bool {
 	return len(o.AllowedOrigins) == 0 ||
 		o.AllowedOrigins[0] == "*" ||
 		helper.Contains(o.AllowedOrigins, request.Header().Get("Origin"))
-}
-
-func (o *Options) validateMethod(request *goyave.Request) bool {
-	return len(o.AllowedMethods) > 0 && helper.Contains(o.AllowedMethods, request.Header().Get("Access-Control-Request-Method"))
-}
-
-func (o *Options) validateHeaders(request *goyave.Request) bool {
-	if len(o.AllowedHeaders) == 0 || o.AllowedHeaders[0] == "*" {
-		return true
-	}
-
-	for _, h := range request.Header() {
-		if !helper.Contains(o.AllowedHeaders, h) {
-			return false
-		}
-	}
-
-	return true
 }

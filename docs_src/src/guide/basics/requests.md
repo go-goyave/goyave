@@ -168,6 +168,8 @@ fmt.Println(request.UserAgent()) // "Mozilla/5.0 ..."
 
 Returns the CORS options applied to this request, or `nil`. Learn more about CORS [here](../advanced/cors.html).
 
+The returned object is a copy of the options applied to the router. Therefore, altering the returned object will not alter the router's options.
+
 | Parameters | Return   |
 |------------|----------|
 |            | `string` |

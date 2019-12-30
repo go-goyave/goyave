@@ -97,8 +97,15 @@ func (r *Request) UserAgent() string {
 }
 
 // CORSOptions returns the CORS options applied to this request, or nil.
+// The returned object is a copy of the options applied to the router.
+// Therefore, altering the returned object will not alter the router's options.
 func (r *Request) CORSOptions() *cors.Options {
-	return r.corsOptions
+	if r.corsOptions == nil {
+		return nil
+	}
+
+	cpy := *r.corsOptions
+	return &cpy
 }
 
 // Has check if the given field exists in the request data.

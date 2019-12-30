@@ -143,7 +143,7 @@ To assign a middleware to a router, use the `router.Middleware()` function. Many
 
 #### Router.Middleware
 
-Middleware apply one or more middleware(s) to the route group.
+Middleware apply one or more middleware to the route group.
 
 | Parameters                 | Return |
 |----------------------------|--------|

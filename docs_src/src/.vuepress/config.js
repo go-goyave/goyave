@@ -111,6 +111,7 @@ function getGuideSidebar () {
                 'advanced/testing',
                 'advanced/plugins',
                 'advanced/multi-services',
+                'advanced/cors',
             ]
         }
     ]

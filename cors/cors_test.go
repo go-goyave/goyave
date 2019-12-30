@@ -97,9 +97,29 @@ func TestConfigureOrigin(t *testing.T) {
 }
 
 func TestConfigureCommon(t *testing.T) {
+	options := Default()
+	options.AllowCredentials = true
+	options.AllowedOrigins = []string{"https://google.com", "https://images.google.com"}
+	options.ExposedHeaders = []string{"Accept", "Content-Type"}
+	headers := http.Header{}
+	requestHeaders := http.Header{"Origin": {"https://images.google.com"}}
 
+	options.ConfigureCommon(headers, requestHeaders)
+	assert.Equal(t, "https://images.google.com", headers.Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, "Origin", headers.Get("Vary"))
+	assert.Equal(t, "true", headers.Get("Access-Control-Allow-Credentials"))
+	assert.Equal(t, "Accept, Content-Type", headers.Get("Access-Control-Expose-Headers"))
 }
 
 func TestPreflight(t *testing.T) {
+	options := Default()
+	options.AllowedMethods = []string{http.MethodGet, http.MethodPut}
+	options.MaxAge = 42 * time.Second
+	headers := http.Header{}
+	requestHeaders := http.Header{}
 
+	options.HandlePreflight(headers, requestHeaders)
+	assert.Equal(t, "GET, PUT", headers.Get("Access-Control-Allow-Methods"))
+	assert.Equal(t, headers.Get("Access-Control-Allow-Headers"), "Origin, Accept, Content-Type, X-Requested-With, Authorization")
+	assert.Equal(t, headers.Get("Access-Control-Max-Age"), "42")
 }

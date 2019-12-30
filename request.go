@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/System-Glitch/goyave/v2/cors"
+
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/validation"
 	"github.com/google/uuid"
@@ -16,6 +18,7 @@ import (
 // Contains the validated body in the Data attribute if the route was defined with a request generator function
 type Request struct {
 	httpRequest *http.Request
+	corsOptions *cors.Options
 	cookies     []*http.Cookie
 	Rules       validation.RuleSet
 	Data        map[string]interface{}
@@ -91,6 +94,11 @@ func (r *Request) Referrer() string {
 // UserAgent returns the client's User-Agent, if sent in the request.
 func (r *Request) UserAgent() string {
 	return r.httpRequest.UserAgent()
+}
+
+// CORSOptions returns the CORS options applied to this request, or nil.
+func (r *Request) CORSOptions() *cors.Options {
+	return r.corsOptions
 }
 
 // Has check if the given field exists in the request data.

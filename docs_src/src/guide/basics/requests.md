@@ -24,6 +24,7 @@ import "github.com/System-Glitch/goyave/v2"
 [Cookies](#request-cookies)
 [Referrer](#request-referrer)
 [UserAgent](#request-useragent)
+[CORSOptions](#request-corsoptions)
 :::
 
 #### Request.Method
@@ -159,6 +160,21 @@ UserAgent returns the client's User-Agent, if sent in the request.
 **Example:**
 ``` go
 fmt.Println(request.UserAgent()) // "Mozilla/5.0 ..."
+```
+
+#### Request.CORSOptions
+
+<p><Badge text="Since v2.3.0"/></p>
+
+Returns the CORS options applied to this request, or `nil`. Learn more about CORS [here](../advanced/cors.html).
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Example:**
+``` go
+fmt.Println(request.CORSOptions().AllowedMethods) // "[HEAD GET POST PUT PATCH DELETE]"
 ```
 
 ### Accessors

@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/lang"
 	"github.com/System-Glitch/goyave/v2/validation"
@@ -78,9 +79,10 @@ func createTestFileRequest(route string, files ...string) *http.Request {
 	return req
 }
 
-func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[string]interface{}, rules validation.RuleSet, handler func(*Response, *Request)) *http.Response {
+func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[string]interface{}, rules validation.RuleSet, corsOptions *cors.Options, handler func(*Response, *Request)) *http.Response {
 	request := &Request{
 		httpRequest: rawRequest,
+		corsOptions: corsOptions,
 		Data:        data,
 		Rules:       rules,
 		Lang:        "en-US",
@@ -98,7 +100,7 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicDebug() {
 	config.Set("debug", true)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		panic(fmt.Errorf("error message"))
 	})
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -109,7 +111,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicDebug() {
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicNoDebug() {
 	config.Set("debug", false)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		panic(fmt.Errorf("error message"))
 	})
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -120,7 +122,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicNoDebug() {
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		response.String(200, "message")
 	})
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -131,12 +133,12 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	rawRequest.Header.Set("Accept-Language", "en-US")
-	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("en-US", r.Lang)
 	})
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("en-US", r.Lang)
 	})
 }
@@ -144,7 +146,7 @@ func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {
 func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
 	})
@@ -152,13 +154,13 @@ func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
 
 func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {
 	rawRequest := httptest.NewRequest("GET", "/test-route?string=hello%20world&number=42", nil)
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
 	})
 
 	rawRequest = httptest.NewRequest("GET", "/test-route?%9", nil)
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Nil(r.Data)
 	})
 }
@@ -166,7 +168,7 @@ func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {
 func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}"))
 	rawRequest.Header.Set("Content-Type", "application/json")
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal(42.0, r.Data["number"])
 		slice, ok := r.Data["array"].([]interface{})
@@ -178,14 +180,14 @@ func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]")) // Missing closing braces
 	rawRequest.Header.Set("Content-Type", "application/json")
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Nil(r.Data)
 	})
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 	rawRequest := createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal(3, len(r.Data))
 		suite.Equal("hello", r.Data["test"])
 		suite.Equal("world", r.Data["field"])
@@ -197,7 +199,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 
 func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 	rawRequest := createTestFileRequest("/test-route?field=hello", "resources/img/logo/goyave_16.png")
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal(2, len(r.Data))
 		suite.Equal("world", r.Data["field"])
 		files, ok := r.Data["file"].([]filesystem.File)
@@ -208,7 +210,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 
 func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
 	rawRequest := httptest.NewRequest("GET", "/test-route?arr=hello&arr=world", nil)
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		arr, ok := r.Data["arr"].([]string)
 		suite.True(ok)
 		if ok {
@@ -248,7 +250,7 @@ func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
 		panic(err)
 	}
 	rawRequest.Header.Set("Content-Type", writer.FormDataContentType())
-	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, func(response *Response, r *Request) {
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal(1, len(r.Data))
 		arr, ok := r.Data["field"].([]string)
 		suite.True(ok)
@@ -271,7 +273,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:10"},
 	}
-	result := testMiddleware(validateRequestMiddleware, rawRequest, data, rules, func(response *Response, r *Request) {})
+	result := testMiddleware(validateRequestMiddleware, rawRequest, data, rules, nil, func(response *Response, r *Request) {})
 	suite.Equal(200, result.StatusCode)
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
@@ -284,7 +286,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:50"},
 	}
-	result = testMiddleware(validateRequestMiddleware, rawRequest, data, rules, func(response *Response, r *Request) {})
+	result = testMiddleware(validateRequestMiddleware, rawRequest, data, rules, nil, func(response *Response, r *Request) {})
 	body, err := ioutil.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
@@ -294,13 +296,76 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", nil)
 	rawRequest.Header.Set("Content-Type", "application/json")
-	result = testMiddleware(validateRequestMiddleware, rawRequest, nil, rules, func(response *Response, r *Request) {})
+	result = testMiddleware(validateRequestMiddleware, rawRequest, nil, rules, nil, func(response *Response, r *Request) {})
 	body, err = ioutil.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
 	suite.Equal(400, result.StatusCode)
 	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
+}
+
+func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
+	// No CORS options
+	rawRequest := httptest.NewRequest("GET", "/test-route", nil)
+	result := testMiddleware(corsMiddleware, rawRequest, nil, nil, nil, func(response *Response, r *Request) {})
+	suite.Equal(200, result.StatusCode)
+
+	// Preflight
+	options := cors.Default()
+	rawRequest = httptest.NewRequest("OPTIONS", "/test-route", nil)
+	rawRequest.Header.Set("Origin", "https://google.com")
+	rawRequest.Header.Set("Access-Control-Request-Method", "GET")
+	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
+		response.String(200, "Hi!")
+	})
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(204, result.StatusCode)
+	suite.Empty(body)
+
+	// Preflight passthrough
+	options = cors.Default()
+	options.OptionsPassthrough = true
+	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
+		response.String(200, "Passthrough")
+	})
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(200, result.StatusCode)
+	suite.Equal("Passthrough", string(body))
+
+	// Preflight without Access-Control-Request-Method
+	rawRequest = httptest.NewRequest("OPTIONS", "/test-route", nil)
+	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
+		response.String(200, "Hi!")
+	})
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(200, result.StatusCode)
+	suite.Equal("Hi!", string(body))
+
+	// Actual request
+	options = cors.Default()
+	options.AllowedOrigins = []string{"https://google.com", "https://images.google.com"}
+	rawRequest = httptest.NewRequest("GET", "/test-route", nil)
+	rawRequest.Header.Set("Origin", "https://images.google.com")
+	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
+		response.String(200, "Hi!")
+	})
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal("Hi!", string(body))
+	suite.Equal("https://images.google.com", result.Header.Get("Access-Control-Allow-Origin"))
+	suite.Equal("Origin", result.Header.Get("Vary"))
 }
 
 func TestMiddlewareTestSuite(t *testing.T) {

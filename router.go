@@ -57,8 +57,19 @@ func (r *Router) Middleware(middleware ...Middleware) {
 //
 // The validation rules set is optional. If you don't want your route
 // to be validated, pass "nil".
+//
+// If the router has CORS options set, the "OPTIONS" method is automatically added
+// to the matcher if it's missing, so it allows preflight requests.
 func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet) {
-	r.muxRouter.HandleFunc(uri, func(w http.ResponseWriter, rawRequest *http.Request) {
+	r.route(methods, uri, handler, validationRules)
+}
+
+func (r *Router) route(methods string, uri string, handler Handler, validationRules validation.RuleSet) *mux.Route {
+	if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
+		methods += "|OPTIONS"
+	}
+
+	return r.muxRouter.HandleFunc(uri, func(w http.ResponseWriter, rawRequest *http.Request) {
 		r.requestHandler(w, rawRequest, handler, validationRules)
 	}).Methods(strings.Split(methods, "|")...)
 }

@@ -20,7 +20,7 @@ type Options struct {
 	// cross-domain requests.
 	// If the first value in the slice is "*", all headers will be allowed.
 	// If the slice is empty, the request's headers will be reflected.
-	// Default value is ["Origin", "Accept", "Content-Type", "X-Requested-With"].
+	// Default value is ["Origin", "Accept", "Content-Type", "X-Requested-With", "Authorization"].
 	AllowedHeaders []string
 
 	// ExposedHeaders indicates which headers are safe to expose to the API of a CORS
@@ -54,7 +54,7 @@ func Default() *Options {
 			http.MethodPatch,
 			http.MethodDelete,
 		},
-		AllowedHeaders:   []string{"Origin", "Accept", "Content-Type", "X-Requested-With"},
+		AllowedHeaders:   []string{"Origin", "Accept", "Content-Type", "X-Requested-With", "Authorization"},
 		AllowCredentials: false,
 		MaxAge:           time.Hour * 12,
 	}

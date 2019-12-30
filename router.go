@@ -4,7 +4,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/System-Glitch/goyave/v2/helper"
+
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/validation"
 	"github.com/gorilla/mux"
@@ -12,8 +15,9 @@ import (
 
 // Router registers routes to be matched and dispatches a handler.
 type Router struct {
-	muxRouter  *mux.Router
-	middleware []Middleware
+	muxRouter   *mux.Router
+	corsOptions *cors.Options
+	middleware  []Middleware
 }
 
 // Handler is a controller or middleware function
@@ -29,15 +33,19 @@ func newRouter() *Router {
 
 // Subrouter create a new sub-router from this router.
 // Use subrouters to create route groups and to apply middleware to multiple routes.
+// CORS options are also inherited.
 func (r *Router) Subrouter(prefix string) *Router {
-	router := &Router{muxRouter: r.muxRouter.PathPrefix(prefix).Subrouter()}
+	router := &Router{
+		muxRouter:   r.muxRouter.PathPrefix(prefix).Subrouter(),
+		corsOptions: r.corsOptions,
+	}
 
 	// Apply parent middleware to subrouter
 	router.Middleware(r.middleware...)
 	return router
 }
 
-// Middleware apply one or more middleware(s) to the route group.
+// Middleware apply one or more middleware to the route group.
 func (r *Router) Middleware(middleware ...Middleware) {
 	r.middleware = append(r.middleware, middleware...)
 }
@@ -63,6 +71,15 @@ func (r *Router) Route(methods string, uri string, handler Handler, validationRu
 // send the "index.html" file if it exists.
 func (r *Router) Static(uri string, directory string, download bool) {
 	r.Route("GET", uri+"{resource:.*}", staticHandler(directory, download), nil)
+}
+
+// CORS set the CORS options for this route group.
+// If the options are not nil, the CORS middleware is automatically added.
+func (r *Router) CORS(options *cors.Options) {
+	r.corsOptions = options
+	if options != nil && !helper.Contains(r.middleware, corsMiddleware) {
+		r.Middleware(corsMiddleware)
+	}
 }
 
 func staticHandler(directory string, download bool) Handler {

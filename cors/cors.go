@@ -2,7 +2,11 @@ package cors
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
+
+	"github.com/System-Glitch/goyave/v2/helper"
 )
 
 // Options holds the CORS configuration for a router.
@@ -58,4 +62,67 @@ func Default() *Options {
 		AllowCredentials: false,
 		MaxAge:           time.Hour * 12,
 	}
+}
+
+// ConfigureCommon configures common headers between regular and preflight requests:
+// Origin, Credentials and Exposed Headers.
+func (o *Options) ConfigureCommon(headers http.Header, requestHeaders http.Header) {
+	o.configureOrigin(headers, requestHeaders)
+	o.configureCredentials(headers)
+	o.configureExposedHeaders(headers)
+}
+
+func (o *Options) configureOrigin(headers http.Header, requestHeaders http.Header) {
+	if len(o.AllowedOrigins) == 0 || o.AllowedOrigins[0] == "*" {
+		headers.Set("Access-Control-Allow-Origin", "*")
+	} else {
+		if o.validateOrigin(requestHeaders) {
+			headers.Set("Access-Control-Allow-Origin", requestHeaders.Get("Origin"))
+		}
+		headers.Add("Vary", "Origin")
+	}
+}
+
+func (o *Options) configureCredentials(headers http.Header) {
+	if o.AllowCredentials {
+		headers.Set("Access-Control-Allow-Credentials", "true")
+	}
+}
+
+func (o *Options) configureExposedHeaders(headers http.Header) {
+	if len(o.ExposedHeaders) > 0 {
+		headers.Set("Access-Control-Expose-Headers", strings.Join(o.ExposedHeaders, ", "))
+	}
+}
+
+func (o *Options) configureAllowedMethods(headers http.Header) {
+	headers.Set("Access-Control-Allow-Methods", strings.Join(o.AllowedMethods, ", "))
+}
+
+func (o *Options) configureAllowedHeaders(headers http.Header, requestHeaders http.Header) {
+	if len(o.AllowedHeaders) == 0 {
+		headers.Add("Vary", "Access-Control-Request-Headers")
+		headers.Set("Access-Control-Allow-Headers", requestHeaders.Get("Access-Control-Request-Headers"))
+	} else {
+		headers.Set("Access-Control-Allow-Headers", strings.Join(o.AllowedHeaders, ", "))
+	}
+
+}
+
+func (o *Options) configureMaxAge(headers http.Header) {
+	headers.Set("Access-Control-Max-Age", strconv.FormatUint(uint64(o.MaxAge.Seconds()), 10))
+}
+
+// HandlePreflight configures headers for preflight requests:
+// Allowed Methods, Allowed Headers and Max Age.
+func (o *Options) HandlePreflight(headers http.Header, requestHeaders http.Header) {
+	o.configureAllowedMethods(headers)
+	o.configureAllowedHeaders(headers, requestHeaders)
+	o.configureMaxAge(headers)
+}
+
+func (o *Options) validateOrigin(requestHeaders http.Header) bool {
+	return len(o.AllowedOrigins) == 0 ||
+		o.AllowedOrigins[0] == "*" ||
+		helper.Contains(o.AllowedOrigins, requestHeaders.Get("Origin"))
 }

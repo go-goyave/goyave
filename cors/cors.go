@@ -8,10 +8,7 @@ import (
 // Options holds the CORS configuration for a router.
 type Options struct {
 	// AllowedOrigins is a list of origins a cross-domain request can be executed from.
-	// If the special "*" value is present in the list, all origins will be allowed.
-	// An origin may contain a wildcard (*) to replace 0 or more characters
-	// (i.e.: http://*.domain.com). Usage of wildcards implies a small performance penalty.
-	// Only one wildcard can be used per origin.
+	// If the first value in the slice is "*" or if the slice is empty, all origins will be allowed.
 	// Default value is ["*"]
 	AllowedOrigins []string
 
@@ -21,7 +18,8 @@ type Options struct {
 
 	// AllowedHeaders is list of non simple headers the client is allowed to use with
 	// cross-domain requests.
-	// If the special "*" value is present in the list, all headers will be allowed.
+	// If the first value in the slice is "*", all headers will be allowed.
+	// If the slice is empty, the request's headers will be reflected.
 	// Default value is ["Origin", "Accept", "Content-Type", "X-Requested-With"].
 	AllowedHeaders []string
 
@@ -43,6 +41,8 @@ type Options struct {
 }
 
 // Default create new CORS options with default settings.
+// The returned value can be used as a starting point for
+// customized options.
 func Default() *Options {
 	return &Options{
 		AllowedOrigins: []string{"*"},
@@ -55,24 +55,6 @@ func Default() *Options {
 			http.MethodDelete,
 		},
 		AllowedHeaders:   []string{"Origin", "Accept", "Content-Type", "X-Requested-With"},
-		AllowCredentials: false,
-		MaxAge:           time.Hour * 12,
-	}
-}
-
-// AllowAll create new CORS Options allowing all origins, all standard methods, all headers and credentials.
-func AllowAll() *Options {
-	return &Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{
-			http.MethodHead,
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-		},
-		AllowedHeaders:   []string{"*"},
 		AllowCredentials: false,
 		MaxAge:           time.Hour * 12,
 	}

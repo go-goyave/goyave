@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/helper"
-
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
@@ -15,9 +13,10 @@ import (
 
 // Router registers routes to be matched and dispatches a handler.
 type Router struct {
-	muxRouter   *mux.Router
-	corsOptions *cors.Options
-	middleware  []Middleware
+	muxRouter         *mux.Router
+	corsOptions       *cors.Options
+	hasCORSMiddleware bool
+	middleware        []Middleware
 }
 
 // Handler is a controller or middleware function
@@ -36,8 +35,9 @@ func newRouter() *Router {
 // CORS options are also inherited.
 func (r *Router) Subrouter(prefix string) *Router {
 	router := &Router{
-		muxRouter:   r.muxRouter.PathPrefix(prefix).Subrouter(),
-		corsOptions: r.corsOptions,
+		muxRouter:         r.muxRouter.PathPrefix(prefix).Subrouter(),
+		corsOptions:       r.corsOptions,
+		hasCORSMiddleware: r.hasCORSMiddleware,
 	}
 
 	// Apply parent middleware to subrouter
@@ -88,8 +88,9 @@ func (r *Router) Static(uri string, directory string, download bool) {
 // If the options are not nil, the CORS middleware is automatically added.
 func (r *Router) CORS(options *cors.Options) {
 	r.corsOptions = options
-	if options != nil && !helper.Contains(r.middleware, corsMiddleware) {
+	if options != nil && !r.hasCORSMiddleware {
 		r.Middleware(corsMiddleware)
+		r.hasCORSMiddleware = true
 	}
 }
 
@@ -127,6 +128,7 @@ func cleanStaticPath(directory string, file string) string {
 func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, handler Handler, rules validation.RuleSet) {
 	request := &Request{
 		httpRequest: rawRequest,
+		corsOptions: r.corsOptions,
 		Rules:       rules,
 		Params:      mux.Vars(rawRequest),
 	}

@@ -23,16 +23,17 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 ### Ideas for future releases
 
-- Plugins
 - CLI utility to help creating controllers, middlewares, etc
 - Email helpers
 - Queues/Scheduler system
 - Logging
 - Custom HTTP error handlers (for custom 404/500/... messages)
-- Named routes, CORS
+- Custom router implementation
+- Named routes
 - Placeholders in language lines and pluralization
 - Support for gzip compression
-- Direct support for the OPTIONS method
+- Direct support for the HEAD method
+- Template rendering (text and HTML)
 - And more!
 
 ## Contributors

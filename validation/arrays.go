@@ -11,6 +11,44 @@ import (
 	"github.com/google/uuid"
 )
 
+// createArray create a slice of the same type as the given type.
+func createArray(dataType string, length int) reflect.Value {
+	var arr reflect.Value
+	switch dataType {
+	case "string":
+		newArray := make([]string, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "numeric":
+		newArray := make([]float64, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "integer":
+		newArray := make([]int, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "timezone":
+		newArray := make([]*time.Location, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "ip", "ipv4", "ipv6":
+		newArray := make([]net.IP, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "json":
+		newArray := make([]interface{}, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "url":
+		newArray := make([]*url.URL, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "uuid":
+		newArray := make([]uuid.UUID, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "bool":
+		newArray := make([]bool, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	case "date":
+		newArray := make([]time.Time, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
+	}
+	return arr
+}
+
 func validateArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	if GetFieldType(value) == "array" {
 
@@ -24,40 +62,7 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 
 		list := reflect.ValueOf(value)
 		length := list.Len()
-		var arr reflect.Value
-
-		switch parameters[0] {
-		case "string":
-			newArray := make([]string, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "numeric":
-			newArray := make([]float64, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "integer":
-			newArray := make([]int, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "timezone":
-			newArray := make([]*time.Location, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "ip", "ipv4", "ipv6":
-			newArray := make([]net.IP, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "json":
-			newArray := make([]interface{}, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "url":
-			newArray := make([]*url.URL, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "uuid":
-			newArray := make([]uuid.UUID, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "bool":
-			newArray := make([]bool, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		case "date":
-			newArray := make([]time.Time, 0, length)
-			arr = reflect.ValueOf(&newArray).Elem()
-		}
+		arr := createArray(parameters[0], length)
 
 		params := parameters[1:]
 

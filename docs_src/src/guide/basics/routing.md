@@ -35,6 +35,8 @@ router.Route("GET", "/hello", func(response *goyave.Response, r *goyave.Request)
 Register a new route.  
 Multiple methods can be passed using a pipe-separated string.
 
+If the router has CORS options set, the `OPTIONS` method is automatically added to the matcher if it's missing, so it allows pre-flight requests.
+
 | Parameters                           | Return |
 |--------------------------------------|--------|
 | `methods string`                     | `void` |
@@ -143,7 +145,7 @@ To assign a middleware to a router, use the `router.Middleware()` function. Many
 
 #### Router.Middleware
 
-Middleware apply one or more middleware(s) to the route group.
+Middleware apply one or more middleware to the route group.
 
 | Parameters                 | Return |
 |----------------------------|--------|

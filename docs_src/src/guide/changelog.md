@@ -2,6 +2,10 @@
 
 [[toc]]
 
+## v2.3.0
+
+- Added [CORS options](./advanced/cors.html).
+
 ## v2.2.1
 
 - Added `domain` config entry. This entry is used for url generation, especially for the TLS redirect.
@@ -9,7 +13,7 @@
 
 ## v2.2.0
 
-- Added [testing API](./advanced/testing.md).
+- Added [testing API](./advanced/testing.html).
 - Fixed links in documentation.
 - Fixed `models` package in template project. (Changed to `model`)
 - Added [`database.ClearRegisteredModels`](./basics/database.html#database-clearregisteredmodels)

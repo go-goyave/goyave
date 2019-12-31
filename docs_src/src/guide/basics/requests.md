@@ -24,6 +24,7 @@ import "github.com/System-Glitch/goyave/v2"
 [Cookies](#request-cookies)
 [Referrer](#request-referrer)
 [UserAgent](#request-useragent)
+[CORSOptions](#request-corsoptions)
 :::
 
 #### Request.Method
@@ -135,6 +136,10 @@ cookie := request.Cookies("cookie-name")
 fmt.Println(cookie[0].value)
 ```
 
+::: warning
+Protect yourself from [CSRF attacks](https://en.wikipedia.org/wiki/Cross-site_request_forgery) when using cookies!
+:::
+
 #### Request.Referrer
 
 Referrer returns the referring URL, if sent in the request.
@@ -159,6 +164,23 @@ UserAgent returns the client's User-Agent, if sent in the request.
 **Example:**
 ``` go
 fmt.Println(request.UserAgent()) // "Mozilla/5.0 ..."
+```
+
+#### Request.CORSOptions
+
+<p><Badge text="Since v2.3.0"/></p>
+
+Returns the CORS options applied to this request, or `nil`. Learn more about CORS [here](../advanced/cors.html).
+
+The returned object is a copy of the options applied to the router. Therefore, altering the returned object will not alter the router's options.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Example:**
+``` go
+fmt.Println(request.CORSOptions().AllowedMethods) // "[HEAD GET POST PUT PATCH DELETE]"
 ```
 
 ### Accessors

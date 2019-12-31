@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/validation"
 	"github.com/gorilla/mux"
@@ -12,8 +13,10 @@ import (
 
 // Router registers routes to be matched and dispatches a handler.
 type Router struct {
-	muxRouter  *mux.Router
-	middleware []Middleware
+	muxRouter         *mux.Router
+	corsOptions       *cors.Options
+	hasCORSMiddleware bool
+	middleware        []Middleware
 }
 
 // Handler is a controller or middleware function
@@ -29,15 +32,20 @@ func newRouter() *Router {
 
 // Subrouter create a new sub-router from this router.
 // Use subrouters to create route groups and to apply middleware to multiple routes.
+// CORS options are also inherited.
 func (r *Router) Subrouter(prefix string) *Router {
-	router := &Router{muxRouter: r.muxRouter.PathPrefix(prefix).Subrouter()}
+	router := &Router{
+		muxRouter:         r.muxRouter.PathPrefix(prefix).Subrouter(),
+		corsOptions:       r.corsOptions,
+		hasCORSMiddleware: r.hasCORSMiddleware,
+	}
 
 	// Apply parent middleware to subrouter
 	router.Middleware(r.middleware...)
 	return router
 }
 
-// Middleware apply one or more middleware(s) to the route group.
+// Middleware apply one or more middleware to the route group.
 func (r *Router) Middleware(middleware ...Middleware) {
 	r.middleware = append(r.middleware, middleware...)
 }
@@ -49,8 +57,19 @@ func (r *Router) Middleware(middleware ...Middleware) {
 //
 // The validation rules set is optional. If you don't want your route
 // to be validated, pass "nil".
+//
+// If the router has CORS options set, the "OPTIONS" method is automatically added
+// to the matcher if it's missing, so it allows preflight requests.
 func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet) {
-	r.muxRouter.HandleFunc(uri, func(w http.ResponseWriter, rawRequest *http.Request) {
+	r.route(methods, uri, handler, validationRules)
+}
+
+func (r *Router) route(methods string, uri string, handler Handler, validationRules validation.RuleSet) *mux.Route {
+	if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
+		methods += "|OPTIONS"
+	}
+
+	return r.muxRouter.HandleFunc(uri, func(w http.ResponseWriter, rawRequest *http.Request) {
 		r.requestHandler(w, rawRequest, handler, validationRules)
 	}).Methods(strings.Split(methods, "|")...)
 }
@@ -63,6 +82,16 @@ func (r *Router) Route(methods string, uri string, handler Handler, validationRu
 // send the "index.html" file if it exists.
 func (r *Router) Static(uri string, directory string, download bool) {
 	r.Route("GET", uri+"{resource:.*}", staticHandler(directory, download), nil)
+}
+
+// CORS set the CORS options for this route group.
+// If the options are not nil, the CORS middleware is automatically added.
+func (r *Router) CORS(options *cors.Options) {
+	r.corsOptions = options
+	if options != nil && !r.hasCORSMiddleware {
+		r.Middleware(corsMiddleware)
+		r.hasCORSMiddleware = true
+	}
 }
 
 func staticHandler(directory string, download bool) Handler {
@@ -99,6 +128,7 @@ func cleanStaticPath(directory string, file string) string {
 func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, handler Handler, rules validation.RuleSet) {
 	request := &Request{
 		httpRequest: rawRequest,
+		corsOptions: r.corsOptions,
 		Rules:       rules,
 		Params:      mux.Vars(rawRequest),
 	}

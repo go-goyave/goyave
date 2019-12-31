@@ -167,6 +167,10 @@ cookie := &http.Cookie{
 response.Cookie(cookie)
 ```
 
+::: warning
+Protect yourself from [CSRF attacks](https://en.wikipedia.org/wiki/Cross-site_request_forgery) when using cookies!
+:::
+
 #### Response.Redirect
 
 Send a permanent redirect response. (HTTP 308)

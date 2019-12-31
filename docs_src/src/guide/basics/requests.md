@@ -136,6 +136,10 @@ cookie := request.Cookies("cookie-name")
 fmt.Println(cookie[0].value)
 ```
 
+::: warning
+Protect yourself from [CSRF attacks](https://en.wikipedia.org/wiki/Cross-site_request_forgery) when using cookies!
+:::
+
 #### Request.Referrer
 
 Referrer returns the referring URL, if sent in the request.

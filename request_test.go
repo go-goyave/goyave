@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/System-Glitch/goyave/v2/cors"
+
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/validation"
 	"github.com/google/uuid"
@@ -190,4 +192,18 @@ func TestRequestHas(t *testing.T) {
 
 	assert.True(t, request.Has("string"))
 	assert.False(t, request.Has("not_in_request"))
+}
+
+func TestRequestCors(t *testing.T) {
+	request := createTestRequest(httptest.NewRequest("POST", "/test-route", nil))
+
+	assert.Nil(t, request.CORSOptions())
+
+	request.corsOptions = cors.Default()
+	options := request.CORSOptions()
+	assert.NotNil(t, options)
+
+	// Check cannot alter config
+	options.MaxAge = time.Second
+	assert.NotEqual(t, request.corsOptions.MaxAge, options.MaxAge)
 }

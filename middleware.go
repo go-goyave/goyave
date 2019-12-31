@@ -57,6 +57,35 @@ func parseRequestMiddleware(next Handler) Handler {
 	}
 }
 
+// corsMiddleware is the middleware handling CORS, using the options set in the router.
+// This middleware is automatically inserted first to the router's list of middleware
+// if the latter has defined CORS Options.
+func corsMiddleware(next Handler) Handler {
+	return func(response *Response, request *Request) {
+		if request.corsOptions == nil {
+			next(response, request)
+			return
+		}
+
+		options := request.corsOptions
+		headers := response.Header()
+		requestHeaders := request.Header()
+
+		options.ConfigureCommon(headers, requestHeaders)
+
+		if request.Method() == http.MethodOptions && requestHeaders.Get("Access-Control-Request-Method") != "" {
+			options.HandlePreflight(headers, requestHeaders)
+			if options.OptionsPassthrough {
+				next(response, request)
+			} else {
+				response.WriteHeader(http.StatusNoContent)
+			}
+		} else {
+			next(response, request)
+		}
+	}
+}
+
 func generateFlatMap(request *http.Request) map[string]interface{} {
 	var flatMap map[string]interface{} = make(map[string]interface{})
 	err := request.ParseMultipartForm(int64(config.Get("maxUploadSize").(float64)) << 20)

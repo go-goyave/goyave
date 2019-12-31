@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -147,6 +149,21 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	suite.Equal(0, len(body))
 	suite.True(suite.middlewareExecuted)
 	suite.middlewareExecuted = false
+}
+
+func (suite *RouterTestSuite) TestCORS() {
+	router := newRouter()
+	suite.Nil(router.corsOptions)
+
+	router.CORS(cors.Default())
+
+	suite.NotNil(router.corsOptions)
+
+	route := router.route("GET", "/cors", helloHandler, nil)
+
+	var match mux.RouteMatch
+	suite.True(route.Match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))
+	suite.True(route.Match(httptest.NewRequest("GET", "/cors", nil), &match))
 }
 
 func TestRouterTestSuite(t *testing.T) {

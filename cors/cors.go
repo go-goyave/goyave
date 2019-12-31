@@ -16,11 +16,11 @@ type Options struct {
 	// Default value is ["*"]
 	AllowedOrigins []string
 
-	// AllowedMethods is a list of methods the client is allowed to use with
-	// cross-domain requests. Default value is ["HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"].
+	// AllowedMethods is a list of methods the client is allowed to use with cross-domain requests.
+	// Default value is ["HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"].
 	AllowedMethods []string
 
-	// AllowedHeaders is list of non simple headers the client is allowed to use with
+	// AllowedHeaders is a list of non simple headers the client is allowed to use with
 	// cross-domain requests.
 	// If the first value in the slice is "*", all headers will be allowed.
 	// If the slice is empty, the request's headers will be reflected.
@@ -31,8 +31,8 @@ type Options struct {
 	// API specification
 	ExposedHeaders []string
 
-	// MaxAge indicates how long (in seconds) the results of a preflight request
-	// can be cached. Default is 12 hours.
+	// MaxAge indicates how long the results of a preflight request can be cached.
+	// Default is 12 hours.
 	MaxAge time.Duration
 
 	// AllowCredentials indicates whether the request can include user credentials like

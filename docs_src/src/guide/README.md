@@ -27,7 +27,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Email helpers
 - Queues/Scheduler system
 - Logging
-- Custom HTTP error handlers (for custom 404/500/... messages)
 - Custom router implementation
 - Named routes
 - Placeholders in language lines and pluralization

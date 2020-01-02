@@ -341,6 +341,8 @@ Create a slice of `filesystem.File` from the given paths. Files are passed to a 
 
 Create a `*goyave.Request` from the given raw request. This function is aimed at making it easier to unit test Requests.
 
+If passed request is `nil`, a default `GET` request to `/` is used.
+
 | Parameters                 | Return            |
 |----------------------------|-------------------|
 | `rawRequest *http.Request` | `*goyave.Request` |

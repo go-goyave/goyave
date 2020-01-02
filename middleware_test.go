@@ -97,36 +97,32 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 	return response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 }
 
-func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicDebug() {
-	config.Set("debug", true)
-	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanic() {
+	response := &Response{
+		ResponseWriter: httptest.NewRecorder(),
+		empty:          true,
+	}
+	recoveryMiddleware(func(response *Response, r *Request) {
 		panic(fmt.Errorf("error message"))
-	})
-	body, _ := ioutil.ReadAll(resp.Body)
-	suite.Equal(500, resp.StatusCode)
-	suite.Equal("{\"error\":\"error message\"}\n", string(body))
-}
-
-func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanicNoDebug() {
-	config.Set("debug", false)
-	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
-		panic(fmt.Errorf("error message"))
-	})
-	body, _ := ioutil.ReadAll(resp.Body)
-	suite.Equal(500, resp.StatusCode)
-	suite.Equal("", string(body))
-	config.Set("debug", true)
+	})(response, &Request{})
+	suite.Equal(500, response.status)
 }
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
-	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	resp := testMiddleware(recoveryMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+	response := &Response{
+		ResponseWriter: httptest.NewRecorder(),
+		empty:          true,
+	}
+	recoveryMiddleware(func(response *Response, r *Request) {
 		response.String(200, "message")
-	})
-	body, _ := ioutil.ReadAll(resp.Body)
+	})(response, &Request{})
+
+	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Equal(200, response.status)
 	suite.Equal(200, resp.StatusCode)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
 	suite.Equal("message", string(body))
 }
 

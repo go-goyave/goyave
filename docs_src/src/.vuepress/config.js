@@ -109,9 +109,9 @@ function getGuideSidebar () {
                 'advanced/authentication',
                 'advanced/localization',
                 'advanced/testing',
-                'advanced/plugins',
                 'advanced/multi-services',
                 'advanced/cors',
+                'advanced/status-handlers',
             ]
         }
     ]

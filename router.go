@@ -23,6 +23,17 @@ type Router struct {
 // Handler is a controller or middleware function
 type Handler func(*Response, *Request)
 
+func panicStatusHandler(response *Response, request *Request) {
+	response.Error(response.GetError())
+}
+
+func errorStatusHandler(response *Response, request *Request) {
+	message := map[string]string{
+		"error": http.StatusText(response.GetStatus()),
+	}
+	response.JSON(response.GetStatus(), message)
+}
+
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.GetString("protocol"))
@@ -30,6 +41,8 @@ func newRouter() *Router {
 		muxRouter:      muxRouter,
 		statusHandlers: map[int]Handler{},
 	}
+	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
+	router.StatusHandler(errorStatusHandler, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 501, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
@@ -117,6 +130,8 @@ func (r *Router) CORS(options *cors.Options) {
 //
 // Status handlers are inherited as a copy in sub-routers. Modifying a child's status handler
 // will not modify its parent's.
+//
+// Codes in the 500 range and codes 404 and 405 have a default status handler.
 func (r *Router) StatusHandler(handler Handler, status int, additionalStatuses ...int) {
 	r.statusHandlers[status] = handler
 	for _, s := range additionalStatuses {
@@ -166,7 +181,7 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 		httpRequest:    rawRequest,
 		ResponseWriter: w,
 		empty:          true,
-		emptyStatus:    true,
+		status:         0,
 	}
 
 	// Validate last.
@@ -179,11 +194,24 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 
 	handler(response, request)
 
-	// TODO status handlers
+	r.finalize(response, request)
+}
 
-	// If the response is empty, return status 204 to
-	// comply with RFC 7231, 6.3.5
-	if response.empty && response.emptyStatus {
-		response.Status(http.StatusNoContent)
+// finalize the request's life-cycle.
+func (r *Router) finalize(response *Response, request *Request) {
+	if response.empty {
+		if response.status == 0 {
+			// If the response is empty, return status 204 to
+			// comply with RFC 7231, 6.3.5
+			response.Status(http.StatusNoContent)
+		} else if statusHandler, ok := r.statusHandlers[response.status]; ok {
+			// Status has been set but body is empty.
+			// Execute status handler if exists.
+			statusHandler(response, request)
+		}
+	}
+
+	if !response.wroteHeader {
+		response.WriteHeader(response.status)
 	}
 }

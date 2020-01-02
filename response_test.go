@@ -25,7 +25,7 @@ func createTestResponse(rawRequest *http.Request) *Response {
 		ResponseWriter: httptest.NewRecorder(),
 		httpRequest:    rawRequest,
 		empty:          true,
-		emptyStatus:    true,
+		status:         0,
 	}
 
 	return response
@@ -37,9 +37,9 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	response.Status(403)
 	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
-	suite.Equal(403, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode) // Not written yet
 	suite.True(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(403, response.GetStatus())
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = createTestResponse(rawRequest)
@@ -48,7 +48,17 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 
 	suite.Equal(403, resp.StatusCode)
 	suite.False(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(403, response.GetStatus())
+
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = createTestResponse(rawRequest)
+	response.Status(403)
+	response.Status(200) // Should have no effect
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(200, resp.StatusCode) // Not written yet
+	suite.True(response.empty)
+	suite.Equal(403, response.GetStatus())
 }
 
 func (suite *ResponseTestSuite) TestResponseHeader() {
@@ -61,7 +71,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.True(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(200, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
@@ -76,7 +86,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(500, response.status)
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = createTestResponse(rawRequest)
@@ -89,7 +99,22 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(500, response.status)
+
+	config.Set("debug", false)
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = createTestResponse(rawRequest)
+	response.Error("random error")
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(500, resp.StatusCode)
+
+	body, err = ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Empty("", string(body))
+	suite.False(response.empty)
+	suite.Equal(500, response.status)
+	config.Set("debug", true)
 }
 
 func (suite *ResponseTestSuite) TestResponseFile() {
@@ -104,7 +129,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(200, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseFilePanic() {
@@ -128,7 +153,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(200, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseRedirect() {
@@ -143,7 +168,7 @@ func (suite *ResponseTestSuite) TestResponseRedirect() {
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Permanent Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(308, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
@@ -158,7 +183,7 @@ func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Temporary Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
-	suite.False(response.emptyStatus)
+	suite.Equal(307, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseCookie() {

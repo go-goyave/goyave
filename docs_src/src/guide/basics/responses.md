@@ -45,7 +45,7 @@ header.Set("Content-Type", "application/json")
 
 #### Response.Status
 
-Write the given status code.
+Write the given status code. Calling this method a second time will have no effect.
 
 | Parameters   | Return |
 |--------------|--------|

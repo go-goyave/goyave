@@ -95,7 +95,8 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	handler = staticHandler("config", false)
 	handler(response, request)
 	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
-	suite.Equal(404, result.StatusCode)
+	suite.Equal(200, result.StatusCode) // Not written yet
+	suite.Equal(404, response.GetStatus())
 
 	body, err = ioutil.ReadAll(result.Body)
 	if err != nil {
@@ -163,7 +164,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 		panic(err)
 	}
 	suite.Equal(404, result.StatusCode)
-	suite.Equal(0, len(body))
+	suite.Equal("{\"error\":\""+http.StatusText(404)+"\"}\n", string(body))
 }
 
 func (suite *RouterTestSuite) TestCORS() {
@@ -191,6 +192,95 @@ func (suite *RouterTestSuite) TestCORS() {
 	})
 	rawRequest := httptest.NewRequest("GET", "/cors", nil)
 	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {}, validation.RuleSet{})
+}
+
+func (suite *RouterTestSuite) TestPanicStatusHandler() {
+	request, response := createRouterTestRequest("/uri")
+	response.err = "random error"
+	panicStatusHandler(response, request)
+	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Equal(500, result.StatusCode)
+}
+
+func (suite *RouterTestSuite) TestErrorStatusHandler() {
+	request, response := createRouterTestRequest("/uri")
+	response.Status(404)
+	errorStatusHandler(response, request)
+	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Equal(404, result.StatusCode)
+	suite.Equal("application/json", result.Header.Get("Content-Type"))
+
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal("{\"error\":\""+http.StatusText(404)+"\"}\n", string(body))
+}
+
+func (suite *RouterTestSuite) TestStatusHandlers() {
+	rawRequest := httptest.NewRequest("GET", "/uri", nil)
+	writer := httptest.NewRecorder()
+	router := newRouter()
+	router.StatusHandler(func(response *Response, request *Request) {
+		response.String(http.StatusInternalServerError, "An unexpected panic occurred.")
+	}, http.StatusInternalServerError)
+	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
+		panic("Panic")
+	}, validation.RuleSet{})
+
+	result := writer.Result()
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(500, result.StatusCode)
+	suite.Equal("An unexpected panic occurred.", string(body))
+
+	// On subrouters
+	subrouter := router.Subrouter("/sub")
+	writer = httptest.NewRecorder()
+	router = newRouter()
+	subrouter.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
+		panic("Panic")
+	}, validation.RuleSet{})
+
+	result = writer.Result()
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(500, result.StatusCode)
+	suite.Equal("An unexpected panic occurred.", string(body))
+
+	// Multiple statuses
+	writer = httptest.NewRecorder()
+	subrouter.StatusHandler(func(response *Response, request *Request) {
+		response.String(response.GetStatus(), http.StatusText(response.GetStatus()))
+	}, 400, 404)
+	subrouter.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
+		response.Status(400)
+	}, validation.RuleSet{})
+
+	result = writer.Result()
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(400, result.StatusCode)
+	suite.Equal(http.StatusText(400), string(body))
+
+	writer = httptest.NewRecorder()
+	subrouter.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
+		response.Status(404)
+	}, validation.RuleSet{})
+
+	result = writer.Result()
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(404, result.StatusCode)
+	suite.Equal(http.StatusText(404), string(body))
 }
 
 func TestRouterTestSuite(t *testing.T) {

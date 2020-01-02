@@ -22,7 +22,9 @@ type Response struct {
 	// core can write default 204 No Content.
 	// See RFC 7231, 6.3.5
 	empty       bool
-	emptyStatus bool
+	status      int
+	wroteHeader bool
+	err         interface{}
 
 	httpRequest *http.Request
 	http.ResponseWriter
@@ -35,14 +37,25 @@ type Response struct {
 // See http.ResponseWriter.Write
 func (r *Response) Write(data []byte) (int, error) {
 	r.empty = false
+	if !r.wroteHeader {
+		if r.status == 0 {
+			r.status = 200
+		}
+		r.WriteHeader(r.status)
+	}
 	return r.ResponseWriter.Write(data)
 }
 
 // WriteHeader sends an HTTP response header with the provided
 // status code.
+// Prefer using "Status()" method instead.
+// Calling this method a second time will have no effect.
 func (r *Response) WriteHeader(status int) {
-	r.emptyStatus = false
-	r.ResponseWriter.WriteHeader(status)
+	if !r.wroteHeader {
+		r.status = status
+		r.wroteHeader = true
+		r.ResponseWriter.WriteHeader(status)
+	}
 }
 
 // Header returns the header map that will be sent.
@@ -52,9 +65,22 @@ func (r *Response) Header() http.Header {
 
 // --------------------------------------
 
-// Status write the given status code
+// GetStatus return the response code for this request or 0 if not yet set.
+func (r *Response) GetStatus() int {
+	return r.status
+}
+
+// GetError return the value which caused a panic in the request's handling, or nil.
+func (r *Response) GetError() interface{} {
+	return r.err
+}
+
+// Status set the response status code.
+// Calling this method a second time will have no effect.
 func (r *Response) Status(status int) {
-	r.WriteHeader(status)
+	if r.status == 0 {
+		r.status = status
+	}
 }
 
 // JSON write json data as a response.
@@ -74,7 +100,7 @@ func (r *Response) String(responseCode int, message string) error {
 
 func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	r.empty = false
-	r.emptyStatus = false
+	r.status = http.StatusOK
 	mime, size := filesystem.GetMIMEType(file)
 	r.ResponseWriter.Header().Set("Content-Disposition", disposition)
 	r.ResponseWriter.Header().Set("Content-Type", mime)

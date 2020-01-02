@@ -3,12 +3,14 @@ package goyave
 import (
 	"encoding/json"
 	"fmt"
+	htmltemplate "html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"runtime/debug"
 	"strconv"
+	"text/template"
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
@@ -144,6 +146,45 @@ func (r *Response) Redirect(url string) {
 // TemporaryRedirect send a temporary redirect response
 func (r *Response) TemporaryRedirect(url string) {
 	http.Redirect(r, r.httpRequest, url, http.StatusTemporaryRedirect)
+}
+
+// Render a text template with the given data.
+// The template path is relative to the "resources/template" directory.
+func (r *Response) Render(responseCode int, templatePath string, data interface{}) {
+	r.ResponseWriter.WriteHeader(responseCode)
+	tmplt, err := template.ParseFiles(r.getTemplateDirectory() + templatePath)
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmplt.Execute(r, data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// RenderHTML an HTML template with the given data.
+// The template path is relative to the "resources/template" directory.
+func (r *Response) RenderHTML(responseCode int, templatePath string, data interface{}) {
+	r.ResponseWriter.WriteHeader(responseCode)
+	tmplt, err := htmltemplate.ParseFiles(r.getTemplateDirectory() + templatePath)
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmplt.Execute(r, data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (r *Response) getTemplateDirectory() string {
+	sep := string(os.PathSeparator)
+	workingDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return workingDir + sep + "resources" + sep + "template" + sep
 }
 
 // CreateTestResponse create an empty response with the given response writer.

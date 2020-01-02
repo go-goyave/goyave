@@ -178,6 +178,98 @@ func (suite *ResponseTestSuite) TestCreateTestResponse() {
 	}
 }
 
+func (suite *ResponseTestSuite) TestRender() {
+	// With map data
+	recorder := httptest.NewRecorder()
+	response := CreateTestResponse(recorder)
+
+	mapData := map[string]interface{}{
+		"Status":  http.StatusNotFound,
+		"Message": "Not Found.",
+	}
+	response.Render(http.StatusNotFound, "error.txt", mapData)
+	resp := recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("Error 404: Not Found.", string(body))
+
+	// With struct data
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	structData := struct {
+		Status  int
+		Message string
+	}{
+		Status:  http.StatusNotFound,
+		Message: "Not Found.",
+	}
+	response.Render(http.StatusNotFound, "error.txt", structData)
+	resp = recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err = ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("Error 404: Not Found.", string(body))
+
+	// Non-existing template and exec error
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	suite.Panics(func() {
+		response.Render(http.StatusNotFound, "non-existing-template", nil)
+	})
+	suite.Panics(func() {
+		response.Render(http.StatusNotFound, "invalid.txt", nil)
+	})
+}
+
+func (suite *ResponseTestSuite) TestRenderHTML() {
+	// With map data
+	recorder := httptest.NewRecorder()
+	response := CreateTestResponse(recorder)
+
+	mapData := map[string]interface{}{
+		"Status":  http.StatusNotFound,
+		"Message": "Not Found.",
+	}
+	response.RenderHTML(http.StatusNotFound, "error.html", mapData)
+	resp := recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
+
+	// With struct data
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	structData := struct {
+		Status  int
+		Message string
+	}{
+		Status:  http.StatusNotFound,
+		Message: "Not Found.",
+	}
+	response.RenderHTML(http.StatusNotFound, "error.html", structData)
+	resp = recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err = ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
+
+	// Non-existing template and exec error
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	suite.Panics(func() {
+		response.RenderHTML(http.StatusNotFound, "non-existing-template", nil)
+	})
+	suite.Panics(func() {
+		response.RenderHTML(http.StatusNotFound, "invalid.txt", nil)
+	})
+}
+
 func TestResponseTestSuite(t *testing.T) {
 	suite.Run(t, new(ResponseTestSuite))
 }

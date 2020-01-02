@@ -21,7 +21,8 @@ type Response struct {
 	// Used to check if controller didn't write anything so
 	// core can write default 204 No Content.
 	// See RFC 7231, 6.3.5
-	empty bool
+	empty       bool
+	emptyStatus bool
 
 	httpRequest *http.Request
 	http.ResponseWriter
@@ -40,7 +41,7 @@ func (r *Response) Write(data []byte) (int, error) {
 // WriteHeader sends an HTTP response header with the provided
 // status code.
 func (r *Response) WriteHeader(status int) {
-	r.empty = false
+	r.emptyStatus = false
 	r.ResponseWriter.WriteHeader(status)
 }
 
@@ -61,18 +62,19 @@ func (r *Response) Status(status int) {
 func (r *Response) JSON(responseCode int, data interface{}) error {
 	r.ResponseWriter.Header().Set("Content-Type", "application/json")
 	r.WriteHeader(responseCode)
-	return json.NewEncoder(r.ResponseWriter).Encode(data)
+	return json.NewEncoder(r).Encode(data)
 }
 
 // String write a string as a response
 func (r *Response) String(responseCode int, message string) error {
-	r.ResponseWriter.WriteHeader(responseCode)
+	r.WriteHeader(responseCode)
 	_, err := r.Write([]byte(message))
 	return err
 }
 
 func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	r.empty = false
+	r.emptyStatus = false
 	mime, size := filesystem.GetMIMEType(file)
 	r.ResponseWriter.Header().Set("Content-Disposition", disposition)
 	r.ResponseWriter.Header().Set("Content-Type", mime)
@@ -127,6 +129,7 @@ func (r *Response) Error(err interface{}) error {
 		return r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
 	}
 
+	r.empty = false
 	r.WriteHeader(http.StatusInternalServerError)
 	return nil
 }
@@ -151,7 +154,7 @@ func (r *Response) TemporaryRedirect(url string) {
 // Render a text template with the given data.
 // The template path is relative to the "resources/template" directory.
 func (r *Response) Render(responseCode int, templatePath string, data interface{}) error {
-	r.ResponseWriter.WriteHeader(responseCode)
+	r.WriteHeader(responseCode)
 	tmplt, err := template.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
 		return err
@@ -162,7 +165,7 @@ func (r *Response) Render(responseCode int, templatePath string, data interface{
 // RenderHTML an HTML template with the given data.
 // The template path is relative to the "resources/template" directory.
 func (r *Response) RenderHTML(responseCode int, templatePath string, data interface{}) error {
-	r.ResponseWriter.WriteHeader(responseCode)
+	r.WriteHeader(responseCode)
 	tmplt, err := htmltemplate.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
 		return err

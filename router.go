@@ -17,6 +17,7 @@ type Router struct {
 	corsOptions       *cors.Options
 	hasCORSMiddleware bool
 	middleware        []Middleware
+	statusHandlers    map[int]Handler
 }
 
 // Handler is a controller or middleware function
@@ -25,9 +26,20 @@ type Handler func(*Response, *Request)
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.GetString("protocol"))
-	router := &Router{muxRouter: muxRouter}
+	router := &Router{
+		muxRouter:      muxRouter,
+		statusHandlers: map[int]Handler{},
+	}
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
+}
+
+func (r *Router) copyStatusHandlers() map[int]Handler {
+	cpy := make(map[int]Handler)
+	for key, value := range r.statusHandlers {
+		cpy[key] = value
+	}
+	return cpy
 }
 
 // Subrouter create a new sub-router from this router.
@@ -38,6 +50,7 @@ func (r *Router) Subrouter(prefix string) *Router {
 		muxRouter:         r.muxRouter.PathPrefix(prefix).Subrouter(),
 		corsOptions:       r.corsOptions,
 		hasCORSMiddleware: r.hasCORSMiddleware,
+		statusHandlers:    r.copyStatusHandlers(),
 	}
 
 	// Apply parent middleware to subrouter
@@ -94,6 +107,23 @@ func (r *Router) CORS(options *cors.Options) {
 	}
 }
 
+// StatusHandler set a handler for responses with an empty body.
+// The handler will be automatically executed if the request's life-cycle reaches its end
+// and nothing has been written in the response body.
+//
+// Multiple status codes can be given. The handler will be executed if one of them matches.
+//
+// This method can be used to define custom error handlers for example.
+//
+// Status handlers are inherited as a copy in sub-routers. Modifying a child's status handler
+// will not modify its parent's.
+func (r *Router) StatusHandler(handler Handler, status int, additionalStatuses ...int) {
+	r.statusHandlers[status] = handler
+	for _, s := range additionalStatuses {
+		r.statusHandlers[s] = handler
+	}
+}
+
 func staticHandler(directory string, download bool) Handler {
 	return func(response *Response, r *Request) {
 		file := r.Params["resource"]
@@ -136,6 +166,7 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 		httpRequest:    rawRequest,
 		ResponseWriter: w,
 		empty:          true,
+		emptyStatus:    true,
 	}
 
 	// Validate last.
@@ -148,9 +179,11 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 
 	handler(response, request)
 
+	// TODO status handlers
+
 	// If the response is empty, return status 204 to
 	// comply with RFC 7231, 6.3.5
-	if response.empty {
+	if response.empty && response.emptyStatus {
 		response.Status(http.StatusNoContent)
 	}
 }

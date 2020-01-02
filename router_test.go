@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -149,6 +150,20 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	suite.Equal(0, len(body))
 	suite.True(suite.middlewareExecuted)
 	suite.middlewareExecuted = false
+
+	writer = httptest.NewRecorder()
+	router = newRouter()
+	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
+		response.Status(http.StatusNotFound)
+	}, validation.RuleSet{})
+
+	result = writer.Result()
+	body, err = ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(404, result.StatusCode)
+	suite.Equal(0, len(body))
 }
 
 func (suite *RouterTestSuite) TestCORS() {

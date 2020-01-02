@@ -25,6 +25,7 @@ func createTestResponse(rawRequest *http.Request) *Response {
 		ResponseWriter: httptest.NewRecorder(),
 		httpRequest:    rawRequest,
 		empty:          true,
+		emptyStatus:    true,
 	}
 
 	return response
@@ -37,7 +38,17 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(403, resp.StatusCode)
+	suite.True(response.empty)
+	suite.False(response.emptyStatus)
+
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = createTestResponse(rawRequest)
+	response.String(403, "test")
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(403, resp.StatusCode)
 	suite.False(response.empty)
+	suite.False(response.emptyStatus)
 }
 
 func (suite *ResponseTestSuite) TestResponseHeader() {
@@ -49,7 +60,8 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.False(response.empty)
+	suite.True(response.empty)
+	suite.False(response.emptyStatus)
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
@@ -64,6 +76,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
+	suite.False(response.emptyStatus)
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = createTestResponse(rawRequest)
@@ -76,6 +89,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
+	suite.False(response.emptyStatus)
 }
 
 func (suite *ResponseTestSuite) TestResponseFile() {
@@ -90,6 +104,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
+	suite.False(response.emptyStatus)
 }
 
 func (suite *ResponseTestSuite) TestResponseFilePanic() {
@@ -113,6 +128,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
+	suite.False(response.emptyStatus)
 }
 
 func (suite *ResponseTestSuite) TestResponseRedirect() {
@@ -127,6 +143,7 @@ func (suite *ResponseTestSuite) TestResponseRedirect() {
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Permanent Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
+	suite.False(response.emptyStatus)
 }
 
 func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
@@ -141,6 +158,7 @@ func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Temporary Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
+	suite.False(response.emptyStatus)
 }
 
 func (suite *ResponseTestSuite) TestResponseCookie() {

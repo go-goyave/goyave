@@ -33,7 +33,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Placeholders in language lines and pluralization
 - Support for gzip compression
 - Direct support for the HEAD method
-- Template rendering (text and HTML)
 - And more!
 
 ## Contributors

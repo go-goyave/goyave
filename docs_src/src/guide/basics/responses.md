@@ -25,6 +25,8 @@ import "github.com/System-Glitch/goyave/v2"
 [Cookie](#response-cookie)
 [Redirect](#response-redirect)
 [TemporaryRedirect](#response-temporaryredirect)
+[Render](#response-render)
+[RenderHTML](#response-renderhtml)
 :::
 
 #### Response.Header
@@ -195,4 +197,56 @@ Send a temporary redirect response. (HTTP 307)
 **Example:**
 ``` go
 response.TemporaryRedirect("/maintenance")
+```
+
+#### Response.Render
+
+Render a text template with the given data. This method uses the [Go's template API](https://golang.org/pkg/text/template/).
+
+The template path is relative to the `resources/template` directory.
+
+| Parameters            | Return  |
+|-----------------------|---------|
+| `responseCode int`    | `error` |
+| `templatePath string` |         |
+| `data interface{}`    |         |
+
+**Example:**
+``` go
+type Inventory struct {
+	Material string
+	Count    uint
+}
+
+sweaters := Inventory{"wool", 17}
+
+// data can also be a map[string]interface{}
+// Here, "resources/template/template.txt" will be used.
+response.Render(http.StatusOK, "template.txt", sweaters)
+```
+
+#### Response.RenderHTML
+
+Render an HTML template with the given data. This method uses the [Go's template API](https://golang.org/pkg/html/template/).
+
+The template path is relative to the `resources/template` directory.
+
+| Parameters            | Return  |
+|-----------------------|---------|
+| `responseCode int`    | `error` |
+| `templatePath string` |         |
+| `data interface{}`    |         |
+
+**Example:**
+``` go
+type Inventory struct {
+	Material string
+	Count    uint
+}
+
+sweaters := Inventory{"wool", 17}
+
+// data can also be a map[string]interface{}
+// Here, "resources/template/inventory.html" will be used.
+response.RenderHTML(http.StatusOK, "inventory.html", sweaters)
 ```

@@ -2,6 +2,10 @@
 
 [[toc]]
 
+## v2.4.0
+
+- Added [template rendring](./basics/responses.html#response-render).
+
 ## v2.3.0
 
 - Added [CORS options](./advanced/cors.html).

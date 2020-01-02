@@ -150,32 +150,24 @@ func (r *Response) TemporaryRedirect(url string) {
 
 // Render a text template with the given data.
 // The template path is relative to the "resources/template" directory.
-func (r *Response) Render(responseCode int, templatePath string, data interface{}) {
+func (r *Response) Render(responseCode int, templatePath string, data interface{}) error {
 	r.ResponseWriter.WriteHeader(responseCode)
 	tmplt, err := template.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
-	err = tmplt.Execute(r, data)
-	if err != nil {
-		panic(err)
-	}
+	return tmplt.Execute(r, data)
 }
 
 // RenderHTML an HTML template with the given data.
 // The template path is relative to the "resources/template" directory.
-func (r *Response) RenderHTML(responseCode int, templatePath string, data interface{}) {
+func (r *Response) RenderHTML(responseCode int, templatePath string, data interface{}) error {
 	r.ResponseWriter.WriteHeader(responseCode)
 	tmplt, err := htmltemplate.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
-	err = tmplt.Execute(r, data)
-	if err != nil {
-		panic(err)
-	}
+	return tmplt.Execute(r, data)
 }
 
 func (r *Response) getTemplateDirectory() string {

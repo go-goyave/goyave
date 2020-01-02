@@ -107,8 +107,10 @@ The typical and recommended directory structure for Goyave applications is as fo
 │   │       ├── fields.json (*optional*)
 │   │       ├── locale.json (*optional*)
 │   │       └── rules.json (*optional*)
-│   └── img (*optional*)
-│       └── *...*
+│   ├── img (*optional*)
+│   │   └── *...*
+|   └── template (*optional*)
+|       └── *...*
 │
 ├── test
 |   └── *...*
@@ -165,6 +167,10 @@ Each language directory contains three files. Each file is **optional**.
 - `rules.json`: validation rules messages.
 
 Learn more about localization [here](./advanced/localization.html).
+
+#### Template resources directory
+
+The `resources/template` directory contains your text and HTML templates. Learn more about template rendering [here](./basics/responses.html#response-render). This directory can contain sub-directories.
 
 ### Test directory
 

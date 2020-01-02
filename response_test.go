@@ -187,7 +187,7 @@ func (suite *ResponseTestSuite) TestRender() {
 		"Status":  http.StatusNotFound,
 		"Message": "Not Found.",
 	}
-	response.Render(http.StatusNotFound, "error.txt", mapData)
+	suite.Nil(response.Render(http.StatusNotFound, "error.txt", mapData))
 	resp := recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -205,7 +205,7 @@ func (suite *ResponseTestSuite) TestRender() {
 		Status:  http.StatusNotFound,
 		Message: "Not Found.",
 	}
-	response.Render(http.StatusNotFound, "error.txt", structData)
+	suite.Nil(response.Render(http.StatusNotFound, "error.txt", structData))
 	resp = recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err = ioutil.ReadAll(resp.Body)
@@ -216,12 +216,8 @@ func (suite *ResponseTestSuite) TestRender() {
 	recorder = httptest.NewRecorder()
 	response = CreateTestResponse(recorder)
 
-	suite.Panics(func() {
-		response.Render(http.StatusNotFound, "non-existing-template", nil)
-	})
-	suite.Panics(func() {
-		response.Render(http.StatusNotFound, "invalid.txt", nil)
-	})
+	suite.NotNil(response.Render(http.StatusNotFound, "non-existing-template", nil))
+	suite.NotNil(response.Render(http.StatusNotFound, "invalid.txt", nil))
 }
 
 func (suite *ResponseTestSuite) TestRenderHTML() {
@@ -233,7 +229,7 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 		"Status":  http.StatusNotFound,
 		"Message": "Not Found.",
 	}
-	response.RenderHTML(http.StatusNotFound, "error.html", mapData)
+	suite.Nil(response.RenderHTML(http.StatusNotFound, "error.html", mapData))
 	resp := recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -251,7 +247,7 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 		Status:  http.StatusNotFound,
 		Message: "Not Found.",
 	}
-	response.RenderHTML(http.StatusNotFound, "error.html", structData)
+	suite.Nil(response.RenderHTML(http.StatusNotFound, "error.html", structData))
 	resp = recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err = ioutil.ReadAll(resp.Body)
@@ -262,12 +258,8 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 	recorder = httptest.NewRecorder()
 	response = CreateTestResponse(recorder)
 
-	suite.Panics(func() {
-		response.RenderHTML(http.StatusNotFound, "non-existing-template", nil)
-	})
-	suite.Panics(func() {
-		response.RenderHTML(http.StatusNotFound, "invalid.txt", nil)
-	})
+	suite.NotNil(response.RenderHTML(http.StatusNotFound, "non-existing-template", nil))
+	suite.NotNil(response.RenderHTML(http.StatusNotFound, "invalid.txt", nil))
 }
 
 func TestResponseTestSuite(t *testing.T) {

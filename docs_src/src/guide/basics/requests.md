@@ -187,7 +187,7 @@ fmt.Println(request.CORSOptions().AllowedMethods) // "[HEAD GET POST PUT PATCH D
 
 <p><Badge text="Since v2.0.0"/></p>
 
-Accessors are helper functions to retrieve request data without having to write the type assertion. This is helpful to make your controllers cleaner. You shouldn't use these accessors in middlewares because they assume the data has been converted by the validation already. Data can still be accessed through the `Data` attribute. There is currently no accessor for slices.
+Accessors are helper functions to retrieve request data without having to write the type assertion. This is helpful to make your controllers cleaner. You shouldn't use these accessors in middleware because they assume the data has been converted by the validation already. Data can still be accessed through the `Data` attribute. There is currently no accessor for slices.
 
 ::: table
 [Has](#request-has)

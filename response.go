@@ -108,7 +108,7 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 
 	f, _ := os.Open(file)
 	defer f.Close()
-	return io.Copy(r.ResponseWriter, f)
+	return io.Copy(r, f)
 }
 
 // File write a file as an inline element.

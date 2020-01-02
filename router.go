@@ -34,6 +34,14 @@ func errorStatusHandler(response *Response, request *Request) {
 	response.JSON(response.GetStatus(), message)
 }
 
+func (r *Router) muxStatusHandler(status int) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, rawRequest *http.Request) {
+		r.requestHandler(w, rawRequest, func(response *Response, r *Request) {
+			response.Status(status)
+		}, nil)
+	})
+}
+
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.GetString("protocol"))
@@ -41,6 +49,8 @@ func newRouter() *Router {
 		muxRouter:      muxRouter,
 		statusHandlers: map[int]Handler{},
 	}
+	muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
+	muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
 	router.StatusHandler(errorStatusHandler, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 501, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)

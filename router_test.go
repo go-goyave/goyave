@@ -283,6 +283,20 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	suite.Equal(http.StatusText(404), string(body))
 }
 
+func (suite *RouterTestSuite) TestMuxStatusHandler() {
+	router := newRouter()
+
+	recorder := httptest.NewRecorder()
+	router.muxRouter.NotFoundHandler.ServeHTTP(recorder, httptest.NewRequest("GET", "/", nil))
+	result := recorder.Result()
+	suite.Equal(404, result.StatusCode)
+
+	recorder = httptest.NewRecorder()
+	router.muxRouter.MethodNotAllowedHandler.ServeHTTP(recorder, httptest.NewRequest("GET", "/", nil))
+	result = recorder.Result()
+	suite.Equal(405, result.StatusCode)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	suite.Run(t, new(RouterTestSuite))
 }

@@ -14,6 +14,8 @@ import "github.com/System-Glitch/goyave/v2"
 
 **List of response methods**:
 ::: table
+[GetStatus](#response-getstatus)
+[GetError](#response-geterror)
 [Header](#response-header)
 [Status](#response-status)
 [JSON](#response-json)
@@ -28,6 +30,34 @@ import "github.com/System-Glitch/goyave/v2"
 [Render](#response-render)
 [RenderHTML](#response-renderhtml)
 :::
+
+#### Response.GetStatus
+
+Returns the response code for this request or `0` if not yet set.
+
+| Parameters | Return |
+|------------|--------|
+|            | `int`  |
+
+**Example:**
+``` go
+fmt.Println(response.GetStatus()) // 200
+```
+
+#### Response.GetError
+
+Returns the value which caused a panic in the request's handling, or `nil`. The response error is also set when [`Error()`](#response-error) is called.
+
+This method is mainly used in [status handlers](../advanced/status-handlers.html).
+
+| Parameters | Return        |
+|------------|---------------|
+|            | `interface{}` |
+
+**Example:**
+``` go
+fmt.Println(response.GetError()) // "panic: something wrong happened"
+```
 
 #### Response.Header
 
@@ -140,7 +170,9 @@ response.Download("/path/to/file", "awesome.txt")
 
 #### Response.Error
 
-Print the error in the console and return it with an error code 500. If debugging is enabled in the config, the error is also written in the response using the JSON format, and the stacktrace is printed in the console.
+Print the error in the console and return it with an error code `500`.
+
+If debugging is enabled in the config, the error is also written in the response using the JSON format, and the stacktrace is printed in the console. If debugging is not enabled, only the stauts code is set, which means you can still write to the response, or use your error [status handler](../advanced/status-handlers.html).
 
 | Parameters        | Return  |
 |-------------------|---------|

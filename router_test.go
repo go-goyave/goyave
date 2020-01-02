@@ -295,6 +295,22 @@ func (suite *RouterTestSuite) TestMuxStatusHandler() {
 	router.muxRouter.MethodNotAllowedHandler.ServeHTTP(recorder, httptest.NewRequest("GET", "/", nil))
 	result = recorder.Result()
 	suite.Equal(405, result.StatusCode)
+
+	config.Set("debug", false)
+	writer := httptest.NewRecorder()
+	router = newRouter()
+	router.requestHandler(writer, httptest.NewRequest("GET", "/uri", nil), func(response *Response, request *Request) {
+		panic("Panic")
+	}, validation.RuleSet{})
+
+	result = writer.Result()
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(500, result.StatusCode)
+	suite.Equal("{\"error\":\""+http.StatusText(http.StatusInternalServerError)+"\"}\n", string(body))
+	config.Set("debug", true)
 }
 
 func TestRouterTestSuite(t *testing.T) {

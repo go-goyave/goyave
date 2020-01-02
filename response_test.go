@@ -107,12 +107,13 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	response.Error("random error")
 	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
-	suite.Equal(500, resp.StatusCode)
+	suite.Equal(500, response.GetStatus())
 
 	body, err = ioutil.ReadAll(resp.Body)
 	suite.Nil(err)
 	suite.Empty("", string(body))
-	suite.False(response.empty)
+	suite.True(response.empty)
+	suite.Equal("random error", response.GetError())
 	suite.Equal(500, response.status)
 	config.Set("debug", true)
 }

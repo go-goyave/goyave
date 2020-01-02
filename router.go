@@ -25,6 +25,12 @@ type Handler func(*Response, *Request)
 
 func panicStatusHandler(response *Response, request *Request) {
 	response.Error(response.GetError())
+	if response.empty {
+		message := map[string]string{
+			"error": http.StatusText(response.GetStatus()),
+		}
+		response.JSON(response.GetStatus(), message)
+	}
 }
 
 func errorStatusHandler(response *Response, request *Request) {
@@ -52,7 +58,7 @@ func newRouter() *Router {
 	muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
 	muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
-	router.StatusHandler(errorStatusHandler, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 501, 511)
+	router.StatusHandler(errorStatusHandler, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
@@ -75,6 +81,8 @@ func (r *Router) Subrouter(prefix string) *Router {
 		hasCORSMiddleware: r.hasCORSMiddleware,
 		statusHandlers:    r.copyStatusHandlers(),
 	}
+	router.muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
+	router.muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
 
 	// Apply parent middleware to subrouter
 	router.Middleware(r.middleware...)

@@ -2,6 +2,13 @@
 
 [[toc]]
 
+## v2.4.0
+
+- Added [template rendring](./basics/responses.html#response-render).
+- Fixed PostgreSQL options not working.
+- `TestSuite.Middleware()` now has a more realistic behavior: the finalization step of the request life-cycle is now also executed. This may require your tests to be updated if those check the status code in the response.
+- Added [status handlers](./advanced/status-handlers.html).
+
 ## v2.3.0
 
 - Added [CORS options](./advanced/cors.html).

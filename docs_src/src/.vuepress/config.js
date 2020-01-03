@@ -15,12 +15,12 @@ module.exports = {
         ['link', { rel: 'icon', type: "image/png", sizes: "512x512", href: `/goyave_512.png` }],
         ['meta', { property: 'twitter:title', content: title }],
         ['meta', { property: 'twitter:description', content: description }],
-        ['meta', { property: 'twitter:image:src', content: `/goyave_banner.png` }],
+        ['meta', { property: 'twitter:image:src', content: `https://system-glitch.github.io/goyave/goyave_banner.png` }],
         ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
         ['meta', { property: 'og:title', content: title }],
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:description', content: description }],
-        ['meta', { property: 'og:image', content: `/goyave/goyave_banner.png` }],
+        ['meta', { property: 'og:image', content: `https://system-glitch.github.io/goyave/goyave_banner.png` }],
         ['meta', { property: 'og:site_name', content: "Goyave" }],
     ],
     themeConfig: {
@@ -109,9 +109,9 @@ function getGuideSidebar () {
                 'advanced/authentication',
                 'advanced/localization',
                 'advanced/testing',
-                'advanced/plugins',
                 'advanced/multi-services',
                 'advanced/cors',
+                'advanced/status-handlers',
             ]
         }
     ]

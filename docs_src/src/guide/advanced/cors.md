@@ -22,7 +22,7 @@ CORS options are set on **routers**. If the passed options are not `nil`, the CO
 router.CORS(cors.Default())
 ```
 
-CORS options should be defined **before middleware and route definition**. All of this router's sub-routers inherit CORS options by default. If you want to remove the options from a sub-router, or use different ones, simply create another `cors.Options` object and assign it.
+CORS options should be defined **before middleware and route definition**. All of this router's sub-routers **inherit** CORS options by default. If you want to remove the options from a sub-router, or use different ones, simply create another `cors.Options` object and assign it.
 
 ``` go
 router.CORS(cors.Default())

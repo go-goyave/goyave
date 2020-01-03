@@ -22,7 +22,8 @@ func recoveryMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				response.Error(err)
+				response.err = err
+				response.Status(http.StatusInternalServerError)
 			}
 		}()
 

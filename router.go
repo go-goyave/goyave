@@ -17,17 +17,58 @@ type Router struct {
 	corsOptions       *cors.Options
 	hasCORSMiddleware bool
 	middleware        []Middleware
+	statusHandlers    map[int]Handler
 }
 
 // Handler is a controller or middleware function
 type Handler func(*Response, *Request)
 
+func panicStatusHandler(response *Response, request *Request) {
+	response.Error(response.GetError())
+	if response.empty {
+		message := map[string]string{
+			"error": http.StatusText(response.GetStatus()),
+		}
+		response.JSON(response.GetStatus(), message)
+	}
+}
+
+func errorStatusHandler(response *Response, request *Request) {
+	message := map[string]string{
+		"error": http.StatusText(response.GetStatus()),
+	}
+	response.JSON(response.GetStatus(), message)
+}
+
+func (r *Router) muxStatusHandler(status int) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, rawRequest *http.Request) {
+		r.requestHandler(w, rawRequest, func(response *Response, r *Request) {
+			response.Status(status)
+		}, nil)
+	})
+}
+
 func newRouter() *Router {
 	muxRouter := mux.NewRouter()
 	muxRouter.Schemes(config.GetString("protocol"))
-	router := &Router{muxRouter: muxRouter}
+	router := &Router{
+		muxRouter:      muxRouter,
+		statusHandlers: map[int]Handler{},
+	}
+	muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
+	muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
+	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
+	router.StatusHandler(errorStatusHandler, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
+}
+
+func (r *Router) copyStatusHandlers() map[int]Handler {
+	cpy := make(map[int]Handler)
+	for key, value := range r.statusHandlers {
+		cpy[key] = value
+	}
+	return cpy
 }
 
 // Subrouter create a new sub-router from this router.
@@ -38,7 +79,10 @@ func (r *Router) Subrouter(prefix string) *Router {
 		muxRouter:         r.muxRouter.PathPrefix(prefix).Subrouter(),
 		corsOptions:       r.corsOptions,
 		hasCORSMiddleware: r.hasCORSMiddleware,
+		statusHandlers:    r.copyStatusHandlers(),
 	}
+	router.muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
+	router.muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
 
 	// Apply parent middleware to subrouter
 	router.Middleware(r.middleware...)
@@ -94,6 +138,25 @@ func (r *Router) CORS(options *cors.Options) {
 	}
 }
 
+// StatusHandler set a handler for responses with an empty body.
+// The handler will be automatically executed if the request's life-cycle reaches its end
+// and nothing has been written in the response body.
+//
+// Multiple status codes can be given. The handler will be executed if one of them matches.
+//
+// This method can be used to define custom error handlers for example.
+//
+// Status handlers are inherited as a copy in sub-routers. Modifying a child's status handler
+// will not modify its parent's.
+//
+// Codes in the 500 range and codes 404 and 405 have a default status handler.
+func (r *Router) StatusHandler(handler Handler, status int, additionalStatuses ...int) {
+	r.statusHandlers[status] = handler
+	for _, s := range additionalStatuses {
+		r.statusHandlers[s] = handler
+	}
+}
+
 func staticHandler(directory string, download bool) Handler {
 	return func(response *Response, r *Request) {
 		file := r.Params["resource"]
@@ -136,6 +199,7 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 		httpRequest:    rawRequest,
 		ResponseWriter: w,
 		empty:          true,
+		status:         0,
 	}
 
 	// Validate last.
@@ -148,9 +212,24 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 
 	handler(response, request)
 
-	// If the response is empty, return status 204 to
-	// comply with RFC 7231, 6.3.5
+	r.finalize(response, request)
+}
+
+// finalize the request's life-cycle.
+func (r *Router) finalize(response *Response, request *Request) {
 	if response.empty {
-		response.Status(http.StatusNoContent)
+		if response.status == 0 {
+			// If the response is empty, return status 204 to
+			// comply with RFC 7231, 6.3.5
+			response.Status(http.StatusNoContent)
+		} else if statusHandler, ok := r.statusHandlers[response.status]; ok {
+			// Status has been set but body is empty.
+			// Execute status handler if exists.
+			statusHandler(response, request)
+		}
+	}
+
+	if !response.wroteHeader {
+		response.WriteHeader(response.status)
 	}
 }

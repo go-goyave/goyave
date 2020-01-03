@@ -3,12 +3,14 @@ package goyave
 import (
 	"encoding/json"
 	"fmt"
+	htmltemplate "html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"runtime/debug"
 	"strconv"
+	"text/template"
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
@@ -19,7 +21,10 @@ type Response struct {
 	// Used to check if controller didn't write anything so
 	// core can write default 204 No Content.
 	// See RFC 7231, 6.3.5
-	empty bool
+	empty       bool
+	status      int
+	wroteHeader bool
+	err         interface{}
 
 	httpRequest *http.Request
 	http.ResponseWriter
@@ -32,14 +37,25 @@ type Response struct {
 // See http.ResponseWriter.Write
 func (r *Response) Write(data []byte) (int, error) {
 	r.empty = false
+	if !r.wroteHeader {
+		if r.status == 0 {
+			r.status = 200
+		}
+		r.WriteHeader(r.status)
+	}
 	return r.ResponseWriter.Write(data)
 }
 
 // WriteHeader sends an HTTP response header with the provided
 // status code.
+// Prefer using "Status()" method instead.
+// Calling this method a second time will have no effect.
 func (r *Response) WriteHeader(status int) {
-	r.empty = false
-	r.ResponseWriter.WriteHeader(status)
+	if !r.wroteHeader {
+		r.status = status
+		r.wroteHeader = true
+		r.ResponseWriter.WriteHeader(status)
+	}
 }
 
 // Header returns the header map that will be sent.
@@ -49,9 +65,22 @@ func (r *Response) Header() http.Header {
 
 // --------------------------------------
 
-// Status write the given status code
+// GetStatus return the response code for this request or 0 if not yet set.
+func (r *Response) GetStatus() int {
+	return r.status
+}
+
+// GetError return the value which caused a panic in the request's handling, or nil.
+func (r *Response) GetError() interface{} {
+	return r.err
+}
+
+// Status set the response status code.
+// Calling this method a second time will have no effect.
 func (r *Response) Status(status int) {
-	r.WriteHeader(status)
+	if r.status == 0 {
+		r.status = status
+	}
 }
 
 // JSON write json data as a response.
@@ -59,18 +88,19 @@ func (r *Response) Status(status int) {
 func (r *Response) JSON(responseCode int, data interface{}) error {
 	r.ResponseWriter.Header().Set("Content-Type", "application/json")
 	r.WriteHeader(responseCode)
-	return json.NewEncoder(r.ResponseWriter).Encode(data)
+	return json.NewEncoder(r).Encode(data)
 }
 
 // String write a string as a response
 func (r *Response) String(responseCode int, message string) error {
-	r.ResponseWriter.WriteHeader(responseCode)
+	r.WriteHeader(responseCode)
 	_, err := r.Write([]byte(message))
 	return err
 }
 
 func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	r.empty = false
+	r.status = http.StatusOK
 	mime, size := filesystem.GetMIMEType(file)
 	r.ResponseWriter.Header().Set("Content-Disposition", disposition)
 	r.ResponseWriter.Header().Set("Content-Type", mime)
@@ -78,7 +108,7 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 
 	f, _ := os.Open(file)
 	defer f.Close()
-	return io.Copy(r.ResponseWriter, f)
+	return io.Copy(r, f)
 }
 
 // File write a file as an inline element.
@@ -111,7 +141,10 @@ func (r *Response) Download(file string, fileName string) error {
 // Error print the error in the console and return it with an error code 500.
 // If debugging is enabled in the config, the error is also written in the response
 // and the stacktrace is printed in the console.
+// If debugging is not enabled, only the stauts code is set, which means you can still
+// write to the response, or use your error status handler.
 func (r *Response) Error(err interface{}) error {
+	r.err = err
 	dbg := config.GetBool("debug")
 	log.Println(err)
 	if dbg {
@@ -125,7 +158,8 @@ func (r *Response) Error(err interface{}) error {
 		return r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
 	}
 
-	r.WriteHeader(http.StatusInternalServerError)
+	// Don't set r.empty to false to let error status handler process the error
+	r.Status(http.StatusInternalServerError)
 	return nil
 }
 
@@ -144,6 +178,37 @@ func (r *Response) Redirect(url string) {
 // TemporaryRedirect send a temporary redirect response
 func (r *Response) TemporaryRedirect(url string) {
 	http.Redirect(r, r.httpRequest, url, http.StatusTemporaryRedirect)
+}
+
+// Render a text template with the given data.
+// The template path is relative to the "resources/template" directory.
+func (r *Response) Render(responseCode int, templatePath string, data interface{}) error {
+	r.WriteHeader(responseCode)
+	tmplt, err := template.ParseFiles(r.getTemplateDirectory() + templatePath)
+	if err != nil {
+		return err
+	}
+	return tmplt.Execute(r, data)
+}
+
+// RenderHTML an HTML template with the given data.
+// The template path is relative to the "resources/template" directory.
+func (r *Response) RenderHTML(responseCode int, templatePath string, data interface{}) error {
+	r.WriteHeader(responseCode)
+	tmplt, err := htmltemplate.ParseFiles(r.getTemplateDirectory() + templatePath)
+	if err != nil {
+		return err
+	}
+	return tmplt.Execute(r, data)
+}
+
+func (r *Response) getTemplateDirectory() string {
+	sep := string(os.PathSeparator)
+	workingDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return workingDir + sep + "resources" + sep + "template" + sep
 }
 
 // CreateTestResponse create an empty response with the given response writer.

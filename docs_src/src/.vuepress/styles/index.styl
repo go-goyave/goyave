@@ -3,6 +3,15 @@
 h4
     font-size 1.2rem
 
+#main-title
+    font-size 3rem
+
+    @media screen and (min-width 420px)
+        font-size 4rem
+
+    @media screen and (min-width 720px)
+        font-size 6rem
+
 .home .feature
     display flex
     flex-basis 100% !important
@@ -12,11 +21,13 @@ h4
     text-align center
     align-items center
     justify-content center
-    margin 2rem 1.5rem
+    padding 0 !important
     img
         min-width 275px
 
     @media screen and (min-width 720px)
+        padding 0 2.5rem
+        margin 2rem 1.5rem
         flex-wrap nowrap
         justify-content left
         text-align left

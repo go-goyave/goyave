@@ -89,7 +89,6 @@ func (suite *CustomTestSuite) TestMiddleware() {
 		}
 	}, request, func(response *Response, request *Request) {
 		suite.Equal("application/json", request.Header().Get("Content-Type"))
-		// TODO example if middleware passed: Fail
 	})
 
 	suite.Equal(418, result.StatusCode)

@@ -2,6 +2,17 @@
 
 [[toc]]
 
+## v2.4.0
+
+- Added [template rendring](./basics/responses.html#response-render).
+- Fixed PostgreSQL options not working.
+- `TestSuite.Middleware()` now has a more realistic behavior: the finalization step of the request life-cycle is now also executed. This may require your tests to be updated if those check the status code in the response.
+- Added [status handlers](./advanced/status-handlers.html).
+
+## v2.3.0
+
+- Added [CORS options](./advanced/cors.html).
+
 ## v2.2.1
 
 - Added `domain` config entry. This entry is used for url generation, especially for the TLS redirect.
@@ -9,7 +20,7 @@
 
 ## v2.2.0
 
-- Added [testing API](./advanced/testing.md).
+- Added [testing API](./advanced/testing.html).
 - Fixed links in documentation.
 - Fixed `models` package in template project. (Changed to `model`)
 - Added [`database.ClearRegisteredModels`](./basics/database.html#database-clearregisteredmodels)

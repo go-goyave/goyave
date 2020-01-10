@@ -24,6 +24,7 @@ import "github.com/System-Glitch/goyave/v2"
 [Cookies](#request-cookies)
 [Referrer](#request-referrer)
 [UserAgent](#request-useragent)
+[CORSOptions](#request-corsoptions)
 :::
 
 #### Request.Method
@@ -135,6 +136,10 @@ cookie := request.Cookies("cookie-name")
 fmt.Println(cookie[0].value)
 ```
 
+::: warning
+Protect yourself from [CSRF attacks](https://en.wikipedia.org/wiki/Cross-site_request_forgery) when using cookies!
+:::
+
 #### Request.Referrer
 
 Referrer returns the referring URL, if sent in the request.
@@ -161,11 +166,28 @@ UserAgent returns the client's User-Agent, if sent in the request.
 fmt.Println(request.UserAgent()) // "Mozilla/5.0 ..."
 ```
 
+#### Request.CORSOptions
+
+<p><Badge text="Since v2.3.0"/></p>
+
+Returns the CORS options applied to this request, or `nil`. Learn more about CORS [here](../advanced/cors.html).
+
+The returned object is a copy of the options applied to the router. Therefore, altering the returned object will not alter the router's options.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Example:**
+``` go
+fmt.Println(request.CORSOptions().AllowedMethods) // "[HEAD GET POST PUT PATCH DELETE]"
+```
+
 ### Accessors
 
 <p><Badge text="Since v2.0.0"/></p>
 
-Accessors are helper functions to retrieve request data without having to write the type assertion. This is helpful to make your controllers cleaner. You shouldn't use these accessors in middlewares because they assume the data has been converted by the validation already. Data can still be accessed through the `Data` attribute. There is currently no accessor for slices.
+Accessors are helper functions to retrieve request data without having to write the type assertion. This is helpful to make your controllers cleaner. You shouldn't use these accessors in middleware because they assume the data has been converted by the validation already. Data can still be accessed through the `Data` attribute. There is currently no accessor for slices.
 
 ::: table
 [Has](#request-has)

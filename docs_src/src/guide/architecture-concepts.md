@@ -74,8 +74,12 @@ The data is validated last. The validation middleware immediately passes if no r
 
 #### 6. Controller handler
 
-Finally, if the request has not been stopped by a middleware, the controller handler is executed.
+If the request has not been stopped by a middleware, the controller handler is executed.
 If the controller handler didn't write anything as a response, an empty response with the HTTP status code 204 "No Content" is automatically sent, so you don't have to do it yourself.
+
+#### 7. Finalization
+
+The `204 No Content` status is written if the response is empty and no status has been set. If a status code has been set but the body is empty, a [status handler](./advanced/status-handlers.html) will be executed if it exists.
 
 ## Directory structure
 
@@ -107,8 +111,10 @@ The typical and recommended directory structure for Goyave applications is as fo
 │   │       ├── fields.json (*optional*)
 │   │       ├── locale.json (*optional*)
 │   │       └── rules.json (*optional*)
-│   └── img (*optional*)
-│       └── *...*
+│   ├── img (*optional*)
+│   │   └── *...*
+|   └── template (*optional*)
+|       └── *...*
 │
 ├── test
 |   └── *...*
@@ -165,6 +171,10 @@ Each language directory contains three files. Each file is **optional**.
 - `rules.json`: validation rules messages.
 
 Learn more about localization [here](./advanced/localization.html).
+
+#### Template resources directory
+
+The `resources/template` directory contains your text and HTML templates. Learn more about template rendering [here](./basics/responses.html#response-render). This directory can contain sub-directories.
 
 ### Test directory
 

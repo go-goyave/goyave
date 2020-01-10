@@ -71,6 +71,19 @@ func (suite *NativeHandlerTestSuite) TestNativeMiddleware() {
 	}
 	middleware(handler)(response, request)
 	suite.True(handlerExecuted)
+
+	middleware = NativeMiddleware(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Blocking middleware
+		})
+	})
+
+	handlerExecuted = false
+	handler = func(response *Response, r *Request) {
+		handlerExecuted = true
+	}
+	middleware(handler)(response, request)
+	suite.False(handlerExecuted)
 }
 
 func TestNativeHandlerTestSuite(t *testing.T) {

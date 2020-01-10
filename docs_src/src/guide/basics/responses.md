@@ -14,6 +14,8 @@ import "github.com/System-Glitch/goyave/v2"
 
 **List of response methods**:
 ::: table
+[GetStatus](#response-getstatus)
+[GetError](#response-geterror)
 [Header](#response-header)
 [Status](#response-status)
 [JSON](#response-json)
@@ -25,7 +27,37 @@ import "github.com/System-Glitch/goyave/v2"
 [Cookie](#response-cookie)
 [Redirect](#response-redirect)
 [TemporaryRedirect](#response-temporaryredirect)
+[Render](#response-render)
+[RenderHTML](#response-renderhtml)
 :::
+
+#### Response.GetStatus
+
+Returns the response code for this request or `0` if not yet set.
+
+| Parameters | Return |
+|------------|--------|
+|            | `int`  |
+
+**Example:**
+``` go
+fmt.Println(response.GetStatus()) // 200
+```
+
+#### Response.GetError
+
+Returns the value which caused a panic in the request's handling, or `nil`. The response error is also set when [`Error()`](#response-error) is called.
+
+This method is mainly used in [status handlers](../advanced/status-handlers.html).
+
+| Parameters | Return        |
+|------------|---------------|
+|            | `interface{}` |
+
+**Example:**
+``` go
+fmt.Println(response.GetError()) // "panic: something wrong happened"
+```
 
 #### Response.Header
 
@@ -43,7 +75,7 @@ header.Set("Content-Type", "application/json")
 
 #### Response.Status
 
-Write the given status code.
+Write the given status code. Calling this method a second time will have no effect.
 
 | Parameters   | Return |
 |--------------|--------|
@@ -138,7 +170,9 @@ response.Download("/path/to/file", "awesome.txt")
 
 #### Response.Error
 
-Print the error in the console and return it with an error code 500. If debugging is enabled in the config, the error is also written in the response using the JSON format, and the stacktrace is printed in the console.
+Print the error in the console and return it with an error code `500`.
+
+If debugging is enabled in the config, the error is also written in the response using the JSON format, and the stacktrace is printed in the console. If debugging is not enabled, only the stauts code is set, which means you can still write to the response, or use your error [status handler](../advanced/status-handlers.html).
 
 | Parameters        | Return  |
 |-------------------|---------|
@@ -167,6 +201,10 @@ cookie := &http.Cookie{
 response.Cookie(cookie)
 ```
 
+::: warning
+Protect yourself from [CSRF attacks](https://en.wikipedia.org/wiki/Cross-site_request_forgery) when using cookies!
+:::
+
 #### Response.Redirect
 
 Send a permanent redirect response. (HTTP 308)
@@ -191,4 +229,56 @@ Send a temporary redirect response. (HTTP 307)
 **Example:**
 ``` go
 response.TemporaryRedirect("/maintenance")
+```
+
+#### Response.Render
+
+Render a text template with the given data. This method uses the [Go's template API](https://golang.org/pkg/text/template/).
+
+The template path is relative to the `resources/template` directory.
+
+| Parameters            | Return  |
+|-----------------------|---------|
+| `responseCode int`    | `error` |
+| `templatePath string` |         |
+| `data interface{}`    |         |
+
+**Example:**
+``` go
+type Inventory struct {
+	Material string
+	Count    uint
+}
+
+sweaters := Inventory{"wool", 17}
+
+// data can also be a map[string]interface{}
+// Here, "resources/template/template.txt" will be used.
+response.Render(http.StatusOK, "template.txt", sweaters)
+```
+
+#### Response.RenderHTML
+
+Render an HTML template with the given data. This method uses the [Go's template API](https://golang.org/pkg/html/template/).
+
+The template path is relative to the `resources/template` directory.
+
+| Parameters            | Return  |
+|-----------------------|---------|
+| `responseCode int`    | `error` |
+| `templatePath string` |         |
+| `data interface{}`    |         |
+
+**Example:**
+``` go
+type Inventory struct {
+	Material string
+	Count    uint
+}
+
+sweaters := Inventory{"wool", 17}
+
+// data can also be a map[string]interface{}
+// Here, "resources/template/inventory.html" will be used.
+response.RenderHTML(http.StatusOK, "inventory.html", sweaters)
 ```

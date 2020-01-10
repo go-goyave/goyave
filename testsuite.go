@@ -83,12 +83,17 @@ func (s *TestSuite) SetTimeout(timeout time.Duration) {
 // CreateTestRequest create a "goyave.Request" from the given raw request.
 // This function is aimed at making it easier to unit test Requests.
 //
+// If passed request is "nil", a default GET request to "/" is used.
+//
 //  rawRequest := httptest.NewRequest("GET", "/test-route", nil)
 //  rawRequest.Header.Set("Content-Type", "application/json")
 //  request := goyave.CreateTestRequest(rawRequest)
 //  request.Lang = "en-US"
 //  request.Data = map[string]interface{}{"field": "value"}
 func (s *TestSuite) CreateTestRequest(rawRequest *http.Request) *Request {
+	if rawRequest == nil {
+		rawRequest = httptest.NewRequest("GET", "/", nil)
+	}
 	return &Request{
 		httpRequest: rawRequest,
 		Data:        nil,
@@ -155,7 +160,11 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 // Core middleware (recovery, parsing and language) is not executed.
 func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedure Handler) *http.Response {
 	recorder := httptest.NewRecorder()
-	middleware(procedure)(s.CreateTestResponse(recorder), request)
+	response := s.CreateTestResponse(recorder)
+	router := newRouter()
+	router.Middleware(middleware)
+	middleware(procedure)(response, request)
+	router.finalize(response, request)
 
 	return recorder.Result()
 }

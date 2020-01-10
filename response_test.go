@@ -25,6 +25,7 @@ func createTestResponse(rawRequest *http.Request) *Response {
 		ResponseWriter: httptest.NewRecorder(),
 		httpRequest:    rawRequest,
 		empty:          true,
+		status:         0,
 	}
 
 	return response
@@ -36,8 +37,28 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	response.Status(403)
 	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
+	suite.Equal(200, resp.StatusCode) // Not written yet
+	suite.True(response.empty)
+	suite.Equal(403, response.GetStatus())
+
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = createTestResponse(rawRequest)
+	response.String(403, "test")
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+
 	suite.Equal(403, resp.StatusCode)
 	suite.False(response.empty)
+	suite.Equal(403, response.GetStatus())
+
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = createTestResponse(rawRequest)
+	response.Status(403)
+	response.Status(200) // Should have no effect
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(200, resp.StatusCode) // Not written yet
+	suite.True(response.empty)
+	suite.Equal(403, response.GetStatus())
 }
 
 func (suite *ResponseTestSuite) TestResponseHeader() {
@@ -49,7 +70,8 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.False(response.empty)
+	suite.True(response.empty)
+	suite.Equal(200, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
@@ -64,6 +86,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
+	suite.Equal(500, response.status)
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = createTestResponse(rawRequest)
@@ -76,6 +99,23 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
+	suite.Equal(500, response.status)
+
+	config.Set("debug", false)
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = createTestResponse(rawRequest)
+	response.Error("random error")
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(500, response.GetStatus())
+
+	body, err = ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Empty("", string(body))
+	suite.True(response.empty)
+	suite.Equal("random error", response.GetError())
+	suite.Equal(500, response.status)
+	config.Set("debug", true)
 }
 
 func (suite *ResponseTestSuite) TestResponseFile() {
@@ -90,6 +130,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
+	suite.Equal(200, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseFilePanic() {
@@ -113,6 +154,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
+	suite.Equal(200, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseRedirect() {
@@ -127,6 +169,7 @@ func (suite *ResponseTestSuite) TestResponseRedirect() {
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Permanent Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
+	suite.Equal(308, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
@@ -141,6 +184,7 @@ func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Temporary Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
+	suite.Equal(307, response.status)
 }
 
 func (suite *ResponseTestSuite) TestResponseCookie() {
@@ -176,6 +220,90 @@ func (suite *ResponseTestSuite) TestCreateTestResponse() {
 	if response != nil {
 		suite.Equal(recorder, response.ResponseWriter)
 	}
+}
+
+func (suite *ResponseTestSuite) TestRender() {
+	// With map data
+	recorder := httptest.NewRecorder()
+	response := CreateTestResponse(recorder)
+
+	mapData := map[string]interface{}{
+		"Status":  http.StatusNotFound,
+		"Message": "Not Found.",
+	}
+	suite.Nil(response.Render(http.StatusNotFound, "error.txt", mapData))
+	resp := recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("Error 404: Not Found.", string(body))
+
+	// With struct data
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	structData := struct {
+		Status  int
+		Message string
+	}{
+		Status:  http.StatusNotFound,
+		Message: "Not Found.",
+	}
+	suite.Nil(response.Render(http.StatusNotFound, "error.txt", structData))
+	resp = recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err = ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("Error 404: Not Found.", string(body))
+
+	// Non-existing template and exec error
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	suite.NotNil(response.Render(http.StatusNotFound, "non-existing-template", nil))
+	suite.NotNil(response.Render(http.StatusNotFound, "invalid.txt", nil))
+}
+
+func (suite *ResponseTestSuite) TestRenderHTML() {
+	// With map data
+	recorder := httptest.NewRecorder()
+	response := CreateTestResponse(recorder)
+
+	mapData := map[string]interface{}{
+		"Status":  http.StatusNotFound,
+		"Message": "Not Found.",
+	}
+	suite.Nil(response.RenderHTML(http.StatusNotFound, "error.html", mapData))
+	resp := recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
+
+	// With struct data
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	structData := struct {
+		Status  int
+		Message string
+	}{
+		Status:  http.StatusNotFound,
+		Message: "Not Found.",
+	}
+	suite.Nil(response.RenderHTML(http.StatusNotFound, "error.html", structData))
+	resp = recorder.Result()
+	suite.Equal(404, resp.StatusCode)
+	body, err = ioutil.ReadAll(resp.Body)
+	suite.Nil(err)
+	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
+
+	// Non-existing template and exec error
+	recorder = httptest.NewRecorder()
+	response = CreateTestResponse(recorder)
+
+	suite.NotNil(response.RenderHTML(http.StatusNotFound, "non-existing-template", nil))
+	suite.NotNil(response.RenderHTML(http.StatusNotFound, "invalid.txt", nil))
 }
 
 func TestResponseTestSuite(t *testing.T) {

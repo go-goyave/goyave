@@ -93,7 +93,7 @@ func buildConnectionOptions(connection string) string {
 		)
 	case "postgres":
 		return fmt.Sprintf(
-			"host=%s port=%d user=%s dbname=%s password=%s options='%s'",
+			"host=%s port=%d user=%s dbname=%s password=%s %s",
 			config.GetString("dbHost"),
 			int64(config.Get("dbPort").(float64)),
 			config.GetString("dbUsername"),

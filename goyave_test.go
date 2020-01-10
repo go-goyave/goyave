@@ -151,25 +151,26 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	c2 := make(chan bool)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	blockingServer := &http.Server{
-		Addr:    getHost("http"),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
-	}
 
 	go func() {
 		go func() {
-			c2 <- true
 			// Run a server using the same port.
-			err := blockingServer.ListenAndServe()
-			if err != http.ErrServerClosed {
+			ln, err := net.Listen("tcp", getHost("http"))
+			if err != nil {
 				suite.Fail(err.Error())
+				return
 			}
+			c2 <- true
+			<-c2
+			ln.Close()
 			c2 <- true
 		}()
 		<-c2
 		config.Set("protocol", "https")
 		suite.RunServer(func(router *Router) {}, func() {})
 		config.Set("protocol", "http")
+		c2 <- true
+		<-c2
 		c <- true
 	}()
 
@@ -184,8 +185,6 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	blockingServer.Shutdown(ctx)
-	<-c2
 }
 
 func (suite *GoyaveTestSuite) TestStaticServing() {

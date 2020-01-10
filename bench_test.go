@@ -5,12 +5,11 @@ import (
 	"net/http/httptest"
 	"runtime"
 	"testing"
+
+	"github.com/System-Glitch/goyave/v2/config"
 )
 
-type route struct {
-	method string
-	path   string
-}
+var staticGoyave *Router
 
 func calcMem(name string, load func()) {
 	m := new(runtime.MemStats)
@@ -32,7 +31,8 @@ func calcMem(name string, load func()) {
 	runtime.GC()
 	runtime.ReadMemStats(m)
 	after := m.HeapAlloc
-	println("   "+name+":", after-before, "Bytes")
+
+	println(""+name+":", after-before, "Bytes")
 }
 
 func goyaveHandler(res *Response, req *Request) {
@@ -40,6 +40,7 @@ func goyaveHandler(res *Response, req *Request) {
 }
 
 func loadGoyaveRouter(routes []route) *Router {
+	config.Load()
 	router := newRouter()
 
 	for _, r := range routes {
@@ -78,4 +79,36 @@ func benchRoutes(b *testing.B, router *Router, routes []route) {
 			router.requestHandler(w, r, goyaveHandler, nil)
 		}
 	}
+}
+
+func Benchmark_Static(b *testing.B) {
+	println("# Static routes len:", len(staticRoutes))
+	calcMem("Goyave", func() {
+		staticGoyave = loadGoyaveRouter(staticRoutes)
+	})
+	benchRoutes(b, staticGoyave, staticRoutes)
+}
+
+func Benchmark_Parse(b *testing.B) {
+	println("# Parse routes len:", len(parseAPIRoutes))
+	calcMem("Goyave", func() {
+		staticGoyave = loadGoyaveRouter(parseAPIRoutes)
+	})
+	benchRoutes(b, staticGoyave, parseAPIRoutes)
+}
+
+func Benchmark_Github(b *testing.B) {
+	println("# Github routes len:", len(githubAPIRoutes))
+	calcMem("Goyave", func() {
+		staticGoyave = loadGoyaveRouter(githubAPIRoutes)
+	})
+	benchRoutes(b, staticGoyave, githubAPIRoutes)
+}
+
+func Benchmark_GPlus(b *testing.B) {
+	println("# Google+ routes len:", len(gplusAPIRoutes))
+	calcMem("Goyave", func() {
+		staticGoyave = loadGoyaveRouter(gplusAPIRoutes)
+	})
+	benchRoutes(b, staticGoyave, gplusAPIRoutes)
 }

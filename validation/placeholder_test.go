@@ -39,6 +39,9 @@ func (suite *PlaceholderTestSuite) TestPlaceholders() {
 
 func (suite *PlaceholderTestSuite) TestProcessPlaceholders() {
 	suite.Equal("The email address is required.", processPlaceholders("email", "required", []string{}, "The :field is required.", "en-US"))
+	suite.Equal("The image must be a file with one of the following extensions: ppm.", processPlaceholders("image", "extension", []string{"ppm"}, "The :field must be a file with one of the following extensions: :values.", "en-US"))
+	suite.Equal("The image must be a file with one of the following extensions: ppm, png.", processPlaceholders("image", "extension", []string{"ppm", "png"}, "The :field must be a file with one of the following extensions: :values.", "en-US"))
+	suite.Equal("The image must have exactly 2 file(s).", processPlaceholders("image", "count", []string{"2"}, "The :field must have exactly :value file(s).", "en-US"))
 }
 
 func TestPlaceholderTestSuite(t *testing.T) {

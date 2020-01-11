@@ -148,7 +148,7 @@ Writes the given file on the disk.
 Appends a timestamp to the given file name to avoid duplicate file names.
 The file is not readable anymore once saved as its FileReader has already been closed.
 
-Returns the actual path to the saved file.
+Returns the actual file name.
 
 | Parameters             | Return   |
 |------------------------|----------|

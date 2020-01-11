@@ -2,6 +2,11 @@
 
 [[toc]]
 
+## v2.4.2
+
+- Don't override `Content-Type` header when sending a file if already set.
+- Fixed a bug with validation message placeholder `:values`, which was mistakingly using the `:value` placeholder.
+
 ## v2.4.1
 
 - Bundle default config and language in executable to avoid needing to deploy `$GOROOT/pkg/mod/github.com/!system-!glitch/goyave/` with the application.

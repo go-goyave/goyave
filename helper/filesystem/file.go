@@ -18,7 +18,7 @@ type File struct {
 // The file is not readable anymore once saved as its FileReader has already been
 // closed.
 //
-// Returns the actual path to the saved file.
+// Returns the actual file name.
 func (file *File) Save(path string, name string) string {
 	name = timestampFileName(name)
 	writer, err := os.OpenFile(path+string(os.PathSeparator)+name, os.O_WRONLY|os.O_CREATE, 0660)

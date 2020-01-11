@@ -2,6 +2,10 @@
 
 [[toc]]
 
+## v2.4.2
+
+- Don't override `Content-Type` header when sending a file if already set.
+
 ## v2.4.1
 
 - Bundle default config and language in executable to avoid needing to deploy `$GOROOT/pkg/mod/github.com/!system-!glitch/goyave/` with the application.

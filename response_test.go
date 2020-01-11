@@ -131,6 +131,14 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
+
+	// Test no Content-Type override
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = createTestResponse(rawRequest)
+	response.Header().Set("Content-Type", "text/plain")
+	response.File("config/config.test.json")
+	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Equal("text/plain", resp.Header.Get("Content-Type"))
 }
 
 func (suite *ResponseTestSuite) TestResponseFilePanic() {

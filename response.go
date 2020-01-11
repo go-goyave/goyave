@@ -103,7 +103,10 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	r.status = http.StatusOK
 	mime, size := filesystem.GetMIMEType(file)
 	r.ResponseWriter.Header().Set("Content-Disposition", disposition)
-	r.ResponseWriter.Header().Set("Content-Type", mime)
+
+	if r.ResponseWriter.Header().Get("Content-Type") == "" {
+		r.ResponseWriter.Header().Set("Content-Type", mime)
+	}
 	r.ResponseWriter.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := os.Open(file)

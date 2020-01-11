@@ -1,6 +1,6 @@
 {
   "name": "goyave_docs",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "An All-in-one elegant web framework written in Go",
   "main": "index.js",
   "scripts": {

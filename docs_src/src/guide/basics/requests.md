@@ -63,7 +63,7 @@ URI specifies the URI being requested. Use this if you absolutely need the raw q
 
 **Example:**
 ``` go
-fmt.Println(request.URL().Path) // "/foo/bar"
+fmt.Println(request.URI().Path) // "/foo/bar"
 ```
 
 #### Request.Header

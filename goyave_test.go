@@ -202,12 +202,12 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal(404, resp.StatusCode)
 		}
 
-		err = ioutil.WriteFile("resources/lang/en-US/test-file.txt", []byte("test-content"), 0644)
+		err = ioutil.WriteFile("resources/template/test-static-serve.txt", []byte("test-content"), 0644)
 		if err != nil {
 			panic(err)
 		}
-		defer filesystem.Delete("resources/lang/en-US/test-file.txt")
-		resp, err = netClient.Get("http://127.0.0.1:1235/resources/lang/en-US/test-file.txt")
+		defer filesystem.Delete("resources/template/test-static-serve.txt")
+		resp, err = netClient.Get("http://127.0.0.1:1235/resources/template/test-static-serve.txt")
 		suite.Nil(err)
 		if err != nil {
 			fmt.Println(err)

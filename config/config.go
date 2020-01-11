@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"reflect"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -15,6 +13,31 @@ import (
 )
 
 var config map[string]interface{}
+
+var configDefaults map[string]interface{} = map[string]interface{}{
+	"appName":              "goyave",
+	"environment":          "localhost",
+	"maintenance":          false,
+	"host":                 "127.0.0.1",
+	"domain":               "",
+	"port":                 8080.0,
+	"httpsPort":            8081.0,
+	"protocol":             "http",
+	"debug":                true,
+	"timeout":              10.0,
+	"maxUploadSize":        10.0,
+	"defaultLanguage":      "en-US",
+	"dbConnection":         "none",
+	"dbHost":               "127.0.0.1",
+	"dbPort":               3306.0,
+	"dbName":               "goyave",
+	"dbUsername":           "root",
+	"dbPassword":           "root",
+	"dbOptions":            "charset=utf8&parseTime=true&loc=Local",
+	"dbMaxOpenConnections": 100.0,
+	"dbMaxIdleConnections": 20.0,
+	"dbAutoMigrate":        false,
+}
 
 var configValidation = map[string]reflect.Kind{
 	"appName":              reflect.String,
@@ -57,22 +80,20 @@ var mutex = &sync.RWMutex{}
 func Load() error {
 	mutex.Lock()
 	defer mutex.Unlock()
-	err := loadDefaults()
+	loadDefaults()
+	workingDir, err := os.Getwd()
 	if err == nil {
-		workingDir, err := os.Getwd()
+		path := getConfigFilePath()
+		conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
 		if err == nil {
-			path := getConfigFilePath()
-			conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
-			if err == nil {
-				for key, value := range conf {
-					config[key] = value
-				}
-			} else {
-				return err
+			for key, value := range conf {
+				config[key] = value
 			}
 		} else {
-			panic(err)
+			return err
 		}
+	} else {
+		panic(err)
 	}
 
 	if !validateConfig() {
@@ -156,14 +177,11 @@ func GetBool(key string) bool {
 	return false
 }
 
-func loadDefaults() error {
-	_, filename, _, _ := runtime.Caller(0)
-	confDefaults, err := readConfigFile(path.Dir(filename) + string(os.PathSeparator) + "defaults.json")
-
-	if err == nil {
-		config = confDefaults
+func loadDefaults() {
+	config = make(map[string]interface{}, len(configDefaults))
+	for k, v := range configDefaults {
+		config[k] = v
 	}
-	return err
 }
 
 func readConfigFile(file string) (map[string]interface{}, error) {

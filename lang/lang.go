@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -41,15 +39,12 @@ type language struct {
 var languages map[string]language = map[string]language{}
 var mutex = &sync.RWMutex{}
 
-// LoadDefault load the fallback language ("en-US") and, if needed,
-// the default language provided in the config.
+// LoadDefault load the fallback language ("en-US").
 // This function is intended for internal use only.
 func LoadDefault() {
 	mutex.Lock()
 	defer mutex.Unlock()
-	_, filename, _, _ := runtime.Caller(0)
-	sep := string(os.PathSeparator)
-	load("en-US", path.Dir(filename)+sep+".."+sep+"resources"+sep+"lang"+sep+"en-US")
+	languages["en-US"] = enUS
 }
 
 // LoadAllAvailableLanguages loads every language directory
@@ -112,16 +107,12 @@ func load(lang string, path string) {
 
 func readLangFile(path string, dest interface{}) {
 	if filesystem.FileExists(path) {
-		langFile, err := os.Open(path)
+		langFile, _ := os.Open(path)
 		defer langFile.Close()
 
-		if err == nil {
-			errParse := json.NewDecoder(langFile).Decode(&dest)
-			if errParse != nil {
-				panic(errParse)
-			}
-		} else {
-			panic(err)
+		errParse := json.NewDecoder(langFile).Decode(&dest)
+		if errParse != nil {
+			panic(errParse)
 		}
 	}
 }

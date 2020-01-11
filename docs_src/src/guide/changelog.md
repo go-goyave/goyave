@@ -2,6 +2,10 @@
 
 [[toc]]
 
+## v2.4.1
+
+- Bundle default config and language in executable to avoid needing to deploy `$GOROOT/pkg/mod/github.com/!system-!glitch/goyave/` with the application.
+
 ## v2.4.0
 
 - Added [template rendring](./basics/responses.html#response-render).

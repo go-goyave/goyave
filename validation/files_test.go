@@ -19,7 +19,8 @@ const (
 	logoPath       string = "resources/img/logo/goyave_16.png"
 	mediumLogoPath string = "resources/img/logo/goyave_128.png"
 	largeLogoPath  string = "resources/img/logo/goyave_512.png"
-	configPath     string = "config/defaults.json"
+	configPath     string = "config/config.test.json"
+	utf8BOMPath    string = "resources/test_file.txt"
 )
 
 func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
@@ -94,9 +95,9 @@ func TestValidateFile(t *testing.T) {
 func TestValidateMIME(t *testing.T) {
 	assert.True(t, validateMIME("file", createTestFiles(logoPath), []string{"image/png"}, map[string]interface{}{}))
 	assert.True(t, validateMIME("file", createTestFiles(logoPath), []string{"text/plain", "image/png"}, map[string]interface{}{}))
-	assert.True(t, validateMIME("file", createTestFiles(configPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
-	assert.True(t, validateMIME("file", createTestFiles(configPath, logoPath), []string{"text/plain", "image/png"}, map[string]interface{}{}))
-	assert.False(t, validateMIME("file", createTestFiles(configPath, logoPath), []string{"text/plain"}, map[string]interface{}{}))
+	assert.True(t, validateMIME("file", createTestFiles(utf8BOMPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
+	assert.True(t, validateMIME("file", createTestFiles(utf8BOMPath, logoPath), []string{"text/plain", "image/png"}, map[string]interface{}{}))
+	assert.False(t, validateMIME("file", createTestFiles(utf8BOMPath, logoPath), []string{"text/plain"}, map[string]interface{}{}))
 	assert.False(t, validateMIME("file", createTestFiles(logoPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
 	assert.False(t, validateMIME("file", "test", []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
 }

@@ -76,6 +76,12 @@ func (suite *LangTestSuite) TestLoad() {
 	})
 
 	Load("en-US", "../resources/lang/en-US") // Is an override
+	suite.Equal("rule override", languages["en-US"].validation.rules["required"])
+
+	suite.Panics(func() {
+		dest := map[string]string{}
+		readLangFile("../resources/lang/invalid.json", &dest)
+	})
 }
 
 func (suite *LangTestSuite) TestMerge() {

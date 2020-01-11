@@ -77,8 +77,8 @@ func TestGetMIMEType(t *testing.T) {
 	mime, _ = GetMIMEType(toAbsolutePath(".gitignore"))
 	assert.Equal(t, "application/octet-stream", mime)
 
-	mime, _ = GetMIMEType(toAbsolutePath("config/defaults.json"))
-	assert.Equal(t, "application/json; charset=utf-8", mime)
+	mime, _ = GetMIMEType(toAbsolutePath("config/config.test.json"))
+	assert.Equal(t, "application/json", mime)
 
 	mime, _ = GetMIMEType(toAbsolutePath("docs_src/src/.vuepress/config.js"))
 	assert.Equal(t, "application/javascript; charset=utf-8", mime)

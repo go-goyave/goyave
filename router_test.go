@@ -69,10 +69,10 @@ func (suite *RouterTestSuite) TestCleanStaticPath() {
 	suite.Equal("config/defaults.json", cleanStaticPath("config", "defaults.json"))
 	suite.Equal("resources/lang/en-US/locale.json", cleanStaticPath("resources", "lang/en-US/locale.json"))
 	suite.Equal("resources/lang/en-US/locale.json", cleanStaticPath("resources", "/lang/en-US/locale.json"))
-	suite.Equal("resources/lang/en-US/index.html", cleanStaticPath("resources", "lang/en-US"))
-	suite.Equal("resources/lang/en-US/index.html", cleanStaticPath("resources", "lang/en-US/"))
-	suite.Equal("resources/lang/index.html", cleanStaticPath("resources", "lang"))
-	suite.Equal("resources/lang/index.html", cleanStaticPath("resources", "lang/"))
+	suite.Equal("resources/img/logo/index.html", cleanStaticPath("resources", "img/logo"))
+	suite.Equal("resources/img/logo/index.html", cleanStaticPath("resources", "img/logo/"))
+	suite.Equal("resources/img/index.html", cleanStaticPath("resources", "img"))
+	suite.Equal("resources/img/index.html", cleanStaticPath("resources", "img/"))
 }
 
 func (suite *RouterTestSuite) TestStaticHandler() {

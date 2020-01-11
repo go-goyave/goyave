@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 type Placeholder func(string, string, []string, string) string
 
 var placeholders map[string]Placeholder = map[string]Placeholder{}
+var sortedKeys []string = []string{}
 
 // SetPlaceholder sets the replacer function for the given placeholder.
 // If a placeholder with this name already exists, the latter will be overridden.
@@ -19,12 +21,19 @@ var placeholders map[string]Placeholder = map[string]Placeholder{}
 //  	return parameters[0] // Replace ":min" by the first parameter in the rule definition
 //  })
 func SetPlaceholder(placeholderName string, replacer Placeholder) {
-	placeholders[":"+placeholderName] = replacer
+	key := ":" + placeholderName
+	placeholders[key] = replacer
+
+	// Sort keys to process placeholders in order.
+	// Needed to avoid conflict between "values" and "value" for example.
+	sortedKeys = append(sortedKeys, key)
+	sort.Sort(sort.Reverse(sort.StringSlice(sortedKeys)))
 }
 
 func processPlaceholders(field string, rule string, params []string, message string, language string) string {
-	for placeholder, replacer := range placeholders {
+	for _, placeholder := range sortedKeys {
 		if strings.Contains(message, placeholder) {
+			replacer := placeholders[placeholder]
 			message = strings.ReplaceAll(message, placeholder, replacer(field, rule, params, language))
 		}
 	}

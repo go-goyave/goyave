@@ -5,6 +5,7 @@
 ## v2.4.2
 
 - Don't override `Content-Type` header when sending a file if already set.
+- Fixed a bug with validation message placeholder `:values`, which was mistakingly using the `:value` placeholder.
 
 ## v2.4.1
 

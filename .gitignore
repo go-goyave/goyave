@@ -2,3 +2,4 @@
 *.out
 *.log
 .vscode/
+./debug.test

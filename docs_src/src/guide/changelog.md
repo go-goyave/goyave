@@ -2,6 +2,10 @@
 
 [[toc]]
 
+## v2.4.3
+
+- Improved string validation by taking grapheme clusters into consideration when calculating length.
+
 ## v2.4.2
 
 - Don't override `Content-Type` header when sending a file if already set.

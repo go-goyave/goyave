@@ -20,6 +20,8 @@ func TestValidateRequired(t *testing.T) {
 func TestValidateMin(t *testing.T) {
 	assert.True(t, validateMin("field", "not numeric", []string{"2"}, map[string]interface{}{}))
 	assert.False(t, validateMin("field", "not numeric", []string{"20"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", "🇩🇪", []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateMin("field", "👍🏼", []string{"2"}, map[string]interface{}{}))
 
 	assert.True(t, validateMin("field", 2, []string{"1"}, map[string]interface{}{}))
 	assert.False(t, validateMin("field", 10, []string{"20"}, map[string]interface{}{}))
@@ -47,6 +49,9 @@ func TestValidateMin(t *testing.T) {
 func TestValidateMax(t *testing.T) {
 	assert.True(t, validateMax("field", "not numeric", []string{"12"}, map[string]interface{}{}))
 	assert.False(t, validateMax("field", "not numeric", []string{"5"}, map[string]interface{}{}))
+	assert.True(t, validateMax("field", "🇩🇪🇩🇪👍🏼", []string{"5"}, map[string]interface{}{}))
+	assert.True(t, validateMax("field", "🇩🇪🇩🇪👍🏼👍🏼👍🏼", []string{"5"}, map[string]interface{}{}))
+	assert.False(t, validateMax("field", "🇩🇪🇩🇪👍🏼👍🏼👍🏼👍🏼", []string{"5"}, map[string]interface{}{}))
 
 	assert.True(t, validateMax("field", 1, []string{"2"}, map[string]interface{}{}))
 	assert.False(t, validateMax("field", 20, []string{"10"}, map[string]interface{}{}))
@@ -75,6 +80,12 @@ func TestValidateBetween(t *testing.T) {
 	assert.True(t, validateBetween("field", "not numeric", []string{"5", "12"}, map[string]interface{}{}))
 	assert.False(t, validateBetween("field", "not numeric", []string{"12", "20"}, map[string]interface{}{}))
 	assert.False(t, validateBetween("field", "not numeric", []string{"5", "6"}, map[string]interface{}{}))
+
+	assert.False(t, validateBetween("field", "🇩🇪", []string{"2", "5"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", "👍🏼", []string{"2", "5"}, map[string]interface{}{}))
+	assert.True(t, validateBetween("field", "👍🏼🇩🇪", []string{"2", "5"}, map[string]interface{}{}))
+	assert.True(t, validateBetween("field", "🇩🇪🇩🇪👍🏼👍🏼👍🏼", []string{"2", "5"}, map[string]interface{}{}))
+	assert.False(t, validateBetween("field", "🇩🇪🇩🇪👍🏼👍🏼👍🏼👍🏼", []string{"2", "5"}, map[string]interface{}{}))
 
 	assert.True(t, validateBetween("field", 1, []string{"0", "3"}, map[string]interface{}{}))
 	assert.False(t, validateBetween("field", 20, []string{"5", "10"}, map[string]interface{}{}))
@@ -120,6 +131,9 @@ func TestValidateGreaterThan(t *testing.T) {
 	assert.True(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
 	assert.False(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
 
+	assert.True(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "👍🏼👍🏼👍🏼👍🏼👍🏼"}))
+	assert.False(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "👍🏼👍🏼👍🏼👍🏼👍🏼👍🏼"}))
+
 	assert.True(t, validateGreaterThan("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1}}))
 	assert.False(t, validateGreaterThan("field", []int{6}, []string{"comparison"}, map[string]interface{}{"field": []int{6}, "comparison": []int{1, 2, 3}}))
 
@@ -151,6 +165,10 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 	assert.True(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
 	assert.True(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "gnirts"}))
 	assert.False(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
+
+	assert.True(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "👍🏼👍🏼👍🏼👍🏼👍🏼"}))
+	assert.True(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "👍🏼👍🏼👍🏼👍🏼👍🏼👍🏼"}))
+	assert.False(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "👍🏼👍🏼👍🏼👍🏼👍🏼👍🏼👍🏼"}))
 
 	assert.True(t, validateGreaterThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1}}))
 	assert.True(t, validateGreaterThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2}}))
@@ -185,6 +203,9 @@ func TestValidateLowerThan(t *testing.T) {
 	assert.True(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
 	assert.False(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
 
+	assert.True(t, validateLowerThan("field", "👍🏼👍🏼", []string{"comparison"}, map[string]interface{}{"field": "👍🏼👍🏼", "comparison": "str"}))
+	assert.False(t, validateLowerThan("field", "st", []string{"comparison"}, map[string]interface{}{"field": "st", "comparison": "👍🏼"}))
+
 	assert.True(t, validateLowerThan("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2, 3}}))
 	assert.False(t, validateLowerThan("field", []int{6, 7, 8}, []string{"comparison"}, map[string]interface{}{"field": []int{6, 7, 8}, "comparison": []int{1, 2}}))
 
@@ -216,6 +237,10 @@ func TestValidateLowerThanEqual(t *testing.T) {
 	assert.True(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "other string"}))
 	assert.True(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "gnirts"}))
 	assert.False(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": "str"}))
+
+	assert.True(t, validateLowerThanEqual("field", "👍🏼👍🏼", []string{"comparison"}, map[string]interface{}{"field": "👍🏼👍🏼", "comparison": "str"}))
+	assert.True(t, validateLowerThanEqual("field", "👍🏼👍🏼👍🏼", []string{"comparison"}, map[string]interface{}{"field": "👍🏼👍🏼👍🏼", "comparison": "str"}))
+	assert.False(t, validateLowerThanEqual("field", "st", []string{"comparison"}, map[string]interface{}{"field": "st", "comparison": "👍🏼"}))
 
 	assert.True(t, validateLowerThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2, 3}}))
 	assert.True(t, validateLowerThanEqual("field", []int{5, 2}, []string{"comparison"}, map[string]interface{}{"field": []int{5, 2}, "comparison": []int{1, 2}}))
@@ -328,6 +353,10 @@ func TestValidateSize(t *testing.T) {
 	assert.True(t, validateSize("field", "", []string{"0"}, map[string]interface{}{}))
 	assert.False(t, validateSize("field", "4567", []string{"5"}, map[string]interface{}{}))
 	assert.False(t, validateSize("field", "4567", []string{"2"}, map[string]interface{}{}))
+
+	assert.True(t, validateSize("field", "🇩🇪👍🏼", []string{"2"}, map[string]interface{}{}))
+	assert.True(t, validateSize("field", "👍🏼!", []string{"2"}, map[string]interface{}{}))
+	assert.False(t, validateSize("field", "👍🏼", []string{"2"}, map[string]interface{}{}))
 
 	assert.False(t, validateSize("field", 4567, []string{"2"}, map[string]interface{}{}))
 	assert.False(t, validateSize("field", 4567.8, []string{"2"}, map[string]interface{}{}))

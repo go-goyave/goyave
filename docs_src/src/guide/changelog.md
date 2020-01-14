@@ -5,6 +5,7 @@
 ## v2.4.3
 
 - Improved string validation by taking grapheme clusters into consideration when calculating length.
+- `lang.LoadDefault` now correctly creates a fresh language map and clones the default `en-US` language. This avoids the default language entries to be overridden permanently.  
 
 ## v2.4.2
 

@@ -82,6 +82,10 @@ func (suite *LangTestSuite) TestLoad() {
 		dest := map[string]string{}
 		readLangFile("../resources/lang/invalid.json", &dest)
 	})
+
+	// Ensure default lang is not changed
+	suite.Equal("The :field is required.", enUS.validation.rules["required"])
+
 }
 
 func (suite *LangTestSuite) TestMerge() {

@@ -36,15 +36,40 @@ type language struct {
 	validation validationLines
 }
 
-var languages map[string]language = map[string]language{}
+var languages map[string]language
 var mutex = &sync.RWMutex{}
+
+func (l *language) clone() language {
+	cpy := language{
+		lines: make(map[string]string, len(l.lines)),
+		validation: validationLines{
+			rules:  make(map[string]string, len(l.validation.rules)),
+			fields: make(map[string]attribute, len(l.validation.fields)),
+		},
+	}
+
+	mergeMap(cpy.lines, l.lines)
+	mergeMap(cpy.validation.rules, l.validation.rules)
+
+	for key, attr := range l.validation.fields {
+		attrCpy := attribute{
+			Name:  attr.Name,
+			Rules: make(map[string]string, len(attr.Rules)),
+		}
+		mergeMap(attrCpy.Rules, attrCpy.Rules)
+		cpy.validation.fields[key] = attrCpy
+	}
+
+	return cpy
+}
 
 // LoadDefault load the fallback language ("en-US").
 // This function is intended for internal use only.
 func LoadDefault() {
 	mutex.Lock()
 	defer mutex.Unlock()
-	languages["en-US"] = enUS
+	languages = make(map[string]language, 1)
+	languages["en-US"] = enUS.clone()
 }
 
 // LoadAllAvailableLanguages loads every language directory

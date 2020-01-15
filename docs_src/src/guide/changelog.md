@@ -2,10 +2,15 @@
 
 [[toc]]
 
+## v2.4.3
+
+- Improved string validation by taking grapheme clusters into consideration when calculating length.
+- `lang.LoadDefault` now correctly creates a fresh language map and clones the default `en-US` language. This avoids the default language entries to be overridden permanently.  
+
 ## v2.4.2
 
 - Don't override `Content-Type` header when sending a file if already set.
-- Fixed a bug with validation message placeholder `:values`, which was mistakingly using the `:value` placeholder.
+- Fixed a bug with validation message placeholder `:values`, which was mistakenly using the `:value` placeholder.
 
 ## v2.4.1
 

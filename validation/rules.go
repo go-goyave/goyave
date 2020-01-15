@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Code-Hex/uniseg"
 	"github.com/System-Glitch/goyave/v2/helper"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 )
@@ -31,7 +32,7 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min
 	case "string":
-		return len(value.(string)) >= int(min)
+		return uniseg.GraphemeClusterCount(value.(string)) >= int(min)
 	case "array":
 		list := reflect.ValueOf(value)
 		return list.Len() >= int(min)
@@ -59,7 +60,7 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 		floatValue, _ := helper.ToFloat64(value)
 		return floatValue <= max
 	case "string":
-		return len(value.(string)) <= int(max)
+		return uniseg.GraphemeClusterCount(value.(string)) <= int(max)
 	case "array":
 		list := reflect.ValueOf(value)
 		return list.Len() <= int(max)
@@ -92,7 +93,7 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 		floatValue, _ := helper.ToFloat64(value)
 		return floatValue >= min && floatValue <= max
 	case "string":
-		length := len(value.(string))
+		length := uniseg.GraphemeClusterCount(value.(string))
 		return length >= int(min) && length <= int(max)
 	case "array":
 		list := reflect.ValueOf(value)
@@ -128,7 +129,7 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue > comparedFloatValue
 	case "string":
-		return len(value.(string)) > len(compared.(string))
+		return uniseg.GraphemeClusterCount(value.(string)) > uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(value).Len() > reflect.ValueOf(compared).Len()
 	case "file":
@@ -162,7 +163,7 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue >= comparedFloatValue
 	case "string":
-		return len(value.(string)) >= len(compared.(string))
+		return uniseg.GraphemeClusterCount(value.(string)) >= uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(value).Len() >= reflect.ValueOf(compared).Len()
 	case "file":
@@ -196,7 +197,7 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue < comparedFloatValue
 	case "string":
-		return len(value.(string)) < len(compared.(string))
+		return uniseg.GraphemeClusterCount(value.(string)) < uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(value).Len() < reflect.ValueOf(compared).Len()
 	case "file":
@@ -230,7 +231,7 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 		comparedFloatValue, _ := helper.ToFloat64(compared)
 		return floatValue <= comparedFloatValue
 	case "string":
-		return len(value.(string)) <= len(compared.(string))
+		return uniseg.GraphemeClusterCount(value.(string)) <= uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(value).Len() <= reflect.ValueOf(compared).Len()
 	case "file":
@@ -324,7 +325,7 @@ func validateSize(field string, value interface{}, parameters []string, form map
 		floatVal, _ := helper.ToFloat64(value)
 		return floatVal == float64(size)
 	case "string":
-		return len(value.(string)) == size
+		return uniseg.GraphemeClusterCount(value.(string)) == size
 	case "array":
 		list := reflect.ValueOf(value)
 		return list.Len() == size

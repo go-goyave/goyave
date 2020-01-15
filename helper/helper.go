@@ -59,10 +59,11 @@ func ToString(value interface{}) string {
 // then
 //  [{text/html 1} {*/* 0.7} {text/* 0.5}]
 func ParseMultiValuesHeader(header string) []HeaderValue {
-	values := []HeaderValue{}
 	regex := regexp.MustCompile("^q=([01]\\.[0-9]{1,3})$")
+	split := strings.Split(header, ",")
+	values := make([]HeaderValue, 0, len(split))
 
-	for _, v := range strings.Split(header, ",") {
+	for _, v := range split {
 		val := HeaderValue{}
 		if i := strings.Index(v, ";"); i != -1 {
 			// Parse priority

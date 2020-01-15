@@ -60,7 +60,8 @@ func (suite *RouterTestSuite) TestSubRouter() {
 	suite.Equal(4, len(router.middleware))
 
 	subrouter := router.Subrouter("/sub")
-	suite.Equal(4, len(subrouter.middleware))
+	suite.Equal(0, len(subrouter.middleware)) // Middleware inherited, not copied
+	suite.Equal(len(router.statusHandlers), len(subrouter.statusHandlers))
 }
 
 func (suite *RouterTestSuite) TestCleanStaticPath() {

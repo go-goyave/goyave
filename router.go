@@ -15,6 +15,7 @@ import (
 type Router struct {
 	muxRouter         *mux.Router
 	corsOptions       *cors.Options
+	parent            *Router
 	hasCORSMiddleware bool
 	middleware        []Middleware
 	statusHandlers    map[int]Handler
@@ -55,6 +56,7 @@ func newRouter() *Router {
 		muxRouter:      muxRouter,
 		statusHandlers: make(map[int]Handler, 13),
 		middleware:     make([]Middleware, 0, 3),
+		parent:         nil,
 	}
 	muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
 	muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
@@ -78,16 +80,14 @@ func (r *Router) copyStatusHandlers() map[int]Handler {
 func (r *Router) Subrouter(prefix string) *Router {
 	router := &Router{
 		muxRouter:         r.muxRouter.PathPrefix(prefix).Subrouter(),
+		parent:            r,
 		corsOptions:       r.corsOptions,
 		hasCORSMiddleware: r.hasCORSMiddleware,
 		statusHandlers:    r.copyStatusHandlers(),
-		middleware:        make([]Middleware, 0, len(r.middleware)),
+		middleware:        make([]Middleware, 0, 3),
 	}
 	router.muxRouter.NotFoundHandler = r.muxRouter.NotFoundHandler
 	router.muxRouter.MethodNotAllowedHandler = r.muxRouter.MethodNotAllowedHandler
-
-	// Apply parent middleware to subrouter
-	router.Middleware(r.middleware...)
 	return router
 }
 
@@ -208,13 +208,24 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 	// Allows custom middleware to be executed after core
 	// middleware and before validation.
 	handler = validateRequestMiddleware(handler)
-	for i := len(r.middleware) - 1; i >= 0; i-- {
-		handler = r.middleware[i](handler)
+	handler = r.applyMiddleware(handler)
+
+	parent := r.parent
+	for parent != nil {
+		handler = parent.applyMiddleware(handler)
+		parent = parent.parent
 	}
 
 	handler(response, request)
 
 	r.finalize(response, request)
+}
+
+func (r *Router) applyMiddleware(handler Handler) Handler {
+	for i := len(r.middleware) - 1; i >= 0; i-- {
+		handler = r.middleware[i](handler)
+	}
+	return handler
 }
 
 // finalize the request's life-cycle.

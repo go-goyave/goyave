@@ -83,8 +83,8 @@ func (r *Router) Subrouter(prefix string) *Router {
 		statusHandlers:    r.copyStatusHandlers(),
 		middleware:        make([]Middleware, 0, len(r.middleware)),
 	}
-	router.muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
-	router.muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
+	router.muxRouter.NotFoundHandler = r.muxRouter.NotFoundHandler
+	router.muxRouter.MethodNotAllowedHandler = r.muxRouter.MethodNotAllowedHandler
 
 	// Apply parent middleware to subrouter
 	router.Middleware(r.middleware...)

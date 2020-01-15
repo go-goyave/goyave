@@ -23,7 +23,7 @@ Be sure to deploy your application with a `config.production.json` config file c
 Of course, don't run your application with `go run` in production. Build your application using `go build` and deploy the executable, alongside the config files and resources directory.
 
 The following Dockerfile is an example of a goyave application called `docker-goyave`:
-``` Dockerfile
+``` docker
 FROM golang:alpine as builder
 
 WORKDIR /app

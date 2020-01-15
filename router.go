@@ -53,7 +53,8 @@ func newRouter() *Router {
 	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{
 		muxRouter:      muxRouter,
-		statusHandlers: map[int]Handler{},
+		statusHandlers: make(map[int]Handler, 13),
+		middleware:     make([]Middleware, 0, 3),
 	}
 	muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
 	muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
@@ -64,7 +65,7 @@ func newRouter() *Router {
 }
 
 func (r *Router) copyStatusHandlers() map[int]Handler {
-	cpy := make(map[int]Handler)
+	cpy := make(map[int]Handler, len(r.statusHandlers))
 	for key, value := range r.statusHandlers {
 		cpy[key] = value
 	}
@@ -80,6 +81,7 @@ func (r *Router) Subrouter(prefix string) *Router {
 		corsOptions:       r.corsOptions,
 		hasCORSMiddleware: r.hasCORSMiddleware,
 		statusHandlers:    r.copyStatusHandlers(),
+		middleware:        make([]Middleware, 0, len(r.middleware)),
 	}
 	router.muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
 	router.muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)

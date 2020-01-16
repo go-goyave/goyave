@@ -184,12 +184,12 @@ func (r *Request) IP(field string) net.IP {
 	return str
 }
 
-// URL get an URL field from the request data.
-// Panics if the field is not an URL.
+// URL get a URL field from the request data.
+// Panics if the field is not a URL.
 func (r *Request) URL(field string) *url.URL {
 	str, ok := r.Data[field].(*url.URL)
 	if !ok {
-		log.Panicf("Field \"%s\" is not an URL", field)
+		log.Panicf("Field \"%s\" is not a URL", field)
 	}
 	return str
 }

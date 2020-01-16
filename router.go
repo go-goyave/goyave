@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Router registers routes to be matched and dispatches a handler.
+// Router registers routes to be matched and executes a handler.
 type Router struct {
 	muxRouter         *mux.Router
 	corsOptions       *cors.Options

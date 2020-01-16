@@ -311,7 +311,7 @@ fmt.Println(request.IP("host").String()) // "127.0.0.1"
 
 #### Request.URL
 
-Get an URL field from the request data. Panics if the field is not an URL or doesn't exist.
+Get a URL field from the request data. Panics if the field is not a URL or doesn't exist.
 
 | Parameters     | Return     |
 |----------------|------------|

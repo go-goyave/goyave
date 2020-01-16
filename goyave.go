@@ -57,7 +57,7 @@ func ClearStartupHooks() {
 }
 
 // Start starts the web server.
-// The routeRegistrer parameter is a function aimed at registering all your routes and middlewares.
+// The routeRegistrer parameter is a function aimed at registering all your routes and middleware.
 //  import (
 //      "github.com/System-Glitch/goyave/v2"
 //      "my-project/route"

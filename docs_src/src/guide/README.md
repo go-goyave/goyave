@@ -23,14 +23,13 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 ### Ideas for future releases
 
-- CLI utility to help creating controllers, middlewares, etc
+- Support for gzip compression
+- CLI utility to help creating controllers, middleware, etc
+- Named routes and other routing features
 - Email helpers
 - Queues/Scheduler system
 - Logging
-- Custom router implementation
-- Named routes
 - Placeholders in language lines and pluralization
-- Support for gzip compression
 - Direct support for the HEAD method
 - And more!
 

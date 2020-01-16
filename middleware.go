@@ -11,7 +11,7 @@ import (
 
 // Middleware function generating middleware handler function.
 //
-// Request data is available to middlewares, but bear in mind that
+// Request data is available to middleware, but bear in mind that
 // it had not been validated yet. That means that you can modify or
 // filter data. (Trim strings for example)
 type Middleware func(Handler) Handler

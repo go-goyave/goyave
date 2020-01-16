@@ -48,7 +48,7 @@ func CustomAuthentication(next goyave.Handler) goyave.Handler {
 ```
 
 ::: tip
-When a middleware stops a request, following middlewares are **not** executed either.
+When a middleware stops a request, following middleware are **not** executed either.
 :::
 
 ## Included middleware

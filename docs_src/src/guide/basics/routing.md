@@ -103,7 +103,7 @@ router.Route("GET", "/products/{id}", product.Show, nil)
 
 ## Groups and sub-routers
 
-Grouping routes makes it easier to define multiple routes having the same prefix and/or middlewares.
+Grouping routes makes it easier to define multiple routes having the same prefix and/or middleware.
 
 Let's take a simple scenario where we want to implement a user CRUD. All our routes will start with `/user`, so we are going to create a sub-router for it:
 ``` go

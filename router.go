@@ -54,14 +54,14 @@ func newRouter() *Router {
 	muxRouter.Schemes(config.GetString("protocol"))
 	router := &Router{
 		muxRouter:      muxRouter,
-		statusHandlers: make(map[int]Handler, 13),
+		statusHandlers: make(map[int]Handler, 15),
 		middleware:     make([]Middleware, 0, 3),
 		parent:         nil,
 	}
 	muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
 	muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
-	router.StatusHandler(errorStatusHandler, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
+	router.StatusHandler(errorStatusHandler, 401, 403, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
@@ -151,7 +151,7 @@ func (r *Router) CORS(options *cors.Options) {
 // Status handlers are inherited as a copy in sub-routers. Modifying a child's status handler
 // will not modify its parent's.
 //
-// Codes in the 500 range and codes 404 and 405 have a default status handler.
+// Codes in the 500 range and codes 401, 403, 404 and 405 have a default status handler.
 func (r *Router) StatusHandler(handler Handler, status int, additionalStatuses ...int) {
 	r.statusHandlers[status] = handler
 	for _, s := range additionalStatuses {

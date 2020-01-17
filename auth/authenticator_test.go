@@ -106,10 +106,6 @@ func (suite *AuthenticationTestSuite) TestAuthMiddleware() {
 	suite.Equal(200, result.StatusCode)
 }
 
-func (suite *AuthenticationTestSuite) TestAuthMiddlewareMultipleMethods() {
-
-}
-
 func (suite *AuthenticationTestSuite) TearDownTest() {
 	suite.ClearDatabase()
 }

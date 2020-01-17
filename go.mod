@@ -9,4 +9,5 @@ require (
 	github.com/imdario/mergo v0.3.8
 	github.com/jinzhu/gorm v1.9.11
 	github.com/stretchr/testify v1.4.0
+	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
 )

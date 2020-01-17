@@ -20,6 +20,7 @@ type Request struct {
 	httpRequest *http.Request
 	corsOptions *cors.Options
 	cookies     []*http.Cookie
+	User        interface{}
 	Rules       validation.RuleSet
 	Data        map[string]interface{}
 	Params      map[string]string
@@ -94,6 +95,12 @@ func (r *Request) Referrer() string {
 // UserAgent returns the client's User-Agent, if sent in the request.
 func (r *Request) UserAgent() string {
 	return r.httpRequest.UserAgent()
+}
+
+// BasicAuth returns the username and password provided in the request's
+// Authorization header, if the request uses HTTP Basic Authentication.
+func (r *Request) BasicAuth() (username, password string, ok bool) {
+	return r.httpRequest.BasicAuth()
 }
 
 // CORSOptions returns the CORS options applied to this request, or nil.

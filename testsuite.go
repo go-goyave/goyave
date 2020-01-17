@@ -66,6 +66,8 @@ type TestSuite struct {
 	mu          sync.Mutex
 }
 
+var _ ITestSuite = (*TestSuite)(nil) // implements ITestSuite
+
 // Timeout get the timeout for test failure when using RunServer or requests.
 func (s *TestSuite) Timeout() time.Duration {
 	s.mu.Lock()

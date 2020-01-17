@@ -53,20 +53,29 @@ type BasicUser struct {
 	Name string
 }
 
-var _ Authenticator = (*BasicUser)(nil) // implements Authenticator
+type basicUserAuthenticator struct{}
 
-// TODO write test for basic auth via config
+var _ Authenticator = (*basicUserAuthenticator)(nil) // implements Authenticator
 
-// Authenticate check if the given username and password match the
-// "auth:username" and "auth:password" config entries.
-func (u *BasicUser) Authenticate(request *goyave.Request, user interface{}) bool {
+// Authenticate check if the request basic auth header matches the
+// "authUsername" and "authPassword" config entries.
+func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user interface{}) bool {
 	username, password, ok := request.BasicAuth()
 
 	if !ok ||
-		username != config.GetString("auth.username") ||
-		password != config.GetString("auth.password") {
+		username != config.GetString("authUsername") ||
+		password != config.GetString("authPassword") {
 		return false
 	}
-	user = &BasicUser{Name: username}
+	user.(*BasicUser).Name = username
 	return true
+}
+
+// ConfigBasicAuth create a new authenticator middleware for
+// config-based Basic authentication. On auth success, the request
+// user is set to a "BasicUser".
+// The user is authenticated if the "authUsername" and "authPassword" config entries
+// match the request's Authorization header.
+func ConfigBasicAuth() goyave.Middleware {
+	return Middleware(&BasicUser{}, &basicUserAuthenticator{})
 }

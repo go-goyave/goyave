@@ -63,6 +63,28 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticate() {
 	})
 }
 
+func (suite *BasicAuthenticatorTestSuite) TestAuthenticateViaConfig() {
+	config.Set("authUsername", "admin")
+	config.Set("authPassword", "secret")
+
+	authenticator := ConfigBasicAuth()
+	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
+	request.Header().Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("admin:wrong_password")))
+	result := suite.Middleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
+		suite.Fail("Auth middleware passed")
+	})
+	suite.Equal(401, result.StatusCode)
+
+	request = suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
+	request.Header().Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("admin:secret")))
+	result = suite.Middleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
+		suite.IsType(&BasicUser{}, request.User)
+		suite.Equal("admin", request.User.(*BasicUser).Name)
+		response.Status(200)
+	})
+	suite.Equal(200, result.StatusCode)
+}
+
 func (suite *BasicAuthenticatorTestSuite) TearDownTest() {
 	suite.ClearDatabase()
 }

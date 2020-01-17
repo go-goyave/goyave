@@ -16,11 +16,8 @@ type Column struct {
 	Field *reflect.StructField
 }
 
-// Authenticatable represents an object that can be authenticated.
-// Models shouldn't directly implement this interface. Create a new structure
-// dedicated to an authentication method instead, like BasicAuthenticatable, and
-// embed this structure inside your models.
-type Authenticatable interface { // TODO how to implement multiple Authentication methods on same model ?
+// Authenticator is an object in charge of authenticating a model.
+type Authenticator interface {
 
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and puts the result in the given user pointer.
@@ -28,15 +25,15 @@ type Authenticatable interface { // TODO how to implement multiple Authenticatio
 	Authenticate(request *goyave.Request, user interface{}) bool
 }
 
-// Authenticator create a new authenticator middleware to authenticate
-// the given authenticatable.
-func Authenticator(authenticatable Authenticatable) goyave.Middleware {
+// Middleware create a new authenticator middleware to authenticate
+// the given model using the given authenticator.
+func Middleware(model interface{}, authenticator Authenticator) goyave.Middleware {
 	return func(next goyave.Handler) goyave.Handler {
 		return func(response *goyave.Response, r *goyave.Request) {
-			userType := reflect.Indirect(reflect.ValueOf(authenticatable)).Type()
+			userType := reflect.Indirect(reflect.ValueOf(model)).Type()
 			user := reflect.New(userType).Interface()
 			r.User = user
-			if !authenticatable.Authenticate(r, r.User) {
+			if !authenticator.Authenticate(r, r.User) {
 				response.Status(http.StatusUnauthorized)
 				return
 			}
@@ -44,8 +41,6 @@ func Authenticator(authenticatable Authenticatable) goyave.Middleware {
 		}
 	}
 }
-
-//--------------------------------------------
 
 // FindColumns in given struct. A field matches if it has a "auth" tag with the given value.
 // Returns a slice of found fields, ordered as the input "fields" slice.

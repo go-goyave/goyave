@@ -10,11 +10,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// BasicAuthenticatable implementation of Authenticatable with the Basic
+// BasicAuthenticator implementation of Authenticator with the Basic
 // authentication method, using config as credentials provider.
-type BasicAuthenticatable struct{}
+type BasicAuthenticator struct{}
 
-var _ Authenticatable = (*BasicAuthenticatable)(nil) // implements Authenticatable
+var _ Authenticator = (*BasicAuthenticator)(nil) // implements Authenticator
 
 // Authenticate fetch the user corresponding to the credentials
 // found in the given request and puts the result in the given user pointer.
@@ -23,7 +23,7 @@ var _ Authenticatable = (*BasicAuthenticatable)(nil) // implements Authenticatab
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.
 // The password is checked using bcrypt. The username field should unique.
-func (ba *BasicAuthenticatable) Authenticate(request *goyave.Request, user interface{}) bool {
+func (ba *BasicAuthenticator) Authenticate(request *goyave.Request, user interface{}) bool {
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
@@ -53,7 +53,7 @@ type BasicUser struct {
 	Name string
 }
 
-var _ Authenticatable = (*BasicUser)(nil) // implements Authenticatable
+var _ Authenticator = (*BasicUser)(nil) // implements Authenticator
 
 // TODO write test for basic auth via config
 

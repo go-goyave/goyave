@@ -18,8 +18,6 @@ type TestUser struct {
 	Name     string `gorm:"type:varchar(100)"`
 	Password string `gorm:"type:varchar(100)" auth:"password"`
 	Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
-
-	BasicAuthenticatable
 }
 
 type TestUserPromoted struct {
@@ -31,8 +29,6 @@ type TestUserOverride struct {
 	Name     string `gorm:"type:varchar(100)"`
 	Password string `gorm:"type:varchar(100);column:password_override" auth:"password"`
 	Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
-
-	BasicAuthenticatable
 }
 
 type AuthenticationTestSuite struct {
@@ -91,7 +87,7 @@ func (suite *AuthenticationTestSuite) TestFindColumnsPromoted() {
 
 func (suite *AuthenticationTestSuite) TestAuthMiddleware() {
 	// Test middleware with BasicAuth
-	authenticator := Authenticator(&TestUser{})
+	authenticator := Middleware(&TestUser{}, &BasicAuthenticator{})
 
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
 	request.Header().Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("johndoe@example.org:wrong_password")))
@@ -108,6 +104,10 @@ func (suite *AuthenticationTestSuite) TestAuthMiddleware() {
 		response.Status(200)
 	})
 	suite.Equal(200, result.StatusCode)
+}
+
+func (suite *AuthenticationTestSuite) TestAuthMiddlewareMultipleMethods() {
+
 }
 
 func (suite *AuthenticationTestSuite) TearDownTest() {

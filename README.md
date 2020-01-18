@@ -73,8 +73,8 @@ The example below shows a basic `Hello world` application using Goyave.
 import "github.com/System-Glitch/goyave/v2"
 
 func registerRoutes(router *goyave.Router) {
-	router.Route("GET", "/hello", func(response *goyave.Response, request *goyave.Request) {
-	    response.String(http.StatusOK, "Hello world!")
+    router.Route("GET", "/hello", func(response *goyave.Response, request *goyave.Request) {
+        response.String(http.StatusOK, "Hello world!")
     }, nil)
 }
 

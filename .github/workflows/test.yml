@@ -5,18 +5,20 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    steps:
-    - uses: getong/mariadb-action@v1.1
-      with:
-        host port: 3306
-        container port: 3306
-        character set server: 'utf8mb4'
-        collation server: 'utf8mb4_general_ci'
-        mysql database: 'goyave'
-        mysql root password: root
-        mysql user: 'goyave'
-        mysql password: secret
 
+    services:
+      mariadb:
+        image: mariadb:latest
+          ports:
+            - 3306
+        env:
+          MYSQL_USER: goyave
+          MYSQL_PASSWORD: secret
+          MYSQL_DATABASE: goyave
+          MYSQL_ROOT_PASSWORD: secret
+          options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+
+    steps:
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
       with:
@@ -33,6 +35,15 @@ jobs:
         go get golang.org/x/lint/golint
         go get github.com/rakyll/gotest
         go get -v -t -d ./...
+
+    - name: Verify MariaDB connection
+      env:
+        PORT: ${{ job.services.mariadb.ports[3306] }}
+      run: |
+        while ! mysqladmin ping -h"127.0.0.1" -P"$PORT" --silent; do
+          sleep 1
+        done
+
     - name: Test
       run: |
         gotest -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...

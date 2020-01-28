@@ -9,8 +9,8 @@ jobs:
     services:
       mariadb:
         image: mariadb:latest
-          ports:
-            - 3306
+        ports:
+          - 3306
         env:
           MYSQL_USER: goyave
           MYSQL_PASSWORD: secret
@@ -48,7 +48,7 @@ jobs:
       run: |
         gotest -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
         golint -set_exit_status $(go list ./...)
-    
+
     - name: Send coverage
       uses: shogo82148/actions-goveralls@v1
       with:

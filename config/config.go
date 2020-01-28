@@ -34,8 +34,9 @@ var configDefaults map[string]interface{} = map[string]interface{}{
 	"dbUsername":           "root",
 	"dbPassword":           "root",
 	"dbOptions":            "charset=utf8&parseTime=true&loc=Local",
-	"dbMaxOpenConnections": 100.0,
+	"dbMaxOpenConnections": 20.0,
 	"dbMaxIdleConnections": 20.0,
+	"dbMaxLifetime":        300.0,
 	"dbAutoMigrate":        false,
 }
 
@@ -63,6 +64,7 @@ var configValidation = map[string]reflect.Kind{
 	"dbOptions":            reflect.String,
 	"dbMaxOpenConnections": reflect.Float64,
 	"dbMaxIdleConnections": reflect.Float64,
+	"dbMaxLifetime":        reflect.Float64,
 	"dbAutoMigrate":        reflect.Bool,
 }
 

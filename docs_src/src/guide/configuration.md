@@ -129,8 +129,9 @@ The core of the framework contains default values covering most cases, but you c
 | dbUsername           | `string`  | any                                             | "root"                                  |                                                                                                                |
 | dbPassword           | `string`  | any                                             | "root"                                  |                                                                                                                |
 | dbOptions            | `string`  | any                                             | "charset=utf8&parseTime=true&loc=Local" |                                                                                                                |
-| dbMaxOpenConnections | `float64` | any                                             | `100`                                   |                                                                                                                |
+| dbMaxOpenConnections | `float64` | any                                             | `20`                                    |                                                                                                                |
 | dbMaxIdleConnections | `float64` | any                                             | `20`                                    |                                                                                                                |
+| dbMaxLifetime        | `float64` | any                                             | `300`                                   | The maximum time (in seconds) a connection may be reused.                                                      |
 | dbAutoMigrate        | `bool`    | `true`, `false`                                 | `false`                                 | When activated, migrate all registered models at startup                                                       |
 
 ::: tip Note

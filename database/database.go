@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/jinzhu/gorm"
@@ -76,6 +77,7 @@ func newConnection() *gorm.DB {
 	db.LogMode(config.GetBool("debug"))
 	db.DB().SetMaxOpenConns(int(config.Get("dbMaxOpenConnections").(float64)))
 	db.DB().SetMaxIdleConns(int(config.Get("dbMaxIdleConnections").(float64)))
+	db.DB().SetConnMaxLifetime(time.Duration(config.Get("dbMaxLifetime").(float64)) * time.Second)
 	return db
 }
 

@@ -6,18 +6,6 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
 
-    services:
-      mariadb:
-        image: mariadb:latest
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_USER: goyave
-          MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: goyave
-          MYSQL_ROOT_PASSWORD: secret
-          options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
-
     steps:
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
@@ -36,14 +24,17 @@ jobs:
         go get github.com/rakyll/gotest
         go get -v -t -d ./...
 
-    - name: Verify MariaDB connection
-      env:
-        PORT: ${{ job.services.mariadb.ports[3306] }}
+    - name: Verify MySQL connection
       run: |
-        while ! mysqladmin ping -h"127.0.0.1" -P"$PORT" --silent; do
+        while ! mysqladmin ping --silent; do
           sleep 1
         done
-        mysql -h"127.0.0.1" -P"$PORT" -u root -psecret -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
+
+    - name: Setup MySQL database
+      run: |
+        sudo mysql -proot -e 'CREATE DATABASE goyave CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+        sudo mysql -proot -e 'CREATE USER "goyave"@"%" IDENTIFIED BY "secret"'
+        sudo mysql -proot -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
 
     - name: Test
       run: |

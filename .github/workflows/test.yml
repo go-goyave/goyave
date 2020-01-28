@@ -1,0 +1,43 @@
+name: Test
+on: [push, pull_request]
+jobs:
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        echo "::set-env name=GOPATH::$(go env GOPATH)"
+        echo "::add-path::$(go env GOPATH)/bin"
+        go get golang.org/x/lint/golint
+        go get github.com/rakyll/gotest
+        go get -v -t -d ./...
+    - name: Test
+      run: |
+        gotest -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
+        golint -set_exit_status $(go list ./...)
+    
+    - name: Send coverage
+      uses: shogo82148/actions-goveralls@v1
+      with:
+        path-to-profile: coverage.txt
+        parallel: true
+        
+  finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shogo82148/actions-goveralls@v1
+        with:
+          parallel-finished: true

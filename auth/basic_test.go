@@ -44,18 +44,18 @@ func (suite *BasicAuthenticatorTestSuite) createRequest(username, password strin
 func (suite *BasicAuthenticatorTestSuite) TestAuthenticate() {
 	user := &TestUser{}
 	basicAuthenticator := &BasicAuthenticator{}
-	suite.True(basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "password"), user))
+	suite.Nil(basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "password"), user))
 	suite.Equal("Admin", user.Name)
 
 	user = &TestUser{}
-	suite.False(basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "wrong password"), user))
+	suite.Equal("These credentials don't match our records.", basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "wrong password"), user).Error())
 	user = &TestUser{}
-	suite.False(basicAuthenticator.Authenticate(suite.createRequest("wrongemail@example.org", "password"), user))
+	suite.Equal("These credentials don't match our records.", basicAuthenticator.Authenticate(suite.createRequest("wrongemail@example.org", "password"), user).Error())
 
 	user = &TestUser{}
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
 	request.Header().Set("Authorization", "Basic")
-	suite.False(basicAuthenticator.Authenticate(request, user))
+	suite.Equal("Invalid or missing authentication header.", basicAuthenticator.Authenticate(request, user).Error())
 
 	suite.Panics(func() {
 		userNoTable := &TestUserPromoted{}

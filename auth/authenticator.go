@@ -21,8 +21,8 @@ type Authenticator interface {
 
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and puts the result in the given user pointer.
-	// If no user can be authenticated, returns false.
-	Authenticate(request *goyave.Request, user interface{}) bool
+	// If no user can be authenticated, returns the error.
+	Authenticate(request *goyave.Request, user interface{}) error
 }
 
 // Middleware create a new authenticator middleware to authenticate
@@ -33,8 +33,8 @@ func Middleware(model interface{}, authenticator Authenticator) goyave.Middlewar
 			userType := reflect.Indirect(reflect.ValueOf(model)).Type()
 			user := reflect.New(userType).Interface()
 			r.User = user
-			if !authenticator.Authenticate(r, r.User) {
-				response.Status(http.StatusUnauthorized)
+			if err := authenticator.Authenticate(r, r.User); err != nil {
+				response.JSON(http.StatusUnauthorized, map[string]string{"authError": err.Error()})
 				return
 			}
 			next(response, r)
@@ -89,4 +89,16 @@ func columnName(field *reflect.StructField) string {
 	}
 
 	return gorm.ToColumnName(field.Name)
+}
+
+// GetBearerToken extract the auth token from the "Authorization" header.
+// Only takes tokens of type "Bearer".
+// Returns empty string if no token found or the header is invalid.
+func GetBearerToken(request *goyave.Request) string {
+	const schema = "Bearer "
+	header := request.Header().Get("Authorization")
+	if !strings.HasPrefix(header, schema) {
+		return ""
+	}
+	return strings.TrimSpace(header[len(schema):])
 }

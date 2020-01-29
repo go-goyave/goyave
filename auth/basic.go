@@ -1,17 +1,19 @@
 package auth
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/System-Glitch/goyave/v2"
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/System-Glitch/goyave/v2/lang"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // BasicAuthenticator implementation of Authenticator with the Basic
-// authentication method, using config as credentials provider.
+// authentication method.
 type BasicAuthenticator struct{}
 
 var _ Authenticator = (*BasicAuthenticator)(nil) // implements Authenticator
@@ -23,11 +25,11 @@ var _ Authenticator = (*BasicAuthenticator)(nil) // implements Authenticator
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.
 // The password is checked using bcrypt. The username field should unique.
-func (ba *BasicAuthenticator) Authenticate(request *goyave.Request, user interface{}) bool {
+func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user interface{}) error {
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
-		return false
+		return fmt.Errorf(lang.Get(request.Lang, "no-credentials-provided"))
 	}
 
 	columns := FindColumns(user, "username", "password")
@@ -39,11 +41,14 @@ func (ba *BasicAuthenticator) Authenticate(request *goyave.Request, user interfa
 	}
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
+
+	// TODO document how to register users with bcrypt
+
 	if result.RecordNotFound() || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
-		return false
+		return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
 	}
 
-	return true
+	return nil
 }
 
 //--------------------------------------------
@@ -59,16 +64,16 @@ var _ Authenticator = (*basicUserAuthenticator)(nil) // implements Authenticator
 
 // Authenticate check if the request basic auth header matches the
 // "authUsername" and "authPassword" config entries.
-func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user interface{}) bool {
+func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user interface{}) error {
 	username, password, ok := request.BasicAuth()
 
 	if !ok ||
 		username != config.GetString("authUsername") ||
 		password != config.GetString("authPassword") {
-		return false
+		return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
 	}
 	user.(*BasicUser).Name = username
-	return true
+	return nil
 }
 
 // ConfigBasicAuth create a new authenticator middleware for

@@ -106,6 +106,18 @@ func (suite *AuthenticationTestSuite) TestAuthMiddleware() {
 	suite.Equal(200, result.StatusCode)
 }
 
+func (suite *AuthenticationTestSuite) TestGetBearerToken() {
+	request := suite.CreateTestRequest(nil)
+	request.Header().Set("Authorization", "NotBearer 123456789")
+	suite.Empty(GetBearerToken(request))
+
+	request.Header().Set("Authorization", "Bearer123456789")
+	suite.Empty(GetBearerToken(request))
+
+	request.Header().Set("Authorization", "Bearer 123456789")
+	suite.Equal("123456789", GetBearerToken(request))
+}
+
 func (suite *AuthenticationTestSuite) TearDownTest() {
 	suite.ClearDatabase()
 }

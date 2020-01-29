@@ -413,3 +413,16 @@ Learn more in the [localization](../advanced/localization.html) section.
 fmt.Println(request.Lang) // "en-US"
 fmt.Println(lang.Get(request.Lang, "validation.rules.required")) // "The :field is required."
 ```
+
+#### Request.User
+
+<p><Badge text="Since v2.5.0"/></p>
+
+`User` is an `interface{}` containing the authenticated user if the route is protected, `nil` otherwise.
+
+Learn more in the [authentication](../advanced/authentication.html) section.
+
+**Example:**
+``` go
+fmt.Println(request.User.(*model.User).Name) // "John Doe"
+```

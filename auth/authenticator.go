@@ -21,7 +21,8 @@ type Authenticator interface {
 
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and puts the result in the given user pointer.
-	// If no user can be authenticated, returns the error.
+	// If no user can be authenticated, returns the error detailing why the
+	// authentication failed. The error message is already localized.
 	Authenticate(request *goyave.Request, user interface{}) error
 }
 

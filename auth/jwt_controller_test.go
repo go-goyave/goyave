@@ -127,7 +127,7 @@ func (suite *JWTControllerTestSuite) TearDownTest() {
 }
 
 func (suite *JWTControllerTestSuite) TearDownSuite() {
-	database.GetConnection().Exec("DROP TABLE test_users;")
+	database.GetConnection().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

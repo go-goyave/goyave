@@ -75,18 +75,25 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 	suite.Equal(0, len(models))
 
 	db := GetConnection()
-	defer db.Exec("DROP TABLE users;")
+	defer db.DropTable(&User{})
 
 	rows, err := db.Raw("SHOW TABLES;").Rows()
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
+
+	found := false
 	for rows.Next() {
 		name := ""
 		rows.Scan(&name)
-		suite.Equal("users", name)
+		if name == "users" {
+			found = true
+			break
+		}
 	}
+
+	suite.True(found)
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

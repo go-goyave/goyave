@@ -90,7 +90,7 @@ func (suite *BasicAuthenticatorTestSuite) TearDownTest() {
 }
 
 func (suite *BasicAuthenticatorTestSuite) TearDownSuite() {
-	database.GetConnection().Exec("DROP TABLE test_users;")
+	database.GetConnection().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

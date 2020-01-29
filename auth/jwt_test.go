@@ -94,7 +94,7 @@ func (suite *JWTAuthenticatorTestSuite) TearDownTest() {
 }
 
 func (suite *JWTAuthenticatorTestSuite) TearDownSuite() {
-	database.GetConnection().Exec("DROP TABLE test_users;")
+	database.GetConnection().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

@@ -123,7 +123,7 @@ func (suite *AuthenticationTestSuite) TearDownTest() {
 }
 
 func (suite *AuthenticationTestSuite) TearDownSuite() {
-	database.GetConnection().Exec("DROP TABLE test_users;")
+	database.GetConnection().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

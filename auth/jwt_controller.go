@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 	"time"
@@ -39,9 +38,9 @@ type JWTController struct {
 	model interface{}
 }
 
-// NewTokenAuthController create a new TokenAuthController that will
+// NewJWTController create a new JWTController that will
 // be using the given model for login and token generation.
-func NewTokenAuthController(model interface{}) *JWTController {
+func NewJWTController(model interface{}) *JWTController {
 	return &JWTController{model}
 }
 
@@ -65,9 +64,6 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 	}
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
-	fmt.Println(result.RecordNotFound())
-	fmt.Println(pass.String())
-	fmt.Println(bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String("password"))))
 	if !result.RecordNotFound() && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String("password"))) == nil {
 		token, err := GenerateToken(username)
 		if err != nil {
@@ -96,7 +92,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 // instantiating an authenticated request's user.
 func JWTRoutes(router *goyave.Router, model interface{}) *goyave.Router {
 	jwtRouter := router.Subrouter("/auth")
-	jwtRouter.Route("POST", "/login", NewTokenAuthController(model).Login, validation.RuleSet{
+	jwtRouter.Route("POST", "/login", NewJWTController(model).Login, validation.RuleSet{
 		"username": {"required", "string"},
 		"password": {"required", "string"},
 	})

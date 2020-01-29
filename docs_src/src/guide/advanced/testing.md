@@ -219,7 +219,7 @@ suite.Middleware(middleware.Auth, request, func(response *Response, request *Req
 [GetJSONBody](#testsuite-getjsonbody)
 [CreateTestFiles](#testsuite-createtestfiles)
 [CreateTestRequest](#testsuite-createtestrequest)
-[CreateTestResponse](#testsuite-createtestResponse)
+[CreateTestResponse](#testsuite-createtestresponse)
 [WriteFile](#testsuite-writefile)
 [WriteField](#testsuite-writefield)
 [ClearDatabase](#testsuite-cleardatabase)
@@ -368,7 +368,7 @@ If passed request is `nil`, a default `GET` request to `/` is used.
 ``` go
 rawRequest := httptest.NewRequest("GET", "/test-route", nil)
 rawRequest.Header.Set("Content-Type", "application/json")
-request := goyave.CreateTestRequest(rawRequest)
+request := suite.CreateTestRequest(rawRequest)
 request.Lang = "en-US"
 request.Data = map[string]interface{}{"field": "value"}
 ```
@@ -384,7 +384,7 @@ Create an empty response with the given response writer. This function is aimed 
 **Example:**
 ``` go
 writer := httptest.NewRecorder()
-response := goyave.CreateTestResponse(writer)
+response := suite.CreateTestResponse(writer)
 response.Status(http.StatusNoContent)
 result := writer.Result()
 fmt.Println(result.StatusCode) // 204

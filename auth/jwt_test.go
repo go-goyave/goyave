@@ -21,7 +21,6 @@ func (suite *JWTAuthenticatorTestSuite) SetupSuite() {
 	database.RegisterModel(&TestUser{})
 
 	database.Migrate()
-
 }
 
 func (suite *JWTAuthenticatorTestSuite) SetupTest() {
@@ -99,6 +98,6 @@ func (suite *JWTAuthenticatorTestSuite) TearDownSuite() {
 	database.ClearRegisteredModels()
 }
 
-func TestTokenAuthenticatorSuite(t *testing.T) {
+func TestJWTAuthenticatorSuite(t *testing.T) {
 	goyave.RunTest(t, new(JWTAuthenticatorTestSuite))
 }

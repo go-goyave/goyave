@@ -14,7 +14,7 @@ func Store(response *goyave.Response, request *goyave.Request) {
         Name: request.String("name"),
         Price: request.Numeric("price"),
     }
-    if err := database.GetConnection().Create(&product); err != nil {
+    if err := database.GetConnection().Create(&product).Error; err != nil {
         response.Error(err)
     } else {
         response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})

@@ -8,6 +8,7 @@ The Goyave framework lets you configure its core and your application.
 To configure your application, use the `config.json` file at your project's root. If you are using the template project, copy `config.example.json` to `config.json`. `config.json` should be ignored in your `.gitignore` file as it can differ from one developer to another. To avoid accidental commit or change to the default project's config, it is a good practice to ignore this file and define the project's default config in `config.example.json`.
 
 If this config file misses some config entries, the default values will be used. All values from the framework's core are **validated**. That means that the application will not start if you provided an invalid value in your config (For example if the specified port is not a number).  
+You can register your own configuration entries for them to be validated too.  
 See the [configuration reference](#configuration-reference) for more details.
 
 ## Environment configuration
@@ -116,6 +117,26 @@ config.Set("appName", "my awesome app")
 ## Custom config entries
 
 The core of the framework contains default values covering most cases, but you can still add custom entries for your most specific needs to the config simply by appending a property to your application's config file. The custom properties are not validated, so you can use the data type you want.
+
+### Validating custom entries
+
+#### config.Register
+
+Register a config entry for validation.
+
+If the entry identified by the given key is set or modified, its value will be validated according to the given kind. If the entry already exists, it will be revalidated.
+
+This method doesn't allow to override existing validation. Once an entry is registered, its expected kind cannot be modified.
+
+| Parameters          | Return          |
+|---------------------|-----------------|
+| `key string`        | `void` or panic |
+| `kind reflect.Kind` |                 |
+
+**Example:**
+``` go
+config.Register("pluginConfig", reflect.Struct)
+```
 
 ## Configuration reference
 

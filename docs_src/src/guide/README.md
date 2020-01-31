@@ -16,22 +16,20 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 ## Roadmap
 
 ::: img-row <img :src="$withBase('/undraw_to_do_list_a49b.svg')" height="150" alt="Roadmap"/>
-### Next release
-
-- Direct support for authentication
-:::
-
 ### Ideas for future releases
 
 - Support for gzip compression
 - CLI utility to help creating controllers, middleware, etc
 - Named routes and other routing features
+- Permission system (guards)
+- Placeholders in language lines and pluralization
+- Direct support for the HEAD method
 - Email helpers
 - Queues/Scheduler system
 - Logging
-- Placeholders in language lines and pluralization
-- Direct support for the HEAD method
 - And more!
+:::
+
 
 ## Contributors
 

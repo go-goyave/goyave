@@ -138,6 +138,74 @@ The user is authenticated if the `authUsername` and `authPassword` config entrie
 
 ### JSON Web Token (JWT)
 
+JWT, or [JSON Web Token](https://en.wikipedia.org/wiki/JSON_Web_Token), is an open standard of authentication that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. This information can be verified and trusted because it is digitally signed. JWTs can be signed using a secret (with the HMAC algorithm) or a public/private key pair using RSA or ECDSA. Goyave uses HMAC-SHA256 in its implementation.
+
+JTW Authentication comes with two configuration entries:
+
+- `jwtExpiry`: the number of seconds a token is valid for. Defaults to `300` (5 minutes).
+- `jwtSecret`: the secret used for the HMAC signature. This entry **doesn't have a default value**, you need to define it yourself. Use a key that is **at least 256 bits long**.
+
+To apply JWT protection to your routes, add the following middleware:
+
+``` go
+authenticator := auth.Middleware(&model.User{}, &auth.JWTAuthenticator{})
+router.Middleware(authenticator)
+```
+
+To request a protected route, you will need to add the following header:
+```
+Authorization: Bearer <YOUR_TOKEN>
+```
+
+---
+
+This Authenticator comes with a built-in login controller for password grant, using the field tags explained earlier. You can register the `/auth/login` route using the helper function `auth.JTWRoutes(router)`.
+
+#### auth.JWTRoutes
+
+Create a `/auth` route group and registers the `POST /auth/login` validated route. Returns the new route group.
+
+Validation rules are as follows:
+- `username`: required string
+- `password`: required string
+
+The given model is used for username and password retrieval and for instantiating an authenticated request's user.
+
+Ensure that the given router **is not** protected by JWT authentication, otherwise your users wouldn't be able to log in.
+
+| Parameters              | Return           |
+|-------------------------|------------------|
+| `router *goyave.Router` | `*goyave.Router` |
+| `model interface{}`     |                  |
+
+**Example:**
+``` go
+func Register(router *goyave.Router) {
+	auth.JWTRoutes(router, &model.User{})
+}
+```
+
+#### auth.NewJWTController
+
+If you want or need ot register the routes yourself, you can instantiate a new JWTController using `auth.NewJWTController()`.
+
+This function creates a new `JWTController` that will be using the given model for login and token generation.
+
+A `JWTController` contains one handler called `Login`.
+
+| Parameters          | Return                |
+|---------------------|-----------------------|
+| `model interface{}` | `*auth.JWTController` |
+
+**Example:**
+``` go
+jwtRouter := router.Subrouter("/auth")
+jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login, validation.RuleSet{
+	"username": {"required", "string"},
+	"password": {"required", "string"},
+})
+```
+
 ### Writing custom Authenticator
 
 ## Permissions

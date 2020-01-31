@@ -81,7 +81,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 // TODO refresh token
 // }
 
-// JWTRoutes create a "/auth" route group and registers the "/auth/login"
+// JWTRoutes create a "/auth" route group and registers the "POST /auth/login"
 // validated route. Returns the new route group.
 //
 // Validation rules are as follows:

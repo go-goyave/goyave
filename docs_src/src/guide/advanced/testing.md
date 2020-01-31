@@ -88,16 +88,32 @@ if err == nil {
 }
 ```
 
+#### URL-encoded requests
+
 ``` go
 headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded; param=value"}
-resp, err = suite.Post("/product", headers, strings.NewReader("field=value"))
+resp, err := suite.Post("/product", headers, strings.NewReader("field=value"))
 suite.Nil(err)
 if err == nil {
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
 
+#### JSON requests
+
+``` go
+headers := map[string]string{"Content-Type": "application/json"}
+body, _ := json.Marshal(map[string]interface{}{"name": "Pizza", "price": 12.5})
+resp, err := suite.Post("/product", headers, bytes.NewReader(body))
+suite.Nil(err)
+if err == nil {
+    suite.Equal("response content", string(suite.GetBody(resp)))
+}
+```
+
+:::tip
 If you need to test another method, you can use the [`suite.Request()`](#testsuite-request) function.
+:::
 
 ### Timeout
 

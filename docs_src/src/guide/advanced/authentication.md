@@ -206,7 +206,97 @@ jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login, va
 })
 ```
 
+#### auth.GenerateToken
+
+You may need to generate a token yourself outside of the login route. This function generates a new JWT.
+
+The token is created using the HMAC SHA256 method and signed using the `jwtSecret` config entry.  
+The token is set to expire in the amount of seconds defined by the `jwtExpiry` config entry.
+
+The generated token will contain the following claims:
+- `userid`: has the value of the `id` parameter
+- `nbf`: "Not before", the current timestamp is used
+- `exp`: "Expriy", the current timestamp plus the `jwtExpiry` config entry.
+
+| Parameters       | Return   |
+|------------------|----------|
+| `id interface{}` | `string` |
+|                  | `error`  |
+
+**Example:**
+``` go
+token, err := auth.GenerateToken(user.ID)
+if err != nil {
+	panic(err)
+}
+fmt.Println(token)
+```
+
 ### Writing custom Authenticator
+
+The Goyave authentication system is expandable, meaning that you can implement more authentication methods by creating a new `Authenticator`.
+
+The typical `Authenticator` is an empty struct implementing the `Authenticator` interface:
+``` go
+type MyAuthenticator struct{}
+
+// Ensure you're correctly implementing Authenticator.
+var _ Authenticator = (*MyAuthenticator)(nil) // implements Authenticator
+```
+
+The next step is to implement the `Authenticate` method. Its purpose is explained at the start of this guide.
+
+In this example, we are going to authenticate the user using a simple token stored in the database.
+``` go
+func (a *MyAuthenticator) Authenticate(request *goyave.Request, user interface{}) error {
+	token, ok := request.BearerToken()
+
+	if !ok {
+		return fmt.Errorf(lang.Get(request.Lang, "no-credentials-provided"))
+	}
+
+	// Find the struct field tagged with `auth:"token"`
+	columns := auth.FindColumns(user, "token")
+
+	// Find the user in the database using its token
+	result := database.GetConnection().Where(columns[0].Name+" = ?", token).First(user)
+
+	if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
+		// Database error
+		panic(errors)
+	}
+
+	if result.RecordNotFound() {
+		// User not found, return "These credentials don't match our records."
+		return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
+	}
+
+	// Authentication successful
+	return nil
+}
+```
+
+#### auth.FindColumns
+
+FindColumns in given struct. A field matches if it has a "auth" tag with the given value.
+Returns a slice of found fields, ordered as the input `fields` slice.
+
+If the nth field is not found, the nth value of the returned slice will be `nil`.
+
+| Parameters          | Return           |
+|---------------------|------------------|
+| `strct interface{}` | `[]*auth.Column` |
+| `fields ...string`  |                  |
+
+::: tip
+The `Column` struct is defined as follows:
+``` go
+type Column struct {
+	Name  string
+	Field *reflect.StructField
+}
+```
+:::
 
 ## Permissions
 

@@ -42,8 +42,6 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user interfac
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
 
-	// TODO document how to register users with bcrypt
-
 	if result.RecordNotFound() || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
 		return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
 	}

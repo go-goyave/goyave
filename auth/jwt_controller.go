@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// GenerateToken generate a new JWT auth token.
+// GenerateToken generate a new JWT.
 // The token is created using the HMAC SHA256 method and signed using
 // the "jwtSecret" config entry.
 // The token is set to expire in the amount of seconds defined by

@@ -11,7 +11,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// JWTAuthenticator implementation of Authenticator using a simple Bearer token.
+// JWTAuthenticator implementation of Authenticator using a JSON Web Token.
 type JWTAuthenticator struct{}
 
 var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator

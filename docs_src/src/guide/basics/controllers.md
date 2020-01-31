@@ -30,7 +30,7 @@ func Show(response *goyave.Response, request *goyave.Request) {
 	} else if err := result.Error; err != nil {
 		response.Error(err)
 	} else {
-		response.JSON(http.StatusOK, product)
+	    response.JSON(http.StatusOK, product)
 	}
 }
 
@@ -41,8 +41,8 @@ func Update(response *goyave.Response, request *goyave.Request) {
     if db.Select("id").First(&product, id).RecordNotFound() {
         response.Status(http.StatusNotFound)
     } else if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
-		response.Error(err)
-	}
+	    response.Error(err)
+    }
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {

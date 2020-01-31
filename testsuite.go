@@ -228,7 +228,7 @@ func (s *TestSuite) GetBody(response *http.Response) []byte {
 // GetJSONBody read the whole body of a response and decode it as JSON.
 // If read or decode failed, test fails.
 func (s *TestSuite) GetJSONBody(response *http.Response, data interface{}) error {
-	err := json.NewDecoder(response.Body).Decode(&data)
+	err := json.NewDecoder(response.Body).Decode(data)
 	if err != nil {
 		s.Fail("Couldn't read response body as JSON", err)
 		return err

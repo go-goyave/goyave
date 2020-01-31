@@ -207,6 +207,7 @@ suite.Middleware(middleware.Auth, request, func(response *Response, request *Req
 [WriteFile](#testsuite-writefile)
 [WriteField](#testsuite-writefield)
 [ClearDatabase](#testsuite-cleardatabase)
+[ClearDatabaseTables](#testsuite-cleardatabasetables)
 [RunTest](#goyave-runtest)
 :::
 
@@ -396,7 +397,15 @@ Create and write a new multipart form field. The test fails if the field couldn'
 
 #### TestSuite.ClearDatabase
 
-delete all records in all tables. This function only clears the tables of registered models.
+Delete all records in all tables. This function only clears the tables of registered models.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
+#### TestSuite.ClearDatabaseTables
+
+Drop all tables. This function only clears the tables of registered models.
 
 | Parameters | Return |
 |------------|--------|

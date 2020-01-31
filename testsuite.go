@@ -310,6 +310,15 @@ func (s *TestSuite) ClearDatabase() {
 	}
 }
 
+// ClearDatabaseTables drop all tables.
+// This function only clears the tables of registered models.
+func (s *TestSuite) ClearDatabaseTables() {
+	db := database.GetConnection()
+	for _, m := range database.GetRegisteredModels() {
+		db.DropTableIfExists(m)
+	}
+}
+
 // RunTest run a test suite with prior initialization of a test environment.
 // The GOYAVE_ENV environment variable is automatically set to "test" and restored
 // to its original value at the end of the test run.

@@ -302,6 +302,34 @@ func (suite *CustomTestSuite) TestClearDatabase() {
 	config.Set("dbConnection", "none")
 }
 
+func (suite *CustomTestSuite) TestClearDatabaseTables() {
+	config.Set("dbConnection", "mysql")
+	db := database.GetConnection()
+	db.AutoMigrate(&TestModel{})
+
+	database.RegisterModel(&TestModel{})
+	suite.ClearDatabaseTables()
+	database.ClearRegisteredModels()
+
+	found := false
+	rows, err := db.Raw("SHOW TABLES;").Rows()
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		name := ""
+		rows.Scan(&name)
+		if name == "test_models" {
+			found = true
+		}
+	}
+
+	suite.False(found)
+
+	config.Set("dbConnection", "none")
+}
+
 func TestTestSuite(t *testing.T) {
 	suite := new(CustomTestSuite)
 	RunTest(t, suite)

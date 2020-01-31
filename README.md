@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    <a href="https://travis-ci.com/System-Glitch/goyave"><img src="https://api.travis-ci.com/System-Glitch/goyave.svg" alt="Build Status"/></a>
+    <a href="https://github.com/System-Glitch/goyave/actions"><img src="https://github.com/System-Glitch/goyave/workflows/Test/badge.svg" alt="Build Status"/></a>
     <a href="https://github.com/System-Glitch/goyave/releases"><img src="https://img.shields.io/github/v/release/System-Glitch/goyave?include_prereleases" alt="Version"/></a>
     <a href="https://goreportcard.com/report/github.com/System-Glitch/goyave"><img src="https://goreportcard.com/badge/github.com/System-Glitch/goyave" alt="Go Report"/></a>
     <a href="https://coveralls.io/github/System-Glitch/goyave?branch=master"><img src="https://coveralls.io/repos/github/System-Glitch/goyave/badge.svg" alt="Coverage Status"/></a>
@@ -26,7 +26,7 @@ Goyave is a progressive and accessible web application framework, aimed at makin
         </td>
         <td valign="top">
             <h3>Powerful functionalities</h3>
-            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, and more!</p>
+            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, authentication, and more!</p>
         </td>
     </tr>
 </table>

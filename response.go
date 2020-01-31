@@ -147,9 +147,11 @@ func (r *Response) Download(file string, fileName string) error {
 // If debugging is not enabled, only the stauts code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err interface{}) error {
+	if r.err == nil {
+		log.Println(err)
+	}
 	r.err = err
 	dbg := config.GetBool("debug")
-	log.Println(err)
 	if dbg {
 		debug.PrintStack()
 		var message interface{}

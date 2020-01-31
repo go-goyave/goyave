@@ -69,21 +69,38 @@ Built-in Goyave Authenticators use [`bcrypt`](https://godoc.org/golang.org/x/cry
 When a user is successfully authenticated on a protected route, its information is available in the controller handler, through, the request `User` field.
 
 ``` go
-user := request.User.(*model.User)
-response.String(http.StatusOK, "Hello " + user.Name)
+func Hello(response *goyave.Response, request *goyave.Request) {
+	user := request.User.(*model.User)
+	response.String(http.StatusOK, "Hello " + user.Name)
+}
 ```
 
 ::: tip
 Remember that Goyave is primarily focused on APIs. It doesn't use session nor cookies in its core features, making requests **stateless**.
+
+If you want to implement cookie or session-based authentication, be sure to protect your application from [CSRF attacks](https://en.wikipedia.org/wiki/Cross-site_request_forgery).
 :::
 
 ### Basic Auth
 
-[Basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) is an authentication method using the `Authorization` header and a simple username and password combination. There are two built-in Authenticators for Basic auth.
+[Basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) is an authentication method using the `Authorization` header and a simple username and password combination with the following format: `username:password`, encoded in base64. There are two built-in Authenticators for Basic auth.
 
 #### Database provider
 
 This Authenticator fetches the user information from the database, using the field tags explained earlier.
+
+To apply this protection to your routes, add the following middleware:
+
+``` go
+authenticator := auth.Middleware(&model.User{}, &auth.BasicAuthenticator{})
+router.Middleware(authenticator)
+```
+
+You can then try requesting a protected route:
+```
+$ curl -u username:password http://localhost:8080/hello
+Hello Jérémy
+```
 
 #### Config provider
 
@@ -103,6 +120,11 @@ The model used for this Authenticator is `auth.BasicUser`:
 type BasicUser struct {
 	Name string
 }
+```
+
+You can then try requesting a protected route:
+```
+$ curl -u username:password http://localhost:8080/hello
 ```
 
 #### auth.ConfigBasicAuth

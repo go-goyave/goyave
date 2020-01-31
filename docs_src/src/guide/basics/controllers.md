@@ -14,18 +14,24 @@ func Store(response *goyave.Response, request *goyave.Request) {
         Name: request.String("name"),
         Price: request.Numeric("price"),
     }
-    database.GetConnection().Create(&product)
-    response.Status(http.StatusCreated)
+    if err := database.GetConnection().Create(&product); err != nil {
+        response.Error(err)
+    } else {
+        response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
+    }
 }
 
 func Show(response *goyave.Response, request *goyave.Request) {
-    product := model.Product{}
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-    if database.GetConnection().First(&product, id).RecordNotFound() {
-        response.Status(http.StatusNotFound)
-    } else {
-        response.JSON(http.StatusOK, product)
-    }
+	product := model.Product{}
+	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+	result := database.GetConnection().First(&product, id)
+	if result.RecordNotFound() {
+		response.Status(http.StatusNotFound)
+	} else if err := result.Error; err != nil {
+		response.Error(err)
+	} else {
+		response.JSON(http.StatusOK, product)
+	}
 }
 
 func Update(response *goyave.Response, request *goyave.Request) {
@@ -34,9 +40,9 @@ func Update(response *goyave.Response, request *goyave.Request) {
     db := database.GetConnection()
     if db.Select("id").First(&product, id).RecordNotFound() {
         response.Status(http.StatusNotFound)
-    } else {
-        db.Model(&product).Update("name", request.String("name"))
-    }
+    } else if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
+		response.Error(err)
+	}
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
@@ -45,14 +51,15 @@ func Destroy(response *goyave.Response, request *goyave.Request) {
     db := database.GetConnection()
     if db.Select("id").First(&product, id).RecordNotFound() {
         response.Status(http.StatusNotFound)
-    } else {
-        db.Delete(&product)
+    } else if err := db.Delete(&product).Error; err != nil {
+        response.Error(err)
     }
 }
 ```
 
 ::: tip
-Learn how to handle database errors [here](https://gorm.io/docs/error_handling.html).
+- Learn how to handle database errors [here](https://gorm.io/docs/error_handling.html).
+- It is not necessary to add `response.Status(http.StatusNoContent)` at the end of `Update` and `Destroy` because the framework automatically sets the response status to 204 if its body is empty and no status has been set.
 :::
 
 ## Handlers

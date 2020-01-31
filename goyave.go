@@ -178,7 +178,7 @@ func getHost(protocol string) string {
 }
 
 func getAddress(protocol string) string {
-	shouldShowPort := false
+	var shouldShowPort bool
 	var port string
 	if protocol == "https" {
 		p := int64(config.Get("httpsPort").(float64))

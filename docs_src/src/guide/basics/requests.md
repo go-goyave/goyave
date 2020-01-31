@@ -24,6 +24,8 @@ import "github.com/System-Glitch/goyave/v2"
 [Cookies](#request-cookies)
 [Referrer](#request-referrer)
 [UserAgent](#request-useragent)
+[BasicAuth](#request-basicauth)
+[BearerToken](#request-bearertoken)
 [CORSOptions](#request-corsoptions)
 :::
 
@@ -181,6 +183,44 @@ The returned object is a copy of the options applied to the router. Therefore, a
 **Example:**
 ``` go
 fmt.Println(request.CORSOptions().AllowedMethods) // "[HEAD GET POST PUT PATCH DELETE]"
+```
+
+#### Request.BasicAuth
+
+Returns the username and password provided in the request's `Authorization` header, if the request uses HTTP Basic Authentication.
+
+| Parameters | Return            |
+|------------|-------------------|
+|            | `username string` |
+|            | `password string` |
+|            | `ok bool`         |
+
+**Example:**
+``` go
+username, password, ok := request.BasicAuth()
+fmt.Println(username) // "admin"
+fmt.Println(password) // "secret"
+fmt.Println(ok) // true
+```
+
+#### Request.BearerToken
+
+<p><Badge text="Since v2.5.0"/></p>
+
+Extract the auth token from the "Authorization" header. Only takes tokens of type "Bearer".
+
+Returns empty string if no token found or the header is invalid.
+
+| Parameters | Return         |
+|------------|----------------|
+|            | `token string` |
+|            | `ok bool`      |
+
+**Example:**
+``` go
+token, ok := request.BearerToken()
+fmt.Println(token) // "ey..."
+fmt.Println(ok) // true
 ```
 
 ### Accessors

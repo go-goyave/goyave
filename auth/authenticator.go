@@ -91,16 +91,3 @@ func columnName(field *reflect.StructField) string {
 
 	return gorm.ToColumnName(field.Name)
 }
-
-// GetBearerToken extract the auth token from the "Authorization" header.
-// Only takes tokens of type "Bearer".
-// Returns empty string if no token found or the header is invalid.
-// TODO move this function inside goyave.Request
-func GetBearerToken(request *goyave.Request) string {
-	const schema = "Bearer "
-	header := request.Header().Get("Authorization")
-	if !strings.HasPrefix(header, schema) {
-		return ""
-	}
-	return strings.TrimSpace(header[len(schema):])
-}

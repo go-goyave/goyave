@@ -26,8 +26,8 @@ var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
 // This implementation is a JWT-based authentication using HMAC SHA256, supporting only one active token.
 func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{}) error {
 
-	tokenString := GetBearerToken(request)
-	if tokenString == "" {
+	tokenString, ok := request.BearerToken()
+	if tokenString == "" || !ok {
 		return fmt.Errorf(lang.Get(request.Lang, "no-credentials-provided"))
 	}
 

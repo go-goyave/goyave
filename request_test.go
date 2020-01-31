@@ -207,3 +207,21 @@ func TestRequestCors(t *testing.T) {
 	options.MaxAge = time.Second
 	assert.NotEqual(t, request.corsOptions.MaxAge, options.MaxAge)
 }
+
+func TestGetBearerToken(t *testing.T) {
+	request := createTestRequest(httptest.NewRequest("POST", "/test-route", nil))
+	request.Header().Set("Authorization", "NotBearer 123456789")
+	token, ok := request.BearerToken()
+	assert.Empty(t, token)
+	assert.False(t, ok)
+
+	request.Header().Set("Authorization", "Bearer123456789")
+	token, ok = request.BearerToken()
+	assert.Empty(t, token)
+	assert.False(t, ok)
+
+	request.Header().Set("Authorization", "Bearer 123456789")
+	token, ok = request.BearerToken()
+	assert.Equal(t, "123456789", token)
+	assert.True(t, ok)
+}

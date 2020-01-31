@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/cors"
@@ -101,6 +102,18 @@ func (r *Request) UserAgent() string {
 // Authorization header, if the request uses HTTP Basic Authentication.
 func (r *Request) BasicAuth() (username, password string, ok bool) {
 	return r.httpRequest.BasicAuth()
+}
+
+// BearerToken extract the auth token from the "Authorization" header.
+// Only takes tokens of type "Bearer".
+// Returns empty string if no token found or the header is invalid.
+func (r *Request) BearerToken() (string, bool) {
+	const schema = "Bearer "
+	header := r.Header().Get("Authorization")
+	if !strings.HasPrefix(header, schema) {
+		return "", false
+	}
+	return strings.TrimSpace(header[len(schema):]), true
 }
 
 // CORSOptions returns the CORS options applied to this request, or nil.

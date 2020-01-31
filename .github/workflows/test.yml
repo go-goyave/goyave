@@ -22,7 +22,6 @@ jobs:
         echo "::add-path::$(go env GOPATH)/bin"
         go get golang.org/x/lint/golint
         go get github.com/rakyll/gotest
-        go get -v -t -d ./...
 
     - name: Verify MySQL connection
       run: |
@@ -38,6 +37,7 @@ jobs:
 
     - name: Test
       run: |
+        gotest -race -count=20 .
         gotest -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
         golint -set_exit_status $(go list ./...)
 

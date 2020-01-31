@@ -55,6 +55,11 @@ func (suite *ConfigTestSuite) TestGet() {
 	})
 }
 
+func (suite *ConfigTestSuite) TestHas() {
+	suite.False(Has("not_a_config_entry"))
+	suite.True(Has("appName"))
+}
+
 func (suite *ConfigTestSuite) TestGetEnv() {
 	os.Setenv("GOYAVE_ENV", "localhost")
 	suite.Equal("config.json", getConfigFilePath())

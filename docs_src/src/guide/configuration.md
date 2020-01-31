@@ -84,6 +84,19 @@ Get a bool config entry. Panics if the entry doesn't exist or is not a bool.
 config.GetBool("debug") // true
 ```
 
+#### config.Has
+
+Check if a config entry exists.
+
+| Parameters   | Return |
+|--------------|--------|
+| `key string` | `bool` |
+
+**Example:**
+``` go
+config.Has("appName") // true
+```
+
 ### Setting a value
 
 You can set a config value at runtime with the `config.Set(key, value)` function. Bear in mind that this change **temporary** and will be lost after your application restarts or if the config is reloaded. This function is mainly used for testing purposes. Values set using this function are still being validated, and your application will panic if the validation doesn't pass.

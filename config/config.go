@@ -133,6 +133,14 @@ func Get(key string) interface{} {
 	return nil
 }
 
+// Has check if a config entry exists.
+func Has(key string) bool {
+	mutex.RLock()
+	_, ok := config[key]
+	mutex.RUnlock()
+	return ok
+}
+
 // Set a config entry
 //
 // The change is temporary and will not be saved for next boot.

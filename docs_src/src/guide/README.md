@@ -19,9 +19,9 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 ### Ideas for future releases
 
 - Support for gzip compression
+- Permission system (guards)
 - CLI utility to help creating controllers, middleware, etc
 - Named routes and other routing features
-- Permission system (guards)
 - Placeholders in language lines and pluralization
 - Direct support for the HEAD method
 - Email helpers

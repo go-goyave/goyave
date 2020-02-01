@@ -278,8 +278,10 @@ func (a *MyAuthenticator) Authenticate(request *goyave.Request, user interface{}
 
 #### auth.FindColumns
 
-FindColumns in given struct. A field matches if it has a "auth" tag with the given value.
+Find columns in the given struct. A field matches if it has a "auth" tag with the given value.
 Returns a slice of found fields, ordered as the input `fields` slice.
+
+Promoted fields are matched as well.
 
 If the nth field is not found, the nth value of the returned slice will be `nil`.
 
@@ -287,6 +289,25 @@ If the nth field is not found, the nth value of the returned slice will be `nil`
 |---------------------|------------------|
 | `strct interface{}` | `[]*auth.Column` |
 | `fields ...string`  |                  |
+
+**Example**:
+
+Given the following struct and `username`, `notatag`, `password`:
+
+``` go
+type TestUser struct {
+	gorm.Model
+	Name     string `gorm:"type:varchar(100)"`
+	Password string `gorm:"type:varchar(100)" auth:"password"`
+	Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
+}
+```
+
+``` go
+fields := auth.FindColumns(user, "username", "notatag", "password")
+```
+
+The result will be the `Email` field, `nil` and the `Password` field.
 
 ::: tip
 The `Column` struct is defined as follows:

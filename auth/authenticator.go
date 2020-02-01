@@ -46,6 +46,18 @@ func Middleware(model interface{}, authenticator Authenticator) goyave.Middlewar
 // FindColumns in given struct. A field matches if it has a "auth" tag with the given value.
 // Returns a slice of found fields, ordered as the input "fields" slice.
 // If the nth field is not found, the nth value of the returned slice will be nil.
+//
+// Promoted fields are matched as well.
+//
+// Given the following struct and "username", "notatag", "password":
+//  type TestUser struct {
+// 		gorm.Model
+// 		Name     string `gorm:"type:varchar(100)"`
+// 		Password string `gorm:"type:varchar(100)" auth:"password"`
+// 		Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
+//  }
+//
+// The result will be the "Email" field, "nil" and the "Password" field.
 func FindColumns(strct interface{}, fields ...string) []*Column {
 	length := len(fields)
 	result := make([]*Column, length, length)

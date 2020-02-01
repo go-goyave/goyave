@@ -2,6 +2,20 @@
 
 [[toc]]
 
+## v2.5.0
+
+- Added an [authentication system](./advanced/authentication.html).
+- Various optimizations.
+- Various documentation improvements.
+- Added `dbMaxLifetime` configuration entry.
+- Moved from Travis CI to Github Actions.
+- Fixed a bug making duplicate log entries on error.
+- Fixed `TestSuite.GetJSONBody()` not working with structs and slices.
+- Added `TestSuite.ClearDatabaseTables()`.
+- Added `Config.Has()` and `Config.Register()` to check for the existence of a config entry and to allow custom config entries valdiation.
+- Added `Request.BearerToken()`.
+- Added `Response.HandleDatabaseError()` for easier database error handling and shorter controller handlers. 
+
 ## v2.4.3
 
 - Improved string validation by taking grapheme clusters into consideration when calculating length.

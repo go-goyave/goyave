@@ -9,15 +9,11 @@ Controllers are files containing a collection of Handlers related to a specific 
 Let's take a very simple CRUD as an example for a controller definition:
 **http/controllers/product/product.go**:
 ``` go
-func Store(response *goyave.Response, request *goyave.Request) {
-	product := model.Product{
-		Name:  request.String("name"),
-		Price: request.Numeric("price"),
-	}
-	if err := database.GetConnection().Create(&product).Error; err != nil {
-		response.Error(err)
-	} else {
-		response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
+func Index(response *goyave.Response, request *goyave.Request) {
+	products := []model.Product{}
+	result := database.GetConnection().Find(&products)
+	if response.HandleDatabaseError(result) {
+		response.JSON(http.StatusOK, products)
 	}
 }
 
@@ -27,6 +23,18 @@ func Show(response *goyave.Response, request *goyave.Request) {
 	result := database.GetConnection().First(&product, id)
 	if response.HandleDatabaseError(result) {
 		response.JSON(http.StatusOK, product)
+	}
+}
+
+func Store(response *goyave.Response, request *goyave.Request) {
+	product := model.Product{
+		Name:  request.String("name"),
+		Price: request.Numeric("price"),
+	}
+	if err := database.GetConnection().Create(&product).Error; err != nil {
+		response.Error(err)
+	} else {
+		response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
 	}
 }
 

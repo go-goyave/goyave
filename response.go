@@ -14,6 +14,7 @@ import (
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/jinzhu/gorm"
 )
 
 // Response represents a controller response.
@@ -214,6 +215,24 @@ func (r *Response) getTemplateDirectory() string {
 		panic(err)
 	}
 	return workingDir + sep + "resources" + sep + "template" + sep
+}
+
+// HandleDatabaseError takes a database query result and checks if any error has occurred.
+//
+// Automatically writes HTTP status code 404 Not Found if the error is a "Not found" error.
+// Calls "Response.Error()" if there is another type of error.
+//
+// Returns true if there is no error.
+func (r *Response) HandleDatabaseError(db *gorm.DB) bool {
+	if db.Error != nil {
+		if gorm.IsRecordNotFoundError(db.Error) {
+			r.Status(http.StatusNotFound)
+		} else {
+			r.Error(db.Error)
+		}
+		return false
+	}
+	return true
 }
 
 // CreateTestResponse create an empty response with the given response writer.

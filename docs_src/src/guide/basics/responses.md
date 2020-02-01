@@ -29,6 +29,7 @@ import "github.com/System-Glitch/goyave/v2"
 [TemporaryRedirect](#response-temporaryredirect)
 [Render](#response-render)
 [RenderHTML](#response-renderhtml)
+[HandleDatabaseError](#response-handledatabaseerror)
 :::
 
 #### Response.GetStatus
@@ -281,4 +282,25 @@ sweaters := Inventory{"wool", 17}
 // data can also be a map[string]interface{}
 // Here, "resources/template/inventory.html" will be used.
 response.RenderHTML(http.StatusOK, "inventory.html", sweaters)
+```
+
+#### Response.HandleDatabaseError
+
+Takes a database query result and checks if any error has occurred.
+
+Automatically writes HTTP status code 404 Not Found if the error is a "Not found" error. Calls `Response.Error()` if there is another type of error.
+
+Returns `true` if there is no error.
+
+| Parameters    | Return |
+|---------------|--------|
+| `db *gorm.DB` | `bool` |
+
+**Example:**
+``` go
+product := model.Product{}
+result := database.GetConnection().First(&product, id)
+if response.HandleDatabaseError(result) {
+    response.JSON(http.StatusOK, product)
+}
 ```

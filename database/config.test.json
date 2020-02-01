@@ -3,11 +3,12 @@
     "dbConnection": "mysql",
     "dbHost": "127.0.0.1",
     "dbPort": 3306,
+    "debug": false,
     "dbName": "goyave",
     "dbUsername": "goyave",
     "dbPassword": "secret",
     "dbOptions": "charset=utf8&parseTime=true&loc=Local",
-    "dbMaxOpenConnections": 100,
+    "dbMaxOpenConnections": 20,
     "dbMaxIdleConnections": 20,
     "dbAutoMigrate": false
 }

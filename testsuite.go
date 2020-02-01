@@ -24,7 +24,6 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/lang"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	testify "github.com/stretchr/testify/suite"
 )
 
@@ -59,12 +58,14 @@ type ITestSuite interface {
 // TestSuite is an extension of testify's Suite for
 // Goyave-specific testing.
 type TestSuite struct {
-	suite.Suite
+	testify.Suite
 	timeout     time.Duration // Timeout for functional tests
 	httpClient  *http.Client
 	previousEnv string
 	mu          sync.Mutex
 }
+
+var _ ITestSuite = (*TestSuite)(nil) // implements ITestSuite
 
 // Timeout get the timeout for test failure when using RunServer or requests.
 func (s *TestSuite) Timeout() time.Duration {

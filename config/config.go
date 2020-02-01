@@ -38,6 +38,7 @@ var configDefaults map[string]interface{} = map[string]interface{}{
 	"dbMaxIdleConnections": 20.0,
 	"dbMaxLifetime":        300.0,
 	"dbAutoMigrate":        false,
+	"jwtExpiry":            300.0,
 }
 
 var configValidation = map[string]reflect.Kind{
@@ -66,6 +67,7 @@ var configValidation = map[string]reflect.Kind{
 	"dbMaxIdleConnections": reflect.Float64,
 	"dbMaxLifetime":        reflect.Float64,
 	"dbAutoMigrate":        reflect.Bool,
+	"jwtExpiry":            reflect.Float64,
 }
 
 var authorizedValues = map[string][]string{

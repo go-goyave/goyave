@@ -17,6 +17,16 @@ func TestContains(t *testing.T) {
 	assert.False(t, Contains([]float64{1, 2, 3}, 4))
 }
 
+func TestIndexOf(t *testing.T) {
+	assert.Equal(t, 1, IndexOf([]string{"val1", "val2", "val3"}, "val2"))
+	assert.Equal(t, -1, IndexOf([]string{"val1", "val2", "val3"}, "val4"))
+	assert.Equal(t, 1, IndexOf([]int{1, 2, 3}, 2))
+	assert.Equal(t, -1, IndexOf([]int{1, 2, 3}, 4))
+	assert.Equal(t, 1, IndexOf([]float64{1, 2, 3}, float64(2)))
+	assert.Equal(t, -1, IndexOf([]float64{1, 2, 3}, 2))
+	assert.Equal(t, -1, IndexOf([]float64{1, 2, 3}, 4))
+}
+
 func TestToFloat64(t *testing.T) {
 	v, err := ToFloat64(1)
 	assert.Nil(t, err)

@@ -9,51 +9,57 @@ Controllers are files containing a collection of Handlers related to a specific 
 Let's take a very simple CRUD as an example for a controller definition:
 **http/controllers/product/product.go**:
 ``` go
-func Store(response *goyave.Response, request *goyave.Request) {
-    product := model.Product{
-        Name: request.String("name"),
-        Price: request.Numeric("price"),
-    }
-    if err := database.GetConnection().Create(&product); err != nil {
-        response.Error(err)
-    } else {
-        response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
-    }
+func Index(response *goyave.Response, request *goyave.Request) {
+	products := []model.Product{}
+	result := database.GetConnection().Find(&products)
+	if response.HandleDatabaseError(result) {
+		response.JSON(http.StatusOK, products)
+	}
 }
 
 func Show(response *goyave.Response, request *goyave.Request) {
 	product := model.Product{}
 	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
 	result := database.GetConnection().First(&product, id)
-	if result.RecordNotFound() {
-		response.Status(http.StatusNotFound)
-	} else if err := result.Error; err != nil {
-		response.Error(err)
-	} else {
+	if response.HandleDatabaseError(result) {
 		response.JSON(http.StatusOK, product)
 	}
 }
 
-func Update(response *goyave.Response, request *goyave.Request) {
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-    product := model.Product{}
-    db := database.GetConnection()
-    if db.Select("id").First(&product, id).RecordNotFound() {
-        response.Status(http.StatusNotFound)
-    } else if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
+func Store(response *goyave.Response, request *goyave.Request) {
+	product := model.Product{
+		Name:  request.String("name"),
+		Price: request.Numeric("price"),
+	}
+	if err := database.GetConnection().Create(&product).Error; err != nil {
 		response.Error(err)
+	} else {
+		response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
+	}
+}
+
+func Update(response *goyave.Response, request *goyave.Request) {
+	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+	product := model.Product{}
+	db := database.GetConnection()
+	result := db.Select("id").First(&product, id)
+	if response.HandleDatabaseError(result) {
+		if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
+			response.Error(err)
+		}
 	}
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-    product := model.Product{}
-    db := database.GetConnection()
-    if db.Select("id").First(&product, id).RecordNotFound() {
-        response.Status(http.StatusNotFound)
-    } else if err := db.Delete(&product).Error; err != nil {
-        response.Error(err)
-    }
+	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+	product := model.Product{}
+	db := database.GetConnection()
+	result := db.Select("id").First(&product, id)
+	if response.HandleDatabaseError(result) {
+		if err := db.Delete(&product).Error; err != nil {
+			response.Error(err)
+		}
+	}
 }
 ```
 

@@ -298,7 +298,7 @@ func (suite *CustomTestSuite) TestClearDatabase() {
 	db.Model(&TestModel{}).Count(&count)
 	suite.Equal(0, count)
 
-	db.Exec("DROP TABLE test_models;")
+	db.DropTable(&TestModel{})
 	config.Set("dbConnection", "none")
 }
 

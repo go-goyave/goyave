@@ -33,7 +33,20 @@ Goyave is a progressive and accessible web application framework, aimed at makin
 
 Most golang frameworks for web development don't have a strong directory structure nor conventions to make applications have a uniform architecture and limit redundancy. This makes it difficult to work with them on different projects. In companies, having a well-defined and documented architecture helps new developers integrate projects faster, and reduces the time needed for maintaining them. For open source projects, it helps newcomers understanding the project and makes it easier to contribute.
 
+## Learning Goyave
+
+The Goyave framework has an extensive documentation covering in-depth subjects and teaching you how to run a project using Goyave from setup to deployment.
+
+<a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
+
+<a href="https://godoc.org/github.com/System-Glitch/goyave"><h3 align="center">GoDoc</h3></a>
+
 ## Getting Started
+
+### Requirements
+
+- Go 1.13+
+- Go modules
 
 ### Install using the template project
 
@@ -65,6 +78,21 @@ $ curl http://localhost:8080/echo?text=abc%20123
 abc 123
 ```
 
+## Features tour
+
+This section's goal is to give a **brief** look at the main features of the framework. Don't consider this documentation. If you want a complete reference and documentation, head to [GoDoc](https://godoc.org/github.com/System-Glitch/goyave) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
+
+- [Hello world from scratch](#hello-world-from-scratch)
+- [Configuration](#configuration)
+- [Routing](#routing)
+- [Controller](#controller)
+- [Middleware](#middleware)
+- [Validation](#validation)
+- [Database](#database)
+- [Localization](#localization)
+- [Testing](#testing)
+- [CORS](#cors)
+
 ### Hello world from scratch
 
 The example below shows a basic `Hello world` application using Goyave.
@@ -83,18 +111,181 @@ func main() {
 }
 ```
 
-## Learning Goyave
+### Configuration
 
-The Goyave framework has an extensive documentation covering in-depth subjects and teaching you how to run a project using Goyave from setup to deployment.
+To configure your application, use the `config.json` file at your project's root. If you are using the template project, copy `config.example.json` to `config.json`. The following code is an example of configuration for a local development environment:
 
-<a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
+```json
+{
+    "appName": "goyave_template",
+    "environment": "localhost",
+    "host": "127.0.0.1",
+    "port": 8080,
+    "httpsPort": 8081,
+    "protocol": "http",
+    "debug": true,
+    "timeout": 10,
+    "maxUploadSize": 10,
+    "defaultLanguage": "en-US",
+    "dbConnection": "mysql",
+    "dbHost": "127.0.0.1",
+    "dbPort": 3306,
+    "dbName": "goyave",
+    "dbUsername": "root",
+    "dbPassword": "root",
+    "dbOptions": "charset=utf8&parseTime=true&loc=Local",
+    "dbMaxOpenConnections": 20,
+    "dbMaxIdleConnections": 20,
+    "dbMaxLifetime": 300,
+    "dbAutoMigrate": false
+}
+```
 
-<a href="https://godoc.org/github.com/System-Glitch/goyave"><h3 align="center">GoDoc</h3></a>
+If this config file misses some config entries, the default values will be used. All values from the framework's core are **validated**. That means that the application will not start if you provided an invalid value in your config (For example if the specified port is not a number).
 
-## Requirements
+**Getting a value:**
+```go
+config.GetString("appName") // "goyave"
+config.GetBool("debug") // true
+config.Has("appName") // true
+```
 
-- Go 1.13+
-- Go modules
+**Setting a value:**
+```go
+config.Set("appName", "my awesome app")
+```
+
+**Learn more about configuration in the [documentation](https://system-glitch.github.io/goyave/guide/configuration.html).**
+
+### Routing
+
+Routing is an essential part of any Goyave application. Routes definition is the action of associating a URI, sometimes having parameters, with a handler which will process the request and respond to it. Separating and naming routes clearly is important to make your API or website clear and expressive.
+
+Routes are defined in **routes registrer functions**. The main route registrer is passed to `goyave.Start()` and is executed automatically with a newly created root-level **router**.
+
+``` go
+func Register(router *goyave.Router) {
+    // Register your routes here
+
+    // With closure, not recommended
+    router.Route("GET", "/hello", func(response *goyave.Response, r *goyave.Request) {
+        response.String(http.StatusOK, "Hi!")
+    }, nil)
+
+    router.Route("GET", "/hello", myHandlerFunction, nil)
+    router.Route("POST", "/user", user.Register, userrequest.Register)
+    router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
+}
+```
+
+**Method signature:**
+| Parameters                           | Return |
+|--------------------------------------|--------|
+| `methods string`                     | `void` |
+| `uri string`                         |        |
+| `handler goyave.Handler`             |        |
+| `validationRules validation.RuleSet` |        |
+
+URIs can have parameters, defined using the format `{name}` or `{name:pattern}`. If a regular expression pattern is not defined, the matched variable will be anything until the next slash. 
+
+**Example:**
+``` go
+router.Route("GET", "/products/{key}", product.Show, nil)
+router.Route("GET", "/products/{id:[0-9]+}", product.ShowById, nil)
+router.Route("GET", "/categories/{category}/{id:[0-9]+}", category.Show, nil)
+```
+
+Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
+``` go
+func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
+    category := request.Params["category"]
+    id, _ := strconv.Atoi(request.Params["id"])
+    //...
+}
+```
+
+**Learn more about routing in the [documentation](https://system-glitch.github.io/goyave/guide/basics/routing.html).**
+
+### Controller
+
+Controllers are files containing a collection of Handlers related to a specific feature. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project.
+
+A `Handler` is a `func(*goyave.Response, *goyave.Request)`. The first parameter lets you write a response, and the second contains all the information extracted from the raw incoming request.
+
+Handlers receive a `goyave.Response` and a `goyave.Request` as parameters.  
+`goyave.Request` can give you a lot of information about the incoming request, such as its headers, cookies, or body. Learn more [here](https://system-glitch.github.io/goyave/guide/basics/requests.html).  
+`goyave.Response` implements `http.ResponseWriter` and is used to write a response. If you didn't write anything before the request lifecycle ends, `204 No Content` is automatically written. Learn everything about reponses [here](https://system-glitch.github.io/goyave/guide/basics/responses.html).
+
+Let's take a very simple CRUD as an example for a controller definition:
+**http/controllers/product/product.go**:
+``` go
+func Index(response *goyave.Response, request *goyave.Request) {
+	products := []model.Product{}
+	result := database.GetConnection().Find(&products)
+	if response.HandleDatabaseError(result) {
+		response.JSON(http.StatusOK, products)
+	}
+}
+
+func Show(response *goyave.Response, request *goyave.Request) {
+	product := model.Product{}
+	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+	result := database.GetConnection().First(&product, id)
+	if response.HandleDatabaseError(result) {
+		response.JSON(http.StatusOK, product)
+	}
+}
+
+func Store(response *goyave.Response, request *goyave.Request) {
+	product := model.Product{
+		Name:  request.String("name"),
+		Price: request.Numeric("price"),
+	}
+	if err := database.GetConnection().Create(&product).Error; err != nil {
+		response.Error(err)
+	} else {
+		response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
+	}
+}
+
+func Update(response *goyave.Response, request *goyave.Request) {
+	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+	product := model.Product{}
+	db := database.GetConnection()
+	result := db.Select("id").First(&product, id)
+	if response.HandleDatabaseError(result) {
+		if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
+			response.Error(err)
+		}
+	}
+}
+
+func Destroy(response *goyave.Response, request *goyave.Request) {
+	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+	product := model.Product{}
+	db := database.GetConnection()
+	result := db.Select("id").First(&product, id)
+	if response.HandleDatabaseError(result) {
+		if err := db.Delete(&product).Error; err != nil {
+			response.Error(err)
+		}
+	}
+}
+```
+
+**Learn more about controllers in the [documentation](https://system-glitch.github.io/goyave/guide/basics/controllers.html).**
+
+### Middleware
+
+### Validation
+
+### Database
+
+### Localization
+
+### Testing
+
+### CORS
 
 ## Contributing
 

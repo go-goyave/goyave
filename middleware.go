@@ -45,7 +45,7 @@ func parseRequestMiddleware(next Handler) Handler {
 		var data map[string]interface{}
 		if request.httpRequest.Header.Get("Content-Type") == "application/json" {
 			defer request.httpRequest.Body.Close()
-			data = make(map[string]interface{})
+			data = make(map[string]interface{}, 10)
 			err := json.NewDecoder(request.httpRequest.Body).Decode(&data)
 			if err != nil {
 				data = nil

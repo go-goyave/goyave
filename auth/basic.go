@@ -29,7 +29,7 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user interfac
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
-		return fmt.Errorf(lang.Get(request.Lang, "no-credentials-provided"))
+		return fmt.Errorf(lang.Get(request.Lang, "auth.no-credentials-provided"))
 	}
 
 	columns := FindColumns(user, "username", "password")
@@ -43,7 +43,7 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user interfac
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
 
 	if result.RecordNotFound() || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
-		return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
+		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user inte
 	if !ok ||
 		username != config.GetString("authUsername") ||
 		password != config.GetString("authPassword") {
-		return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
+		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 	}
 	user.(*BasicUser).Name = username
 	return nil

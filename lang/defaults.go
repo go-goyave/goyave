@@ -5,11 +5,11 @@ var enUS language = language{
 		"disallow-non-validated-fields": "Non-validated fields are forbidden.",
 		"malformed-request":             "Malformed request",
 		"malformed-json":                "Malformed JSON",
-		"invalid-credentials":           "These credentials don't match our records.",
-		"no-credentials-provided":       "Invalid or missing authentication header.",
-		"jwt-invalid":                   "Your authentication token is invalid.",
-		"jwt-not-valid-yet":             "Your authentication token is not valid yet.",
-		"jwt-expired":                   "Your authentication token is expired.",
+		"auth.invalid-credentials":      "These credentials don't match our records.",
+		"auth.no-credentials-provided":  "Invalid or missing authentication header.",
+		"auth.jwt-invalid":              "Your authentication token is invalid.",
+		"auth.jwt-not-valid-yet":        "Your authentication token is not valid yet.",
+		"auth.jwt-expired":              "Your authentication token is expired.",
 	},
 	validation: validationLines{
 		rules: map[string]string{

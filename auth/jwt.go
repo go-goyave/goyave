@@ -28,7 +28,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 
 	tokenString, ok := request.BearerToken()
 	if tokenString == "" || !ok {
-		return fmt.Errorf(lang.Get(request.Lang, "no-credentials-provided"))
+		return fmt.Errorf(lang.Get(request.Lang, "auth.no-credentials-provided"))
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -49,7 +49,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 			}
 
 			if result.RecordNotFound() {
-				return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
+				return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 			}
 
 			return nil
@@ -61,9 +61,9 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 
 func (a *JWTAuthenticator) makeError(language string, bitfield uint32) error {
 	if bitfield&jwt.ValidationErrorNotValidYet != 0 {
-		return fmt.Errorf(lang.Get(language, "jwt-not-valid-yet"))
+		return fmt.Errorf(lang.Get(language, "auth.jwt-not-valid-yet"))
 	} else if bitfield&jwt.ValidationErrorExpired != 0 {
-		return fmt.Errorf(lang.Get(language, "jwt-expired"))
+		return fmt.Errorf(lang.Get(language, "auth.jwt-expired"))
 	}
-	return fmt.Errorf(lang.Get(language, "jwt-invalid"))
+	return fmt.Errorf(lang.Get(language, "auth.jwt-invalid"))
 }

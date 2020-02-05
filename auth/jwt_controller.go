@@ -73,7 +73,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 		return
 	}
 
-	response.JSON(http.StatusUnprocessableEntity, map[string]string{"validationError": lang.Get(request.Lang, "invalid-credentials")})
+	response.JSON(http.StatusUnprocessableEntity, map[string]string{"validationError": lang.Get(request.Lang, "auth.invalid-credentials")})
 }
 
 // Refresh refresh the current token.

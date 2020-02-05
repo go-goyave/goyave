@@ -116,7 +116,7 @@ func registerRoutes(router *goyave.Router) {
 }
 
 func main() {
-	goyave.Start(registerRoutes)
+    goyave.Start(registerRoutes)
 }
 ```
 
@@ -230,56 +230,56 @@ Let's take a very simple CRUD as an example for a controller definition:
 **http/controllers/product/product.go**:
 ``` go
 func Index(response *goyave.Response, request *goyave.Request) {
-	products := []model.Product{}
-	result := database.GetConnection().Find(&products)
-	if response.HandleDatabaseError(result) {
-		response.JSON(http.StatusOK, products)
-	}
+    products := []model.Product{}
+    result := database.GetConnection().Find(&products)
+    if response.HandleDatabaseError(result) {
+        response.JSON(http.StatusOK, products)
+    }
 }
 
 func Show(response *goyave.Response, request *goyave.Request) {
-	product := model.Product{}
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-	result := database.GetConnection().First(&product, id)
-	if response.HandleDatabaseError(result) {
-		response.JSON(http.StatusOK, product)
-	}
+    product := model.Product{}
+    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+    result := database.GetConnection().First(&product, id)
+    if response.HandleDatabaseError(result) {
+        response.JSON(http.StatusOK, product)
+    }
 }
 
 func Store(response *goyave.Response, request *goyave.Request) {
-	product := model.Product{
-		Name:  request.String("name"),
-		Price: request.Numeric("price"),
-	}
-	if err := database.GetConnection().Create(&product).Error; err != nil {
-		response.Error(err)
-	} else {
-		response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
-	}
+    product := model.Product{
+        Name:  request.String("name"),
+        Price: request.Numeric("price"),
+    }
+    if err := database.GetConnection().Create(&product).Error; err != nil {
+        response.Error(err)
+    } else {
+        response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
+    }
 }
 
 func Update(response *goyave.Response, request *goyave.Request) {
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-	product := model.Product{}
-	db := database.GetConnection()
-	result := db.Select("id").First(&product, id)
-	if response.HandleDatabaseError(result) {
-		if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
-			response.Error(err)
-		}
-	}
+    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+    product := model.Product{}
+    db := database.GetConnection()
+    result := db.Select("id").First(&product, id)
+    if response.HandleDatabaseError(result) {
+        if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
+            response.Error(err)
+        }
+    }
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-	product := model.Product{}
-	db := database.GetConnection()
-	result := db.Select("id").First(&product, id)
-	if response.HandleDatabaseError(result) {
-		if err := db.Delete(&product).Error; err != nil {
-			response.Error(err)
-		}
-	}
+    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
+    product := model.Product{}
+    db := database.GetConnection()
+    result := db.Select("id").First(&product, id)
+    if response.HandleDatabaseError(result) {
+        if err := db.Delete(&product).Error; err != nil {
+            response.Error(err)
+        }
+    }
 }
 ```
 
@@ -291,7 +291,7 @@ Middleware are handlers executed before the controller handler. They are a conve
 
 ``` go
 func MyCustomMiddleware(next goyave.Handler) goyave.Handler {
-	return func(response *goyave.Response, request *goyave.Request) {
+    return func(response *goyave.Response, request *goyave.Request) {
         // Do something
         next(response, request) // Pass to the next handler
     }
@@ -322,10 +322,10 @@ The `http/request` directory contains the requests validation rules sets. You sh
 **Example:** (`http/request/productrequest/product.go`)
 ``` go
 var (
-	Store validation.RuleSet = validation.RuleSet{
-		"name":  {"required", "string", "between:3,50"},
-		"price": {"required", "numeric", "min:0.01"},
-		"image": {"nullable", "file", "image", "max:2048", "count:1"},
+    Store validation.RuleSet = validation.RuleSet{
+        "name":  {"required", "string", "between:3,50"},
+        "price": {"required", "numeric", "min:0.01"},
+        "image": {"nullable", "file", "image", "max:2048", "count:1"},
     }
     
     // ...
@@ -348,6 +348,7 @@ Most web applications use a database. In this section, we are going to see how G
 Database connections are managed by the framework and are long-lived. When the server shuts down, the database connections are closed automatically. So you don't have to worry about creating, closing or refreshing database connections in your application.
 
 Very few code is required to get started with databases. There are some [configuration](https://system-glitch.github.io/goyave/guide/configuration.html#configuration-reference) options that you need to change though:
+
 - `dbConnection`
 - `dbHost`
 - `dbPort`
@@ -375,16 +376,16 @@ func init() {
 }
 
 type User struct {
-  gorm.Model
-  Name         string
-  Age          sql.NullInt64
-  Birthday     *time.Time
-  Email        string  `gorm:"type:varchar(100);unique_index"`
-  Role         string  `gorm:"size:255"` // set field size to 255
-  MemberNumber *string `gorm:"unique;not null"` // set member number to unique and not null
-  Num          int     `gorm:"AUTO_INCREMENT"` // set num to auto incrementable
-  Address      string  `gorm:"index:addr"` // create index with name `addr` for address
-  IgnoreMe     int     `gorm:"-"` // ignore this field
+    gorm.Model
+    Name         string
+    Age          sql.NullInt64
+    Birthday     *time.Time
+    Email        string  `gorm:"type:varchar(100);unique_index"`
+    Role         string  `gorm:"size:255"` // set field size to 255
+    MemberNumber *string `gorm:"unique;not null"` // set member number to unique and not null
+    Num          int     `gorm:"AUTO_INCREMENT"` // set num to auto incrementable
+    Address      string  `gorm:"index:addr"` // create index with name `addr` for address
+    IgnoreMe     int     `gorm:"-"` // ignore this field
 }
 ```
 
@@ -471,23 +472,23 @@ import (
 )
 
 type CustomTestSuite struct {
-	goyave.TestSuite
+    goyave.TestSuite
 }
 
 func (suite *CustomTestSuite) TestHello() {
     suite.RunServer(route.Register, func() {
-		resp, err := suite.Get("/hello", nil)
-		suite.Nil(err)
-		suite.NotNil(resp)
-		if resp != nil {
-			suite.Equal(200, resp.StatusCode)
-			suite.Equal("Hi!", string(suite.GetBody(resp)))
-		}
-	})
+        resp, err := suite.Get("/hello", nil)
+        suite.Nil(err)
+        suite.NotNil(resp)
+        if resp != nil {
+            suite.Equal(200, resp.StatusCode)
+            suite.Equal("Hi!", string(suite.GetBody(resp)))
+        }
+    })
 }
 
 func TestCustomSuite(t *testing.T) {
-	goyave.RunTest(t, new(CustomTestSuite))
+    goyave.RunTest(t, new(CustomTestSuite))
 }
 ```
 
@@ -528,17 +529,17 @@ if err == nil {
 
 ``` go
 suite.RunServer(route.Register, func() {
-	resp, err := suite.Get("/product", nil)
-	suite.Nil(err)
-	if err == nil {
-		json := map[string]interface{}{}
-		err := suite.GetJSONBody(resp, &json)
-		suite.Nil(err)
-		if err == nil { // You should always check parsing error before continuing.
-			suite.Equal("value", json["field"])
-			suite.Equal(float64(42), json["number"])
-		}
-	}
+    resp, err := suite.Get("/product", nil)
+    suite.Nil(err)
+    if err == nil {
+        json := map[string]interface{}{}
+        err := suite.GetJSONBody(resp, &json)
+        suite.Nil(err)
+        if err == nil { // You should always check parsing error before continuing.
+            suite.Equal("value", json["field"])
+            suite.Equal(float64(42), json["number"])
+        }
+    }
 })
 ```
 
@@ -600,7 +601,7 @@ I have many ideas for the future of Goyave. I would be infinitely grateful to wh
 You can support also me on Patreon:
 
 <a href="https://www.patreon.com/bePatron?u=25997573">
-	<img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
+    <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
 
 ### Contributors

@@ -21,23 +21,23 @@ import (
 )
 
 type CustomTestSuite struct {
-	goyave.TestSuite
+    goyave.TestSuite
 }
 
 func (suite *CustomTestSuite) TestHello() {
     suite.RunServer(route.Register, func() {
-		resp, err := suite.Get("/hello", nil)
-		suite.Nil(err)
-		suite.NotNil(resp)
-		if resp != nil {
-			suite.Equal(200, resp.StatusCode)
-			suite.Equal("Hi!", string(suite.GetBody(resp)))
-		}
-	})
+        resp, err := suite.Get("/hello", nil)
+        suite.Nil(err)
+        suite.NotNil(resp)
+        if resp != nil {
+            suite.Equal(200, resp.StatusCode)
+            suite.Equal("Hi!", string(suite.GetBody(resp)))
+        }
+    })
 }
 
 func TestCustomSuite(t *testing.T) {
-	goyave.RunTest(t, new(CustomTestSuite))
+    goyave.RunTest(t, new(CustomTestSuite))
 }
 ```
 
@@ -130,17 +130,17 @@ It is very likely that you will need to check the content of a JSON response whe
 
 ``` go
 suite.RunServer(route.Register, func() {
-	resp, err := suite.Get("/product", nil)
-	suite.Nil(err)
-	if err == nil {
-		json := map[string]interface{}{}
-		err := suite.GetJSONBody(resp, &json)
-		suite.Nil(err)
-		if err == nil { // You should always check parsing error before continuing.
-			suite.Equal("value", json["field"])
-			suite.Equal(float64(42), json["number"])
-		}
-	}
+    resp, err := suite.Get("/product", nil)
+    suite.Nil(err)
+    if err == nil {
+        json := map[string]interface{}{}
+        err := suite.GetJSONBody(resp, &json)
+        suite.Nil(err)
+        if err == nil { // You should always check parsing error before continuing.
+            suite.Equal("value", json["field"])
+            suite.Equal(float64(42), json["number"])
+        }
+    }
 })
 ```
 
@@ -150,24 +150,24 @@ You may need to test requests requiring file uploads. The best way to do this is
 
 ``` go
 suite.RunServer(route.Register, func() {
-	const path = "profile.png"
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	suite.WriteField(writer, "email", "johndoe@example.org")
-	suite.WriteFile(writer, path, "profile_picture", filepath.Base(path))
-	err := writer.Close()
-	if err != nil {
-		panic(err)
-	}
+    const path = "profile.png"
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+    suite.WriteField(writer, "email", "johndoe@example.org")
+    suite.WriteFile(writer, path, "profile_picture", filepath.Base(path))
+    err := writer.Close()
+    if err != nil {
+        panic(err)
+    }
 
-	// Don't forget to set the "Content-Type" header!
-	headers := map[string]string{"Content-Type": writer.FormDataContentType()}
+    // Don't forget to set the "Content-Type" header!
+    headers := map[string]string{"Content-Type": writer.FormDataContentType()}
 
-	resp, err := suite.Post("/register", headers, body)
-	suite.Nil(err)
-	if err == nil {
-		suite.Equal("Welcome!", string(suite.GetBody(resp)))
-	}
+    resp, err := suite.Post("/register", headers, body)
+    suite.Nil(err)
+    if err == nil {
+        suite.Equal("Welcome!", string(suite.GetBody(resp)))
+    }
 })
 ```
 
@@ -186,8 +186,8 @@ request := suite.CreateTestRequest(rawRequest)
 request.Data = map[string]interface{}{"text": "  \n  test  \t"}
 
 result := suite.Middleware(middleware.Trim, request, func(response *Response, request *Request) {
-	suite.Equal("application/json", request.Header().Get("Content-Type"))
-	suite.Equal("test", request.String("text"))
+    suite.Equal("application/json", request.Header().Get("Content-Type"))
+    suite.Equal("test", request.String("text"))
 })
 
 suite.Equal(200, result.StatusCode)
@@ -198,7 +198,7 @@ If you want to test a blocking middleware, flag the test as failed in the test p
 ``` go
 request := suite.CreateTestRequest(nil)
 suite.Middleware(middleware.Auth, request, func(response *Response, request *Request) {
-	suite.Fail("Auth middleware passed")
+    suite.Fail("Auth middleware passed")
 })
 ```
 
@@ -463,7 +463,7 @@ You may want to use a clean database for each of your tests. You can clear your 
 
 ``` go
 func (suite *CustomTestSuite) SetupTest() {
-	suite.ClearDatabase()
+    suite.ClearDatabase()
 }
 ```
 :::
@@ -476,13 +476,13 @@ Factories need a **generator function**. These functions generate a single rando
 import "github.com/bxcodec/faker/v3"
 
 func UserGenerator() interface{} {
-	user := &User{}
-	user.Name = faker.Name()
+    user := &User{}
+    user.Name = faker.Name()
 
-	faker.SetGenerateUniqueValues(true)
-	user.Email = faker.Email()
-	faker.SetGenerateUniqueValues(false)
-	return user
+    faker.SetGenerateUniqueValues(true)
+    user.Email = faker.Email()
+    faker.SetGenerateUniqueValues(false)
+    return user
 }
 ```
 
@@ -495,14 +495,14 @@ Generators can also create associated records. Associated records should be gene
 
 ``` go
 func UserGenerator() interface{} {
-	user := &User{}
-	// ... Generate users fields ...
+    user := &User{}
+    // ... Generate users fields ...
 
-	// Generate between 0 and 10 blog posts
-	rand.Seed(time.Now().UnixNano())
-	user.Posts = database.NewFactory(PostGenerator).Generate(rand.Intn(10))
+    // Generate between 0 and 10 blog posts
+    rand.Seed(time.Now().UnixNano())
+    user.Posts = database.NewFactory(PostGenerator).Generate(rand.Intn(10))
 
-	return user
+    return user
 }
 ```
 
@@ -530,7 +530,7 @@ It is possible to override some of the generated data if needed, for example if 
 
 ``` go
 override := &model.User{
-	Name: "Jérémy",
+    Name: "Jérémy",
 }
 records := factory.Override(override).Generate(10)
 // All generated records will have the same name: "Jérémy"
@@ -590,11 +590,11 @@ Each seeder should have its own file. A seeder's responsabilities are limited to
 package seeder
 
 import (
-	"my-project/database/model"
-	"github.com/System-Glitch/goyave/v2/database"
+    "my-project/database/model"
+    "github.com/System-Glitch/goyave/v2/database"
 )
 
 func User() {
-	database.NewFactory(model.UserGenerator).Save(10)
+    database.NewFactory(model.UserGenerator).Save(10)
 }
 ```

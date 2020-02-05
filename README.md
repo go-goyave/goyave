@@ -188,8 +188,9 @@ func Register(router *goyave.Router) {
 ```
 
 **Method signature:**
+
 | Parameters                           | Return |
-|--------------------------------------|--------|
+| ------------------------------------ | ------ |
 | `methods string`                     | `void` |
 | `uri string`                         |        |
 | `handler goyave.Handler`             |        |

@@ -187,6 +187,32 @@ func (suite *CustomTestSuite) TestJSON() {
 	})
 }
 
+func (suite *CustomTestSuite) TestJSONSlice() {
+	suite.RunServer(func(router *Router) {
+		router.Route("GET", "/get", func(response *Response, request *Request) {
+			response.JSON(http.StatusOK, []map[string]interface{}{
+				{"field": "value", "number": 42},
+				{"field": "other value", "number": 12},
+			})
+		}, nil)
+	}, func() {
+		resp, err := suite.Get("/get", nil)
+		suite.Nil(err)
+		if err == nil {
+			json := []map[string]interface{}{}
+			err := suite.GetJSONBody(resp, &json)
+			suite.Nil(err)
+			suite.Len(json, 2)
+			if err == nil {
+				suite.Equal("value", json[0]["field"])
+				suite.Equal(float64(42), json[0]["number"])
+				suite.Equal("other value", json[1]["field"])
+				suite.Equal(float64(12), json[1]["number"])
+			}
+		}
+	})
+}
+
 func (suite *CustomTestSuite) TestCreateTestFiles() {
 	err := ioutil.WriteFile("test-file.txt", []byte("test-content"), 0644)
 	if err != nil {
@@ -272,7 +298,35 @@ func (suite *CustomTestSuite) TestClearDatabase() {
 	db.Model(&TestModel{}).Count(&count)
 	suite.Equal(0, count)
 
-	db.Exec("DROP TABLE test_models;")
+	db.DropTable(&TestModel{})
+	config.Set("dbConnection", "none")
+}
+
+func (suite *CustomTestSuite) TestClearDatabaseTables() {
+	config.Set("dbConnection", "mysql")
+	db := database.GetConnection()
+	db.AutoMigrate(&TestModel{})
+
+	database.RegisterModel(&TestModel{})
+	suite.ClearDatabaseTables()
+	database.ClearRegisteredModels()
+
+	found := false
+	rows, err := db.Raw("SHOW TABLES;").Rows()
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		name := ""
+		rows.Scan(&name)
+		if name == "test_models" {
+			found = true
+		}
+	}
+
+	suite.False(found)
+
 	config.Set("dbConnection", "none")
 }
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/jinzhu/gorm"
 )
 
 // Response represents a controller response.
@@ -147,9 +148,11 @@ func (r *Response) Download(file string, fileName string) error {
 // If debugging is not enabled, only the stauts code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err interface{}) error {
+	if r.err == nil {
+		log.Println(err)
+	}
 	r.err = err
 	dbg := config.GetBool("debug")
-	log.Println(err)
 	if dbg {
 		debug.PrintStack()
 		var message interface{}
@@ -212,6 +215,24 @@ func (r *Response) getTemplateDirectory() string {
 		panic(err)
 	}
 	return workingDir + sep + "resources" + sep + "template" + sep
+}
+
+// HandleDatabaseError takes a database query result and checks if any error has occurred.
+//
+// Automatically writes HTTP status code 404 Not Found if the error is a "Not found" error.
+// Calls "Response.Error()" if there is another type of error.
+//
+// Returns true if there is no error.
+func (r *Response) HandleDatabaseError(db *gorm.DB) bool {
+	if db.Error != nil {
+		if gorm.IsRecordNotFoundError(db.Error) {
+			r.Status(http.StatusNotFound)
+		} else {
+			r.Error(db.Error)
+		}
+		return false
+	}
+	return true
 }
 
 // CreateTestResponse create an empty response with the given response writer.

@@ -103,7 +103,7 @@ router.Route("GET", "/products/{id}", product.Show, nil)
 
 ## Groups and sub-routers
 
-Grouping routes makes it easier to define multiple routes having the same prefix and/or middlewares.
+Grouping routes makes it easier to define multiple routes having the same prefix and/or middleware.
 
 Let's take a simple scenario where we want to implement a user CRUD. All our routes will start with `/user`, so we are going to create a sub-router for it:
 ``` go
@@ -113,12 +113,12 @@ userRouter := router.Subrouter("/user")
 In our application, user profiles are public: anyone can see the user profiles without being authenticated. However, only authenticated users can modify their information and delete their account. We don't want to add some redundancy and apply the authentication middleware for each route needing it, so we are going to create another sub-router.
 ```go
 userRouter.Route("GET", "/{username}", user.Show, nil)
-userRouter.Route("POST", "/", user.Register, userrequest.Register)
+userRouter.Route("POST", "", user.Register, userrequest.Register)
 
-authUserRouter := userRouter.Subrouter("/") // Don't add a prefix
+authUserRouter := userRouter.Subrouter("") // Don't add a prefix
 authUserRouter.Middleware(authenticationMiddleware)
-authUserRouter.Route("PUT", "/", user.Update, userrequest.Update)
-authUserRouter.Route("DELETE", "/", user.Delete, nil)
+authUserRouter.Route("PUT", "/{id}", user.Update, userrequest.Update)
+authUserRouter.Route("DELETE", "/{id}", user.Delete, nil)
 ```
 
 To improve your routes definition readability, you should create a new route registrer for each feature. In our example, our definitions would look like this:

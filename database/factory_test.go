@@ -82,7 +82,7 @@ func (suite *FactoryTestSuite) TestSave() {
 
 	db := GetConnection()
 	db.AutoMigrate(&User{})
-	defer db.Exec("DROP TABLE users;")
+	defer db.DropTable(&User{})
 
 	records := NewFactory(userGenerator).Save(2)
 	suite.Equal(2, len(records))

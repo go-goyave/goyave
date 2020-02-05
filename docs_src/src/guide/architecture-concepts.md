@@ -64,9 +64,9 @@ The request is **parsed** by a second middleware. This middleware will automatic
 
 The `Accept-Language` header is checked. If it's there, its value is parsed and the request's language attribute is set accordingly so localization is easy in the following handlers. If the header is missing, invalid, or asks for an unsupported language, the framework falls back to the default language defined in the configuration. Learn more [here](./advanced/localization.html).
 
-#### 4. Application middlewares
+#### 4. Application middleware
 
-Application middlewares are executed. These middlewares are implemented and defined by the application developer. Note that some application middleware are already available in the framework. Learn more in the [middlewares](./basics/middleware.html) section. At this stage of the lifecycle, the request is not validated yet, so application middleware can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
+Application middleware are executed. These middleware are implemented and defined by the application developer. Note that some application middleware are already available in the framework. Learn more in the [middleware](./basics/middleware.html) section. At this stage of the lifecycle, the request is not validated yet, so application middleware can be used for authentication or automatic string trimming for example. Bear in mind that manipulating unvalidated data can be dangerous, especially in form-data where the data types are not converted by the validator yet.
 
 #### 5. Validation
 

@@ -185,34 +185,32 @@ func Get(lang string, line string) string {
 	defer mutex.RUnlock()
 	if strings.Count(line, ".") > 0 {
 		path := strings.Split(line, ".")
-		if path[0] != "validation" {
-			return line
-		}
-
-		switch path[1] {
-		case "rules":
-			if len(path) < 3 {
-				return line
-			}
-			return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")])
-		case "fields":
-			len := len(path)
-			if len < 3 {
-				return line
-			}
-			attr := languages[lang].validation.fields[path[2]]
-			if len == 4 {
-				if attr.Rules == nil {
+		if path[0] == "validation" {
+			switch path[1] {
+			case "rules":
+				if len(path) < 3 {
 					return line
 				}
-				return convertEmptyLine(line, attr.Rules[path[3]])
-			} else if len == 3 {
-				return convertEmptyLine(line, attr.Name)
-			} else {
+				return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")])
+			case "fields":
+				len := len(path)
+				if len < 3 {
+					return line
+				}
+				attr := languages[lang].validation.fields[path[2]]
+				if len == 4 {
+					if attr.Rules == nil {
+						return line
+					}
+					return convertEmptyLine(line, attr.Rules[path[3]])
+				} else if len == 3 {
+					return convertEmptyLine(line, attr.Name)
+				} else {
+					return line
+				}
+			default:
 				return line
 			}
-		default:
-			return line
 		}
 	}
 

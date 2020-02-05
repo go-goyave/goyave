@@ -48,12 +48,12 @@ func CustomAuthentication(next goyave.Handler) goyave.Handler {
 ```
 
 ::: tip
-When a middleware stops a request, following middlewares are **not** executed either.
+When a middleware stops a request, following middleware are **not** executed either.
 :::
 
-## Included middleware
+## Built-in middleware
 
-Included middleware are located in the `middleware` package.
+Built-in middleware is located in the `middleware` package.
 ``` go
 import "github.com/System-Glitch/goyave/v2/middleware"
 ```

@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/cors"
@@ -20,6 +21,7 @@ type Request struct {
 	httpRequest *http.Request
 	corsOptions *cors.Options
 	cookies     []*http.Cookie
+	User        interface{}
 	Rules       validation.RuleSet
 	Data        map[string]interface{}
 	Params      map[string]string
@@ -94,6 +96,24 @@ func (r *Request) Referrer() string {
 // UserAgent returns the client's User-Agent, if sent in the request.
 func (r *Request) UserAgent() string {
 	return r.httpRequest.UserAgent()
+}
+
+// BasicAuth returns the username and password provided in the request's
+// Authorization header, if the request uses HTTP Basic Authentication.
+func (r *Request) BasicAuth() (username, password string, ok bool) {
+	return r.httpRequest.BasicAuth()
+}
+
+// BearerToken extract the auth token from the "Authorization" header.
+// Only takes tokens of type "Bearer".
+// Returns empty string if no token found or the header is invalid.
+func (r *Request) BearerToken() (string, bool) {
+	const schema = "Bearer "
+	header := r.Header().Get("Authorization")
+	if !strings.HasPrefix(header, schema) {
+		return "", false
+	}
+	return strings.TrimSpace(header[len(schema):]), true
 }
 
 // CORSOptions returns the CORS options applied to this request, or nil.
@@ -184,12 +204,12 @@ func (r *Request) IP(field string) net.IP {
 	return str
 }
 
-// URL get an URL field from the request data.
-// Panics if the field is not an URL.
+// URL get a URL field from the request data.
+// Panics if the field is not a URL.
 func (r *Request) URL(field string) *url.URL {
 	str, ok := r.Data[field].(*url.URL)
 	if !ok {
-		log.Panicf("Field \"%s\" is not an URL", field)
+		log.Panicf("Field \"%s\" is not a URL", field)
 	}
 	return str
 }

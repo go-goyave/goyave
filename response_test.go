@@ -5,19 +5,27 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/suite"
 )
 
 type ResponseTestSuite struct {
 	suite.Suite
+	previousEnv string
 }
 
 func (suite *ResponseTestSuite) SetupSuite() {
-	config.Load()
+	suite.previousEnv = os.Getenv("GOYAVE_ENV")
+	os.Setenv("GOYAVE_ENV", "test")
+	if err := config.Load(); err != nil {
+		suite.FailNow(err.Error())
+	}
 }
 
 func createTestResponse(rawRequest *http.Request) *Response {
@@ -75,6 +83,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
+	config.Set("debug", true)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := createTestResponse(rawRequest)
 	response.Error(fmt.Errorf("random error"))
@@ -87,6 +96,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
 	suite.Equal(500, response.status)
+	suite.NotNil(response.err)
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = createTestResponse(rawRequest)
@@ -94,12 +104,14 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(500, resp.StatusCode)
+	suite.NotNil(response.err)
 
 	body, err = ioutil.ReadAll(resp.Body)
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
 	suite.Equal(500, response.status)
+	suite.NotNil(response.err)
 
 	config.Set("debug", false)
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
@@ -312,6 +324,41 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 
 	suite.NotNil(response.RenderHTML(http.StatusNotFound, "non-existing-template", nil))
 	suite.NotNil(response.RenderHTML(http.StatusNotFound, "invalid.txt", nil))
+}
+
+func (suite *ResponseTestSuite) TestHandleDatabaseError() {
+	type TestRecord struct {
+		gorm.Model
+	}
+	config.Set("dbConnection", "mysql")
+	defer config.Set("dbConnection", "none")
+	db := database.GetConnection()
+
+	response := createTestResponse(nil)
+	suite.False(response.HandleDatabaseError(db.Find(&TestRecord{})))
+
+	suite.Equal(http.StatusInternalServerError, response.status)
+
+	db.AutoMigrate(&TestRecord{})
+	defer db.DropTable(&TestRecord{})
+	response = createTestResponse(nil)
+	suite.False(response.HandleDatabaseError(db.Where("id = ?", -1).Find(&TestRecord{})))
+
+	suite.Equal(http.StatusNotFound, response.status)
+
+	response = createTestResponse(nil)
+	suite.True(response.HandleDatabaseError(db.Exec("SHOW TABLES;")))
+
+	suite.Equal(0, response.status)
+
+	response = createTestResponse(nil)
+	results := []TestRecord{}
+	suite.True(response.HandleDatabaseError(db.Find(&results))) // Get all but empty result should not be an error
+	suite.Equal(0, response.status)
+}
+
+func (suite *ResponseTestSuite) TearDownAllSuite() {
+	os.Setenv("GOYAVE_ENV", suite.previousEnv)
 }
 
 func TestResponseTestSuite(t *testing.T) {

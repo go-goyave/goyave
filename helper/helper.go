@@ -9,16 +9,22 @@ import (
 	"strings"
 )
 
-// Contains check if a slice contains a value.
-func Contains(slice interface{}, value interface{}) bool {
+// IndexOf get the index of the given value in the given slice,
+// or -1 if not found.
+func IndexOf(slice interface{}, value interface{}) int {
 	list := reflect.ValueOf(slice)
 	length := list.Len()
 	for i := 0; i < length; i++ {
 		if list.Index(i).Interface() == value {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
+}
+
+// Contains check if a slice contains a value.
+func Contains(slice interface{}, value interface{}) bool {
+	return IndexOf(slice, value) != -1
 }
 
 // SliceEqual check if two generic slices are the same.
@@ -59,10 +65,11 @@ func ToString(value interface{}) string {
 // then
 //  [{text/html 1} {*/* 0.7} {text/* 0.5}]
 func ParseMultiValuesHeader(header string) []HeaderValue {
-	values := []HeaderValue{}
 	regex := regexp.MustCompile("^q=([01]\\.[0-9]{1,3})$")
+	split := strings.Split(header, ",")
+	values := make([]HeaderValue, 0, len(split))
 
-	for _, v := range strings.Split(header, ",") {
+	for _, v := range split {
 		val := HeaderValue{}
 		if i := strings.Index(v, ";"); i != -1 {
 			// Parse priority

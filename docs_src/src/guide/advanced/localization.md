@@ -70,7 +70,7 @@ It is a good practice to use **dot-separated** names for language lines to help 
 
 ### Rules
 
-The `rules.json` file contains the validation rules messages. These messages can have **[placeholders](../basics/validation.html#placeholders)**, which will be replaced by dynamic valuesautomatically by the validator. If you write custom validation rules, their messages shall be written in this file.
+The `rules.json` file contains the validation rules messages. These messages can have **[placeholders](../basics/validation.html#placeholders)**, which will be automatically replaced by the validator with dynamic values. If you write custom validation rules, their messages shall be written in this file.
 
 **Example:**
 

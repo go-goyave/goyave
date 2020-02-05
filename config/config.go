@@ -34,9 +34,11 @@ var configDefaults map[string]interface{} = map[string]interface{}{
 	"dbUsername":           "root",
 	"dbPassword":           "root",
 	"dbOptions":            "charset=utf8&parseTime=true&loc=Local",
-	"dbMaxOpenConnections": 100.0,
+	"dbMaxOpenConnections": 20.0,
 	"dbMaxIdleConnections": 20.0,
+	"dbMaxLifetime":        300.0,
 	"dbAutoMigrate":        false,
+	"jwtExpiry":            300.0,
 }
 
 var configValidation = map[string]reflect.Kind{
@@ -63,7 +65,9 @@ var configValidation = map[string]reflect.Kind{
 	"dbOptions":            reflect.String,
 	"dbMaxOpenConnections": reflect.Float64,
 	"dbMaxIdleConnections": reflect.Float64,
+	"dbMaxLifetime":        reflect.Float64,
 	"dbAutoMigrate":        reflect.Bool,
+	"jwtExpiry":            reflect.Float64,
 }
 
 var authorizedValues = map[string][]string{
@@ -127,8 +131,16 @@ func Get(key string) interface{} {
 		return val
 	}
 
-	log.Panicf("Config entry %s doesn't exist", key)
+	log.Panicf("Config entry \"%s\" doesn't exist", key)
 	return nil
+}
+
+// Has check if a config entry exists.
+func Has(key string) bool {
+	mutex.RLock()
+	_, ok := config[key]
+	mutex.RUnlock()
+	return ok
 }
 
 // Set a config entry
@@ -151,12 +163,12 @@ func GetString(key string) string {
 	if ok {
 		str, ok := val.(string)
 		if !ok {
-			log.Panicf("Config entry %s is not a string", key)
+			log.Panicf("Config entry \"%s\" is not a string", key)
 		}
 		return str
 	}
 
-	log.Panicf("Config entry %s doesn't exist", key)
+	log.Panicf("Config entry \"%s\" doesn't exist", key)
 	return ""
 }
 
@@ -168,13 +180,38 @@ func GetBool(key string) bool {
 	if ok {
 		b, ok := val.(bool)
 		if !ok {
-			log.Panicf("Config entry %s is not a bool", key)
+			log.Panicf("Config entry \"%s\" is not a bool", key)
 		}
 		return b
 	}
 
-	log.Panicf("Config entry %s doesn't exist", key)
+	log.Panicf("Config entry \"%s\" doesn't exist", key)
 	return false
+}
+
+// Register a config entry for validation.
+// If the entry identified by the given key is set or modified, its
+// value will be validated according to the given kind.
+// If the entry already exists, it will be revalidated.
+//
+// This method doesn't allow to override existing validation. Once an
+// entry is registered, its expected kind cannot be modified.
+func Register(key string, kind reflect.Kind) {
+	_, exists := configValidation[key]
+	if exists {
+		log.Panicf("Config entry \"%s\" is already registered", key)
+	}
+
+	configValidation[key] = kind
+
+	val, exists := config[key]
+	if exists {
+		if err := validateEntry(val, key); err != nil {
+			delete(configValidation, "key")
+			panic(err)
+		}
+	}
+
 }
 
 func loadDefaults() {

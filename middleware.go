@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -11,17 +12,19 @@ import (
 
 // Middleware function generating middleware handler function.
 //
-// Request data is available to middlewares, but bear in mind that
+// Request data is available to middleware, but bear in mind that
 // it had not been validated yet. That means that you can modify or
 // filter data. (Trim strings for example)
 type Middleware func(Handler) Handler
 
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
-// If debugging is enabled in the config, the error is also written in the response.
+// If debugging is enabled in the config and the default status handler for the 500 status code
+// had not been changed, the error is also written in the response.
 func recoveryMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
 		defer func() {
 			if err := recover(); err != nil {
+				log.Println(err)
 				response.err = err
 				response.Status(http.StatusInternalServerError)
 			}
@@ -43,7 +46,7 @@ func parseRequestMiddleware(next Handler) Handler {
 		var data map[string]interface{}
 		if request.httpRequest.Header.Get("Content-Type") == "application/json" {
 			defer request.httpRequest.Body.Close()
-			data = make(map[string]interface{})
+			data = make(map[string]interface{}, 10)
 			err := json.NewDecoder(request.httpRequest.Body).Decode(&data)
 			if err != nil {
 				data = nil

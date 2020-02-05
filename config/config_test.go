@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -52,6 +53,30 @@ func (suite *ConfigTestSuite) TestGet() {
 	})
 	suite.Panics(func() {
 		GetBool("appName") // Not a bool
+	})
+}
+
+func (suite *ConfigTestSuite) TestHas() {
+	suite.False(Has("not_a_config_entry"))
+	suite.True(Has("appName"))
+}
+
+func (suite *ConfigTestSuite) TestRegister() {
+	Set("register_test", "value")
+	suite.Panics(func() {
+		Register("register_test", reflect.Struct)
+	})
+	delete(configValidation, "register_test")
+	delete(config, "register_test")
+
+	type configStruct struct{}
+	Register("register_test", reflect.Struct)
+	Set("register_test", configStruct{})
+	suite.Panics(func() {
+		Set("register_test", "value")
+	})
+	suite.Panics(func() { // Already registered
+		Register("register_test", reflect.Struct)
 	})
 }
 

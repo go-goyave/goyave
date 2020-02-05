@@ -29,6 +29,7 @@ Very few code is required to get started with databases. There are some [configu
 - `dbOptions`
 - `dbMaxOpenConnection`
 - `dbMaxIdleConnection`
+- `dbMaxLifetime`
 
 ::: tip
 `dbOptions` represents the addtional connection options. For example, when using MySQL, you should use the `parseTime=true` option so `time.Time` can be handled correctly. Available options differ from one driver to another and can be found in their respective documentation.
@@ -107,16 +108,16 @@ func init() {
 }
 
 type User struct {
-  gorm.Model
-  Name         string
-  Age          sql.NullInt64
-  Birthday     *time.Time
-  Email        string  `gorm:"type:varchar(100);unique_index"`
-  Role         string  `gorm:"size:255"` // set field size to 255
-  MemberNumber *string `gorm:"unique;not null"` // set member number to unique and not null
-  Num          int     `gorm:"AUTO_INCREMENT"` // set num to auto incrementable
-  Address      string  `gorm:"index:addr"` // create index with name `addr` for address
-  IgnoreMe     int     `gorm:"-"` // ignore this field
+    gorm.Model
+    Name         string
+    Age          sql.NullInt64
+    Birthday     *time.Time
+    Email        string  `gorm:"type:varchar(100);unique_index"`
+    Role         string  `gorm:"size:255"` // set field size to 255
+    MemberNumber *string `gorm:"unique;not null"` // set member number to unique and not null
+    Num          int     `gorm:"AUTO_INCREMENT"` // set num to auto incrementable
+    Address      string  `gorm:"index:addr"` // create index with name `addr` for address
+    IgnoreMe     int     `gorm:"-"` // ignore this field
 }
 ```
 

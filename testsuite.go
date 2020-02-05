@@ -24,7 +24,6 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/lang"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	testify "github.com/stretchr/testify/suite"
 )
 
@@ -59,12 +58,14 @@ type ITestSuite interface {
 // TestSuite is an extension of testify's Suite for
 // Goyave-specific testing.
 type TestSuite struct {
-	suite.Suite
+	testify.Suite
 	timeout     time.Duration // Timeout for functional tests
 	httpClient  *http.Client
 	previousEnv string
 	mu          sync.Mutex
 }
+
+var _ ITestSuite = (*TestSuite)(nil) // implements ITestSuite
 
 // Timeout get the timeout for test failure when using RunServer or requests.
 func (s *TestSuite) Timeout() time.Duration {
@@ -228,7 +229,7 @@ func (s *TestSuite) GetBody(response *http.Response) []byte {
 // GetJSONBody read the whole body of a response and decode it as JSON.
 // If read or decode failed, test fails.
 func (s *TestSuite) GetJSONBody(response *http.Response, data interface{}) error {
-	err := json.NewDecoder(response.Body).Decode(&data)
+	err := json.NewDecoder(response.Body).Decode(data)
 	if err != nil {
 		s.Fail("Couldn't read response body as JSON", err)
 		return err
@@ -307,6 +308,15 @@ func (s *TestSuite) ClearDatabase() {
 	db := database.GetConnection()
 	for _, m := range database.GetRegisteredModels() {
 		db.Unscoped().Delete(m)
+	}
+}
+
+// ClearDatabaseTables drop all tables.
+// This function only clears the tables of registered models.
+func (s *TestSuite) ClearDatabaseTables() {
+	db := database.GetConnection()
+	for _, m := range database.GetRegisteredModels() {
+		db.DropTableIfExists(m)
 	}
 }
 

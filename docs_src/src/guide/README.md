@@ -19,6 +19,7 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 ### Ideas for future releases
 
 - Support for gzip compression
+- Custom router implementation
 - Permission system (guards)
 - CLI utility to help creating controllers, middleware, etc
 - Named routes and other routing features

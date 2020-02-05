@@ -18,7 +18,8 @@ import (
 type Middleware func(Handler) Handler
 
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
-// If debugging is enabled in the config, the error is also written in the response.
+// If debugging is enabled in the config and the default status handler for the 500 status code
+// had not been changed, the error is also written in the response.
 func recoveryMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
 		defer func() {

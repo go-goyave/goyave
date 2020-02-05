@@ -33,6 +33,14 @@ Goyave is a progressive and accessible web application framework, aimed at makin
 
 Most golang frameworks for web development don't have a strong directory structure nor conventions to make applications have a uniform architecture and limit redundancy. This makes it difficult to work with them on different projects. In companies, having a well-defined and documented architecture helps new developers integrate projects faster, and reduces the time needed for maintaining them. For open source projects, it helps newcomers understanding the project and makes it easier to contribute.
 
+## Table of contents
+
+- [Leaning Goyave](#learning-goyave)
+- [Getting started](#getting-started)
+- [Features tour](#features-tour)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Learning Goyave
 
 The Goyave framework has an extensive documentation covering in-depth subjects and teaching you how to run a project using Goyave from setup to deployment.
@@ -41,7 +49,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://godoc.org/github.com/System-Glitch/goyave"><h3 align="center">GoDoc</h3></a>
 
-## Getting Started
+## Getting started
 
 ### Requirements
 
@@ -91,6 +99,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 - [Database](#database)
 - [Localization](#localization)
 - [Testing](#testing)
+- [Status handlers](#status-handlers)
 - [CORS](#cors)
 
 ### Hello world from scratch
@@ -277,15 +286,309 @@ func Destroy(response *goyave.Response, request *goyave.Request) {
 
 ### Middleware
 
+Middleware are handlers executed before the controller handler. They are a convenient way to filter, intercept or alter HTTP requests entering your application. For example, middleware can be used to authenticate users. If the user is not authenticated, a message is sent to the user even before the controller handler is reached. However, if the user is authenticated, the middleware will pass to the next handler. Middleware can also be used to sanitize user inputs, by trimming strings for example, to log all requests into a log file, to automatically add headers to all your responses, etc.
+
+``` go
+func MyCustomMiddleware(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
+        // Do something
+        next(response, request) // Pass to the next handler
+    }
+}
+```
+
+To assign a middleware to a router, use the `router.Middleware()` function. Many middleware can be assigned at once. The assignment order is important as middleware will be **executed in order**.
+
+``` go
+router.Middleware(middleware.MyCustomMiddleware)
+```
+
+**Learn more about middleware in the [documentation](https://system-glitch.github.io/goyave/guide/basics/middleware.html).**
+
+
 ### Validation
+
+Goyave provides a powerful, yet easy way to validate all incoming data, no matter its type or its format, thanks to a large number of validation rules.
+
+Incoming requests are validated using **rules set**, which associate rules with each expected field in the request.
+
+Validation rules can **alter the raw data**. That means that when you validate a field to be number, if the validation passes, you are ensured that the data you'll be using in your controller handler is a `float64`. Or if you're validating an IP, you get a `net.IP` object.
+
+Validation is automatic. You just have to define a rules set and assign it to a route. When the validation doesn't pass, the request is stopped and the validation errors messages are sent as a response.
+
+The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>request`.
+
+**Example:** (`http/request/productrequest/product.go`)
+``` go
+var (
+	Store validation.RuleSet = validation.RuleSet{
+		"name":  {"required", "string", "between:3,50"},
+		"price": {"required", "numeric", "min:0.01"},
+		"image": {"nullable", "file", "image", "max:2048", "count:1"},
+    }
+    
+    // ...
+)
+```
+
+Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition.
+
+``` go
+router.Route("POST", "/product", product.Store, productrequest.Store)
+```
+
+
+**Learn more about validation in the [documentation](https://system-glitch.github.io/goyave/guide/basics/validation.html).**
 
 ### Database
 
+Most web applications use a database. In this section, we are going to see how Goyave applications can query a database, using the awesome [Gorm ORM](https://gorm.io/).
+
+Database connections are managed by the framework and are long-lived. When the server shuts down, the database connections are closed automatically. So you don't have to worry about creating, closing or refreshing database connections in your application.
+
+Very few code is required to get started with databases. There are some [configuration](https://system-glitch.github.io/goyave/guide/configuration.html#configuration-reference) options that you need to change though:
+- `dbConnection`
+- `dbHost`
+- `dbPort`
+- `dbName`
+- `dbUsername`
+- `dbPassword`
+- `dbOptions`
+- `dbMaxOpenConnection`
+- `dbMaxIdleConnection`
+- `dbMaxLifetime`
+
+``` go
+user := model.User{}
+db := database.GetConnection()
+db.First(&user)
+
+fmt.Println(user)
+```
+
+Models are usually just normal Golang structs, basic Go types, or pointers of them. `sql.Scanner` and `driver.Valuer` interfaces are also supported.
+
+```go
+func init() {
+    database.RegisterModel(&User{})
+}
+
+type User struct {
+  gorm.Model
+  Name         string
+  Age          sql.NullInt64
+  Birthday     *time.Time
+  Email        string  `gorm:"type:varchar(100);unique_index"`
+  Role         string  `gorm:"size:255"` // set field size to 255
+  MemberNumber *string `gorm:"unique;not null"` // set member number to unique and not null
+  Num          int     `gorm:"AUTO_INCREMENT"` // set num to auto incrementable
+  Address      string  `gorm:"index:addr"` // create index with name `addr` for address
+  IgnoreMe     int     `gorm:"-"` // ignore this field
+}
+```
+
+**Learn more about using databases in the [documentation](https://system-glitch.github.io/goyave/guide/basics/database.html).**
+
 ### Localization
+
+The Goyave framework provides a convenient way to support multiple languages within your application. Out of the box, Goyave only provides the `en-US` language.
+
+Language files are stored in the `resources/lang` directory.
+
+```
+.
+└── resources
+    └── lang
+        └── en-US (language name)
+            ├── fields.json (optional)
+            ├── locale.json (optional)
+            └── rules.json (optional)
+```
+
+The `fields.json` file contains the field names translations and their rule-specific messages. Translating field names helps making more expressive messages instead of showing the technical field name to the user. Rule-specific messages let you override a validation rule message for a specific field.
+
+**Example:**
+``` json
+{
+    "email": {
+        "name": "email address",
+        "rules": {
+            "required": "You must provide an :field."
+        }
+    }
+}
+```
+
+The `locale.json` file contains all language lines that are not related to validation. This is the place where you should write the language lines for your user interface or for the messages returned by your controllers.
+
+**Example:**
+``` json
+{
+    "product.created": "The product have been created with success.",
+    "product.deleted": "The product have been deleted with success."
+}
+```
+
+The `rules.json` file contains the validation rules messages. These messages can have **[placeholders](https://system-glitch.github.io/goyave/guide/basics/validation.html#placeholders)**, which will be automatically replaced by the validator with dynamic values. If you write custom validation rules, their messages shall be written in this file.
+
+**Example:**
+
+``` json
+{
+    "integer": "The :field must be an integer.",
+    "starts_with": "The :field must start with one of the following values: :values.",
+    "same": "The :field and the :other must match."
+}
+```
+
+When an incoming request enters your application, the core language middleware checks if the `Accept-Language` header is set, and set the `goyave.Request`'s `Lang` attribute accordingly. Localization is handled automatically by the validator.
+
+``` go
+func ControllerHandler(response *goyave.Response, request *goyave.Request) {
+    response.String(http.StatusOK, lang.Get(request.Lang, "my-custom-message"))
+}
+```
+
+**Learn more about localization in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/localization.html).**
 
 ### Testing
 
+Goyave provides an API to ease the unit and functional testing of your application. This API is an extension of [testify](https://github.com/stretchr/testify). `goyave.TestSuite` inherits from testify's `suite.Suite`, and sets up the environment for you. That means:
+
+- `GOYAVE_ENV` environment variable is set to `test` and restored to its original value when the suite is done.
+- All tests are run using your project's root as working directory. This directory is determined by the presence of a `go.mod` file.
+- Config and language files are loaded before the tests start. As the environment is set to `test`, you **need** a `config.test.json` in the root directory of your project.
+
+This setup is done by the function `goyave.RunTest`, so you shouldn't run your test suites using testify's `suite.Run()` function.
+
+The following example is a **functional** test and would be located in the `test` package.
+
+``` go
+import (
+    "my-project/http/route"
+    "github.com/System-Glitch/goyave/v2"
+)
+
+type CustomTestSuite struct {
+	goyave.TestSuite
+}
+
+func (suite *CustomTestSuite) TestHello() {
+    suite.RunServer(route.Register, func() {
+		resp, err := suite.Get("/hello", nil)
+		suite.Nil(err)
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(200, resp.StatusCode)
+			suite.Equal("Hi!", string(suite.GetBody(resp)))
+		}
+	})
+}
+
+func TestCustomSuite(t *testing.T) {
+	goyave.RunTest(t, new(CustomTestSuite))
+}
+```
+
+When writing functional tests, you can retrieve the response body  easily using `suite.GetBody(response)`.
+
+``` go 
+resp, err := suite.Get("/get", nil)
+suite.Nil(err)
+if err == nil {
+    suite.Equal("response content", string(suite.GetBody(resp)))
+}
+```
+
+**URL-encoded requests:**
+
+``` go
+headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded; param=value"}
+resp, err := suite.Post("/product", headers, strings.NewReader("field=value"))
+suite.Nil(err)
+if err == nil {
+    suite.Equal("response content", string(suite.GetBody(resp)))
+}
+```
+
+**JSON requests:**
+
+``` go
+headers := map[string]string{"Content-Type": "application/json"}
+body, _ := json.Marshal(map[string]interface{}{"name": "Pizza", "price": 12.5})
+resp, err := suite.Post("/product", headers, bytes.NewReader(body))
+suite.Nil(err)
+if err == nil {
+    suite.Equal("response content", string(suite.GetBody(resp)))
+}
+```
+
+**Testing JSON respones:**
+
+``` go
+suite.RunServer(route.Register, func() {
+	resp, err := suite.Get("/product", nil)
+	suite.Nil(err)
+	if err == nil {
+		json := map[string]interface{}{}
+		err := suite.GetJSONBody(resp, &json)
+		suite.Nil(err)
+		if err == nil { // You should always check parsing error before continuing.
+			suite.Equal("value", json["field"])
+			suite.Equal(float64(42), json["number"])
+		}
+	}
+})
+```
+
+The testing API has many more features such as record generators, factories, database helpers, a middleware tester, support for multipart and file uploads...
+
+**Learn more about testing in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/testing.html).**
+
+### Status handlers
+
+Status handlers are regular handlers executed during the finalization step of the request's lifecycle if the response body is empty but a status code has been set. Status handler are mainly used to implement a custom behavior for user or server errors (400 and 500 status codes).
+
+The following file `http/controller/status/status.go` is an example of custom 404 error handling:
+``` go
+package status
+
+import "github.com/System-Glitch/goyave/v2"
+
+func NotFound(response *goyave.Response, request *goyave.Request) {
+    response.RenderHTML(response.GetStatus(), "errors/404.html", nil)
+}
+```
+
+Status handlers are registered in the **router**.
+
+``` go
+// Use "status.NotFound" for empty responses having status 404 or 405.
+router.StatusHandler(status.NotFound, 404)
+```
+
+**Learn more about status handlers in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/status-handlers.html).**
+
+
 ### CORS
+
+Goyave provides a built-in CORS module. CORS options are set on **routers**. If the passed options are not `nil`, the CORS core middleware is automatically added.
+
+``` go
+router.CORS(cors.Default())
+```
+
+CORS options should be defined **before middleware and route definition**. All of this router's sub-routers **inherit** CORS options by default. If you want to remove the options from a sub-router, or use different ones, simply create another `cors.Options` object and assign it.
+
+`cors.Default()` can be used as a starting point for custom configuration.
+
+``` go
+options := cors.Default()
+options.AllowedOrigins = []string{"https://google.com", "https://images.google.com"}
+router.CORS(options)
+```
+
+**Learn more about CORS in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/cors.html).**
 
 ## Contributing
 

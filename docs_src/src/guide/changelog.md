@@ -10,6 +10,7 @@
 - Added `dbMaxLifetime` configuration entry.
 - Moved from Travis CI to Github Actions.
 - Fixed a bug making duplicate log entries on error.
+- Fixed a bug preventing language lines containing a dot to be retrieved.
 - Fixed `TestSuite.GetJSONBody()` not working with structs and slices.
 - Added `TestSuite.ClearDatabaseTables()`.
 - Added `Config.Has()` and `Config.Register()` to check for the existence of a config entry and to allow custom config entries valdiation.

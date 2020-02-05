@@ -252,7 +252,7 @@ func (a *MyAuthenticator) Authenticate(request *goyave.Request, user interface{}
 	token, ok := request.BearerToken()
 
 	if !ok {
-		return fmt.Errorf(lang.Get(request.Lang, "no-credentials-provided"))
+		return fmt.Errorf(lang.Get(request.Lang, "auth.no-credentials-provided"))
 	}
 
 	// Find the struct field tagged with `auth:"token"`
@@ -268,7 +268,7 @@ func (a *MyAuthenticator) Authenticate(request *goyave.Request, user interface{}
 
 	if result.RecordNotFound() {
 		// User not found, return "These credentials don't match our records."
-		return fmt.Errorf(lang.Get(request.Lang, "invalid-credentials"))
+		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 	}
 
 	// Authentication successful

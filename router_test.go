@@ -8,8 +8,6 @@ import (
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/cors"
-	"github.com/System-Glitch/goyave/v2/validation"
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -126,9 +124,15 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	rawRequest := httptest.NewRequest("GET", "/uri", nil)
 	writer := httptest.NewRecorder()
 	router := newRouter()
-	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
-		response.String(200, "Hello world")
-	}, validation.RuleSet{})
+
+	match := &routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {
+				response.String(200, "Hello world")
+			},
+		},
+	}
+	router.requestHandler(match, writer, rawRequest)
 
 	result := writer.Result()
 	body, err := ioutil.ReadAll(result.Body)
@@ -141,7 +145,13 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	writer = httptest.NewRecorder()
 	router = newRouter()
 	router.Middleware(suite.routerTestMiddleware)
-	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {}, validation.RuleSet{})
+
+	match = &routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {},
+		},
+	}
+	router.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
 	body, err = ioutil.ReadAll(result.Body)
@@ -155,9 +165,14 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 
 	writer = httptest.NewRecorder()
 	router = newRouter()
-	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
-		response.Status(http.StatusNotFound)
-	}, validation.RuleSet{})
+	match = &routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {
+				response.Status(http.StatusNotFound)
+			},
+		},
+	}
+	router.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
 	body, err = ioutil.ReadAll(result.Body)
@@ -177,11 +192,11 @@ func (suite *RouterTestSuite) TestCORS() {
 	suite.NotNil(router.corsOptions)
 	suite.True(router.hasCORSMiddleware)
 
-	route := router.route("GET", "/cors", helloHandler, nil)
+	route := router.registerRoute("GET", "/cors", helloHandler, nil)
 
-	var match mux.RouteMatch
-	suite.True(route.Match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))
-	suite.True(route.Match(httptest.NewRequest("GET", "/cors", nil), &match))
+	var match routeMatch
+	suite.True(route.match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))
+	suite.True(route.match(httptest.NewRequest("GET", "/cors", nil), &match))
 
 	writer := httptest.NewRecorder()
 	router.Middleware(func(handler Handler) Handler {
@@ -192,7 +207,13 @@ func (suite *RouterTestSuite) TestCORS() {
 		}
 	})
 	rawRequest := httptest.NewRequest("GET", "/cors", nil)
-	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {}, validation.RuleSet{})
+
+	match = routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {},
+		},
+	}
+	router.requestHandler(&match, writer, rawRequest)
 }
 
 func (suite *RouterTestSuite) TestPanicStatusHandler() {
@@ -225,9 +246,15 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	router.StatusHandler(func(response *Response, request *Request) {
 		response.String(http.StatusInternalServerError, "An unexpected panic occurred.")
 	}, http.StatusInternalServerError)
-	router.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
-		panic("Panic")
-	}, validation.RuleSet{})
+
+	match := &routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {
+				panic("Panic")
+			},
+		},
+	}
+	router.requestHandler(match, writer, rawRequest)
 
 	result := writer.Result()
 	body, err := ioutil.ReadAll(result.Body)
@@ -241,9 +268,8 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	subrouter := router.Subrouter("/sub")
 	writer = httptest.NewRecorder()
 	router = newRouter()
-	subrouter.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
-		panic("Panic")
-	}, validation.RuleSet{})
+
+	subrouter.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
 	body, err = ioutil.ReadAll(result.Body)
@@ -258,9 +284,15 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	subrouter.StatusHandler(func(response *Response, request *Request) {
 		response.String(response.GetStatus(), http.StatusText(response.GetStatus()))
 	}, 400, 404)
-	subrouter.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
-		response.Status(400)
-	}, validation.RuleSet{})
+
+	match = &routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {
+				response.Status(400)
+			},
+		},
+	}
+	subrouter.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
 	body, err = ioutil.ReadAll(result.Body)
@@ -271,9 +303,15 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	suite.Equal(http.StatusText(400), string(body))
 
 	writer = httptest.NewRecorder()
-	subrouter.requestHandler(writer, rawRequest, func(response *Response, request *Request) {
-		response.Status(404)
-	}, validation.RuleSet{})
+
+	match = &routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {
+				response.Status(404)
+			},
+		},
+	}
+	subrouter.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
 	body, err = ioutil.ReadAll(result.Body)
@@ -282,36 +320,6 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	}
 	suite.Equal(404, result.StatusCode)
 	suite.Equal(http.StatusText(404), string(body))
-}
-
-func (suite *RouterTestSuite) TestMuxStatusHandler() {
-	router := newRouter()
-
-	recorder := httptest.NewRecorder()
-	router.muxRouter.NotFoundHandler.ServeHTTP(recorder, httptest.NewRequest("GET", "/", nil))
-	result := recorder.Result()
-	suite.Equal(404, result.StatusCode)
-
-	recorder = httptest.NewRecorder()
-	router.muxRouter.MethodNotAllowedHandler.ServeHTTP(recorder, httptest.NewRequest("GET", "/", nil))
-	result = recorder.Result()
-	suite.Equal(405, result.StatusCode)
-
-	config.Set("debug", false)
-	writer := httptest.NewRecorder()
-	router = newRouter()
-	router.requestHandler(writer, httptest.NewRequest("GET", "/uri", nil), func(response *Response, request *Request) {
-		panic("Panic")
-	}, validation.RuleSet{})
-
-	result = writer.Result()
-	body, err := ioutil.ReadAll(result.Body)
-	if err != nil {
-		panic(err)
-	}
-	suite.Equal(500, result.StatusCode)
-	suite.Equal("{\"error\":\""+http.StatusText(http.StatusInternalServerError)+"\"}\n", string(body))
-	config.Set("debug", true)
 }
 
 func TestRouterTestSuite(t *testing.T) {

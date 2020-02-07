@@ -48,7 +48,7 @@ Finally, the framework starts listening for incoming HTTP requests and serves th
 
 ### Requests
 
-When an incoming request is received, it's first passed through the [Gorilla Mux](https://github.com/gorilla/mux) router so your server knows which handler to execute when a user requests a specific URI. Then, the framework's internal handler creates a `goyave.Request` object and a `goyave.Response` object from the raw request. These two objects are fundamental features of the framework as you are going to use them to retrieve the requests' data and write your responses.
+When an incoming request is received, it's first passed through the router so your server knows which handler to execute when a user requests a specific URI. Then, the framework's internal handler creates a `goyave.Request` object and a `goyave.Response` object from the raw request. These two objects are fundamental features of the framework as you are going to use them to retrieve the requests' data and write your responses.
 
 Before executing the handler, the middleware are executed. The framework features a few core middleware, which are executed **first** and for all routes and all requests.
 

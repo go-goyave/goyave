@@ -238,6 +238,10 @@ router.Route("GET", "/user", goyave.NativeHandler(httpHandler), nil)
 
 #### goyave.NativeMiddleware
 
+::: warning
+**Deprecated**: Goyave doesn't use gorilla/mux anymore. This function will be removed in a future major release.
+::: 
+
 NativeMiddleware is an adapter function `mux.MiddlewareFunc`. With this adapter, you can plug [Gorilla Mux middleware](https://github.com/gorilla/mux#middleware) to your application.
 
 Native middleware work like native handlers. See [`NativeHandler`](#goyave-nativehandler) for more details.

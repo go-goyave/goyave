@@ -26,6 +26,10 @@ func NativeHandler(handler http.Handler) Handler {
 }
 
 // NativeMiddleware is an adapter function "mux.MiddlewareFunc".
+//
+// Deprecated: Goyave doesn't use gorilla/mux anymore. This function will be removed
+// in a future major release.
+//
 // With this adapter, you can plug Gorilla Mux middleware to your application.
 //
 // Native middleware work like native handlers. See "NativeHandler" for more details.

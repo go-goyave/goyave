@@ -104,7 +104,6 @@ func EnableMaintenance() {
 // DisableMaintenance replace the main server handler with the original router.
 func DisableMaintenance() {
 	mutex.Lock()
-	// server.Handler = router.muxRouter
 	server.Handler = router
 	maintenanceEnabled = false
 	mutex.Unlock()
@@ -252,8 +251,7 @@ func startServer(router *Router) {
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
-		// Handler:      router.muxRouter,
-		Handler: router,
+		Handler:      router,
 	}
 
 	if config.GetBool("maintenance") {

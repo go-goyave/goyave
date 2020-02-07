@@ -37,12 +37,14 @@ Multiple methods can be passed using a pipe-separated string.
 
 If the router has CORS options set, the `OPTIONS` method is automatically added to the matcher if it's missing, so it allows pre-flight requests.
 
-| Parameters                           | Return |
-|--------------------------------------|--------|
-| `methods string`                     | `void` |
-| `uri string`                         |        |
-| `handler goyave.Handler`             |        |
-| `validationRules validation.RuleSet` |        |
+Returns the generated route.
+
+| Parameters                           | Return          |
+|--------------------------------------|-----------------|
+| `methods string`                     | `*goyave.Route` |
+| `uri string`                         |                 |
+| `handler goyave.Handler`             |                 |
+| `validationRules validation.RuleSet` |                 |
 
 **Examples:**
 ``` go
@@ -55,6 +57,55 @@ router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
 - `goyave.Handler` is an alias for `func(*goyave.Response, *goyave.Request)`.
 - Learn more about validation and rules sets [here](./validation.html).
 :::
+
+## goyave.Route reference
+
+::: table
+[GetName](#route-getname)
+[GetURI](#route-geturi)
+[GetMethods](#route-getmethods)
+::: 
+
+#### Route.GetName
+
+Get the name of this route.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetName()) // "product-create"
+```
+
+#### Route.GetURI
+
+Get the URI of this route.
+
+Note that this URI may contain route parameters in their définition format. Use the request's URI if you want to see the URI as it was requested by the client.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetURI()) // "/product/{id:[0-9]+}"
+```
+
+#### Route.GetMethods
+
+Returns the methods the route matches against.
+
+| Parameters | Return     |
+|------------|------------|
+|            | `[]string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetMethods()) // [GET OPTIONS]
+```
 
 ## Route parameters
 

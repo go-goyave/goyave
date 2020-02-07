@@ -158,8 +158,10 @@ func (r *Router) Middleware(middleware ...Middleware) {
 //
 // If the router has CORS options set, the "OPTIONS" method is automatically added
 // to the matcher if it's missing, so it allows preflight requests.
-func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) {
-	r.registerRoute(methods, uri, handler, validationRules, middleware...)
+//
+// Returns the generated route.
+func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute(methods, uri, handler, validationRules, middleware...)
 }
 
 func (r *Router) registerRoute(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {

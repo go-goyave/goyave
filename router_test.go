@@ -46,6 +46,18 @@ func (suite *RouterTestSuite) TestNewRouter() {
 	suite.Equal(3, len(router.middleware))
 }
 
+func (suite *RouterTestSuite) TestRouterRegisterRoute() {
+	router := newRouter()
+	route := router.Route("GET", "/uri", func(resp *Response, r *Request) {}, nil)
+	suite.Contains(router.routes, route)
+
+	route = router.Route("GET", "/", func(resp *Response, r *Request) {}, nil)
+	suite.Equal("", route.uri)
+
+	route = router.Route("GET|POST", "/", func(resp *Response, r *Request) {}, nil)
+	suite.Equal([]string{"GET", "POST"}, route.methods)
+}
+
 func (suite *RouterTestSuite) TestRouterMiddleware() {
 	router := newRouter()
 	router.Middleware(suite.routerTestMiddleware)
@@ -58,8 +70,13 @@ func (suite *RouterTestSuite) TestSubRouter() {
 	suite.Equal(4, len(router.middleware))
 
 	subrouter := router.Subrouter("/sub")
+	suite.Contains(router.subrouters, subrouter)
 	suite.Equal(0, len(subrouter.middleware)) // Middleware inherited, not copied
 	suite.Equal(len(router.statusHandlers), len(subrouter.statusHandlers))
+
+	router = newRouter()
+	subrouter = router.Subrouter("/")
+	suite.Equal("", subrouter.prefix)
 }
 
 func (suite *RouterTestSuite) TestCleanStaticPath() {
@@ -193,6 +210,7 @@ func (suite *RouterTestSuite) TestCORS() {
 	suite.True(router.hasCORSMiddleware)
 
 	route := router.registerRoute("GET", "/cors", helloHandler, nil)
+	suite.Equal([]string{"GET", "OPTIONS"}, route.methods)
 
 	var match routeMatch
 	suite.True(route.match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))

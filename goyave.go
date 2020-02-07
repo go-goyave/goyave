@@ -218,7 +218,12 @@ func startTLSRedirectServer() {
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, httpsAddress+r.RequestURI, http.StatusPermanentRedirect)
+			address := httpsAddress + r.URL.Path
+			query := r.URL.Query()
+			if len(query) != 0 {
+				address += "?" + query.Encode()
+			}
+			http.Redirect(w, r, address, http.StatusPermanentRedirect)
 		}),
 	}
 

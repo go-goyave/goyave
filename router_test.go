@@ -6,13 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/cors"
-	"github.com/stretchr/testify/suite"
 )
 
 type RouterTestSuite struct {
-	suite.Suite
+	TestSuite
 	middlewareExecuted bool
 }
 
@@ -34,10 +32,6 @@ func (suite *RouterTestSuite) routerTestMiddleware(handler Handler) Handler {
 		suite.middlewareExecuted = true
 		handler(response, request)
 	}
-}
-
-func (suite *RouterTestSuite) SetupSuite() {
-	config.Load()
 }
 
 func (suite *RouterTestSuite) TestNewRouter() {
@@ -381,6 +375,29 @@ func (suite *RouterTestSuite) TestNamedRoutes() {
 	router = nil
 }
 
+func (suite *RouterTestSuite) TestMiddlewareHolder() {
+	result := ""
+	testMiddleware := func(next Handler) Handler {
+		return func(response *Response, r *Request) {
+			result += "1"
+			next(response, r)
+		}
+	}
+	secondTestMiddleware := func(next Handler) Handler {
+		return func(response *Response, r *Request) {
+			result += "2"
+			next(response, r)
+		}
+	}
+
+	holder := &middlewareHolder{[]Middleware{testMiddleware, secondTestMiddleware}}
+	handler := holder.applyMiddleware(func(response *Response, r *Request) {
+		result += "3"
+	})
+	handler(suite.CreateTestResponse(httptest.NewRecorder()), suite.CreateTestRequest(nil))
+	suite.Equal("123", result)
+}
+
 func TestRouterTestSuite(t *testing.T) {
-	suite.Run(t, new(RouterTestSuite))
+	RunTest(t, new(RouterTestSuite))
 }

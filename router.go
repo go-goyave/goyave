@@ -35,7 +35,7 @@ var _ routeMatcher = (*Router)(nil) // implements routeMatcher
 // Handler is a controller or middleware function
 type Handler func(*Response, *Request)
 
-type middlewareHolder struct { // TODO test middlewareHolder
+type middlewareHolder struct {
 	middleware []Middleware
 }
 

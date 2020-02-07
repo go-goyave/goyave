@@ -4,12 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/stretchr/testify/suite"
 )
 
 type RouteTestSuite struct {
-	suite.Suite
+	TestSuite
 }
 
 func (suite *RouteTestSuite) TestNewRoute() {
@@ -86,14 +84,44 @@ func (suite *RouteTestSuite) TestAccessors() {
 	route := &Route{
 		name:    "route-name",
 		uri:     "/product/{id:[0-9+]}",
+		parent:  newRouter(),
 		methods: []string{"GET", "POST"},
 	}
 
 	suite.Equal("route-name", route.GetName())
+
+	route.Name("new-name")
+	suite.Equal("new-name", route.GetName())
+
 	suite.Equal("/product/{id:[0-9+]}", route.GetURI())
 	suite.Equal([]string{"GET", "POST"}, route.GetMethods())
 }
 
+func (suite *RouteTestSuite) TestBuildURL() {
+	route := &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}",
+		methods: []string{"GET", "POST"},
+	}
+	route.compileParameters(route.uri)
+	suite.Equal("http://127.0.0.1:1235/product/42", route.BuildURL("42"))
+
+	suite.Panics(func() {
+		route.BuildURL()
+	})
+	suite.Panics(func() {
+		route.BuildURL("42", "more")
+	})
+
+	route = &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}/{name}/accessories",
+		methods: []string{"GET", "POST"},
+	}
+	route.compileParameters(route.uri)
+	suite.Equal("http://127.0.0.1:1235/product/42/screwdriver/accessories", route.BuildURL("42", "screwdriver"))
+}
+
 func TestRouteTestSuite(t *testing.T) {
-	suite.Run(t, new(RouteTestSuite))
+	RunTest(t, new(RouteTestSuite))
 }

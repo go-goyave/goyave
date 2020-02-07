@@ -1,8 +1,11 @@
 package goyave
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper"
 	"github.com/System-Glitch/goyave/v2/validation"
 )
@@ -50,6 +53,49 @@ func (r *Route) match(req *http.Request, match *routeMatch) bool {
 
 func (r *Route) makeParameters(match []string) map[string]string {
 	return r.parametrizeable.makeParameters(match, r.parameters)
+}
+
+// Name set the name of the route.
+// Panics if a route with the same name already exists.
+func (r *Route) Name(name string) {
+	r.name = name
+
+	if _, ok := r.parent.namedRoutes[name]; ok {
+		panic(fmt.Errorf("Route %q already exists", name))
+	}
+	r.parent.namedRoutes[name] = r
+}
+
+// BuildURL build a full URL pointing to this route.
+// Panics if the amount of parameters doesn't match the amount of
+// actual parameters for this route.
+func (r *Route) BuildURL(parameters ...string) string {
+	if len(parameters) != len(r.parameters) {
+		panic(fmt.Errorf("BuildURL: route has %d parameters, %d given", len(r.parameters), len(parameters)))
+	}
+
+	address := getAddress(config.GetString("protocol"))
+
+	var builder strings.Builder
+	builder.Grow(len(r.uri) + len(address))
+
+	builder.WriteString(address)
+
+	idxs, _ := r.braceIndices(r.uri)
+	length := len(idxs)
+	end := 0
+	currentParam := 0
+	for i := 0; i < length; i += 2 {
+		raw := r.uri[end:idxs[i]]
+		end = idxs[i+1]
+		builder.WriteString(raw)
+		builder.WriteString(parameters[currentParam])
+		currentParam++
+		end++ // Skip closing braces
+	}
+	builder.WriteString(r.uri[end:])
+
+	return builder.String()
 }
 
 // GetName get the name of this route.

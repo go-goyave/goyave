@@ -50,12 +50,15 @@ func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 	router := newRouter()
 	route := router.Route("GET", "/uri", func(resp *Response, r *Request) {}, nil)
 	suite.Contains(router.routes, route)
+	suite.Equal(router, route.parent)
 
 	route = router.Route("GET", "/", func(resp *Response, r *Request) {}, nil)
 	suite.Equal("", route.uri)
+	suite.Equal(router, route.parent)
 
 	route = router.Route("GET|POST", "/", func(resp *Response, r *Request) {}, nil)
 	suite.Equal([]string{"GET", "POST"}, route.methods)
+	suite.Equal(router, route.parent)
 }
 
 func (suite *RouterTestSuite) TestRouterMiddleware() {
@@ -355,6 +358,26 @@ func (suite *RouterTestSuite) TestRouteNoMatch() {
 	router.requestHandler(match, writer, rawRequest)
 	result = writer.Result()
 	suite.Equal(http.StatusMethodNotAllowed, result.StatusCode)
+}
+
+func (suite *RouterTestSuite) TestNamedRoutes() {
+	r := newRouter()
+	route := r.Route("GET", "/uri", func(resp *Response, r *Request) {}, nil)
+	route.Name("get-uri")
+	suite.Equal(route, r.namedRoutes["get-uri"])
+	suite.Equal(route, r.GetRoute("get-uri"))
+
+	subrouter := r.Subrouter("/sub")
+	suite.Equal(route, subrouter.GetRoute("get-uri"))
+
+	suite.Panics(func() {
+		route.Name("get-uri")
+	})
+
+	// Global router
+	router = r
+	suite.Equal(route, GetRoute("get-uri"))
+	router = nil
 }
 
 func TestRouterTestSuite(t *testing.T) {

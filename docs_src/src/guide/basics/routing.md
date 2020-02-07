@@ -58,13 +58,32 @@ router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
 - Learn more about validation and rules sets [here](./validation.html).
 :::
 
-## goyave.Route reference
+## Route reference
+
+<p><Badge text="Since v2.6.0"/></p>
 
 ::: table
+[Name](#route-name)
 [GetName](#route-getname)
+[BuildURL](#route-buildurl)
 [GetURI](#route-geturi)
 [GetMethods](#route-getmethods)
 ::: 
+
+#### Route.Name
+
+Set the name of this route.
+
+Panics if a route with the same name already exists.
+
+| Parameters    | Return |
+|---------------|--------|
+| `name string` | `void` |
+
+**Examples:**
+``` go
+router.Route("GET", "/product/{id:[0-9]+}", myHandlerFunction, nil).Name("product.show")
+```
 
 #### Route.GetName
 
@@ -77,6 +96,21 @@ Get the name of this route.
 **Examples:**
 ``` go
 fmt.Println(route.GetName()) // "product-create"
+```
+
+#### Route.BuildURL
+
+Build a full URL pointing to this route.
+
+Panics if the amount of parameters doesn't match the amount of actual parameters for this route.
+
+| Parameters             | Return   |
+|------------------------|----------|
+| `parameters ...string` | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.BuildURL("42")) // "http://localhost:8080/product/42"
 ```
 
 #### Route.GetURI
@@ -131,6 +165,32 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
     //...
 }
 ```
+
+## Named routes
+
+It is possible to give a name to your routes to make it easier to retrieve them later and build dynamic URLs.
+
+``` go
+router.Route("GET", "/product/{id:[0-9]+}", myHandlerFunction, nil).Name("product.show")
+```
+
+The route can now be retrieved from any router or from the global helper:
+
+``` go
+route := router.GetRoute("product.show")
+// or
+route := goyave.GetRoute("product.show")
+
+fmt.Println(route.BuildURL("42")) // "http://localhost:8080/product/42"
+```
+
+#### goyave.GetRoute
+
+Get a named route. Returns nil if the route doesn't exist.
+
+| Parameters    | Return          |
+|---------------|-----------------|
+| `name string` | `*goyave.Route` |
 
 ## Validation
 

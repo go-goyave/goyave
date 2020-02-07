@@ -24,6 +24,7 @@ type Router struct {
 	routes         []*Route
 	subrouters     []*Router // not sure needed, maybe consider subrouter as a route
 	statusHandlers map[int]Handler
+	namedRoutes    map[string]*Route
 	middlewareHolder
 	parametrizeable
 }
@@ -80,6 +81,7 @@ func newRouter() *Router {
 		prefix:            "",
 		hasCORSMiddleware: false,
 		statusHandlers:    make(map[int]Handler, 15),
+		namedRoutes:       make(map[string]*Route, 5),
 		middlewareHolder: middlewareHolder{
 			middleware: make([]Middleware, 0, 3),
 		},
@@ -91,7 +93,7 @@ func newRouter() *Router {
 }
 
 // ServeHTTP dispatches the handler registered in the matched route.
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) { // TODO test ServeHTTP
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var match routeMatch
 	r.match(req, &match)
 	r.requestHandler(&match, w, req)
@@ -134,6 +136,7 @@ func (r *Router) Subrouter(prefix string) *Router {
 		corsOptions:       r.corsOptions,
 		hasCORSMiddleware: r.hasCORSMiddleware,
 		statusHandlers:    r.copyStatusHandlers(),
+		namedRoutes:       r.namedRoutes,
 		middlewareHolder: middlewareHolder{
 			middleware: make([]Middleware, 0, 3),
 		},
@@ -174,7 +177,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 	}
 
 	route := &Route{
-		name:            "",             // TODO route name
+		name:            "",
 		uri:             r.prefix + uri, // TODO use partial route only for optimization
 		methods:         strings.Split(methods, "|"),
 		parent:          r,
@@ -188,6 +191,14 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 	r.routes = append(r.routes, route)
 	return route
 }
+
+// GetRoute get a named route.
+// Returns nil if the route doesn't exist.
+func (r *Router) GetRoute(name string) *Route {
+	return r.namedRoutes[name]
+}
+
+// TODO document GetRoute
 
 // Static serve a directory and its subdirectories of static resources.
 // Set the "download" parameter to true if you want the files to be sent as an attachment

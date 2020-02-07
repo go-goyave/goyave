@@ -532,7 +532,7 @@ validation.GetFieldType([]int{1,2}) // "array"
 
 ## Validating arrays
 
-<p><Badge text="Since v2.1.0"/><Badge text="BETA" type="warn"/></p>
+<p><Badge text="Since v2.1.0"/></p>
 
 Validating arrays is easy. All the validation rules, **except the file-related rules and the `confirmed` rule**, can be applied to array values using the prefix `>`. When array values are validated, **all of them** must pass the validation.
 

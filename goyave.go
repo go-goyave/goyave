@@ -116,6 +116,14 @@ func IsMaintenanceEnabled() bool {
 	return maintenanceEnabled
 }
 
+// GetRoute get a named route.
+// Returns nil if the route doesn't exist.
+func GetRoute(name string) *Route {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return router.namedRoutes[name]
+}
+
 func getMaintenanceHandler() http.Handler {
 	once.Do(func() {
 		maintenanceHandler = http.HandlerFunc(func(resp http.ResponseWriter, request *http.Request) {

@@ -322,6 +322,23 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	suite.Equal(http.StatusText(404), string(body))
 }
 
+func (suite *RouterTestSuite) TestRouteNoMatch() {
+	rawRequest := httptest.NewRequest("GET", "/uri", nil)
+	writer := httptest.NewRecorder()
+	router := newRouter()
+
+	match := &routeMatch{route: notFoundRoute}
+	router.requestHandler(match, writer, rawRequest)
+	result := writer.Result()
+	suite.Equal(http.StatusNotFound, result.StatusCode)
+
+	writer = httptest.NewRecorder()
+	match = &routeMatch{route: methodNotAllowedRoute}
+	router.requestHandler(match, writer, rawRequest)
+	result = writer.Result()
+	suite.Equal(http.StatusMethodNotAllowed, result.StatusCode)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	suite.Run(t, new(RouterTestSuite))
 }

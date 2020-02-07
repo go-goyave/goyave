@@ -34,7 +34,7 @@ var _ routeMatcher = (*Router)(nil) // implements routeMatcher
 // Handler is a controller or middleware function
 type Handler func(*Response, *Request)
 
-type middlewareHolder struct {
+type middlewareHolder struct { // TODO test middlewareHolder
 	middleware []Middleware
 }
 
@@ -91,13 +91,13 @@ func newRouter() *Router {
 }
 
 // ServeHTTP dispatches the handler registered in the matched route.
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) { // TODO test ServeHTTP
 	var match routeMatch
 	r.match(req, &match)
 	r.requestHandler(&match, w, req)
 }
 
-func (r *Router) match(req *http.Request, match *routeMatch) bool {
+func (r *Router) match(req *http.Request, match *routeMatch) bool { // TODO test match
 	for _, route := range r.routes {
 		if route.match(req, match) {
 			return true

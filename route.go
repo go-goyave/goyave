@@ -21,12 +21,14 @@ type Route struct {
 
 var _ routeMatcher = (*Route)(nil) // implements routeMatcher
 
+// newRoute create a new route without any settings except its handler.
+// This is used to generate a fake route for the Method Not Allowed and Not Found handlers.
 func newRoute(handler Handler) *Route {
 	return &Route{handler: handler}
 }
 
 func (r *Route) match(req *http.Request, match *routeMatch) bool {
-	if params := r.parametrizeable.regex.FindStringSubmatch(req.URL.Path); params != nil && len(params)-1 == len(r.parameters) {
+	if params := r.parametrizeable.regex.FindStringSubmatch(req.URL.Path); params != nil {
 		if helper.Contains(r.methods, req.Method) {
 			match.parameters = r.makeParameters(params[1:])
 			match.route = r
@@ -50,16 +52,23 @@ func (r *Route) makeParameters(match []string) map[string]string {
 	return r.parametrizeable.makeParameters(match, r.parameters)
 }
 
-// Name get the name of this route.
-func (r *Route) Name() string {
+// GetName get the name of this route.
+func (r *Route) GetName() string {
 	return r.name
 }
 
-// URI get the URI of this route.
+// GetURI get the URI of this route.
 // Note that this URI may contain route parameters in their définition format.
 // Use the request's URI if you want to see the URI as it was requested by the client.
-func (r *Route) URI() string {
+func (r *Route) GetURI() string {
 	return r.uri
 }
 
-// TODO implement more getters
+// TODO get full URI when tree-like router implementation done
+
+// GetMethods returns the methods the route matches against.
+func (r *Route) GetMethods() []string {
+	cpy := make([]string, len(r.methods))
+	copy(cpy, r.methods)
+	return cpy
+}

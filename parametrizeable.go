@@ -20,7 +20,13 @@ func (p *parametrizeable) compileParameters(uri string) {
 		panic(err)
 	}
 
-	fullPattern := "^"
+	var builder strings.Builder
+
+	// Final regex will never be larger than src uri
+	// Make initial alloc to avoid the need for realloc
+	builder.Grow(len(uri))
+
+	builder.WriteString("^")
 	length := len(idxs)
 	if length > 0 {
 		end := 0
@@ -40,19 +46,21 @@ func (p *parametrizeable) compileParameters(uri string) {
 				}
 			}
 
-			fullPattern += raw
-			fullPattern += "(" + pattern + ")" // TODO find more efficient way of building the string
-			end++                              // Skip closing braces
+			builder.WriteString(raw)
+			builder.WriteString("(")
+			builder.WriteString(pattern)
+			builder.WriteString(")")
+			end++ // Skip closing braces
 			p.parameters = append(p.parameters, parts[0])
 		}
-		fullPattern += uri[end:]
+		builder.WriteString(uri[end:])
 	} else {
-		fullPattern += uri
+		builder.WriteString(uri)
 	}
 
-	fullPattern += "$"
+	builder.WriteString("$")
 
-	p.regex = regexp.MustCompile(fullPattern) // TODO optimize by checking if pattern already exists
+	p.regex = regexp.MustCompile(builder.String())
 
 	if p.regex.NumSubexp() != length/2 {
 		panic(fmt.Sprintf("route %s contains capture groups in its regexp. ", uri) +

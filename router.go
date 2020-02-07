@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/validation"
@@ -75,7 +76,6 @@ func errorStatusHandler(response *Response, request *Request) {
 }
 
 func newRouter() *Router {
-	// TODO match scheme (protocol)
 	router := &Router{
 		parent:            nil,
 		prefix:            "",
@@ -94,12 +94,23 @@ func newRouter() *Router {
 
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	protocol := config.GetString("protocol")
+	if req.URL.Scheme != "" && req.URL.Scheme != protocol {
+		address := getAddress(protocol) + req.URL.Path
+		query := req.URL.Query()
+		if len(query) != 0 {
+			address += "?" + query.Encode()
+		}
+		http.Redirect(w, req, address, http.StatusPermanentRedirect)
+		return
+	}
+
 	var match routeMatch
 	r.match(req, &match)
 	r.requestHandler(&match, w, req)
 }
 
-func (r *Router) match(req *http.Request, match *routeMatch) bool { // TODO test match
+func (r *Router) match(req *http.Request, match *routeMatch) bool {
 	for _, route := range r.routes {
 		if route.match(req, match) {
 			return true

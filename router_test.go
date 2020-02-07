@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/cors"
 )
 
@@ -464,6 +465,42 @@ func (suite *RouterTestSuite) TestMatch() {
 	suite.True(productRouter.match(httptest.NewRequest("GET", "/product/42", nil), &match))
 	suite.Equal(router.GetRoute("product.show"), match.route)
 	suite.Equal("42", match.parameters["id"])
+}
+
+func (suite *RouterTestSuite) TestScheme() {
+	// From HTTP to HTTPS
+	config.Set("protocol", "https")
+	router := newRouter()
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest("GET", "http://localhost:443/test?param=1", nil))
+	result := recorder.Result()
+	body, err := ioutil.ReadAll(result.Body)
+	suite.Nil(err)
+
+	suite.Equal(http.StatusPermanentRedirect, result.StatusCode)
+	suite.Equal("<a href=\"https://127.0.0.1:1236/test?param=1\">Permanent Redirect</a>.\n\n", string(body))
+
+	// From HTTPS to HTTP
+	config.Set("protocol", "http")
+	recorder = httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest("GET", "https://localhost:80/test?param=1", nil))
+	result = recorder.Result()
+	body, err = ioutil.ReadAll(result.Body)
+	suite.Nil(err)
+
+	suite.Equal(http.StatusPermanentRedirect, result.StatusCode)
+	suite.Equal("<a href=\"http://127.0.0.1:1235/test?param=1\">Permanent Redirect</a>.\n\n", string(body))
+
+	// Only URI
+	recorder = httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest("GET", "/test?param=1", nil))
+	result = recorder.Result()
+	body, err = ioutil.ReadAll(result.Body)
+	suite.Nil(err)
+
+	suite.Equal(http.StatusNotFound, result.StatusCode)
+	suite.Equal("{\"error\":\"Not Found\"}\n", string(body))
 }
 
 func TestRouterTestSuite(t *testing.T) {

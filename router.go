@@ -198,8 +198,6 @@ func (r *Router) GetRoute(name string) *Route {
 	return r.namedRoutes[name]
 }
 
-// TODO document GetRoute
-
 // Static serve a directory and its subdirectories of static resources.
 // Set the "download" parameter to true if you want the files to be sent as an attachment
 // instead of an inline element.
@@ -281,7 +279,7 @@ func (r *Router) copyStatusHandlers() map[int]Handler {
 func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
 	request := &Request{
 		httpRequest: rawRequest,
-		route:       match.route, // TODO write test for route access
+		route:       match.route,
 		corsOptions: r.corsOptions,
 		Rules:       match.route.validationRules,
 		Params:      match.parameters,

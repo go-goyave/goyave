@@ -145,14 +145,15 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	writer := httptest.NewRecorder()
 	router := newRouter()
 
-	match := &routeMatch{
-		route: &Route{
-			handler: func(response *Response, request *Request) {
-				response.String(200, "Hello world")
-			},
-		},
+	route := &Route{}
+	var tmp *Route = nil
+	route.handler = func(response *Response, request *Request) {
+		tmp = request.Route()
+		response.String(200, "Hello world")
 	}
+	match := &routeMatch{route: route}
 	router.requestHandler(match, writer, rawRequest)
+	suite.Equal(route, tmp)
 
 	result := writer.Result()
 	body, err := ioutil.ReadAll(result.Body)

@@ -69,6 +69,7 @@ router.Route("POST", "/product", product.Store, productrequest.Store, middleware
 [GetName](#route-getname)
 [BuildURL](#route-buildurl)
 [GetURI](#route-geturi)
+[GetFullURI](#route-getfulluri)
 [GetMethods](#route-getmethods)
 ::: 
 
@@ -78,9 +79,11 @@ Set the name of this route.
 
 Panics if a route with the same name already exists.
 
-| Parameters    | Return |
-|---------------|--------|
-| `name string` | `void` |
+Returns itself.
+
+| Parameters    | Return          |
+|---------------|-----------------|
+| `name string` | `*goyave.Route` |
 
 **Examples:**
 ``` go
@@ -119,6 +122,8 @@ fmt.Println(route.BuildURL("42")) // "http://localhost:8080/product/42"
 
 Get the URI of this route.
 
+The returned URI is relative to the parent router of this route, it is NOT the full path to this route.
+
 Note that this URI may contain route parameters in their définition format. Use the request's URI if you want to see the URI as it was requested by the client.
 
 | Parameters | Return   |
@@ -127,7 +132,22 @@ Note that this URI may contain route parameters in their définition format. Use
 
 **Examples:**
 ``` go
-fmt.Println(route.GetURI()) // "/product/{id:[0-9]+}"
+fmt.Println(route.GetURI()) // "/{id:[0-9]+}"
+```
+
+#### Route.GetFullURI
+
+Get the URI of this route.
+
+Note that this URI may contain route parameters in their définition format. Use the request's URI if you want to see the URI as it was requested by the client.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetFullURI()) // "/product/{id:[0-9]+}"
 ```
 
 #### Route.GetMethods

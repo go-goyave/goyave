@@ -116,7 +116,7 @@ func (r *Router) match(req *http.Request, match *routeMatch) bool {
 	// TODO check trailing slash ?
 	// Check if router itself matches
 	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
-		match.trimCurrentURL(params[0])
+		match.trimCurrentPath(params[0])
 		match.mergeParams(r.makeParameters(params[1:]))
 
 		// Check in subrouters first
@@ -373,6 +373,6 @@ func (rm *routeMatch) mergeParams(params map[string]string) {
 	}
 }
 
-func (rm *routeMatch) trimCurrentURL(fullMatch string) {
+func (rm *routeMatch) trimCurrentPath(fullMatch string) {
 	rm.currentPath = rm.currentPath[len(fullMatch):]
 }

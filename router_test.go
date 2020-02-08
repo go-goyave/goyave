@@ -400,6 +400,12 @@ func (suite *RouterTestSuite) TestMiddlewareHolder() { // TODO test middleware-s
 	suite.Equal("123", result)
 }
 
+func (suite *RouterTestSuite) TestTrimCurrentPath() {
+	routeMatch := routeMatch{currentPath: "/product/55"}
+	routeMatch.trimCurrentPath("/product")
+	suite.Equal("/55", routeMatch.currentPath)
+}
+
 func (suite *RouterTestSuite) TestMatch() {
 	handler := func(response *Response, r *Request) {
 		response.String(http.StatusOK, "Hello")

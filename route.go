@@ -73,14 +73,13 @@ func (r *Route) Name(name string) *Route {
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
 func (r *Route) BuildURL(parameters ...string) string {
-	fullParameters := r.getFullParameters()
+	fullURI, fullParameters := r.getFullParameters()
 
 	if len(parameters) != len(fullParameters) {
 		panic(fmt.Errorf("BuildURL: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
 	address := getAddress(config.GetString("protocol"))
-	fullURI := r.GetFullURI()
 
 	var builder strings.Builder
 	builder.Grow(len(fullURI) + len(address))
@@ -149,19 +148,36 @@ func (r *Route) GetMethods() []string {
 	return cpy
 }
 
-// getFullParameters get the parameters for this route and all its parent routers.
-func (r *Route) getFullParameters() []string {
-
+// getFullParameters get the full uri and parameters for this route and all its parent routers.
+func (r *Route) getFullParameters() (string, []string) {
 	router := r.parent
-	parameters := make([]string, len(r.parameters))
-	copy(parameters, r.parameters)
+	segments := make([]string, 0, 3)
+	segments = append(segments, r.uri)
 
-	for router != nil { // TODO optimize getFullParameters
-		for _, v := range router.parameters {
-			parameters = append([]string{v}, parameters...)
+	parameters := make([]string, 0, len(r.parameters))
+	for i := len(r.parameters) - 1; i >= 0; i-- {
+		parameters = append(parameters, r.parameters[i])
+	}
+
+	for router != nil {
+		segments = append(segments, router.prefix)
+		for i := len(router.parameters) - 1; i >= 0; i-- {
+			parameters = append(parameters, router.parameters[i])
 		}
 		router = router.parent
 	}
 
-	return parameters
+	// Revert segements
+	for i := len(segments)/2 - 1; i >= 0; i-- {
+		opp := len(segments) - 1 - i
+		segments[i], segments[opp] = segments[opp], segments[i]
+	}
+
+	// Revert parameters
+	for i := len(parameters)/2 - 1; i >= 0; i-- {
+		opp := len(parameters) - 1 - i
+		parameters[i], parameters[opp] = parameters[opp], parameters[i]
+	}
+
+	return strings.Join(segments, ""), parameters
 }

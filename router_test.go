@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -32,6 +33,15 @@ func (suite *RouterTestSuite) routerTestMiddleware(handler Handler) Handler {
 	return func(response *Response, request *Request) {
 		suite.middlewareExecuted = true
 		handler(response, request)
+	}
+}
+
+func (suite *RouterTestSuite) createOrderedTestMiddleware(result *string, str string) Middleware {
+	return func(next Handler) Handler {
+		return func(response *Response, r *Request) {
+			*result += str
+			next(response, r)
+		}
 	}
 }
 
@@ -377,20 +387,36 @@ func (suite *RouterTestSuite) TestNamedRoutes() {
 	router = nil
 }
 
-func (suite *RouterTestSuite) TestMiddlewareHolder() { // TODO test middleware-specific route + router
+func (suite *RouterTestSuite) TestMiddleware() {
+	// Test the middleware execution order
 	result := ""
-	testMiddleware := func(next Handler) Handler {
-		return func(response *Response, r *Request) {
-			result += "1"
-			next(response, r)
-		}
+	middleware := make([]Middleware, 0, 3)
+	for i := 0; i < 3; i++ {
+		middleware = append(middleware, suite.createOrderedTestMiddleware(&result, strconv.Itoa(i+1)))
 	}
-	secondTestMiddleware := func(next Handler) Handler {
-		return func(response *Response, r *Request) {
-			result += "2"
-			next(response, r)
-		}
+	router := newRouter()
+
+	handler := func(response *Response, r *Request) {
+		result += "4"
 	}
+	route := router.Route("GET", "/hello", handler, nil, middleware[1], middleware[2])
+
+	router.Middleware(middleware[0])
+
+	rawRequest := httptest.NewRequest("GET", "/hello", nil)
+	match := routeMatch{
+		route:       route,
+		currentPath: rawRequest.URL.Path,
+	}
+	router.requestHandler(&match, httptest.NewRecorder(), rawRequest)
+
+	suite.Equal("1234", result)
+}
+
+func (suite *RouterTestSuite) TestMiddlewareHolder() {
+	result := ""
+	testMiddleware := suite.createOrderedTestMiddleware(&result, "1")
+	secondTestMiddleware := suite.createOrderedTestMiddleware(&result, "2")
 
 	holder := &middlewareHolder{[]Middleware{testMiddleware, secondTestMiddleware}}
 	handler := holder.applyMiddleware(func(response *Response, r *Request) {

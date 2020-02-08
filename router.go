@@ -188,7 +188,7 @@ func (r *Router) Middleware(middleware ...Middleware) {
 // to the matcher if it's missing, so it allows preflight requests.
 //
 // Returns the generated route.
-func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route { // TODO document middleware
 	return r.registerRoute(methods, uri, handler, validationRules, middleware...)
 }
 

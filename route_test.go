@@ -18,7 +18,7 @@ func (suite *RouteTestSuite) TestNewRoute() {
 
 func (suite *RouteTestSuite) TestMakeParameters() {
 	route := newRoute(func(resp *Response, r *Request) {})
-	route.compileParameters("/product/{id:[0-9]+}")
+	route.compileParameters("/product/{id:[0-9]+}", true)
 	suite.Equal([]string{"id"}, route.parameters)
 	suite.NotNil(route.regex)
 	suite.True(route.regex.MatchString("/product/666"))
@@ -32,26 +32,26 @@ func (suite *RouteTestSuite) TestMatch() {
 	}
 	route := &Route{
 		name:            "test-route",
-		uri:             "/product/{id:[0-9]+}", // TODO use partial route only for optimization
+		uri:             "/product/{id:[0-9]+}",
 		methods:         []string{"GET", "POST"},
 		parent:          nil,
 		handler:         handler,
 		validationRules: nil,
 	}
-	route.compileParameters(route.uri)
+	route.compileParameters(route.uri, true)
 
 	rawRequest := httptest.NewRequest("GET", "/product/33", nil)
-	match := routeMatch{}
+	match := routeMatch{currentPath: rawRequest.URL.Path}
 	suite.True(route.match(rawRequest, &match))
 	suite.Equal("33", match.parameters["id"])
 
 	rawRequest = httptest.NewRequest("POST", "/product/33", nil)
-	match = routeMatch{}
+	match = routeMatch{currentPath: rawRequest.URL.Path}
 	suite.True(route.match(rawRequest, &match))
 	suite.Equal("33", match.parameters["id"])
 
 	rawRequest = httptest.NewRequest("PUT", "/product/33", nil)
-	match = routeMatch{}
+	match = routeMatch{currentPath: rawRequest.URL.Path}
 	suite.False(route.match(rawRequest, &match))
 	suite.Equal(errMatchMethodNotAllowed, match.err)
 
@@ -60,7 +60,7 @@ func (suite *RouteTestSuite) TestMatch() {
 	suite.False(route.match(rawRequest, &match))
 	suite.Equal(errMatchMethodNotAllowed, match.err)
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: rawRequest.URL.Path}
 	suite.False(route.match(rawRequest, &match))
 	suite.Equal(errMatchNotFound, match.err)
 
@@ -72,9 +72,9 @@ func (suite *RouteTestSuite) TestMatch() {
 		handler:         handler,
 		validationRules: nil,
 	}
-	route.compileParameters(route.uri)
+	route.compileParameters(route.uri, true)
 	rawRequest = httptest.NewRequest("GET", "/product/666/test", nil)
-	match = routeMatch{}
+	match = routeMatch{currentPath: rawRequest.URL.Path}
 	suite.True(route.match(rawRequest, &match))
 	suite.Equal("666", match.parameters["id"])
 	suite.Equal("test", match.parameters["name"])
@@ -103,7 +103,7 @@ func (suite *RouteTestSuite) TestBuildURL() {
 		uri:     "/product/{id:[0-9+]}",
 		methods: []string{"GET", "POST"},
 	}
-	route.compileParameters(route.uri)
+	route.compileParameters(route.uri, true)
 	suite.Equal("http://127.0.0.1:1235/product/42", route.BuildURL("42"))
 
 	suite.Panics(func() {
@@ -118,7 +118,7 @@ func (suite *RouteTestSuite) TestBuildURL() {
 		uri:     "/product/{id:[0-9+]}/{name}/accessories",
 		methods: []string{"GET", "POST"},
 	}
-	route.compileParameters(route.uri)
+	route.compileParameters(route.uri, true)
 	suite.Equal("http://127.0.0.1:1235/product/42/screwdriver/accessories", route.BuildURL("42", "screwdriver"))
 }
 

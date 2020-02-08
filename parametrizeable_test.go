@@ -13,7 +13,7 @@ type ParametrizeableTestSuite struct {
 func (suite *ParametrizeableTestSuite) TestCompileParameters() {
 
 	p := &parametrizeable{}
-	p.compileParameters("/product/{id:[0-9]+}")
+	p.compileParameters("/product/{id:[0-9]+}", true)
 	suite.Equal([]string{"id"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.True(p.regex.MatchString("/product/666"))
@@ -21,7 +21,7 @@ func (suite *ParametrizeableTestSuite) TestCompileParameters() {
 	suite.False(p.regex.MatchString("/product/qwerty"))
 
 	p = &parametrizeable{}
-	p.compileParameters("/product/{id:[0-9]+}/{name}")
+	p.compileParameters("/product/{id:[0-9]+}/{name}", true)
 	suite.Equal([]string{"id", "name"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.False(p.regex.MatchString("/product/666"))
@@ -31,20 +31,22 @@ func (suite *ParametrizeableTestSuite) TestCompileParameters() {
 	suite.True(p.regex.MatchString("/product/666/test"))
 
 	suite.Panics(func() { // Empty param, expect error
-		p.compileParameters("/product/{}")
+		p.compileParameters("/product/{}", true)
 	})
 	suite.Panics(func() { // Empty name, expect error
-		p.compileParameters("/product/{:[0-9]+}")
+		p.compileParameters("/product/{:[0-9]+}", true)
 	})
 	suite.Panics(func() { // Empty pattern, expect error
-		p.compileParameters("/product/{id:}")
+		p.compileParameters("/product/{id:}", true)
 	})
 	suite.Panics(func() { // Capturing groups
-		p.compileParameters("/product/{name:(.*)}")
+		p.compileParameters("/product/{name:(.*)}", true)
 	})
 	suite.NotPanics(func() { // Non-capturing groups
-		p.compileParameters("/product/{name:(?:.*)}")
+		p.compileParameters("/product/{name:(?:.*)}", true)
 	})
+
+	// TODO test compile ends false
 }
 
 func (suite *ParametrizeableTestSuite) TestBraceIndices() {

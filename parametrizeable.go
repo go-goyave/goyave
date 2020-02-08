@@ -14,7 +14,9 @@ type parametrizeable struct {
 }
 
 // compileParameters parse the route parameters and compiles their regexes if needed.
-func (p *parametrizeable) compileParameters(uri string) {
+// If "ends" is set to true, the generated regex ends with "$", thus set "ends" to true
+// if you're compiling route paramters, set to false if you're compiling router parameters.
+func (p *parametrizeable) compileParameters(uri string, ends bool) {
 	idxs, err := p.braceIndices(uri)
 	if err != nil {
 		panic(err)
@@ -58,9 +60,11 @@ func (p *parametrizeable) compileParameters(uri string) {
 		builder.WriteString(uri)
 	}
 
-	builder.WriteString("$")
+	if ends {
+		builder.WriteString("$")
+	}
 
-	p.regex = regexp.MustCompile(builder.String())
+	p.regex = regexp.MustCompile(builder.String()) // TODO cache recurrent regexes
 
 	if p.regex.NumSubexp() != length/2 {
 		panic(fmt.Sprintf("route %s contains capture groups in its regexp. ", uri) +

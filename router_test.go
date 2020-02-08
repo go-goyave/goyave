@@ -211,8 +211,9 @@ func (suite *RouterTestSuite) TestCORS() {
 	route := router.registerRoute("GET", "/cors", helloHandler, nil)
 	suite.Equal([]string{"GET", "OPTIONS"}, route.methods)
 
-	var match routeMatch
+	match := routeMatch{currentPath: "/cors"}
 	suite.True(route.match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))
+	match = routeMatch{currentPath: "/cors"}
 	suite.True(route.match(httptest.NewRequest("GET", "/cors", nil), &match))
 
 	writer := httptest.NewRecorder()
@@ -376,7 +377,7 @@ func (suite *RouterTestSuite) TestNamedRoutes() {
 	router = nil
 }
 
-func (suite *RouterTestSuite) TestMiddlewareHolder() {
+func (suite *RouterTestSuite) TestMiddlewareHolder() { // TODO test middleware-specific route + router
 	result := ""
 	testMiddleware := func(next Handler) Handler {
 		return func(response *Response, r *Request) {
@@ -418,53 +419,62 @@ func (suite *RouterTestSuite) TestMatch() {
 	userRouter.Route("GET", "/", handler, nil).Name("user.index")
 	userRouter.Route("GET", "/{id:[0-9]+}", handler, nil).Name("user.show")
 
-	match := routeMatch{}
+	router.Subrouter("/empty")
+
+	match := routeMatch{currentPath: "/hello"}
 	suite.True(router.match(httptest.NewRequest("GET", "/hello", nil), &match))
 	suite.Equal(router.GetRoute("hello"), match.route)
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/hello/sub"}
 	suite.True(router.match(httptest.NewRequest("GET", "/hello/sub", nil), &match))
 	suite.Equal(router.GetRoute("hello.sub"), match.route)
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/product"}
 	suite.True(router.match(httptest.NewRequest("GET", "/product", nil), &match))
 	suite.Equal(router.GetRoute("product.index"), match.route)
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/product/5"}
 	suite.True(router.match(httptest.NewRequest("GET", "/product/5", nil), &match))
 	suite.Equal(router.GetRoute("product.show"), match.route)
 	suite.Equal("5", match.parameters["id"])
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/product/5/details"}
 	suite.True(router.match(httptest.NewRequest("GET", "/product/5/details", nil), &match))
 	suite.Equal(router.GetRoute("product.show.details"), match.route)
 	suite.Equal("5", match.parameters["id"])
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/user"}
 	suite.True(router.match(httptest.NewRequest("GET", "/user", nil), &match))
 	suite.Equal(router.GetRoute("user.index"), match.route)
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/user/42"}
 	suite.True(router.match(httptest.NewRequest("GET", "/user/42", nil), &match))
 	suite.Equal(router.GetRoute("user.show"), match.route)
 	suite.Equal("42", match.parameters["id"])
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/product/notaroute"}
 	suite.False(router.match(httptest.NewRequest("GET", "/product/notaroute", nil), &match))
 	suite.Equal(notFoundRoute, match.route)
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/empty"}
+	suite.False(router.match(httptest.NewRequest("GET", "/empty", nil), &match))
+	suite.Equal(notFoundRoute, match.route)
+
+	match = routeMatch{currentPath: "/product"}
 	suite.True(router.match(httptest.NewRequest("DELETE", "/product", nil), &match))
 	suite.Equal(methodNotAllowedRoute, match.route)
 
 	// ------------
 
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/user/42"}
 	suite.False(productRouter.match(httptest.NewRequest("GET", "/user/42", nil), &match))
-	match = routeMatch{}
+	match = routeMatch{currentPath: "/product/42"}
 	suite.True(productRouter.match(httptest.NewRequest("GET", "/product/42", nil), &match))
 	suite.Equal(router.GetRoute("product.show"), match.route)
 	suite.Equal("42", match.parameters["id"])
+
+	match = routeMatch{currentPath: "/user/42/extra"}
+	suite.False(userRouter.match(httptest.NewRequest("GET", "/user/42/extra", nil), &match))
 }
 
 func (suite *RouterTestSuite) TestScheme() {

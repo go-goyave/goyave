@@ -41,9 +41,10 @@ type middlewareHolder struct {
 }
 
 type routeMatch struct {
-	route      *Route
-	err        error
-	parameters map[string]string
+	route       *Route
+	err         error
+	currentPath string
+	parameters  map[string]string
 }
 
 var (
@@ -86,6 +87,7 @@ func newRouter() *Router {
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
+	router.compileParameters(router.prefix, false)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
 	router.StatusHandler(errorStatusHandler, 401, 403, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
@@ -105,22 +107,30 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var match routeMatch
+	match := routeMatch{currentPath: req.URL.Path}
 	r.match(req, &match)
 	r.requestHandler(&match, w, req)
 }
 
 func (r *Router) match(req *http.Request, match *routeMatch) bool {
-	for _, route := range r.routes {
-		if route.match(req, match) {
-			return true
-		}
-	}
+	// TODO check trailing slash ?
+	// Check if router itself matches
+	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
+		match.trimCurrentURL(params[0])
+		match.mergeParams(r.makeParameters(params[1:]))
 
-	// No route found, check in subrouters
-	for _, router := range r.subrouters {
-		if router.match(req, match) {
-			return true
+		// Check in subrouters first
+		for _, router := range r.subrouters {
+			if router.match(req, match) {
+				return true
+			}
+		}
+
+		// Check if any route matches
+		for _, route := range r.routes {
+			if route.match(req, match) {
+				return true
+			}
 		}
 	}
 
@@ -133,6 +143,10 @@ func (r *Router) match(req *http.Request, match *routeMatch) bool {
 	return false
 }
 
+func (r *Router) makeParameters(match []string) map[string]string {
+	return r.parametrizeable.makeParameters(match, r.parameters)
+}
+
 // Subrouter create a new sub-router from this router.
 // Use subrouters to create route groups and to apply middleware to multiple routes.
 // CORS options are also inherited.
@@ -143,7 +157,7 @@ func (r *Router) Subrouter(prefix string) *Router {
 
 	router := &Router{
 		parent:            r,
-		prefix:            r.prefix + prefix,
+		prefix:            prefix,
 		corsOptions:       r.corsOptions,
 		hasCORSMiddleware: r.hasCORSMiddleware,
 		statusHandlers:    r.copyStatusHandlers(),
@@ -152,7 +166,7 @@ func (r *Router) Subrouter(prefix string) *Router {
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
-	router.compileParameters(router.prefix)
+	router.compileParameters(router.prefix, false)
 	r.subrouters = append(r.subrouters, router)
 	return router
 }
@@ -189,7 +203,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 
 	route := &Route{
 		name:            "",
-		uri:             r.prefix + uri, // TODO use partial route only for optimization
+		uri:             uri,
 		methods:         strings.Split(methods, "|"),
 		parent:          r,
 		handler:         handler,
@@ -198,7 +212,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 			middleware: middleware,
 		},
 	}
-	route.compileParameters(route.uri)
+	route.compileParameters(route.uri, true)
 	r.routes = append(r.routes, route)
 	return route
 }
@@ -348,4 +362,17 @@ func (h *middlewareHolder) applyMiddleware(handler Handler) Handler {
 		handler = h.middleware[i](handler)
 	}
 	return handler
+}
+
+func (rm *routeMatch) mergeParams(params map[string]string) {
+	if rm.parameters == nil {
+		rm.parameters = params
+	}
+	for k, v := range params {
+		rm.parameters[k] = v
+	}
+}
+
+func (rm *routeMatch) trimCurrentURL(fullMatch string) {
+	rm.currentPath = rm.currentPath[len(fullMatch):]
 }

@@ -3,11 +3,20 @@ package goyave
 import (
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 )
 
 type RouteTestSuite struct {
 	TestSuite
+}
+
+func (suite *RouteTestSuite) SetupTest() {
+	regexCache = make(map[string]*regexp.Regexp, 5)
+}
+
+func (suite *RouteTestSuite) TearDownTest() {
+	regexCache = nil
 }
 
 func (suite *RouteTestSuite) TestNewRoute() {

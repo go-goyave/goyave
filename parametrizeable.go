@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+var regexCache map[string]*regexp.Regexp = nil
+
 // parametrizeable represents a route or router accepting
 // parameters in its URI.
 type parametrizeable struct {
@@ -64,7 +66,15 @@ func (p *parametrizeable) compileParameters(uri string, ends bool) {
 		builder.WriteString("$")
 	}
 
-	p.regex = regexp.MustCompile(builder.String()) // TODO cache recurrent regexes
+	pattern := builder.String()
+	cachedRegex, ok := regexCache[pattern]
+	if !ok {
+		regex := regexp.MustCompile(pattern)
+		regexCache[pattern] = regex
+		p.regex = regex
+	} else {
+		p.regex = cachedRegex
+	}
 
 	if p.regex.NumSubexp() != length/2 {
 		panic(fmt.Sprintf("route %s contains capture groups in its regexp. ", uri) +

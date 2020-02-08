@@ -45,6 +45,10 @@ func (suite *RouterTestSuite) createOrderedTestMiddleware(result *string, str st
 	}
 }
 
+func (suite *RouterTestSuite) TearDownTest() {
+	regexCache = nil
+}
+
 func (suite *RouterTestSuite) TestNewRouter() {
 	router := newRouter()
 	suite.NotNil(router)

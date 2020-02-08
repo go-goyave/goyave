@@ -3,6 +3,7 @@ package goyave
 import (
 	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -77,6 +78,10 @@ func errorStatusHandler(response *Response, request *Request) {
 }
 
 func newRouter() *Router {
+	// Create a fresh regex cache
+	// This cache is set to nil when the server starts
+	regexCache = make(map[string]*regexp.Regexp, 5)
+
 	router := &Router{
 		parent:            nil,
 		prefix:            "",

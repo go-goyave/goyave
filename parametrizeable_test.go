@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -8,6 +9,14 @@ import (
 
 type ParametrizeableTestSuite struct {
 	suite.Suite
+}
+
+func (suite *ParametrizeableTestSuite) SetupTest() {
+	regexCache = make(map[string]*regexp.Regexp, 5)
+}
+
+func (suite *ParametrizeableTestSuite) TearDownTest() {
+	regexCache = nil
 }
 
 func (suite *ParametrizeableTestSuite) TestCompileParameters() {
@@ -110,6 +119,18 @@ func (suite *ParametrizeableTestSuite) TestMakeParameters() {
 	for k := range matches {
 		suite.Equal(matches[k], params[names[k]])
 	}
+}
+
+func (suite *ParametrizeableTestSuite) TestRegexCache() {
+	path := "/product/{id:[0-9]+}"
+	regex := "^/product/([0-9]+)$"
+	p1 := &parametrizeable{}
+	p1.compileParameters(path, true)
+	suite.NotNil(regexCache[regex])
+
+	p2 := &parametrizeable{}
+	p2.compileParameters(path, true)
+	suite.Equal(p1.regex, p2.regex)
 }
 
 func TestParametrizeableTestSuite(t *testing.T) {

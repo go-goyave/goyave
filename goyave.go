@@ -90,6 +90,7 @@ func Start(routeRegistrer func(*Router)) {
 
 	router = newRouter()
 	routeRegistrer(router)
+	regexCache = nil // Clear regex cache
 	startServer(router)
 }
 

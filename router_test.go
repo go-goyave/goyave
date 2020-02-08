@@ -381,9 +381,11 @@ func (suite *RouterTestSuite) TestNamedRoutes() {
 	subrouter := r.Subrouter("/sub")
 	suite.Equal(route, subrouter.GetRoute("get-uri"))
 
+	route2 := r.Route("GET", "/other-route", func(resp *Response, r *Request) {}, nil)
 	suite.Panics(func() {
-		route.Name("get-uri")
+		route2.Name("get-uri")
 	})
+	suite.Empty(route2.GetName())
 
 	// Global router
 	router = r

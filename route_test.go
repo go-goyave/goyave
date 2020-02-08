@@ -99,6 +99,16 @@ func (suite *RouteTestSuite) TestAccessors() {
 
 	suite.Equal("route-name", route.GetName())
 
+	suite.Panics(func() {
+		route.Name("new-name") // Cannot re-set name
+	})
+
+	route = &Route{
+		name:    "",
+		uri:     "/product/{id:[0-9+]}",
+		parent:  newRouter(),
+		methods: []string{"GET", "POST"},
+	}
 	route.Name("new-name")
 	suite.Equal("new-name", route.GetName())
 

@@ -60,11 +60,15 @@ func (r *Route) makeParameters(match []string) map[string]string {
 // Panics if a route with the same name already exists.
 // Returns itself.
 func (r *Route) Name(name string) *Route {
-	r.name = name
+	if r.name != "" {
+		panic(fmt.Errorf("Route name is already set"))
+	}
 
 	if _, ok := r.parent.namedRoutes[name]; ok {
 		panic(fmt.Errorf("Route %q already exists", name))
 	}
+
+	r.name = name
 	r.parent.namedRoutes[name] = r
 	return r
 }

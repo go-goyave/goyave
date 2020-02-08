@@ -184,25 +184,28 @@ func Register(router *goyave.Router) {
     router.Route("GET", "/hello", myHandlerFunction, nil)
     router.Route("POST", "/user", user.Register, userrequest.Register)
     router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
+    router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
 }
 ```
 
 **Method signature:**
 
-| Parameters                           | Return |
-| ------------------------------------ | ------ |
-| `methods string`                     | `void` |
-| `uri string`                         |        |
-| `handler goyave.Handler`             |        |
-| `validationRules validation.RuleSet` |        |
+| Parameters                           | Return          |
+|--------------------------------------|-----------------|
+| `methods string`                     | `*goyave.Route` |
+| `uri string`                         |                 |
+| `handler goyave.Handler`             |                 |
+| `validationRules validation.RuleSet` |                 |
+| `middleware ...goyave.Middleware`    |                 |
+
 
 URIs can have parameters, defined using the format `{name}` or `{name:pattern}`. If a regular expression pattern is not defined, the matched variable will be anything until the next slash. 
 
 **Example:**
 ``` go
-router.Route("GET", "/products/{key}", product.Show, nil)
-router.Route("GET", "/products/{id:[0-9]+}", product.ShowById, nil)
-router.Route("GET", "/categories/{category}/{id:[0-9]+}", category.Show, nil)
+router.Route("GET", "/product/{key}", product.Show, nil)
+router.Route("GET", "/product/{id:[0-9]+}", product.ShowById, nil)
+router.Route("GET", "/category/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.

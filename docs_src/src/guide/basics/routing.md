@@ -45,12 +45,14 @@ Returns the generated route.
 | `uri string`                         |                 |
 | `handler goyave.Handler`             |                 |
 | `validationRules validation.RuleSet` |                 |
+| `middleware ...goyave.Middleware`    |                 |
 
 **Examples:**
 ``` go
 router.Route("GET", "/hello", myHandlerFunction, nil)
 router.Route("POST", "/user", user.Register, userrequest.Register)
 router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
+router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
 ```
 
 ::: tip
@@ -147,14 +149,14 @@ URIs can have parameters, defined using the format `{name}` or `{name:pattern}`.
 
 **Example:**
 ``` go
-router.Route("GET", "/products/{key}", product.Show, nil)
-router.Route("GET", "/products/{id:[0-9]+}", product.ShowById, nil)
-router.Route("GET", "/categories/{category}/{id:[0-9]+}", category.Show, nil)
+router.Route("GET", "/product/{key}", product.Show, nil)
+router.Route("GET", "/product/{id:[0-9]+}", product.ShowById, nil)
+router.Route("GET", "/category/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Regex groups can be used inside patterns, as long as they are non-capturing (`(?:re)`). For example:
 ``` go
-router.Route("GET", "/categories/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
+router.Route("GET", "/category/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -197,7 +199,7 @@ Get a named route. Returns nil if the route doesn't exist.
 You can assign a validation rules set to each route. Learn more in the dedicated [section](./validation.html). You should always validate incoming requests.
 
 ``` go
-router.Route("POST", "/products", product.Create, validation.RuleSet{
+router.Route("POST", "/product", product.Store, validation.RuleSet{
 	"Name":  []string{"required", "string", "min:4"},
 	"Price": []string{"required", "numeric"},
 })
@@ -209,7 +211,37 @@ It's not recommended to define rules set directly in the route definition. You s
 
 If you don't want your route to be validated, or if validation is not necessary, just pass `nil` as the last parameter.
 ``` go
-router.Route("GET", "/products/{id}", product.Show, nil)
+router.Route("GET", "/product/{id}", product.Show, nil)
+```
+
+## Middleware
+
+Middleware are handlers executed before the controller handler. Learn more in the dedicated [section](./middleware.html).
+
+Middleware are applied to a router or a sub-router **before the routes definition**. Therefore, all routes in that router and its sub-routers will execute them before executing their associated handler.
+
+To assign a middleware to a router, use the `router.Middleware()` function. Many middleware can be assigned at once. The assignment order is important as middleware will be **executed in order**.
+
+#### Router.Middleware
+
+Middleware apply one or more middleware to the route group.
+
+| Parameters                 | Return |
+|----------------------------|--------|
+| `middleware ...Middleware` | `void` |
+
+**Example:**
+``` go
+router.Middleware(middleware.DisallowNonValidatedFields)
+```
+
+---
+
+Middleware can also be applied to specific routes. You can add as many as you want.
+
+**Example:**
+``` go
+router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
 ```
 
 ## Groups and sub-routers
@@ -241,30 +273,9 @@ func registerUserRoutes(router *goyave.Router) {
 // Register is the main route registrer.
 func Register(router *goyave.Router) {
     registerUserRoutes(router)
-    registerProductsRoutes(router)
+    registerProductRoutes(router)
     //...
 }
-```
-
-## Middleware
-
-Middleware are handlers executed before the controller handler. Learn more in the dedicated [section](./middleware.html).
-
-Middleware are applied to a router or a sub-router **before the routes definition**. Therefore, all routes in that router and its sub-routers will execute them before executing their associated handler.
-
-To assign a middleware to a router, use the `router.Middleware()` function. Many middleware can be assigned at once. The assignment order is important as middleware will be **executed in order**.
-
-#### Router.Middleware
-
-Middleware apply one or more middleware to the route group.
-
-| Parameters                 | Return |
-|----------------------------|--------|
-| `middleware ...Middleware` | `void` |
-
-**Example:**
-``` go
-router.Middleware(middleware.DisallowNonValidatedFields)
 ```
 
 ## Serve static resources

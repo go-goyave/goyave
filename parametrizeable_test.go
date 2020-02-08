@@ -45,8 +45,18 @@ func (suite *ParametrizeableTestSuite) TestCompileParameters() {
 	suite.NotPanics(func() { // Non-capturing groups
 		p.compileParameters("/product/{name:(?:.*)}", true)
 	})
+}
 
-	// TODO test compile ends false
+func (suite *ParametrizeableTestSuite) TestCompileParametersRouter() {
+	p := &parametrizeable{}
+	p.compileParameters("/product/{id:[0-9]+}", false)
+	suite.Equal([]string{"id"}, p.parameters)
+	suite.NotNil(p.regex)
+	suite.True(p.regex.MatchString("/product/666"))
+	suite.True(p.regex.MatchString("/product/666/extra"))
+	suite.False(p.regex.MatchString("/product/"))
+	suite.False(p.regex.MatchString("/product/qwerty"))
+	suite.False(p.regex.MatchString("/product/qwerty/extra"))
 }
 
 func (suite *ParametrizeableTestSuite) TestBraceIndices() {

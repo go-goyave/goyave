@@ -87,6 +87,8 @@ func (suite *RouteTestSuite) TestMatch() {
 	suite.True(route.match(rawRequest, &match))
 	suite.Equal("666", match.parameters["id"])
 	suite.Equal("test", match.parameters["name"])
+
+	// TODO test match "/categories/{category}/{sort:(?:asc|desc|new)}"
 }
 
 func (suite *RouteTestSuite) TestAccessors() {

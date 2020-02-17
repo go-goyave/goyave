@@ -118,7 +118,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) match(req *http.Request, match *routeMatch) bool {
-	// TODO check trailing slash ?
 	// Check if router itself matches
 	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
 		match.trimCurrentPath(params[0])

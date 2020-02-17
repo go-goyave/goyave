@@ -88,7 +88,23 @@ func (suite *RouteTestSuite) TestMatch() {
 	suite.Equal("666", match.parameters["id"])
 	suite.Equal("test", match.parameters["name"])
 
-	// TODO test match "/categories/{category}/{sort:(?:asc|desc|new)}"
+	route = &Route{
+		name:            "test-route",
+		uri:             "/categories/{category}/{sort:(?:asc|desc|new)}",
+		methods:         []string{"GET"},
+		parent:          nil,
+		handler:         handler,
+		validationRules: nil,
+	}
+	route.compileParameters(route.uri, true)
+	rawRequest = httptest.NewRequest("GET", "/categories/lawn-mower/asc", nil)
+	match = routeMatch{currentPath: rawRequest.URL.Path}
+	suite.True(route.match(rawRequest, &match))
+	suite.Equal("lawn-mower", match.parameters["category"])
+	suite.Equal("asc", match.parameters["sort"])
+
+	rawRequest = httptest.NewRequest("GET", "/categories/lawn-mower/notsort", nil)
+	suite.False(route.match(rawRequest, &match))
 }
 
 func (suite *RouteTestSuite) TestAccessors() {

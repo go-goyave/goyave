@@ -330,12 +330,16 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 
 	// Route-specific middleware is executed after router middleware
 	handler = match.route.applyMiddleware(handler)
-	handler = r.applyMiddleware(handler)
 
-	parent := r.parent
-	for parent != nil {
-		handler = parent.applyMiddleware(handler)
-		parent = parent.parent
+	parent := match.route.parent
+	if parent == nil { // Not Found or Method Not Allowed
+		// Ensure core middleware is executed on 404 and 405
+		handler = r.applyMiddleware(handler)
+	} else {
+		for parent != nil {
+			handler = parent.applyMiddleware(handler)
+			parent = parent.parent
+		}
 	}
 
 	handler(response, request)

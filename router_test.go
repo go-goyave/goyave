@@ -179,6 +179,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	match = &routeMatch{
 		route: &Route{
 			handler: func(response *Response, request *Request) {},
+			parent:  router,
 		},
 	}
 	router.requestHandler(match, writer, rawRequest)
@@ -284,6 +285,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 			handler: func(response *Response, request *Request) {
 				panic("Panic")
 			},
+			parent: router,
 		},
 	}
 	router.requestHandler(match, writer, rawRequest)
@@ -396,18 +398,20 @@ func (suite *RouterTestSuite) TestNamedRoutes() {
 func (suite *RouterTestSuite) TestMiddleware() {
 	// Test the middleware execution order
 	result := ""
-	middleware := make([]Middleware, 0, 3)
-	for i := 0; i < 3; i++ {
+	middleware := make([]Middleware, 0, 4)
+	for i := 0; i < 4; i++ {
 		middleware = append(middleware, suite.createOrderedTestMiddleware(&result, strconv.Itoa(i+1)))
 	}
 	router := newRouter()
+	router.Middleware(middleware[0])
+
+	subrouter := router.Subrouter("/")
+	subrouter.Middleware(middleware[1])
 
 	handler := func(response *Response, r *Request) {
-		result += "4"
+		result += "5"
 	}
-	route := router.Route("GET", "/hello", handler, nil, middleware[1], middleware[2])
-
-	router.Middleware(middleware[0])
+	route := subrouter.Route("GET", "/hello", handler, nil, middleware[2], middleware[3])
 
 	rawRequest := httptest.NewRequest("GET", "/hello", nil)
 	match := routeMatch{
@@ -416,7 +420,32 @@ func (suite *RouterTestSuite) TestMiddleware() {
 	}
 	router.requestHandler(&match, httptest.NewRecorder(), rawRequest)
 
-	suite.Equal("1234", result)
+	suite.Equal("12345", result)
+}
+
+func (suite *RouterTestSuite) TestCoreMiddleware() {
+	// Ensure core middleware is executed on Not Found and Method Not Allowed
+	router := newRouter()
+
+	match := &routeMatch{
+		route: &Route{
+			handler: func(response *Response, request *Request) {
+				panic("Test panic") // Test recover middleware is executed
+			},
+			// No parent router
+		},
+	}
+
+	writer := httptest.NewRecorder()
+	router.requestHandler(match, writer, httptest.NewRequest("GET", "/uri", nil))
+
+	result := writer.Result()
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal(500, result.StatusCode)
+	suite.Equal("{\"error\":\"Internal Server Error\"}\n", string(body))
 }
 
 func (suite *RouterTestSuite) TestMiddlewareHolder() {

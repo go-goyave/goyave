@@ -114,17 +114,14 @@ func (p *parametrizeable) braceIndices(s string) ([]int, error) {
 
 // makeParameters from a regex match and the given parameter names.
 // The match parameter is expected to contain only the capturing groups.
-// The full match should be excluded. The two given slices are expected to
-// have the same size.
 //
-//  p.makeParameters(matches[1:])
-//
-// Given ["33", "param"] ["id", "name"]
+// Given ["/product/33/param", "33", "param"] ["id", "name"]
 // The returned map will be ["id": "33", "name": "param"]
 func (p *parametrizeable) makeParameters(match []string, names []string) map[string]string {
-	params := make(map[string]string, len(match))
-	for i, v := range match {
-		params[names[i]] = v
+	length := len(match)
+	params := make(map[string]string, length-1)
+	for i := 1; i < length; i++ {
+		params[names[i-1]] = match[i]
 	}
 	return params
 }

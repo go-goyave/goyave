@@ -128,7 +128,9 @@ func (r *Router) match(req *http.Request, match *routeMatch) bool {
 
 	if params != nil {
 		match.trimCurrentPath(params[0])
-		match.mergeParams(r.makeParameters(params[1:]))
+		if len(params) > 1 {
+			match.mergeParams(r.makeParameters(params))
+		}
 
 		// Check in subrouters first
 		for _, router := range r.subrouters {

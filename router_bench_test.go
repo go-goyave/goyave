@@ -41,6 +41,13 @@ var sampleRouteDefinition *routerDefinition = &routerDefinition{
 			rules:   nil,
 		},
 		{
+			uri:     "/world",
+			methods: "POST",
+			name:    "post",
+			handler: handler,
+			rules:   nil,
+		},
+		{
 			uri:     "/{param}",
 			methods: "POST",
 			name:    "param",
@@ -98,6 +105,7 @@ var sampleRequests []*http.Request = []*http.Request{
 	httptest.NewRequest("GET", "/", nil), // 404
 	httptest.NewRequest("GET", "/hello", nil),
 	httptest.NewRequest("POST", "/world", nil),
+	httptest.NewRequest("POST", "/param", nil),
 	httptest.NewRequest("GET", "/product", nil),
 	httptest.NewRequest("POST", "/product", nil),     // TODO body and validation
 	httptest.NewRequest("GET", "/product/test", nil), // 404
@@ -154,7 +162,7 @@ func BenchmarkRootLevelPostMatch(b *testing.B) {
 	}
 }
 
-func BenchmarkSubrouterMatch(b *testing.B) {
+func BenchmarkRootLevelPostParamMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
@@ -162,7 +170,7 @@ func BenchmarkSubrouterMatch(b *testing.B) {
 	}
 }
 
-func BenchmarkSubrouterPostMatch(b *testing.B) {
+func BenchmarkSubrouterMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
@@ -170,7 +178,7 @@ func BenchmarkSubrouterPostMatch(b *testing.B) {
 	}
 }
 
-func BenchmarkSubrouterNotFound(b *testing.B) {
+func BenchmarkSubrouterPostMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
@@ -178,7 +186,7 @@ func BenchmarkSubrouterNotFound(b *testing.B) {
 	}
 }
 
-func BenchmarkParamMatch(b *testing.B) {
+func BenchmarkSubrouterNotFound(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
@@ -186,7 +194,7 @@ func BenchmarkParamMatch(b *testing.B) {
 	}
 }
 
-func BenchmarkParamPutMatch(b *testing.B) {
+func BenchmarkParamMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
@@ -194,11 +202,19 @@ func BenchmarkParamPutMatch(b *testing.B) {
 	}
 }
 
-func BenchmarkParamDeleteMatch(b *testing.B) {
+func BenchmarkParamPutMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
 		router.match(sampleRequests[8], &routeMatch{currentPath: sampleRequests[8].URL.Path})
+	}
+}
+
+func BenchmarkParamDeleteMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[9], &routeMatch{currentPath: sampleRequests[9].URL.Path})
 	}
 }
 

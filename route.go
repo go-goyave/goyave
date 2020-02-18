@@ -32,7 +32,9 @@ func newRoute(handler Handler) *Route {
 func (r *Route) match(req *http.Request, match *routeMatch) bool {
 	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
 		if r.checkMethod(req.Method) {
-			match.mergeParams(r.makeParameters(params[1:]))
+			if len(params) > 1 {
+				match.mergeParams(r.makeParameters(params))
+			}
 			match.route = r
 			return true
 		}

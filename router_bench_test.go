@@ -99,7 +99,8 @@ var sampleRequests []*http.Request = []*http.Request{
 	httptest.NewRequest("GET", "/hello", nil),
 	httptest.NewRequest("POST", "/world", nil),
 	httptest.NewRequest("GET", "/product", nil),
-	httptest.NewRequest("POST", "/product", nil), // TODO body and validation
+	httptest.NewRequest("POST", "/product", nil),     // TODO body and validation
+	httptest.NewRequest("GET", "/product/test", nil), // 404
 	httptest.NewRequest("GET", "/product/1", nil),
 	httptest.NewRequest("PUT", "/product/1", nil),
 	httptest.NewRequest("DELETE", "/product/1", nil),
@@ -129,16 +130,83 @@ func BenchmarkRouteRegistration(b *testing.B) {
 	}
 }
 
-func BenchmarkRouteMatch(b *testing.B) {
+func BenchmarkRootLevelNotFound(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[0], &routeMatch{})
+	}
+}
+
+func BenchmarkRootLevelMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[1], &routeMatch{})
+	}
+}
+
+func BenchmarkRootLevelPostMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[2], &routeMatch{})
+	}
+}
+
+func BenchmarkSubrouterMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[3], &routeMatch{})
+	}
+}
+
+func BenchmarkSubrouterPostMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[4], &routeMatch{})
+	}
+}
+
+func BenchmarkSubrouterNotFound(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[5], &routeMatch{})
+	}
+}
+
+func BenchmarkParamMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[6], &routeMatch{})
+	}
+}
+
+func BenchmarkParamPutMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[7], &routeMatch{})
+	}
+}
+
+func BenchmarkParamDeleteMatch(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		router.match(sampleRequests[8], &routeMatch{})
+	}
+}
+
+func setupRouteBench(b *testing.B) *Router {
 	router := registerAll(sampleRouteDefinition)
 	regexCache = nil
 	b.ReportAllocs()
 	runtime.GC()
-	b.ResetTimer()
-
-	for n := 0; n < b.N; n++ {
-		for _, r := range sampleRequests {
-			router.match(r, &routeMatch{})
-		}
-	}
+	defer b.ResetTimer()
+	return router
 }

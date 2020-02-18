@@ -175,7 +175,7 @@ func (r *Router) Subrouter(prefix string) *Router {
 		namedRoutes:       r.namedRoutes,
 		routes:            make([]*Route, 0, 5), // Typical CRUD has 5 routes
 		middlewareHolder: middlewareHolder{
-			middleware: make([]Middleware, 0, 3),
+			middleware: nil,
 		},
 	}
 	router.compileParameters(router.prefix, false)
@@ -185,6 +185,9 @@ func (r *Router) Subrouter(prefix string) *Router {
 
 // Middleware apply one or more middleware to the route group.
 func (r *Router) Middleware(middleware ...Middleware) {
+	if r.middleware == nil {
+		r.middleware = make([]Middleware, 0, 3)
+	}
 	r.middleware = append(r.middleware, middleware...)
 }
 

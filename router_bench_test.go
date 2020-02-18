@@ -134,7 +134,7 @@ func BenchmarkRootLevelNotFound(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[0], &routeMatch{})
+		router.match(sampleRequests[0], &routeMatch{currentPath: sampleRequests[0].URL.Path})
 	}
 }
 
@@ -142,7 +142,7 @@ func BenchmarkRootLevelMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[1], &routeMatch{})
+		router.match(sampleRequests[1], &routeMatch{currentPath: sampleRequests[1].URL.Path})
 	}
 }
 
@@ -150,7 +150,7 @@ func BenchmarkRootLevelPostMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[2], &routeMatch{})
+		router.match(sampleRequests[2], &routeMatch{currentPath: sampleRequests[2].URL.Path})
 	}
 }
 
@@ -158,7 +158,7 @@ func BenchmarkSubrouterMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[3], &routeMatch{})
+		router.match(sampleRequests[3], &routeMatch{currentPath: sampleRequests[3].URL.Path})
 	}
 }
 
@@ -166,7 +166,7 @@ func BenchmarkSubrouterPostMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[4], &routeMatch{})
+		router.match(sampleRequests[4], &routeMatch{currentPath: sampleRequests[4].URL.Path})
 	}
 }
 
@@ -174,7 +174,7 @@ func BenchmarkSubrouterNotFound(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[5], &routeMatch{})
+		router.match(sampleRequests[5], &routeMatch{currentPath: sampleRequests[5].URL.Path})
 	}
 }
 
@@ -182,7 +182,7 @@ func BenchmarkParamMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[6], &routeMatch{})
+		router.match(sampleRequests[6], &routeMatch{currentPath: sampleRequests[6].URL.Path})
 	}
 }
 
@@ -190,7 +190,7 @@ func BenchmarkParamPutMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[7], &routeMatch{})
+		router.match(sampleRequests[7], &routeMatch{currentPath: sampleRequests[7].URL.Path})
 	}
 }
 
@@ -198,7 +198,7 @@ func BenchmarkParamDeleteMatch(b *testing.B) {
 	router := setupRouteBench(b)
 
 	for n := 0; n < b.N; n++ {
-		router.match(sampleRequests[8], &routeMatch{})
+		router.match(sampleRequests[8], &routeMatch{currentPath: sampleRequests[8].URL.Path})
 	}
 }
 
@@ -207,7 +207,7 @@ func BenchmarkMatchAll(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		for _, r := range sampleRequests {
-			router.match(r, &routeMatch{})
+			router.match(r, &routeMatch{currentPath: r.URL.Path})
 		}
 	}
 }

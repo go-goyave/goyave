@@ -202,6 +202,16 @@ func BenchmarkParamDeleteMatch(b *testing.B) {
 	}
 }
 
+func BenchmarkMatchAll(b *testing.B) {
+	router := setupRouteBench(b)
+
+	for n := 0; n < b.N; n++ {
+		for _, r := range sampleRequests {
+			router.match(r, &routeMatch{})
+		}
+	}
+}
+
 func setupRouteBench(b *testing.B) *Router {
 	router := registerAll(sampleRouteDefinition)
 	regexCache = nil

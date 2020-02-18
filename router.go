@@ -24,7 +24,7 @@ type Router struct {
 	hasCORSMiddleware bool
 
 	routes         []*Route
-	subrouters     []*Router // not sure needed, maybe consider subrouter as a route
+	subrouters     []*Router
 	statusHandlers map[int]Handler
 	namedRoutes    map[string]*Route
 	middlewareHolder
@@ -173,6 +173,7 @@ func (r *Router) Subrouter(prefix string) *Router {
 		hasCORSMiddleware: r.hasCORSMiddleware,
 		statusHandlers:    r.copyStatusHandlers(),
 		namedRoutes:       r.namedRoutes,
+		routes:            make([]*Route, 0, 5), // Typical CRUD has 5 routes
 		middlewareHolder: middlewareHolder{
 			middleware: make([]Middleware, 0, 3),
 		},

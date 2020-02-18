@@ -14,12 +14,30 @@ import "github.com/System-Glitch/goyave/v2/helper"
 
 **List of general helpers**:
 ::: table
+[IndexOf](#helper-indexof)
 [Contains](#helper-contains)
+[IndexOfStr](#helper-indexofstr)
+[ContainsStr](#helper-containsstr)
 [SliceEqual](#helper-sliceequal)
 [ToFloat64](#helper-tofloat64)
 [ToString](#helper-tostring)
 [ParseMultiValuesHeader](#helper-parsemultivaluesheader)
 :::
+
+#### helper.IndexOf
+
+Get the index of the given value in the given slice, or `-1` if not found.
+
+| Parameters          | Return |
+|---------------------|--------|
+| `slice interface{}` | `int`  |
+| `value interface{}` |        |
+
+**Example:**
+``` go
+slice := []interface{'r', "Goyave", 3, 2.42}
+fmt.Println(helper.IndexOf(slice, "Goyave")) // 1
+```
 
 #### helper.Contains
 
@@ -32,8 +50,42 @@ Check if a generic slice contains the given value.
 
 **Example:**
 ``` go
-slice := []string{"Avogado", "Goyave", "Pear", "Apple"}
+slice := []interface{'r', "Goyave", 3, 2.42}
 fmt.Println(helper.Contains(slice, "Goyave")) // true
+```
+
+#### helper.IndexOfStr
+
+Get the index of the given value in the given string slice, or `-1` if not found.
+
+Prefer using this helper instead of `IndexOf` for better performance.
+
+| Parameters       | Return |
+|------------------|--------|
+| `slice []string` | `int`  |
+| `value []string` |        |
+
+**Example:**
+``` go
+slice := []string{"Avogado", "Goyave", "Pear", "Apple"}
+fmt.Println(helper.IndexOfStr(slice, "Goyave")) // 1
+```
+
+#### helper.ContainsStr
+
+Check if a string slice contains the given value.
+
+Prefer using this helper instead of `Contains` for better performance.
+
+| Parameters       | Return |
+|------------------|--------|
+| `slice []string` | `bool` |
+| `value []string` |        |
+
+**Example:**
+``` go
+slice := []string{"Avogado", "Goyave", "Pear", "Apple"}
+fmt.Println(helper.ContainsStr(slice, "Goyave")) // true
 ```
 
 #### helper.SliceEqual
@@ -74,8 +126,8 @@ fmt.Println(helper.ToFloat64([]string{})) // 0 nil
 
 Convert a generic value to string.
 
-| Parameters          | Return    |
-|---------------------|-----------|
+| Parameters          | Return   |
+|---------------------|----------|
 | `value interface{}` | `string` |
 
 **Examples:**
@@ -150,10 +202,10 @@ The file is not readable anymore once saved as its FileReader has already been c
 
 Returns the actual file name.
 
-| Parameters             | Return   |
-|------------------------|----------|
-| `path string`          | `string` |
-| `name string`          |          |
+| Parameters    | Return   |
+|---------------|----------|
+| `path string` | `string` |
+| `name string` |          |
 
 **Example:**
 ``` go

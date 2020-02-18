@@ -262,7 +262,7 @@ func validateEntry(value interface{}, key string) error {
 		}
 
 		if v, ok := authorizedValues[key]; ok {
-			if !helper.Contains(v, value.(string)) {
+			if !helper.ContainsStr(v, value.(string)) {
 				return fmt.Errorf("Invalid config entry. %s must have one of the following values: %s", key, strings.Join(v, ", "))
 			}
 		}

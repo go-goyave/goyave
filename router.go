@@ -92,7 +92,7 @@ func newRouter() *Router {
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
-	router.compileParameters(router.prefix, false)
+	// router.compileParameters(router.prefix, false)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
 	router.StatusHandler(errorStatusHandler, 401, 403, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
@@ -119,7 +119,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (r *Router) match(req *http.Request, match *routeMatch) bool {
 	// Check if router itself matches
-	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
+	var params []string = nil
+	if r.parametrizeable.regex != nil {
+		params = r.parametrizeable.regex.FindStringSubmatch(match.currentPath)
+	} else {
+		params = []string{""}
+	}
+
+	if params != nil {
 		match.trimCurrentPath(params[0])
 		match.mergeParams(r.makeParameters(params[1:]))
 

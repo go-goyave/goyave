@@ -118,7 +118,7 @@ func registerRouter(router *Router, def *routerDefinition) {
 		registerRouter(subrouter, subdef)
 	}
 	for _, routeDef := range def.routes {
-		router.Route(routeDef.methods, routeDef.uri, routeDef.handler, routeDef.rules).Name(routeDef.name)
+		router.registerRoute(routeDef.methods, routeDef.uri, routeDef.handler, routeDef.rules).Name(routeDef.name)
 	}
 }
 

@@ -26,9 +26,9 @@ func (p *parametrizeable) compileParameters(uri string, ends bool) {
 
 	var builder strings.Builder
 
-	// Final regex will never be larger than src uri
+	// Final regex will never be larger than src uri + 2 (for ^ and $)
 	// Make initial alloc to avoid the need for realloc
-	builder.Grow(len(uri))
+	builder.Grow(len(uri) + 2)
 
 	builder.WriteString("^")
 	length := len(idxs)

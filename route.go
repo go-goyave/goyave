@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/helper"
 	"github.com/System-Glitch/goyave/v2/validation"
 )
 
@@ -32,8 +31,7 @@ func newRoute(handler Handler) *Route {
 
 func (r *Route) match(req *http.Request, match *routeMatch) bool {
 	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
-		if helper.Contains(r.methods, req.Method) {
-			match.trimCurrentPath(params[0])
+		if r.checkMethod(req.Method) {
 			match.mergeParams(r.makeParameters(params[1:]))
 			match.route = r
 			return true
@@ -48,6 +46,15 @@ func (r *Route) match(req *http.Request, match *routeMatch) bool {
 		// or it's errMatchMethodNotAllowed, implying that a route has
 		// already been matched but with wrong method.
 		match.err = errMatchNotFound
+	}
+	return false
+}
+
+func (r *Route) checkMethod(method string) bool {
+	for _, m := range r.methods {
+		if m == method {
+			return true
+		}
 	}
 	return false
 }

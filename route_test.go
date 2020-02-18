@@ -104,6 +104,7 @@ func (suite *RouteTestSuite) TestMatch() {
 	suite.Equal("asc", match.parameters["sort"])
 
 	rawRequest = httptest.NewRequest("GET", "/categories/lawn-mower/notsort", nil)
+	match = routeMatch{currentPath: rawRequest.URL.Path}
 	suite.False(route.match(rawRequest, &match))
 }
 

@@ -190,6 +190,8 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 
 ## Named routes
 
+<p><Badge text="Since v2.6.0"/></p>
+
 It is possible to give a name to your routes to make it easier to retrieve them later and build dynamic URLs.
 
 ``` go

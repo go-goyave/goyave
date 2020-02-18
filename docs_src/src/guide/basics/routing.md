@@ -298,6 +298,15 @@ func Register(router *goyave.Router) {
 }
 ```
 
+Subrouters are checked before routes, meaning that they have priority over the latter. If you have a router sharing a prefix with a higher-level level route, **it will never match** because the subrouter will match first.
+``` go
+subrouter := router.Subrouter("/product")
+subrouter.Route("GET", "/{id:[0-9]+}", handler, nil)
+
+router.Route("GET", "/product/{id:[0-9]+}", handler, nil) // This route will never match
+router.Route("GET", "/product/category", handler, nil)    // This one neither
+```
+
 ## Serve static resources
 
 The Goyave router provides a way to serve a directory of static resources, including its sub-directories.

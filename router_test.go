@@ -580,6 +580,35 @@ func (suite *RouterTestSuite) TestScheme() {
 	suite.Equal("{\"error\":\"Not Found\"}\n", string(body))
 }
 
+func (suite *RouterTestSuite) TestConflictingRoutes() {
+	// Test subrouter has priority over routes
+	handler := func(response *Response, request *Request) {
+		response.Status(200)
+	}
+	router := newRouter()
+
+	subrouter := router.Subrouter("/product")
+	routeSub := subrouter.Route("GET", "/{id:[0-9]+}", handler, nil)
+
+	router.Route("GET", "/product/{id:[0-9]+}", handler, nil)
+
+	req := httptest.NewRequest("GET", "/product/2", nil)
+	match := routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+
+	suite.Equal(routeSub, match.route)
+
+	// Test when route not in subrouter but first segment matches
+	// Should not match
+	router.Route("GET", "/product/test", handler, nil)
+
+	req = httptest.NewRequest("GET", "/product/test", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+
+	suite.Equal(notFoundRoute, match.route)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	RunTest(t, new(RouterTestSuite))
 }

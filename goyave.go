@@ -32,6 +32,7 @@ var (
 	maintenanceEnabled bool = false
 	mutex                   = &sync.RWMutex{}
 	once               sync.Once
+	errLogger          *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
 // IsReady returns true if the server has finished initializing and
@@ -76,7 +77,7 @@ func Start(routeRegistrer func(*Router)) {
 	mutex.Lock()
 	if !config.IsLoaded() {
 		if err := config.Load(); err != nil {
-			fmt.Println(err)
+			errLogger.Println(err)
 			return
 		}
 	}
@@ -275,7 +276,7 @@ func startServer(router *Router) {
 
 	ln, err := net.Listen("tcp", server.Addr)
 	if err != nil {
-		fmt.Println(err)
+		errLogger.Println(err)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		stop(ctx)
@@ -294,7 +295,7 @@ func startServer(router *Router) {
 		mutex.Unlock()
 		runStartupHooks()
 		if err := s.ServeTLS(ln, config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
-			fmt.Println(err)
+			errLogger.Println(err)
 			Stop()
 		}
 	} else {
@@ -303,7 +304,7 @@ func startServer(router *Router) {
 		mutex.Unlock()
 		runStartupHooks()
 		if err := s.Serve(ln); err != nil && err != http.ErrServerClosed {
-			fmt.Println(err)
+			errLogger.Println(err)
 			Stop()
 		}
 	}

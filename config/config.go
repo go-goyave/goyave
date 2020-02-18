@@ -246,7 +246,7 @@ func validateConfig() bool {
 	valid := true
 	for key, value := range config {
 		if err := validateEntry(value, key); err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 			valid = false
 		}
 	}
@@ -258,12 +258,12 @@ func validateEntry(value interface{}, key string) error {
 	if v, ok := configValidation[key]; ok {
 		t := reflect.TypeOf(value)
 		if t.Kind() != v {
-			return fmt.Errorf("Invalid config entry. %s type must be %s", key, v)
+			return fmt.Errorf("Invalid config entry: %q type must be %s", key, v)
 		}
 
 		if v, ok := authorizedValues[key]; ok {
 			if !helper.ContainsStr(v, value.(string)) {
-				return fmt.Errorf("Invalid config entry. %s must have one of the following values: %s", key, strings.Join(v, ", "))
+				return fmt.Errorf("Invalid config entry: %q must have one of the following values: %s", key, strings.Join(v, ", "))
 			}
 		}
 	}

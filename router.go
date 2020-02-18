@@ -1,28 +1,64 @@
 package goyave
 
 import (
+	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/validation"
-	"github.com/gorilla/mux"
 )
+
+type routeMatcher interface {
+	match(req *http.Request, match *routeMatch) bool
+}
 
 // Router registers routes to be matched and executes a handler.
 type Router struct {
-	muxRouter         *mux.Router
-	corsOptions       *cors.Options
 	parent            *Router
+	prefix            string
+	corsOptions       *cors.Options
 	hasCORSMiddleware bool
-	middleware        []Middleware
-	statusHandlers    map[int]Handler
+
+	routes         []*Route
+	subrouters     []*Router
+	statusHandlers map[int]Handler
+	namedRoutes    map[string]*Route
+	middlewareHolder
+	parametrizeable
 }
+
+var _ http.Handler = (*Router)(nil) // implements http.Handler
+var _ routeMatcher = (*Router)(nil) // implements routeMatcher
 
 // Handler is a controller or middleware function
 type Handler func(*Response, *Request)
+
+type middlewareHolder struct {
+	middleware []Middleware
+}
+
+type routeMatch struct {
+	route       *Route
+	err         error
+	currentPath string
+	parameters  map[string]string
+}
+
+var (
+	errMatchMethodNotAllowed = errors.New("Method not allowed for this route")
+	errMatchNotFound         = errors.New("No match for this URI")
+
+	methodNotAllowedRoute = newRoute(func(response *Response, request *Request) {
+		response.Status(http.StatusMethodNotAllowed)
+	})
+	notFoundRoute = newRoute(func(response *Response, request *Request) {
+		response.Status(http.StatusNotFound)
+	})
+)
 
 func panicStatusHandler(response *Response, request *Request) {
 	response.Error(response.GetError())
@@ -41,58 +77,119 @@ func errorStatusHandler(response *Response, request *Request) {
 	response.JSON(response.GetStatus(), message)
 }
 
-func (r *Router) muxStatusHandler(status int) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, rawRequest *http.Request) {
-		r.requestHandler(w, rawRequest, func(response *Response, r *Request) {
-			response.Status(status)
-		}, nil)
-	})
-}
-
 func newRouter() *Router {
-	muxRouter := mux.NewRouter()
-	muxRouter.Schemes(config.GetString("protocol"))
+	// Create a fresh regex cache
+	// This cache is set to nil when the server starts
+	regexCache = make(map[string]*regexp.Regexp, 5)
+
 	router := &Router{
-		muxRouter:      muxRouter,
-		statusHandlers: make(map[int]Handler, 15),
-		middleware:     make([]Middleware, 0, 3),
-		parent:         nil,
+		parent:            nil,
+		prefix:            "",
+		hasCORSMiddleware: false,
+		statusHandlers:    make(map[int]Handler, 15),
+		namedRoutes:       make(map[string]*Route, 5),
+		middlewareHolder: middlewareHolder{
+			middleware: make([]Middleware, 0, 3),
+		},
 	}
-	muxRouter.NotFoundHandler = router.muxStatusHandler(http.StatusNotFound)
-	muxRouter.MethodNotAllowedHandler = router.muxStatusHandler(http.StatusMethodNotAllowed)
+	// router.compileParameters(router.prefix, false)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
 	router.StatusHandler(errorStatusHandler, 401, 403, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
 
-func (r *Router) copyStatusHandlers() map[int]Handler {
-	cpy := make(map[int]Handler, len(r.statusHandlers))
-	for key, value := range r.statusHandlers {
-		cpy[key] = value
+// ServeHTTP dispatches the handler registered in the matched route.
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	protocol := config.GetString("protocol")
+	if req.URL.Scheme != "" && req.URL.Scheme != protocol {
+		address := getAddress(protocol) + req.URL.Path
+		query := req.URL.Query()
+		if len(query) != 0 {
+			address += "?" + query.Encode()
+		}
+		http.Redirect(w, req, address, http.StatusPermanentRedirect)
+		return
 	}
-	return cpy
+
+	match := routeMatch{currentPath: req.URL.Path}
+	r.match(req, &match)
+	r.requestHandler(&match, w, req)
+}
+
+func (r *Router) match(req *http.Request, match *routeMatch) bool {
+	// Check if router itself matches
+	var params []string = nil
+	if r.parametrizeable.regex != nil {
+		params = r.parametrizeable.regex.FindStringSubmatch(match.currentPath)
+	} else {
+		params = []string{""}
+	}
+
+	if params != nil {
+		match.trimCurrentPath(params[0])
+		if len(params) > 1 {
+			match.mergeParams(r.makeParameters(params))
+		}
+
+		// Check in subrouters first
+		for _, router := range r.subrouters {
+			if router.match(req, match) {
+				return true
+			}
+		}
+
+		// Check if any route matches
+		for _, route := range r.routes {
+			if route.match(req, match) {
+				return true
+			}
+		}
+	}
+
+	if match.err == errMatchMethodNotAllowed {
+		match.route = methodNotAllowedRoute
+		return true
+	}
+
+	match.route = notFoundRoute
+	return false
+}
+
+func (r *Router) makeParameters(match []string) map[string]string {
+	return r.parametrizeable.makeParameters(match, r.parameters)
 }
 
 // Subrouter create a new sub-router from this router.
 // Use subrouters to create route groups and to apply middleware to multiple routes.
 // CORS options are also inherited.
 func (r *Router) Subrouter(prefix string) *Router {
+	if prefix == "/" {
+		prefix = ""
+	}
+
 	router := &Router{
-		muxRouter:         r.muxRouter.PathPrefix(prefix).Subrouter(),
 		parent:            r,
+		prefix:            prefix,
 		corsOptions:       r.corsOptions,
 		hasCORSMiddleware: r.hasCORSMiddleware,
 		statusHandlers:    r.copyStatusHandlers(),
-		middleware:        make([]Middleware, 0, 3),
+		namedRoutes:       r.namedRoutes,
+		routes:            make([]*Route, 0, 5), // Typical CRUD has 5 routes
+		middlewareHolder: middlewareHolder{
+			middleware: nil,
+		},
 	}
-	router.muxRouter.NotFoundHandler = r.muxRouter.NotFoundHandler
-	router.muxRouter.MethodNotAllowedHandler = r.muxRouter.MethodNotAllowedHandler
+	router.compileParameters(router.prefix, false)
+	r.subrouters = append(r.subrouters, router)
 	return router
 }
 
 // Middleware apply one or more middleware to the route group.
 func (r *Router) Middleware(middleware ...Middleware) {
+	if r.middleware == nil {
+		r.middleware = make([]Middleware, 0, 3)
+	}
 	r.middleware = append(r.middleware, middleware...)
 }
 
@@ -106,18 +203,41 @@ func (r *Router) Middleware(middleware ...Middleware) {
 //
 // If the router has CORS options set, the "OPTIONS" method is automatically added
 // to the matcher if it's missing, so it allows preflight requests.
-func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet) {
-	r.route(methods, uri, handler, validationRules)
+//
+// Returns the generated route.
+func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute(methods, uri, handler, validationRules, middleware...)
 }
 
-func (r *Router) route(methods string, uri string, handler Handler, validationRules validation.RuleSet) *mux.Route {
+func (r *Router) registerRoute(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
 	if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
 		methods += "|OPTIONS"
 	}
 
-	return r.muxRouter.HandleFunc(uri, func(w http.ResponseWriter, rawRequest *http.Request) {
-		r.requestHandler(w, rawRequest, handler, validationRules)
-	}).Methods(strings.Split(methods, "|")...)
+	if uri == "/" {
+		uri = ""
+	}
+
+	route := &Route{
+		name:            "",
+		uri:             uri,
+		methods:         strings.Split(methods, "|"),
+		parent:          r,
+		handler:         handler,
+		validationRules: validationRules,
+		middlewareHolder: middlewareHolder{
+			middleware: middleware,
+		},
+	}
+	route.compileParameters(route.uri, true)
+	r.routes = append(r.routes, route)
+	return route
+}
+
+// GetRoute get a named route.
+// Returns nil if the route doesn't exist.
+func (r *Router) GetRoute(name string) *Route {
+	return r.namedRoutes[name]
 }
 
 // Static serve a directory and its subdirectories of static resources.
@@ -127,7 +247,7 @@ func (r *Router) route(methods string, uri string, handler Handler, validationRu
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
 func (r *Router) Static(uri string, directory string, download bool) {
-	r.Route("GET", uri+"{resource:.*}", staticHandler(directory, download), nil)
+	r.registerRoute("GET", uri+"{resource:.*}", staticHandler(directory, download), nil)
 }
 
 // CORS set the CORS options for this route group.
@@ -190,12 +310,21 @@ func cleanStaticPath(directory string, file string) string {
 	return path
 }
 
-func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request, handler Handler, rules validation.RuleSet) {
+func (r *Router) copyStatusHandlers() map[int]Handler {
+	cpy := make(map[int]Handler, len(r.statusHandlers))
+	for key, value := range r.statusHandlers {
+		cpy[key] = value
+	}
+	return cpy
+}
+
+func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
 	request := &Request{
 		httpRequest: rawRequest,
+		route:       match.route,
 		corsOptions: r.corsOptions,
-		Rules:       rules,
-		Params:      mux.Vars(rawRequest),
+		Rules:       match.route.validationRules,
+		Params:      match.parameters,
 	}
 	response := &Response{
 		httpRequest:    rawRequest,
@@ -204,28 +333,30 @@ func (r *Router) requestHandler(w http.ResponseWriter, rawRequest *http.Request,
 		status:         0,
 	}
 
+	handler := match.route.handler
+
 	// Validate last.
 	// Allows custom middleware to be executed after core
 	// middleware and before validation.
 	handler = validateRequestMiddleware(handler)
-	handler = r.applyMiddleware(handler)
 
-	parent := r.parent
-	for parent != nil {
-		handler = parent.applyMiddleware(handler)
-		parent = parent.parent
+	// Route-specific middleware is executed after router middleware
+	handler = match.route.applyMiddleware(handler)
+
+	parent := match.route.parent
+	if parent == nil { // Not Found or Method Not Allowed
+		// Ensure core middleware is executed on 404 and 405
+		handler = r.applyMiddleware(handler)
+	} else {
+		for parent != nil {
+			handler = parent.applyMiddleware(handler)
+			parent = parent.parent
+		}
 	}
 
 	handler(response, request)
 
 	r.finalize(response, request)
-}
-
-func (r *Router) applyMiddleware(handler Handler) Handler {
-	for i := len(r.middleware) - 1; i >= 0; i-- {
-		handler = r.middleware[i](handler)
-	}
-	return handler
 }
 
 // finalize the request's life-cycle.
@@ -245,4 +376,24 @@ func (r *Router) finalize(response *Response, request *Request) {
 	if !response.wroteHeader {
 		response.WriteHeader(response.status)
 	}
+}
+
+func (h *middlewareHolder) applyMiddleware(handler Handler) Handler {
+	for i := len(h.middleware) - 1; i >= 0; i-- {
+		handler = h.middleware[i](handler)
+	}
+	return handler
+}
+
+func (rm *routeMatch) mergeParams(params map[string]string) {
+	if rm.parameters == nil {
+		rm.parameters = params
+	}
+	for k, v := range params {
+		rm.parameters[k] = v
+	}
+}
+
+func (rm *routeMatch) trimCurrentPath(fullMatch string) {
+	rm.currentPath = rm.currentPath[len(fullMatch):]
 }

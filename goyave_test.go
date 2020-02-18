@@ -126,6 +126,21 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello\">Permanent Redirect</a>.\n\n", string(body))
 		}
 
+		resp, err = netClient.Get("http://127.0.0.1:1235/hello?param=1")
+		suite.Nil(err)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		suite.NotNil(resp)
+		if resp != nil {
+			suite.Equal(308, resp.StatusCode)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			suite.Nil(err)
+			suite.Equal("<a href=\"https://127.0.0.1:1236/hello?param=1\">Permanent Redirect</a>.\n\n", string(body))
+		}
+
 		resp, err = netClient.Get("https://127.0.0.1:1236/hello")
 		suite.Nil(err)
 		if err != nil {

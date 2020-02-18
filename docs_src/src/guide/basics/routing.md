@@ -37,18 +37,22 @@ Multiple methods can be passed using a pipe-separated string.
 
 If the router has CORS options set, the `OPTIONS` method is automatically added to the matcher if it's missing, so it allows pre-flight requests.
 
-| Parameters                           | Return |
-|--------------------------------------|--------|
-| `methods string`                     | `void` |
-| `uri string`                         |        |
-| `handler goyave.Handler`             |        |
-| `validationRules validation.RuleSet` |        |
+Returns the generated route.
+
+| Parameters                           | Return          |
+|--------------------------------------|-----------------|
+| `methods string`                     | `*goyave.Route` |
+| `uri string`                         |                 |
+| `handler goyave.Handler`             |                 |
+| `validationRules validation.RuleSet` |                 |
+| `middleware ...goyave.Middleware`    |                 |
 
 **Examples:**
 ``` go
 router.Route("GET", "/hello", myHandlerFunction, nil)
 router.Route("POST", "/user", user.Register, userrequest.Register)
 router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
+router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
 ```
 
 ::: tip
@@ -56,20 +60,123 @@ router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
 - Learn more about validation and rules sets [here](./validation.html).
 :::
 
+## Route reference
+
+<p><Badge text="Since v2.6.0"/></p>
+
+::: table
+[Name](#route-name)
+[GetName](#route-getname)
+[BuildURL](#route-buildurl)
+[GetURI](#route-geturi)
+[GetFullURI](#route-getfulluri)
+[GetMethods](#route-getmethods)
+::: 
+
+#### Route.Name
+
+Set the name of this route.
+
+Panics if a route with the same name already exists.
+
+Returns itself.
+
+| Parameters    | Return          |
+|---------------|-----------------|
+| `name string` | `*goyave.Route` |
+
+**Examples:**
+``` go
+router.Route("GET", "/product/{id:[0-9]+}", myHandlerFunction, nil).Name("product.show")
+```
+
+#### Route.GetName
+
+Get the name of this route.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetName()) // "product-create"
+```
+
+#### Route.BuildURL
+
+Build a full URL pointing to this route.
+
+Panics if the amount of parameters doesn't match the amount of actual parameters for this route.
+
+| Parameters             | Return   |
+|------------------------|----------|
+| `parameters ...string` | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.BuildURL("42")) // "http://localhost:8080/product/42"
+```
+
+#### Route.GetURI
+
+Get the URI of this route.
+
+The returned URI is relative to the parent router of this route, it is NOT the full path to this route.
+
+Note that this URI may contain route parameters in their définition format. Use the request's URI if you want to see the URI as it was requested by the client.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetURI()) // "/{id:[0-9]+}"
+```
+
+#### Route.GetFullURI
+
+Get the URI of this route.
+
+Note that this URI may contain route parameters in their définition format. Use the request's URI if you want to see the URI as it was requested by the client.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetFullURI()) // "/product/{id:[0-9]+}"
+```
+
+#### Route.GetMethods
+
+Returns the methods the route matches against.
+
+| Parameters | Return     |
+|------------|------------|
+|            | `[]string` |
+
+**Examples:**
+``` go
+fmt.Println(route.GetMethods()) // [GET OPTIONS]
+```
+
 ## Route parameters
 
 URIs can have parameters, defined using the format `{name}` or `{name:pattern}`. If a regular expression pattern is not defined, the matched variable will be anything until the next slash. 
 
 **Example:**
 ``` go
-router.Route("GET", "/products/{key}", product.Show, nil)
-router.Route("GET", "/products/{id:[0-9]+}", product.ShowById, nil)
-router.Route("GET", "/categories/{category}/{id:[0-9]+}", category.Show, nil)
+router.Route("GET", "/product/{key}", product.Show, nil)
+router.Route("GET", "/product/{id:[0-9]+}", product.ShowById, nil)
+router.Route("GET", "/category/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Regex groups can be used inside patterns, as long as they are non-capturing (`(?:re)`). For example:
 ``` go
-router.Route("GET", "/categories/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
+router.Route("GET", "/category/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -81,12 +188,38 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
+## Named routes
+
+It is possible to give a name to your routes to make it easier to retrieve them later and build dynamic URLs.
+
+``` go
+router.Route("GET", "/product/{id:[0-9]+}", myHandlerFunction, nil).Name("product.show")
+```
+
+The route can now be retrieved from any router or from the global helper:
+
+``` go
+route := router.GetRoute("product.show")
+// or
+route := goyave.GetRoute("product.show")
+
+fmt.Println(route.BuildURL("42")) // "http://localhost:8080/product/42"
+```
+
+#### goyave.GetRoute
+
+Get a named route. Returns nil if the route doesn't exist.
+
+| Parameters    | Return          |
+|---------------|-----------------|
+| `name string` | `*goyave.Route` |
+
 ## Validation
 
 You can assign a validation rules set to each route. Learn more in the dedicated [section](./validation.html). You should always validate incoming requests.
 
 ``` go
-router.Route("POST", "/products", product.Create, validation.RuleSet{
+router.Route("POST", "/product", product.Store, validation.RuleSet{
 	"Name":  []string{"required", "string", "min:4"},
 	"Price": []string{"required", "numeric"},
 })
@@ -98,7 +231,37 @@ It's not recommended to define rules set directly in the route definition. You s
 
 If you don't want your route to be validated, or if validation is not necessary, just pass `nil` as the last parameter.
 ``` go
-router.Route("GET", "/products/{id}", product.Show, nil)
+router.Route("GET", "/product/{id}", product.Show, nil)
+```
+
+## Middleware
+
+Middleware are handlers executed before the controller handler. Learn more in the dedicated [section](./middleware.html).
+
+Middleware are applied to a router or a sub-router **before the routes definition**. Therefore, all routes in that router and its sub-routers will execute them before executing their associated handler.
+
+To assign a middleware to a router, use the `router.Middleware()` function. Many middleware can be assigned at once. The assignment order is important as middleware will be **executed in order**.
+
+#### Router.Middleware
+
+Middleware apply one or more middleware to the route group.
+
+| Parameters                 | Return |
+|----------------------------|--------|
+| `middleware ...Middleware` | `void` |
+
+**Example:**
+``` go
+router.Middleware(middleware.DisallowNonValidatedFields)
+```
+
+---
+
+Middleware can also be applied to specific routes. You can add as many as you want.
+
+**Example:**
+``` go
+router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
 ```
 
 ## Groups and sub-routers
@@ -130,30 +293,18 @@ func registerUserRoutes(router *goyave.Router) {
 // Register is the main route registrer.
 func Register(router *goyave.Router) {
     registerUserRoutes(router)
-    registerProductsRoutes(router)
+    registerProductRoutes(router)
     //...
 }
 ```
 
-## Middleware
-
-Middleware are handlers executed before the controller handler. Learn more in the dedicated [section](./middleware.html).
-
-Middleware are applied to a router or a sub-router **before the routes definition**. Therefore, all routes in that router and its sub-routers will execute them before executing their associated handler.
-
-To assign a middleware to a router, use the `router.Middleware()` function. Many middleware can be assigned at once. The assignment order is important as middleware will be **executed in order**.
-
-#### Router.Middleware
-
-Middleware apply one or more middleware to the route group.
-
-| Parameters                 | Return |
-|----------------------------|--------|
-| `middleware ...Middleware` | `void` |
-
-**Example:**
+Subrouters are checked before routes, meaning that they have priority over the latter. If you have a router sharing a prefix with a higher-level level route, **it will never match** because the subrouter will match first.
 ``` go
-router.Middleware(middleware.DisallowNonValidatedFields)
+subrouter := router.Subrouter("/product")
+subrouter.Route("GET", "/{id:[0-9]+}", handler, nil)
+
+router.Route("GET", "/product/{id:[0-9]+}", handler, nil) // This route will never match
+router.Route("GET", "/product/category", handler, nil)    // This one neither
 ```
 
 ## Serve static resources
@@ -237,6 +388,10 @@ router.Route("GET", "/user", goyave.NativeHandler(httpHandler), nil)
 ```
 
 #### goyave.NativeMiddleware
+
+::: warning
+**Deprecated**: Goyave doesn't use gorilla/mux anymore. This function will be removed in a future major release.
+::: 
 
 NativeMiddleware is an adapter function `mux.MiddlewareFunc`. With this adapter, you can plug [Gorilla Mux middleware](https://github.com/gorilla/mux#middleware) to your application.
 

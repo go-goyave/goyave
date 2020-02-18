@@ -115,6 +115,11 @@ func (suite *CustomTestSuite) TestRequests() {
 		if err == nil {
 			suite.Equal(http.StatusMethodNotAllowed, resp.StatusCode)
 		}
+		resp, err = suite.Get("/nonexistent-route", nil)
+		suite.Nil(err)
+		if err == nil {
+			suite.Equal(http.StatusNotFound, resp.StatusCode)
+		}
 		resp, err = suite.Post("/post", nil, strings.NewReader("field=value"))
 		suite.Nil(err)
 		if err == nil {

@@ -10,6 +10,7 @@
 - Added `Route.GetFullURI()` and `Route.BuildURL()` for dynamic URL generation.
 - Added `helper.IndexOfStr()` and `helper.ContainsStr()` for better performance when using string slices.
 - Moved from GoDoc to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2).
+- Print errors to stderr.
 
 ## v2.5.0
 

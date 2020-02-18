@@ -35,7 +35,7 @@ Get the index of the given value in the given slice, or `-1` if not found.
 
 **Example:**
 ``` go
-slice := []interface{'r', "Goyave", 3, 2.42}
+slice := []interface{}{'r', "Goyave", 3, 2.42}
 fmt.Println(helper.IndexOf(slice, "Goyave")) // 1
 ```
 
@@ -50,7 +50,7 @@ Check if a generic slice contains the given value.
 
 **Example:**
 ``` go
-slice := []interface{'r', "Goyave", 3, 2.42}
+slice := []interface{}{'r', "Goyave", 3, 2.42}
 fmt.Println(helper.Contains(slice, "Goyave")) // true
 ```
 

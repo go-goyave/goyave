@@ -41,7 +41,7 @@ func TestCustomSuite(t *testing.T) {
 }
 ```
 
-We will explain in more details what this test does in the following sections, but in short, this test runs the server, registers all your application routes and executes the second parameter as a server startup hook. The test requests the `/hello` route with the method `GET` and checks the content of the response. The server automatically shuts down after the hook is executed and before `RunServer` returns. See the available assertions in the [testify's documentation](https://godoc.org/github.com/stretchr/testify).
+We will explain in more details what this test does in the following sections, but in short, this test runs the server, registers all your application routes and executes the second parameter as a server startup hook. The test requests the `/hello` route with the method `GET` and checks the content of the response. The server automatically shuts down after the hook is executed and before `RunServer` returns. See the available assertions in the [testify's documentation](https://pkg.go.dev/github.com/stretchr/testify).
 
 This test is a **functional** test. Therefore, it requires route registration and should be located in the `test` package.
 
@@ -459,7 +459,7 @@ import "github.com/System-Glitch/goyave/v2/database"
 ```
 
 ::: tip
-You may want to use a clean database for each of your tests. You can clear your database before each test using [`suite.SetupTest()`](https://godoc.org/github.com/stretchr/testify/suite#SetupTestSuite).
+You may want to use a clean database for each of your tests. You can clear your database before each test using [`suite.SetupTest()`](https://pkg.go.dev/github.com/stretchr/testify/suite?tab=doc#SetupTestSuite).
 
 ``` go
 func (suite *CustomTestSuite) SetupTest() {

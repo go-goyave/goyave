@@ -47,7 +47,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
 
-<a href="https://godoc.org/github.com/System-Glitch/goyave"><h3 align="center">GoDoc</h3></a>
+<a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v2"><h3 align="center">pkg.go.dev</h3></a>
 
 ## Getting started
 
@@ -88,7 +88,7 @@ abc 123
 
 ## Features tour
 
-This section's goal is to give a **brief** look at the main features of the framework. Don't consider this documentation. If you want a complete reference and documentation, head to [GoDoc](https://godoc.org/github.com/System-Glitch/goyave) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
+This section's goal is to give a **brief** look at the main features of the framework. Don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
 
 - [Hello world from scratch](#hello-world-from-scratch)
 - [Configuration](#configuration)

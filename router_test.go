@@ -533,6 +533,16 @@ func (suite *RouterTestSuite) TestMatch() {
 
 	// ------------
 
+	paramSubrouter := router.Subrouter("/{param}")
+	route := paramSubrouter.Route("GET", "/{subparam}", handler, nil).Name("param.name")
+	match = routeMatch{currentPath: "/name/surname"}
+	suite.True(router.match(httptest.NewRequest("GET", "/name/surname", nil), &match))
+	suite.Equal(route, match.route)
+	suite.Equal("name", match.parameters["param"])
+	suite.Equal("surname", match.parameters["subparam"])
+
+	// ------------
+
 	match = routeMatch{currentPath: "/user/42"}
 	suite.False(productRouter.match(httptest.NewRequest("GET", "/user/42", nil), &match))
 	match = routeMatch{currentPath: "/product/42"}

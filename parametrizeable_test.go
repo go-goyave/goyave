@@ -110,14 +110,14 @@ func (suite *ParametrizeableTestSuite) TestBraceIndices() {
 }
 
 func (suite *ParametrizeableTestSuite) TestMakeParameters() {
-	matches := []string{"33", "param"}
+	matches := []string{"/product/33/param", "33", "param"}
 	names := []string{"id", "name"}
 
 	p := &parametrizeable{}
 	params := p.makeParameters(matches, names)
 
-	for k := range matches {
-		suite.Equal(matches[k], params[names[k]])
+	for k := 1; k < len(matches); k++ {
+		suite.Equal(matches[k], params[names[k-1]])
 	}
 }
 

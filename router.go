@@ -119,7 +119,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (r *Router) match(req *http.Request, match *routeMatch) bool {
 	// Check if router itself matches
-	var params []string = nil
+	var params []string
 	if r.parametrizeable.regex != nil {
 		params = r.parametrizeable.regex.FindStringSubmatch(match.currentPath)
 	} else {

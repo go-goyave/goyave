@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var regexCache map[string]*regexp.Regexp = nil
+var regexCache map[string]*regexp.Regexp
 
 // parametrizeable represents a route or router accepting
 // parameters in its URI.
@@ -17,7 +17,7 @@ type parametrizeable struct {
 
 // compileParameters parse the route parameters and compiles their regexes if needed.
 // If "ends" is set to true, the generated regex ends with "$", thus set "ends" to true
-// if you're compiling route paramters, set to false if you're compiling router parameters.
+// if you're compiling route parameters, set to false if you're compiling router parameters.
 func (p *parametrizeable) compileParameters(uri string, ends bool) {
 	idxs, err := p.braceIndices(uri)
 	if err != nil {

@@ -4,7 +4,7 @@
 
 ## v2.6.0
 
-- Custom router implementation. Goyave is not using gorilla/mux anymore. The new router is twice as fast and uses about 5 times less memory.
+- Custom router implementation. Goyave is not using gorilla/mux anymore. The new router is twice as fast and uses about 3 times less memory.
 - Now redirects to configured protocol if request scheme doesn't match.
 - Added [named routes](./basics/routing.html#named-routes).
 - Added `Route.GetFullURI()` and `Route.BuildURL()` for dynamic URL generation.

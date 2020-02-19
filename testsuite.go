@@ -97,6 +97,7 @@ func (s *TestSuite) CreateTestRequest(rawRequest *http.Request) *Request {
 	}
 	return &Request{
 		httpRequest: rawRequest,
+		route:       nil,
 		Data:        nil,
 		Rules:       nil,
 		Lang:        "en-US",

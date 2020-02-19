@@ -21,6 +21,7 @@ type Request struct {
 	httpRequest *http.Request
 	corsOptions *cors.Options
 	cookies     []*http.Cookie
+	route       *Route
 	User        interface{}
 	Rules       validation.RuleSet
 	Data        map[string]interface{}
@@ -43,6 +44,11 @@ func (r *Request) Protocol() string {
 // Otherwise use the provided methods and fields of the "goyave.Request".
 func (r *Request) URI() *url.URL {
 	return r.httpRequest.URL
+}
+
+// Route returns the current route.
+func (r *Request) Route() *Route {
+	return r.route
 }
 
 // Header contains the request header fields either received

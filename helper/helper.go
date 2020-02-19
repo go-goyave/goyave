@@ -27,6 +27,24 @@ func Contains(slice interface{}, value interface{}) bool {
 	return IndexOf(slice, value) != -1
 }
 
+// IndexOfStr get the index of the given value in the given string slice,
+// or -1 if not found.
+// Prefer using this helper instead of IndexOf for better performance.
+func IndexOfStr(slice []string, value string) int {
+	for i, v := range slice {
+		if v == value {
+			return i
+		}
+	}
+	return -1
+}
+
+// ContainsStr check if a string slice contains a value.
+// Prefer using this helper instead of Contains for better performance.
+func ContainsStr(slice []string, value string) bool {
+	return IndexOfStr(slice, value) != -1
+}
+
 // SliceEqual check if two generic slices are the same.
 func SliceEqual(first interface{}, second interface{}) bool {
 	l1 := reflect.ValueOf(first)

@@ -47,7 +47,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
 
-<a href="https://godoc.org/github.com/System-Glitch/goyave"><h3 align="center">GoDoc</h3></a>
+<a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v2"><h3 align="center">pkg.go.dev</h3></a>
 
 ## Getting started
 
@@ -88,7 +88,7 @@ abc 123
 
 ## Features tour
 
-This section's goal is to give a **brief** look at the main features of the framework. Don't consider this documentation. If you want a complete reference and documentation, head to [GoDoc](https://godoc.org/github.com/System-Glitch/goyave) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
+This section's goal is to give a **brief** look at the main features of the framework. Don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
 
 - [Hello world from scratch](#hello-world-from-scratch)
 - [Configuration](#configuration)
@@ -184,25 +184,28 @@ func Register(router *goyave.Router) {
     router.Route("GET", "/hello", myHandlerFunction, nil)
     router.Route("POST", "/user", user.Register, userrequest.Register)
     router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
+    router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
 }
 ```
 
 **Method signature:**
 
-| Parameters                           | Return |
-| ------------------------------------ | ------ |
-| `methods string`                     | `void` |
-| `uri string`                         |        |
-| `handler goyave.Handler`             |        |
-| `validationRules validation.RuleSet` |        |
+| Parameters                           | Return          |
+|--------------------------------------|-----------------|
+| `methods string`                     | `*goyave.Route` |
+| `uri string`                         |                 |
+| `handler goyave.Handler`             |                 |
+| `validationRules validation.RuleSet` |                 |
+| `middleware ...goyave.Middleware`    |                 |
+
 
 URIs can have parameters, defined using the format `{name}` or `{name:pattern}`. If a regular expression pattern is not defined, the matched variable will be anything until the next slash. 
 
 **Example:**
 ``` go
-router.Route("GET", "/products/{key}", product.Show, nil)
-router.Route("GET", "/products/{id:[0-9]+}", product.ShowById, nil)
-router.Route("GET", "/categories/{category}/{id:[0-9]+}", category.Show, nil)
+router.Route("GET", "/product/{key}", product.Show, nil)
+router.Route("GET", "/product/{id:[0-9]+}", product.ShowById, nil)
+router.Route("GET", "/category/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -603,6 +606,10 @@ You can support also me on Patreon:
 <a href="https://www.patreon.com/bePatron?u=25997573">
     <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
+
+I'm very grateful to my patron:
+
+- Ben Hyrman
 
 ### Contributors
 

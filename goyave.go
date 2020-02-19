@@ -32,6 +32,7 @@ var (
 	maintenanceEnabled bool = false
 	mutex                   = &sync.RWMutex{}
 	once               sync.Once
+	errLogger          *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
 // IsReady returns true if the server has finished initializing and
@@ -76,7 +77,7 @@ func Start(routeRegistrer func(*Router)) {
 	mutex.Lock()
 	if !config.IsLoaded() {
 		if err := config.Load(); err != nil {
-			fmt.Println(err)
+			errLogger.Println(err)
 			return
 		}
 	}
@@ -90,6 +91,7 @@ func Start(routeRegistrer func(*Router)) {
 
 	router = newRouter()
 	routeRegistrer(router)
+	regexCache = nil // Clear regex cache
 	startServer(router)
 }
 
@@ -104,7 +106,7 @@ func EnableMaintenance() {
 // DisableMaintenance replace the main server handler with the original router.
 func DisableMaintenance() {
 	mutex.Lock()
-	server.Handler = router.muxRouter
+	server.Handler = router
 	maintenanceEnabled = false
 	mutex.Unlock()
 }
@@ -114,6 +116,14 @@ func IsMaintenanceEnabled() bool {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	return maintenanceEnabled
+}
+
+// GetRoute get a named route.
+// Returns nil if the route doesn't exist.
+func GetRoute(name string) *Route {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return router.namedRoutes[name]
 }
 
 func getMaintenanceHandler() http.Handler {
@@ -210,7 +220,12 @@ func startTLSRedirectServer() {
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, httpsAddress+r.RequestURI, http.StatusPermanentRedirect)
+			address := httpsAddress + r.URL.Path
+			query := r.URL.Query()
+			if len(query) != 0 {
+				address += "?" + query.Encode()
+			}
+			http.Redirect(w, r, address, http.StatusPermanentRedirect)
 		}),
 	}
 
@@ -251,7 +266,7 @@ func startServer(router *Router) {
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
 		IdleTimeout:  timeout * 2,
-		Handler:      router.muxRouter,
+		Handler:      router,
 	}
 
 	if config.GetBool("maintenance") {
@@ -261,7 +276,7 @@ func startServer(router *Router) {
 
 	ln, err := net.Listen("tcp", server.Addr)
 	if err != nil {
-		fmt.Println(err)
+		errLogger.Println(err)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		stop(ctx)
@@ -280,7 +295,7 @@ func startServer(router *Router) {
 		mutex.Unlock()
 		runStartupHooks()
 		if err := s.ServeTLS(ln, config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
-			fmt.Println(err)
+			errLogger.Println(err)
 			Stop()
 		}
 	} else {
@@ -289,7 +304,7 @@ func startServer(router *Router) {
 		mutex.Unlock()
 		runStartupHooks()
 		if err := s.Serve(ln); err != nil && err != http.ErrServerClosed {
-			fmt.Println(err)
+			errLogger.Println(err)
 			Stop()
 		}
 	}

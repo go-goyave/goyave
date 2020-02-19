@@ -4,8 +4,8 @@ module.exports = [
       link: "/guide/"
     },
     {
-      text: 'GoDoc',
-      link: 'https://godoc.org/github.com/System-Glitch/goyave'
+      text: 'pkg.go.dev',
+      link: 'https://pkg.go.dev/github.com/System-Glitch/goyave/v2'
     }
   ];
   

@@ -2,6 +2,16 @@
 
 [[toc]]
 
+## v2.6.0
+
+- Custom router implementation. Goyave is not using gorilla/mux anymore. The new router is twice as fast and uses about 3 times less memory.
+- Now redirects to configured protocol if request scheme doesn't match.
+- Added [named routes](./basics/routing.html#named-routes).
+- Added `Route.GetFullURI()` and `Route.BuildURL()` for dynamic URL generation.
+- Added `helper.IndexOfStr()` and `helper.ContainsStr()` for better performance when using string slices.
+- Moved from GoDoc to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2).
+- Print errors to stderr.
+
 ## v2.5.0
 
 - Added an [authentication system](./advanced/authentication.html).

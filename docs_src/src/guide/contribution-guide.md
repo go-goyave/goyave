@@ -14,3 +14,7 @@ I have many ideas for the future of Goyave. I would be infinitely grateful to wh
 You can support me on Patreon.
 
 <a href="https://www.patreon.com/bePatron?u=25997573" data-patreon-widget-type="become-patron-button">Become a Patron!</a><script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
+
+I'm very grateful to my patron:
+
+- Ben Hyrman

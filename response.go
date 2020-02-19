@@ -5,7 +5,6 @@ import (
 	"fmt"
 	htmltemplate "html/template"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -149,12 +148,12 @@ func (r *Response) Download(file string, fileName string) error {
 // write to the response, or use your error status handler.
 func (r *Response) Error(err interface{}) error {
 	if r.err == nil {
-		log.Println(err)
+		errLogger.Println(err)
 	}
 	r.err = err
 	dbg := config.GetBool("debug")
 	if dbg {
-		debug.PrintStack()
+		errLogger.Print(string(debug.Stack()))
 		var message interface{}
 		if e, ok := err.(error); ok {
 			message = e.Error()

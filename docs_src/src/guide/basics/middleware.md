@@ -6,7 +6,7 @@
 
 Middleware are handlers executed before the controller handler. They are a convenient way to filter, intercept or alter HTTP requests entering your application. For example, middleware can be used to authenticate users. If the user is not authenticated, a message is sent to the user even before the controller handler is reached. However, if the user is authenticated, the middleware will pass to the next handler. Middleware can also be used to sanitize user inputs, by trimming strings for example, to log all requests into a log file, to automatically add headers to all your responses, etc.
 
-Writing middleware is as easy as writing standard handlers. In fact, middleware are handlers, but they have an additional responsability: when they are done, the may or may not pass to the next handler, which is either another middleware or a controller handler.
+Writing middleware is as easy as writing standard handlers. In fact, middleware are handlers, but they have an additional responsibility: when they are done, the may or may not pass to the next handler, which is either another middleware or a controller handler.
 
 ## Writing middleware
 

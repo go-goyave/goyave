@@ -126,7 +126,7 @@ Each rule, except the file-related rules and the `confirmed` rule, can be used t
 
 ### Overrides
 
-If you define the `en-US`  language in your application, the default language lines will be overriden by the ones in your language files, and all the undefined ones will be kept.
+If you define the `en-US`  language in your application, the default language lines will be overridden by the ones in your language files, and all the undefined ones will be kept.
 
 It is possible to load a language directory manually from another location than the stardard `resources/lang` using the `lang.Load()` function. If the loaded language is already available in your application, the newly loaded one will override the previous in the same manner.
 

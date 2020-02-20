@@ -74,7 +74,7 @@ goyave.Stop()
 
 When the running process receives a `SIGINT` or a `SIGTERM` signal, for example when you press `CTRL+C` to interrupt the program, the server will shutdown gracefully, so you don't have to handle that yourself.
 
-However, if you start the server in a goroutine, you have the responsability to shutdown properly. If you exit the program manually or if the main goroutine terminates, ensure that `goyave.Stop()` is called. If the program exits because of an interruption signal, the server will shutdown gracefully.
+However, if you start the server in a goroutine, you have the responsibility to shutdown properly. If you exit the program manually or if the main goroutine terminates, ensure that `goyave.Stop()` is called. If the program exits because of an interruption signal, the server will shutdown gracefully.
 
 #### goyave.Stop
 

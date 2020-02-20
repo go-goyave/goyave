@@ -399,7 +399,7 @@ See the [Golang datetime format](https://golang.org/src/time/format.go).
 :::
 
 ::: warning
-When validating dates by comparing them together, the order of the declaration of the fields in the request is important. For example, if you want to validate that an end date is after a start date, the start date should be decalred **before** the end date in the rules set.
+When validating dates by comparing them together, the order of the declaration of the fields in the request is important. For example, if you want to validate that an end date is after a start date, the start date should be declared **before** the end date in the rules set.
 
 If a date has not been validated and converted yet, the date comparison rules will attempt to parse the dates using the following format: `2006-01-02`.
 :::

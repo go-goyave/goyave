@@ -126,7 +126,7 @@ suite.SetTimeout(10 * time.Second)
 
 ### Testing JSON reponses
 
-It is very likely that you will need to check the content of a JSON response when testing your application. Instead of unmarshaling the JSON yourself, Goyave provides the [`suite.GetJSONBody`](#suite-getjsonbody) function. This function decodes the raw body of the request. If the data cannot be decoded, or is invalid JSON, the test fails and the function retuns `nil`.
+It is very likely that you will need to check the content of a JSON response when testing your application. Instead of unmarshaling the JSON yourself, Goyave provides the [`suite.GetJSONBody`](#suite-getjsonbody) function. This function decodes the raw body of the request. If the data cannot be decoded, or is invalid JSON, the test fails and the function returns `nil`.
 
 ``` go
 suite.RunServer(route.Register, func() {
@@ -584,7 +584,7 @@ Generate a number of records using the given factory and return the inserted rec
 
 Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. Seeders are written in the `database/seeder` package.
 
-Each seeder should have its own file. A seeder's responsabilities are limited to a single table or model. For example, the `seeder.User` should only seed the `users` table. Moreover, seeders should have the same name as the model they are using.
+Each seeder should have its own file. A seeder's responsibilities are limited to a single table or model. For example, the `seeder.User` should only seed the `users` table. Moreover, seeders should have the same name as the model they are using.
 
 ``` go
 package seeder

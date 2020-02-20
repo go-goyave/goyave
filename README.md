@@ -528,7 +528,7 @@ if err == nil {
 }
 ```
 
-**Testing JSON respones:**
+**Testing JSON response:**
 
 ``` go
 suite.RunServer(route.Register, func() {

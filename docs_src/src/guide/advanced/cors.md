@@ -36,7 +36,7 @@ subrouter.CORS(options) // Different CORS options
 ```
 
 ::: tip
-All routes defined in a router having CORS options will match the `OPTIONS` HTTP method to allow **pre-flight** requests, even if it's not explicitely told in the route definition.
+All routes defined in a router having CORS options will match the `OPTIONS` HTTP method to allow **pre-flight** requests, even if it's not explicitly told in the route definition.
 :::
 
 ## Options

@@ -32,7 +32,7 @@ Very few code is required to get started with databases. There are some [configu
 - `dbMaxLifetime`
 
 ::: tip
-`dbOptions` represents the addtional connection options. For example, when using MySQL, you should use the `parseTime=true` option so `time.Time` can be handled correctly. Available options differ from one driver to another and can be found in their respective documentation.
+`dbOptions` represents the additional connection options. For example, when using MySQL, you should use the `parseTime=true` option so `time.Time` can be handled correctly. Available options differ from one driver to another and can be found in their respective documentation.
 :::
 
 ### Drivers

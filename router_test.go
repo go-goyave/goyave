@@ -155,7 +155,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	router := newRouter()
 
 	route := &Route{}
-	var tmp *Route = nil
+	var tmp *Route
 	route.handler = func(response *Response, request *Request) {
 		tmp = request.Route()
 		response.String(200, "Hello world")

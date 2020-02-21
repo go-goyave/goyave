@@ -92,7 +92,6 @@ func newRouter() *Router {
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
-	// router.compileParameters(router.prefix, false)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
 	router.StatusHandler(errorStatusHandler, 401, 403, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)

@@ -142,7 +142,8 @@ func TestRequestAccessors(t *testing.T) {
 		panic(err)
 	}
 
-	request := createTestRequest(httptest.NewRequest("POST", "/test-route", nil))
+	rawRequest := httptest.NewRequest("POST", "/test-route", nil)
+	request := createTestRequest(rawRequest)
 	request.Data = map[string]interface{}{
 		"string":   "hello world",
 		"integer":  42,
@@ -159,6 +160,7 @@ func TestRequestAccessors(t *testing.T) {
 	assert.Equal(t, "hello world", request.String("string"))
 	assert.Equal(t, 42, request.Integer("integer"))
 	assert.Equal(t, 42.3, request.Numeric("numeric"))
+	assert.Equal(t, rawRequest, request.Request())
 	assert.True(t, request.Bool("bool"))
 
 	files := request.File("file")

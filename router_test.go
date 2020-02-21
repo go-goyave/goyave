@@ -428,12 +428,9 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	router := newRouter()
 
 	match := &routeMatch{
-		route: &Route{
-			handler: func(response *Response, request *Request) {
-				panic("Test panic") // Test recover middleware is executed
-			},
-			// No parent router
-		},
+		route: newRoute(func(response *Response, request *Request) {
+			panic("Test panic") // Test recover middleware is executed
+		}),
 	}
 
 	writer := httptest.NewRecorder()
@@ -446,6 +443,35 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	}
 	suite.Equal(500, result.StatusCode)
 	suite.Equal("{\"error\":\"Internal Server Error\"}\n", string(body))
+
+	lang := ""
+	param := ""
+	match = &routeMatch{
+		route: newRoute(func(response *Response, request *Request) {
+			// Test lang and parse request
+			lang = request.Lang
+			param = request.String("param")
+		}),
+	}
+
+	writer = httptest.NewRecorder()
+	router.requestHandler(match, writer, httptest.NewRequest("GET", "/uri?param=param", nil))
+	suite.Equal("en-US", lang)
+	suite.Equal("param", param)
+
+	// Custom middleware shouldn't be executed
+	strResult := ""
+	testMiddleware := suite.createOrderedTestMiddleware(&strResult, "1")
+	router.Middleware(testMiddleware)
+
+	match = &routeMatch{route: notFoundRoute}
+	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Empty(strResult)
+
+	match = &routeMatch{route: methodNotAllowedRoute}
+	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Empty(strResult)
+
 }
 
 func (suite *RouterTestSuite) TestMiddlewareHolder() {

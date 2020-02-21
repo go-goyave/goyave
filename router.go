@@ -343,14 +343,9 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	handler = match.route.applyMiddleware(handler)
 
 	parent := match.route.parent
-	if parent == nil { // Not Found or Method Not Allowed
-		// Ensure core middleware is executed on 404 and 405
-		handler = r.applyMiddleware(handler)
-	} else {
-		for parent != nil {
-			handler = parent.applyMiddleware(handler)
-			parent = parent.parent
-		}
+	for parent != nil {
+		handler = parent.applyMiddleware(handler)
+		parent = parent.parent
 	}
 
 	handler(response, request)

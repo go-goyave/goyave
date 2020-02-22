@@ -7,6 +7,8 @@
 - Added `Request.Request()` accessor to get the raw `*http.Request`.
 - Fixed a bug allowing non-core middleware applied to the root router to be executed when the "Not Found" or "Method Not Allowed" routes were matched.
 - Added [chained writers](./basics/responses.html#chained-writers).
+- Added [gzip compression middleware](./basics/middleware.html#gzip).
+- Added the ability to register route-specific middleware in `Router.Static()`.
 
 ## v2.6.0
 

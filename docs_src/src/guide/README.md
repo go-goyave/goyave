@@ -18,7 +18,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 ::: img-row <img :src="$withBase('/undraw_to_do_list_a49b.svg')" height="150" alt="Roadmap"/>
 ### Ideas for future releases
 
-- Support for gzip compression
 - Permission system (guards)
 - CLI utility to help creating controllers, middleware, etc
 - Placeholders in language lines and pluralization

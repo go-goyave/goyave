@@ -81,3 +81,19 @@ For example, `" \t  trimmed\n  \t"` will be transformed to `"trimmed"`.
 ```go
 router.Middleware(middleware.Trim)
 ```
+
+### Gzip
+
+<p><Badge text="Since v2.7.0"/></p>
+
+Gzip compresses HTTP responses with default compression level for clients that support it via the `Accept-Encoding` header.
+
+```go
+router.Middleware(middleware.Gzip())
+```
+
+The compression level can be specified using `GzipLevel(level)`. The compression level should be `gzip.DefaultCompression`, `gzip.NoCompression`, or any integer value between `gzip.BestSpeed` and `gzip.BestCompression` inclusive. `gzip.HuffmanOnly` is also available.
+
+``` go
+router.Middleware(middleware.GzipLevel(gzip.BestCompression))
+```

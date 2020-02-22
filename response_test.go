@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -344,6 +345,61 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	results := []TestRecord{}
 	suite.True(response.HandleDatabaseError(db.Find(&results))) // Get all but empty result should not be an error
 	suite.Equal(0, response.status)
+}
+
+// ------------------------
+
+type testWriter struct {
+	result *string
+	id     string
+	io.Writer
+}
+
+func (w *testWriter) Write(b []byte) (int, error) {
+	*w.result += w.id + string(b)
+	return w.Writer.Write(b)
+}
+
+func (w *testWriter) Close() error {
+	return fmt.Errorf("Test close error")
+}
+
+func (suite *ResponseTestSuite) TestChainedWriter() {
+	writer := httptest.NewRecorder()
+	response := newResponse(writer, nil)
+	result := ""
+	testWr := &testWriter{&result, "0", response.Writer()}
+	response.SetWriter(testWr)
+
+	response.String(http.StatusOK, "hello world")
+
+	suite.Equal("0hello world", result)
+	suite.Equal(200, response.status)
+	suite.True(response.wroteHeader)
+	suite.False(response.empty)
+
+	suite.Equal("Test close error", response.close().Error())
+
+	resp := writer.Result()
+	body, _ := ioutil.ReadAll(resp.Body)
+	suite.Equal("hello world", string(body))
+
+	// Test double chained writer
+	writer = httptest.NewRecorder()
+	response = newResponse(writer, nil)
+	result = ""
+	testWr = &testWriter{&result, "0", response.Writer()}
+	testWr2 := &testWriter{&result, "1", testWr}
+	response.SetWriter(testWr2)
+
+	response.String(http.StatusOK, "hello world")
+	suite.Equal("1hello world0hello world", result)
+	suite.Equal(200, response.status)
+	suite.True(response.wroteHeader)
+	suite.False(response.empty)
+	resp = writer.Result()
+	body, _ = ioutil.ReadAll(resp.Body)
+	suite.Equal("hello world", string(body))
 }
 
 func (suite *ResponseTestSuite) TearDownAllSuite() {

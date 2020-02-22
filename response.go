@@ -25,9 +25,23 @@ type Response struct {
 	status      int
 	wroteHeader bool
 	err         interface{}
+	writer      io.Writer
 
-	httpRequest *http.Request
-	http.ResponseWriter
+	httpRequest    *http.Request
+	responseWriter http.ResponseWriter
+}
+
+// newResponse create a new Response using the given http.ResponseWriter and raw request.
+func newResponse(writer http.ResponseWriter, rawRequest *http.Request) *Response {
+	return &Response{
+		responseWriter: writer,
+		writer:         writer,
+		httpRequest:    rawRequest,
+		empty:          true,
+		status:         0,
+		wroteHeader:    false,
+		err:            nil,
+	}
 }
 
 // --------------------------------------
@@ -43,7 +57,8 @@ func (r *Response) Write(data []byte) (int, error) {
 		}
 		r.WriteHeader(r.status)
 	}
-	return r.ResponseWriter.Write(data)
+
+	return r.writer.Write(data)
 }
 
 // WriteHeader sends an HTTP response header with the provided
@@ -54,16 +69,43 @@ func (r *Response) WriteHeader(status int) {
 	if !r.wroteHeader {
 		r.status = status
 		r.wroteHeader = true
-		r.ResponseWriter.WriteHeader(status)
+		r.responseWriter.WriteHeader(status)
 	}
 }
 
 // Header returns the header map that will be sent.
 func (r *Response) Header() http.Header {
-	return r.ResponseWriter.Header()
+	return r.responseWriter.Header()
 }
 
 // --------------------------------------
+// Chained writers
+
+// Writer return the current writer used to write the response.
+// Note that the returned writer is not necessarily an http.ResponseWriter, as
+// it can be replaced using SetWriter.
+func (r *Response) Writer() io.Writer {
+	return r.writer
+}
+
+// SetWriter set the writer used to write the response.
+// This can be used to chain writers, for example to enable
+// gzip compression, or for logging.
+//
+// The original http.ResponseWriter is always kept.
+func (r *Response) SetWriter(writer io.Writer) {
+	r.writer = writer
+}
+
+func (r *Response) close() error {
+	if wr, ok := r.writer.(io.Closer); ok {
+		return wr.Close()
+	}
+	return nil
+}
+
+// --------------------------------------
+// Accessors
 
 // GetStatus return the response code for this request or 0 if not yet set.
 func (r *Response) GetStatus() int {
@@ -86,7 +128,7 @@ func (r *Response) Status(status int) {
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically
 func (r *Response) JSON(responseCode int, data interface{}) error {
-	r.ResponseWriter.Header().Set("Content-Type", "application/json")
+	r.responseWriter.Header().Set("Content-Type", "application/json")
 	r.WriteHeader(responseCode)
 	return json.NewEncoder(r).Encode(data)
 }
@@ -102,12 +144,13 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	r.empty = false
 	r.status = http.StatusOK
 	mime, size := filesystem.GetMIMEType(file)
-	r.ResponseWriter.Header().Set("Content-Disposition", disposition)
+	header := r.responseWriter.Header()
+	header.Set("Content-Disposition", disposition)
 
-	if r.ResponseWriter.Header().Get("Content-Type") == "" {
-		r.ResponseWriter.Header().Set("Content-Type", mime)
+	if header.Get("Content-Type") == "" {
+		header.Set("Content-Type", mime)
 	}
-	r.ResponseWriter.Header().Set("Content-Length", strconv.FormatInt(size, 10))
+	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := os.Open(file)
 	defer f.Close()
@@ -172,7 +215,7 @@ func (r *Response) Error(err interface{}) error {
 // The provided cookie must have a valid Name. Invalid cookies may be
 // silently dropped.
 func (r *Response) Cookie(cookie *http.Cookie) {
-	http.SetCookie(r.ResponseWriter, cookie)
+	http.SetCookie(r.responseWriter, cookie)
 }
 
 // Redirect send a permanent redirect response
@@ -246,7 +289,8 @@ func (r *Response) HandleDatabaseError(db *gorm.DB) bool {
 //  fmt.Println(result.StatusCode) // 204
 func CreateTestResponse(recorder http.ResponseWriter) *Response {
 	return &Response{
-		ResponseWriter: recorder,
+		responseWriter: recorder,
+		writer:         recorder,
 		empty:          true,
 	}
 }

@@ -45,6 +45,19 @@ func (suite *CustomTestSuite) TestEnv() {
 	suite.Equal("Malformed JSON", lang.Get("en-US", "malformed-json"))
 }
 
+func (suite *CustomTestSuite) TestCreateTestResponse() {
+	writer := httptest.NewRecorder()
+	response := suite.CreateTestResponse(writer)
+	suite.Equal(writer, response.writer)
+	suite.Equal(writer, response.responseWriter)
+
+	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("body"))
+	response = suite.CreateTestResponseWithRequest(writer, rawRequest)
+	suite.Equal(writer, response.writer)
+	suite.Equal(writer, response.responseWriter)
+	suite.Equal(rawRequest, response.httpRequest)
+}
+
 func (suite *CustomTestSuite) TestRunServer() {
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", func(response *Response, request *Request) {

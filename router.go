@@ -325,13 +325,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 		Rules:       match.route.validationRules,
 		Params:      match.parameters,
 	}
-	response := &Response{
-		httpRequest:    rawRequest,
-		ResponseWriter: w,
-		empty:          true,
-		status:         0,
-	}
-
+	response := newResponse(w, rawRequest)
 	handler := match.route.handler
 
 	// Validate last.
@@ -370,6 +364,8 @@ func (r *Router) finalize(response *Response, request *Request) {
 	if !response.wroteHeader {
 		response.WriteHeader(response.status)
 	}
+
+	response.close()
 }
 
 func (h *middlewareHolder) applyMiddleware(handler Handler) Handler {

@@ -220,6 +220,7 @@ suite.Middleware(middleware.Auth, request, func(response *Response, request *Req
 [CreateTestFiles](#testsuite-createtestfiles)
 [CreateTestRequest](#testsuite-createtestrequest)
 [CreateTestResponse](#testsuite-createtestresponse)
+[CreateTestResponseWithRequest](#testsuite-createtestresponsewithrequest)
 [WriteFile](#testsuite-writefile)
 [WriteField](#testsuite-writefield)
 [ClearDatabase](#testsuite-cleardatabase)
@@ -385,6 +386,25 @@ Create an empty response with the given response writer. This function is aimed 
 ``` go
 writer := httptest.NewRecorder()
 response := suite.CreateTestResponse(writer)
+response.Status(http.StatusNoContent)
+result := writer.Result()
+fmt.Println(result.StatusCode) // 204
+```
+
+#### TestSuite.CreateTestResponseWithRequest
+
+Create an empty response with the given response writer and HTTP request. This function is aimed at making it easier to unit test Responses needing the raw request's information, such as redirects.
+
+| Parameters                     | Return             |
+|--------------------------------|--------------------|
+| `recorder http.ResponseWriter` | `*goyave.Response` |
+| `rawRequest *http.Request`     |                    |
+
+**Example:**
+``` go
+writer := httptest.NewRecorder()
+rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("body"))
+response := suite.CreateTestResponseWithRequest(writer, rawRequest)
 response.Status(http.StatusNoContent)
 result := writer.Result()
 fmt.Println(result.StatusCode) // 204

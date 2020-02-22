@@ -22,10 +22,7 @@ func createRouterTestRequest(url string) (*Request, *Response) {
 		httpRequest: rawRequest,
 		Params:      map[string]string{"resource": url},
 	}
-	response := &Response{
-		ResponseWriter: httptest.NewRecorder(),
-		empty:          true,
-	}
+	response := newResponse(httptest.NewRecorder(), nil)
 	return request, response
 }
 
@@ -107,7 +104,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response := createRouterTestRequest("/config.test.json")
 	handler := staticHandler("config", false)
 	handler(response, request)
-	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("inline", result.Header.Get("Content-Disposition"))
@@ -122,7 +119,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response = createRouterTestRequest("/doesn'texist")
 	handler = staticHandler("config", false)
 	handler(response, request)
-	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode) // Not written yet
 	suite.Equal(404, response.GetStatus())
 
@@ -136,7 +133,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response = createRouterTestRequest("/config.test.json")
 	handler = staticHandler("config", true)
 	handler(response, request)
-	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("attachment; filename=\"config.test.json\"", result.Header.Get("Content-Disposition"))
@@ -253,7 +250,7 @@ func (suite *RouterTestSuite) TestPanicStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.err = "random error"
 	panicStatusHandler(response, request)
-	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(500, result.StatusCode)
 }
 
@@ -261,7 +258,7 @@ func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.Status(404)
 	errorStatusHandler(response, request)
-	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(404, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 

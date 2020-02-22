@@ -109,15 +109,26 @@ func (s *TestSuite) CreateTestRequest(rawRequest *http.Request) *Request {
 // This function is aimed at making it easier to unit test Responses.
 //
 //  writer := httptest.NewRecorder()
-//  response := goyave.CreateTestResponse(writer)
+//  response := suite.CreateTestResponse(writer)
 //  response.Status(http.StatusNoContent)
 //  result := writer.Result()
 //  fmt.Println(result.StatusCode) // 204
 func (s *TestSuite) CreateTestResponse(recorder http.ResponseWriter) *Response {
-	return &Response{
-		ResponseWriter: recorder,
-		empty:          true,
-	}
+	return newResponse(recorder, nil)
+}
+
+// CreateTestResponseWithRequest create an empty response with the given response writer HTTP request.
+// This function is aimed at making it easier to unit test Responses needing the raw request's
+// information, such as redirects.
+//
+//  writer := httptest.NewRecorder()
+//  rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("body"))
+//  response := suite.CreateTestResponseWithRequest(writer, rawRequest)
+//  response.Status(http.StatusNoContent)
+//  result := writer.Result()
+//  fmt.Println(result.StatusCode) // 204
+func (s *TestSuite) CreateTestResponseWithRequest(recorder http.ResponseWriter, rawRequest *http.Request) *Response {
+	return newResponse(recorder, rawRequest)
 }
 
 // RunServer start the application and run the given functional test procedure.

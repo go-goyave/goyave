@@ -23,10 +23,7 @@ func (suite *NativeHandlerTestSuite) TestNativeHandler() {
 		httpRequest: httptest.NewRequest("GET", "/native", nil),
 	}
 	recorder := httptest.NewRecorder()
-	response := &Response{
-		ResponseWriter: recorder,
-		empty:          true,
-	}
+	response := newResponse(recorder, nil)
 	handler := NativeHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello world"))
 	}))
@@ -46,10 +43,7 @@ func (suite *NativeHandlerTestSuite) TestNativeMiddleware() {
 		httpRequest: httptest.NewRequest("GET", "/native", nil),
 	}
 	recorder := httptest.NewRecorder()
-	response := &Response{
-		ResponseWriter: recorder,
-		empty:          true,
-	}
+	response := newResponse(recorder, nil)
 	middleware := NativeMiddleware(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Hello world"))

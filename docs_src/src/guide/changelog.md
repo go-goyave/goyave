@@ -2,6 +2,12 @@
 
 [[toc]]
 
+## v2.7.0
+
+- Added `Request.Request()` accessor to get the raw `*http.Request`.
+- Fixed a bug allowing non-core middleware applied to the root router to be executed when the "Not Found" or "Method Not Allowed" routes were matched.
+- Added [chained writers](./basics/responses.html#chained-writers).
+
 ## v2.6.0
 
 - Custom router implementation. Goyave is not using gorilla/mux anymore. The new router is twice as fast and uses about 3 times less memory.
@@ -70,7 +76,7 @@
 - Added maintenance mode.
     - Can be [toggled at runtime](./advanced/multi-services.html#maintenance-mode).
     - The server can be started in maintenance mode using the `maintenance` config option. (Defaults to `false`)
-- Added [advanced array validation](./basics/validation.html#validating-arrays), with support for n-dimensional arrays.<Badge text="BETA" type="warn"/>
+- Added [advanced array validation](./basics/validation.html#validating-arrays), with support for n-dimensional arrays.
 - Malformed request messages can now be localized. (`malformed-request` and `malformed-json` entries in `locale.json`)
 - Modified the validator to allow [manual validation](./basics/validation.html#manual-validation).
 

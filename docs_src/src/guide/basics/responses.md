@@ -313,6 +313,8 @@ if response.HandleDatabaseError(result) {
 
 ## Chained writers
 
+<p><Badge text="Since v2.7.0"/></p>
+
 It is possible to replace the `io.Writer` used by the `Response` object. This allows for more flexibility when manipulating the data you send to the client. It makes it easier to compress your response, write it to logs, etc. You can chain as many writers as you want. The writer replacement is most often done in a middleware. If your writer implements `io.Closer`, it will be automatically closed at the end of the request's lifecycle.
 
 The following example is a simple implementation of a logging middleware.
@@ -355,3 +357,23 @@ func LogMiddleware(next goyave.Handler) goyave.Handler {
 	}
 }
 ```
+
+#### Response.Writer
+
+Return the current writer used to write the response.
+
+Note that the returned writer is not necessarily a `http.ResponseWriter`, as it can be replaced using `SetWriter`.
+
+| Parameters | Return      |
+|------------|-------------|
+|            | `io.Writer` |
+
+#### Response.SetWriter
+
+Set the writer used to write the response.
+
+This can be used to chain writers, for example to enable gzip compression, or for logging. The original `http.ResponseWriter` is always kept.
+
+| Parameters         | Return |
+|--------------------|--------|
+| `writer io.Writer` |        |

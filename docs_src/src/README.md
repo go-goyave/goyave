@@ -7,7 +7,7 @@ footer: MIT Licensed | Copyright © 2019 Jérémy LAMBERT (SystemGlitch)
 ---
 
 <p class="center">
-Goyave is a progressive and accessible web application framework, aimed at making development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
+Goyave is a progressive and accessible web application framework, aimed at making development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused. Get started quickly and master all its powerful functionalities thanks to its extensive documentation.
 </p>
 
 <div class="features">

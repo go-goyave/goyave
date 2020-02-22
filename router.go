@@ -245,8 +245,8 @@ func (r *Router) GetRoute(name string) *Route {
 //
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
-func (r *Router) Static(uri string, directory string, download bool) {
-	r.registerRoute("GET", uri+"{resource:.*}", staticHandler(directory, download), nil)
+func (r *Router) Static(uri string, directory string, download bool, middleware ...Middleware) {
+	r.registerRoute("GET", uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
 }
 
 // CORS set the CORS options for this route group.

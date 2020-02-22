@@ -349,11 +349,12 @@ Set the `download` parameter to true if you want the files to be sent as an atta
 
 The `directory` parameter can be a relative or an absolute path.
 
-| Parameters         | Return |
-|--------------------|--------|
-| `uri string`       | `void` |
-| `directory string` |        |
-| `download bool`    |        |
+| Parameters                        | Return |
+|-----------------------------------|--------|
+| `uri string`                      | `void` |
+| `directory string`                |        |
+| `download bool`                   |        |
+| `middleware ...goyave.Middleware` |        |
 
 **Example:**
 ``` go

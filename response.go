@@ -82,7 +82,7 @@ func (r *Response) Header() http.Header {
 // Chained writers
 
 // Writer return the current writer used to write the response.
-// Note that the returned writer is not necessarily an http.ResponseWriter, as
+// Note that the returned writer is not necessarily a http.ResponseWriter, as
 // it can be replaced using SetWriter.
 func (r *Response) Writer() io.Writer {
 	return r.writer

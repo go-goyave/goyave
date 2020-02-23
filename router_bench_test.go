@@ -107,7 +107,7 @@ var sampleRequests []*http.Request = []*http.Request{
 	httptest.NewRequest("POST", "/world", nil),
 	httptest.NewRequest("POST", "/param", nil),
 	httptest.NewRequest("GET", "/product", nil),
-	httptest.NewRequest("POST", "/product", nil),     // TODO body and validation
+	httptest.NewRequest("POST", "/product", nil),
 	httptest.NewRequest("GET", "/product/test", nil), // 404
 	httptest.NewRequest("GET", "/product/1", nil),
 	httptest.NewRequest("PUT", "/product/1", nil),

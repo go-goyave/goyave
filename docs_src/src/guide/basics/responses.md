@@ -1,10 +1,16 @@
 # Responses
 
-Handlers receive a `goyave.Response` and a `goyave.Request` as parameters. This section is a technical reference of the `Response` object.
+[[toc]]
+
+## Introduction
+
+Handlers receive a `goyave.Response` and a `goyave.Request` as parameters.
 
 `goyave.Response` implements `http.ResponseWriter`. This object brings a number of convenient methods to write HTTP responses.
 
 If you didn't write anything before the request lifecycle ends, `204 No Content` is automatically written.
+
+## Reference
 
 All functions below require the `goyave` package to be imported.
 
@@ -304,3 +310,70 @@ if response.HandleDatabaseError(result) {
     response.JSON(http.StatusOK, product)
 }
 ```
+
+## Chained writers
+
+<p><Badge text="Since v2.7.0"/></p>
+
+It is possible to replace the `io.Writer` used by the `Response` object. This allows for more flexibility when manipulating the data you send to the client. It makes it easier to compress your response, write it to logs, etc. You can chain as many writers as you want. The writer replacement is most often done in a middleware. If your writer implements `io.Closer`, it will be automatically closed at the end of the request's lifecycle.
+
+The following example is a simple implementation of a logging middleware.
+``` go
+import (
+	"io"
+	"log"
+
+	"github.com/System-Glitch/goyave/v2"
+)
+
+type LogWriter struct {
+	writer   io.Writer
+	response *goyave.Response
+}
+
+func (w *LogWriter) Write(b []byte) (int, error) {
+	log.Println("RESPONSE", w.response.GetStatus(), string(b))
+	return w.writer.Write(b)
+}
+
+func (w *LogWriter) Close() error {
+    // The chained writer MUST be closed if it's closeable.
+    // Thus, all chained writers should implement io.Closer.
+	if wr, ok := w.writer.(io.Closer); ok {
+		return wr.Close()
+	}
+	return nil
+}
+
+func LogMiddleware(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
+		logWriter := &LogWriter{
+			writer:   response.Writer(),
+			response: response,
+		}
+		response.SetWriter(logWriter)
+
+		next(response, request)
+	}
+}
+```
+
+#### Response.Writer
+
+Return the current writer used to write the response.
+
+Note that the returned writer is not necessarily a `http.ResponseWriter`, as it can be replaced using `SetWriter`.
+
+| Parameters | Return      |
+|------------|-------------|
+|            | `io.Writer` |
+
+#### Response.SetWriter
+
+Set the writer used to write the response.
+
+This can be used to chain writers, for example to enable gzip compression, or for logging. The original `http.ResponseWriter` is always kept.
+
+| Parameters         | Return |
+|--------------------|--------|
+| `writer io.Writer` |        |

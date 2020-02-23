@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -28,41 +29,30 @@ func (suite *ResponseTestSuite) SetupSuite() {
 	}
 }
 
-func createTestResponse(rawRequest *http.Request) *Response {
-	response := &Response{
-		ResponseWriter: httptest.NewRecorder(),
-		httpRequest:    rawRequest,
-		empty:          true,
-		status:         0,
-	}
-
-	return response
-}
-
 func (suite *ResponseTestSuite) TestResponseStatus() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Status(403)
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode) // Not written yet
 	suite.True(response.empty)
 	suite.Equal(403, response.GetStatus())
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response = createTestResponse(rawRequest)
+	response = newResponse(httptest.NewRecorder(), rawRequest)
 	response.String(403, "test")
-	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(403, resp.StatusCode)
 	suite.False(response.empty)
 	suite.Equal(403, response.GetStatus())
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response = createTestResponse(rawRequest)
+	response = newResponse(httptest.NewRecorder(), rawRequest)
 	response.Status(403)
 	response.Status(200) // Should have no effect
-	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode) // Not written yet
 	suite.True(response.empty)
@@ -71,10 +61,10 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 
 func (suite *ResponseTestSuite) TestResponseHeader() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Header().Set("Content-Type", "application/json")
 	response.Status(200)
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
@@ -85,9 +75,9 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 func (suite *ResponseTestSuite) TestResponseError() {
 	config.Set("debug", true)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Error(fmt.Errorf("random error"))
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(500, resp.StatusCode)
 
@@ -99,9 +89,9 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.NotNil(response.err)
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response = createTestResponse(rawRequest)
+	response = newResponse(httptest.NewRecorder(), rawRequest)
 	response.Error("random error")
-	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(500, resp.StatusCode)
 	suite.NotNil(response.err)
@@ -115,9 +105,9 @@ func (suite *ResponseTestSuite) TestResponseError() {
 
 	config.Set("debug", false)
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response = createTestResponse(rawRequest)
+	response = newResponse(httptest.NewRecorder(), rawRequest)
 	response.Error("random error")
-	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(500, response.GetStatus())
 
@@ -132,10 +122,10 @@ func (suite *ResponseTestSuite) TestResponseError() {
 
 func (suite *ResponseTestSuite) TestResponseFile() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 
 	response.File("config/config.test.json")
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
@@ -146,16 +136,16 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 
 	// Test no Content-Type override
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response = createTestResponse(rawRequest)
+	response = newResponse(httptest.NewRecorder(), rawRequest)
 	response.Header().Set("Content-Type", "text/plain")
 	response.File("config/config.test.json")
-	resp = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal("text/plain", resp.Header.Get("Content-Type"))
 }
 
 func (suite *ResponseTestSuite) TestResponseFilePanic() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 
 	suite.Panics(func() {
 		response.File("doesn'texist")
@@ -164,10 +154,10 @@ func (suite *ResponseTestSuite) TestResponseFilePanic() {
 
 func (suite *ResponseTestSuite) TestResponseDownload() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 
 	response.Download("config/config.test.json", "config.json")
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
@@ -179,10 +169,10 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 
 func (suite *ResponseTestSuite) TestResponseRedirect() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 
 	response.Redirect("https://www.google.com")
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(308, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -194,10 +184,10 @@ func (suite *ResponseTestSuite) TestResponseRedirect() {
 
 func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 
 	response.TemporaryRedirect("https://www.google.com")
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(307, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -209,13 +199,13 @@ func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 
 func (suite *ResponseTestSuite) TestResponseCookie() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Cookie(&http.Cookie{
 		Name:  "cookie-name",
 		Value: "test",
 	})
 
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	cookies := resp.Cookies()
 	suite.Equal(1, len(cookies))
 	suite.Equal("cookie-name", cookies[0].Name)
@@ -224,9 +214,9 @@ func (suite *ResponseTestSuite) TestResponseCookie() {
 
 func (suite *ResponseTestSuite) TestResponseWrite() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := createTestResponse(rawRequest)
+	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Write([]byte("byte array"))
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	body, err := ioutil.ReadAll(resp.Body)
 	suite.Nil(err)
 	suite.Equal("byte array", string(body))
@@ -238,7 +228,7 @@ func (suite *ResponseTestSuite) TestCreateTestResponse() {
 	response := CreateTestResponse(recorder)
 	suite.NotNil(response)
 	if response != nil {
-		suite.Equal(recorder, response.ResponseWriter)
+		suite.Equal(recorder, response.responseWriter)
 	}
 }
 
@@ -334,27 +324,82 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	defer config.Set("dbConnection", "none")
 	db := database.GetConnection()
 
-	response := createTestResponse(nil)
+	response := newResponse(httptest.NewRecorder(), nil)
 	suite.False(response.HandleDatabaseError(db.Find(&TestRecord{})))
 
 	suite.Equal(http.StatusInternalServerError, response.status)
 
 	db.AutoMigrate(&TestRecord{})
 	defer db.DropTable(&TestRecord{})
-	response = createTestResponse(nil)
+	response = newResponse(httptest.NewRecorder(), nil)
 	suite.False(response.HandleDatabaseError(db.Where("id = ?", -1).Find(&TestRecord{})))
 
 	suite.Equal(http.StatusNotFound, response.status)
 
-	response = createTestResponse(nil)
+	response = newResponse(httptest.NewRecorder(), nil)
 	suite.True(response.HandleDatabaseError(db.Exec("SHOW TABLES;")))
 
 	suite.Equal(0, response.status)
 
-	response = createTestResponse(nil)
+	response = newResponse(httptest.NewRecorder(), nil)
 	results := []TestRecord{}
 	suite.True(response.HandleDatabaseError(db.Find(&results))) // Get all but empty result should not be an error
 	suite.Equal(0, response.status)
+}
+
+// ------------------------
+
+type testWriter struct {
+	result *string
+	id     string
+	io.Writer
+}
+
+func (w *testWriter) Write(b []byte) (int, error) {
+	*w.result += w.id + string(b)
+	return w.Writer.Write(b)
+}
+
+func (w *testWriter) Close() error {
+	return fmt.Errorf("Test close error")
+}
+
+func (suite *ResponseTestSuite) TestChainedWriter() {
+	writer := httptest.NewRecorder()
+	response := newResponse(writer, nil)
+	result := ""
+	testWr := &testWriter{&result, "0", response.Writer()}
+	response.SetWriter(testWr)
+
+	response.String(http.StatusOK, "hello world")
+
+	suite.Equal("0hello world", result)
+	suite.Equal(200, response.status)
+	suite.True(response.wroteHeader)
+	suite.False(response.empty)
+
+	suite.Equal("Test close error", response.close().Error())
+
+	resp := writer.Result()
+	body, _ := ioutil.ReadAll(resp.Body)
+	suite.Equal("hello world", string(body))
+
+	// Test double chained writer
+	writer = httptest.NewRecorder()
+	response = newResponse(writer, nil)
+	result = ""
+	testWr = &testWriter{&result, "0", response.Writer()}
+	testWr2 := &testWriter{&result, "1", testWr}
+	response.SetWriter(testWr2)
+
+	response.String(http.StatusOK, "hello world")
+	suite.Equal("1hello world0hello world", result)
+	suite.Equal(200, response.status)
+	suite.True(response.wroteHeader)
+	suite.False(response.empty)
+	resp = writer.Result()
+	body, _ = ioutil.ReadAll(resp.Body)
+	suite.Equal("hello world", string(body))
 }
 
 func (suite *ResponseTestSuite) TearDownAllSuite() {

@@ -25,8 +25,15 @@ var _ routeMatcher = (*Route)(nil) // implements routeMatcher
 
 // newRoute create a new route without any settings except its handler.
 // This is used to generate a fake route for the Method Not Allowed and Not Found handlers.
+// This route has the core middleware enabled and can be used without a parent router.
+// Thus, custom status handlers can use language and body.
 func newRoute(handler Handler) *Route {
-	return &Route{handler: handler}
+	return &Route{
+		handler: handler,
+		middlewareHolder: middlewareHolder{
+			middleware: []Middleware{recoveryMiddleware, parseRequestMiddleware, languageMiddleware},
+		},
+	}
 }
 
 func (r *Route) match(req *http.Request, match *routeMatch) bool {

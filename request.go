@@ -29,6 +29,12 @@ type Request struct {
 	Lang        string
 }
 
+// Request return the raw http request.
+// Prefer using the "goyave.Request" accessors.
+func (r *Request) Request() *http.Request {
+	return r.httpRequest
+}
+
 // Method specifies the HTTP method (GET, POST, PUT, etc.).
 func (r *Request) Method() string {
 	return r.httpRequest.Method

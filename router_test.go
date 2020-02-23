@@ -22,10 +22,7 @@ func createRouterTestRequest(url string) (*Request, *Response) {
 		httpRequest: rawRequest,
 		Params:      map[string]string{"resource": url},
 	}
-	response := &Response{
-		ResponseWriter: httptest.NewRecorder(),
-		empty:          true,
-	}
+	response := newResponse(httptest.NewRecorder(), nil)
 	return request, response
 }
 
@@ -107,7 +104,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response := createRouterTestRequest("/config.test.json")
 	handler := staticHandler("config", false)
 	handler(response, request)
-	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("inline", result.Header.Get("Content-Disposition"))
@@ -122,7 +119,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response = createRouterTestRequest("/doesn'texist")
 	handler = staticHandler("config", false)
 	handler(response, request)
-	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode) // Not written yet
 	suite.Equal(404, response.GetStatus())
 
@@ -136,7 +133,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	request, response = createRouterTestRequest("/config.test.json")
 	handler = staticHandler("config", true)
 	handler(response, request)
-	result = response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("attachment; filename=\"config.test.json\"", result.Header.Get("Content-Disposition"))
@@ -253,7 +250,7 @@ func (suite *RouterTestSuite) TestPanicStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.err = "random error"
 	panicStatusHandler(response, request)
-	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(500, result.StatusCode)
 }
 
@@ -261,7 +258,7 @@ func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.Status(404)
 	errorStatusHandler(response, request)
-	result := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(404, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 
@@ -428,12 +425,9 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	router := newRouter()
 
 	match := &routeMatch{
-		route: &Route{
-			handler: func(response *Response, request *Request) {
-				panic("Test panic") // Test recover middleware is executed
-			},
-			// No parent router
-		},
+		route: newRoute(func(response *Response, request *Request) {
+			panic("Test panic") // Test recover middleware is executed
+		}),
 	}
 
 	writer := httptest.NewRecorder()
@@ -446,6 +440,35 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	}
 	suite.Equal(500, result.StatusCode)
 	suite.Equal("{\"error\":\"Internal Server Error\"}\n", string(body))
+
+	lang := ""
+	param := ""
+	match = &routeMatch{
+		route: newRoute(func(response *Response, request *Request) {
+			// Test lang and parse request
+			lang = request.Lang
+			param = request.String("param")
+		}),
+	}
+
+	writer = httptest.NewRecorder()
+	router.requestHandler(match, writer, httptest.NewRequest("GET", "/uri?param=param", nil))
+	suite.Equal("en-US", lang)
+	suite.Equal("param", param)
+
+	// Custom middleware shouldn't be executed
+	strResult := ""
+	testMiddleware := suite.createOrderedTestMiddleware(&strResult, "1")
+	router.Middleware(testMiddleware)
+
+	match = &routeMatch{route: notFoundRoute}
+	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Empty(strResult)
+
+	match = &routeMatch{route: methodNotAllowedRoute}
+	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Empty(strResult)
+
 }
 
 func (suite *RouterTestSuite) TestMiddlewareHolder() {
@@ -617,6 +640,81 @@ func (suite *RouterTestSuite) TestConflictingRoutes() {
 	router.match(req, &match)
 
 	suite.Equal(notFoundRoute, match.route)
+}
+
+func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
+	result := ""
+	handler := func(resp *Response, r *Request) {}
+	router := newRouter()
+
+	productRouter := router.Subrouter("/product")
+	productRouter.Route("GET", "/", handler, nil).Name("product.index")
+	productRouter.Route("GET", "/{id:[0-9]+}", handler, nil).Name("product.show")
+	productRouter.Route("POST", "/hardpath", handler, nil).Name("product.hardpath.post")
+	productRouter.Route("GET", "/conflict", handler, nil).Name("product.conflict")
+
+	// This route group has an empty prefix, the full path is identical to productRouter.
+	// However this group has a middleware and some conflicting routes with productRouter.
+	// Conflict should be resolved and both routes should be able to match.
+	groupProductRouter := productRouter.Subrouter("/")
+	groupProductRouter.Middleware(suite.createOrderedTestMiddleware(&result, "1"))
+	groupProductRouter.Route("POST", "/", handler, nil).Name("product.store")
+	groupProductRouter.Route("GET", "/hardpath", handler, nil).Name("product.hardpath.get")
+	groupProductRouter.Route("PUT", "/{id:[0-9]+}", handler, nil).Name("product.update")
+	groupProductRouter.Route("GET", "/conflict", handler, nil).Name("product.conflict.group")
+
+	req := httptest.NewRequest("GET", "/product", nil)
+	match := routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.index", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Empty(result)
+	result = ""
+
+	req = httptest.NewRequest("POST", "/product", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.store", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Equal("1", result)
+	result = ""
+
+	req = httptest.NewRequest("GET", "/product/hardpath", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.hardpath.get", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Equal("1", result)
+	result = ""
+
+	req = httptest.NewRequest("POST", "/product/hardpath", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.hardpath.post", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Empty(result)
+	result = ""
+
+	req = httptest.NewRequest("GET", "/product/42", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.show", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Empty(result)
+	result = ""
+
+	req = httptest.NewRequest("PUT", "/product/42", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.update", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Equal("1", result)
+	result = ""
+
+	req = httptest.NewRequest("GET", "/product/conflict", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.conflict.group", match.route.name)
 }
 
 func TestRouterTestSuite(t *testing.T) {

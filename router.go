@@ -78,6 +78,7 @@ func errorStatusHandler(response *Response, request *Request) {
 }
 
 func newRouter() *Router {
+	methodNotAllowedRoute.name = "method-not-allowed"
 	// Create a fresh regex cache
 	// This cache is set to nil when the server starts
 	regexCache = make(map[string]*regexp.Regexp, 5)
@@ -92,7 +93,6 @@ func newRouter() *Router {
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
-	// router.compileParameters(router.prefix, false)
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
 	router.StatusHandler(errorStatusHandler, 401, 403, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
@@ -135,6 +135,10 @@ func (r *Router) match(req *http.Request, match *routeMatch) bool {
 		// Check in subrouters first
 		for _, router := range r.subrouters {
 			if router.match(req, match) {
+				if router.prefix == "" && match.route == methodNotAllowedRoute {
+					// This allows route groups with subrouters having empty prefix.
+					break
+				}
 				return true
 			}
 		}
@@ -246,8 +250,8 @@ func (r *Router) GetRoute(name string) *Route {
 //
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
-func (r *Router) Static(uri string, directory string, download bool) {
-	r.registerRoute("GET", uri+"{resource:.*}", staticHandler(directory, download), nil)
+func (r *Router) Static(uri string, directory string, download bool, middleware ...Middleware) {
+	r.registerRoute("GET", uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
 }
 
 // CORS set the CORS options for this route group.
@@ -326,13 +330,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 		Rules:       match.route.validationRules,
 		Params:      match.parameters,
 	}
-	response := &Response{
-		httpRequest:    rawRequest,
-		ResponseWriter: w,
-		empty:          true,
-		status:         0,
-	}
-
+	response := newResponse(w, rawRequest)
 	handler := match.route.handler
 
 	// Validate last.
@@ -344,14 +342,9 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	handler = match.route.applyMiddleware(handler)
 
 	parent := match.route.parent
-	if parent == nil { // Not Found or Method Not Allowed
-		// Ensure core middleware is executed on 404 and 405
-		handler = r.applyMiddleware(handler)
-	} else {
-		for parent != nil {
-			handler = parent.applyMiddleware(handler)
-			parent = parent.parent
-		}
+	for parent != nil {
+		handler = parent.applyMiddleware(handler)
+		parent = parent.parent
 	}
 
 	handler(response, request)
@@ -376,6 +369,8 @@ func (r *Router) finalize(response *Response, request *Request) {
 	if !response.wroteHeader {
 		response.WriteHeader(response.status)
 	}
+
+	response.close()
 }
 
 func (h *middlewareHolder) applyMiddleware(handler Handler) Handler {

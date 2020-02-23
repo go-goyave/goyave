@@ -15,6 +15,7 @@ import "github.com/System-Glitch/goyave/v2"
 ## Methods
 
 ::: table
+[Request](#request-request)
 [Method](#request-method)
 [Protocol](#request-protocol)
 [URI](#request-uri)
@@ -28,6 +29,14 @@ import "github.com/System-Glitch/goyave/v2"
 [BearerToken](#request-bearertoken)
 [CORSOptions](#request-corsoptions)
 :::
+
+#### Request.Request
+
+Return the raw http request. Prefer using the "goyave.Request" accessors.
+
+| Parameters | Return          |
+|------------|-----------------|
+|            | `*http.Request` |
 
 #### Request.Method
 

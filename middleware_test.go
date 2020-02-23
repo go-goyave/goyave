@@ -88,20 +88,14 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 		Lang:        "en-US",
 		Params:      map[string]string{},
 	}
-	response := &Response{
-		ResponseWriter: httptest.NewRecorder(),
-		empty:          true,
-	}
+	response := newResponse(httptest.NewRecorder(), nil)
 	middleware(handler)(response, request)
 
-	return response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	return response.responseWriter.(*httptest.ResponseRecorder).Result()
 }
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanic() {
-	response := &Response{
-		ResponseWriter: httptest.NewRecorder(),
-		empty:          true,
-	}
+	response := newResponse(httptest.NewRecorder(), nil)
 	recoveryMiddleware(func(response *Response, r *Request) {
 		panic(fmt.Errorf("error message"))
 	})(response, &Request{})
@@ -109,15 +103,12 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanic() {
 }
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
-	response := &Response{
-		ResponseWriter: httptest.NewRecorder(),
-		empty:          true,
-	}
+	response := newResponse(httptest.NewRecorder(), nil)
 	recoveryMiddleware(func(response *Response, r *Request) {
 		response.String(200, "message")
 	})(response, &Request{})
 
-	resp := response.ResponseWriter.(*httptest.ResponseRecorder).Result()
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, response.status)
 	suite.Equal(200, resp.StatusCode)
 

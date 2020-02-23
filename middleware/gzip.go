@@ -73,7 +73,6 @@ func GzipLevel(level int) goyave.Middleware {
 
 func acceptsGzip(request *goyave.Request) bool {
 	encodings := helper.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
-	fmt.Println(encodings)
 	for _, h := range encodings {
 		if h.Value == "gzip" {
 			return true

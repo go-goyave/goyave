@@ -275,7 +275,7 @@ Let's take a simple scenario where we want to implement a user CRUD. All our rou
 userRouter := router.Subrouter("/user")
 ```
 
-In our application, user profiles are public: anyone can see the user profiles without being authenticated. However, only authenticated users can modify their information and delete their account. We don't want to add some redundancy and apply the authentication middleware for each route needing it, so we are going to create another sub-router.
+In our application, user profiles are public: anyone can see the user profiles without being authenticated. However, only authenticated users can modify their information and delete their account. We don't want to add some redundancy and apply the authentication middleware for each route needing it, so we are going to create another sub-router. Sub-routers having an empty prefix are called **route groups**.
 ```go
 userRouter.Route("GET", "/{username}", user.Show, nil)
 userRouter.Route("POST", "", user.Register, userrequest.Register)
@@ -300,7 +300,7 @@ func Register(router *goyave.Router) {
 }
 ```
 
-Subrouters are checked before routes, meaning that they have priority over the latter. If you have a router sharing a prefix with a higher-level level route, **it will never match** because the subrouter will match first.
+Sub-routers are checked before routes, meaning that they have priority over the latter. If you have a router sharing a prefix with a higher-level level route, **it will never match** because the sub-router will match first.
 ``` go
 subrouter := router.Subrouter("/product")
 subrouter.Route("GET", "/{id:[0-9]+}", handler, nil)

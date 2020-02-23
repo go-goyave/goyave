@@ -642,6 +642,81 @@ func (suite *RouterTestSuite) TestConflictingRoutes() {
 	suite.Equal(notFoundRoute, match.route)
 }
 
+func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
+	result := ""
+	handler := func(resp *Response, r *Request) {}
+	router := newRouter()
+
+	productRouter := router.Subrouter("/product")
+	productRouter.Route("GET", "/", handler, nil).Name("product.index")
+	productRouter.Route("GET", "/{id:[0-9]+}", handler, nil).Name("product.show")
+	productRouter.Route("POST", "/hardpath", handler, nil).Name("product.hardpath.post")
+	productRouter.Route("GET", "/conflict", handler, nil).Name("product.conflict")
+
+	// This route group has an empty prefix, the full path is identical to productRouter.
+	// However this group has a middleware and some conflicting routes with productRouter.
+	// Conflict should be resolved and both routes should be able to match.
+	groupProductRouter := productRouter.Subrouter("/")
+	groupProductRouter.Middleware(suite.createOrderedTestMiddleware(&result, "1"))
+	groupProductRouter.Route("POST", "/", handler, nil).Name("product.store")
+	groupProductRouter.Route("GET", "/hardpath", handler, nil).Name("product.hardpath.get")
+	groupProductRouter.Route("PUT", "/{id:[0-9]+}", handler, nil).Name("product.update")
+	groupProductRouter.Route("GET", "/conflict", handler, nil).Name("product.conflict.group")
+
+	req := httptest.NewRequest("GET", "/product", nil)
+	match := routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.index", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Empty(result)
+	result = ""
+
+	req = httptest.NewRequest("POST", "/product", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.store", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Equal("1", result)
+	result = ""
+
+	req = httptest.NewRequest("GET", "/product/hardpath", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.hardpath.get", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Equal("1", result)
+	result = ""
+
+	req = httptest.NewRequest("POST", "/product/hardpath", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.hardpath.post", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Empty(result)
+	result = ""
+
+	req = httptest.NewRequest("GET", "/product/42", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.show", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Empty(result)
+	result = ""
+
+	req = httptest.NewRequest("PUT", "/product/42", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.update", match.route.name)
+	router.requestHandler(&match, httptest.NewRecorder(), req)
+	suite.Equal("1", result)
+	result = ""
+
+	req = httptest.NewRequest("GET", "/product/conflict", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal("product.conflict.group", match.route.name)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	RunTest(t, new(RouterTestSuite))
 }

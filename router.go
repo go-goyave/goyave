@@ -78,6 +78,7 @@ func errorStatusHandler(response *Response, request *Request) {
 }
 
 func newRouter() *Router {
+	methodNotAllowedRoute.name = "method-not-allowed"
 	// Create a fresh regex cache
 	// This cache is set to nil when the server starts
 	regexCache = make(map[string]*regexp.Regexp, 5)
@@ -134,6 +135,10 @@ func (r *Router) match(req *http.Request, match *routeMatch) bool {
 		// Check in subrouters first
 		for _, router := range r.subrouters {
 			if router.match(req, match) {
+				if router.prefix == "" && match.route == methodNotAllowedRoute {
+					// This allows route groups with subrouters having empty prefix.
+					break
+				}
 				return true
 			}
 		}

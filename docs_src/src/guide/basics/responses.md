@@ -329,16 +329,20 @@ import (
 type LogWriter struct {
 	writer   io.Writer
 	response *goyave.Response
+	body     []byte
 }
 
 func (w *LogWriter) Write(b []byte) (int, error) {
-	log.Println("RESPONSE", w.response.GetStatus(), string(b))
+	w.body = append(w.body, b...)
 	return w.writer.Write(b)
 }
 
 func (w *LogWriter) Close() error {
     // The chained writer MUST be closed if it's closeable.
-    // Thus, all chained writers should implement io.Closer.
+	// Therefore, all chained writers should implement io.Closer.
+
+	log.Println("RESPONSE", w.response.GetStatus(), string(w.body))
+
 	if wr, ok := w.writer.(io.Closer); ok {
 		return wr.Close()
 	}

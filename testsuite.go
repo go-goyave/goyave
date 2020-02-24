@@ -42,8 +42,8 @@ type ITestSuite interface {
 	Delete(string, map[string]string, io.Reader) (*http.Response, error)
 	Request(string, string, map[string]string, io.Reader) (*http.Response, error)
 
-	T() testify.TestingT
-	SetT(testify.TestingT)
+	T() *testing.T
+	SetT(*testing.T)
 
 	GetBody(*http.Response) []byte
 	GetJSONBody(*http.Response, interface{}) error

@@ -1,9 +1,11 @@
 name: Test
 on:
   push:
-    tags-ignore: '*'
+    tags-ignore:
+      - '*'
   pull_request:
-    branches: '*'
+    branches:
+      - '*'
 jobs:
 
   test:

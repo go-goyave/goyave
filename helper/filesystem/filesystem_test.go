@@ -81,7 +81,7 @@ func TestGetMIMEType(t *testing.T) {
 	assert.Equal(t, "application/json", mime)
 
 	mime, _ = GetMIMEType(toAbsolutePath("docs_src/src/.vuepress/config.js"))
-	assert.Equal(t, "application/javascript; charset=utf-8", mime)
+	assert.Equal(t, "text/javascript; charset=utf-8", mime)
 
 	cssPath := toAbsolutePath("helper/filesystem/test.css")
 	err := ioutil.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)

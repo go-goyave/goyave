@@ -4,7 +4,7 @@ about: Submit an idea for a feature, enhancement or documentation change
 
 ---
 
-## Description
+## Proposal
 
 Describe your proposal and its benefits. 
 

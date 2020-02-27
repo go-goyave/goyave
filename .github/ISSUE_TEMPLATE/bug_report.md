@@ -4,7 +4,7 @@ about: Report a bug, improperly working feature or code
 
 ---
 
-## Description
+## Bug report
 
 **Version:** [framework version]  
 **Environment:** [Operating system, Go version]  

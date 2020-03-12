@@ -85,7 +85,7 @@ func (suite *CustomTestSuite) TestRunServerTimeout() {
 	suite.RunServer(func(router *Router) {}, func() {
 		time.Sleep(suite.Timeout() + 1*time.Second)
 	})
-	assert.True(oldT, suite.T().(*testing.T).Failed())
+	assert.True(oldT, suite.T().Failed())
 	suite.SetTimeout(5 * time.Second)
 	suite.SetT(oldT)
 }
@@ -198,7 +198,7 @@ func (suite *CustomTestSuite) TestJSON() {
 			suite.SetT(new(testing.T))
 			json := map[string]interface{}{}
 			err := suite.GetJSONBody(resp, &json)
-			assert.True(oldT, suite.T().(*testing.T).Failed())
+			assert.True(oldT, suite.T().Failed())
 			suite.SetT(oldT)
 			suite.NotNil(err)
 		}
@@ -249,7 +249,7 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 	oldT := suite.T()
 	suite.SetT(new(testing.T))
 	files = suite.CreateTestFiles("doesn't exist")
-	assert.True(oldT, suite.T().(*testing.T).Failed())
+	assert.True(oldT, suite.T().Failed())
 	suite.SetT(oldT)
 	suite.Equal(0, len(files))
 }

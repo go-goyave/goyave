@@ -11,7 +11,8 @@ import (
 var contentTypeByExtension map[string]string = map[string]string{
 	".jsonld": "application/ld+json",
 	".json":   "application/json",
-	".js":     "application/javascript",
+	".js":     "text/javascript",
+	".mjs":    "text/javascript",
 	".css":    "text/css",
 }
 

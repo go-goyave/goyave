@@ -2,6 +2,11 @@
 
 [[toc]]
 
+## v2.7.1
+
+- Changed MIME type of `js` and `mjs` files to `text/javascript`. This is in accordance with an [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-dispatch-javascript-mjs/) that treats application/javascript as obsolete.
+- Improved error handling: stacktrace wasn't relevant on unexpected panic since it was retrieved from the route's request handler therefore not including the real source of the panic. Stacktrace retrieval has been moved to the recovery middleware to fix this.
+
 ## v2.7.0
 
 - Added `Request.Request()` accessor to get the raw `*http.Request`.

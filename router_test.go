@@ -662,6 +662,7 @@ func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
 	groupProductRouter.Route("GET", "/hardpath", handler, nil).Name("product.hardpath.get")
 	groupProductRouter.Route("PUT", "/{id:[0-9]+}", handler, nil).Name("product.update")
 	groupProductRouter.Route("GET", "/conflict", handler, nil).Name("product.conflict.group")
+	groupProductRouter.Route("POST", "/method", handler, nil).Name("product.method")
 
 	req := httptest.NewRequest("GET", "/product", nil)
 	match := routeMatch{currentPath: req.URL.Path}
@@ -715,6 +716,11 @@ func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
 	match = routeMatch{currentPath: req.URL.Path}
 	router.match(req, &match)
 	suite.Equal("product.conflict.group", match.route.name)
+
+	req = httptest.NewRequest("GET", "/product/method", nil)
+	match = routeMatch{currentPath: req.URL.Path}
+	router.match(req, &match)
+	suite.Equal(methodNotAllowedRoute, match.route)
 }
 
 func TestRouterTestSuite(t *testing.T) {

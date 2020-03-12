@@ -25,6 +25,7 @@ type Response struct {
 	status      int
 	wroteHeader bool
 	err         interface{}
+	stacktrace  string
 	writer      io.Writer
 
 	httpRequest    *http.Request
@@ -194,9 +195,12 @@ func (r *Response) Error(err interface{}) error {
 		errLogger.Println(err)
 	}
 	r.err = err
-	dbg := config.GetBool("debug")
-	if dbg {
-		errLogger.Print(string(debug.Stack()))
+	if config.GetBool("debug") {
+		stacktrace := r.stacktrace
+		if stacktrace == "" {
+			stacktrace = string(debug.Stack())
+		}
+		errLogger.Print(stacktrace)
 		var message interface{}
 		if e, ok := err.(error); ok {
 			message = e.Error()

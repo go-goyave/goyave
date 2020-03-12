@@ -3,6 +3,7 @@ package goyave
 import (
 	"encoding/json"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
@@ -25,6 +26,9 @@ func recoveryMiddleware(next Handler) Handler {
 			if err := recover(); err != nil {
 				errLogger.Println(err)
 				response.err = err
+				if config.GetBool("debug") {
+					response.stacktrace = string(debug.Stack())
+				}
 				response.Status(http.StatusInternalServerError)
 			}
 		}()

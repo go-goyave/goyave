@@ -100,8 +100,8 @@ func Load() error {
 		panic(err)
 	}
 
-	if !validateConfig() {
-		return fmt.Errorf("Invalid config")
+	if err := validateConfig(); err != nil {
+		return err
 	}
 
 	return err
@@ -242,16 +242,20 @@ func getConfigFilePath() string {
 	return "config." + env + ".json"
 }
 
-func validateConfig() bool {
+func validateConfig() error {
+	message := "Invalid config:"
 	valid := true
 	for key, value := range config {
 		if err := validateEntry(value, key); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			message += "\n- " + err.Error()
 			valid = false
 		}
 	}
 
-	return valid
+	if !valid {
+		return fmt.Errorf(message)
+	}
+	return nil
 }
 
 func validateEntry(value interface{}, key string) error {

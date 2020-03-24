@@ -192,7 +192,7 @@ func (r *Response) Download(file string, fileName string) error {
 // write to the response, or use your error status handler.
 func (r *Response) Error(err interface{}) error {
 	if r.err == nil {
-		errLogger.Println(err)
+		ErrLogger.Println(err)
 	}
 	r.err = err
 	if config.GetBool("debug") {
@@ -200,7 +200,7 @@ func (r *Response) Error(err interface{}) error {
 		if stacktrace == "" {
 			stacktrace = string(debug.Stack())
 		}
-		errLogger.Print(stacktrace)
+		ErrLogger.Print(stacktrace)
 		var message interface{}
 		if e, ok := err.(error); ok {
 			message = e.Error()

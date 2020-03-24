@@ -9,6 +9,14 @@ import (
 	"github.com/System-Glitch/goyave/v2"
 )
 
+const (
+	// Format is the fmt format code for common logs
+	Format string = "%s %s %s [%s] \"%s %s %s\" %d %d"
+
+	// TimestampFormat is the time format used in common logs
+	TimestampFormat string = "02/Jan/2006:15:04:05 -0700"
+)
+
 // CommonLogFormatter build a log entry using the Common Log Format.
 func CommonLogFormatter(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string {
 	req := request.Request()
@@ -39,11 +47,11 @@ func CommonLogFormatter(now time.Time, response *goyave.Response, request *goyav
 		uri = url.RequestURI()
 	}
 
-	return fmt.Sprintf("%s %s %s [%s] \"%s %s %s\" %d %d",
+	return fmt.Sprintf(Format,
 		host,
 		"-",
 		username,
-		now.Format("02/Jan/2006:15:04:05 -0700"),
+		now.Format(TimestampFormat),
 		req.Method,
 		strconv.QuoteToASCII(uri),
 		req.Proto,

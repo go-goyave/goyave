@@ -2,7 +2,6 @@ package log
 
 import (
 	"io"
-	"log"
 	"time"
 
 	"github.com/System-Glitch/goyave/v2"
@@ -50,8 +49,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 // Close the writer and its child ResponseWriter, flushing response
 // output to the logs.
 func (w *Writer) Close() error {
-	// TODO use default logger
-	log.Println(w.formatter(w.now, w.response, w.request, w.body))
+	goyave.AccessLogger.Println(w.formatter(w.now, w.response, w.request, w.body))
 
 	if wr, ok := w.writer.(io.Closer); ok {
 		return wr.Close()

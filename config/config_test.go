@@ -97,7 +97,9 @@ func (suite *ConfigTestSuite) TestInvalidConfig() {
 	val := Get("appName")
 
 	config["appName"] = true
-	suite.False(validateConfig())
+	err := validateConfig()
+	suite.NotNil(err)
+	suite.Equal("Invalid config:\n- Invalid config entry: \"appName\" type must be string", err.Error())
 	config["appName"] = val
 
 	suite.Panics(func() {

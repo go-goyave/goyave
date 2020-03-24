@@ -27,14 +27,13 @@ func (w *gzipWriter) Write(b []byte) (int, error) {
 }
 
 func (w *gzipWriter) Close() error {
-	if err := w.Writer.Close(); err != nil {
-		return err
-	}
+	err := w.Writer.Close()
 
 	if w.childWriter != nil {
 		return w.childWriter.Close()
 	}
-	return nil
+
+	return err
 }
 
 // Gzip compresses HTTP responses with default compression level

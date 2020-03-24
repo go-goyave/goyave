@@ -82,19 +82,23 @@ func (suite *GzipMiddlewareTestSuite) TestCloseNonCloseable() {
 }
 
 func (suite *GzipMiddlewareTestSuite) TestCloseChild() {
-	rawRequest := httptest.NewRequest("GET", "/", nil)
-	rawRequest.Header.Set("Accept-Encoding", "gzip")
-	recorder := httptest.NewRecorder()
-	closeable := &closeableChildWriter{Writer: recorder}
-	writer, _ := gzip.NewWriterLevel(closeable, gzip.BestCompression)
-	compressWriter := &gzipWriter{
-		Writer:         writer,
-		ResponseWriter: recorder,
-		childWriter:    closeable,
-	}
-	compressWriter.Close()
-
-	suite.True(closeable.closed)
+	closeableWriter := &closeableChildWriter{closed: false}
+	suite.RunServer(func(router *goyave.Router) {
+		router.Middleware(func(next goyave.Handler) goyave.Handler {
+			return func(response *goyave.Response, r *goyave.Request) {
+				closeableWriter.Writer = response.Writer()
+				response.SetWriter(closeableWriter)
+				next(response, r)
+			}
+		})
+		router.Middleware(Gzip())
+		router.Route("GET", "/test", func(response *goyave.Response, r *goyave.Request) {
+			response.String(http.StatusOK, "hello world")
+		}, nil)
+	}, func() {
+		suite.Get("/test", nil)
+		suite.True(closeableWriter.closed)
+	})
 }
 
 func (suite *GzipMiddlewareTestSuite) TestGzipMiddlewareInvalidLevel() {

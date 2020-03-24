@@ -14,12 +14,12 @@ type LogMiddlewareTestSuite struct {
 	goyave.TestSuite
 }
 
-func (suite *LogMiddlewareTestSuite) TestNewCommonLogWriter() {
+func (suite *LogMiddlewareTestSuite) TestNewWriter() {
 	now := time.Now()
 	recorder := httptest.NewRecorder()
 	response := suite.CreateTestResponse(recorder)
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/log", nil))
-	writer := NewCommonLogWriter(response, request, CommonLogFormatter)
+	writer := NewWriter(response, request, CommonLogFormatter)
 
 	suite.Equal(now.Format("2006-01-02T15:04"), writer.now.Format("2006-01-02T15:04"))
 	suite.Equal(request, writer.request)
@@ -31,7 +31,7 @@ func (suite *LogMiddlewareTestSuite) TestWrite() {
 	// now := time.Now()
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/log", nil))
 
-	result := suite.Middleware(CommonMiddleware(), request, func(response *goyave.Response, request *goyave.Request) {
+	result := suite.Middleware(CommonLogMiddleware(), request, func(response *goyave.Response, request *goyave.Request) {
 		response.String(http.StatusOK, "message")
 	})
 

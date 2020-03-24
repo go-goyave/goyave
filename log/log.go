@@ -14,9 +14,9 @@ import (
 // modifications will have no effect.
 type Formatter func(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string
 
-// CommonLogWriter chained writer keeping response body in memory.
+// Writer chained writer keeping response body in memory.
 // Used for loggin in common format.
-type CommonLogWriter struct {
+type Writer struct {
 	now       time.Time
 	request   *goyave.Request
 	writer    io.Writer
@@ -25,13 +25,13 @@ type CommonLogWriter struct {
 	formatter Formatter
 }
 
-var _ io.Closer = (*CommonLogWriter)(nil)
+var _ io.Closer = (*Writer)(nil)
 
-// NewCommonLogWriter create a new CommonLogWriter.
+// NewWriter create a new LogWriter.
 // The given Request and Response will be used and passed to the given
 // formatter.
-func NewCommonLogWriter(response *goyave.Response, request *goyave.Request, formatter Formatter) *CommonLogWriter {
-	return &CommonLogWriter{
+func NewWriter(response *goyave.Response, request *goyave.Request, formatter Formatter) *Writer {
+	return &Writer{
 		now:       time.Now(),
 		request:   request,
 		writer:    response.Writer(),
@@ -42,14 +42,14 @@ func NewCommonLogWriter(response *goyave.Response, request *goyave.Request, form
 
 // Write writes the data as a response and keeps it in memory
 // for later logging.
-func (w *CommonLogWriter) Write(b []byte) (int, error) {
+func (w *Writer) Write(b []byte) (int, error) {
 	w.body = append(w.body, b...)
 	return w.writer.Write(b)
 }
 
 // Close the writer and its child ResponseWriter, flushing response
 // output to the logs.
-func (w *CommonLogWriter) Close() error {
+func (w *Writer) Close() error {
 	// TODO use default logger
 	log.Println(w.formatter(w.now, w.response, w.request, w.body))
 
@@ -64,7 +64,7 @@ func (w *CommonLogWriter) Close() error {
 func Middleware(formatter Formatter) goyave.Middleware {
 	return func(next goyave.Handler) goyave.Handler {
 		return func(response *goyave.Response, request *goyave.Request) {
-			logWriter := NewCommonLogWriter(response, request, formatter)
+			logWriter := NewWriter(response, request, formatter)
 			response.SetWriter(logWriter)
 
 			next(response, request)
@@ -72,14 +72,14 @@ func Middleware(formatter Formatter) goyave.Middleware {
 	}
 }
 
-// CommonMiddleware captures response data and outputs it to the default logger
+// CommonLogMiddleware captures response data and outputs it to the default logger
 // using the common log format.
-func CommonMiddleware() goyave.Middleware {
+func CommonLogMiddleware() goyave.Middleware {
 	return Middleware(CommonLogFormatter)
 }
 
-// CombinedMiddleware captures response data and outputs it to the default logger
+// CombinedLogMiddleware captures response data and outputs it to the default logger
 // using the combined log format.
-func CombinedMiddleware() goyave.Middleware {
+func CombinedLogMiddleware() goyave.Middleware {
 	return Middleware(CombinedLogFormatter)
 }

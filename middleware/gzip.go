@@ -11,8 +11,9 @@ import (
 )
 
 type gzipWriter struct {
-	io.Writer
+	*gzip.Writer
 	http.ResponseWriter
+	childWriter io.Closer
 }
 
 func (w *gzipWriter) Write(b []byte) (int, error) {
@@ -26,8 +27,12 @@ func (w *gzipWriter) Write(b []byte) (int, error) {
 }
 
 func (w *gzipWriter) Close() error {
-	if wr, ok := w.Writer.(io.Closer); ok {
-		return wr.Close()
+	if err := w.Writer.Close(); err != nil {
+		return err
+	}
+
+	if w.childWriter != nil {
+		return w.childWriter.Close()
 	}
 	return nil
 }
@@ -56,10 +61,14 @@ func GzipLevel(level int) goyave.Middleware {
 
 			request.Header().Del("Accept-Encoding")
 
-			writer, _ := gzip.NewWriterLevel(response.Writer(), level)
+			respWriter := response.Writer()
+			writer, _ := gzip.NewWriterLevel(respWriter, level)
 			compressWriter := &gzipWriter{
 				Writer:         writer,
 				ResponseWriter: response,
+			}
+			if w, ok := respWriter.(io.Closer); ok {
+				compressWriter.childWriter = w
 			}
 			response.SetWriter(compressWriter)
 			response.Header().Set("Content-Encoding", "gzip")

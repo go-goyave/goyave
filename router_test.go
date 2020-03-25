@@ -723,6 +723,35 @@ func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
 	suite.Equal(methodNotAllowedRoute, match.route)
 }
 
+func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
+	result := ""
+	testWr := &testWriter{&result, "0", nil, false}
+
+	suite.RunServer(func(router *Router) {
+		router.Middleware(func(next Handler) Handler {
+			return func(response *Response, r *Request) {
+				testWr.Writer = response.Writer()
+				response.SetWriter(testWr)
+
+				next(response, r)
+			}
+		})
+		router.Route("GET", "/panic", func(response *Response, req *Request) {
+			panic("chained writer panic")
+		}, nil)
+	}, func() {
+		resp, err := suite.Get("/panic", nil)
+		if err != nil {
+			panic(err)
+		}
+
+		suite.Equal(500, resp.StatusCode)
+		suite.True(testWr.closed)
+	})
+
+	suite.True(testWr.closed)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	RunTest(t, new(RouterTestSuite))
 }

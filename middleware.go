@@ -24,7 +24,7 @@ func recoveryMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				errLogger.Println(err)
+				ErrLogger.Println(err)
 				response.err = err
 				if config.GetBool("debug") {
 					response.stacktrace = string(debug.Stack())

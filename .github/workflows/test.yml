@@ -34,8 +34,9 @@ jobs:
         go get github.com/client9/misspell/cmd/misspell
         go get github.com/rakyll/gotest
 
-    - name: Verify MySQL connection
+    - name: Start MySQL
       run: |
+        sudo /etc/init.d/mysql start
         while ! mysqladmin ping --silent; do
           sleep 1
         done

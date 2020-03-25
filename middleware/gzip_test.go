@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"compress/gzip"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,16 @@ import (
 
 type GzipMiddlewareTestSuite struct {
 	goyave.TestSuite
+}
+
+type closeableChildWriter struct {
+	io.Writer
+	closed bool
+}
+
+func (w *closeableChildWriter) Close() error {
+	w.closed = true
+	return nil
 }
 
 func (suite *GzipMiddlewareTestSuite) TestGzipMiddleware() {
@@ -48,19 +59,46 @@ func (suite *GzipMiddlewareTestSuite) TestCloseNonCloseable() {
 	rawRequest := httptest.NewRequest("GET", "/", nil)
 	rawRequest.Header.Set("Accept-Encoding", "gzip")
 	recorder := httptest.NewRecorder()
+	writer, _ := gzip.NewWriterLevel(recorder, gzip.BestCompression)
 	compressWriter := &gzipWriter{
-		Writer:         recorder,
+		Writer:         writer,
 		ResponseWriter: recorder,
 	}
 	compressWriter.Write([]byte("hello world"))
 	compressWriter.Close()
 
 	result := recorder.Result()
-	body, err := ioutil.ReadAll(result.Body)
+	reader, err := gzip.NewReader(result.Body)
 	if err != nil {
 		panic(err)
 	}
+
+	body, err := ioutil.ReadAll(reader)
+	if err != nil {
+		panic(err)
+	}
+
 	suite.Equal("hello world", string(body))
+}
+
+func (suite *GzipMiddlewareTestSuite) TestCloseChild() {
+	closeableWriter := &closeableChildWriter{closed: false}
+	suite.RunServer(func(router *goyave.Router) {
+		router.Middleware(func(next goyave.Handler) goyave.Handler {
+			return func(response *goyave.Response, r *goyave.Request) {
+				closeableWriter.Writer = response.Writer()
+				response.SetWriter(closeableWriter)
+				next(response, r)
+			}
+		})
+		router.Middleware(Gzip())
+		router.Route("GET", "/test", func(response *goyave.Response, r *goyave.Request) {
+			response.String(http.StatusOK, "hello world")
+		}, nil)
+	}, func() {
+		suite.Get("/test", nil)
+		suite.True(closeableWriter.closed)
+	})
 }
 
 func (suite *GzipMiddlewareTestSuite) TestGzipMiddlewareInvalidLevel() {

@@ -50,7 +50,7 @@ jobs:
     - name: Test
       run: |
         gotest -race -count=20 .
-        gotest -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
+        gotest -v -p 1 -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
         go vet $(go list ./...)
         golint -set_exit_status $(go list ./...)
         gocyclo -over 15 .

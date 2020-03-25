@@ -112,6 +112,7 @@ function getGuideSidebar () {
                 'advanced/multi-services',
                 'advanced/cors',
                 'advanced/status-handlers',
+                'advanced/logging',
             ]
         }
     ]

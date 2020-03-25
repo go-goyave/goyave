@@ -41,9 +41,9 @@ echo -e "\033[92m\033[1mDatabase ready. Running tests...\033[0m"
 gcc --version >/dev/null 2>&1
 if [ $? -ne 0 ]; then
 	echo -e "\033[33mgcc is missing. Running tests without data race checking.\033[0m"
-	gotest -v -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+	gotest -v -p 1 -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
 else
-	gotest -v -race -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
+	gotest -v -p 1 -race -coverprofile=c.out -coverpkg=./... ./... ; go tool cover -html=c.out ; go tool cover -func=c.out | grep total ; rm c.out
 fi
 test_result=$?
 

@@ -2,7 +2,6 @@ package goyave
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -32,7 +31,19 @@ var (
 	maintenanceEnabled bool = false
 	mutex                   = &sync.RWMutex{}
 	once               sync.Once
-	errLogger          *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
+
+	// Logger the logger for default output
+	// Writes to stdout by default.
+	Logger *log.Logger = log.New(os.Stdout, "", log.LstdFlags)
+
+	// AccessLogger the logger for access. This logger
+	// is used by the logging middleware.
+	// Writes to stdout by default.
+	AccessLogger *log.Logger = log.New(os.Stdout, "", 0)
+
+	// ErrLogger the logger in which errors and stacktraces are written.
+	// Writes to stderr by default.
+	ErrLogger *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
 // IsReady returns true if the server has finished initializing and
@@ -77,7 +88,7 @@ func Start(routeRegistrer func(*Router)) {
 	mutex.Lock()
 	if !config.IsLoaded() {
 		if err := config.Load(); err != nil {
-			errLogger.Println(err)
+			ErrLogger.Println(err)
 			return
 		}
 	}
@@ -231,7 +242,7 @@ func startTLSRedirectServer() {
 
 	ln, err := net.Listen("tcp", redirectServer.Addr)
 	if err != nil {
-		fmt.Printf("The TLS redirect server encountered an error: %s\n", err.Error())
+		ErrLogger.Printf("The TLS redirect server encountered an error: %s\n", err.Error())
 		redirectServer = nil
 		return
 	}
@@ -244,7 +255,7 @@ func startTLSRedirectServer() {
 	go func() {
 		if ok && r != nil {
 			if err := r.Serve(ln); err != nil && err != http.ErrServerClosed {
-				fmt.Printf("The TLS redirect server encountered an error: %s\n", err.Error())
+				ErrLogger.Printf("The TLS redirect server encountered an error: %s\n", err.Error())
 				mutex.Lock()
 				redirectServer = nil
 				stopChannel = nil
@@ -276,7 +287,7 @@ func startServer(router *Router) {
 
 	ln, err := net.Listen("tcp", server.Addr)
 	if err != nil {
-		errLogger.Println(err)
+		ErrLogger.Println(err)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		stop(ctx)
@@ -295,7 +306,7 @@ func startServer(router *Router) {
 		mutex.Unlock()
 		runStartupHooks()
 		if err := s.ServeTLS(ln, config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
-			errLogger.Println(err)
+			ErrLogger.Println(err)
 			Stop()
 		}
 	} else {
@@ -304,7 +315,7 @@ func startServer(router *Router) {
 		mutex.Unlock()
 		runStartupHooks()
 		if err := s.Serve(ln); err != nil && err != http.ErrServerClosed {
-			errLogger.Println(err)
+			ErrLogger.Println(err)
 			Stop()
 		}
 	}

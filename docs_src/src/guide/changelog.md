@@ -2,6 +2,13 @@
 
 [[toc]]
 
+## v2.8.0
+
+- Added a built-in logging system.
+    - Added a middleware for access logs using the Common Log Format or Combined Log Format. This allows custom formatters too.
+    - Added three standard loggers: `goyave.Logger`, `goyave.AccessLogger` and `goyave.ErrLogger`
+- Fixed bug: the gzip middleware now closes underlying writer on close.
+
 ## v2.7.1
 
 - Changed MIME type of `js` and `mjs` files to `text/javascript`. This is in accordance with an [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-dispatch-javascript-mjs/) that treats application/javascript as obsolete.

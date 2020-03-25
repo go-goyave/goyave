@@ -353,6 +353,7 @@ type testWriter struct {
 	result *string
 	id     string
 	io.Writer
+	closed bool
 }
 
 func (w *testWriter) Write(b []byte) (int, error) {
@@ -361,6 +362,7 @@ func (w *testWriter) Write(b []byte) (int, error) {
 }
 
 func (w *testWriter) Close() error {
+	w.closed = true
 	return fmt.Errorf("Test close error")
 }
 
@@ -368,7 +370,7 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	writer := httptest.NewRecorder()
 	response := newResponse(writer, nil)
 	result := ""
-	testWr := &testWriter{&result, "0", response.Writer()}
+	testWr := &testWriter{&result, "0", response.Writer(), false}
 	response.SetWriter(testWr)
 
 	response.String(http.StatusOK, "hello world")
@@ -379,6 +381,7 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	suite.False(response.empty)
 
 	suite.Equal("Test close error", response.close().Error())
+	suite.True(testWr.closed)
 
 	resp := writer.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -388,8 +391,8 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	writer = httptest.NewRecorder()
 	response = newResponse(writer, nil)
 	result = ""
-	testWr = &testWriter{&result, "0", response.Writer()}
-	testWr2 := &testWriter{&result, "1", testWr}
+	testWr = &testWriter{&result, "0", response.Writer(), false}
+	testWr2 := &testWriter{&result, "1", testWr, false}
 	response.SetWriter(testWr2)
 
 	response.String(http.StatusOK, "hello world")

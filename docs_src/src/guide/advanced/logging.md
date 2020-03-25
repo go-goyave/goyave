@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Logging is an important part of all applications. The framework provides a standard and flexible way to log accesses, errors and regular information. This standard logging feature should be preferred in all applications and modules developped using Goyave for consistency across the framework's environment.
+Logging is an important part of all applications. The framework provides a standard and flexible way to log accesses, errors and regular information. This standard logging feature should be preferred in all applications and modules developed using Goyave for consistency across the framework's environment.
 
 ## Custom loggers
 

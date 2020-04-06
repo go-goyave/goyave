@@ -36,7 +36,7 @@ Most golang frameworks for web development don't have a strong directory structu
 
 ## Table of contents
 
-- [Leaning Goyave](#learning-goyave)
+- [Learning Goyave](#learning-goyave)
 - [Getting started](#getting-started)
 - [Features tour](#features-tour)
 - [Contributing](#contributing)

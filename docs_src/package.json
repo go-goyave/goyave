@@ -1,6 +1,6 @@
 {
   "name": "goyave_docs",
-  "version": "2.8.0",
+  "version": "2.9.0",
   "description": "An All-in-one elegant web framework written in Go",
   "main": "index.js",
   "scripts": {
@@ -12,6 +12,6 @@
   "devDependencies": {
     "@vuepress/plugin-back-to-top": "^1.4.0",
     "vuepress": "^1.4.0",
-    "vuepress-plugin-container": "^2.1.2"
+    "vuepress-plugin-container": "^2.1.3"
   }
 }

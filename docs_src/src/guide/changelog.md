@@ -2,6 +2,10 @@
 
 [[toc]]
 
+## v2.9.0
+
+- Added [hidden fields](./basics/database.html#hidden-fields).
+
 ## v2.8.0
 
 - Added a built-in logging system.

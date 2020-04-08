@@ -124,8 +124,8 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 	return values
 }
 
-// RemoveHiddenFields if the given model is a struct pointer,
-// all fields marked with the tag `model:"hide"` will be
+// RemoveHiddenFields if the given model is a struct pointer.
+// All fields marked with the tag `model:"hide"` will be
 // set to their zero value.
 //
 // For example, this allows to send user models to the client

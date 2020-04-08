@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v2/helper"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/jinzhu/gorm"
 )
@@ -127,8 +128,12 @@ func (r *Response) Status(status int) {
 }
 
 // JSON write json data as a response.
-// Also sets the "Content-Type" header automatically
+// Also sets the "Content-Type" header automatically.
+//
+// If a model is passed as parameter, its hidden fields will be removed.
 func (r *Response) JSON(responseCode int, data interface{}) error {
+	helper.RemoveHiddenFields(data)
+
 	r.responseWriter.Header().Set("Content-Type", "application/json")
 	r.WriteHeader(responseCode)
 	return json.NewEncoder(r).Encode(data)

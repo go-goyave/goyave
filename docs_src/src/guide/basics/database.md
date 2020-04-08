@@ -155,6 +155,23 @@ Unregister all models.
 |------------|--------|
 |            | `void` |
 
+### Hidden fields
+
+<p><Badge text="Since v2.9.0"/></p>
+
+Sometimes you may wish to exclude some fields from your model's JSON form, such as passwords. To do so, you can add the `model:"hide"` tag to the field you want to hide.
+
+``` go
+type User struct {
+    Username string
+    Password string `model:"hide" json:",omitempty"`
+}
+```
+
+When a struct is sent as a response through `response.JSON()`, all its fields (including promoted fields) tagged with `model:"hide"` will be set to their zero value. Add the `json:",omitempty"` tag to entirely remove the field from the resulting JSON string.
+
+You can also filter hidden fields by passing a struct to [`helper.RemoveHiddenFields()`](../advanced/helpers.html#helper-removehiddenfields).
+
 ### Automatic migrations
 
 If the `dbAutoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.

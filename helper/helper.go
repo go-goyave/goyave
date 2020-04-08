@@ -72,6 +72,13 @@ func ToString(value interface{}) string {
 	return fmt.Sprintf("%v", value)
 }
 
+// HeaderValue represent a value and its quality value (priority)
+// in a multi-values HTTP header.
+type HeaderValue struct {
+	Value    string
+	Priority float64
+}
+
 // ParseMultiValuesHeader parses multi-values HTTP headers, taking the
 // quality values into account. The result is a slice of values sorted
 // according to the order of priority.
@@ -117,9 +124,37 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 	return values
 }
 
-// HeaderValue represent a value and its quality value (priority)
-// in a multi-values HTTP header.
-type HeaderValue struct {
-	Value    string
-	Priority float64
+// RemoveHiddenFields if the given model is a struct pointer.
+// All fields marked with the tag `model:"hide"` will be
+// set to their zero value.
+//
+// For example, this allows to send user models to the client
+// without their password field.
+func RemoveHiddenFields(model interface{}) {
+	t := reflect.TypeOf(model)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		if t.Kind() == reflect.Struct {
+			value := reflect.ValueOf(model).Elem()
+			for i := 0; i < t.NumField(); i++ {
+				field := value.Field(i)
+				fieldType := t.Field(i)
+
+				if !field.CanSet() {
+					continue
+				}
+
+				if field.Kind() == reflect.Struct && fieldType.Anonymous {
+					// Check promoted fields recursively
+					RemoveHiddenFields(field.Addr().Interface())
+					continue
+				}
+
+				tag := strings.Split(fieldType.Tag.Get("model"), ";")
+				if ContainsStr(tag, "hide") {
+					field.Set(reflect.Zero(fieldType.Type))
+				}
+			}
+		}
+	}
 }

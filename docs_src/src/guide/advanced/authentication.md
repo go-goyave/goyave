@@ -1,6 +1,4 @@
-# Authentication
-
-<p><Badge text="Since v2.5.0"/></p>
+# Authentication <Badge text="Since v2.5.0"/>
 
 [[toc]]
 

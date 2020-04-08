@@ -1,6 +1,4 @@
-# Logging
-
-<p><Badge text="Since v2.8.0"/></p>
+# Logging <Badge text="Since v2.8.0"/>
 
 [[toc]]
 

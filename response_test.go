@@ -143,6 +143,50 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal("text/plain", resp.Header.Get("Content-Type"))
 }
 
+func (suite *ResponseTestSuite) TestResponseJSON() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+
+	response.JSON(http.StatusOK, map[string]interface{}{
+		"status": "ok",
+		"code":   200,
+	})
+
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Equal(200, resp.StatusCode)
+	suite.Equal("application/json", resp.Header.Get("Content-Type"))
+	suite.False(response.empty)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal("{\"code\":200,\"status\":\"ok\"}\n", string(body))
+}
+
+func (suite *ResponseTestSuite) TestResponseJSONHiddenFields() {
+	type Model struct {
+		Password string `model:"hide" json:",omitempty"`
+		Username string
+	}
+
+	model := &Model{
+		Password: "bcrypted password",
+		Username: "Jeff",
+	}
+
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+
+	response.JSON(http.StatusOK, model)
+	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	suite.Equal("{\"Username\":\"Jeff\"}\n", string(body))
+}
+
 func (suite *ResponseTestSuite) TestResponseFilePanic() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)

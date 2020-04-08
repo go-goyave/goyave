@@ -2,6 +2,11 @@
 
 [[toc]]
 
+## v2.9.0
+
+- Added [hidden fields](./basics/database.html#hidden-fields).
+- Entirely removed Gorilla mux. This change is not breaking: native middleware still work the same.
+
 ## v2.8.0
 
 - Added a built-in logging system.

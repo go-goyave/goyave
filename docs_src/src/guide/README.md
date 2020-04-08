@@ -24,7 +24,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - Direct support for the HEAD method
 - Email helpers
 - Queues/Scheduler system
-- Logging
 - OpenAPI generator
 - And more!
 :::

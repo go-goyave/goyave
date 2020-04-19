@@ -13,7 +13,7 @@
 
 <h2 align="center">An Elegant Golang Web Framework</h2>
 
-Goyave is a progressive and accessible web application framework, aimed at making development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
+Goyave is a progressive and accessible web application framework focused on APIs, aimed at making development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
 
 <table>
     <tr>
@@ -102,6 +102,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 - [Testing](#testing)
 - [Status handlers](#status-handlers)
 - [CORS](#cors)
+- [Authentication](#authentication)
 
 ### Hello world from scratch
 
@@ -111,7 +112,7 @@ The example below shows a basic `Hello world` application using Goyave.
 import "github.com/System-Glitch/goyave/v2"
 
 func registerRoutes(router *goyave.Router) {
-    router.Route("GET", "/hello", func(response *goyave.Response, request *goyave.Request) {
+    router.Get("/hello", func(response *goyave.Response, request *goyave.Request) {
         response.String(http.StatusOK, "Hello world!")
     }, nil)
 }
@@ -178,18 +179,18 @@ func Register(router *goyave.Router) {
     // Register your routes here
 
     // With closure, not recommended
-    router.Route("GET", "/hello", func(response *goyave.Response, r *goyave.Request) {
+    router.Get("GET", "/hello", func(response *goyave.Response, r *goyave.Request) {
         response.String(http.StatusOK, "Hi!")
     }, nil)
 
-    router.Route("GET", "/hello", myHandlerFunction, nil)
-    router.Route("POST", "/user", user.Register, userrequest.Register)
+    router.Get("/hello", myHandlerFunction, nil)
+    router.Post("/user", user.Register, userrequest.Register)
     router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
     router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
 }
 ```
 
-**Method signature:**
+**`Route` Method signature:**
 
 | Parameters                           | Return          |
 |--------------------------------------|-----------------|
@@ -204,9 +205,9 @@ URIs can have parameters, defined using the format `{name}` or `{name:pattern}`.
 
 **Example:**
 ``` go
-router.Route("GET", "/product/{key}", product.Show, nil)
-router.Route("GET", "/product/{id:[0-9]+}", product.ShowById, nil)
-router.Route("GET", "/category/{category}/{id:[0-9]+}", category.Show, nil)
+router.Get("/product/{key}", product.Show, nil)
+router.Get("/product/{id:[0-9]+}", product.ShowById, nil)
+router.Get("/category/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -339,7 +340,7 @@ var (
 Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition.
 
 ``` go
-router.Route("POST", "/product", product.Store, productrequest.Store)
+router.Post("/product", product.Store, productrequest.Store)
 ```
 
 
@@ -595,6 +596,43 @@ router.CORS(options)
 ```
 
 **Learn more about CORS in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/cors.html).**
+
+### Authentication
+
+Goyave provides a convenient and expandable way of handling authentication in your application. Authentication can be enabled when registering your routes:
+
+``` go
+import "github.com/System-Glitch/goyave/v2/auth"
+
+//...
+
+authenticator := auth.Middleware(&model.User{}, &auth.BasicAuthenticator{})
+router.Middleware(authenticator)
+```
+
+Authentication is handled by a simple middleware calling an **Authenticator**. This middleware also needs a model, which will be used to fetch user information on a successful login.
+
+Authenticators use their model's struct fields tags to know which field to use for username and password. To make your model compatible with authentication, you must add the `auth:"username"` and `auth:"password"` tags:
+
+``` go
+type User struct {
+	gorm.Model
+	Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
+	Name     string `gorm:"type:varchar(100)"`
+	Password string `gorm:"type:varchar(60)" auth:"password"`
+}
+```
+
+When a user is successfully authenticated on a protected route, its information is available in the controller handler, through the request `User` field.
+
+``` go
+func Hello(response *goyave.Response, request *goyave.Request) {
+	user := request.User.(*model.User)
+	response.String(http.StatusOK, "Hello " + user.Name)
+}
+```
+
+**Learn more about authentication in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/authentication.html).**
 
 ## Contributing
 

@@ -64,7 +64,7 @@ type User struct {
 Built-in Goyave Authenticators use [`bcrypt`](https://pkg.go.dev/golang.org/x/crypto/bcrypt) to check if a password matches the user request.
 :::
 
-When a user is successfully authenticated on a protected route, its information is available in the controller handler, through, the request `User` field.
+When a user is successfully authenticated on a protected route, its information is available in the controller handler, through the request `User` field.
 
 ``` go
 func Hello(response *goyave.Response, request *goyave.Request) {

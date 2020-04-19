@@ -238,6 +238,36 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 	return route
 }
 
+// Get registers a new route wit the GET method.
+func (r *Router) Get(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute("GET", uri, handler, validationRules, middleware...)
+}
+
+// Post registers a new route wit the POST method.
+func (r *Router) Post(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute("POST", uri, handler, validationRules, middleware...)
+}
+
+// Put registers a new route wit the PUT method.
+func (r *Router) Put(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute("PUT", uri, handler, validationRules, middleware...)
+}
+
+// Patch registers a new route wit the PATCH method.
+func (r *Router) Patch(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute("PATCH", uri, handler, validationRules, middleware...)
+}
+
+// Delete registers a new route wit the DELETE method.
+func (r *Router) Delete(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute("DELETE", uri, handler, validationRules, middleware...)
+}
+
+// Options registers a new route wit the OPTIONS method.
+func (r *Router) Options(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+	return r.registerRoute("OPTIONS", uri, handler, validationRules, middleware...)
+}
+
 // GetRoute get a named route.
 // Returns nil if the route doesn't exist.
 func (r *Router) GetRoute(name string) *Route {

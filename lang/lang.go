@@ -176,7 +176,7 @@ func mergeMap(dst map[string]string, src map[string]string) {
 // a line called "validation", it won't conflict with the dot-separated paths.
 //
 // If not found, returns the exact "line" attribute.
-func Get(lang string, line string) string {
+func Get(lang string, line string, placeholders ...string) string {
 	if !IsAvailable(lang) {
 		return line
 	}
@@ -191,7 +191,7 @@ func Get(lang string, line string) string {
 				if len(path) < 3 {
 					return line
 				}
-				return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")])
+				return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")], placeholders)
 			case "fields":
 				len := len(path)
 				if len < 3 {
@@ -202,9 +202,9 @@ func Get(lang string, line string) string {
 					if attr.Rules == nil {
 						return line
 					}
-					return convertEmptyLine(line, attr.Rules[path[3]])
+					return convertEmptyLine(line, attr.Rules[path[3]], placeholders)
 				} else if len == 3 {
-					return convertEmptyLine(line, attr.Name)
+					return convertEmptyLine(line, attr.Name, placeholders)
 				} else {
 					return line
 				}
@@ -214,14 +214,22 @@ func Get(lang string, line string) string {
 		}
 	}
 
-	return convertEmptyLine(line, languages[lang].lines[line])
+	return convertEmptyLine(line, languages[lang].lines[line], placeholders)
 }
 
-func convertEmptyLine(entry, line string) string {
+func processPlaceholders(message string, values []string) string {
+	length := len(values) - 1
+	for i := 0; i < length; i += 2 {
+		message = strings.ReplaceAll(message, values[i], values[i+1])
+	}
+	return message
+}
+
+func convertEmptyLine(entry, line string, placeholders []string) string {
 	if line == "" {
 		return entry
 	}
-	return line
+	return processPlaceholders(line, placeholders)
 }
 
 // IsAvailable returns true if the language is available.

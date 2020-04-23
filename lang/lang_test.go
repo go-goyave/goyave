@@ -129,6 +129,12 @@ func (suite *LangTestSuite) TestMerge() {
 	suite.Equal("The test field override is required", dst.validation.fields["test"].Rules["required"])
 }
 
+func (suite *LangTestSuite) TestPlaceholders() {
+	suite.Equal("Greetings, Kevin", convertEmptyLine("greetings", "Greetings, :username", []string{":username", "Kevin"}))
+	suite.Equal("Greetings, Kevin, today is Monday", convertEmptyLine("greetings", "Greetings, :username, today is :today", []string{":username", "Kevin", ":today", "Monday"}))
+	suite.Equal("Greetings, Kevin, today is :today", convertEmptyLine("greetings", "Greetings, :username, today is :today", []string{":username", "Kevin", ":today"}))
+}
+
 func (suite *LangTestSuite) TearDownAllSuite() {
 	languages = map[string]language{}
 }

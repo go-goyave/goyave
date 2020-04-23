@@ -752,6 +752,27 @@ func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 	suite.True(testWr.closed)
 }
 
+func (suite *RouterTestSuite) TestMethodRouteRegistration() {
+	router := newRouter()
+	route := router.Get("/uri", func(resp *Response, r *Request) {}, nil)
+	suite.Equal([]string{"GET"}, route.methods)
+
+	route = router.Post("/uri", func(resp *Response, r *Request) {}, nil)
+	suite.Equal([]string{"POST"}, route.methods)
+
+	route = router.Put("/uri", func(resp *Response, r *Request) {}, nil)
+	suite.Equal([]string{"PUT"}, route.methods)
+
+	route = router.Patch("/uri", func(resp *Response, r *Request) {}, nil)
+	suite.Equal([]string{"PATCH"}, route.methods)
+
+	route = router.Delete("/uri", func(resp *Response, r *Request) {}, nil)
+	suite.Equal([]string{"DELETE"}, route.methods)
+
+	route = router.Options("/uri", func(resp *Response, r *Request) {}, nil)
+	suite.Equal([]string{"OPTIONS"}, route.methods)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	RunTest(t, new(RouterTestSuite))
 }

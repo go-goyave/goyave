@@ -60,6 +60,23 @@ router.Route("POST", "/product", product.Store, productrequest.Store, middleware
 - Learn more about validation and rules sets [here](./validation.html).
 :::
 
+You can also register routes by using the `Get`, `Post`, `Put`, `Patch`, `Delete` and `Options` methods:
+``` go
+router.Get("/hello", myHandlerFunction, nil)
+router.Post("/user", user.Register, userrequest.Register)
+router.Put("/product/{id:[0-9]+}", product.Update, productrequest.Update)
+router.Patch("/product/{id:[0-9]+}", product.Update, productrequest.Update)
+router.Delete("/product/{id:[0-9]+}", product.Destroy, productrequest.Destroy)
+router.Options("/options", myHandlerFunction, nil)
+```
+
+| Parameters                           | Return          |
+|--------------------------------------|-----------------|
+| `uri string`                         | `*goyave.Route` |
+| `handler goyave.Handler`             |                 |
+| `validationRules validation.RuleSet` |                 |
+| `middleware ...goyave.Middleware`    |                 |
+
 ## Route reference
 
 <p><Badge text="Since v2.6.0"/></p>
@@ -169,14 +186,14 @@ URIs can have parameters, defined using the format `{name}` or `{name:pattern}`.
 
 **Example:**
 ``` go
-router.Route("GET", "/product/{key}", product.Show, nil)
-router.Route("GET", "/product/{id:[0-9]+}", product.ShowById, nil)
-router.Route("GET", "/category/{category}/{id:[0-9]+}", category.Show, nil)
+router.Get("/product/{key}", product.Show, nil)
+router.Get("/product/{id:[0-9]+}", product.ShowById, nil)
+router.Get("/category/{category}/{id:[0-9]+}", category.Show, nil)
 ```
 
 Regex groups can be used inside patterns, as long as they are non-capturing (`(?:re)`). For example:
 ``` go
-router.Route("GET", "/category/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
+router.Get("/category/{category}/{sort:(?:asc|desc|new)}", category.ShowSorted, nil)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.

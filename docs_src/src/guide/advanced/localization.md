@@ -159,6 +159,38 @@ func ControllerHandler(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
+### Placeholders
+
+Language lines can contain **placeholders**. Placeholders are identified by a colon directly followed by the placeholder name:
+
+```json
+"greetings": "Greetings, :username!"
+```
+
+The last parameter of the `lang.Get()` method is a variadic associative slice of placeholders and their replacement. In the following example, the placeholder `:username` will be replaced with the Name field in the user struct.
+
+```go
+lang.Get("en-US", "greetings", ":username", user.Name) // "Greetings, Taylor!"
+```
+
+You can provide as many as you want:
+
+```go
+lang.Get("en-US", "greetings-with-date", ":username", user.Name, ":day", "Monday") // "Greetings, Taylor! Today is Monday"
+```
+
+::: tip
+When a placeholder is given, **all occurrences** are replaced.
+
+```json
+"popular": ":product are very popular. :product sales exceeded 1000 last week."
+```
+```go
+lang.Get("en-US", "popular", ":product", "Lawnmowers")
+// "Lawnmowers are very popular. Lawnmowers sales exceeded 1000 last week."
+```
+:::
+
 ### Localization reference
 
 ::: table
@@ -173,16 +205,18 @@ func ControllerHandler(response *goyave.Response, request *goyave.Request) {
 
 Get a language line.
 
-| Parameters    | Return   |
-|---------------|----------|
-| `lang string` | `string` |
-| `line string` |          |
+| Parameters               | Return   |
+|--------------------------|----------|
+| `lang string`            | `string` |
+| `line string`            |          |
+| `placeholders ...string` |          |
 
 **Example:**
 ``` go
 fmt.Println(lang.Get("en-US", "my-custom-message")) // "my message"
 fmt.Println(lang.Get("en-US", "validation.rules.greater_than.string")) // "The :field must be longer than the :other."
 fmt.Println(lang.Get("en-US", "validation.fields.email")) // "email address"
+fmt.Println(lang.Get("en-US", "greetings", ":username", user.Name)) // "Greetings, Taylor!"
 ```
 
 #### lang.Load

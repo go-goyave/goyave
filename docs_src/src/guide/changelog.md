@@ -5,6 +5,7 @@
 ## v2.10.0
 
 - Added router `Get`, `Post`, `Put`, `Patch`, `Delete` and `Options` methods to register routes directly without having to specify a method string.
+- Added [placeholder](./advanced/localization.html#placeholders) support in regular language lines.
 
 ## v2.9.0
 

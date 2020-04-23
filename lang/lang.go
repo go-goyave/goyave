@@ -176,6 +176,12 @@ func mergeMap(dst map[string]string, src map[string]string) {
 // a line called "validation", it won't conflict with the dot-separated paths.
 //
 // If not found, returns the exact "line" attribute.
+//
+// The placeholders parameter is a variadic associative slice of placeholders and their
+// replacement. In the following example, the placeholder ":username" will be replaced
+// with the Name field in the user struct.
+//
+// 	lang.Get("en-US", "greetings", ":username", user.Name)
 func Get(lang string, line string, placeholders ...string) string {
 	if !IsAvailable(lang) {
 		return line

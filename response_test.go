@@ -148,7 +148,9 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	err := response.File("config/doesntexist")
 	suite.Equal("open config/doesntexist: no such file or directory", err.Error())
 	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
-	suite.Equal(404, resp.StatusCode)
+	suite.Equal(404, response.status)
+	suite.True(response.empty)
+	suite.False(response.wroteHeader)
 	suite.Empty(resp.Header.Get("Content-Type"))
 	suite.Empty(resp.Header.Get("Content-Disposition"))
 }
@@ -217,7 +219,9 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	err := response.Download("config/doesntexist", "config.json")
 	suite.Equal("open config/doesntexist: no such file or directory", err.Error())
 	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
-	suite.Equal(404, resp.StatusCode)
+	suite.Equal(404, response.status)
+	suite.True(response.empty)
+	suite.False(response.wroteHeader)
 	suite.Empty(resp.Header.Get("Content-Type"))
 	suite.Empty(resp.Header.Get("Content-Disposition"))
 }

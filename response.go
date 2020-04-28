@@ -148,7 +148,7 @@ func (r *Response) String(responseCode int, message string) error {
 
 func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	if !filesystem.FileExists(file) {
-		r.WriteHeader(http.StatusNotFound)
+		r.Status(http.StatusNotFound)
 		return 0, &os.PathError{Op: "open", Path: file, Err: fmt.Errorf("no such file or directory")}
 	}
 	r.empty = false

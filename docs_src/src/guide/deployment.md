@@ -30,7 +30,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -ldflags "-w"
+RUN go build -ldflags "-w -s"
 
 FROM alpine:3.9
 

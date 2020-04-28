@@ -20,7 +20,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 - Permission system (guards)
 - CLI utility to help creating controllers, middleware, etc
-- Placeholders in language lines and pluralization
 - Direct support for the HEAD method
 - Email helpers
 - Queues/Scheduler system

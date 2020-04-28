@@ -144,9 +144,9 @@ response.Write([]byte("Hello there!"))
 
 Write a file as an inline element.
 
-Automatically detects the file MIME type and sets the "Content-Type" header accordingly. It is advised to call `filesystem.FileExists()` before sending a file to avoid a panic and return a 404 error. The given path can be relative or absolute.
+Automatically detects the file MIME type and sets the "Content-Type" header accordingly. If the file doesn't exist, respond with status `404 Not Found`. The given path can be relative or absolute.
 
-If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
+If you want the file to be sent as a download ("Content-Disposition: attachment"), use the `Download` function instead.
 
 | Parameters    | Return  |
 |---------------|---------|
@@ -161,9 +161,11 @@ response.File("/path/to/file")
 
 Write a file as an attachment element.
 
-Automatically detects the file MIME type and sets the "Content-Type" header accordingly. It is advised to call `filesystem.FileExists()` before sending a file to avoid a panic and return a 404 error if the file doesn't exist. The given path can be relative or absolute.
+Automatically detects the file MIME type and sets the "Content-Type" header accordingly. If the file doesn't exist, respond with status `404 Not Found`. The given path can be relative or absolute.
 
-If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
+The `fileName` parameter defines the name the client will see. In other words, it sets the header "Content-Disposition" to "attachment; filename="${fileName}""
+
+If you want the file to be sent as an inline element ("Content-Disposition: inline"), use the `File` function instead.
 
 | Parameters        | Return  |
 |-------------------|---------|

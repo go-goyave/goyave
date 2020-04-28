@@ -2,7 +2,13 @@
 
 [[toc]]
 
-## v2.10.0
+## v2.10.x
+
+### v2.10.1
+
+- Changed the behavior of `response.File()` and `response.Download()` to respond with a status 404 if the given file doesn't exist instead of panicking.
+
+### v2.10.0
 
 - Added router `Get`, `Post`, `Put`, `Patch`, `Delete` and `Options` methods to register routes directly without having to specify a method string.
 - Added [placeholder](./advanced/localization.html#placeholders) support in regular language lines.
@@ -19,12 +25,14 @@
     - Added three standard loggers: `goyave.Logger`, `goyave.AccessLogger` and `goyave.ErrLogger`
 - Fixed bug: the gzip middleware now closes underlying writer on close.
 
-## v2.7.1
+## v2.7.x
+
+### v2.7.1
 
 - Changed MIME type of `js` and `mjs` files to `text/javascript`. This is in accordance with an [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-dispatch-javascript-mjs/) that treats application/javascript as obsolete.
 - Improved error handling: stacktrace wasn't relevant on unexpected panic since it was retrieved from the route's request handler therefore not including the real source of the panic. Stacktrace retrieval has been moved to the recovery middleware to fix this.
 
-## v2.7.0
+### v2.7.0
 
 - Added `Request.Request()` accessor to get the raw `*http.Request`.
 - Fixed a bug allowing non-core middleware applied to the root router to be executed when the "Not Found" or "Method Not Allowed" routes were matched.
@@ -58,21 +66,23 @@
 - Added `Request.BearerToken()`.
 - Added `Response.HandleDatabaseError()` for easier database error handling and shorter controller handlers. 
 
-## v2.4.3
+## v2.4.x
+
+### v2.4.3
 
 - Improved string validation by taking grapheme clusters into consideration when calculating length.
 - `lang.LoadDefault` now correctly creates a fresh language map and clones the default `en-US` language. This avoids the default language entries to be overridden permanently.  
 
-## v2.4.2
+### v2.4.2
 
 - Don't override `Content-Type` header when sending a file if already set.
 - Fixed a bug with validation message placeholder `:values`, which was mistakenly using the `:value` placeholder.
 
-## v2.4.1
+### v2.4.1
 
 - Bundle default config and language in executable to avoid needing to deploy `$GOROOT/pkg/mod/github.com/!system-!glitch/goyave/` with the application.
 
-## v2.4.0
+### v2.4.0
 
 - Added [template rendring](./basics/responses.html#response-render).
 - Fixed PostgreSQL options not working.
@@ -83,12 +93,14 @@
 
 - Added [CORS options](./advanced/cors.html).
 
-## v2.2.1
+## v2.2.x
+
+### v2.2.1
 
 - Added `domain` config entry. This entry is used for url generation, especially for the TLS redirect.
 - Don't show port in TLS redirect response if ports are standard (80 for HTTP, 443 for HTTPS).
 
-## v2.2.0
+### v2.2.0
 
 - Added [testing API](./advanced/testing.html).
 - Fixed links in documentation.

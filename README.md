@@ -118,7 +118,9 @@ func registerRoutes(router *goyave.Router) {
 }
 
 func main() {
-    goyave.Start(registerRoutes)
+    if err := goyave.Start(registerRoutes); err != nil {
+        os.Exit(err.(*goyave.Error).ExitCode)
+    }
 }
 ```
 

@@ -7,6 +7,22 @@
 ### v2.10.1
 
 - Changed the behavior of `response.File()` and `response.Download()` to respond with a status 404 if the given file doesn't exist instead of panicking.
+- Improved error handling:
+    - `log.Panicf` is not used anymore to print panics, removing possible duplicate logs.
+    - Added error checks during automatic migrations.
+    - `goyave.Start()` now exits the program with the following error codes:
+        - `2`: Panic (server already running, error when loading language files, etc)
+        - `3`: Configuration is invalid
+        - `4`: An error occurred when opening network listener
+        - `5`: An error occurred in the HTTP server
+
+This change will require a slightly longer `main` function but offers better flexibility for error handling and multi-services.
+
+``` go
+if err := goyave.Start(route.Register); err != nil {
+	os.Exit(err.(*goyave.Error).ExitCode)
+}
+```
 
 ### v2.10.0
 

@@ -1,7 +1,6 @@
 package goyave
 
 import (
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -151,7 +150,7 @@ func (r *Request) Has(field string) bool {
 func (r *Request) String(field string) string {
 	str, ok := r.Data[field].(string)
 	if !ok {
-		log.Panicf("Field \"%s\" is not a string", field)
+		ErrLogger.Panicf("Field \"%s\" is not a string", field)
 	}
 	return str
 }
@@ -161,7 +160,7 @@ func (r *Request) String(field string) string {
 func (r *Request) Numeric(field string) float64 {
 	str, ok := r.Data[field].(float64)
 	if !ok {
-		log.Panicf("Field \"%s\" is not numeric", field)
+		ErrLogger.Panicf("Field \"%s\" is not numeric", field)
 	}
 	return str
 }
@@ -171,7 +170,7 @@ func (r *Request) Numeric(field string) float64 {
 func (r *Request) Integer(field string) int {
 	str, ok := r.Data[field].(int)
 	if !ok {
-		log.Panicf("Field \"%s\" is not an integer", field)
+		ErrLogger.Panicf("Field \"%s\" is not an integer", field)
 	}
 	return str
 }
@@ -181,7 +180,7 @@ func (r *Request) Integer(field string) int {
 func (r *Request) Bool(field string) bool {
 	str, ok := r.Data[field].(bool)
 	if !ok {
-		log.Panicf("Field \"%s\" is not a bool", field)
+		ErrLogger.Panicf("Field \"%s\" is not a bool", field)
 	}
 	return str
 }
@@ -191,7 +190,7 @@ func (r *Request) Bool(field string) bool {
 func (r *Request) File(field string) []filesystem.File {
 	str, ok := r.Data[field].([]filesystem.File)
 	if !ok {
-		log.Panicf("Field \"%s\" is not a file", field)
+		ErrLogger.Panicf("Field \"%s\" is not a file", field)
 	}
 	return str
 }
@@ -201,7 +200,7 @@ func (r *Request) File(field string) []filesystem.File {
 func (r *Request) Timezone(field string) *time.Location {
 	str, ok := r.Data[field].(*time.Location)
 	if !ok {
-		log.Panicf("Field \"%s\" is not a timezone", field)
+		ErrLogger.Panicf("Field \"%s\" is not a timezone", field)
 	}
 	return str
 }
@@ -211,7 +210,7 @@ func (r *Request) Timezone(field string) *time.Location {
 func (r *Request) IP(field string) net.IP {
 	str, ok := r.Data[field].(net.IP)
 	if !ok {
-		log.Panicf("Field \"%s\" is not an IP", field)
+		ErrLogger.Panicf("Field \"%s\" is not an IP", field)
 	}
 	return str
 }
@@ -221,7 +220,7 @@ func (r *Request) IP(field string) net.IP {
 func (r *Request) URL(field string) *url.URL {
 	str, ok := r.Data[field].(*url.URL)
 	if !ok {
-		log.Panicf("Field \"%s\" is not a URL", field)
+		ErrLogger.Panicf("Field \"%s\" is not a URL", field)
 	}
 	return str
 }
@@ -231,7 +230,7 @@ func (r *Request) URL(field string) *url.URL {
 func (r *Request) UUID(field string) uuid.UUID {
 	str, ok := r.Data[field].(uuid.UUID)
 	if !ok {
-		log.Panicf("Field \"%s\" is not an UUID", field)
+		ErrLogger.Panicf("Field \"%s\" is not an UUID", field)
 	}
 	return str
 }
@@ -241,7 +240,7 @@ func (r *Request) UUID(field string) uuid.UUID {
 func (r *Request) Date(field string) time.Time {
 	str, ok := r.Data[field].(time.Time)
 	if !ok {
-		log.Panicf("Field \"%s\" is not a date", field)
+		ErrLogger.Panicf("Field \"%s\" is not a date", field)
 	}
 	return str
 }

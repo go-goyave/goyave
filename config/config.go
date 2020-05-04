@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -86,18 +85,18 @@ func Load() error {
 	defer mutex.Unlock()
 	loadDefaults()
 	workingDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	path := getConfigFilePath()
+	conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
 	if err == nil {
-		path := getConfigFilePath()
-		conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
-		if err == nil {
-			for key, value := range conf {
-				config[key] = value
-			}
-		} else {
-			return err
+		for key, value := range conf {
+			config[key] = value
 		}
 	} else {
-		panic(err)
+		return err
 	}
 
 	if err := validateConfig(); err != nil {
@@ -131,8 +130,7 @@ func Get(key string) interface{} {
 		return val
 	}
 
-	log.Panicf("Config entry \"%s\" doesn't exist", key)
-	return nil
+	panic(fmt.Sprintf("Config entry \"%s\" doesn't exist", key))
 }
 
 // Has check if a config entry exists.
@@ -163,13 +161,12 @@ func GetString(key string) string {
 	if ok {
 		str, ok := val.(string)
 		if !ok {
-			log.Panicf("Config entry \"%s\" is not a string", key)
+			panic(fmt.Sprintf("Config entry \"%s\" is not a string", key))
 		}
 		return str
 	}
 
-	log.Panicf("Config entry \"%s\" doesn't exist", key)
-	return ""
+	panic(fmt.Sprintf("Config entry \"%s\" doesn't exist", key))
 }
 
 // GetBool a config entry as bool
@@ -180,13 +177,12 @@ func GetBool(key string) bool {
 	if ok {
 		b, ok := val.(bool)
 		if !ok {
-			log.Panicf("Config entry \"%s\" is not a bool", key)
+			panic(fmt.Sprintf("Config entry \"%s\" is not a bool", key))
 		}
 		return b
 	}
 
-	log.Panicf("Config entry \"%s\" doesn't exist", key)
-	return false
+	panic(fmt.Sprintf("Config entry \"%s\" doesn't exist", key))
 }
 
 // Register a config entry for validation.
@@ -199,7 +195,7 @@ func GetBool(key string) bool {
 func Register(key string, kind reflect.Kind) {
 	_, exists := configValidation[key]
 	if exists {
-		log.Panicf("Config entry \"%s\" is already registered", key)
+		panic(fmt.Sprintf("Config entry \"%s\" is already registered", key))
 	}
 
 	configValidation[key] = kind
@@ -247,7 +243,7 @@ func validateConfig() error {
 	valid := true
 	for key, value := range config {
 		if err := validateEntry(value, key); err != nil {
-			message += "\n- " + err.Error()
+			message += "\n\t- " + err.Error()
 			valid = false
 		}
 	}
@@ -262,12 +258,12 @@ func validateEntry(value interface{}, key string) error {
 	if v, ok := configValidation[key]; ok {
 		t := reflect.TypeOf(value)
 		if t.Kind() != v {
-			return fmt.Errorf("Invalid config entry: %q type must be %s", key, v)
+			return fmt.Errorf("%q type must be %s", key, v)
 		}
 
 		if v, ok := authorizedValues[key]; ok {
 			if !helper.ContainsStr(v, value.(string)) {
-				return fmt.Errorf("Invalid config entry: %q must have one of the following values: %s", key, strings.Join(v, ", "))
+				return fmt.Errorf("%q must have one of the following values: %s", key, strings.Join(v, ", "))
 			}
 		}
 	}

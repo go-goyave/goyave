@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -58,7 +57,9 @@ func ClearRegisteredModels() {
 func Migrate() {
 	db := GetConnection()
 	for _, model := range models {
-		db.AutoMigrate(model)
+		if err := db.AutoMigrate(model).Error; err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -66,7 +67,7 @@ func newConnection() *gorm.DB {
 	connection := config.GetString("dbConnection")
 
 	if connection == "none" {
-		log.Panicf("Cannot create DB connection. Database is set to \"none\" in the config")
+		panic("Cannot create DB connection. Database is set to \"none\" in the config")
 	}
 
 	db, err := gorm.Open(connection, buildConnectionOptions(connection))
@@ -117,6 +118,5 @@ func buildConnectionOptions(connection string) string {
 		)
 	}
 
-	log.Panicf("DB Connection %s not supported", connection)
-	return ""
+	panic(fmt.Sprintf("DB Connection %s not supported", connection))
 }

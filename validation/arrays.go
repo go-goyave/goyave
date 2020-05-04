@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"log"
+	"fmt"
 	"net"
 	"net/url"
 	"reflect"
@@ -57,7 +57,7 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 		}
 
 		if !isArrayType(parameters[0]) {
-			log.Panicf("Rule %s is not converting, cannot use it for array validation", parameters[0])
+			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", parameters[0]))
 		}
 
 		list := reflect.ValueOf(value)

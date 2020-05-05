@@ -155,8 +155,7 @@ suite.RunServer(route.Register, func() {
     writer := multipart.NewWriter(body)
     suite.WriteField(writer, "email", "johndoe@example.org")
     suite.WriteFile(writer, path, "profile_picture", filepath.Base(path))
-    err := writer.Close()
-    if err != nil {
+    if err := writer.Close(); err != nil {
         panic(err)
     }
 

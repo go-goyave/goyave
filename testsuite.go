@@ -221,6 +221,7 @@ func (s *TestSuite) Request(method, route string, headers map[string]string, bod
 	if err != nil {
 		return nil, err
 	}
+	req.Close = true
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}

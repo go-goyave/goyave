@@ -279,8 +279,7 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 
 		suite.WriteFile(writer, path, "file", filepath.Base(path))
 		suite.WriteField(writer, "field", "hello world")
-		err := writer.Close()
-		if err != nil {
+		if err := writer.Close(); err != nil {
 			panic(err)
 		}
 		resp, err := suite.Post("/post", map[string]string{"Content-Type": writer.FormDataContentType()}, body)

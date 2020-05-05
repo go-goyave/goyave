@@ -112,7 +112,10 @@ func (suite *LogMiddlewareTestSuite) TestCloseChildWriter() {
 			response.String(http.StatusOK, "message")
 		}, nil)
 	}, func() {
-		suite.Get("/test", nil)
+		_, err := suite.Get("/test", nil)
+		if err != nil {
+			suite.Fail(err.Error())
+		}
 		suite.True(closeableWriter.closed)
 	})
 }

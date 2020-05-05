@@ -72,7 +72,9 @@ func (suite *JWTAuthenticatorTestSuite) TestAuthenticate() {
 		userNoTable := &TestUserPromoted{}
 		token, err = GenerateToken("wrongemail@example.org")
 		suite.Nil(err)
-		tokenAuthenticator.Authenticate(suite.createRequest(token), userNoTable)
+		if err := tokenAuthenticator.Authenticate(suite.createRequest(token), userNoTable); err != nil {
+			suite.Fail(err.Error())
+		}
 	})
 
 	user = &TestUser{}

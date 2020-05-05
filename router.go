@@ -319,10 +319,15 @@ func staticHandler(directory string, download bool) Handler {
 		path := cleanStaticPath(directory, file)
 
 		if filesystem.FileExists(path) {
+			var err error
 			if download {
-				response.Download(path, file[strings.LastIndex(file, "/")+1:])
+				err = response.Download(path, file[strings.LastIndex(file, "/")+1:])
 			} else {
-				response.File(path)
+				err = response.File(path)
+			}
+
+			if err != nil {
+				ErrLogger.Println(err)
 			}
 		} else {
 			response.Status(http.StatusNotFound)
@@ -331,9 +336,7 @@ func staticHandler(directory string, download bool) Handler {
 }
 
 func cleanStaticPath(directory string, file string) string {
-	if strings.HasPrefix(file, "/") {
-		file = file[1:]
-	}
+	file = strings.TrimPrefix(file, "/")
 	path := directory + "/" + file
 	if filesystem.IsDirectory(path) {
 		if !strings.HasSuffix(path, "/") {

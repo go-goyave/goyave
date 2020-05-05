@@ -76,17 +76,23 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				Stop()
 			} else {
 				fmt.Println("send sig")
-				proc.Signal(syscall.SIGTERM)
+				if err := proc.Signal(syscall.SIGTERM); err != nil {
+					suite.Fail(err.Error())
+				}
 				time.Sleep(10 * time.Millisecond)
 				for IsReady() {
 					time.Sleep(10 * time.Millisecond)
-					proc.Signal(syscall.SIGTERM)
+					if err := proc.Signal(syscall.SIGTERM); err != nil {
+						suite.Fail(err.Error())
+					}
 				}
 			}
 			c <- true
 		})
 		go func() {
-			Start(func(router *Router) {})
+			if err := Start(func(router *Router) {}); err != nil {
+				suite.Fail(err.Error())
+			}
 			c2 <- true
 		}()
 
@@ -198,9 +204,6 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 		suite.Nil(redirectServer)
 		suite.Nil(stopChannel)
 	}
-
-	ctx, cancel = context.WithTimeout(context.Background(), suite.Timeout())
-	defer cancel()
 }
 
 func (suite *GoyaveTestSuite) TestStaticServing() {
@@ -307,7 +310,9 @@ func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 	suite.loadConfig()
 	suite.RunServer(func(router *Router) {}, func() {
 		suite.Panics(func() {
-			Start(func(router *Router) {})
+			if err := Start(func(router *Router) {}); err != nil {
+				suite.Fail(err.Error())
+			}
 		})
 	})
 }
@@ -407,7 +412,9 @@ func (suite *GoyaveTestSuite) TestError() {
 
 func (suite *GoyaveTestSuite) TestConfigError() {
 	config.Clear()
-	os.Chdir("config")
+	if err := os.Chdir("config"); err != nil {
+		panic(err)
+	}
 	defer os.Chdir("..")
 
 	os.Setenv("GOYAVE_ENV", "test_invalid")

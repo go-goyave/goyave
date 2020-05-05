@@ -91,12 +91,12 @@ func Load() error {
 
 	path := getConfigFilePath()
 	conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
-	if err == nil {
-		for key, value := range conf {
-			config[key] = value
-		}
-	} else {
+	if err != nil {
 		return err
+	}
+
+	for key, value := range conf {
+		config[key] = value
 	}
 
 	if err := validateConfig(); err != nil {
@@ -224,7 +224,7 @@ func readConfigFile(file string) (map[string]interface{}, error) {
 	if err == nil {
 		defer configFile.Close()
 		jsonParser := json.NewDecoder(configFile)
-		jsonParser.Decode(&conf)
+		err = jsonParser.Decode(&conf)
 	}
 
 	return conf, err

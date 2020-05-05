@@ -59,7 +59,9 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticate() {
 
 	suite.Panics(func() {
 		userNoTable := &TestUserPromoted{}
-		basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "password"), userNoTable)
+		if err := basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "password"), userNoTable); err != nil {
+			suite.Fail(err.Error())
+		}
 	})
 }
 

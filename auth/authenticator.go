@@ -60,7 +60,7 @@ func Middleware(model interface{}, authenticator Authenticator) goyave.Middlewar
 // The result will be the "Email" field, "nil" and the "Password" field.
 func FindColumns(strct interface{}, fields ...string) []*Column {
 	length := len(fields)
-	result := make([]*Column, length, length)
+	result := make([]*Column, length)
 
 	value := reflect.ValueOf(strct)
 	t := reflect.TypeOf(strct)

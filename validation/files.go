@@ -32,8 +32,8 @@ func validateMIME(field string, value interface{}, parameters []string, form map
 }
 
 func validateImage(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	parameters = []string{"image/jpeg", "image/png", "image/gif", "image/bmp", "image/svg+xml", "image/webp"}
-	return validateMIME(field, value, parameters, form)
+	params := []string{"image/jpeg", "image/png", "image/gif", "image/bmp", "image/svg+xml", "image/webp"}
+	return validateMIME(field, value, params, form)
 }
 
 func validateExtension(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

@@ -17,12 +17,11 @@ type routerDefinition struct {
 }
 
 type routeDefinition struct {
-	uri        string
-	methods    string
-	name       string
-	handler    Handler
-	rules      validation.RuleSet
-	middleware []Middleware
+	uri     string
+	methods string
+	name    string
+	handler Handler
+	rules   validation.RuleSet
 }
 
 var handler Handler = func(response *Response, request *Request) {

@@ -334,7 +334,7 @@ var (
         "price": {"required", "numeric", "min:0.01"},
         "image": {"nullable", "file", "image", "max:2048", "count:1"},
     }
-    
+
     // ...
 )
 ```

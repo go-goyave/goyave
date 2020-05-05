@@ -15,6 +15,7 @@
         - `3`: Configuration is invalid
         - `4`: An error occurred when opening network listener
         - `5`: An error occurred in the HTTP server
+- Fixed a bug in `TestSuite`: HTTP client was re-created everytime `getHTTPClient()` was called.
 
 This change will require a slightly longer `main` function but offers better flexibility for error handling and multi-services.
 

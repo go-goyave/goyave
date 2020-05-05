@@ -337,7 +337,9 @@ func (suite *CustomTestSuite) TestClearDatabaseTables() {
 	defer rows.Close()
 	for rows.Next() {
 		name := ""
-		rows.Scan(&name)
+		if err := rows.Scan(&name); err != nil {
+			panic(err)
+		}
 		if name == "test_models" {
 			found = true
 		}
@@ -361,9 +363,13 @@ func (s *FailingTestSuite) TestRunServerTimeout() {
 }
 
 func TestTestSuiteFail(t *testing.T) {
-	os.Rename("config.test.json", "config.test.json.bak")
+	if err := os.Rename("config.test.json", "config.test.json.bak"); err != nil {
+		panic(err)
+	}
 	mockT := new(testing.T)
 	RunTest(mockT, new(FailingTestSuite))
 	assert.True(t, mockT.Failed())
-	os.Rename("config.test.json.bak", "config.test.json")
+	if err := os.Rename("config.test.json.bak", "config.test.json"); err != nil {
+		panic(err)
+	}
 }

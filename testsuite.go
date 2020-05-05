@@ -59,10 +59,9 @@ type ITestSuite interface {
 // Goyave-specific testing.
 type TestSuite struct {
 	testify.Suite
-	timeout     time.Duration // Timeout for functional tests
-	httpClient  *http.Client
-	previousEnv string
-	mu          sync.Mutex
+	timeout    time.Duration // Timeout for functional tests
+	httpClient *http.Client
+	mu         sync.Mutex
 }
 
 var _ ITestSuite = (*TestSuite)(nil) // implements ITestSuite
@@ -154,7 +153,9 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 	})
 
 	go func() {
-		Start(routeRegistrer)
+		if err := Start(routeRegistrer); err != nil {
+			s.Fail(err.Error())
+		}
 		c2 <- true
 	}()
 
@@ -220,10 +221,8 @@ func (s *TestSuite) Request(method, route string, headers map[string]string, bod
 	if err != nil {
 		return nil, err
 	}
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 	return s.getHTTPClient().Do(req)
 }
@@ -265,7 +264,9 @@ func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
 
 	req, _ := http.NewRequest("POST", "/test-route", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.ParseMultipartForm(10 << 20)
+	if err := req.ParseMultipartForm(10 << 20); err != nil {
+		panic(err)
+	}
 	return filesystem.ParseMultipartFiles(req, "file")
 }
 
@@ -305,13 +306,17 @@ func (s *TestSuite) getHTTPClient() *http.Client {
 		InsecureSkipVerify: true,
 	}
 
-	return &http.Client{
-		Timeout:   s.Timeout(),
-		Transport: &http.Transport{TLSClientConfig: config},
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+	if s.httpClient == nil {
+		s.httpClient = &http.Client{
+			Timeout:   s.Timeout(),
+			Transport: &http.Transport{TLSClientConfig: config},
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
 	}
+
+	return s.httpClient
 }
 
 // ClearDatabase delete all records in all tables.
@@ -367,5 +372,7 @@ func setRootWorkingDirectory() {
 			panic("Couldn't find project's root directory.")
 		}
 	}
-	os.Chdir(directory)
+	if err := os.Chdir(directory); err != nil {
+		panic(err)
+	}
 }

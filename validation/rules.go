@@ -309,8 +309,8 @@ func validateDifferent(field string, value interface{}, parameters []string, for
 }
 
 func validateConfirmed(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	parameters = []string{field + "_confirmation"}
-	return validateSame(field, value, parameters, form)
+	params := []string{field + "_confirmation"}
+	return validateSame(field, value, params, form)
 }
 
 func validateSize(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

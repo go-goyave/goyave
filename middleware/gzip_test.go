@@ -64,7 +64,9 @@ func (suite *GzipMiddlewareTestSuite) TestCloseNonCloseable() {
 		Writer:         writer,
 		ResponseWriter: recorder,
 	}
-	compressWriter.Write([]byte("hello world"))
+	if _, err := compressWriter.Write([]byte("hello world")); err != nil {
+		panic(err)
+	}
 	compressWriter.Close()
 
 	result := recorder.Result()
@@ -96,7 +98,9 @@ func (suite *GzipMiddlewareTestSuite) TestCloseChild() {
 			response.String(http.StatusOK, "hello world")
 		}, nil)
 	}, func() {
-		suite.Get("/test", nil)
+		if _, err := suite.Get("/test", nil); err != nil {
+			suite.Fail(err.Error())
+		}
 		suite.True(closeableWriter.closed)
 	})
 }

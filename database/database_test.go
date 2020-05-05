@@ -86,7 +86,9 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 	found := false
 	for rows.Next() {
 		name := ""
-		rows.Scan(&name)
+		if err := rows.Scan(&name); err != nil {
+			panic(err)
+		}
 		if name == "users" {
 			found = true
 			break

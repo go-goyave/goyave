@@ -186,31 +186,31 @@ func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedur
 // Get execute a GET request on the given route.
 // Headers are optional.
 func (s *TestSuite) Get(route string, headers map[string]string) (*http.Response, error) {
-	return s.Request("GET", route, headers, nil)
+	return s.Request(http.MethodGet, route, headers, nil)
 }
 
 // Post execute a POST request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Post(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.Request("POST", route, headers, body)
+	return s.Request(http.MethodPost, route, headers, body)
 }
 
 // Put execute a PUT request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Put(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.Request("PUT", route, headers, body)
+	return s.Request(http.MethodPut, route, headers, body)
 }
 
 // Patch execute a PATCH request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Patch(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.Request("PATCH", route, headers, body)
+	return s.Request(http.MethodPatch, route, headers, body)
 }
 
 // Delete execute a DELETE request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Delete(route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	return s.Request("DELETE", route, headers, body)
+	return s.Request(http.MethodDelete, route, headers, body)
 }
 
 // Request execute a request on the given route.

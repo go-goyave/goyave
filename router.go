@@ -240,32 +240,32 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 
 // Get registers a new route wit the GET method.
 func (r *Router) Get(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("GET", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodGet, uri, handler, validationRules, middleware...)
 }
 
 // Post registers a new route wit the POST method.
 func (r *Router) Post(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("POST", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodPost, uri, handler, validationRules, middleware...)
 }
 
 // Put registers a new route wit the PUT method.
 func (r *Router) Put(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("PUT", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodPut, uri, handler, validationRules, middleware...)
 }
 
 // Patch registers a new route wit the PATCH method.
 func (r *Router) Patch(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("PATCH", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodPatch, uri, handler, validationRules, middleware...)
 }
 
 // Delete registers a new route wit the DELETE method.
 func (r *Router) Delete(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("DELETE", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodDelete, uri, handler, validationRules, middleware...)
 }
 
 // Options registers a new route wit the OPTIONS method.
 func (r *Router) Options(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("OPTIONS", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodOptions, uri, handler, validationRules, middleware...)
 }
 
 // GetRoute get a named route.
@@ -281,7 +281,7 @@ func (r *Router) GetRoute(name string) *Route {
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
 func (r *Router) Static(uri string, directory string, download bool, middleware ...Middleware) {
-	r.registerRoute("GET", uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
+	r.registerRoute(http.MethodGet, uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
 }
 
 // CORS set the CORS options for this route group.

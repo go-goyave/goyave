@@ -75,7 +75,6 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
 				Stop()
 			} else {
-				fmt.Println("send sig")
 				if err := proc.Signal(syscall.SIGTERM); err != nil {
 					suite.Fail(err.Error())
 				}

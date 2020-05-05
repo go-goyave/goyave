@@ -67,8 +67,9 @@ func (suite *CustomTestSuite) TestRunServer() {
 		resp, err := suite.Get("/hello", nil)
 		suite.Nil(err)
 		if err != nil {
-			fmt.Println(err)
+			suite.Fail(err.Error())
 		}
+		defer resp.Body.Close()
 
 		suite.NotNil(resp)
 		if resp != nil {
@@ -122,16 +123,19 @@ func (suite *CustomTestSuite) TestRequests() {
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal("get", string(suite.GetBody(resp)))
+			resp.Body.Close()
 		}
 		resp, err = suite.Get("/post", nil)
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal(http.StatusMethodNotAllowed, resp.StatusCode)
+			resp.Body.Close()
 		}
 		resp, err = suite.Get("/nonexistent-route", nil)
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal(http.StatusNotFound, resp.StatusCode)
+			resp.Body.Close()
 		}
 		resp, err = suite.Post("/post", nil, strings.NewReader("field=value"))
 		suite.Nil(err)
@@ -159,6 +163,7 @@ func (suite *CustomTestSuite) TestRequests() {
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal("en-US", string(suite.GetBody(resp)))
+			resp.Body.Close()
 		}
 
 		// Errors
@@ -182,6 +187,7 @@ func (suite *CustomTestSuite) TestJSON() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
 		if err == nil {
+			defer resp.Body.Close()
 			json := map[string]interface{}{}
 			err := suite.GetJSONBody(resp, &json)
 			suite.Nil(err)
@@ -194,6 +200,7 @@ func (suite *CustomTestSuite) TestJSON() {
 		resp, err = suite.Get("/invalid", nil)
 		suite.Nil(err)
 		if err == nil {
+			defer resp.Body.Close()
 			oldT := suite.T()
 			suite.SetT(new(testing.T))
 			json := map[string]interface{}{}
@@ -217,6 +224,7 @@ func (suite *CustomTestSuite) TestJSONSlice() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
 		if err == nil {
+			defer resp.Body.Close()
 			json := []map[string]interface{}{}
 			err := suite.GetJSONBody(resp, &json)
 			suite.Nil(err)

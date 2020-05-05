@@ -488,6 +488,7 @@ func (suite *CustomTestSuite) TestHello() {
         suite.Nil(err)
         suite.NotNil(resp)
         if resp != nil {
+            defer resp.Body.Close()
             suite.Equal(200, resp.StatusCode)
             suite.Equal("Hi!", string(suite.GetBody(resp)))
         }
@@ -505,6 +506,7 @@ When writing functional tests, you can retrieve the response body  easily using 
 resp, err := suite.Get("/get", nil)
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -539,6 +541,7 @@ suite.RunServer(route.Register, func() {
     resp, err := suite.Get("/product", nil)
     suite.Nil(err)
     if err == nil {
+        defer resp.Body.Close()
         json := map[string]interface{}{}
         err := suite.GetJSONBody(resp, &json)
         suite.Nil(err)

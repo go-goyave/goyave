@@ -30,6 +30,7 @@ func (suite *CustomTestSuite) TestHello() {
         suite.Nil(err)
         suite.NotNil(resp)
         if resp != nil {
+            defer resp.Body.Close()
             suite.Equal(200, resp.StatusCode)
             suite.Equal("Hi!", string(suite.GetBody(resp)))
         }
@@ -84,6 +85,7 @@ The response body can be retrieved easily using [`suite.GetBody(response)`](#sui
 resp, err := suite.Get("/get", nil)
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -133,6 +135,7 @@ suite.RunServer(route.Register, func() {
     resp, err := suite.Get("/product", nil)
     suite.Nil(err)
     if err == nil {
+        defer resp.Body.Close()
         json := map[string]interface{}{}
         err := suite.GetJSONBody(resp, &json)
         suite.Nil(err)
@@ -165,6 +168,7 @@ suite.RunServer(route.Register, func() {
     resp, err := suite.Post("/register", headers, body)
     suite.Nil(err)
     if err == nil {
+        defer resp.Body.Close()
         suite.Equal("Welcome!", string(suite.GetBody(resp)))
     }
 })

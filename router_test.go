@@ -743,6 +743,7 @@ func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 		if err != nil {
 			panic(err)
 		}
+		defer resp.Body.Close()
 
 		suite.Equal(500, resp.StatusCode)
 		suite.True(testWr.closed)

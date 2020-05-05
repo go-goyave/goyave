@@ -16,6 +16,7 @@
         - `4`: An error occurred when opening network listener
         - `5`: An error occurred in the HTTP server
 - Fixed a bug in `TestSuite`: HTTP client was re-created everytime `getHTTPClient()` was called.
+- Fixed documentation examples that didn't close http response body.
 
 This change will require a slightly longer `main` function but offers better flexibility for error handling and multi-services.
 

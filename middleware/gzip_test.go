@@ -98,9 +98,11 @@ func (suite *GzipMiddlewareTestSuite) TestCloseChild() {
 			response.String(http.StatusOK, "hello world")
 		}, nil)
 	}, func() {
-		if _, err := suite.Get("/test", nil); err != nil {
+		resp, err := suite.Get("/test", nil)
+		if err != nil {
 			suite.Fail(err.Error())
 		}
+		resp.Body.Close()
 		suite.True(closeableWriter.closed)
 	})
 }

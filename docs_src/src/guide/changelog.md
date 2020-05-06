@@ -41,7 +41,7 @@ if err := goyave.Start(route.Register); err != nil {
 - The server will now automatically return `413 Payload Too Large` if the request's size exceeds the `maxUploadSize` defined in configuration.
 - The request parsing middleware doesn't drain the body anymore, improving native handler compatibility.
 - Set a default status handler for all 400 errors.
-
+- Fixed a bug preventing query parameters to be parsed when the request had the `Content-Type: application/json` header.
 
 ### v2.10.0
 

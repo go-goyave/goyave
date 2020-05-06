@@ -74,6 +74,7 @@ func parseRequestMiddleware(next Handler) Handler {
 			bodyBytes := bodyBuf.Bytes()
 			if request.httpRequest.Header.Get("Content-Type") == "application/json" {
 				request.Data = make(map[string]interface{}, 10)
+				parseQuery(request)
 				if err := json.Unmarshal(bodyBytes, &request.Data); err != nil {
 					request.Data = nil
 				}
@@ -87,6 +88,62 @@ func parseRequestMiddleware(next Handler) Handler {
 
 		next(response, request)
 	}
+}
+
+func generateFlatMap(request *http.Request, maxSize int64) map[string]interface{} {
+	var flatMap map[string]interface{} = make(map[string]interface{})
+	err := request.ParseMultipartForm(maxSize)
+
+	if err != nil {
+		if err == http.ErrNotMultipart {
+			if err := request.ParseForm(); err != nil {
+				return nil
+			}
+		} else {
+			return nil
+		}
+	}
+
+	if request.Form != nil {
+		flatten(flatMap, request.Form)
+	}
+	if request.MultipartForm != nil {
+		flatten(flatMap, request.MultipartForm.Value)
+
+		for field := range request.MultipartForm.File {
+			flatMap[field] = filesystem.ParseMultipartFiles(request, field)
+		}
+	}
+
+	// Source form is not needed anymore, clear it.
+	request.Form = nil
+	request.PostForm = nil
+	request.MultipartForm = nil
+
+	return flatMap
+}
+
+func flatten(dst map[string]interface{}, values url.Values) {
+	for field, value := range values {
+		if len(value) > 1 {
+			dst[field] = value
+		} else {
+			dst[field] = value[0]
+		}
+	}
+}
+
+func parseQuery(request *Request) {
+	if uri := request.URI(); uri != nil {
+		queryParams, err := url.ParseQuery(uri.RawQuery)
+		if err == nil {
+			flatten(request.Data, queryParams)
+		}
+	}
+}
+
+func resetRequestBody(request *Request, bodyBytes []byte) {
+	request.httpRequest.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 }
 
 // corsMiddleware is the middleware handling CORS, using the options set in the router.
@@ -116,55 +173,6 @@ func corsMiddleware(next Handler) Handler {
 			next(response, request)
 		}
 	}
-}
-
-func generateFlatMap(request *http.Request, maxSize int64) map[string]interface{} {
-	var flatMap map[string]interface{} = make(map[string]interface{})
-	err := request.ParseMultipartForm(maxSize)
-
-	if err != nil {
-		if err == http.ErrNotMultipart {
-			if err := request.ParseForm(); err != nil {
-				return nil
-			}
-		} else {
-			return nil
-		}
-	}
-
-	if request.Form != nil {
-		for field, value := range request.Form {
-			if len(value) > 1 {
-				flatMap[field] = value
-			} else {
-				flatMap[field] = value[0]
-			}
-		}
-	}
-	if request.MultipartForm != nil {
-		for field, value := range request.MultipartForm.Value {
-			if len(value) > 1 {
-				flatMap[field] = value
-			} else {
-				flatMap[field] = value[0]
-			}
-		}
-
-		for field := range request.MultipartForm.File {
-			flatMap[field] = filesystem.ParseMultipartFiles(request, field)
-		}
-	}
-
-	// Source form is not needed anymore, clear it.
-	request.Form = url.Values{}
-	request.PostForm = url.Values{}
-	request.MultipartForm = nil
-
-	return flatMap
-}
-
-func resetRequestBody(request *Request, bodyBytes []byte) {
-	request.httpRequest.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 }
 
 // validateRequestMiddleware is a middleware that validates the request and sends a 422 error code

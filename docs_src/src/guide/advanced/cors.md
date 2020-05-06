@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "CORS - Goyave"
+  - name: "twitter:title"
+    content: "CORS - Goyave"
+  - name: "title"
+    content: "CORS - Goyave"
+---
+
 # CORS <Badge text="Since v2.3.0"/>
 
 [[toc]]

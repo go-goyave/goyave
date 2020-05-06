@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Architecture concepts - Goyave"
+  - name: "twitter:title"
+    content: "Architecture concepts - Goyave"
+  - name: "title"
+    content: "Architecture concepts - Goyave"
+---
+
 # Architecture Concepts
 
 [[toc]]

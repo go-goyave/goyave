@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Configuration - Goyave"
+  - name: "twitter:title"
+    content: "Configuration - Goyave"
+  - name: "title"
+    content: "Configuration - Goyave"
+---
+
 # Configuration
 
 [[toc]]

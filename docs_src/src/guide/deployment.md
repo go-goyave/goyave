@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Deployment - Goyave"
+  - name: "twitter:title"
+    content: "Deployment - Goyave"
+  - name: "title"
+    content: "Deployment - Goyave"
+---
+
 # Deployment
 
 [[toc]]

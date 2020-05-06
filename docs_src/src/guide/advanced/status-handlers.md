@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Status Handlers - Goyave"
+  - name: "twitter:title"
+    content: "Status Handlers - Goyave"
+  - name: "title"
+    content: "Status Handlers - Goyave"
+---
+
 # Status Handlers <Badge text="Since v2.4.0"/>
 
 [[toc]]

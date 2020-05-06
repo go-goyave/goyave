@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Changelog - Goyave"
+  - name: "twitter:title"
+    content: "Changelog - Goyave"
+  - name: "title"
+    content: "Changelog - Goyave"
+---
+
 # Changelog
 
 [[toc]]
@@ -15,8 +25,6 @@
         - `3`: Configuration is invalid
         - `4`: An error occurred when opening network listener
         - `5`: An error occurred in the HTTP server
-- Fixed a bug in `TestSuite`: HTTP client was re-created everytime `getHTTPClient()` was called.
-- Fixed documentation examples that didn't close http response body.
 
 This change will require a slightly longer `main` function but offers better flexibility for error handling and multi-services.
 
@@ -25,6 +33,11 @@ if err := goyave.Start(route.Register); err != nil {
 	os.Exit(err.(*goyave.Error).ExitCode)
 }
 ```
+
+- Fixed a bug in `TestSuite`: HTTP client was re-created everytime `getHTTPClient()` was called.
+- Fixed documentation examples that didn't close http response body.
+- Documentation meta improvements.
+
 
 ### v2.10.0
 

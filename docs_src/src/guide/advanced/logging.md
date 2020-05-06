@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Logging - Goyave"
+  - name: "twitter:title"
+    content: "Logging - Goyave"
+  - name: "title"
+    content: "Logging - Goyave"
+---
+
 # Logging <Badge text="Since v2.8.0"/>
 
 [[toc]]

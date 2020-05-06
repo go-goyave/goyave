@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Localization - Goyave"
+  - name: "twitter:title"
+    content: "Localization - Goyave"
+  - name: "title"
+    content: "Localization - Goyave"
+---
+
 # Localization
 
 [[toc]]

@@ -4,6 +4,13 @@ heroImage: /goyave_512.png
 actionText: Get Started →
 actionLink: /guide/
 footer: MIT Licensed | Copyright © 2019 Jérémy LAMBERT (SystemGlitch)
+meta:
+  - name: "og:title"
+    content: "Goyave - Elegant Golang Web Framework"
+  - name: "twitter:title"
+    content: "Goyave - Elegant Golang Web Framework"
+  - name: "title"
+    content: "Goyave - Elegant Golang Web Framework"
 ---
 
 <p class="center">

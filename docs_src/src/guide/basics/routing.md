@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Routing - Goyave"
+  - name: "twitter:title"
+    content: "Routing - Goyave"
+  - name: "title"
+    content: "Routing - Goyave"
+---
+
 # Routing
 
 [[toc]]

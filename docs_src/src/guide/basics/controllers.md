@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Controllers - Goyave"
+  - name: "twitter:title"
+    content: "Controllers - Goyave"
+  - name: "title"
+    content: "Controllers - Goyave"
+---
+
 # Controllers
 
 [[toc]]
@@ -93,10 +103,10 @@ Setting the `Content-Type` header is not necessary. `response.Write` automatical
 - Controller handlers are always **exported** so they can be used when registering routes. All functions which aren't handlers **must be unexported**.
 - CRUD operations naming and routing:
 
-| Method           | URI                  | Handler name | Description                    |
-|------------------|----------------------|--------------|--------------------------------|
-| `GET`            | `/product`           | `Index()`    | Get the products list          |
-| `POST`           | `/product`           | `Store()`    | Create a product               |
-| `GET`            | `/product/{id}`      | `Show()`     | Show a product                 |
-| `PUT` or `PATCH` | `/product/{id}`      | `Update()`   | Update a product               |
-| `DELETE`         | `/product/{id}`      | `Destroy()`  | Delete a product               |
+| Method           | URI             | Handler name | Description           |
+|------------------|-----------------|--------------|-----------------------|
+| `GET`            | `/product`      | `Index()`    | Get the products list |
+| `POST`           | `/product`      | `Store()`    | Create a product      |
+| `GET`            | `/product/{id}` | `Show()`     | Show a product        |
+| `PUT` or `PATCH` | `/product/{id}` | `Update()`   | Update a product      |
+| `DELETE`         | `/product/{id}` | `Destroy()`  | Delete a product      |

@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Responses - Goyave"
+  - name: "twitter:title"
+    content: "Responses - Goyave"
+  - name: "title"
+    content: "Responses - Goyave"
+---
+
 # Responses
 
 [[toc]]

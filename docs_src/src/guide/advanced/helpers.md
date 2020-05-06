@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Helpers - Goyave"
+  - name: "twitter:title"
+    content: "Helpers - Goyave"
+  - name: "title"
+    content: "Helpers - Goyave"
+---
+
 # Helpers
 
 [[toc]]

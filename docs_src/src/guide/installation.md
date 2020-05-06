@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Installation - Goyave"
+  - name: "twitter:title"
+    content: "Installation - Goyave"
+  - name: "title"
+    content: "Installation - Goyave"
+---
+
 # Installation
 
 This guide will walk you through the installation process. The rest of the guide assumes you are using the template project, as it is the recommended option.

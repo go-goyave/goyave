@@ -1,5 +1,5 @@
 const title = 'Goyave'
-const description = 'An Elegant Golang Web Framework'
+const description = 'Goyave is a Golang web API framework aiming at cleanliness, fast development and power.'
 
 module.exports = {
     title: title,
@@ -13,11 +13,11 @@ module.exports = {
         ['link', { rel: 'icon', type: "image/png", sizes: "128x128", href: `/goyave_128.png` }],
         ['link', { rel: 'icon', type: "image/png", sizes: "256x256", href: `/goyave_256.png` }],
         ['link', { rel: 'icon', type: "image/png", sizes: "512x512", href: `/goyave_512.png` }],
-        ['meta', { property: 'twitter:title', content: title }],
+        // ['meta', { property: 'twitter:title', content: title }],
         ['meta', { property: 'twitter:description', content: description }],
         ['meta', { property: 'twitter:image:src', content: `https://system-glitch.github.io/goyave/goyave_banner.png` }],
         ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
-        ['meta', { property: 'og:title', content: title }],
+        // ['meta', { property: 'og:title', content: title }],
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:description', content: description }],
         ['meta', { property: 'og:image', content: `https://system-glitch.github.io/goyave/goyave_banner.png` }],

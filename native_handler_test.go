@@ -4,18 +4,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
-
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/stretchr/testify/suite"
 )
 
 type NativeHandlerTestSuite struct {
-	suite.Suite
-}
-
-func (suite *NativeHandlerTestSuite) SetupSuite() {
-	config.Load()
+	TestSuite
 }
 
 func (suite *NativeHandlerTestSuite) TestNativeHandler() {
@@ -38,6 +32,61 @@ func (suite *NativeHandlerTestSuite) TestNativeHandler() {
 	suite.Equal("Hello world", string(body))
 	suite.False(response.empty)
 }
+
+func (suite *NativeHandlerTestSuite) TestNativeHandlerBody() {
+
+	handler := NativeHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		suite.Equal("request=content", string(res))
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	suite.RunServer(func(router *Router) {
+		router.Route("POST", "/native", handler, nil)
+	}, func() {
+		headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded; param=value"}
+		resp, err := suite.Post("/native", headers, strings.NewReader("request=content"))
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		suite.Equal(http.StatusNoContent, resp.StatusCode)
+	})
+}
+
+func (suite *NativeHandlerTestSuite) TestNativeHandlerBodyJSON() {
+
+	handler := NativeHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		suite.Equal("{\"request\":\"content\"}", string(res))
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	suite.RunServer(func(router *Router) {
+		router.Route("POST", "/native", handler, nil)
+	}, func() {
+		headers := map[string]string{"Content-Type": "application/json"}
+		resp, err := suite.Post("/native", headers, strings.NewReader("{\"request\":\"content\"}"))
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		suite.Equal(http.StatusNoContent, resp.StatusCode)
+	})
+}
+
 func (suite *NativeHandlerTestSuite) TestNativeMiddleware() {
 	request := &Request{
 		httpRequest: httptest.NewRequest("GET", "/native", nil),
@@ -81,5 +130,5 @@ func (suite *NativeHandlerTestSuite) TestNativeMiddleware() {
 }
 
 func TestNativeHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(NativeHandlerTestSuite))
+	RunTest(t, new(NativeHandlerTestSuite))
 }

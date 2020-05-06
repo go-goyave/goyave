@@ -37,6 +37,10 @@ if err := goyave.Start(route.Register); err != nil {
 - Fixed a bug in `TestSuite`: HTTP client was re-created everytime `getHTTPClient()` was called.
 - Fixed documentation examples that didn't close http response body.
 - Documentation meta improvements.
+- Protect JSON requests with `maxUploadSize`. 
+- The server will now automatically return `413 Payload Too Large` if the request's size exceeds the `maxUploadSize` defined in configuration.
+- The request parsing middleware doesn't drain the body anymore, improving native handler compatibility.
+- Set a default status handler for all 400 errors.
 
 
 ### v2.10.0

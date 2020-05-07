@@ -23,7 +23,11 @@ module.exports = {
         ['meta', { property: 'og:image', content: `https://system-glitch.github.io/goyave/goyave_banner.png` }],
         ['meta', { property: 'og:site_name', content: "Goyave" }],
     ],
+    theme: 'yuu',
     themeConfig: {
+        yuu: {
+			colorThemes: [],
+		},
         repo: 'System-Glitch/goyave',
         editLinks: true,
         docsDir: 'docs_src/src',

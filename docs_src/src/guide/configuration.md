@@ -179,7 +179,7 @@ config.Register("pluginConfig", reflect.Struct)
 | dbAutoMigrate        | `bool`    | `true`, `false`                                 | `false`                                 | When activated, migrate all registered models at startup                                                                                      |
 | jwtExpiry            | `float64` | any                                             | `300`                                   | The number of seconds a generated JWT token is valid for. See the [authentication](./advanced/authentication.htmll#json-web-token-jwt) guide. |
 
-::: tip Note
+::: tip NOTE
 Numeric values are parsed as `float64` even if they are supposed to be integers so it covers the potential use-case of floats in the config.
 :::
 

@@ -147,7 +147,6 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 		procedure()
 		if ctx.Err() == nil {
 			Stop()
-			ClearStartupHooks()
 			c <- true
 		}
 	})
@@ -155,6 +154,7 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 	go func() {
 		if err := Start(routeRegistrer); err != nil {
 			s.Fail(err.Error())
+			c <- true
 		}
 		c2 <- true
 	}()
@@ -163,10 +163,10 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 	case <-ctx.Done():
 		s.Fail("Timeout exceeded in goyave.TestSuite.RunServer")
 		Stop()
-		ClearStartupHooks()
 	case sig := <-c:
 		s.True(sig)
 	}
+	ClearStartupHooks()
 	<-c2
 }
 

@@ -77,6 +77,7 @@ func (suite *CustomTestSuite) TestRunServer() {
 			suite.Equal("Hi!", string(suite.GetBody(resp)))
 		}
 	})
+	suite.Empty(startupHooks)
 }
 
 func (suite *CustomTestSuite) TestRunServerTimeout() {
@@ -89,6 +90,24 @@ func (suite *CustomTestSuite) TestRunServerTimeout() {
 	assert.True(oldT, suite.T().Failed())
 	suite.SetTimeout(5 * time.Second)
 	suite.SetT(oldT)
+	suite.Empty(startupHooks)
+}
+
+func (suite *CustomTestSuite) TestRunServerError() {
+	config.Clear()
+	oldT := suite.T()
+	suite.SetT(new(testing.T))
+	prevEnv := os.Getenv("GOYAVE_ENV")
+	if err := os.Setenv("GOYAVE_ENV", "notanenv"); err != nil {
+		suite.Fail(err.Error())
+	}
+	suite.RunServer(func(router *Router) {}, func() {})
+	assert.True(oldT, suite.T().Failed())
+	suite.SetT(oldT)
+	if err := os.Setenv("GOYAVE_ENV", prevEnv); err != nil {
+		suite.Fail(err.Error())
+	}
+	suite.Empty(startupHooks)
 }
 
 func (suite *CustomTestSuite) TestMiddleware() {

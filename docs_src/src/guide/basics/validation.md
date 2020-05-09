@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Validation - Goyave"
+  - name: "twitter:title"
+    content: "Validation - Goyave"
+  - name: "title"
+    content: "Validation - Goyave"
+---
+
 # Validation
 
 [[toc]]

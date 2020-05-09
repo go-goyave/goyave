@@ -46,6 +46,31 @@ var (
 	ErrLogger *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
+const (
+	// ExitInvalidConfig the exit code returned when the config
+	// validation doesn't pass.
+	ExitInvalidConfig = 3
+
+	// ExitNetworkError the exit code returned when an error
+	// occurs when opening the network listener
+	ExitNetworkError = 4
+
+	// ExitHTTPError the exit code returned when an error
+	// occurs in the HTTP server (port already in use for example)
+	ExitHTTPError = 5
+)
+
+// Error wrapper for errors directely related to the server itself.
+// Contains an exit code and the original error.
+type Error struct {
+	ExitCode int
+	Err      error
+}
+
+func (e *Error) Error() string {
+	return e.Err.Error()
+}
+
 // IsReady returns true if the server has finished initializing and
 // is ready to serve incoming requests.
 func IsReady() bool {
@@ -76,20 +101,24 @@ func ClearStartupHooks() {
 //  )
 //
 //  func main() {
-// 	    goyave.start(route.Register)
+//      if err := goyave.Start(route.Register); err != nil {
+//          os.Exit(err.(*goyave.Error).ExitCode)
+//      }
 //  }
 //
-// Panic if the server is already running.
-func Start(routeRegistrer func(*Router)) {
+// Errors returned can be safely type-asserted to "*goyave.Error".
+// Panics if the server is already running.
+func Start(routeRegistrer func(*Router)) error {
 	if IsReady() {
-		log.Panicf("Server is already running.")
+		ErrLogger.Panicf("Server is already running.")
 	}
 
 	mutex.Lock()
 	if !config.IsLoaded() {
 		if err := config.Load(); err != nil {
 			ErrLogger.Println(err)
-			return
+			mutex.Unlock()
+			return &Error{ExitInvalidConfig, err}
 		}
 	}
 
@@ -103,7 +132,7 @@ func Start(routeRegistrer func(*Router)) {
 	router = newRouter()
 	routeRegistrer(router)
 	regexCache = nil // Clear regex cache
-	startServer(router)
+	return startServer(router)
 }
 
 // EnableMaintenance replace the main server handler with the "Service Unavailable" handler.
@@ -269,7 +298,7 @@ func startTLSRedirectServer() {
 	}()
 }
 
-func startServer(router *Router) {
+func startServer(router *Router) error {
 	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
 	protocol := config.GetString("protocol")
 	server = &http.Server{
@@ -292,7 +321,7 @@ func startServer(router *Router) {
 		defer cancel()
 		stop(ctx)
 		mutex.Unlock()
-		return
+		return &Error{ExitNetworkError, err}
 	}
 	defer ln.Close()
 	registerShutdownHook(stop)
@@ -308,6 +337,7 @@ func startServer(router *Router) {
 		if err := s.ServeTLS(ln, config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
 			ErrLogger.Println(err)
 			Stop()
+			return &Error{ExitHTTPError, err}
 		}
 	} else {
 
@@ -317,8 +347,11 @@ func startServer(router *Router) {
 		if err := s.Serve(ln); err != nil && err != http.ErrServerClosed {
 			ErrLogger.Println(err)
 			Stop()
+			return &Error{ExitHTTPError, err}
 		}
 	}
+
+	return nil
 }
 
 func runStartupHooks() {

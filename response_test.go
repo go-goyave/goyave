@@ -141,6 +141,18 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	response.File("config/config.test.json")
 	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal("text/plain", resp.Header.Get("Content-Type"))
+
+	// File doesn't exist
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = newResponse(httptest.NewRecorder(), rawRequest)
+	err := response.File("config/doesntexist")
+	suite.Equal("open config/doesntexist: no such file or directory", err.Error())
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Equal(404, response.status)
+	suite.True(response.empty)
+	suite.False(response.wroteHeader)
+	suite.Empty(resp.Header.Get("Content-Type"))
+	suite.Empty(resp.Header.Get("Content-Disposition"))
 }
 
 func (suite *ResponseTestSuite) TestResponseJSON() {
@@ -187,15 +199,6 @@ func (suite *ResponseTestSuite) TestResponseJSONHiddenFields() {
 	suite.Equal("{\"Username\":\"Jeff\"}\n", string(body))
 }
 
-func (suite *ResponseTestSuite) TestResponseFilePanic() {
-	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := newResponse(httptest.NewRecorder(), rawRequest)
-
-	suite.Panics(func() {
-		response.File("doesn'texist")
-	})
-}
-
 func (suite *ResponseTestSuite) TestResponseDownload() {
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)
@@ -209,6 +212,18 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal("29", resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
+
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = newResponse(httptest.NewRecorder(), rawRequest)
+
+	err := response.Download("config/doesntexist", "config.json")
+	suite.Equal("open config/doesntexist: no such file or directory", err.Error())
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Equal(404, response.status)
+	suite.True(response.empty)
+	suite.False(response.wroteHeader)
+	suite.Empty(resp.Header.Get("Content-Type"))
+	suite.Empty(resp.Header.Get("Content-Disposition"))
 }
 
 func (suite *ResponseTestSuite) TestResponseRedirect() {

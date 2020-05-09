@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Testing - Goyave"
+  - name: "twitter:title"
+    content: "Testing - Goyave"
+  - name: "title"
+    content: "Testing - Goyave"
+---
+
 # Testing <Badge text="Since v2.2.0"/>
 
 [[toc]]
@@ -30,6 +40,7 @@ func (suite *CustomTestSuite) TestHello() {
         suite.Nil(err)
         suite.NotNil(resp)
         if resp != nil {
+            defer resp.Body.Close()
             suite.Equal(200, resp.StatusCode)
             suite.Equal("Hi!", string(suite.GetBody(resp)))
         }
@@ -84,6 +95,7 @@ The response body can be retrieved easily using [`suite.GetBody(response)`](#sui
 resp, err := suite.Get("/get", nil)
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -133,6 +145,7 @@ suite.RunServer(route.Register, func() {
     resp, err := suite.Get("/product", nil)
     suite.Nil(err)
     if err == nil {
+        defer resp.Body.Close()
         json := map[string]interface{}{}
         err := suite.GetJSONBody(resp, &json)
         suite.Nil(err)
@@ -155,8 +168,7 @@ suite.RunServer(route.Register, func() {
     writer := multipart.NewWriter(body)
     suite.WriteField(writer, "email", "johndoe@example.org")
     suite.WriteFile(writer, path, "profile_picture", filepath.Base(path))
-    err := writer.Close()
-    if err != nil {
+    if err := writer.Close(); err != nil {
         panic(err)
     }
 
@@ -166,6 +178,7 @@ suite.RunServer(route.Register, func() {
     resp, err := suite.Post("/register", headers, body)
     suite.Nil(err)
     if err == nil {
+        defer resp.Body.Close()
         suite.Equal("Welcome!", string(suite.GetBody(resp)))
     }
 })

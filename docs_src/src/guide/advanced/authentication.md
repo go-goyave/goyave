@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Authentication - Goyave"
+  - name: "twitter:title"
+    content: "Authentication - Goyave"
+  - name: "title"
+    content: "Authentication - Goyave"
+---
+
 # Authentication <Badge text="Since v2.5.0"/>
 
 [[toc]]

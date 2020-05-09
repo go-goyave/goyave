@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Configuration - Goyave"
+  - name: "twitter:title"
+    content: "Configuration - Goyave"
+  - name: "title"
+    content: "Configuration - Goyave"
+---
+
 # Configuration
 
 [[toc]]
@@ -154,7 +164,7 @@ config.Register("pluginConfig", reflect.Struct)
 | tlsKey               | `string`  | any                                             | none                                    | Path to your TLS key                                                                                                                          |
 | debug                | `bool`    | `true`, `false`                                 | `true`                                  | When activated, print stacktrace on error and sends error message in response. **Disable this in production!**                                |
 | timeout              | `float64` | any                                             | `10`                                    | Timeout in seconds                                                                                                                            |
-| maxUploadSize        | `float64` | any                                             | `10`                                    | Max **in-memory** files sent in the request, in MiB                                                                                           |
+| maxUploadSize        | `float64` | any                                             | `10`                                    | Maximum size of the request, in MiB                                                                                                           |
 | defaultLanguage      | `string`  | any                                             | "en-US"                                 | See the [Localization](./advanced/localization.html) guide                                                                                    |
 | dbConnection         | `string`  | "none", "mysql", "postgres", "sqlite3", "mssql" | "none"                                  | See the [Database](./basics/database.html) guide                                                                                              |
 | dbHost               | `string`  | any                                             | "127.0.0.1"                             |                                                                                                                                               |
@@ -169,7 +179,7 @@ config.Register("pluginConfig", reflect.Struct)
 | dbAutoMigrate        | `bool`    | `true`, `false`                                 | `false`                                 | When activated, migrate all registered models at startup                                                                                      |
 | jwtExpiry            | `float64` | any                                             | `300`                                   | The number of seconds a generated JWT token is valid for. See the [authentication](./advanced/authentication.htmll#json-web-token-jwt) guide. |
 
-::: tip Note
+::: tip NOTE
 Numeric values are parsed as `float64` even if they are supposed to be integers so it covers the potential use-case of floats in the config.
 :::
 

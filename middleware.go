@@ -1,8 +1,12 @@
 package goyave
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"runtime/debug"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -44,24 +48,102 @@ func recoveryMiddleware(next Handler) Handler {
 //
 // If the "Content-Type: application/json" header is set, the middleware
 // will attempt to unmarshal the request's body.
+//
+// This middleware doesn't drain the request body to maximize compatibility
+// with native handlers.
+//
+// The maximum length of the data is limited by the "maxUploadSize" config entry.
+// If a request exceeds the maximum size, the middleware doesn't call "next()" and
+// sets the response status code to "413 Payload Too Large".
 func parseRequestMiddleware(next Handler) Handler {
 	return func(response *Response, request *Request) {
-		var data map[string]interface{}
-		if request.httpRequest.Header.Get("Content-Type") == "application/json" {
-			defer request.httpRequest.Body.Close()
-			data = make(map[string]interface{}, 10)
-			err := json.NewDecoder(request.httpRequest.Body).Decode(&data)
-			if err != nil {
-				data = nil
+
+		request.Data = nil
+		maxSize := int64(config.Get("maxUploadSize").(float64) * 1024 * 1024)
+		maxValueBytes := maxSize
+		var bodyBuf bytes.Buffer
+		n, err := io.CopyN(&bodyBuf, request.httpRequest.Body, maxValueBytes+1)
+		request.httpRequest.Body.Close()
+		if err == nil || err == io.EOF {
+			maxValueBytes -= n
+			if maxValueBytes < 0 {
+				response.Status(http.StatusRequestEntityTooLarge)
+				return
 			}
-		} else {
-			data = generateFlatMap(request.httpRequest)
-			// TODO free memory by clearing the Form data from the request?
-			// Would probably break native handlers.
+
+			bodyBytes := bodyBuf.Bytes()
+			if request.httpRequest.Header.Get("Content-Type") == "application/json" {
+				request.Data = make(map[string]interface{}, 10)
+				parseQuery(request)
+				if err := json.Unmarshal(bodyBytes, &request.Data); err != nil {
+					request.Data = nil
+				}
+				resetRequestBody(request, bodyBytes)
+			} else {
+				resetRequestBody(request, bodyBytes)
+				request.Data = generateFlatMap(request.httpRequest, maxSize)
+				resetRequestBody(request, bodyBytes)
+			}
 		}
-		request.Data = data
+
 		next(response, request)
 	}
+}
+
+func generateFlatMap(request *http.Request, maxSize int64) map[string]interface{} {
+	var flatMap map[string]interface{} = make(map[string]interface{})
+	err := request.ParseMultipartForm(maxSize)
+
+	if err != nil {
+		if err == http.ErrNotMultipart {
+			if err := request.ParseForm(); err != nil {
+				return nil
+			}
+		} else {
+			return nil
+		}
+	}
+
+	if request.Form != nil {
+		flatten(flatMap, request.Form)
+	}
+	if request.MultipartForm != nil {
+		flatten(flatMap, request.MultipartForm.Value)
+
+		for field := range request.MultipartForm.File {
+			flatMap[field] = filesystem.ParseMultipartFiles(request, field)
+		}
+	}
+
+	// Source form is not needed anymore, clear it.
+	request.Form = nil
+	request.PostForm = nil
+	request.MultipartForm = nil
+
+	return flatMap
+}
+
+func flatten(dst map[string]interface{}, values url.Values) {
+	for field, value := range values {
+		if len(value) > 1 {
+			dst[field] = value
+		} else {
+			dst[field] = value[0]
+		}
+	}
+}
+
+func parseQuery(request *Request) {
+	if uri := request.URI(); uri != nil {
+		queryParams, err := url.ParseQuery(uri.RawQuery)
+		if err == nil {
+			flatten(request.Data, queryParams)
+		}
+	}
+}
+
+func resetRequestBody(request *Request, bodyBytes []byte) {
+	request.httpRequest.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 }
 
 // corsMiddleware is the middleware handling CORS, using the options set in the router.
@@ -91,46 +173,6 @@ func corsMiddleware(next Handler) Handler {
 			next(response, request)
 		}
 	}
-}
-
-func generateFlatMap(request *http.Request) map[string]interface{} {
-	var flatMap map[string]interface{} = make(map[string]interface{})
-	err := request.ParseMultipartForm(int64(config.Get("maxUploadSize").(float64)) << 20)
-
-	if err != nil {
-		if err == http.ErrNotMultipart {
-			if request.ParseForm() != nil {
-				return nil
-			}
-		} else {
-			return nil
-		}
-	}
-
-	if request.Form != nil {
-		for field, value := range request.Form {
-			if len(value) > 1 {
-				flatMap[field] = value
-			} else {
-				flatMap[field] = value[0]
-			}
-		}
-	}
-	if request.MultipartForm != nil {
-		for field, value := range request.MultipartForm.Value {
-			if len(value) > 1 {
-				flatMap[field] = value
-			} else {
-				flatMap[field] = value[0]
-			}
-		}
-
-		for field := range request.MultipartForm.File {
-			flatMap[field] = filesystem.ParseMultipartFiles(request, field)
-		}
-	}
-
-	return flatMap
 }
 
 // validateRequestMiddleware is a middleware that validates the request and sends a 422 error code

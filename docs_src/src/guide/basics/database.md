@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Database - Goyave"
+  - name: "twitter:title"
+    content: "Database - Goyave"
+  - name: "title"
+    content: "Database - Goyave"
+---
+
 # Database
 
 [[toc]]

@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Middleware - Goyave"
+  - name: "twitter:title"
+    content: "Middleware - Goyave"
+  - name: "title"
+    content: "Middleware - Goyave"
+---
+
 # Middleware
 
 [[toc]]

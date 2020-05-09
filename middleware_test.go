@@ -118,43 +118,58 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 }
 
 func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {
+	executed := false
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	rawRequest.Header.Set("Accept-Language", "en-US")
 	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("en-US", r.Lang)
+		executed = true
 	})
+	suite.True(executed)
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	testMiddleware(languageMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("en-US", r.Lang)
+		executed = true
 	})
+	suite.True(executed)
 }
 
 func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
+	executed := false
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
+		executed = true
 	})
+	suite.True(executed)
 }
 
 func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {
+	executed := false
 	rawRequest := httptest.NewRequest("GET", "/test-route?string=hello%20world&number=42", nil)
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
+		executed = true
 	})
+	suite.True(executed)
 
+	executed = false
 	rawRequest = httptest.NewRequest("GET", "/test-route?%9", nil)
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Nil(r.Data)
+		executed = true
 	})
+	suite.True(executed)
 }
 
 func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}"))
 	rawRequest.Header.Set("Content-Type", "application/json")
+	executed := false
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal(42.0, r.Data["number"])
@@ -163,16 +178,34 @@ func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 		suite.Equal(2, len(slice))
 		suite.Equal("val1", slice[0])
 		suite.Equal("val2", slice[1])
+		executed = true
 	})
+	suite.True(executed)
 
+	executed = false
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]")) // Missing closing braces
 	rawRequest.Header.Set("Content-Type", "application/json")
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Nil(r.Data)
+		executed = true
 	})
+	suite.True(executed)
+
+	// Test with query parameters
+	executed = false
+	rawRequest = httptest.NewRequest("POST", "/test-route?query=param", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}"))
+	rawRequest.Header.Set("Content-Type", "application/json")
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+		suite.NotNil(r.Data)
+		suite.Equal("param", r.Data["query"])
+		executed = true
+	})
+	suite.True(executed)
+
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
+	executed := false
 	rawRequest := createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal(3, len(r.Data))
@@ -181,10 +214,24 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 		files, ok := r.Data["file"].([]filesystem.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))
+		executed = true
 	})
+	suite.True(executed)
+
+	// Test payload too large
+	prev := config.Get("maxUploadSize")
+	config.Set("maxUploadSize", -10.0)
+	rawRequest = createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
+
+	request := createTestRequest(rawRequest)
+	response := newResponse(httptest.NewRecorder(), nil)
+	parseRequestMiddleware(nil)(response, request)
+	suite.Equal(http.StatusRequestEntityTooLarge, response.GetStatus())
+	config.Set("maxUploadSize", prev)
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
+	executed := false
 	rawRequest := createTestFileRequest("/test-route?field=hello", "resources/img/logo/goyave_16.png")
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal(2, len(r.Data))
@@ -192,10 +239,13 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 		files, ok := r.Data["file"].([]filesystem.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))
+		executed = true
 	})
+	suite.True(executed)
 }
 
 func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
+	executed := false
 	rawRequest := httptest.NewRequest("GET", "/test-route?arr=hello&arr=world", nil)
 	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		arr, ok := r.Data["arr"].([]string)
@@ -205,7 +255,9 @@ func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
 			suite.Equal("hello", arr[0])
 			suite.Equal("world", arr[1])
 		}
+		executed = true
 	})
+	suite.True(executed)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -232,6 +284,7 @@ func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
 		panic(err)
 	}
 
+	executed = false
 	rawRequest, err = http.NewRequest("POST", "/test-route", body)
 	if err != nil {
 		panic(err)
@@ -246,7 +299,9 @@ func (suite *MiddlewareTestSuite) TestParseMiddlewareWithArray() {
 			suite.Equal("hello", arr[0])
 			suite.Equal("world", arr[1])
 		}
+		executed = true
 	})
+	suite.True(executed)
 }
 
 func (suite *MiddlewareTestSuite) TestValidateMiddleware() {

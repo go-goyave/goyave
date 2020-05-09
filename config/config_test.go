@@ -99,12 +99,20 @@ func (suite *ConfigTestSuite) TestInvalidConfig() {
 	config["appName"] = true
 	err := validateConfig()
 	suite.NotNil(err)
-	suite.Equal("Invalid config:\n- Invalid config entry: \"appName\" type must be string", err.Error())
+	suite.Equal("Invalid config:\n\t- \"appName\" type must be string", err.Error())
 	config["appName"] = val
 
 	suite.Panics(func() {
 		Set("appName", true)
 	})
+
+	val = Get("dbConnection")
+
+	config["dbConnection"] = "not a driver"
+	err = validateConfig()
+	suite.NotNil(err)
+	suite.Equal("Invalid config:\n\t- \"dbConnection\" must have one of the following values: none, mysql, postgres, sqlite3, mssql", err.Error())
+	config["dbConnection"] = val
 
 	suite.Panics(func() {
 		Set("protocol", "ftp") // Unsupported protocol

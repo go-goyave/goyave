@@ -147,6 +147,10 @@ func (r *Response) String(responseCode int, message string) error {
 }
 
 func (r *Response) writeFile(file string, disposition string) (int64, error) {
+	if !filesystem.FileExists(file) {
+		r.Status(http.StatusNotFound)
+		return 0, &os.PathError{Op: "open", Path: file, Err: fmt.Errorf("no such file or directory")}
+	}
 	r.empty = false
 	r.status = http.StatusOK
 	mime, size := filesystem.GetMIMEType(file)
@@ -165,8 +169,7 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 
 // File write a file as an inline element.
 // Automatically detects the file MIME type and sets the "Content-Type" header accordingly.
-// It is advised to call "filesystem.FileExists()" before sending a file to avoid a panic and return a 404 error
-// if the file doesn't exist.
+// If the file doesn't exist, respond with status 404 Not Found.
 // The given path can be relative or absolute.
 //
 // If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
@@ -177,8 +180,7 @@ func (r *Response) File(file string) error {
 
 // Download write a file as an attachment element.
 // Automatically detects the file MIME type and sets the "Content-Type" header accordingly.
-// It is advised to call "filesystem.FileExists()" before sending a file to avoid a panic and return a 404 error
-// if the file doesn't exist.
+// If the file doesn't exist, respond with status 404 Not Found.
 // The given path can be relative or absolute.
 //
 // The "fileName" parameter defines the name the client will see. In other words, it sets the header "Content-Disposition" to

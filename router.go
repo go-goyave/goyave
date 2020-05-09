@@ -87,14 +87,21 @@ func newRouter() *Router {
 		parent:            nil,
 		prefix:            "",
 		hasCORSMiddleware: false,
-		statusHandlers:    make(map[int]Handler, 15),
+		statusHandlers:    make(map[int]Handler, 41),
 		namedRoutes:       make(map[string]*Route, 5),
 		middlewareHolder: middlewareHolder{
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
 	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
-	router.StatusHandler(errorStatusHandler, 401, 403, 404, 405, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
+	for i := 400; i <= 418; i++ {
+		router.StatusHandler(errorStatusHandler, i)
+	}
+	for i := 421; i <= 426; i++ {
+		router.StatusHandler(errorStatusHandler, i)
+	}
+	router.StatusHandler(errorStatusHandler, 428, 429, 431, 444, 451)
+	router.StatusHandler(errorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
@@ -240,32 +247,32 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 
 // Get registers a new route wit the GET method.
 func (r *Router) Get(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("GET", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodGet, uri, handler, validationRules, middleware...)
 }
 
 // Post registers a new route wit the POST method.
 func (r *Router) Post(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("POST", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodPost, uri, handler, validationRules, middleware...)
 }
 
 // Put registers a new route wit the PUT method.
 func (r *Router) Put(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("PUT", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodPut, uri, handler, validationRules, middleware...)
 }
 
 // Patch registers a new route wit the PATCH method.
 func (r *Router) Patch(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("PATCH", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodPatch, uri, handler, validationRules, middleware...)
 }
 
 // Delete registers a new route wit the DELETE method.
 func (r *Router) Delete(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("DELETE", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodDelete, uri, handler, validationRules, middleware...)
 }
 
 // Options registers a new route wit the OPTIONS method.
 func (r *Router) Options(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute("OPTIONS", uri, handler, validationRules, middleware...)
+	return r.registerRoute(http.MethodOptions, uri, handler, validationRules, middleware...)
 }
 
 // GetRoute get a named route.
@@ -281,7 +288,7 @@ func (r *Router) GetRoute(name string) *Route {
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
 func (r *Router) Static(uri string, directory string, download bool, middleware ...Middleware) {
-	r.registerRoute("GET", uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
+	r.registerRoute(http.MethodGet, uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
 }
 
 // CORS set the CORS options for this route group.
@@ -305,7 +312,7 @@ func (r *Router) CORS(options *cors.Options) {
 // Status handlers are inherited as a copy in sub-routers. Modifying a child's status handler
 // will not modify its parent's.
 //
-// Codes in the 500 range and codes 401, 403, 404 and 405 have a default status handler.
+// Codes in the 400 and 500 ranges have a default status handler.
 func (r *Router) StatusHandler(handler Handler, status int, additionalStatuses ...int) {
 	r.statusHandlers[status] = handler
 	for _, s := range additionalStatuses {
@@ -319,10 +326,15 @@ func staticHandler(directory string, download bool) Handler {
 		path := cleanStaticPath(directory, file)
 
 		if filesystem.FileExists(path) {
+			var err error
 			if download {
-				response.Download(path, file[strings.LastIndex(file, "/")+1:])
+				err = response.Download(path, file[strings.LastIndex(file, "/")+1:])
 			} else {
-				response.File(path)
+				err = response.File(path)
+			}
+
+			if err != nil {
+				ErrLogger.Println(err)
 			}
 		} else {
 			response.Status(http.StatusNotFound)
@@ -331,9 +343,7 @@ func staticHandler(directory string, download bool) Handler {
 }
 
 func cleanStaticPath(directory string, file string) string {
-	if strings.HasPrefix(file, "/") {
-		file = file[1:]
-	}
+	file = strings.TrimPrefix(file, "/")
 	path := directory + "/" + file
 	if filesystem.IsDirectory(path) {
 		if !strings.HasSuffix(path, "/") {

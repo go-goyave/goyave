@@ -51,7 +51,9 @@ func createTestFiles(files ...string) []File {
 		panic(err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.ParseMultipartForm(10 << 20)
+	if err := req.ParseMultipartForm(10 << 20); err != nil {
+		panic(err)
+	}
 	return ParseMultipartFiles(req, "file")
 }
 

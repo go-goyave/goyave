@@ -118,7 +118,9 @@ func registerRoutes(router *goyave.Router) {
 }
 
 func main() {
-    goyave.Start(registerRoutes)
+    if err := goyave.Start(registerRoutes); err != nil {
+        os.Exit(err.(*goyave.Error).ExitCode)
+    }
 }
 ```
 
@@ -332,7 +334,7 @@ var (
         "price": {"required", "numeric", "min:0.01"},
         "image": {"nullable", "file", "image", "max:2048", "count:1"},
     }
-    
+
     // ...
 )
 ```
@@ -486,6 +488,7 @@ func (suite *CustomTestSuite) TestHello() {
         suite.Nil(err)
         suite.NotNil(resp)
         if resp != nil {
+            defer resp.Body.Close()
             suite.Equal(200, resp.StatusCode)
             suite.Equal("Hi!", string(suite.GetBody(resp)))
         }
@@ -503,6 +506,7 @@ When writing functional tests, you can retrieve the response body  easily using 
 resp, err := suite.Get("/get", nil)
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -537,6 +541,7 @@ suite.RunServer(route.Register, func() {
     resp, err := suite.Get("/product", nil)
     suite.Nil(err)
     if err == nil {
+        defer resp.Body.Close()
         json := map[string]interface{}{}
         err := suite.GetJSONBody(resp, &json)
         suite.Nil(err)
@@ -656,6 +661,7 @@ A big "Thank you" to the Goyave contributors:
 
 - [Kuinox](https://github.com/Kuinox) (Powershell install script)
 - [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)
+- [jRimbault](https://github.com/jRimbault) (CI and code analysis)
 
 ## License
 

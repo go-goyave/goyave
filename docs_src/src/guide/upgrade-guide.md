@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Upgrade guide - Goyave"
+  - name: "twitter:title"
+    content: "Upgrade guide - Goyave"
+  - name: "title"
+    content: "Upgrade guide - Goyave"
+---
+
 # Upgrade Guide
 
 Although Goyave is developed with backwards compatibility, breaking changes can happen, especially in the project's early days. This guide will help you to upgrade your applications using older versions of the framework. Bear in mind that if you are several versions behind, you will have to follow the instructions for each in-between versions.

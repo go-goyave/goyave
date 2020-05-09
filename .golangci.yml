@@ -1,0 +1,24 @@
+run:
+  skip-dirs:
+    - docs_src
+    - docs
+    - .github
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  gofmt:
+    simplify: true
+  misspell:
+    locale: US
+
+linters:
+  enable:
+    - gofmt
+    - gocyclo
+    - misspell
+  disable:
+    - errcheck
+  disable-all: false
+  fast: false
+  

@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"log"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -109,7 +109,7 @@ func init() {
 // The language entry used will be "validation.rules.rulename.type"
 func AddRule(name string, typeDependentMessage bool, rule Rule) {
 	if _, exists := validationRules[name]; exists {
-		log.Panicf("Rule %s already exists", name)
+		panic(fmt.Sprintf("Rule %s already exists", name))
 	}
 	validationRules[name] = rule
 
@@ -179,7 +179,7 @@ func validate(data map[string]interface{}, isJSON bool, rules RuleSet, language 
 
 func validateRuleInArray(ruleName, fieldName string, arrayDimensions uint8, data map[string]interface{}, params []string) (bool, *reflect.Value) {
 	if t := GetFieldType(data[fieldName]); t != "array" {
-		log.Panicf("Cannot validate array values on non-array field %s of type %s", fieldName, t)
+		panic(fmt.Sprintf("Cannot validate array values on non-array field %s of type %s", fieldName, t))
 	}
 
 	converted := false
@@ -300,7 +300,7 @@ func parseRule(rule string) (string, uint8, []string) {
 	var ruleName string
 	if indexName == -1 {
 		if strings.Count(rule, ",") > 0 {
-			log.Panicf("Invalid rule: \"%s\"", rule)
+			panic(fmt.Sprintf("Invalid rule: \"%s\"", rule))
 		}
 		ruleName = rule
 	} else {
@@ -317,13 +317,13 @@ func parseRule(rule string) (string, uint8, []string) {
 		switch ruleName {
 		case "confirmed", "file", "mime", "image", "extension", "count",
 			"count_min", "count_max", "count_between":
-			log.Panicf("Cannot use rule \"%s\" in array validation", ruleName)
+			panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", ruleName))
 		}
 
 	}
 
 	if _, exists := validationRules[ruleName]; !exists {
-		log.Panicf("Rule \"%s\" doesn't exist", ruleName)
+		panic(fmt.Sprintf("Rule \"%s\" doesn't exist", ruleName))
 	}
 
 	return ruleName, validatesArray, params
@@ -335,6 +335,6 @@ func parseRule(rule string) (string, uint8, []string) {
 // Use this to make sure your validation rules are correctly used.
 func RequireParametersCount(rule string, params []string, count int) {
 	if len(params) < count {
-		log.Panicf("Rule \"%s\" requires %d parameter(s)", rule, count)
+		panic(fmt.Sprintf("Rule \"%s\" requires %d parameter(s)", rule, count))
 	}
 }

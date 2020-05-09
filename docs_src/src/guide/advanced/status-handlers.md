@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Status Handlers - Goyave"
+  - name: "twitter:title"
+    content: "Status Handlers - Goyave"
+  - name: "title"
+    content: "Status Handlers - Goyave"
+---
+
 # Status Handlers <Badge text="Since v2.4.0"/>
 
 [[toc]]
@@ -14,7 +24,7 @@ Goyave comes with a default error status handler. When a panic occurs or the [`R
 }
 ```
 
-The status handler covering the `401`, `403`, `404`, `405` and `501` to `511` status codes has a similar behavior but doesn't print anything to the console. For example, if the user requests a route that doesn't exist, the following is returned:
+The status handler covering all the other errors in the `400` and `500` status codes ranges has a similar behavior but doesn't print anything to the console. For example, if the user requests a route that doesn't exist, the following is returned:
 
 ``` json
 {

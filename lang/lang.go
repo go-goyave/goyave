@@ -2,8 +2,8 @@ package lang
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -112,7 +112,7 @@ func Load(language, path string) {
 	if filesystem.IsDirectory(path) {
 		load(language, path)
 	} else {
-		log.Panicf("Failed loading language \"%s\", directory \"%s\" doesn't exist", language, path)
+		panic(fmt.Sprintf("Failed loading language \"%s\", directory \"%s\" doesn't exist", language, path))
 	}
 }
 

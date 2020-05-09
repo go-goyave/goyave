@@ -26,23 +26,23 @@ func validateDigits(field string, value interface{}, parameters []string, form m
 }
 
 func validateAlpha(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	parameters = []string{patternAlpha}
-	return validateRegex(field, value, parameters, form)
+	params := []string{patternAlpha}
+	return validateRegex(field, value, params, form)
 }
 
 func validateAlphaDash(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	parameters = []string{patternAlphaDash}
-	return validateRegex(field, value, parameters, form)
+	params := []string{patternAlphaDash}
+	return validateRegex(field, value, params, form)
 }
 
 func validateAlphaNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	parameters = []string{patternAlphaNumeric}
-	return validateRegex(field, value, parameters, form)
+	params := []string{patternAlphaNumeric}
+	return validateRegex(field, value, params, form)
 }
 
 func validateEmail(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	parameters = []string{patternEmail}
-	return validateRegex(field, value, parameters, form)
+	params := []string{patternEmail}
+	return validateRegex(field, value, params, form)
 }
 
 func validateStartsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

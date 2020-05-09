@@ -28,6 +28,7 @@ func helloHandler(response *Response, request *Request) {
 
 func (suite *GoyaveTestSuite) SetupSuite() {
 	os.Setenv("GOYAVE_ENV", "test")
+	suite.SetTimeout(5 * time.Second)
 }
 
 func (suite *GoyaveTestSuite) loadConfig() {
@@ -65,7 +66,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 	if err == nil {
 		c := make(chan bool, 1)
 		c2 := make(chan bool, 1)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), suite.Timeout())
 		defer cancel()
 
 		RegisterStartupHook(func() {
@@ -74,18 +75,23 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
 				Stop()
 			} else {
-				fmt.Println("send sig")
-				proc.Signal(syscall.SIGTERM)
+				if err := proc.Signal(syscall.SIGTERM); err != nil {
+					suite.Fail(err.Error())
+				}
 				time.Sleep(10 * time.Millisecond)
 				for IsReady() {
 					time.Sleep(10 * time.Millisecond)
-					proc.Signal(syscall.SIGTERM)
+					if err := proc.Signal(syscall.SIGTERM); err != nil {
+						suite.Fail(err.Error())
+					}
 				}
 			}
 			c <- true
 		})
 		go func() {
-			Start(func(router *Router) {})
+			if err := Start(func(router *Router) {}); err != nil {
+				suite.Fail(err.Error())
+			}
 			c2 <- true
 		}()
 
@@ -164,7 +170,7 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	suite.loadConfig()
 	c := make(chan bool)
 	c2 := make(chan bool)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), suite.Timeout())
 	defer cancel()
 
 	go func() {
@@ -197,9 +203,6 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 		suite.Nil(redirectServer)
 		suite.Nil(stopChannel)
 	}
-
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 }
 
 func (suite *GoyaveTestSuite) TestStaticServing() {
@@ -245,9 +248,9 @@ func (suite *GoyaveTestSuite) TestServerError() {
 }
 
 func (suite *GoyaveTestSuite) testServerError(protocol string) {
-	c := make(chan bool)
+	c := make(chan error)
 	c2 := make(chan bool)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), suite.Timeout())
 	defer cancel()
 
 	var ln net.Listener
@@ -277,17 +280,23 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		}
 
 		fmt.Println("test server error " + protocol)
-		Start(func(router *Router) {})
+		err := Start(func(router *Router) {})
 		config.Set("protocol", "http")
-		c <- true
+		c <- err
 	}()
 
 	select {
 	case <-ctx.Done():
 		suite.Fail("Timeout exceeded in server error test")
-	case <-c:
+	case err := <-c:
 		suite.False(IsReady())
 		suite.Nil(server)
+		suite.NotNil(err)
+		if protocol == "https" {
+			suite.Equal(ExitHTTPError, err.(*Error).ExitCode)
+		} else {
+			suite.Equal(ExitNetworkError, err.(*Error).ExitCode)
+		}
 	}
 
 	if protocol != "https" {
@@ -300,7 +309,9 @@ func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 	suite.loadConfig()
 	suite.RunServer(func(router *Router) {}, func() {
 		suite.Panics(func() {
-			Start(func(router *Router) {})
+			if err := Start(func(router *Router) {}); err != nil {
+				suite.Fail(err.Error())
+			}
 		})
 	})
 }
@@ -391,6 +402,42 @@ func (suite *GoyaveTestSuite) TestAutoMigrate() {
 	suite.RunServer(func(router *Router) {}, func() {})
 	config.Set("dbAutoMigrate", false)
 	config.Set("dbConnection", "none")
+}
+
+func (suite *GoyaveTestSuite) TestError() {
+	err := &Error{ExitHTTPError, fmt.Errorf("test error")}
+	suite.Equal("test error", err.Error())
+}
+
+func (suite *GoyaveTestSuite) TestConfigError() {
+	config.Clear()
+	if err := os.Chdir("config"); err != nil {
+		panic(err)
+	}
+	defer os.Chdir("..")
+
+	os.Setenv("GOYAVE_ENV", "test_invalid")
+	defer os.Setenv("GOYAVE_ENV", "test")
+
+	c := make(chan error, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), suite.Timeout())
+	defer cancel()
+
+	go func() {
+		c <- Start(func(r *Router) {})
+	}()
+
+	select {
+	case <-ctx.Done():
+		suite.Fail("Timeout exceeded in Goyave test suite TestConfigError")
+	case err := <-c:
+		suite.NotNil(err)
+		if err != nil {
+			e := err.(*Error)
+			suite.Equal(ExitInvalidConfig, e.ExitCode)
+			suite.Equal("Invalid config:\n\t- \"environment\" type must be string", e.Error())
+		}
+	}
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

@@ -58,7 +58,9 @@ func createTestFiles(files ...string) []filesystem.File {
 		panic(err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.ParseMultipartForm(10 << 20)
+	if err := req.ParseMultipartForm(10 << 20); err != nil {
+		panic(err)
+	}
 	return filesystem.ParseMultipartFiles(req, "file")
 }
 
@@ -78,7 +80,9 @@ func createTestFileWithNoExtension() []filesystem.File {
 		panic(err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.ParseMultipartForm(10 << 20)
+	if err := req.ParseMultipartForm(10 << 20); err != nil {
+		panic(err)
+	}
 	return filesystem.ParseMultipartFiles(req, "file")
 }
 

@@ -298,7 +298,6 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	// On subrouters
 	subrouter := router.Subrouter("/sub")
 	writer = httptest.NewRecorder()
-	router = newRouter()
 
 	subrouter.requestHandler(match, writer, rawRequest)
 
@@ -744,6 +743,7 @@ func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 		if err != nil {
 			panic(err)
 		}
+		defer resp.Body.Close()
 
 		suite.Equal(500, resp.StatusCode)
 		suite.True(testWr.closed)

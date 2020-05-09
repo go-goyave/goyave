@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Requests - Goyave"
+  - name: "twitter:title"
+    content: "Requests - Goyave"
+  - name: "title"
+    content: "Requests - Goyave"
+---
+
 # Requests
 
 [[toc]]

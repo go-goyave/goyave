@@ -1,8 +1,50 @@
+---
+meta:
+  - name: "og:title"
+    content: "Changelog - Goyave"
+  - name: "twitter:title"
+    content: "Changelog - Goyave"
+  - name: "title"
+    content: "Changelog - Goyave"
+---
+
 # Changelog
 
 [[toc]]
 
-## v2.10.0
+## v2.10.x
+
+### v2.10.1
+
+- Changed the behavior of `response.File()` and `response.Download()` to respond with a status 404 if the given file doesn't exist instead of panicking.
+- Improved error handling:
+    - `log.Panicf` is not used anymore to print panics, removing possible duplicate logs.
+    - Added error checks during automatic migrations.
+    - `goyave.Start()` now exits the program with the following error codes:
+        - `2`: Panic (server already running, error when loading language files, etc)
+        - `3`: Configuration is invalid
+        - `4`: An error occurred when opening network listener
+        - `5`: An error occurred in the HTTP server
+
+This change will require a slightly longer `main` function but offers better flexibility for error handling and multi-services.
+
+``` go
+if err := goyave.Start(route.Register); err != nil {
+	os.Exit(err.(*goyave.Error).ExitCode)
+}
+```
+
+- Fixed a bug in `TestSuite`: HTTP client was re-created everytime `getHTTPClient()` was called.
+- Fixed testing documentation examples that didn't close http response body.
+- Documentation meta improvements.
+- Protect JSON requests with `maxUploadSize`. 
+- The server will now automatically return `413 Payload Too Large` if the request's size exceeds the `maxUploadSize` defined in configuration.
+- The request parsing middleware doesn't drain the body anymore, improving native handler compatibility.
+- Set a default status handler for all 400 errors.
+- Fixed a bug preventing query parameters to be parsed when the request had the `Content-Type: application/json` header.
+- Added a dark theme for the documentation. It can be toggled by clicking the moon icon next to the search bar.
+
+### v2.10.0
 
 - Added router `Get`, `Post`, `Put`, `Patch`, `Delete` and `Options` methods to register routes directly without having to specify a method string.
 - Added [placeholder](./advanced/localization.html#placeholders) support in regular language lines.
@@ -19,12 +61,14 @@
     - Added three standard loggers: `goyave.Logger`, `goyave.AccessLogger` and `goyave.ErrLogger`
 - Fixed bug: the gzip middleware now closes underlying writer on close.
 
-## v2.7.1
+## v2.7.x
+
+### v2.7.1
 
 - Changed MIME type of `js` and `mjs` files to `text/javascript`. This is in accordance with an [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-dispatch-javascript-mjs/) that treats application/javascript as obsolete.
 - Improved error handling: stacktrace wasn't relevant on unexpected panic since it was retrieved from the route's request handler therefore not including the real source of the panic. Stacktrace retrieval has been moved to the recovery middleware to fix this.
 
-## v2.7.0
+### v2.7.0
 
 - Added `Request.Request()` accessor to get the raw `*http.Request`.
 - Fixed a bug allowing non-core middleware applied to the root router to be executed when the "Not Found" or "Method Not Allowed" routes were matched.
@@ -58,21 +102,23 @@
 - Added `Request.BearerToken()`.
 - Added `Response.HandleDatabaseError()` for easier database error handling and shorter controller handlers. 
 
-## v2.4.3
+## v2.4.x
+
+### v2.4.3
 
 - Improved string validation by taking grapheme clusters into consideration when calculating length.
 - `lang.LoadDefault` now correctly creates a fresh language map and clones the default `en-US` language. This avoids the default language entries to be overridden permanently.  
 
-## v2.4.2
+### v2.4.2
 
 - Don't override `Content-Type` header when sending a file if already set.
 - Fixed a bug with validation message placeholder `:values`, which was mistakenly using the `:value` placeholder.
 
-## v2.4.1
+### v2.4.1
 
 - Bundle default config and language in executable to avoid needing to deploy `$GOROOT/pkg/mod/github.com/!system-!glitch/goyave/` with the application.
 
-## v2.4.0
+### v2.4.0
 
 - Added [template rendring](./basics/responses.html#response-render).
 - Fixed PostgreSQL options not working.
@@ -83,12 +129,14 @@
 
 - Added [CORS options](./advanced/cors.html).
 
-## v2.2.1
+## v2.2.x
+
+### v2.2.1
 
 - Added `domain` config entry. This entry is used for url generation, especially for the TLS redirect.
 - Don't show port in TLS redirect response if ports are standard (80 for HTTP, 443 for HTTPS).
 
-## v2.2.0
+### v2.2.0
 
 - Added [testing API](./advanced/testing.html).
 - Fixed links in documentation.

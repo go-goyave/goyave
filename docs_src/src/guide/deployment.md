@@ -1,3 +1,13 @@
+---
+meta:
+  - name: "og:title"
+    content: "Deployment - Goyave"
+  - name: "twitter:title"
+    content: "Deployment - Goyave"
+  - name: "title"
+    content: "Deployment - Goyave"
+---
+
 # Deployment
 
 [[toc]]
@@ -30,7 +40,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -ldflags "-w"
+RUN go build -ldflags "-w -s"
 
 FROM alpine:3.9
 

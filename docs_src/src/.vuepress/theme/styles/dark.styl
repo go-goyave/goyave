@@ -48,8 +48,12 @@
 		background: $accentDarkColor;
 	}
 
-	.badge.tip {
+	.badge.tip, .action-button {
 		background-color: darken($accentColor, 10%) !important;
+	}
+
+	.action-button:hover {
+		background-color: $accentColor !important;
 	}
 
 	// @parent-theme/components/AlgoliaSearchBox.vue
@@ -273,7 +277,7 @@
 			}
 
 			a {
-				color: darken($warningYellow, 10%);
+				color: $accentDarkColor;
 			}
 		}
 
@@ -286,7 +290,7 @@
 			}
 
 			a {
-				color: lighten($dangerRed, 20%);
+				color: $accentDarkColor;
 			}
 		}
 	}

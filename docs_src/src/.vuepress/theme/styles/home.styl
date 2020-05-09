@@ -1,0 +1,25 @@
+.home .feature {
+	display: flex;
+	flex-basis: 100% !important;
+	max-width: 100% !important;
+	flex-direction: row;
+	flex-wrap: wrap;
+	text-align: center;
+	align-items: center;
+	justify-content: center;
+	padding: 0 !important;
+	img {
+		min-width: 275px;
+	}
+
+	@media screen and (min-width 720px) {
+		padding: 0 2.5rem;
+		margin: 2rem 1.5rem;
+		flex-wrap: nowrap;
+		justify-content: left;
+		text-align: left;
+		img {
+			margin-right: 2.5rem;
+		}
+	}
+}

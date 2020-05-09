@@ -1,0 +1,101 @@
+@import './variables.styl';
+
+@import url('https://fonts.googleapis.com/css?family=Montserrat&display=swap')
+
+.site-name, #main-title {
+	font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+	font-weight: 400;
+}
+
+h4 {
+	font-size 1.2rem
+}
+
+#main-title {
+	font-size: 3rem;
+
+	@media screen and (min-width 420px) {
+		font-size: 4rem;
+	}
+		
+	@media screen and (min-width 720px) {
+		font-size: 6rem;
+	}
+}
+
+.search-box input {
+	transition: border-color 0.2s ease;
+
+	@media (max-width: $MQMobile) {
+		&:focus {
+			margin-left: 1em;
+		}
+	}
+}
+
+h2 {
+	padding-bottom: 0;
+	border-bottom: 0;
+}
+
+.sidebar-heading {
+	color: inherit;
+}
+
+.img-row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	margin-top: 1.5rem;
+	&.left {
+		flex-direction: row;
+	}
+	&.right {
+		flex-direction: row-reverse;
+	}
+	.row-content {
+		flex-grow: 1;
+	}
+
+	@media screen and (min-width 960px) {
+		flex-wrap: nowrap;
+		justify-content: left;
+		&.left {
+			& > :first-child {
+				margin-right: 2.5rem;
+			}
+		}
+		&.right {
+			& > :first-child {
+				margin-left: 2.5rem;
+			}
+		}
+	}
+}
+
+.center {
+	text-align: center;
+}
+
+.table p {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	line-height: 2;
+	* {
+		flex-basis: 33%;
+	}
+}
+
+
+:focus {
+	outline: none;
+}
+
+::-moz-focus-inner {
+	border: 0;
+}
+
+@import './home.styl';
+@import './vue-container.styl';

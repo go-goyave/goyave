@@ -36,12 +36,12 @@ import "github.com/System-Glitch/goyave/v2/validation"
 
 ## Rules sets
 
-The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>request`.
+Rule sets are defined in the same package as the controller, typically in a separate file named `request.go`. Rule sets are named after the name of the controller handler they will be used with, and end with `Request`. For example, a rule set for the `Store` handler will be named `StoreRequest`. If a rule set can be used for multiple handlers, consider using a name suited for all of them. The rules for a store operation are often the same for update operations, so instead of duplicating the set, create one unique set called `UpsertRequest`.
 
-**Example:** (`http/request/productrequest/product.go`)
+**Example:** (`http/controller/product/request.go`)
 ``` go
 var (
-	Store validation.RuleSet = validation.RuleSet{
+	StoreRequest validation.RuleSet = validation.RuleSet{
 		"name":  {"required", "string", "between:3,50"},
 		"price": {"required", "numeric", "min:0.01"},
 		"image": {"nullable", "file", "image", "max:2048", "count:1"},
@@ -58,7 +58,7 @@ If a field is not **required** and is missing from the request, **no rules are c
 :::
 
 ::: tip
-`validation.RuleSet` is an alias for `map[string][]string`
+`validation.RuleSet` is an alias for `map[string][]string`.
 :::
 
 ---
@@ -66,7 +66,7 @@ If a field is not **required** and is missing from the request, **no rules are c
 Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition. Learn more about routing in the [dedicated section](./routing.html).
 
 ``` go
-router.Post("/product", product.Store, productrequest.Store)
+router.Post("/product", product.Store, product.StoreRequest)
 ```
 
 ## Available validation rules
@@ -452,7 +452,7 @@ If the name of another field is given as a date, then all the fields must be a d
 
 ## Custom rules
 
-If none of the available validation rules satisfy your needs, you can implement custom validation rules. To do so, create a new file `http/requests/validation.go` in which you are going to define your custom rules.
+If none of the available validation rules satisfy your needs, you can implement custom validation rules. To do so, create a new file `http/validation/validation.go` in which you are going to define your custom rules.
 
 Rules definition shouldn't be exported, and start with `validate`. A rule returns a `bool`, indicating if the validation passed or not.
 
@@ -599,7 +599,7 @@ func simpleParameterPlaceholder(field string, rule string, parameters []string, 
 
 ---
 
-Placeholders are implemented in the `http/requests/placeholders.go`. To register a custom placeholder, use the `validation.SetPlaceholder()` function, preferably in the `init()` function of your `placeholders.go` file.
+Placeholders are implemented in the `http/validation/placeholder.go`. To register a custom placeholder, use the `validation.SetPlaceholder()` function, preferably in the `init()` function of your `placeholder.go` file.
 
 #### validation.SetPlaceholder
 

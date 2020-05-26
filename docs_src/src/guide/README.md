@@ -22,8 +22,6 @@ Most golang frameworks for web development don't have a strong directory structu
 Please feel free to sudgest changes, ask for more details, report grammar errors, or notice of uncovered scenarios by [creating an issue](https://github.com/System-Glitch/goyave/issues/new/choose) with the proposal template.
 :::
 
-## Roadmap
-
 ::: img-row <img :src="$withBase('/undraw_to_do_list_a49b.svg')" height="150" alt="Roadmap"/>
 ### Ideas for future releases
 
@@ -35,7 +33,6 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 - OpenAPI generator
 - And more!
 :::
-
 
 ## Contributors
 

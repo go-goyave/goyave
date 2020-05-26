@@ -186,9 +186,9 @@ func Register(router *goyave.Router) {
     }, nil)
 
     router.Get("/hello", myHandlerFunction, nil)
-    router.Post("/user", user.Register, userrequest.Register)
-    router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
-    router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
+    router.Post("/user", user.Register, user.RegisterRequest)
+    router.Route("PUT|PATCH", "/user", user.Update, user.UpdateRequest)
+    router.Route("POST", "/product", product.Store, product.StoreRequest, middleware.Trim)
 }
 ```
 
@@ -324,12 +324,12 @@ Validation rules can **alter the raw data**. That means that when you validate a
 
 Validation is automatic. You just have to define a rules set and assign it to a route. When the validation doesn't pass, the request is stopped and the validation errors messages are sent as a response.
 
-The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>request`.
+Rule sets are defined in the same package as the controller, typically in a separate file named `request.go`. Rule sets are named after the name of the controller handler they will be used with, and end with `Request`. For example, a rule set for the `Store` handler will be named `StoreRequest`. If a rule set can be used for multiple handlers, consider using a name suited for all of them. The rules for a store operation are often the same for update operations, so instead of duplicating the set, create one unique set called `UpsertRequest`.
 
-**Example:** (`http/request/productrequest/product.go`)
+**Example:** (`http/controller/product/request.go`)
 ``` go
 var (
-    Store validation.RuleSet = validation.RuleSet{
+    StoreRequest validation.RuleSet = validation.RuleSet{
         "name":  {"required", "string", "between:3,50"},
         "price": {"required", "numeric", "min:0.01"},
         "image": {"nullable", "file", "image", "max:2048", "count:1"},
@@ -342,7 +342,7 @@ var (
 Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition.
 
 ``` go
-router.Post("/product", product.Store, productrequest.Store)
+router.Post("/product", product.Store, product.StoreRequest)
 ```
 
 

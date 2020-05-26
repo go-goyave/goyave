@@ -60,9 +60,9 @@ Returns the generated route.
 **Examples:**
 ``` go
 router.Route("GET", "/hello", myHandlerFunction, nil)
-router.Route("POST", "/user", user.Register, userrequest.Register)
-router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
-router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
+router.Route("POST", "/user", user.Register, user.RegisterRequest)
+router.Route("PUT|PATCH", "/user", user.Update, user.UpdateRequest)
+router.Route("POST", "/product", product.Store, product.StoreRequest, middleware.Trim)
 ```
 
 ::: tip
@@ -73,10 +73,10 @@ router.Route("POST", "/product", product.Store, productrequest.Store, middleware
 You can also register routes by using the `Get`, `Post`, `Put`, `Patch`, `Delete` and `Options` methods:
 ``` go
 router.Get("/hello", myHandlerFunction, nil)
-router.Post("/user", user.Register, userrequest.Register)
-router.Put("/product/{id:[0-9]+}", product.Update, productrequest.Update)
-router.Patch("/product/{id:[0-9]+}", product.Update, productrequest.Update)
-router.Delete("/product/{id:[0-9]+}", product.Destroy, productrequest.Destroy)
+router.Post("/user", user.Register, user.RegisterRequest)
+router.Put("/product/{id:[0-9]+}", product.Update, product.UpdateRequest)
+router.Patch("/product/{id:[0-9]+}", product.Update, product.UpdateRequest)
+router.Delete("/product/{id:[0-9]+}", product.Destroy, product.DestroyRequest)
 router.Options("/options", myHandlerFunction, nil)
 ```
 
@@ -255,7 +255,7 @@ router.Route("POST", "/product", product.Store, validation.RuleSet{
 ```
 
 ::: tip
-It's not recommended to define rules set directly in the route definition. You should define rules sets in the `http/requests` directory and have one file per feature, regrouping all requests handled by the same controller. You can also create one package per feature, just like controllers, if you so desire.
+It's not recommended to define rules set directly in the route definition. You should define rules sets in your controller package.
 :::
 
 If you don't want your route to be validated, or if validation is not necessary, just pass `nil` as the last parameter.
@@ -290,7 +290,7 @@ Middleware can also be applied to specific routes. You can add as many as you wa
 
 **Example:**
 ``` go
-router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
+router.Route("POST", "/product", product.Store, product.StoreRequest, middleware.Trim)
 ```
 
 ## Groups and sub-routers
@@ -305,11 +305,11 @@ userRouter := router.Subrouter("/user")
 In our application, user profiles are public: anyone can see the user profiles without being authenticated. However, only authenticated users can modify their information and delete their account. We don't want to add some redundancy and apply the authentication middleware for each route needing it, so we are going to create another sub-router. Sub-routers having an empty prefix are called **route groups**.
 ```go
 userRouter.Route("GET", "/{username}", user.Show, nil)
-userRouter.Route("POST", "", user.Register, userrequest.Register)
+userRouter.Route("POST", "", user.Register, user.RegisterRequest)
 
 authUserRouter := userRouter.Subrouter("") // Don't add a prefix
 authUserRouter.Middleware(authenticationMiddleware)
-authUserRouter.Route("PUT", "/{id}", user.Update, userrequest.Update)
+authUserRouter.Route("PUT", "/{id}", user.Update, user.UpdateRequest)
 authUserRouter.Route("DELETE", "/{id}", user.Delete, nil)
 ```
 

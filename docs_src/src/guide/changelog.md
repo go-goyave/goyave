@@ -12,6 +12,13 @@ meta:
 
 [[toc]]
 
+## v3.0.0
+
+- Changed conventions:
+    - `validation.go` and `placeholders.go` moved to a new `http/validation` package.
+    - Validation rule sets are now located in a `request.go` file in the same package as the controller.
+- Protect the database instance with mutex.
+
 ## v2.10.x
 
 ### v2.10.2

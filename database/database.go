@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -9,6 +10,7 @@ import (
 )
 
 var dbConnection *gorm.DB
+var mu sync.Mutex
 
 var models []interface{}
 
@@ -18,6 +20,8 @@ var models []interface{}
 // The connections will be closed automatically on server shutdown so you
 // don't need to call "Close()" when you're done with the database.
 func GetConnection() *gorm.DB {
+	mu.Lock()
+	defer mu.Unlock()
 	if dbConnection == nil {
 		dbConnection = newConnection()
 	}
@@ -26,6 +30,8 @@ func GetConnection() *gorm.DB {
 
 // Close the database connections if they exist.
 func Close() {
+	mu.Lock()
+	defer mu.Unlock()
 	if dbConnection != nil {
 		dbConnection.Close()
 		dbConnection = nil

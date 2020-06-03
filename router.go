@@ -235,7 +235,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 		methods:         strings.Split(methods, "|"),
 		parent:          r,
 		handler:         handler,
-		validationRules: validationRules,
+		validationRules: validation.ParseRuleSet(validationRules), // TODO how to register route with verbose syntax ?
 		middlewareHolder: middlewareHolder{
 			middleware: middleware,
 		},

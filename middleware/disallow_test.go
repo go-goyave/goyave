@@ -28,7 +28,13 @@ func (suite *DisallowMiddlewareTestSuite) TestDisallowMiddleware() {
 
 	request = suite.CreateTestRequest(nil)
 	request.Data = map[string]interface{}{"non-validated": "hello world"}
-	request.Rules = validation.RuleSet{"non-validated": {"string"}}
+	request.Rules = validation.Rules{
+		"non-validated": {
+			Rules: []*validation.Rule{
+				{Name: "string"},
+			},
+		},
+	}
 	result = suite.Middleware(DisallowNonValidatedFields, request, func(response *goyave.Response, r *goyave.Request) {})
 	suite.Equal(204, result.StatusCode)
 }

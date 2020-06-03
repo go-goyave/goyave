@@ -5,98 +5,124 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/helper"
-
 	"github.com/System-Glitch/goyave/v2/lang"
 )
 
-// Rule function defining a validation rule.
+// RuleFunc function defining a validation rule.
 // Passing rules should return true, false otherwise.
 //
 // Rules can modifiy the validated value if needed.
 // For example, the "numeric" rule converts the data to float64 if it's a string.
-type Rule func(string, interface{}, []string, map[string]interface{}) bool
+type RuleFunc func(string, interface{}, []string, map[string]interface{}) bool
+
+type RuleDefinition struct { // TODO document this
+	Function        RuleFunc
+	IsType          bool
+	IsTypeDependent bool
+}
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
 type RuleSet map[string][]string
 
+type ValidatedField struct {
+	Rules      []*Rule
+	isArray    bool // TODO these fields are never set when using verbose declaration
+	isRequired bool
+	isNullable bool
+}
+
+// TODO temporary solution for verbose declaration
+func (v *ValidatedField) is(rule string) bool {
+	for _, r := range v.Rules {
+		if r.Name == rule {
+			return true
+		}
+	}
+	return false
+}
+
+func (v *ValidatedField) IsRequired() bool {
+	// return v.isRequired
+	return v.is("required")
+}
+
+func (v *ValidatedField) IsNullable() bool {
+	// return v.isNullable
+	return v.is("nullable")
+}
+
+func (v *ValidatedField) IsArray() bool {
+	// return v.isArray
+	return v.is("array")
+}
+
+type Rule struct {
+	Name           string
+	Params         []string
+	ArrayDimension uint8
+}
+
+type Rules map[string]*ValidatedField
+
 // Errors is a map of validation errors with the field name as a key.
 type Errors map[string][]string
 
-var (
-	validationRules           map[string]Rule
-	typeDependentMessageRules []string
-
-	// Rules that check the data type and can be used to validate arrays.
-	typeRules []string
-)
+var validationRules map[string]*RuleDefinition
 
 func init() {
-	validationRules = map[string]Rule{
-		"required":           validateRequired,
-		"numeric":            validateNumeric,
-		"integer":            validateInteger,
-		"min":                validateMin,
-		"max":                validateMax,
-		"between":            validateBetween,
-		"greater_than":       validateGreaterThan,
-		"greater_than_equal": validateGreaterThanEqual,
-		"lower_than":         validateLowerThan,
-		"lower_than_equal":   validateLowerThanEqual,
-		"string":             validateString,
-		"array":              validateArray,
-		"distinct":           validateDistinct,
-		"digits":             validateDigits,
-		"regex":              validateRegex,
-		"email":              validateEmail,
-		"size":               validateSize,
-		"alpha":              validateAlpha,
-		"alpha_dash":         validateAlphaDash,
-		"alpha_num":          validateAlphaNumeric,
-		"starts_with":        validateStartsWith,
-		"ends_with":          validateEndsWith,
-		"in":                 validateIn,
-		"not_in":             validateNotIn,
-		"in_array":           validateInArray,
-		"not_in_array":       validateNotInArray,
-		"timezone":           validateTimezone,
-		"ip":                 validateIP,
-		"ipv4":               validateIPv4,
-		"ipv6":               validateIPv6,
-		"json":               validateJSON,
-		"url":                validateURL,
-		"uuid":               validateUUID,
-		"bool":               validateBool,
-		"same":               validateSame,
-		"different":          validateDifferent,
-		"confirmed":          validateConfirmed,
-		"file":               validateFile,
-		"mime":               validateMIME,
-		"image":              validateImage,
-		"extension":          validateExtension,
-		"count":              validateCount,
-		"count_min":          validateCountMin,
-		"count_max":          validateCountMax,
-		"count_between":      validateCountBetween,
-		"date":               validateDate,
-		"before":             validateBefore,
-		"before_equal":       validateBeforeEqual,
-		"after":              validateAfter,
-		"after_equal":        validateAfterEqual,
-		"date_equals":        validateDateEquals,
-		"date_between":       validateDateBetween,
-	}
-
-	typeDependentMessageRules = []string{
-		"min", "max", "between", "size",
-		"greater_than", "greater_than_equal",
-		"lower_than", "lower_than_equal",
-	}
-
-	typeRules = []string{
-		"numeric", "integer", "timezone", "ip",
-		"ipv4", "ipv6", "json", "url", "uuid",
-		"bool", "date", "string",
+	validationRules = map[string]*RuleDefinition{
+		"required":           {validateRequired, false, false},
+		"numeric":            {validateNumeric, true, false},
+		"integer":            {validateInteger, true, false},
+		"min":                {validateMin, false, true},
+		"max":                {validateMax, false, true},
+		"between":            {validateBetween, false, true},
+		"greater_than":       {validateGreaterThan, false, true},
+		"greater_than_equal": {validateGreaterThanEqual, false, true},
+		"lower_than":         {validateLowerThan, false, true},
+		"lower_than_equal":   {validateLowerThanEqual, false, true},
+		"string":             {validateString, true, false},
+		"array":              {validateArray, false, false},
+		"distinct":           {validateDistinct, false, false},
+		"digits":             {validateDigits, false, false},
+		"regex":              {validateRegex, false, false},
+		"email":              {validateEmail, false, false},
+		"size":               {validateSize, false, false},
+		"alpha":              {validateAlpha, false, false},
+		"alpha_dash":         {validateAlphaDash, false, false},
+		"alpha_num":          {validateAlphaNumeric, false, false},
+		"starts_with":        {validateStartsWith, false, false},
+		"ends_with":          {validateEndsWith, false, false},
+		"in":                 {validateIn, false, false},
+		"not_in":             {validateNotIn, false, false},
+		"in_array":           {validateInArray, false, false},
+		"not_in_array":       {validateNotInArray, false, false},
+		"timezone":           {validateTimezone, true, false},
+		"ip":                 {validateIP, true, false},
+		"ipv4":               {validateIPv4, true, false},
+		"ipv6":               {validateIPv6, true, false},
+		"json":               {validateJSON, true, false},
+		"url":                {validateURL, true, false},
+		"uuid":               {validateUUID, true, false},
+		"bool":               {validateBool, true, false},
+		"same":               {validateSame, false, false},
+		"different":          {validateDifferent, false, false},
+		"confirmed":          {validateConfirmed, false, false},
+		"file":               {validateFile, false, false},
+		"mime":               {validateMIME, false, false},
+		"image":              {validateImage, false, false},
+		"extension":          {validateExtension, false, false},
+		"count":              {validateCount, false, false},
+		"count_min":          {validateCountMin, false, false},
+		"count_max":          {validateCountMax, false, false},
+		"count_between":      {validateCountBetween, false, false},
+		"date":               {validateDate, true, false},
+		"before":             {validateBefore, false, false},
+		"before_equal":       {validateBeforeEqual, false, false},
+		"after":              {validateAfter, false, false},
+		"after_equal":        {validateAfterEqual, false, false},
+		"date_equals":        {validateDateEquals, false, false},
+		"date_between":       {validateDateBetween, false, false},
 	}
 }
 
@@ -107,22 +133,18 @@ func init() {
 // Type-dependent messages let you define a different message for
 // numeric, string, arrays and files.
 // The language entry used will be "validation.rules.rulename.type"
-func AddRule(name string, typeDependentMessage bool, rule Rule) {
+func AddRule(name string, rule *RuleDefinition) { // TODO update documentation
 	if _, exists := validationRules[name]; exists {
 		panic(fmt.Sprintf("Rule %s already exists", name))
 	}
 	validationRules[name] = rule
-
-	if typeDependentMessage {
-		typeDependentMessageRules = append(typeDependentMessageRules, name)
-	}
 }
 
 // Validate the given data with the given rule set.
 // If all validation rules pass, returns an empty "validation.Errors".
 // Third parameter tells the function if the data comes from a JSON request.
 // Last parameter sets the language of the validation error messages.
-func Validate(data map[string]interface{}, rules RuleSet, isJSON bool, language string) Errors {
+func Validate(data map[string]interface{}, rules Rules, isJSON bool, language string) Errors {
 	var malformedMessage string
 	if isJSON {
 		malformedMessage = lang.Get(language, "malformed-json")
@@ -136,40 +158,41 @@ func Validate(data map[string]interface{}, rules RuleSet, isJSON bool, language 
 	return validate(data, isJSON, rules, language)
 }
 
-func validate(data map[string]interface{}, isJSON bool, rules RuleSet, language string) Errors {
+func validate(data map[string]interface{}, isJSON bool, rules Rules, language string) Errors {
 	errors := Errors{}
 
 	for fieldName, field := range rules {
-		if !isNullable(field) && data[fieldName] == nil {
+		fmt.Println(fieldName)
+		if !field.IsNullable() && data[fieldName] == nil {
 			delete(data, fieldName)
 		}
 
-		if !isRequired(field) && !validateRequired(fieldName, data[fieldName], []string{}, data) {
+		if !field.IsRequired() && !validateRequired(fieldName, data[fieldName], []string{}, data) {
 			continue
 		}
 
 		convertArray(isJSON, fieldName, field, data) // Convert single value arrays in url-encoded requests
 
-		for _, rule := range field {
-			if rule == "nullable" {
+		for _, rule := range field.Rules {
+			// TODO better nullable tests
+			if rule.Name == "nullable" {
 				if data[fieldName] == nil {
 					break
 				}
 				continue
 			}
-			ruleName, arrayDimensions, params := parseRule(rule)
 
-			if arrayDimensions > 0 {
-				if ok, errorValue := validateRuleInArray(ruleName, fieldName, arrayDimensions, data, params); !ok {
+			if rule.ArrayDimension > 0 {
+				if ok, errorValue := validateRuleInArray(rule, fieldName, rule.ArrayDimension, data); !ok {
 					errors[fieldName] = append(
 						errors[fieldName],
-						processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, *errorValue, language, arrayDimensions), language),
+						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(rule, *errorValue, language), language),
 					)
 				}
-			} else if !validationRules[ruleName](fieldName, data[fieldName], params, data) {
+			} else if !validationRules[rule.Name].Function(fieldName, data[fieldName], rule.Params, data) {
 				errors[fieldName] = append(
 					errors[fieldName],
-					processPlaceholders(fieldName, ruleName, params, getMessage(ruleName, reflect.ValueOf(data[fieldName]), language, arrayDimensions), language),
+					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(rule, reflect.ValueOf(data[fieldName]), language), language),
 				)
 			}
 		}
@@ -177,7 +200,7 @@ func validate(data map[string]interface{}, isJSON bool, rules RuleSet, language 
 	return errors
 }
 
-func validateRuleInArray(ruleName, fieldName string, arrayDimensions uint8, data map[string]interface{}, params []string) (bool, *reflect.Value) {
+func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, data map[string]interface{}) (bool, *reflect.Value) {
 	if t := GetFieldType(data[fieldName]); t != "array" {
 		panic(fmt.Sprintf("Cannot validate array values on non-array field %s of type %s", fieldName, t))
 	}
@@ -190,17 +213,17 @@ func validateRuleInArray(ruleName, fieldName string, arrayDimensions uint8, data
 		v := list.Index(i)
 		value := v.Interface()
 		tmpData := map[string]interface{}{fieldName: value}
-		if arrayDimensions > 1 {
-			ok, errorValue := validateRuleInArray(ruleName, fieldName, arrayDimensions-1, tmpData, params)
+		if arrayDimension > 1 {
+			ok, errorValue := validateRuleInArray(rule, fieldName, arrayDimension-1, tmpData)
 			if !ok {
 				return false, errorValue
 			}
-		} else if !validationRules[ruleName](fieldName, value, params, tmpData) {
+		} else if !validationRules[rule.Name].Function(fieldName, value, rule.Params, tmpData) {
 			return false, &v
 		}
 
 		// Update original array if value has been modified.
-		if ruleName == "array" {
+		if rule.Name == "array" {
 			if !converted { // Ensure field is a two dimensional array of the correct type
 				convertedArr = reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(tmpData[fieldName])), 0, length)
 				converted = true
@@ -217,12 +240,12 @@ func validateRuleInArray(ruleName, fieldName string, arrayDimensions uint8, data
 	return true, nil
 }
 
-func convertArray(isJSON bool, fieldName string, field []string, data map[string]interface{}) {
+func convertArray(isJSON bool, fieldName string, field *ValidatedField, data map[string]interface{}) {
 	if !isJSON {
 		val := data[fieldName]
 		rv := reflect.ValueOf(val)
 		kind := rv.Kind().String()
-		if isArray(field) && kind != "slice" {
+		if field.IsArray() && kind != "slice" {
 			rt := reflect.TypeOf(val)
 			slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
 			slice = reflect.Append(slice, rv)
@@ -231,13 +254,13 @@ func convertArray(isJSON bool, fieldName string, field []string, data map[string
 	}
 }
 
-func getMessage(rule string, value reflect.Value, language string, arrayDimensions uint8) string {
-	langEntry := "validation.rules." + rule
-	if isTypeDependent(rule) {
+func getMessage(rule *Rule, value reflect.Value, language string) string {
+	langEntry := "validation.rules." + rule.Name
+	if validationRules[rule.Name].IsTypeDependent {
 		langEntry += "." + getFieldType(value)
 	}
 
-	if arrayDimensions > 0 {
+	if rule.ArrayDimension > 0 {
 		langEntry += ".array"
 	}
 
@@ -273,24 +296,32 @@ func getFieldType(value reflect.Value) string {
 	}
 }
 
-func isTypeDependent(rule string) bool {
-	return helper.Contains(typeDependentMessageRules, rule)
+func ParseRuleSet(set RuleSet) Rules { // TODO test this
+	rules := make(Rules, len(set))
+	for k, r := range set {
+		field := &ValidatedField{
+			Rules: make([]*Rule, 0, len(r)),
+		}
+		for _, v := range r {
+			rule := parseInternalRule(v)
+			switch rule.Name {
+			case "array":
+				field.isArray = true
+			case "required":
+				field.isRequired = true
+			case "nullable":
+				field.isNullable = true
+			}
+			field.Rules = append(field.Rules, rule)
+		}
+		rules[k] = field
+	}
+	return rules
 }
 
-func isArrayType(rule string) bool {
-	return helper.Contains(typeRules, rule)
-}
-
-func isRequired(field []string) bool {
-	return helper.Contains(field, "required")
-}
-
-func isNullable(field []string) bool {
-	return helper.Contains(field, "nullable")
-}
-
-func isArray(field []string) bool {
-	return helper.Contains(field, "array")
+func parseInternalRule(rule string) *Rule { // TODO refactor parseRule to directly return *Rule
+	name, arrDims, params := parseRule(rule)
+	return &Rule{name, params, arrDims}
 }
 
 func parseRule(rule string) (string, uint8, []string) {
@@ -305,7 +336,7 @@ func parseRule(rule string) (string, uint8, []string) {
 		ruleName = rule
 	} else {
 		ruleName = rule[:indexName]
-		params = strings.Split(rule[indexName+1:], ",") // TODO how to escape comma?
+		params = strings.Split(rule[indexName+1:], ",") // TODO how to escape comma? -> with verbose syntax
 	}
 
 	if ruleName[0] == '>' {
@@ -322,8 +353,10 @@ func parseRule(rule string) (string, uint8, []string) {
 
 	}
 
-	if _, exists := validationRules[ruleName]; !exists {
-		panic(fmt.Sprintf("Rule \"%s\" doesn't exist", ruleName))
+	if ruleName != "nullable" {
+		if _, exists := validationRules[ruleName]; !exists {
+			panic(fmt.Sprintf("Rule \"%s\" doesn't exist", ruleName))
+		}
 	}
 
 	return ruleName, validatesArray, params
@@ -333,7 +366,7 @@ func parseRule(rule string) (string, uint8, []string) {
 // If this is not the case, panics.
 //
 // Use this to make sure your validation rules are correctly used.
-func RequireParametersCount(rule string, params []string, count int) {
+func RequireParametersCount(rule string, params []string, count int) { // TODO check params count at startup
 	if len(params) < count {
 		panic(fmt.Sprintf("Rule \"%s\" requires %d parameter(s)", rule, count))
 	}

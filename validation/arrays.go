@@ -56,7 +56,7 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 			return true
 		}
 
-		if !isArrayType(parameters[0]) {
+		if !validationRules[parameters[0]].IsType { // TODO check array IsType tests
 			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", parameters[0]))
 		}
 
@@ -69,7 +69,7 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 		for i := 0; i < length; i++ {
 			val := list.Index(i).Interface()
 			tmpData := map[string]interface{}{field: val}
-			if !validationRules[parameters[0]](field, val, params, tmpData) {
+			if !validationRules[parameters[0]].Function(field, val, params, tmpData) {
 				return false
 			}
 			arr.Set(reflect.Append(arr, reflect.ValueOf(tmpData[field])))

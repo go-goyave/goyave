@@ -20,7 +20,7 @@ import (
 func createTestRequest(rawRequest *http.Request) *Request {
 	return &Request{
 		httpRequest: rawRequest,
-		Rules:       validation.RuleSet{},
+		Rules:       validation.Rules{},
 		Params:      map[string]string{},
 	}
 }
@@ -92,10 +92,10 @@ func TestRequestValidate(t *testing.T) {
 		"string": "hello world",
 		"number": 42,
 	}
-	request.Rules = validation.RuleSet{
+	request.Rules = validation.ParseRuleSet(validation.RuleSet{
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:10"},
-	}
+	})
 	errors := request.validate()
 	assert.Nil(t, errors)
 
@@ -105,9 +105,24 @@ func TestRequestValidate(t *testing.T) {
 	request.Data = map[string]interface{}{
 		"string": "hello world",
 	}
-	request.Rules = validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:50"},
+	// request.Rules = validation.RuleSet{
+	// 	"string": {"required", "string"},
+	// 	"number": {"required", "numeric", "min:50"},
+	// }
+	request.Rules = validation.Rules{ // TODO verbose validation declaration documentation
+		"string": {
+			Rules: []*validation.Rule{
+				{Name: "required"},
+				{Name: "string"},
+			},
+		},
+		"number": {
+			Rules: []*validation.Rule{
+				{Name: "required"}, // TODO verbose declaration is not handy when fields are required, arrays and nullable
+				{Name: "numeric"},
+				{Name: "min", Params: []string{"50"}}, // TODO can parse param at startup ?
+			},
+		},
 	}
 	errors = request.validate()
 	assert.NotNil(t, errors)

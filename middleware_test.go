@@ -84,7 +84,7 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 		httpRequest: rawRequest,
 		corsOptions: corsOptions,
 		Data:        data,
-		Rules:       rules,
+		Rules:       validation.ParseRuleSet(rules),
 		Lang:        "en-US",
 		Params:      map[string]string{},
 	}

@@ -22,7 +22,7 @@ type Request struct {
 	cookies     []*http.Cookie
 	route       *Route
 	User        interface{}
-	Rules       validation.RuleSet
+	Rules       validation.Rules // TODO rules
 	Data        map[string]interface{}
 	Params      map[string]string
 	Lang        string

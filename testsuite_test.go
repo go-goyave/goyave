@@ -69,10 +69,10 @@ func (suite *CustomTestSuite) TestRunServer() {
 		if err != nil {
 			suite.Fail(err.Error())
 		}
-		defer resp.Body.Close()
 
 		suite.NotNil(resp)
 		if resp != nil {
+			defer resp.Body.Close()
 			suite.Equal(200, resp.StatusCode)
 			suite.Equal("Hi!", string(suite.GetBody(resp)))
 		}

@@ -15,7 +15,8 @@ import (
 // For example, the "numeric" rule converts the data to float64 if it's a string.
 type RuleFunc func(string, interface{}, []string, map[string]interface{}) bool
 
-type RuleDefinition struct { // TODO document this
+// RuleDefinition TODO document this
+type RuleDefinition struct {
 	Function        RuleFunc
 	IsType          bool
 	IsTypeDependent bool
@@ -24,6 +25,7 @@ type RuleDefinition struct { // TODO document this
 // RuleSet is a request rules definition. Each entry is a field in the request.
 type RuleSet map[string][]string
 
+// ValidatedField TODO document this
 type ValidatedField struct {
 	Rules      []*Rule
 	isArray    bool // TODO these fields are never set when using verbose declaration
@@ -41,27 +43,32 @@ func (v *ValidatedField) is(rule string) bool {
 	return false
 }
 
+// IsRequired check if a field has the "required" rule
 func (v *ValidatedField) IsRequired() bool {
 	// return v.isRequired
 	return v.is("required")
 }
 
+// IsNullable check if a field has the "nullable" rule
 func (v *ValidatedField) IsNullable() bool {
 	// return v.isNullable
 	return v.is("nullable")
 }
 
+// IsArray check if a field has the "array" rule
 func (v *ValidatedField) IsArray() bool {
 	// return v.isArray
 	return v.is("array")
 }
 
+// Rule TODO document this
 type Rule struct {
 	Name           string
 	Params         []string
 	ArrayDimension uint8
 }
 
+// Rules TODO document this
 type Rules map[string]*ValidatedField
 
 // Errors is a map of validation errors with the field name as a key.
@@ -296,6 +303,7 @@ func getFieldType(value reflect.Value) string {
 	}
 }
 
+// ParseRuleSet TODO document this
 func ParseRuleSet(set RuleSet) Rules { // TODO test this
 	rules := make(Rules, len(set))
 	for k, r := range set {

@@ -15,10 +15,13 @@ linters-settings:
 linters:
   enable:
     - gofmt
+    - golint
     - gocyclo
     - misspell
   disable:
     - errcheck
   disable-all: false
   fast: false
-  
+
+issues:
+  exclude-use-default: false

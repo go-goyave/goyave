@@ -43,7 +43,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run lint
-      uses: actions-contrib/golangci-lint@v1
+      uses: golangci/golangci-lint-action@v1
+      with:
+        version: v1.27
 
   spellcheck:
     name: Spellcheck docs

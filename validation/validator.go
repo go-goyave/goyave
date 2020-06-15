@@ -311,7 +311,7 @@ func ParseRuleSet(set RuleSet) Rules { // TODO test this
 			Rules: make([]*Rule, 0, len(r)),
 		}
 		for _, v := range r {
-			rule := parseInternalRule(v)
+			rule := parseRule(v)
 			switch rule.Name {
 			case "array":
 				field.isArray = true
@@ -327,15 +327,10 @@ func ParseRuleSet(set RuleSet) Rules { // TODO test this
 	return rules
 }
 
-func parseInternalRule(rule string) *Rule { // TODO refactor parseRule to directly return *Rule
-	name, arrDims, params := parseRule(rule)
-	return &Rule{name, params, arrDims}
-}
-
-func parseRule(rule string) (string, uint8, []string) {
+func parseRule(rule string) *Rule {
 	indexName := strings.Index(rule, ":")
 	params := []string{}
-	validatesArray := uint8(0)
+	arrayDimensions := uint8(0)
 	var ruleName string
 	if indexName == -1 {
 		if strings.Count(rule, ",") > 0 {
@@ -350,7 +345,7 @@ func parseRule(rule string) (string, uint8, []string) {
 	if ruleName[0] == '>' {
 		for ruleName[0] == '>' {
 			ruleName = ruleName[1:]
-			validatesArray++
+			arrayDimensions++
 		}
 
 		switch ruleName {
@@ -367,7 +362,7 @@ func parseRule(rule string) (string, uint8, []string) {
 		}
 	}
 
-	return ruleName, validatesArray, params
+	return &Rule{ruleName, params, arrayDimensions}
 }
 
 // RequireParametersCount checks if the given parameters slice has at least "count" elements.

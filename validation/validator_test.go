@@ -47,14 +47,14 @@ func (suite *ValidatorTestSuite) TestIsArray() {
 // TODO test IsType
 
 func (suite *ValidatorTestSuite) TestParseRule() {
-	rule, _, params := parseRule("required")
-	suite.Equal("required", rule)
-	suite.Equal(0, len(params))
+	rule := parseRule("required")
+	suite.Equal("required", rule.Name)
+	suite.Equal(0, len(rule.Params))
 
-	rule, _, params = parseRule("min:5")
-	suite.Equal("min", rule)
-	suite.Equal(1, len(params))
-	suite.Equal("5", params[0])
+	rule = parseRule("min:5")
+	suite.Equal("min", rule.Name)
+	suite.Equal(1, len(rule.Params))
+	suite.Equal("5", rule.Params[0])
 
 	suite.Panics(func() {
 		parseRule("invalid,rule")
@@ -64,21 +64,21 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 		parseRule("invalidrule")
 	})
 
-	rule, validatesArray, params := parseRule(">min:3")
-	suite.Equal("min", rule)
-	suite.Equal(1, len(params))
-	suite.Equal("3", params[0])
-	suite.Equal(uint8(1), validatesArray)
+	rule = parseRule(">min:3")
+	suite.Equal("min", rule.Name)
+	suite.Equal(1, len(rule.Params))
+	suite.Equal("3", rule.Params[0])
+	suite.Equal(uint8(1), rule.ArrayDimension)
 
 	suite.Panics(func() {
 		parseRule(">file")
 	})
 
-	rule, validatesArray, params = parseRule(">>max:5")
-	suite.Equal("max", rule)
-	suite.Equal(1, len(params))
-	suite.Equal("5", params[0])
-	suite.Equal(uint8(2), validatesArray)
+	rule = parseRule(">>max:5")
+	suite.Equal("max", rule.Name)
+	suite.Equal(1, len(rule.Params))
+	suite.Equal("5", rule.Params[0])
+	suite.Equal(uint8(2), rule.ArrayDimension)
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {

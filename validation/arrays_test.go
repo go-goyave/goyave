@@ -153,7 +153,6 @@ func TestValidateIn(t *testing.T) {
 	assert.False(t, validateIn("field", 2.51, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
 
 	assert.False(t, validateIn("field", []string{"1"}, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateIn("field", "hi", []string{}, map[string]interface{}{}) })
 }
 
 func TestValidateNotIn(t *testing.T) {
@@ -165,7 +164,6 @@ func TestValidateNotIn(t *testing.T) {
 	assert.True(t, validateNotIn("field", 2.51, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
 
 	assert.False(t, validateNotIn("field", []string{"1"}, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateNotIn("field", "hi", []string{}, map[string]interface{}{}) })
 }
 
 func TestValidateInArray(t *testing.T) {

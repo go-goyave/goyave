@@ -240,6 +240,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 			middleware: middleware,
 		},
 	}
+	route.validationRules.Check() // TODO test this
 	route.compileParameters(route.uri, true)
 	r.routes = append(r.routes, route)
 	return route

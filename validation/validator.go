@@ -17,9 +17,10 @@ type RuleFunc func(string, interface{}, []string, map[string]interface{}) bool
 
 // RuleDefinition TODO document this
 type RuleDefinition struct {
-	Function        RuleFunc
-	IsType          bool
-	IsTypeDependent bool
+	Function           RuleFunc
+	RequiredParameters int
+	IsType             bool
+	IsTypeDependent    bool
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
@@ -33,32 +34,48 @@ type ValidatedField struct {
 	isNullable bool
 }
 
-// TODO temporary solution for verbose declaration
-func (v *ValidatedField) is(rule string) bool {
-	for _, r := range v.Rules {
-		if r.Name == rule {
-			return true
-		}
-	}
-	return false
-}
-
 // IsRequired check if a field has the "required" rule
 func (v *ValidatedField) IsRequired() bool {
-	// return v.isRequired
-	return v.is("required")
+	return v.isRequired
 }
 
 // IsNullable check if a field has the "nullable" rule
 func (v *ValidatedField) IsNullable() bool {
-	// return v.isNullable
-	return v.is("nullable")
+	return v.isNullable
 }
 
 // IsArray check if a field has the "array" rule
 func (v *ValidatedField) IsArray() bool {
-	// return v.isArray
-	return v.is("array")
+	return v.isArray
+}
+
+// check if rules meet the minimum parameters requirement and update
+// the isRequired, isNullable and isArray fields.
+func (v *ValidatedField) check() { // TODO test checks
+	for _, rule := range v.Rules {
+		switch rule.Name {
+		case "confirmed", "file", "mime", "image", "extension", "count",
+			"count_min", "count_max", "count_between":
+			if rule.ArrayDimension != 0 {
+				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name))
+			}
+		case "required":
+			v.isRequired = true
+		case "nullable":
+			v.isNullable = true
+			continue
+		case "array":
+			v.isArray = true
+		}
+
+		def, exists := validationRules[rule.Name]
+		if !exists {
+			panic(fmt.Sprintf("Rule \"%s\" doesn't exist", rule.Name))
+		}
+		if len(rule.Params) < def.RequiredParameters {
+			panic(fmt.Sprintf("Rule \"%s\" requires %d parameter(s)", rule.Name, def.RequiredParameters))
+		}
+	}
 }
 
 // Rule TODO document this
@@ -71,6 +88,16 @@ type Rule struct {
 // Rules TODO document this
 type Rules map[string]*ValidatedField
 
+// Check TODO document this
+func (r Rules) Check() {
+	// TODO test this
+	// TODO update all tests checking rule panic with wrong number of parameters
+	// TODO do it once? it's a map so can't add an extra field
+	for _, field := range r {
+		field.check()
+	}
+}
+
 // Errors is a map of validation errors with the field name as a key.
 type Errors map[string][]string
 
@@ -78,58 +105,58 @@ var validationRules map[string]*RuleDefinition
 
 func init() {
 	validationRules = map[string]*RuleDefinition{
-		"required":           {validateRequired, false, false},
-		"numeric":            {validateNumeric, true, false},
-		"integer":            {validateInteger, true, false},
-		"min":                {validateMin, false, true},
-		"max":                {validateMax, false, true},
-		"between":            {validateBetween, false, true},
-		"greater_than":       {validateGreaterThan, false, true},
-		"greater_than_equal": {validateGreaterThanEqual, false, true},
-		"lower_than":         {validateLowerThan, false, true},
-		"lower_than_equal":   {validateLowerThanEqual, false, true},
-		"string":             {validateString, true, false},
-		"array":              {validateArray, false, false},
-		"distinct":           {validateDistinct, false, false},
-		"digits":             {validateDigits, false, false},
-		"regex":              {validateRegex, false, false},
-		"email":              {validateEmail, false, false},
-		"size":               {validateSize, false, false},
-		"alpha":              {validateAlpha, false, false},
-		"alpha_dash":         {validateAlphaDash, false, false},
-		"alpha_num":          {validateAlphaNumeric, false, false},
-		"starts_with":        {validateStartsWith, false, false},
-		"ends_with":          {validateEndsWith, false, false},
-		"in":                 {validateIn, false, false},
-		"not_in":             {validateNotIn, false, false},
-		"in_array":           {validateInArray, false, false},
-		"not_in_array":       {validateNotInArray, false, false},
-		"timezone":           {validateTimezone, true, false},
-		"ip":                 {validateIP, true, false},
-		"ipv4":               {validateIPv4, true, false},
-		"ipv6":               {validateIPv6, true, false},
-		"json":               {validateJSON, true, false},
-		"url":                {validateURL, true, false},
-		"uuid":               {validateUUID, true, false},
-		"bool":               {validateBool, true, false},
-		"same":               {validateSame, false, false},
-		"different":          {validateDifferent, false, false},
-		"confirmed":          {validateConfirmed, false, false},
-		"file":               {validateFile, false, false},
-		"mime":               {validateMIME, false, false},
-		"image":              {validateImage, false, false},
-		"extension":          {validateExtension, false, false},
-		"count":              {validateCount, false, false},
-		"count_min":          {validateCountMin, false, false},
-		"count_max":          {validateCountMax, false, false},
-		"count_between":      {validateCountBetween, false, false},
-		"date":               {validateDate, true, false},
-		"before":             {validateBefore, false, false},
-		"before_equal":       {validateBeforeEqual, false, false},
-		"after":              {validateAfter, false, false},
-		"after_equal":        {validateAfterEqual, false, false},
-		"date_equals":        {validateDateEquals, false, false},
-		"date_between":       {validateDateBetween, false, false},
+		"required":           {validateRequired, 0, false, false},
+		"numeric":            {validateNumeric, 0, true, false},
+		"integer":            {validateInteger, 0, true, false},
+		"min":                {validateMin, 1, false, true},
+		"max":                {validateMax, 1, false, true},
+		"between":            {validateBetween, 2, false, true},
+		"greater_than":       {validateGreaterThan, 1, false, true},
+		"greater_than_equal": {validateGreaterThanEqual, 1, false, true},
+		"lower_than":         {validateLowerThan, 1, false, true},
+		"lower_than_equal":   {validateLowerThanEqual, 1, false, true},
+		"string":             {validateString, 0, true, false},
+		"array":              {validateArray, 0, false, false},
+		"distinct":           {validateDistinct, 0, false, false},
+		"digits":             {validateDigits, 0, false, false},
+		"regex":              {validateRegex, 1, false, false},
+		"email":              {validateEmail, 0, false, false},
+		"size":               {validateSize, 1, false, false},
+		"alpha":              {validateAlpha, 0, false, false},
+		"alpha_dash":         {validateAlphaDash, 0, false, false},
+		"alpha_num":          {validateAlphaNumeric, 0, false, false},
+		"starts_with":        {validateStartsWith, 1, false, false},
+		"ends_with":          {validateEndsWith, 1, false, false},
+		"in":                 {validateIn, 1, false, false},
+		"not_in":             {validateNotIn, 1, false, false},
+		"in_array":           {validateInArray, 1, false, false},
+		"not_in_array":       {validateNotInArray, 1, false, false},
+		"timezone":           {validateTimezone, 0, true, false},
+		"ip":                 {validateIP, 0, true, false},
+		"ipv4":               {validateIPv4, 0, true, false},
+		"ipv6":               {validateIPv6, 0, true, false},
+		"json":               {validateJSON, 0, true, false},
+		"url":                {validateURL, 0, true, false},
+		"uuid":               {validateUUID, 0, true, false},
+		"bool":               {validateBool, 0, true, false},
+		"same":               {validateSame, 1, false, false},
+		"different":          {validateDifferent, 1, false, false},
+		"confirmed":          {validateConfirmed, 0, false, false},
+		"file":               {validateFile, 0, false, false},
+		"mime":               {validateMIME, 1, false, false},
+		"image":              {validateImage, 0, false, false},
+		"extension":          {validateExtension, 1, false, false},
+		"count":              {validateCount, 1, false, false},
+		"count_min":          {validateCountMin, 1, false, false},
+		"count_max":          {validateCountMax, 1, false, false},
+		"count_between":      {validateCountBetween, 2, false, false},
+		"date":               {validateDate, 0, true, false},
+		"before":             {validateBefore, 1, false, false},
+		"before_equal":       {validateBeforeEqual, 1, false, false},
+		"after":              {validateAfter, 1, false, false},
+		"after_equal":        {validateAfterEqual, 1, false, false},
+		"date_equals":        {validateDateEquals, 1, false, false},
+		"date_between":       {validateDateBetween, 1, false, false},
 	}
 }
 
@@ -169,7 +196,6 @@ func validate(data map[string]interface{}, isJSON bool, rules Rules, language st
 	errors := Errors{}
 
 	for fieldName, field := range rules {
-		fmt.Println(fieldName)
 		if !field.IsNullable() && data[fieldName] == nil {
 			delete(data, fieldName)
 		}
@@ -277,11 +303,11 @@ func getMessage(rule *Rule, value reflect.Value, language string) string {
 // GetFieldType returns the non-technical type of the given "value" interface.
 // This is used by validation rules to know if the input data is a candidate
 // for validation or not and is especially useful for type-dependent rules.
-// - "numeric" if the value is an int, uint or a float
-// - "string" if the value is a string
-// - "array" if the value is a slice
-// - "file" if the value is a slice of "filesystem.File"
-// - "unsupported" otherwise
+//  - "numeric" if the value is an int, uint or a float
+//  - "string" if the value is a string
+//  - "array" if the value is a slice
+//  - "file" if the value is a slice of "filesystem.File"
+//  - "unsupported" otherwise
 func GetFieldType(value interface{}) string {
 	return getFieldType(reflect.ValueOf(value))
 }
@@ -311,19 +337,11 @@ func ParseRuleSet(set RuleSet) Rules { // TODO test this
 			Rules: make([]*Rule, 0, len(r)),
 		}
 		for _, v := range r {
-			rule := parseRule(v)
-			switch rule.Name {
-			case "array":
-				field.isArray = true
-			case "required":
-				field.isRequired = true
-			case "nullable":
-				field.isNullable = true
-			}
-			field.Rules = append(field.Rules, rule)
+			field.Rules = append(field.Rules, parseRule(v))
 		}
 		rules[k] = field
 	}
+	rules.Check()
 	return rules
 }
 
@@ -339,7 +357,7 @@ func parseRule(rule string) *Rule {
 		ruleName = rule
 	} else {
 		ruleName = rule[:indexName]
-		params = strings.Split(rule[indexName+1:], ",") // TODO how to escape comma? -> with verbose syntax
+		params = strings.Split(rule[indexName+1:], ",")
 	}
 
 	if ruleName[0] == '>' {
@@ -347,30 +365,7 @@ func parseRule(rule string) *Rule {
 			ruleName = ruleName[1:]
 			arrayDimensions++
 		}
-
-		switch ruleName {
-		case "confirmed", "file", "mime", "image", "extension", "count",
-			"count_min", "count_max", "count_between":
-			panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", ruleName))
-		}
-
-	}
-
-	if ruleName != "nullable" {
-		if _, exists := validationRules[ruleName]; !exists {
-			panic(fmt.Sprintf("Rule \"%s\" doesn't exist", ruleName))
-		}
 	}
 
 	return &Rule{ruleName, params, arrayDimensions}
-}
-
-// RequireParametersCount checks if the given parameters slice has at least "count" elements.
-// If this is not the case, panics.
-//
-// Use this to make sure your validation rules are correctly used.
-func RequireParametersCount(rule string, params []string, count int) { // TODO check params count at startup
-	if len(params) < count {
-		panic(fmt.Sprintf("Rule \"%s\" requires %d parameter(s)", rule, count))
-	}
 }

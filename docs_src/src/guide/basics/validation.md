@@ -459,7 +459,7 @@ Rules definition shouldn't be exported, and start with `validate`. A rule return
 ``` go
 func validateCustomFormat(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
     // Ensure the rule has at least one parameter
-    validation.RequireParametersCount("custom_format", parameters, 1)
+    validation.RequireParametersCount("custom_format", parameters, 1) // TODO remove this and update rule registration function docs
     str, ok := value.(string)
 
     if ok { // The data under validation is a string

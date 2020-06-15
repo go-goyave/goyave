@@ -94,14 +94,12 @@ func TestValidateStartsWith(t *testing.T) {
 	assert.True(t, validateStartsWith("field", "hello world", []string{"hello"}, map[string]interface{}{}))
 	assert.True(t, validateStartsWith("field", "hi", []string{"hello", "hi", "hey"}, map[string]interface{}{}))
 	assert.False(t, validateStartsWith("field", "sup'!", []string{"hello", "hi", "hey"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateStartsWith("field", "sup'!", []string{}, map[string]interface{}{}) })
 }
 
 func TestValidateEndsWith(t *testing.T) {
 	assert.True(t, validateEndsWith("field", "hello world", []string{"world"}, map[string]interface{}{}))
 	assert.True(t, validateEndsWith("field", "oh hi mark", []string{"ross", "mark", "bruce"}, map[string]interface{}{}))
 	assert.False(t, validateEndsWith("field", "sup' bro!", []string{"ross", "mark", "bruce"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateEndsWith("field", "sup'!", []string{}, map[string]interface{}{}) })
 }
 
 func TestValidateTimezone(t *testing.T) {

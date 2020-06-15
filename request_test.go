@@ -120,10 +120,11 @@ func TestRequestValidate(t *testing.T) {
 			Rules: []*validation.Rule{
 				{Name: "required"}, // TODO verbose declaration is not handy when fields are required, arrays and nullable
 				{Name: "numeric"},
-				{Name: "min", Params: []string{"50"}}, // TODO can parse param at startup ?
+				{Name: "min", Params: []string{"50"}},
 			},
 		},
 	}
+	request.Rules.Check() // TODO not very handy for manual validation, maybe check it internally once?
 	errors = request.validate()
 	assert.NotNil(t, errors)
 	assert.Equal(t, 2, len(errors["validationError"]["number"]))

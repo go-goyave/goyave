@@ -15,21 +15,37 @@ import (
 // For example, the "numeric" rule converts the data to float64 if it's a string.
 type RuleFunc func(string, interface{}, []string, map[string]interface{}) bool
 
-// RuleDefinition TODO document this
+// RuleDefinition is the definition of a rule, containing the information
+// related to the behavior executed on validation-time.
 type RuleDefinition struct {
-	Function           RuleFunc
+
+	// The Function field is the function that will be executed
+	Function RuleFunc
+
+	// The minimum amount of parameters
 	RequiredParameters int
-	IsType             bool
-	IsTypeDependent    bool
+
+	// A type rule is a rule that checks if a field has a certain type
+	// and can convert the raw value to a value fitting. For example, the UUID
+	// rule is a type rule because it takes a string as input, checks if it's a
+	// valid UUID and converts it to a "uuid.UUID".
+	IsType bool
+
+	// Type-dependent rules are rules that can be used with different field types
+	// (numeric, string, arrays and files) and have a different validation messages depending on the type.
+	// Type-dependent messages let you define a different message for .
+	// The language entry used will be "validation.rules.rulename.type"
+	IsTypeDependent bool
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
 type RuleSet map[string][]string
 
-// ValidatedField TODO document this
+// ValidatedField is a component of route validation. A ValidatedField is a value in
+// a Rules map, the key being the name of the field.
 type ValidatedField struct {
 	Rules      []*Rule
-	isArray    bool // TODO these fields are never set when using verbose declaration
+	isArray    bool
 	isRequired bool
 	isNullable bool
 }
@@ -78,17 +94,27 @@ func (v *ValidatedField) check() { // TODO test checks
 	}
 }
 
-// Rule TODO document this
+// Rule is a component of rule sets for route validation. Each validated fields
+// has one or multiple validation rules. The goal of this struct is to
+// gather information about how to use a rule definition for this field.
+// This inludes the rule name (referring to a RuleDefinition), the parameters
+// and the array dimension for array validation.
 type Rule struct {
 	Name           string
 	Params         []string
 	ArrayDimension uint8
 }
 
-// Rules TODO document this
+// Rules is a component of route validation and maps a
+// field name (key) with a ValidatedField struct (value).
 type Rules map[string]*ValidatedField
 
-// Check TODO document this
+// Check all rules in this set. This function will panic if
+// any of the rules doesn't refer to an existing RuleDefinition, doesn't
+// meet the parameters requirement, or if the rule cannot be used in array validation
+// while ArrayDimension is not equal to 0.
+//
+// IMPORTANT: When manually validating, don't use Rules before it have been checked.
 func (r Rules) Check() {
 	// TODO test this
 	// TODO update all tests checking rule panic with wrong number of parameters
@@ -329,7 +355,8 @@ func getFieldType(value reflect.Value) string {
 	}
 }
 
-// ParseRuleSet TODO document this
+// ParseRuleSet converts the more convenient RuleSet validation rules syntax to
+// a Rules map. This method calls the Check method on the resulting Rules.
 func ParseRuleSet(set RuleSet) Rules { // TODO test this
 	rules := make(Rules, len(set))
 	for k, r := range set {

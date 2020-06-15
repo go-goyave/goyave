@@ -105,10 +105,7 @@ func TestRequestValidate(t *testing.T) {
 	request.Data = map[string]interface{}{
 		"string": "hello world",
 	}
-	// request.Rules = validation.RuleSet{
-	// 	"string": {"required", "string"},
-	// 	"number": {"required", "numeric", "min:50"},
-	// }
+
 	request.Rules = validation.Rules{ // TODO verbose validation declaration documentation
 		"string": {
 			Rules: []*validation.Rule{
@@ -118,7 +115,7 @@ func TestRequestValidate(t *testing.T) {
 		},
 		"number": {
 			Rules: []*validation.Rule{
-				{Name: "required"}, // TODO verbose declaration is not handy when fields are required, arrays and nullable
+				{Name: "required"},
 				{Name: "numeric"},
 				{Name: "min", Params: []string{"50"}},
 			},

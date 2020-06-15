@@ -220,7 +220,7 @@ func (r *Router) Route(methods string, uri string, handler Handler, validationRu
 	return r.registerRoute(methods, uri, handler, validationRules, middleware...)
 }
 
-func (r *Router) registerRoute(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+func (r *Router) registerRoute(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route { // TODO move validationRules param to a new method
 	if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
 		methods += "|OPTIONS"
 	}
@@ -235,12 +235,11 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 		methods:         strings.Split(methods, "|"),
 		parent:          r,
 		handler:         handler,
-		validationRules: validation.ParseRuleSet(validationRules), // TODO how to register route with verbose syntax ?
+		validationRules: validation.ParseRuleSet(validationRules), // TODO how to register route with verbose syntax ? (don't forget to call Check)
 		middlewareHolder: middlewareHolder{
 			middleware: middleware,
 		},
 	}
-	route.validationRules.Check() // TODO test this
 	route.compileParameters(route.uri, true)
 	r.routes = append(r.routes, route)
 	return route

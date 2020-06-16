@@ -47,7 +47,7 @@ func (suite *NativeHandlerTestSuite) TestNativeHandlerBody() {
 	}))
 
 	suite.RunServer(func(router *Router) {
-		router.Route("POST", "/native", handler, nil)
+		router.Route("POST", "/native", handler)
 	}, func() {
 		headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded; param=value"}
 		resp, err := suite.Post("/native", headers, strings.NewReader("request=content"))
@@ -74,7 +74,7 @@ func (suite *NativeHandlerTestSuite) TestNativeHandlerBodyJSON() {
 	}))
 
 	suite.RunServer(func(router *Router) {
-		router.Route("POST", "/native", handler, nil)
+		router.Route("POST", "/native", handler)
 	}, func() {
 		headers := map[string]string{"Content-Type": "application/json"}
 		resp, err := suite.Post("/native", headers, strings.NewReader("{\"request\":\"content\"}"))

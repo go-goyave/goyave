@@ -96,7 +96,7 @@ func (suite *GzipMiddlewareTestSuite) TestCloseChild() {
 		router.Middleware(Gzip())
 		router.Route("GET", "/test", func(response *goyave.Response, r *goyave.Request) {
 			response.String(http.StatusOK, "hello world")
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/test", nil)
 		if err != nil {

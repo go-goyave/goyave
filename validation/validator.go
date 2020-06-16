@@ -8,6 +8,13 @@ import (
 	"github.com/System-Glitch/goyave/v2/lang"
 )
 
+// Ruler adapter interface for method dispatching between RuleSet and Rules
+// at route registration time. Allows to input both of these types as parameters
+// of the Route.Validate method.
+type Ruler interface {
+	AsRules() Rules
+}
+
 // RuleFunc function defining a validation rule.
 // Passing rules should return true, false otherwise.
 //
@@ -40,6 +47,24 @@ type RuleDefinition struct {
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
 type RuleSet map[string][]string
+
+var _ Ruler = (RuleSet)(nil) // implements Ruler
+
+// AsRules parses and checks this RuleSet and returns it as Rules.
+func (r RuleSet) AsRules() Rules {
+	return ParseRuleSet(r)
+}
+
+// Rule is a component of rule sets for route validation. Each validated fields
+// has one or multiple validation rules. The goal of this struct is to
+// gather information about how to use a rule definition for this field.
+// This inludes the rule name (referring to a RuleDefinition), the parameters
+// and the array dimension for array validation.
+type Rule struct {
+	Name           string
+	Params         []string
+	ArrayDimension uint8
+}
 
 // ValidatedField is a component of route validation. A ValidatedField is a value in
 // a Rules map, the key being the name of the field.
@@ -94,20 +119,17 @@ func (v *ValidatedField) check() { // TODO test checks
 	}
 }
 
-// Rule is a component of rule sets for route validation. Each validated fields
-// has one or multiple validation rules. The goal of this struct is to
-// gather information about how to use a rule definition for this field.
-// This inludes the rule name (referring to a RuleDefinition), the parameters
-// and the array dimension for array validation.
-type Rule struct {
-	Name           string
-	Params         []string
-	ArrayDimension uint8
-}
-
 // Rules is a component of route validation and maps a
 // field name (key) with a ValidatedField struct (value).
 type Rules map[string]*ValidatedField
+
+var _ Ruler = (Rules)(nil) // implements Ruler
+
+// AsRules performs the checking and returns the same Rules instance.
+func (r Rules) AsRules() Rules {
+	r.Check()
+	return r
+}
 
 // Check all rules in this set. This function will panic if
 // any of the rules doesn't refer to an existing RuleDefinition, doesn't

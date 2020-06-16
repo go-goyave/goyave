@@ -9,7 +9,6 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/cors"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/validation"
 )
 
 type routeMatcher interface {
@@ -211,16 +210,17 @@ func (r *Router) Middleware(middleware ...Middleware) {
 //
 // The validation rules set is optional. If you don't want your route
 // to be validated, pass "nil".
+// TODO update Route documentation, examples and upgrade guide
 //
 // If the router has CORS options set, the "OPTIONS" method is automatically added
 // to the matcher if it's missing, so it allows preflight requests.
 //
 // Returns the generated route.
-func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(methods, uri, handler, validationRules, middleware...)
+func (r *Router) Route(methods string, uri string, handler Handler) *Route {
+	return r.registerRoute(methods, uri, handler)
 }
 
-func (r *Router) registerRoute(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route { // TODO move validationRules param to a new method
+func (r *Router) registerRoute(methods string, uri string, handler Handler) *Route {
 	if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
 		methods += "|OPTIONS"
 	}
@@ -230,15 +230,11 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 	}
 
 	route := &Route{
-		name:            "",
-		uri:             uri,
-		methods:         strings.Split(methods, "|"),
-		parent:          r,
-		handler:         handler,
-		validationRules: validation.ParseRuleSet(validationRules), // TODO how to register route with verbose syntax ? (don't forget to call Check)
-		middlewareHolder: middlewareHolder{
-			middleware: middleware,
-		},
+		name:    "",
+		uri:     uri,
+		methods: strings.Split(methods, "|"),
+		parent:  r,
+		handler: handler,
 	}
 	route.compileParameters(route.uri, true)
 	r.routes = append(r.routes, route)
@@ -246,33 +242,33 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 }
 
 // Get registers a new route wit the GET method.
-func (r *Router) Get(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodGet, uri, handler, validationRules, middleware...)
+func (r *Router) Get(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodGet, uri, handler)
 }
 
 // Post registers a new route wit the POST method.
-func (r *Router) Post(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodPost, uri, handler, validationRules, middleware...)
+func (r *Router) Post(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodPost, uri, handler)
 }
 
 // Put registers a new route wit the PUT method.
-func (r *Router) Put(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodPut, uri, handler, validationRules, middleware...)
+func (r *Router) Put(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodPut, uri, handler)
 }
 
 // Patch registers a new route wit the PATCH method.
-func (r *Router) Patch(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodPatch, uri, handler, validationRules, middleware...)
+func (r *Router) Patch(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodPatch, uri, handler)
 }
 
 // Delete registers a new route wit the DELETE method.
-func (r *Router) Delete(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodDelete, uri, handler, validationRules, middleware...)
+func (r *Router) Delete(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodDelete, uri, handler)
 }
 
 // Options registers a new route wit the OPTIONS method.
-func (r *Router) Options(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodOptions, uri, handler, validationRules, middleware...)
+func (r *Router) Options(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodOptions, uri, handler)
 }
 
 // GetRoute get a named route.
@@ -288,7 +284,7 @@ func (r *Router) GetRoute(name string) *Route {
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
 func (r *Router) Static(uri string, directory string, download bool, middleware ...Middleware) {
-	r.registerRoute(http.MethodGet, uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
+	r.registerRoute(http.MethodGet, uri+"{resource:.*}", staticHandler(directory, download)).Middleware(middleware...)
 }
 
 // CORS set the CORS options for this route group.

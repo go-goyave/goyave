@@ -62,7 +62,7 @@ func (suite *CustomTestSuite) TestRunServer() {
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", func(response *Response, request *Request) {
 			response.String(http.StatusOK, "Hi!")
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/hello", nil)
 		suite.Nil(err)
@@ -129,14 +129,14 @@ func (suite *CustomTestSuite) TestMiddleware() {
 
 func (suite *CustomTestSuite) TestRequests() {
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/get", genericHandler("get"), nil)
-		router.Route("POST", "/post", genericHandler("post"), nil)
-		router.Route("PUT", "/put", genericHandler("put"), nil)
-		router.Route("PATCH", "/patch", genericHandler("patch"), nil)
-		router.Route("DELETE", "/delete", genericHandler("delete"), nil)
+		router.Route("GET", "/get", genericHandler("get"))
+		router.Route("POST", "/post", genericHandler("post"))
+		router.Route("PUT", "/put", genericHandler("put"))
+		router.Route("PATCH", "/patch", genericHandler("patch"))
+		router.Route("DELETE", "/delete", genericHandler("delete"))
 		router.Route("GET", "/headers", func(response *Response, request *Request) {
 			response.String(http.StatusOK, request.Header().Get("Accept-Language"))
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
@@ -195,13 +195,13 @@ func (suite *CustomTestSuite) TestRequests() {
 
 func (suite *CustomTestSuite) TestJSON() {
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/invalid", genericHandler("get"), nil)
+		router.Route("GET", "/invalid", genericHandler("get"))
 		router.Route("GET", "/get", func(response *Response, request *Request) {
 			response.JSON(http.StatusOK, map[string]interface{}{
 				"field":  "value",
 				"number": 42,
 			})
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
@@ -238,7 +238,7 @@ func (suite *CustomTestSuite) TestJSONSlice() {
 				{"field": "value", "number": 42},
 				{"field": "other value", "number": 12},
 			})
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
@@ -299,7 +299,7 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 				"file":  string(content),
 				"field": request.String("field"),
 			})
-		}, nil)
+		})
 	}, func() {
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)

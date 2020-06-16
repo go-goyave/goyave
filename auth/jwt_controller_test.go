@@ -88,6 +88,8 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 	}
 }
 
+// TODO test JWT route validation
+
 func (suite *JWTControllerTestSuite) TestLoginPanic() {
 	suite.Panics(func() {
 		request := suite.CreateTestRequest(nil)

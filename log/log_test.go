@@ -110,7 +110,7 @@ func (suite *LogMiddlewareTestSuite) TestCloseChildWriter() {
 		router.Middleware(CombinedLogMiddleware())
 		router.Route("GET", "/test", func(response *goyave.Response, request *goyave.Request) {
 			response.String(http.StatusOK, "message")
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/test", nil)
 		if err != nil {

@@ -92,9 +92,19 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 // instantiating an authenticated request's user.
 func JWTRoutes(router *goyave.Router, model interface{}) *goyave.Router {
 	jwtRouter := router.Subrouter("/auth")
-	jwtRouter.Route("POST", "/login", NewJWTController(model).Login, validation.RuleSet{
-		"username": {"required", "string"},
-		"password": {"required", "string"},
+	jwtRouter.Route("POST", "/login", NewJWTController(model).Login).Validate(validation.Rules{
+		"username": {
+			Rules: []*validation.Rule{
+				{Name: "required"},
+				{Name: "string"},
+			},
+		},
+		"password": {
+			Rules: []*validation.Rule{
+				{Name: "required"},
+				{Name: "string"},
+			},
+		},
 	})
 	return jwtRouter
 }

@@ -114,7 +114,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 	suite.loadConfig()
 	config.Set("protocol", "https")
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/hello", helloHandler, nil)
+		router.Route("GET", "/hello", helloHandler)
 	}, func() {
 		netClient := suite.getHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
@@ -319,7 +319,7 @@ func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 	suite.loadConfig()
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/hello", helloHandler, nil)
+		router.Route("GET", "/hello", helloHandler)
 	}, func() {
 		EnableMaintenance()
 		suite.True(IsMaintenanceEnabled())
@@ -357,7 +357,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 
 	config.Set("maintenance", true)
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/hello", helloHandler, nil)
+		router.Route("GET", "/hello", helloHandler)
 	}, func() {
 		suite.True(IsMaintenanceEnabled())
 

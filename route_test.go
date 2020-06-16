@@ -137,7 +137,7 @@ func (suite *RouteTestSuite) TestAccessors() {
 
 func (suite *RouteTestSuite) TestGetFullURI() {
 	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
-	route := router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}, nil).Name("route-name")
+	route := router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
 
 	suite.Equal("/product/{id:[0-9+]}/{name}/accessories", route.GetFullURI())
 }
@@ -167,7 +167,7 @@ func (suite *RouteTestSuite) TestBuildURL() {
 	suite.Equal("http://127.0.0.1:1235/product/42/screwdriver/accessories", route.BuildURL("42", "screwdriver"))
 
 	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
-	route = router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}, nil).Name("route-name")
+	route = router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
 
 	suite.Equal("http://127.0.0.1:1235/product/42/screwdriver/accessories", route.BuildURL("42", "screwdriver"))
 }

@@ -20,9 +20,17 @@ func DisallowNonValidatedFields(next goyave.Handler) goyave.Handler {
 	return func(response *goyave.Response, request *goyave.Request) {
 		nonValidated := validation.Errors{}
 		if request.Data != nil {
-			for field := range request.Data {
-				if _, exists := request.Rules[field]; !exists && !strings.HasSuffix(field, "_confirmation") {
-					nonValidated[field] = append(nonValidated[field], lang.Get(request.Lang, "disallow-non-validated-fields"))
+			langEntry := lang.Get(request.Lang, "disallow-non-validated-fields")
+			if len(request.Data) > 0 && request.Rules == nil {
+				for field := range request.Data {
+					nonValidated[field] = append(nonValidated[field], langEntry)
+				}
+			} else {
+				for field := range request.Data {
+					// TODO document that handlers accessing request.Rules must be updated
+					if _, exists := request.Rules.Fields[field]; !exists && !strings.HasSuffix(field, "_confirmation") {
+						nonValidated[field] = append(nonValidated[field], langEntry)
+					}
 				}
 			}
 

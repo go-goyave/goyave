@@ -12,7 +12,7 @@ import (
 // at route registration time. Allows to input both of these types as parameters
 // of the Route.Validate method.
 type Ruler interface {
-	AsRules() Rules
+	AsRules() *Rules
 }
 
 // RuleFunc function defining a validation rule.
@@ -51,24 +51,26 @@ type RuleSet map[string][]string
 var _ Ruler = (RuleSet)(nil) // implements Ruler
 
 // AsRules parses and checks this RuleSet and returns it as Rules.
-func (r RuleSet) AsRules() Rules {
+func (r RuleSet) AsRules() *Rules {
 	return r.parse()
 }
 
 // Parse converts the more convenient RuleSet validation rules syntax to
-// a Rules map. This method calls the Check method on the resulting Rules.
-func (r RuleSet) parse() Rules { // TODO test this
-	rules := make(Rules, len(r))
+// a Rules map.
+func (r RuleSet) parse() *Rules { // TODO test this
+	rules := &Rules{
+		Fields: make(map[string]*Field, len(r)),
+	}
 	for k, r := range r {
-		field := &ValidatedField{
+		field := &Field{
 			Rules: make([]*Rule, 0, len(r)),
 		}
 		for _, v := range r {
 			field.Rules = append(field.Rules, parseRule(v))
 		}
-		rules[k] = field
+		rules.Fields[k] = field
 	}
-	rules.Check()
+	rules.check()
 	return rules
 }
 
@@ -83,9 +85,9 @@ type Rule struct {
 	ArrayDimension uint8
 }
 
-// ValidatedField is a component of route validation. A ValidatedField is a value in
+// Field is a component of route validation. A Field is a value in
 // a Rules map, the key being the name of the field.
-type ValidatedField struct {
+type Field struct {
 	Rules      []*Rule
 	isArray    bool
 	isRequired bool
@@ -93,23 +95,23 @@ type ValidatedField struct {
 }
 
 // IsRequired check if a field has the "required" rule
-func (v *ValidatedField) IsRequired() bool {
+func (v *Field) IsRequired() bool {
 	return v.isRequired
 }
 
 // IsNullable check if a field has the "nullable" rule
-func (v *ValidatedField) IsNullable() bool {
+func (v *Field) IsNullable() bool {
 	return v.isNullable
 }
 
 // IsArray check if a field has the "array" rule
-func (v *ValidatedField) IsArray() bool {
+func (v *Field) IsArray() bool {
 	return v.isArray
 }
 
 // check if rules meet the minimum parameters requirement and update
 // the isRequired, isNullable and isArray fields.
-func (v *ValidatedField) check() { // TODO test checks
+func (v *Field) check() { // TODO test checks
 	for _, rule := range v.Rules {
 		switch rule.Name {
 		case "confirmed", "file", "mime", "image", "extension", "count",
@@ -136,31 +138,38 @@ func (v *ValidatedField) check() { // TODO test checks
 	}
 }
 
-// Rules is a component of route validation and maps a
-// field name (key) with a ValidatedField struct (value).
-type Rules map[string]*ValidatedField
+// FieldMap is an alias to shorten verbose validation rules declaration.
+// Maps a field name (key) with a Field struct (value).
+type FieldMap map[string]*Field
 
-var _ Ruler = (Rules)(nil) // implements Ruler
+// Rules is a component of route validation and maps a
+// field name (key) with a Field struct (value).
+type Rules struct {
+	Fields  map[string]*Field
+	checked bool
+}
+
+var _ Ruler = (*Rules)(nil) // implements Ruler
 
 // AsRules performs the checking and returns the same Rules instance.
 // TODO test AsRules
-func (r Rules) AsRules() Rules {
-	r.Check()
+func (r *Rules) AsRules() *Rules {
+	r.check()
 	return r
 }
 
-// Check all rules in this set. This function will panic if
+// check all rules in this set. This function will panic if
 // any of the rules doesn't refer to an existing RuleDefinition, doesn't
 // meet the parameters requirement, or if the rule cannot be used in array validation
 // while ArrayDimension is not equal to 0.
-//
-// IMPORTANT: When manually validating, don't use Rules before it have been checked.
-func (r Rules) Check() {
+func (r *Rules) check() {
 	// TODO test this
 	// TODO update all tests checking rule panic with wrong number of parameters
-	// TODO do it once? it's a map so can't add an extra field
-	for _, field := range r {
-		field.check()
+	if !r.checked {
+		for _, field := range r.Fields {
+			field.check()
+		}
+		r.checked = true
 	}
 }
 
@@ -255,13 +264,13 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 		return map[string][]string{"error": {malformedMessage}}
 	}
 
-	return validate(data, isJSON, rules.AsRules(), language) // TODO check is performed every time
+	return validate(data, isJSON, rules.AsRules(), language)
 }
 
-func validate(data map[string]interface{}, isJSON bool, rules Rules, language string) Errors {
+func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {
 	errors := Errors{}
 
-	for fieldName, field := range rules {
+	for fieldName, field := range rules.Fields {
 		if !field.IsNullable() && data[fieldName] == nil {
 			delete(data, fieldName)
 		}
@@ -339,7 +348,7 @@ func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, dat
 	return true, nil
 }
 
-func convertArray(isJSON bool, fieldName string, field *ValidatedField, data map[string]interface{}) {
+func convertArray(isJSON bool, fieldName string, field *Field, data map[string]interface{}) {
 	if !isJSON {
 		val := data[fieldName]
 		rv := reflect.ValueOf(val)

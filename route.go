@@ -16,7 +16,7 @@ type Route struct {
 	methods         []string
 	parent          *Router
 	handler         Handler
-	validationRules validation.Rules
+	validationRules *validation.Rules
 	middlewareHolder
 	parametrizeable
 }

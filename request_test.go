@@ -20,7 +20,7 @@ import (
 func createTestRequest(rawRequest *http.Request) *Request {
 	return &Request{
 		httpRequest: rawRequest,
-		Rules:       validation.Rules{},
+		Rules:       &validation.Rules{},
 		Params:      map[string]string{},
 	}
 }
@@ -106,22 +106,23 @@ func TestRequestValidate(t *testing.T) {
 		"string": "hello world",
 	}
 
-	request.Rules = validation.Rules{ // TODO verbose validation declaration documentation
-		"string": {
-			Rules: []*validation.Rule{
-				{Name: "required"},
-				{Name: "string"},
+	request.Rules = &validation.Rules{ // TODO verbose validation declaration documentation
+		Fields: validation.FieldMap{
+			"string": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "string"},
+				},
 			},
-		},
-		"number": {
-			Rules: []*validation.Rule{
-				{Name: "required"},
-				{Name: "numeric"},
-				{Name: "min", Params: []string{"50"}},
+			"number": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "numeric"},
+					{Name: "min", Params: []string{"50"}},
+				},
 			},
 		},
 	}
-	request.Rules.Check() // TODO not very handy for manual validation, maybe check it internally once?
 	errors = request.validate()
 	assert.NotNil(t, errors)
 	assert.Equal(t, 2, len(errors["validationError"]["number"]))

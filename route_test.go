@@ -180,11 +180,13 @@ func (suite *RouteTestSuite) TestValidate() {
 		uri:     "/product/{id:[0-9+]}",
 		methods: []string{"GET", "POST"},
 	}
-	rules := validation.Rules{
-		"field": {
-			Rules: []*validation.Rule{
-				{Name: "required"},
-				{Name: "string"},
+	rules := &validation.Rules{
+		Fields: map[string]*validation.Field{
+			"field": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "string"},
+				},
 			},
 		},
 	}

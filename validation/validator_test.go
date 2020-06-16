@@ -116,11 +116,11 @@ func (suite *ValidatorTestSuite) TestAddRule() {
 }
 
 func (suite *ValidatorTestSuite) TestValidate() {
-	errors := Validate(nil, Rules{}, false, "en-US")
+	errors := Validate(nil, &Rules{}, false, "en-US")
 	suite.Equal(1, len(errors))
 	suite.Equal("Malformed request", errors["error"][0])
 
-	errors = Validate(nil, Rules{}, true, "en-US")
+	errors = Validate(nil, &Rules{}, true, "en-US")
 	suite.Equal(1, len(errors))
 	suite.Equal("Malformed JSON", errors["error"][0])
 

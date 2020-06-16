@@ -92,14 +92,14 @@ func (r *Route) Name(name string) *Route {
 // Validate adds validation rules to this route. If the user-submitted data
 // doesn't pass validation, the user will receive an error and messages explaining
 // what is wrong.
-// TODO document and test this
+// TODO document this
 func (r *Route) Validate(validationRules validation.Ruler) *Route {
 	r.validationRules = validationRules.AsRules()
 	return r
 }
 
 // Middleware register middleware for this route only.
-// TODO document and test this
+// TODO document this
 func (r *Route) Middleware(middleware ...Middleware) *Route {
 	r.middleware = middleware
 	return r

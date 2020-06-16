@@ -92,10 +92,10 @@ func TestRequestValidate(t *testing.T) {
 		"string": "hello world",
 		"number": 42,
 	}
-	request.Rules = validation.ParseRuleSet(validation.RuleSet{
+	request.Rules = validation.RuleSet{
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:10"},
-	})
+	}.AsRules()
 	errors := request.validate()
 	assert.Nil(t, errors)
 

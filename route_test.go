@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"testing"
+
+	"github.com/System-Glitch/goyave/v2/validation"
 )
 
 type RouteTestSuite struct {
@@ -170,6 +172,40 @@ func (suite *RouteTestSuite) TestBuildURL() {
 	route = router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
 
 	suite.Equal("http://127.0.0.1:1235/product/42/screwdriver/accessories", route.BuildURL("42", "screwdriver"))
+}
+
+func (suite *RouteTestSuite) TestValidate() {
+	route := &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}",
+		methods: []string{"GET", "POST"},
+	}
+	rules := validation.Rules{
+		"field": {
+			Rules: []*validation.Rule{
+				{Name: "required"},
+				{Name: "string"},
+			},
+		},
+	}
+	route.Validate(rules)
+	suite.Equal(rules, route.validationRules)
+}
+
+func (suite *RouteTestSuite) TestMiddleware() {
+	route := &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}",
+		methods: []string{"GET", "POST"},
+	}
+	middelware := func(next Handler) Handler {
+		return func(response *Response, r *Request) {}
+	}
+	middelware2 := func(next Handler) Handler {
+		return func(response *Response, r *Request) {}
+	}
+	route.Middleware(middelware, middelware2)
+	suite.Len(route.middleware, 2)
 }
 
 func TestRouteTestSuite(t *testing.T) {

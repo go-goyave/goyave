@@ -52,7 +52,24 @@ var _ Ruler = (RuleSet)(nil) // implements Ruler
 
 // AsRules parses and checks this RuleSet and returns it as Rules.
 func (r RuleSet) AsRules() Rules {
-	return ParseRuleSet(r)
+	return r.parse()
+}
+
+// Parse converts the more convenient RuleSet validation rules syntax to
+// a Rules map. This method calls the Check method on the resulting Rules.
+func (r RuleSet) parse() Rules { // TODO test this
+	rules := make(Rules, len(r))
+	for k, r := range r {
+		field := &ValidatedField{
+			Rules: make([]*Rule, 0, len(r)),
+		}
+		for _, v := range r {
+			field.Rules = append(field.Rules, parseRule(v))
+		}
+		rules[k] = field
+	}
+	rules.Check()
+	return rules
 }
 
 // Rule is a component of rule sets for route validation. Each validated fields
@@ -126,6 +143,7 @@ type Rules map[string]*ValidatedField
 var _ Ruler = (Rules)(nil) // implements Ruler
 
 // AsRules performs the checking and returns the same Rules instance.
+// TODO test AsRules
 func (r Rules) AsRules() Rules {
 	r.Check()
 	return r
@@ -226,7 +244,7 @@ func AddRule(name string, rule *RuleDefinition) { // TODO update documentation
 // If all validation rules pass, returns an empty "validation.Errors".
 // Third parameter tells the function if the data comes from a JSON request.
 // Last parameter sets the language of the validation error messages.
-func Validate(data map[string]interface{}, rules Rules, isJSON bool, language string) Errors {
+func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language string) Errors {
 	var malformedMessage string
 	if isJSON {
 		malformedMessage = lang.Get(language, "malformed-json")
@@ -237,7 +255,7 @@ func Validate(data map[string]interface{}, rules Rules, isJSON bool, language st
 		return map[string][]string{"error": {malformedMessage}}
 	}
 
-	return validate(data, isJSON, rules, language)
+	return validate(data, isJSON, rules.AsRules(), language) // TODO check is performed every time
 }
 
 func validate(data map[string]interface{}, isJSON bool, rules Rules, language string) Errors {
@@ -375,23 +393,6 @@ func getFieldType(value reflect.Value) string {
 	default:
 		return "unsupported"
 	}
-}
-
-// ParseRuleSet converts the more convenient RuleSet validation rules syntax to
-// a Rules map. This method calls the Check method on the resulting Rules.
-func ParseRuleSet(set RuleSet) Rules { // TODO test this
-	rules := make(Rules, len(set))
-	for k, r := range set {
-		field := &ValidatedField{
-			Rules: make([]*Rule, 0, len(r)),
-		}
-		for _, v := range r {
-			field.Rules = append(field.Rules, parseRule(v))
-		}
-		rules[k] = field
-	}
-	rules.Check()
-	return rules
 }
 
 func parseRule(rule string) *Rule {

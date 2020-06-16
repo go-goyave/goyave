@@ -127,18 +127,18 @@ func (suite *ValidatorTestSuite) TestValidate() {
 	errors = Validate(map[string]interface{}{
 		"string": "hello world",
 		"number": 42,
-	}, ParseRuleSet(RuleSet{
+	}, RuleSet{
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:10"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(0, len(errors))
 
 	data := map[string]interface{}{
 		"nullField": nil,
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"nullField": {"numeric"},
-	}), true, "en-US")
+	}, true, "en-US")
 	_, exists := data["nullField"]
 	suite.False(exists)
 	suite.Equal(0, len(errors))
@@ -146,9 +146,9 @@ func (suite *ValidatorTestSuite) TestValidate() {
 	data = map[string]interface{}{
 		"nullField": nil,
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"nullField": {"required", "nullable", "numeric"},
-	}), true, "en-US")
+	}, true, "en-US")
 	_, exists = data["nullField"]
 	suite.True(exists)
 	suite.Equal(0, len(errors))
@@ -156,9 +156,9 @@ func (suite *ValidatorTestSuite) TestValidate() {
 	data = map[string]interface{}{
 		"nullField": "test",
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"nullField": {"required", "nullable", "numeric"},
-	}), true, "en-US")
+	}, true, "en-US")
 	_, exists = data["nullField"]
 	suite.True(exists)
 	suite.Equal(1, len(errors))
@@ -168,9 +168,9 @@ func (suite *ValidatorTestSuite) TestValidateWithArray() {
 	data := map[string]interface{}{
 		"string": "hello",
 	}
-	errors := Validate(data, ParseRuleSet(RuleSet{
+	errors := Validate(data, RuleSet{
 		"string": {"required", "array"},
-	}), false, "en-US")
+	}, false, "en-US")
 	suite.Equal("array", GetFieldType(data["string"]))
 	suite.Equal("hello", data["string"].([]string)[0])
 	suite.Equal(0, len(errors))
@@ -180,25 +180,25 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 	data := map[string]interface{}{
 		"string": []string{"hello", "world"},
 	}
-	errors := Validate(data, ParseRuleSet(RuleSet{
+	errors := Validate(data, RuleSet{
 		"string": {"required", "array", ">min:3"},
-	}), false, "en-US")
+	}, false, "en-US")
 	suite.Equal(0, len(errors))
 
 	data = map[string]interface{}{
 		"string": []string{"hi", ",", "there"},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"string": {"required", "array", ">min:3"},
-	}), false, "en-US")
+	}, false, "en-US")
 	suite.Equal(1, len(errors))
 
 	data = map[string]interface{}{
 		"string": []string{"johndoe@example.org", "foobar@example.org"},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"string": {"required", "array:string", ">email"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(0, len(errors))
 
 	suite.Panics(func() {
@@ -210,9 +210,9 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 	data = map[string]interface{}{
 		"string": []string{},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"string": {"array", ">uuid:5"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(0, len(errors))
 
 	// TODO test Validate with verbose declaration
@@ -222,9 +222,9 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	data := map[string]interface{}{
 		"values": [][]interface{}{{"0.5", 1.42}, {0.6, 7}},
 	}
-	errors := Validate(data, ParseRuleSet(RuleSet{
+	errors := Validate(data, RuleSet{
 		"values": {"required", "array", ">array:numeric"},
-	}), false, "en-US")
+	}, false, "en-US")
 	suite.Equal(0, len(errors))
 
 	arr, ok := data["values"].([][]float64)
@@ -240,9 +240,9 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	data = map[string]interface{}{
 		"values": [][]float64{{5, 8}, {0.6, 7}},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"values": {"required", "array", ">array:numeric", ">min:3"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(1, len(errors))
 
 	_, ok = data["values"].([][]float64)
@@ -251,25 +251,25 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	data = map[string]interface{}{
 		"values": [][]float64{{5, 8, 6}, {0.6, 7, 9}},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"values": {"required", "array", ">array:numeric", ">min:3"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(0, len(errors))
 
 	data = map[string]interface{}{
 		"values": [][]float64{{5, 8}, {3, 7}},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"values": {"required", "array", ">array:numeric", ">>min:3"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(0, len(errors))
 
 	data = map[string]interface{}{
 		"values": [][]float64{{5, 8}, {0.6, 7}},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"values": {"required", "array", ">array:numeric", ">>min:3"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(1, len(errors))
 
 	// TODO test Validate with verbose declaration
@@ -282,9 +282,9 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 			{{"0.6", "1.43"}, {}, {2}},
 		},
 	}
-	errors := Validate(data, ParseRuleSet(RuleSet{
+	errors := Validate(data, RuleSet{
 		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(0, len(errors))
 
 	arr, ok := data["values"].([][][]float64)
@@ -304,9 +304,9 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 			{{"0.6", "1.43"}, {}, {2}, {4}},
 		},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(1, len(errors))
 
 	data = map[string]interface{}{
@@ -315,9 +315,9 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 			{{"0.6", "1.43"}, {}, {2}},
 		},
 	}
-	errors = Validate(data, ParseRuleSet(RuleSet{
+	errors = Validate(data, RuleSet{
 		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
-	}), true, "en-US")
+	}, true, "en-US")
 	suite.Equal(1, len(errors))
 
 	// TODO test Validate with verbose declaration

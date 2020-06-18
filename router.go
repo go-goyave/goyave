@@ -210,7 +210,6 @@ func (r *Router) Middleware(middleware ...Middleware) {
 //
 // The validation rules set is optional. If you don't want your route
 // to be validated, pass "nil".
-// TODO update Route documentation, examples and upgrade guide
 //
 // If the router has CORS options set, the "OPTIONS" method is automatically added
 // to the matcher if it's missing, so it allows preflight requests.

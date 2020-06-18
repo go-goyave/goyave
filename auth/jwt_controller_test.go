@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"github.com/System-Glitch/goyave/v2"
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/System-Glitch/goyave/v2/validation"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -88,7 +90,27 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 	}
 }
 
-// TODO test JWT route validation
+func (suite *JWTControllerTestSuite) TestValidation() {
+	suite.RunServer(func(router *goyave.Router) {
+		JWTRoutes(router, &TestUser{})
+	}, func() {
+		headers := map[string]string{"Content-Type": "application/json"}
+		data := map[string]interface{}{}
+		body, _ := json.Marshal(data)
+		resp, err := suite.Post("/auth/login", headers, bytes.NewReader(body))
+		suite.Nil(err)
+		if err == nil {
+			defer resp.Body.Close()
+			json := map[string]validation.Errors{}
+			err := suite.GetJSONBody(resp, &json)
+			suite.Nil(err)
+			if err == nil {
+				suite.Len(json["validationError"]["username"], 2)
+				suite.Len(json["validationError"]["password"], 2)
+			}
+		}
+	})
+}
 
 func (suite *JWTControllerTestSuite) TestLoginPanic() {
 	suite.Panics(func() {

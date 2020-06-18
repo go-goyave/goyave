@@ -208,7 +208,7 @@ A `JWTController` contains one handler called `Login`.
 **Example:**
 ``` go
 jwtRouter := router.Subrouter("/auth")
-jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login, validation.RuleSet{
+jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login).Validate(validation.RuleSet{
 	"username": {"required", "string"},
 	"password": {"required", "string"},
 })

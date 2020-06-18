@@ -58,8 +58,18 @@ func CustomAuthentication(next goyave.Handler) goyave.Handler {
 ```
 
 ::: tip
-When a middleware stops a request, following middleware are **not** executed either.
+When a middleware stops a request, following middleware are **not** executed neither.
 :::
+
+## Applying Middleware
+
+When your middleware is ready, you will need to apply it to a router or a specific route. When applying a middleware to a router, all routes and subrouters will execute this middleware when matched.
+
+```go
+router.Middleware(middleware.MyCustomMiddleware)
+
+router.Get("/products", product.Index).Middleware(middleware.MyCustomMiddleware)
+```
 
 ## Built-in middleware
 

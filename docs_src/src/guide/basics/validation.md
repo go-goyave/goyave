@@ -63,10 +63,10 @@ If a field is not **required** and is missing from the request, **no rules are c
 
 ---
 
-Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition. Learn more about routing in the [dedicated section](./routing.html).
+Once your rules sets are defined, you need to assign them to your routes using the `Validate()` method. Learn more about routing in the [dedicated section](./routing.html).
 
 ``` go
-router.Post("/product", product.Store, product.StoreRequest)
+router.Post("/product", product.Store).Validate(product.StoreRequest)
 ```
 
 ## Available validation rules

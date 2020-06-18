@@ -114,7 +114,7 @@ import "github.com/System-Glitch/goyave/v2"
 func registerRoutes(router *goyave.Router) {
     router.Get("/hello", func(response *goyave.Response, request *goyave.Request) {
         response.String(http.StatusOK, "Hello world!")
-    }, nil)
+    })
 }
 
 func main() {
@@ -183,33 +183,22 @@ func Register(router *goyave.Router) {
     // With closure, not recommended
     router.Get("GET", "/hello", func(response *goyave.Response, r *goyave.Request) {
         response.String(http.StatusOK, "Hi!")
-    }, nil)
+    })
 
-    router.Get("/hello", myHandlerFunction, nil)
-    router.Post("/user", user.Register, user.RegisterRequest)
-    router.Route("PUT|PATCH", "/user", user.Update, user.UpdateRequest)
-    router.Route("POST", "/product", product.Store, product.StoreRequest, middleware.Trim)
+    router.Get("/hello", myHandlerFunction)
+    router.Post("/user", user.Register).Validate(user.RegisterRequest)
+    router.Route("PUT|PATCH", "/user", user.Update).Validate(user.UpdateRequest)
+    router.Route("POST", "/product", product.Store).Validate(product.StoreRequest).Middleware(middleware.Trim)
 }
 ```
-
-**`Route` Method signature:**
-
-| Parameters                           | Return          |
-|--------------------------------------|-----------------|
-| `methods string`                     | `*goyave.Route` |
-| `uri string`                         |                 |
-| `handler goyave.Handler`             |                 |
-| `validationRules validation.RuleSet` |                 |
-| `middleware ...goyave.Middleware`    |                 |
-
 
 URIs can have parameters, defined using the format `{name}` or `{name:pattern}`. If a regular expression pattern is not defined, the matched variable will be anything until the next slash. 
 
 **Example:**
 ``` go
-router.Get("/product/{key}", product.Show, nil)
-router.Get("/product/{id:[0-9]+}", product.ShowById, nil)
-router.Get("/category/{category}/{id:[0-9]+}", category.Show, nil)
+router.Get("/product/{key}", product.Show)
+router.Get("/product/{id:[0-9]+}", product.ShowById)
+router.Get("/category/{category}/{id:[0-9]+}", category.Show)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -339,10 +328,10 @@ var (
 )
 ```
 
-Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition.
+Once your rules sets are defined, you need to assign them to your routes using the `Validate()` method.
 
 ``` go
-router.Post("/product", product.Store, product.StoreRequest)
+router.Post("/product", product.Store).Validate(product.StoreRequest)
 ```
 
 

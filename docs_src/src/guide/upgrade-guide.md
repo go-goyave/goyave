@@ -16,6 +16,31 @@ Although Goyave is developed with backwards compatibility, breaking changes can 
 
 ## v2.x.x to v3.0.0
 
+### Routing changes
+
+Routing has been improved by changing how validation and route-specific middleware are registered. The signature of the router functions have been simplified by removing the validation and middleware parameters from `Route()`, `Get()`, `Post()`, etc. This is now done through two new chainable methods on the `Route`:
+
+```go
+router.Post("/echo", hello.Echo, hellorequest.Echo)
+
+// Becomes
+router.Post("/echo", hello.Echo).Validate(hello.EchoRequest)
+```
+
+```go
+router.Post("/echo", hello.Echo, nil, middleware.Trim, middleware.Gzip())
+
+// Becomes
+router.Post("/echo", hello.Echo).Middleware(middleware.Trim, middleware.Gzip())
+```
+
+```go
+router.Post("/echo", hello.Echo, hellorequest.Echo, middleware.Trim)
+
+// Becomes
+router.Post("/echo", hello.Echo).Validate(hello.EchoRequest).Middleware(middleware.Trim)
+```
+
 ### Convention changes
 
 This release brought changes to the conventions. Although your applications can still work with the old ones, it's recommended to make the change.
@@ -28,7 +53,7 @@ This release brought changes to the conventions. Although your applications can 
 router.Post("/echo", hello.Echo, hellorequest.Echo)
 
 // Becomes
-router.Post("/echo", hello.Echo, hello.EchoRequest)
+router.Post("/echo", hello.Echo).Validate(hello.EchoRequest)
 ```
 
 ## v1.0.0 to v2.0.0

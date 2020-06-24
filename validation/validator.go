@@ -57,7 +57,7 @@ func (r RuleSet) AsRules() *Rules {
 
 // Parse converts the more convenient RuleSet validation rules syntax to
 // a Rules map.
-func (r RuleSet) parse() *Rules { // TODO test this
+func (r RuleSet) parse() *Rules {
 	rules := &Rules{
 		Fields: make(map[string]*Field, len(r)),
 	}
@@ -111,7 +111,7 @@ func (v *Field) IsArray() bool {
 
 // check if rules meet the minimum parameters requirement and update
 // the isRequired, isNullable and isArray fields.
-func (v *Field) check() { // TODO test checks
+func (v *Field) check() {
 	for _, rule := range v.Rules {
 		switch rule.Name {
 		case "confirmed", "file", "mime", "image", "extension", "count",
@@ -152,7 +152,6 @@ type Rules struct {
 var _ Ruler = (*Rules)(nil) // implements Ruler
 
 // AsRules performs the checking and returns the same Rules instance.
-// TODO test AsRules
 func (r *Rules) AsRules() *Rules {
 	r.check()
 	return r
@@ -163,8 +162,6 @@ func (r *Rules) AsRules() *Rules {
 // meet the parameters requirement, or if the rule cannot be used in array validation
 // while ArrayDimension is not equal to 0.
 func (r *Rules) check() {
-	// TODO test this
-	// TODO update all tests checking rule panic with wrong number of parameters
 	if !r.checked {
 		for _, field := range r.Fields {
 			field.check()
@@ -179,7 +176,7 @@ type Errors map[string][]string
 var validationRules map[string]*RuleDefinition
 
 func init() {
-	validationRules = map[string]*RuleDefinition{
+	validationRules = map[string]*RuleDefinition{ // TODO test all parameter count for all rules
 		"required":           {validateRequired, 0, false, false},
 		"numeric":            {validateNumeric, 0, true, false},
 		"integer":            {validateInteger, 0, true, false},
@@ -231,7 +228,7 @@ func init() {
 		"after":              {validateAfter, 1, false, false},
 		"after_equal":        {validateAfterEqual, 1, false, false},
 		"date_equals":        {validateDateEquals, 1, false, false},
-		"date_between":       {validateDateBetween, 1, false, false},
+		"date_between":       {validateDateBetween, 2, false, false},
 	}
 }
 
@@ -282,7 +279,6 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 		convertArray(isJSON, fieldName, field, data) // Convert single value arrays in url-encoded requests
 
 		for _, rule := range field.Rules {
-			// TODO better nullable tests
 			if rule.Name == "nullable" {
 				if data[fieldName] == nil {
 					break

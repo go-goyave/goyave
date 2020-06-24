@@ -56,7 +56,7 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 			return true
 		}
 
-		if !validationRules[parameters[0]].IsType { // TODO check array IsType tests
+		if !validationRules[parameters[0]].IsType {
 			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", parameters[0]))
 		}
 

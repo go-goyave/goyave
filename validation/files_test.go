@@ -104,6 +104,15 @@ func TestValidateMIME(t *testing.T) {
 	assert.False(t, validateMIME("file", createTestFiles(utf8BOMPath, logoPath), []string{"text/plain"}, map[string]interface{}{}))
 	assert.False(t, validateMIME("file", createTestFiles(logoPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
 	assert.False(t, validateMIME("file", "test", []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "mime"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateImage(t *testing.T) {
@@ -119,6 +128,15 @@ func TestValidateExtension(t *testing.T) {
 	assert.False(t, validateExtension("file", createTestFiles(logoPath, configPath), []string{"png"}, map[string]interface{}{}))
 	assert.False(t, validateExtension("file", createTestFileWithNoExtension(), []string{"png"}, map[string]interface{}{}))
 	assert.False(t, validateExtension("file", "test", []string{"png"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "extension"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateCount(t *testing.T) {
@@ -127,6 +145,15 @@ func TestValidateCount(t *testing.T) {
 
 	assert.False(t, validateCount("file", "test", []string{"3"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateCount("file", true, []string{"test"}, map[string]interface{}{}) })
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "count"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateCountMin(t *testing.T) {
@@ -135,6 +162,15 @@ func TestValidateCountMin(t *testing.T) {
 
 	assert.False(t, validateCountMin("file", "test", []string{"3"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateCountMin("file", true, []string{"test"}, map[string]interface{}{}) })
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "count_min"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateCountMax(t *testing.T) {
@@ -143,6 +179,15 @@ func TestValidateCountMax(t *testing.T) {
 
 	assert.False(t, validateCountMax("file", "test", []string{"3"}, map[string]interface{}{}))
 	assert.Panics(t, func() { validateCountMax("file", true, []string{"test"}, map[string]interface{}{}) })
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "count_max"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateCountBetween(t *testing.T) {
@@ -154,4 +199,22 @@ func TestValidateCountBetween(t *testing.T) {
 	assert.Panics(t, func() { validateCountBetween("file", true, []string{"test", "2"}, map[string]interface{}{}) })
 	assert.Panics(t, func() { validateCountBetween("file", true, []string{"2", "test"}, map[string]interface{}{}) })
 	assert.Panics(t, func() { validateCountBetween("file", true, []string{"test", "test"}, map[string]interface{}{}) })
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "count_between"},
+			},
+		}
+		field.check()
+	})
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "count_between", Params: []string{"2"}},
+			},
+		}
+		field.check()
+	})
 }

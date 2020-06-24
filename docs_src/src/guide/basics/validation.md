@@ -157,7 +157,7 @@ This rule converts the field to `int` if it passes.
 
 #### min:value
 
-Depending on its type, the field under validation must be at least `min`.
+Depending on its type, the field under validation must be at least `value`.
 Strings, numerics, array, and files are evaluated using the same method as the [`size`](#size-value) rule.
 
 #### max:value

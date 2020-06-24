@@ -18,6 +18,7 @@ meta:
     - `validation.go` and `placeholders.go` moved to a new `http/validation` package.
     - Validation rule sets are now located in a `request.go` file in the same package as the controller.
 - Protect the database instance with mutex.
+- Optimized regex-based validation rules by compiling expressions once.
 
 ## v2.10.x
 

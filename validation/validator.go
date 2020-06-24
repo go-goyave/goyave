@@ -251,13 +251,13 @@ func AddRule(name string, rule *RuleDefinition) { // TODO update documentation
 // Third parameter tells the function if the data comes from a JSON request.
 // Last parameter sets the language of the validation error messages.
 func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language string) Errors {
-	var malformedMessage string
-	if isJSON {
-		malformedMessage = lang.Get(language, "malformed-json")
-	} else {
-		malformedMessage = lang.Get(language, "malformed-request")
-	}
 	if data == nil {
+		var malformedMessage string
+		if isJSON {
+			malformedMessage = lang.Get(language, "malformed-json")
+		} else {
+			malformedMessage = lang.Get(language, "malformed-request")
+		}
 		return map[string][]string{"error": {malformedMessage}}
 	}
 
@@ -272,7 +272,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 			delete(data, fieldName)
 		}
 
-		if !field.IsRequired() && !validateRequired(fieldName, data[fieldName], []string{}, data) {
+		if !field.IsRequired() && !validateRequired(fieldName, data[fieldName], nil, data) {
 			continue
 		}
 

@@ -39,8 +39,8 @@ type RuleDefinition struct {
 	IsType bool
 
 	// Type-dependent rules are rules that can be used with different field types
-	// (numeric, string, arrays and files) and have a different validation messages depending on the type.
-	// Type-dependent messages let you define a different message for .
+	// (numeric, string, arrays and files) and have a different validation messages
+	// depending on the type.
 	// The language entry used will be "validation.rules.rulename.type"
 	IsTypeDependent bool
 }
@@ -176,7 +176,7 @@ type Errors map[string][]string
 var validationRules map[string]*RuleDefinition
 
 func init() {
-	validationRules = map[string]*RuleDefinition{ // TODO test all parameter count for all rules
+	validationRules = map[string]*RuleDefinition{
 		"required":           {validateRequired, 0, false, false},
 		"numeric":            {validateNumeric, 0, true, false},
 		"integer":            {validateInteger, 0, true, false},
@@ -239,7 +239,7 @@ func init() {
 // Type-dependent messages let you define a different message for
 // numeric, string, arrays and files.
 // The language entry used will be "validation.rules.rulename.type"
-func AddRule(name string, rule *RuleDefinition) { // TODO update documentation
+func AddRule(name string, rule *RuleDefinition) {
 	if _, exists := validationRules[name]; exists {
 		panic(fmt.Sprintf("Rule %s already exists", name))
 	}

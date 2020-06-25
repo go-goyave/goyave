@@ -106,7 +106,7 @@ func TestRequestValidate(t *testing.T) {
 		"string": "hello world",
 	}
 
-	request.Rules = &validation.Rules{ // TODO verbose validation declaration documentation
+	request.Rules = &validation.Rules{
 		Fields: validation.FieldMap{
 			"string": {
 				Rules: []*validation.Rule{

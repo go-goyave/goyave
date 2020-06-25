@@ -18,7 +18,11 @@ meta:
     - `validation.go` and `placeholders.go` moved to a new `http/validation` package.
     - Validation rule sets are now located in a `request.go` file in the same package as the controller.
 - Protect the database instance with mutex.
+- Validation system overhaul, allowing rule sets to be parsed only once instead of every time a request is received, giving better overall performance. This new system also allows a more verbose syntax for validation, solving the comma rule parameter value and a much easier use in your handlers.
+- Rule functions don't check required parameters anymore. This is now done when registering a new rule.
+- Routing has been improved by changing how validation and route-specific middleware are registered. The signature of the router functions have been simplified by removing the validation and middleware parameters from `Route()`, `Get()`, `Post()`, etc. This is now done through two new chainable methods on the `Route`: `route.Validate()` and  `route.Middleware()`.
 - Optimized regex-based validation rules by compiling expressions once.
+- A significant amount of untested cases are now tested.
 
 ## v2.10.x
 

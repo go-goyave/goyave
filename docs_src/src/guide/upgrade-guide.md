@@ -56,6 +56,10 @@ router.Post("/echo", hello.Echo, hellorequest.Echo)
 router.Post("/echo", hello.Echo).Validate(hello.EchoRequest)
 ```
 
+### Validation changes
+
+Although the validation changes are internally huge, there is only a tiny amount of code to change to update your application. You will have to update all your handlers accessing the `request.Rules` field. This field is no longer a `validation.RuleSet` and has been changed to `*validation.Rules`, which will be easier to use, as the rules are already parsed. Refer to the [alternative validation syntax](./basics/validation.html#alternative-syntax) documentation for more details about this new structure.
+
 ## v1.0.0 to v2.0.0
 
 This first update comes with refactoring and package renaming to better fit the Go conventions.

@@ -1,14 +1,14 @@
 <template>
-	<ParentLayout />
+  <ParentLayout />
 </template>
 
 <script>
-import ParentLayout from '@parent-theme/layouts/Layout.vue';
+import ParentLayout from "@parent-theme/layouts/Layout.vue";
 
 export default {
-	components: {
-		ParentLayout,
-	}
+  components: {
+    ParentLayout
+  }
 };
 </script>
 

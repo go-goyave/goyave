@@ -288,8 +288,8 @@ You can assign a validation rules set to each route. Learn more in the dedicated
 
 ``` go
 router.Route("POST", "/product", product.Store).Validate(validation.RuleSet{
-	"Name":  []string{"required", "string", "min:4"},
-	"Price": []string{"required", "numeric"},
+	"Name":  {"required", "string", "min:4"},
+	"Price": {"required", "numeric"},
 })
 ```
 

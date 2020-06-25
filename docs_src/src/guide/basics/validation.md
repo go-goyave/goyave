@@ -458,8 +458,6 @@ Rules definition shouldn't be exported, and start with `validate`. A rule return
 
 ``` go
 func validateCustomFormat(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-    // Ensure the rule has at least one parameter
-    validation.RequireParametersCount("custom_format", parameters, 1) // TODO remove this and update rule registration function docs
     str, ok := value.(string)
 
     if ok { // The data under validation is a string
@@ -470,7 +468,7 @@ func validateCustomFormat(field string, value interface{}, parameters []string, 
 }
 ```
 ::: tip
-- `validation.Rule` is an alias for `func(string, interface{}, []string, map[string]interface{}) bool`
+- `validation.RuleFunc` is an alias for `func(string, interface{}, []string, map[string]interface{}) bool`
 - The `form` parameter lets you access the whole form data, and modify it if needed.
 - The custom rule in the example above validates a string using a regex. If you need this kind of validation, prefer the included `regex` validation rule.
 :::
@@ -485,34 +483,44 @@ The rule will be usable in request validation by using the given rule name.
 
 Type-dependent messages let you define a different message for numeric, string, arrays and files. The language entry used will be "validation.rules.rulename.type"
 
-| Parameters                  | Return |
-|-----------------------------|--------|
-| `name string`               | `void` |
-| `typeDependentMessage bool` |        |
-| `rule validation.Rule`      |        |
+| Parameters                        | Return |
+|-----------------------------------|--------|
+| `name string`                     | `void` |
+| `rule *validation.RuleDefinition` |        |
 
 **Example:**
 ``` go
 func init() {
-    validation.AddRule("custom_format", false, validateCustomFormat)
+    validation.AddRule("custom_format", &validation.RuleDefinition{
+        Function:           validateCustomFormat,
+        RequiredParameters: 1, // Ensure the rule has at least one parameter
+	})
 }
 ```
 
-#### validation.RequireParametersCount
+The **RuleDefinition** struct is defined as follows:
 
-Checks if the given parameters slice has at least `count` elements. If this criteria is not met, the function triggers a panic.
+```go
+type RuleDefinition struct {
 
-Use this to make sure your validation rules are correctly used.
+	// The Function field is the function that will be executed
+	Function RuleFunc
 
-| Parameters        | Return |
-|-------------------|--------|
-| `rule string`     | `void` |
-| `params []string` |        |
-| `count int`       |        |
+	// The minimum amount of parameters
+	RequiredParameters int
 
-**Example:**
-``` go
-validation.RequireParametersCount("custom_format", parameters, 1)
+	// A type rule is a rule that checks if a field has a certain type
+	// and can convert the raw value to a value fitting. For example, the UUID
+	// rule is a type rule because it takes a string as input, checks if it's a
+	// valid UUID and converts it to a "uuid.UUID".
+	IsType bool
+
+	// Type-dependent rules are rules that can be used with different field types
+    // (numeric, string, arrays and files) and have a different validation messages
+    // depending on the type.
+	// The language entry used will be "validation.rules.rulename.type"
+	IsTypeDependent bool
+}
 ```
 
 #### validation.GetFieldType
@@ -548,7 +556,7 @@ Validating arrays is easy. All the validation rules, **except the file-related r
 
 **Example:**
 ``` go
-var arrayValidation = goyave.RuleSet{
+var arrayValidation = validation.RuleSet{
     "array": {"required", "array:string", "between:1,5", ">email", ">max:128"},
 }
 ```
@@ -684,12 +692,13 @@ The last parameter (`language`) sets the language of the validation error messag
 | Parameters                    | Return              |
 |-------------------------------|---------------------|
 | `data map[string]interface{}` | `validation.Errors` |
-| `rules RuleSet`               |                     |
+| `rules validation.Ruler`      |                     |
 | `isJSON bool`                 |                     |
 | `language string`             |                     |
 
 ::: tip
-`validation.Errors` is an alias for `map[string][]string`. The key represents the field name and the associated slice contains all already translated validation error messages for this field.
+- `validation.Errors` is an alias for `map[string][]string`. The key represents the field name and the associated slice contains all already translated validation error messages for this field.
+- `validation.Ruler` is an interface that both `validation.RuleSet` and `validation.Rules` implement.
 :::
 
 **Example:**
@@ -714,3 +723,53 @@ func Store(response *goyave.Response, request *goyave.Request) {
 	// ...
 }
 ```
+
+## Alternative syntax
+
+<p><Badge text="Since v3.0.0"/></p>
+
+Internally, `validation.RuleSet` is parsed and replaced with a more complex structure the first time it is used: `validation.Rules`. This avoids having to parse rules everytime a request is received. Both `validation.RuleSet` and `validation.Rules` can be used when calling `validation.Validate()`, as they both implement the `validation.Ruler` interface. The syntax for `validation.Rules` is significantly more verbose and harder to read,
+
+Here is an example of rule definition using `validation.Rules` instead of `validation.RuleSet`:
+
+```go
+rules := &validation.Rules{
+    Fields: validation.FieldMap{
+        "email": {
+            Rules: []*validation.Rule{
+                {Name: "required"},
+                {Name: "string"},
+                {Name: "between", Params: []string{"3", "125"}},
+                {Name: "email"},
+            },
+        },
+        "password": {
+            Rules: []*validation.Rule{
+                {Name: "required"},
+                {Name: "string"},
+                {Name: "between", Params: []string{"6", "64"}},
+                {Name: "confirmed"},
+            },
+        },
+        "info": {
+            Rules: []*validation.Rule{
+                {Name: "nullable"},
+                {Name: "array", Params: []string{"string"}},
+                {Name: "min", Params: []string{"2"}, ArrayDimension: 1},
+            },
+        },
+    },
+}
+
+// Is the same as:
+set := validation.RuleSet{
+    "email":    {"required", "string", "between:3,125", "email"},
+    "password": {"required", "string", "between:6,64", "confirmed"},
+    "info":     {"nullable", "array:string", ">min:2"},
+}
+```
+
+::: tip
+- `validation.FieldMap` is an alias for `map[string]*validation.Field`
+- You can use this syntax if you need commas to be part of the values of a rule parameters.
+:::

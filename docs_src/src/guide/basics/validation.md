@@ -523,6 +523,23 @@ type RuleDefinition struct {
 }
 ```
 
+### Adding a message to your rule
+
+Finally, you may want to add a custom validation message for your rule so the client knows what's wrong with its request. Open `resources/lang/en-US/rules.json` and add an entry with the name of your rule as key:
+
+```json
+{
+    //...
+    "custom_format": "The :field format is invalid.",
+}
+```
+
+If you are supporting multiple languages, don't forget to add this to your other `rules.json` files too.
+
+::: tip
+Learn more about validation rules messages in the [Localization documentation](../advanced/localization.html#rules).
+:::
+
 #### validation.GetFieldType
 
 <p><Badge text="Since v2.0.0"/></p>

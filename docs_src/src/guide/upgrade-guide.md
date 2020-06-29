@@ -63,6 +63,10 @@ Although the validation changes are internally huge, there is only a tiny amount
 ### Minor changes
 
 - Recovery middleware now correctly handles panics with a `nil` value. You may have to update your custom status handler for the HTTP `500` error code.
+- Log `Formatter` now receive the length of the response (in bytes) instead of the full body.
+  - `log.Formatter` is now `func(now time.Time, response *goyave.Response, request *goyave.Request, length int) string`.
+  - If you were just using `len(body)`, just replace it with `length`.
+  - If you were using the content of the body in your logger, you will have to implement a [chained writer](./basics/responses.html#chained-writers).
 
 ## v1.0.0 to v2.0.0
 

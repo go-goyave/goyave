@@ -81,23 +81,23 @@ CombinedLogMiddleware captures response data and outputs it to the default logge
 It is possible to implement custom formatters for access logs. A `Formatter` is a function with the following signature:
 
 ``` go
-func(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string
+func(now time.Time, response *goyave.Response, request *goyave.Request, length int) string
 ```
 
 - `now` is the time at which the server received the request
-- `body` contains what has been written to the client as a response. It doesn't take headers into account.
+- `length` the length of the response body
 
 **Example:**
 ``` go
-func CustomFormatter(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string {
-	return fmt.Sprintf("%s %s %s %s %d %d",
-		now.Format(TimestampFormat),
-		host,
-		req.Method,
-		strconv.QuoteToASCII(uri),
-        response.GetStatus(),
-        len(body),
-	)
+func CustomFormatter(now time.Time, response *goyave.Response, request *goyave.Request, length int) string {
+  return fmt.Sprintf("%s %s %s %s %d %d",
+    now.Format(TimestampFormat),
+    host,
+    req.Method,
+    strconv.QuoteToASCII(uri),
+    response.GetStatus(),
+    length,
+  )
 }
 ```
 

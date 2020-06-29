@@ -17,11 +17,21 @@ meta:
 - Changed conventions:
     - `validation.go` and `placeholders.go` moved to a new `http/validation` package.
     - Validation rule sets are now located in a `request.go` file in the same package as the controller.
-    - Motivation: *Separating the requests in another package added unnecessary complexity to the directory structure and was not convenient to use. Package naming was far from ideal with the "request" suffix. Moving requests to the same package as the controller is more intuitive and requires less imports and makes route definition cleaner and easier.*
+    
+**Motivation**: *Separating the requests in another package added unnecessary complexity to the directory structure and was not convenient to use. Package naming was far from ideal with the "request" suffix. Moving requests to the same package as the controller is more intuitive and requires less imports and makes route definition cleaner and easier.*
+
 - Validation system overhaul, allowing rule sets to be parsed only once instead of every time a request is received, giving better overall performance. This new system also allows a more verbose syntax for validation, solving the comma rule parameter value and a much easier use in your handlers.
-    - Motivation: *The validation system had a lot of room for improvement when it comes to performance, as `RuleSet` were parsed every time a request was received. Moving this process out of the request life-cycle to execute it only once saves a good amount of execution time. Moreover, any handler who would want to read the rules applied to the current request needed to parse them too, which was inconvenient and not effective. With a structure containing everything you need, making middleware interacting with the request's rules is much easier.*
+
+**Motivation**: *The validation system had a lot of room for improvement when it comes to performance, as `RuleSet` were parsed every time a request was received. Moving this process out of the request life-cycle to execute it only once saves a good amount of execution time. Moreover, any handler who would want to read the rules applied to the current request needed to parse them too, which was inconvenient and not effective. With a structure containing everything you need, making middleware interacting with the request's rules is much easier.*
+
 - Routing has been improved by changing how validation and route-specific middleware are registered. The signature of the router functions have been simplified by removing the validation and middleware parameters from `Route()`, `Get()`, `Post()`, etc. This is now done through two new chainable methods on the `Route`: `route.Validate()` and  `route.Middleware()`.
-    - Motivation: *In the original design, the validation parameter was included in the main route definition function because most routes were expected to be validated, which turned out not to be the case. In a typical CRUD, only the create and update actions are validated, which made the route definition dirty and filled with `nil` parameters. Separating the rules and middleware definition is more in line with their optional nature and makes routes definition cleaner and more readable, although sometimes slightly longer.*
+
+**Motivation**: *In the original design, the validation parameter was included in the main route definition function because most routes were expected to be validated, which turned out not to be the case. In a typical CRUD, only the create and update actions are validated, which made the route definition dirty and filled with `nil` parameters. Separating the rules and middleware definition is more in line with their optional nature and makes routes definition cleaner and more readable, although sometimes slightly longer.*
+
+- Log `Formatter` now receive the length of the response (in bytes) instead of the full body.
+
+**Motivation:** *Keeping in memory the full response has an important impact on memory when sending files or large responses. Using the response content in a log formatter is also a marginal use-case which doesn't justify the performance loss described previously. It is still possible to retrieve the content of the response by writing your own chained writer.*
+
 - Rule functions don't check required parameters anymore. This is now done when the rules are parsed at startup time. The amount of required parameters is given when registering a new rule.
 - Optimized regex-based validation rules by compiling expressions once.
 - A significant amount of untested cases are now tested.

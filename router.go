@@ -60,7 +60,7 @@ var (
 )
 
 func panicStatusHandler(response *Response, request *Request) {
-	response.Error(response.GetError())
+	response.error(response.GetError())
 	if response.empty {
 		message := map[string]string{
 			"error": http.StatusText(response.GetStatus()),

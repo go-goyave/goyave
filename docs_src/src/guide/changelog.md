@@ -26,6 +26,7 @@ meta:
 - Optimized regex-based validation rules by compiling expressions once.
 - A significant amount of untested cases are now tested.
 - Protect the database instance with mutex.
+- Recovery middleware now correctly handles panics with a `nil` value.
 
 ## v2.10.x
 

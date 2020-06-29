@@ -27,8 +27,9 @@ type Middleware func(Handler) Handler
 // had not been changed, the error is also written in the response.
 func recoveryMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
+		panicked := true
 		defer func() {
-			if err := recover(); err != nil {
+			if err := recover(); err != nil || panicked {
 				ErrLogger.Println(err)
 				response.err = err
 				if config.GetBool("debug") {
@@ -39,6 +40,7 @@ func recoveryMiddleware(next Handler) Handler {
 		}()
 
 		next(response, r)
+		panicked = false
 	}
 }
 

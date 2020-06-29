@@ -96,9 +96,11 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanic() {
 	response := newResponse(httptest.NewRecorder(), nil)
+	err := fmt.Errorf("error message")
 	recoveryMiddleware(func(response *Response, r *Request) {
-		panic(fmt.Errorf("error message"))
+		panic(err)
 	})(response, &Request{})
+	suite.Equal(err, response.GetError())
 	suite.Equal(500, response.status)
 }
 
@@ -109,12 +111,22 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 	})(response, &Request{})
 
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Nil(response.GetError())
 	suite.Equal(200, response.status)
 	suite.Equal(200, resp.StatusCode)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	suite.Nil(err)
 	suite.Equal("message", string(body))
+}
+
+func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNilPanic() {
+	response := newResponse(httptest.NewRecorder(), nil)
+	recoveryMiddleware(func(response *Response, r *Request) {
+		panic(nil)
+	})(response, &Request{})
+	suite.Nil(response.GetError())
+	suite.Equal(500, response.status)
 }
 
 func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {

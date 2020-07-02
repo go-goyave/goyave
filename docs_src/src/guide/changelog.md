@@ -14,6 +14,10 @@ meta:
 
 ## v2.10.x
 
+### v2.10.2
+
+- Fixed a bug in body parsing middleware preventing json body to be parsed if a charset was provided.
+
 ### v2.10.1
 
 - Changed the behavior of `response.File()` and `response.Download()` to respond with a status 404 if the given file doesn't exist instead of panicking.

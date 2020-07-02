@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime/debug"
+	"strings"
 
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
@@ -72,7 +73,8 @@ func parseRequestMiddleware(next Handler) Handler {
 			}
 
 			bodyBytes := bodyBuf.Bytes()
-			if request.httpRequest.Header.Get("Content-Type") == "application/json" {
+			contentType := request.httpRequest.Header.Get("Content-Type")
+			if strings.HasPrefix(contentType, "application/json") {
 				request.Data = make(map[string]interface{}, 10)
 				parseQuery(request)
 				if err := json.Unmarshal(bodyBytes, &request.Data); err != nil {

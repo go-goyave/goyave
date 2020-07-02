@@ -202,6 +202,22 @@ func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 	})
 	suite.True(executed)
 
+	// Test with charset (#101)
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}"))
+	rawRequest.Header.Set("Content-Type", "application/json; charset=utf-8")
+	executed = false
+	testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+		suite.Equal("hello world", r.Data["string"])
+		suite.Equal(42.0, r.Data["number"])
+		slice, ok := r.Data["array"].([]interface{})
+		suite.True(ok)
+		suite.Equal(2, len(slice))
+		suite.Equal("val1", slice[0])
+		suite.Equal("val2", slice[1])
+		executed = true
+	})
+	suite.True(executed)
+
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {

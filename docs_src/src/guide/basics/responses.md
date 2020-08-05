@@ -273,7 +273,9 @@ sweaters := Inventory{"wool", 17}
 
 // data can also be a map[string]interface{}
 // Here, "resources/template/template.txt" will be used.
-response.Render(http.StatusOK, "template.txt", sweaters)
+if err := response.Render(http.StatusOK, "template.txt", sweaters); err != nil {
+	response.Error(err)
+}
 ```
 
 #### Response.RenderHTML
@@ -299,7 +301,9 @@ sweaters := Inventory{"wool", 17}
 
 // data can also be a map[string]interface{}
 // Here, "resources/template/inventory.html" will be used.
-response.RenderHTML(http.StatusOK, "inventory.html", sweaters)
+if err := response.RenderHTML(http.StatusOK, "inventory.html", sweaters); err != nil {
+	response.Error(err)
+}
 ```
 
 #### Response.HandleDatabaseError

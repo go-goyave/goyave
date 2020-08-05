@@ -128,6 +128,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Equal(308, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello\">Permanent Redirect</a>.\n\n", string(body))
 		}
@@ -143,6 +144,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Equal(308, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello?param=1\">Permanent Redirect</a>.\n\n", string(body))
 		}
@@ -158,6 +160,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
 		}
@@ -235,6 +238,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("test-content", string(body))
 		}
@@ -350,6 +354,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
 		}
@@ -388,6 +393,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
 		}

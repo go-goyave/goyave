@@ -116,6 +116,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 	suite.Equal(200, resp.StatusCode)
 
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("message", string(body))
 }

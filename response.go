@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	htmltemplate "html/template"
@@ -244,23 +245,33 @@ func (r *Response) TemporaryRedirect(url string) {
 // Render a text template with the given data.
 // The template path is relative to the "resources/template" directory.
 func (r *Response) Render(responseCode int, templatePath string, data interface{}) error {
-	r.WriteHeader(responseCode)
 	tmplt, err := template.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
 		return err
 	}
-	return tmplt.Execute(r, data)
+
+	var b bytes.Buffer
+	if err := tmplt.Execute(&b, data); err != nil {
+		return err
+	}
+
+	return r.String(responseCode, b.String())
 }
 
 // RenderHTML an HTML template with the given data.
 // The template path is relative to the "resources/template" directory.
 func (r *Response) RenderHTML(responseCode int, templatePath string, data interface{}) error {
-	r.WriteHeader(responseCode)
 	tmplt, err := htmltemplate.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
 		return err
 	}
-	return tmplt.Execute(r, data)
+
+	var b bytes.Buffer
+	if err := tmplt.Execute(&b, data); err != nil {
+		return err
+	}
+
+	return r.String(responseCode, b.String())
 }
 
 func (r *Response) getTemplateDirectory() string {

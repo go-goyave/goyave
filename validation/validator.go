@@ -193,7 +193,7 @@ func init() {
 		"digits":             {validateDigits, 0, false, false},
 		"regex":              {validateRegex, 1, false, false},
 		"email":              {validateEmail, 0, false, false},
-		"size":               {validateSize, 1, false, false},
+		"size":               {validateSize, 1, false, true},
 		"alpha":              {validateAlpha, 0, false, false},
 		"alpha_dash":         {validateAlphaDash, 0, false, false},
 		"alpha_num":          {validateAlphaNumeric, 0, false, false},

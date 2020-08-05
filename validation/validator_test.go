@@ -46,9 +46,19 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {
-	suite.Equal("The :field is required.", getMessage(&Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
-	suite.Equal("The :field must be at least :min.", getMessage(&Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
-	suite.Equal("The :field values must be at least :min.", getMessage(&Rule{Name: "min", ArrayDimension: 1}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field is required.", getMessage([]*Rule{}, &Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{{Name: "numeric"}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field values must be at least :min.", getMessage([]*Rule{{Name: "numeric", ArrayDimension: 1}}, &Rule{Name: "min", ArrayDimension: 1}, reflect.ValueOf(42), "en-US"))
+
+	rules := []*Rule{
+		{Name: "array", Params: []string{"numeric"}},
+		{Name: "min", ArrayDimension: 1},
+	}
+	suite.Equal("The :field values must be at least :min.", getMessage(rules, rules[1], reflect.ValueOf(42), "en-US"))
+
+	// Test type fallback if no type rule is found
+	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field must be at least :min characters.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {
@@ -256,11 +266,9 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
-	suite.Panics(func() {
-		rule := &Rule{Name: "required", ArrayDimension: 1}
-		// Cannot validate array values on non-array field string of type string
-		validateRuleInArray(rule, "string", rule.ArrayDimension, map[string]interface{}{"string": "hi"})
-	})
+	// Cannot validate array values on non-array field string of type string
+	rule := &Rule{Name: "required", ArrayDimension: 1}
+	suite.False(validateRuleInArray(rule, "string", rule.ArrayDimension, map[string]interface{}{"string": "hi"}))
 
 	// Empty array
 	data = map[string]interface{}{

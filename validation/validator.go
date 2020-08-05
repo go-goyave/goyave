@@ -36,6 +36,9 @@ type RuleDefinition struct {
 	// and can convert the raw value to a value fitting. For example, the UUID
 	// rule is a type rule because it takes a string as input, checks if it's a
 	// valid UUID and converts it to a "uuid.UUID".
+	// The "array" rule is an exception. It does convert the value to a new slice of
+	// the correct type if provided, but is not considered a type rule to avoid being
+	// able to be used as parameter for itself ("array:array").
 	IsType bool
 
 	// Type-dependent rules are rules that can be used with different field types
@@ -290,13 +293,13 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 				if ok, errorValue := validateRuleInArray(rule, fieldName, rule.ArrayDimension, data); !ok {
 					errors[fieldName] = append(
 						errors[fieldName],
-						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(rule, *errorValue, language), language),
+						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, errorValue, language), language),
 					)
 				}
 			} else if !validationRules[rule.Name].Function(fieldName, data[fieldName], rule.Params, data) {
 				errors[fieldName] = append(
 					errors[fieldName],
-					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(rule, reflect.ValueOf(data[fieldName]), language), language),
+					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, reflect.ValueOf(data[fieldName]), language), language),
 				)
 			}
 		}
@@ -304,9 +307,9 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 	return errors
 }
 
-func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, data map[string]interface{}) (bool, *reflect.Value) {
+func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, data map[string]interface{}) (bool, reflect.Value) {
 	if t := GetFieldType(data[fieldName]); t != "array" {
-		panic(fmt.Sprintf("Cannot validate array values on non-array field %s of type %s", fieldName, t))
+		return false, reflect.ValueOf(data[fieldName])
 	}
 
 	converted := false
@@ -323,7 +326,7 @@ func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, dat
 				return false, errorValue
 			}
 		} else if !validationRules[rule.Name].Function(fieldName, value, rule.Params, tmpData) {
-			return false, &v
+			return false, v
 		}
 
 		// Update original array if value has been modified.
@@ -341,7 +344,7 @@ func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, dat
 	if converted {
 		data[fieldName] = convertedArr.Interface()
 	}
-	return true, nil
+	return true, reflect.Value{}
 }
 
 func convertArray(isJSON bool, fieldName string, field *Field, data map[string]interface{}) {
@@ -358,10 +361,15 @@ func convertArray(isJSON bool, fieldName string, field *Field, data map[string]i
 	}
 }
 
-func getMessage(rule *Rule, value reflect.Value, language string) string {
+func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string) string {
 	langEntry := "validation.rules." + rule.Name
 	if validationRules[rule.Name].IsTypeDependent {
-		langEntry += "." + getFieldType(value)
+		expectedType := findTypeRule(rules, rule.ArrayDimension)
+		if expectedType == "unsupported" {
+			langEntry += "." + getFieldType(value)
+		} else {
+			langEntry += "." + expectedType
+		}
 	}
 
 	if rule.ArrayDimension > 0 {
@@ -369,6 +377,18 @@ func getMessage(rule *Rule, value reflect.Value, language string) string {
 	}
 
 	return lang.Get(language, langEntry)
+}
+
+// findTypeRule find the expected type of a field for a given array dimension.
+func findTypeRule(rules []*Rule, arrayDimension uint8) string {
+	for _, rule := range rules {
+		if rule.ArrayDimension == arrayDimension-1 && rule.Name == "array" && len(rule.Params) > 0 {
+			return rule.Params[0]
+		} else if rule.ArrayDimension == arrayDimension && validationRules[rule.Name].IsType {
+			return rule.Name
+		}
+	}
+	return "unsupported"
 }
 
 // GetFieldType returns the non-technical type of the given "value" interface.

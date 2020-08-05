@@ -21,7 +21,7 @@ var enUS language = language{
 			"integer.array":                    "The :field values must be integers.",
 			"string":                           "The :field must be a string.",
 			"string.array":                     "The :field values must be strings.",
-			"array":                            "The :field must be an array.",
+			"array":                            "The :field must be an array.", // TODO add type of values in array if provided
 			"array.array":                      "The :field values must be arrays.",
 			"min.string":                       "The :field must be at least :min characters.",
 			"min.numeric":                      "The :field must be at least :min.",

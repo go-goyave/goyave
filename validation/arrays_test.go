@@ -26,6 +26,9 @@ func TestValidateArray(t *testing.T) {
 		validateArray("field", []float64{5.5}, []string{"file"}, map[string]interface{}{})
 	})
 	assert.Panics(t, func() {
+		validateArray("field", []float64{5.5}, []string{"array"}, map[string]interface{}{})
+	})
+	assert.Panics(t, func() {
 		validateArray("field", []float64{5.5}, []string{"not a type"}, map[string]interface{}{})
 	})
 	assert.False(t, validateArray("field", []string{"0.5", "not numeric"}, []string{"numeric"}, map[string]interface{}{}))

@@ -56,6 +56,10 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 			return true
 		}
 
+		if parameters[0] == "array" {
+			panic("Cannot use array type for array validation. Use \">array\" instead")
+		}
+
 		if !validationRules[parameters[0]].IsType {
 			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", parameters[0]))
 		}

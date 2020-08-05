@@ -179,8 +179,9 @@ func TestValidateGreaterThan(t *testing.T) {
 	// Missing field
 	assert.False(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateGreaterThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateGreaterThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(largeLogoPath)
 	otherFiles := createTestFiles(logoPath)
@@ -225,8 +226,9 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 	// Missing field
 	assert.False(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateGreaterThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateGreaterThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(largeLogoPath)
 	otherFiles := createTestFiles(logoPath)
@@ -269,8 +271,9 @@ func TestValidateLowerThan(t *testing.T) {
 	// Missing field
 	assert.False(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateLowerThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateLowerThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(logoPath)
 	otherFiles := createTestFiles(largeLogoPath)
@@ -315,8 +318,9 @@ func TestValidateLowerThanEqual(t *testing.T) {
 	// Missing field
 	assert.False(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateLowerThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateLowerThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(logoPath)
 	otherFiles := createTestFiles(largeLogoPath)
@@ -450,7 +454,9 @@ func TestValidateSize(t *testing.T) {
 
 	assert.False(t, validateSize("field", 4567, []string{"2"}, map[string]interface{}{}))
 	assert.False(t, validateSize("field", 4567.8, []string{"2"}, map[string]interface{}{}))
-	assert.False(t, validateSize("field", true, []string{"2"}, map[string]interface{}{}))
+
+	// Unsupported type
+	assert.True(t, validateSize("field", true, []string{"2"}, map[string]interface{}{}))
 
 	assert.Panics(t, func() { validateSize("field", "123", []string{"test"}, map[string]interface{}{}) })
 

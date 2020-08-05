@@ -67,6 +67,7 @@ Although the validation changes are internally huge, there is only a tiny amount
   - `log.Formatter` is now `func(now time.Time, response *goyave.Response, request *goyave.Request, length int) string`.
   - If you were just using `len(body)`, just replace it with `length`.
   - If you were using the content of the body in your logger, you will have to implement a [chained writer](./basics/responses.html#chained-writers).
+- The following rules now pass if the validated data type is not supported: `greater_than`, `greater_than_equal`, `lower_than`, `lower_than_equal`, `size`.
 
 ## v1.0.0 to v2.0.0
 

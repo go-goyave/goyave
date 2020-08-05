@@ -247,6 +247,10 @@ Depending on its type, the field under validation must:
     - *Note: for this rule only (not for `min`, `max`, etc), the size of the file under validation is **rounded** to the closest KiB.*
     - When the field is a multi-files upload, the size of **all files** is checked.
 
+::: warning
+If the value cannot be validated because its type is unsupported, the rule passes. Therefore, you should always validate the type of the field **before** using the `size`, `min`, `lower_than`, ... rules.
+:::
+
 #### alpha
 
 The field under validation must be a string and be entirely alphabetic characters.

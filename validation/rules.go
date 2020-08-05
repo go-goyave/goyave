@@ -141,7 +141,7 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -174,7 +174,7 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -207,7 +207,7 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -240,7 +240,7 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateBool(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -329,5 +329,6 @@ func validateSize(field string, value interface{}, parameters []string, form map
 		}
 		return true
 	}
-	return false
+
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }

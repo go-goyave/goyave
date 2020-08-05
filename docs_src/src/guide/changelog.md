@@ -37,6 +37,7 @@ meta:
 - A significant amount of untested cases are now tested.
 - Protect the database instance with mutex.
 - Recovery middleware now correctly handles panics with a `nil` value.
+- The following rules now pass if the validated data type is not supported: `greater_than`, `greater_than_equal`, `lower_than`, `lower_than_equal`, `size`.
 
 ## v2.10.x
 

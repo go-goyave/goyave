@@ -66,6 +66,9 @@ type TestSuite struct {
 
 var _ ITestSuite = (*TestSuite)(nil) // implements ITestSuite
 
+// Use a mutex to avoid parallel goyave test suites to be run concurrently.
+var mu sync.Mutex
+
 // Timeout get the timeout for test failure when using RunServer or requests.
 func (s *TestSuite) Timeout() time.Duration {
 	s.mu.Lock()
@@ -344,6 +347,8 @@ func (s *TestSuite) ClearDatabaseTables() {
 // All tests are run using your project's root as working directory. This directory is determined
 // by the presence of a "go.mod" file.
 func RunTest(t *testing.T, suite ITestSuite) bool {
+	mu.Lock()
+	defer mu.Unlock()
 	if suite.Timeout() == 0 {
 		suite.SetTimeout(5 * time.Second)
 	}
@@ -354,6 +359,7 @@ func RunTest(t *testing.T, suite ITestSuite) bool {
 	if err := config.Load(); err != nil {
 		return assert.Fail(t, "Failed to load config", err)
 	}
+	defer config.Clear()
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
 

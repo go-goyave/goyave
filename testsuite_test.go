@@ -28,6 +28,11 @@ type FailingTestSuite struct {
 	TestSuite
 }
 
+type ConcurrentTestSuite struct {
+	TestSuite
+	res *int
+}
+
 type TestModel struct {
 	ID   uint   `gorm:"primary_key"`
 	Name string `gorm:"type:varchar(100)"`
@@ -374,6 +379,30 @@ func (suite *CustomTestSuite) TestClearDatabaseTables() {
 	suite.False(found)
 
 	config.Set("dbConnection", "none")
+}
+
+func TestConcurrentSuiteExecution(t *testing.T) { // Suites should not execute in parallel
+	// This test is only useful if the race detector is enabled
+	res := 0
+	suite1 := new(ConcurrentTestSuite)
+	suite2 := new(ConcurrentTestSuite)
+	suite1.res = &res
+	suite2.res = &res
+
+	for i := 0; i < 10; i++ {
+		// Executing this ten times almost guarantees
+		// there WILL be a race condition.
+		go func() {
+			RunTest(t, suite1)
+		}()
+		go func() {
+			RunTest(t, suite2)
+		}()
+	}
+}
+
+func (suite *ConcurrentTestSuite) TestExecutionOrder() {
+	*suite.res++
 }
 
 func TestTestSuite(t *testing.T) {

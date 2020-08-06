@@ -107,6 +107,7 @@ headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded;
 resp, err := suite.Post("/product", headers, strings.NewReader("field=value"))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -119,6 +120,7 @@ body, _ := json.Marshal(map[string]interface{}{"name": "Pizza", "price": 12.5})
 resp, err := suite.Post("/product", headers, bytes.NewReader(body))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```

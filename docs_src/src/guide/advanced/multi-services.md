@@ -37,7 +37,7 @@ Register a startup hook to execute some code once the server is ready and runnin
 **Example:**
 ``` go
 goyave.RegsiterStartupHook(func() {
-    fmt.Println("Server ready.")
+    goyave.Logger.Println("Server ready.")
 })
 ```
 
@@ -137,7 +137,7 @@ Returns true if the server is ready to receive and serve incoming requests.
 **Example:**
 ``` go
 if goyave.IsReady() {
-    fmt.Println("Server is ready")
+    goyave.Logger.Println("Server is ready")
 }
 ```
 

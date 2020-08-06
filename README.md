@@ -89,7 +89,7 @@ abc 123
 
 ## Features tour
 
-This section's goal is to give a **brief** look at the main features of the framework. Don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
+This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
 
 - [Hello world from scratch](#hello-world-from-scratch)
 - [Configuration](#configuration)
@@ -223,7 +223,7 @@ Handlers receive a `goyave.Response` and a `goyave.Request` as parameters.
 `goyave.Response` implements `http.ResponseWriter` and is used to write a response. If you didn't write anything before the request lifecycle ends, `204 No Content` is automatically written. Learn everything about reponses [here](https://system-glitch.github.io/goyave/guide/basics/responses.html).
 
 Let's take a very simple CRUD as an example for a controller definition:
-**http/controllers/product/product.go**:
+**http/controller/product/product.go**:
 ``` go
 func Index(response *goyave.Response, request *goyave.Request) {
     products := []model.Product{}
@@ -507,6 +507,7 @@ headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded;
 resp, err := suite.Post("/product", headers, strings.NewReader("field=value"))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -519,6 +520,7 @@ body, _ := json.Marshal(map[string]interface{}{"name": "Pizza", "price": 12.5})
 resp, err := suite.Post("/product", headers, bytes.NewReader(body))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -557,7 +559,9 @@ package status
 import "github.com/System-Glitch/goyave/v2"
 
 func NotFound(response *goyave.Response, request *goyave.Request) {
-    response.RenderHTML(response.GetStatus(), "errors/404.html", nil)
+    if err := response.RenderHTML(response.GetStatus(), "errors/404.html", nil); err != nil {
+        response.Error(err)
+    }
 }
 ```
 

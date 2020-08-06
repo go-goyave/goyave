@@ -43,7 +43,9 @@ package status
 import "github.com/System-Glitch/goyave/v2"
 
 func NotFound(response *goyave.Response, request *goyave.Request) {
-    response.RenderHTML(response.GetStatus(), "errors/404.html", nil)
+    if err := response.RenderHTML(response.GetStatus(), "errors/404.html", nil); err != nil {
+        response.Error(err)
+    }
 }
 ```
 

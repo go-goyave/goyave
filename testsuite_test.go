@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -389,16 +391,37 @@ func TestConcurrentSuiteExecution(t *testing.T) { // Suites should not execute i
 	suite1.res = &res
 	suite2.res = &res
 
+	c := make(chan bool, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		// Executing this ten times almost guarantees
 		// there WILL be a race condition.
+		wg.Add(2)
 		go func() {
+			defer wg.Done()
 			RunTest(t, suite1)
 		}()
 		go func() {
+			defer wg.Done()
 			RunTest(t, suite2)
 		}()
 	}
+
+	go func() {
+		wg.Wait()
+		c <- true
+	}()
+
+	select {
+	case <-ctx.Done():
+		assert.Fail(t, "Timeout exceeded in concurrent suites test")
+	case val := <-c:
+		assert.True(t, val)
+	}
+
 }
 
 func (suite *ConcurrentTestSuite) TestExecutionOrder() {
@@ -421,10 +444,12 @@ func TestTestSuiteFail(t *testing.T) {
 	if err := os.Rename("config.test.json", "config.test.json.bak"); err != nil {
 		panic(err)
 	}
+	defer func() {
+		if err := os.Rename("config.test.json.bak", "config.test.json"); err != nil {
+			panic(err)
+		}
+	}()
 	mockT := new(testing.T)
 	RunTest(mockT, new(FailingTestSuite))
 	assert.True(t, mockT.Failed())
-	if err := os.Rename("config.test.json.bak", "config.test.json"); err != nil {
-		panic(err)
-	}
 }

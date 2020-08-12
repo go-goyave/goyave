@@ -72,7 +72,9 @@ import (
 )
 
 func main() {
-    goyave.Start(route.Register)
+    if err := goyave.Start(route.Register); err != nil {
+      os.Exit(err.(*goyave.Error).ExitCode)
+    }
 }
 ```
 

@@ -205,7 +205,7 @@ func (r *Response) Error(err interface{}) error {
 
 func (r *Response) error(err interface{}) error {
 	r.err = err
-	if config.GetBool("debug") {
+	if config.GetBool("app.debug") {
 		stacktrace := r.stacktrace
 		if stacktrace == "" {
 			stacktrace = string(debug.Stack())

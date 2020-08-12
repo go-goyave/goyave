@@ -36,7 +36,7 @@ type AuthenticationTestSuite struct {
 }
 
 func (suite *AuthenticationTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 

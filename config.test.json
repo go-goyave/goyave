@@ -1,19 +1,38 @@
 {
-    "environment": "test",
-    "protocol": "http",
-    "debug": false,
-    "port": 1235,
-    "httpsPort": 1236,
-    "dbConnection": "none",
-    "dbHost": "127.0.0.1",
-    "dbPort": 3306,
-    "dbName": "goyave",
-    "dbUsername": "goyave",
-    "dbPassword": "secret",
-    "dbOptions": "charset=utf8&parseTime=true&loc=Local",
-    "dbMaxOpenConnections": 100,
-    "dbMaxIdleConnections": 20,
-    "dbAutoMigrate": false,
-    "jwtExpiry": 300.0,
-    "jwtSecret": "jwt-secret"
+    "app": {
+        "name": "goyave",
+        "environment": "test",
+        "debug": false,
+        "defaultLanguage": "en-US"
+    },
+    "server": {
+        "maintenance": false,
+        "protocol": "http",
+        "domain": "",
+        "port": 1235,
+        "httpsPort": 1236,
+        "timeout": 10,
+        "maxUploadSize": 10
+    },
+    "database": {
+        "connection": "none",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "name": "goyave",
+        "username": "goyave",
+        "password": "secret",
+        "options": "charset=utf8&parseTime=true&loc=Local",
+        "maxOpenConnections": 20,
+        "maxIdleConnections": 20,
+        "maxLifetime": 300,
+        "autoMigrate": false
+    },
+    "jwt": {
+        "expiry": 300.0,
+        "secret": "jwt-secret"
+    },
+    "auth": {
+        "username": "admin",
+        "password": "admin"
+    }
 }

@@ -73,7 +73,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
-	config.Set("debug", true)
+	config.Set("app.debug", true)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Error(fmt.Errorf("random error"))
@@ -105,7 +105,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Equal(500, response.status)
 	suite.NotNil(response.err)
 
-	config.Set("debug", false)
+	config.Set("app.debug", false)
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
 	response.Error("random error")
@@ -120,7 +120,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.True(response.empty)
 	suite.Equal("random error", response.GetError())
 	suite.Equal(500, response.status)
-	config.Set("debug", true)
+	config.Set("app.debug", true)
 }
 
 func (suite *ResponseTestSuite) TestResponseFile() {
@@ -402,8 +402,8 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	type TestRecord struct {
 		gorm.Model
 	}
-	config.Set("dbConnection", "mysql")
-	defer config.Set("dbConnection", "none")
+	config.Set("database.connection", "mysql")
+	defer config.Set("database.connection", "none")
 	db := database.GetConnection()
 
 	response := newResponse(httptest.NewRecorder(), nil)

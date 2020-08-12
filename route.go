@@ -117,7 +117,7 @@ func (r *Route) BuildURL(parameters ...string) string {
 		panic(fmt.Errorf("BuildURL: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
-	address := getAddress(config.GetString("protocol"))
+	address := getAddress(config.GetString("server.protocol"))
 
 	var builder strings.Builder
 	builder.Grow(len(fullURI) + len(address))

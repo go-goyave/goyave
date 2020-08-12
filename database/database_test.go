@@ -50,19 +50,19 @@ func (suite *DatabaseTestSuite) TestGetConnection() {
 }
 
 func (suite *DatabaseTestSuite) TestGetConnectionPanic() {
-	tmpConnection := config.Get("dbConnection")
-	config.Set("dbConnection", "none")
+	tmpConnection := config.Get("database.connection")
+	config.Set("database.connection", "none")
 	suite.Panics(func() {
 		GetConnection()
 	})
-	config.Set("dbConnection", tmpConnection)
+	config.Set("database.connection", tmpConnection)
 
-	tmpPort := config.Get("dbPort")
-	config.Set("dbPort", 0.0)
+	tmpPort := config.Get("database.port")
+	config.Set("database.port", 0.0)
 	suite.Panics(func() {
 		GetConnection()
 	})
-	config.Set("dbPort", tmpPort)
+	config.Set("database.port", tmpPort)
 }
 
 func (suite *DatabaseTestSuite) TestModelAndMigrate() {

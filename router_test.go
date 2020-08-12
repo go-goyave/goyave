@@ -578,7 +578,7 @@ func (suite *RouterTestSuite) TestMatch() {
 
 func (suite *RouterTestSuite) TestScheme() {
 	// From HTTP to HTTPS
-	config.Set("protocol", "https")
+	config.Set("server.protocol", "https")
 	router := newRouter()
 
 	recorder := httptest.NewRecorder()
@@ -591,7 +591,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	suite.Equal("<a href=\"https://127.0.0.1:1236/test?param=1\">Permanent Redirect</a>.\n\n", string(body))
 
 	// From HTTPS to HTTP
-	config.Set("protocol", "http")
+	config.Set("server.protocol", "http")
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "https://localhost:80/test?param=1", nil))
 	result = recorder.Result()

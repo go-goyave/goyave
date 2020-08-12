@@ -22,7 +22,7 @@ func (suite *LangTestSuite) SetupSuite() {
 	LoadDefault()
 	LoadAllAvailableLanguages()
 	config.Load()
-	config.Set("defaultLanguage", "en-US")
+	config.Set("app.defaultLanguage", "en-US")
 }
 
 func (suite *LangTestSuite) TestLang() {

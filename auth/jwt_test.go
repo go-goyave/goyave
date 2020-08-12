@@ -16,7 +16,7 @@ type JWTAuthenticatorTestSuite struct {
 }
 
 func (suite *JWTAuthenticatorTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 
@@ -44,7 +44,7 @@ func (suite *JWTAuthenticatorTestSuite) createWrongToken(method jwt.SigningMetho
 		"exp":    exp.Unix(), // Expiry
 	})
 
-	return token.SignedString([]byte(config.GetString("jwtSecret")))
+	return token.SignedString([]byte(config.GetString("jwt.secret")))
 }
 
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticate() {

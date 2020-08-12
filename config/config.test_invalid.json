@@ -1,3 +1,6 @@
 {
-    "environment": 10
+    "rootLevel": 10,
+    "app": {
+        "name": 10
+    }
 }

@@ -18,7 +18,7 @@ type BasicAuthenticatorTestSuite struct {
 }
 
 func (suite *BasicAuthenticatorTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 
@@ -66,8 +66,8 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticate() {
 }
 
 func (suite *BasicAuthenticatorTestSuite) TestAuthenticateViaConfig() {
-	config.Set("authUsername", "admin")
-	config.Set("authPassword", "secret")
+	config.Set("auth.username", "admin")
+	config.Set("auth.password", "secret")
 
 	authenticator := ConfigBasicAuth()
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))

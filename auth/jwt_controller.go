@@ -17,11 +17,11 @@ import (
 
 // GenerateToken generate a new JWT.
 // The token is created using the HMAC SHA256 method and signed using
-// the "jwtSecret" config entry.
+// the "jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
-// the "jwtExpiry" config entry.
-func GenerateToken(id interface{}) (string, error) {
-	expiry := time.Duration(config.Get("jwtExpiry").(float64)) * time.Second
+// the "jwt.expiry" config entry.
+func GenerateToken(id interface{}) (string, error) { // TODO update jwt docs
+	expiry := time.Duration(config.GetInt("jwt.expiry")) * time.Second
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userid": id,
@@ -29,7 +29,7 @@ func GenerateToken(id interface{}) (string, error) {
 		"exp":    now.Add(expiry).Unix(), // Expiry
 	})
 
-	return token.SignedString([]byte(config.GetString("jwtSecret")))
+	return token.SignedString([]byte(config.GetString("jwt.secret")))
 }
 
 // JWTController a controller for JWT-based authentication, using HMAC SHA256.

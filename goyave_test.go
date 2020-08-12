@@ -35,8 +35,8 @@ func (suite *GoyaveTestSuite) loadConfig() {
 	if err := config.Load(); err != nil {
 		suite.FailNow(err.Error())
 	}
-	config.Set("tlsKey", "resources/server.key")
-	config.Set("tlsCert", "resources/server.crt")
+	config.Set("server.tlsKey", "resources/server.key")
+	config.Set("server.tlsCert", "resources/server.crt")
 }
 
 func (suite *GoyaveTestSuite) TestGetHost() {
@@ -50,12 +50,12 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
 	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
 
-	config.Set("domain", "test.system-glitch.me")
+	config.Set("server.domain", "test.system-glitch.me")
 	suite.Equal("http://test.system-glitch.me:1235", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me:1236", getAddress("https"))
 
-	config.Set("port", 80.0)
-	config.Set("httpsPort", 443.0)
+	config.Set("server.port", 80.0)
+	config.Set("server.httpsPort", 443.0)
 	suite.Equal("http://test.system-glitch.me", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me", getAddress("https"))
 }
@@ -112,7 +112,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 
 func (suite *GoyaveTestSuite) TestTLSServer() {
 	suite.loadConfig()
-	config.Set("protocol", "https")
+	config.Set("server.protocol", "https")
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler)
 	}, func() {
@@ -166,7 +166,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		}
 	})
 
-	config.Set("protocol", "http")
+	config.Set("server.protocol", "http")
 }
 
 func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
@@ -190,9 +190,9 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 			c2 <- true
 		}()
 		<-c2
-		config.Set("protocol", "https")
+		config.Set("server.protocol", "https")
 		suite.RunServer(func(router *Router) {}, func() {})
-		config.Set("protocol", "http")
+		config.Set("server.protocol", "http")
 		c2 <- true
 		<-c2
 		c <- true
@@ -276,16 +276,16 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 			c2 <- true
 		}()
 		<-c2
-		config.Set("protocol", protocol)
+		config.Set("server.protocol", protocol)
 		if protocol == "https" {
 			// Invalid certificates
-			config.Set("tlsKey", "doesntexist")
-			config.Set("tlsCert", "doesntexist")
+			config.Set("server.tlsKey", "doesntexist")
+			config.Set("server.tlsCert", "doesntexist")
 		}
 
 		fmt.Println("test server error " + protocol)
 		err := Start(func(router *Router) {})
-		config.Set("protocol", "http")
+		config.Set("server.protocol", "http")
 		c <- err
 	}()
 
@@ -360,7 +360,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		}
 	})
 
-	config.Set("maintenance", true)
+	config.Set("server.maintenance", true)
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler)
 	}, func() {
@@ -398,16 +398,16 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 			suite.Equal("Hi!", string(body))
 		}
 	})
-	config.Set("maintenance", false)
+	config.Set("server.maintenance", false)
 }
 
 func (suite *GoyaveTestSuite) TestAutoMigrate() {
 	suite.loadConfig()
-	config.Set("dbConnection", "mysql")
-	config.Set("dbAutoMigrate", true)
+	config.Set("database.connection", "mysql")
+	config.Set("database.AutoMigrate", true)
 	suite.RunServer(func(router *Router) {}, func() {})
-	config.Set("dbAutoMigrate", false)
-	config.Set("dbConnection", "none")
+	config.Set("database.AutoMigrate", false)
+	config.Set("database.Connection", "none")
 }
 
 func (suite *GoyaveTestSuite) TestError() {

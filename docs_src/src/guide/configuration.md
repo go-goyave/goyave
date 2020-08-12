@@ -60,13 +60,15 @@ config.Load()
 
 Get a generic config entry. You may need to type-assert it before being able to use it. You can do so safely as the config values and types are validated. Panics if the entry doesn't exist.
 
+TODO update config Get and Set
+
 | Parameters   | Return                 |
 |--------------|------------------------|
 | `key string` | `interface{}` or panic |
 
 **Example:**
 ``` go
-config.Get("appName") // "goyave"
+config.Get("app.name") // "goyave"
 ```
 
 #### config.GetString
@@ -79,7 +81,7 @@ Get a string config entry. Panics if the entry doesn't exist or is not a string.
 
 **Example:**
 ``` go
-config.GetString("protocol") // "http"
+config.GetString("server.protocol") // "http"
 ```
 
 #### config.GetBool
@@ -92,7 +94,7 @@ Get a bool config entry. Panics if the entry doesn't exist or is not a bool.
 
 **Example:**
 ``` go
-config.GetBool("debug") // true
+config.GetBool("app.debug") // true
 ```
 
 #### config.Has
@@ -105,7 +107,7 @@ Check if a config entry exists.
 
 **Example:**
 ``` go
-config.Has("appName") // true
+config.Has("app.name") // true
 ```
 
 ### Setting a value
@@ -121,7 +123,7 @@ You can set a config value at runtime with the `config.Set(key, value)` function
 
 **Example:**
 ``` go
-config.Set("appName", "my awesome app")
+config.Set("app.name", "my awesome app")
 ```
 
 ## Custom config entries
@@ -149,6 +151,8 @@ config.Register("pluginConfig", reflect.Struct)
 ```
 
 ## Configuration reference
+
+TODO update configuration reference and categorize
 
 | Entry                | Type      | Accepted values                                 | Default                                 | Note                                                                                                                                          |
 |----------------------|-----------|-------------------------------------------------|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|

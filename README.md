@@ -130,27 +130,34 @@ To configure your application, use the `config.json` file at your project's root
 
 ```json
 {
-    "appName": "goyave_template",
-    "environment": "localhost",
-    "host": "127.0.0.1",
-    "port": 8080,
-    "httpsPort": 8081,
-    "protocol": "http",
-    "debug": true,
-    "timeout": 10,
-    "maxUploadSize": 10,
-    "defaultLanguage": "en-US",
-    "dbConnection": "mysql",
-    "dbHost": "127.0.0.1",
-    "dbPort": 3306,
-    "dbName": "goyave",
-    "dbUsername": "root",
-    "dbPassword": "root",
-    "dbOptions": "charset=utf8&parseTime=true&loc=Local",
-    "dbMaxOpenConnections": 20,
-    "dbMaxIdleConnections": 20,
-    "dbMaxLifetime": 300,
-    "dbAutoMigrate": false
+    "app": {
+        "name": "goyave_template",
+        "environment": "localhost",
+        "debug": true,
+        "defaultLanguage": "en-US"
+    },
+    "server": {
+        "maintenance": false,
+        "protocol": "http",
+        "domain": "",
+        "port": 8080,
+        "httpsPort": 8081,
+        "timeout": 10,
+        "maxUploadSize": 10
+    },
+    "database": {
+        "connection": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "name": "goyave",
+        "username": "root",
+        "password": "root",
+        "options": "charset=utf8&parseTime=true&loc=Local",
+        "maxOpenConnections": 20,
+        "maxIdleConnections": 20,
+        "maxLifetime": 300,
+        "autoMigrate": false
+    }
 }
 ```
 
@@ -158,14 +165,15 @@ If this config file misses some config entries, the default values will be used.
 
 **Getting a value:**
 ```go
-config.GetString("appName") // "goyave"
-config.GetBool("debug") // true
-config.Has("appName") // true
+config.GetString("app.name") // "goyave"
+config.GetBool("app.debug") // true
+config.GetInt("server.port") // 80
+config.Has("app.name") // true
 ```
 
 **Setting a value:**
 ```go
-config.Set("appName", "my awesome app")
+config.Set("app.name", "my awesome app")
 ```
 
 **Learn more about configuration in the [documentation](https://system-glitch.github.io/goyave/guide/configuration.html).**

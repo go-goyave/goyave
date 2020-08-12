@@ -288,5 +288,5 @@ func DetectLanguage(lang string) string {
 		}
 	}
 
-	return config.GetString("defaultLanguage")
+	return config.GetString("app.defaultLanguage")
 }

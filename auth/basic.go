@@ -66,8 +66,8 @@ func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user inte
 	username, password, ok := request.BasicAuth()
 
 	if !ok ||
-		username != config.GetString("authUsername") ||
-		password != config.GetString("authPassword") {
+		username != config.GetString("auth.username") || // TODO update basic auth docs
+		password != config.GetString("auth.password") {
 		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 	}
 	user.(*BasicUser).Name = username
@@ -77,7 +77,7 @@ func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user inte
 // ConfigBasicAuth create a new authenticator middleware for
 // config-based Basic authentication. On auth success, the request
 // user is set to a "BasicUser".
-// The user is authenticated if the "authUsername" and "authPassword" config entries
+// The user is authenticated if the "auth.username" and "auth.password" config entries
 // match the request's Authorization header.
 func ConfigBasicAuth() goyave.Middleware {
 	return Middleware(&BasicUser{}, &basicUserAuthenticator{})

@@ -48,7 +48,7 @@ func genericHandler(message string) func(response *Response, request *Request) {
 
 func (suite *CustomTestSuite) TestEnv() {
 	suite.Equal("test", os.Getenv("GOYAVE_ENV"))
-	suite.Equal("test", config.GetString("environment"))
+	suite.Equal("test", config.GetString("app.environment"))
 	suite.Equal("Malformed JSON", lang.Get("en-US", "malformed-json"))
 }
 
@@ -331,7 +331,7 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 }
 
 func (suite *CustomTestSuite) TestClearDatabase() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	db := database.GetConnection()
 	db.AutoMigrate(&TestModel{})
 
@@ -350,11 +350,11 @@ func (suite *CustomTestSuite) TestClearDatabase() {
 	suite.Equal(0, count)
 
 	db.DropTable(&TestModel{})
-	config.Set("dbConnection", "none")
+	config.Set("database.connection", "none")
 }
 
 func (suite *CustomTestSuite) TestClearDatabaseTables() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	db := database.GetConnection()
 	db.AutoMigrate(&TestModel{})
 
@@ -380,7 +380,7 @@ func (suite *CustomTestSuite) TestClearDatabaseTables() {
 
 	suite.False(found)
 
-	config.Set("dbConnection", "none")
+	config.Set("database.connection", "none")
 }
 
 func TestConcurrentSuiteExecution(t *testing.T) { // Suites should not execute in parallel

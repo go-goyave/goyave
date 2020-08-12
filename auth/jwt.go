@@ -36,7 +36,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(config.GetString("jwtSecret")), nil
+		return []byte(config.GetString("jwt.secret")), nil
 	})
 
 	if err == nil && token.Valid {

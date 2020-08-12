@@ -107,7 +107,7 @@ func newRouter() *Router {
 
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	protocol := config.GetString("protocol")
+	protocol := config.GetString("server.protocol")
 	if req.URL.Scheme != "" && req.URL.Scheme != protocol {
 		address := getAddress(protocol) + req.URL.Path
 		query := req.URL.Query()

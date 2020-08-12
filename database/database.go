@@ -70,7 +70,7 @@ func Migrate() {
 }
 
 func newConnection() *gorm.DB {
-	connection := config.GetString("dbConnection")
+	connection := config.GetString("database.connection")
 
 	if connection == "none" {
 		panic("Cannot create DB connection. Database is set to \"none\" in the config")
@@ -81,46 +81,46 @@ func newConnection() *gorm.DB {
 		panic(err)
 	}
 
-	db.LogMode(config.GetBool("debug"))
-	db.DB().SetMaxOpenConns(int(config.Get("dbMaxOpenConnections").(float64)))
-	db.DB().SetMaxIdleConns(int(config.Get("dbMaxIdleConnections").(float64)))
-	db.DB().SetConnMaxLifetime(time.Duration(config.Get("dbMaxLifetime").(float64)) * time.Second)
+	db.LogMode(config.GetBool("app.debug"))
+	db.DB().SetMaxOpenConns(config.GetInt("database.maxOpenConnections"))
+	db.DB().SetMaxIdleConns(config.GetInt("database.maxIdleConnections"))
+	db.DB().SetConnMaxLifetime(time.Duration(config.GetInt("database.maxLifetime")) * time.Second)
 	return db
 }
 
-func buildConnectionOptions(connection string) string {
+func buildConnectionOptions(connection string) string { // TODO add a way to register a new dialect
 	switch connection {
 	case "mysql":
 		return fmt.Sprintf(
 			"%s:%s@(%s:%d)/%s?%s",
-			config.GetString("dbUsername"),
-			config.GetString("dbPassword"),
-			config.GetString("dbHost"),
-			int64(config.Get("dbPort").(float64)),
-			config.GetString("dbName"),
-			config.GetString("dbOptions"),
+			config.GetString("database.username"),
+			config.GetString("database.password"),
+			config.GetString("database.host"),
+			config.GetInt("database.port"),
+			config.GetString("database.name"),
+			config.GetString("database.options"),
 		)
 	case "postgres":
 		return fmt.Sprintf(
 			"host=%s port=%d user=%s dbname=%s password=%s %s",
-			config.GetString("dbHost"),
-			int64(config.Get("dbPort").(float64)),
-			config.GetString("dbUsername"),
-			config.GetString("dbName"),
-			config.GetString("dbPassword"),
-			config.GetString("dbOptions"),
+			config.GetString("database.host"),
+			config.GetInt("database.port"),
+			config.GetString("database.username"),
+			config.GetString("database.name"),
+			config.GetString("database.password"),
+			config.GetString("database.options"),
 		)
 	case "sqlite3":
-		return config.GetString("dbName")
+		return config.GetString("database.name")
 	case "mssql":
 		return fmt.Sprintf(
 			"sqlserver://%s:%s@%s:%d?database=%s&%s",
-			config.GetString("dbUsername"),
-			config.GetString("dbPassword"),
-			config.GetString("dbHost"),
-			int64(config.Get("dbPort").(float64)),
-			config.GetString("dbName"),
-			config.GetString("dbOptions"),
+			config.GetString("database.username"),
+			config.GetString("database.password"),
+			config.GetString("database.host"),
+			config.GetInt("database.port"),
+			config.GetString("database.name"),
+			config.GetString("database.options"),
 		)
 	}
 

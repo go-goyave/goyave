@@ -125,7 +125,7 @@ func Start(routeRegistrer func(*Router)) error {
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
 
-	if config.GetBool("dbAutoMigrate") && config.GetString("dbConnection") != "none" {
+	if config.GetBool("database.autoMigrate") && config.GetString("database.connection") != "none" {
 		database.Migrate()
 	}
 
@@ -220,28 +220,28 @@ func stop(ctx context.Context) error {
 func getHost(protocol string) string {
 	var port string
 	if protocol == "https" {
-		port = "httpsPort"
+		port = "server.httpsPort"
 	} else {
-		port = "port"
+		port = "server.port"
 	}
-	return config.GetString("host") + ":" + strconv.FormatInt(int64(config.Get(port).(float64)), 10)
+	return config.GetString("server.host") + ":" + strconv.Itoa(config.GetInt(port))
 }
 
 func getAddress(protocol string) string {
 	var shouldShowPort bool
 	var port string
 	if protocol == "https" {
-		p := int64(config.Get("httpsPort").(float64))
-		port = strconv.FormatInt(p, 10)
+		p := config.GetInt("server.httpsPort")
+		port = strconv.Itoa(p)
 		shouldShowPort = p != 443
 	} else {
-		p := int64(config.Get("port").(float64))
-		port = strconv.FormatInt(p, 10)
+		p := config.GetInt("server.port")
+		port = strconv.Itoa(p)
 		shouldShowPort = p != 80
 	}
-	host := config.GetString("domain")
+	host := config.GetString("server.domain")
 	if len(host) == 0 {
-		host = config.GetString("host")
+		host = config.GetString("server.host")
 	}
 
 	if shouldShowPort {
@@ -253,7 +253,7 @@ func getAddress(protocol string) string {
 
 func startTLSRedirectServer() {
 	httpsAddress := getAddress("https")
-	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
+	timeout := time.Duration(config.GetInt("server.timeout")) * time.Second
 	redirectServer = &http.Server{
 		Addr:         getHost("http"),
 		WriteTimeout: timeout,
@@ -299,8 +299,8 @@ func startTLSRedirectServer() {
 }
 
 func startServer(router *Router) error {
-	timeout := time.Duration(config.Get("timeout").(float64)) * time.Second
-	protocol := config.GetString("protocol")
+	timeout := time.Duration(config.GetInt("server.timeout")) * time.Second
+	protocol := config.GetString("server.protocol")
 	server = &http.Server{
 		Addr:         getHost(protocol),
 		WriteTimeout: timeout,
@@ -309,7 +309,7 @@ func startServer(router *Router) error {
 		Handler:      router,
 	}
 
-	if config.GetBool("maintenance") {
+	if config.GetBool("server.maintenance") {
 		server.Handler = getMaintenanceHandler()
 		maintenanceEnabled = true
 	}
@@ -334,7 +334,7 @@ func startServer(router *Router) error {
 		s := server
 		mutex.Unlock()
 		runStartupHooks()
-		if err := s.ServeTLS(ln, config.GetString("tlsCert"), config.GetString("tlsKey")); err != nil && err != http.ErrServerClosed {
+		if err := s.ServeTLS(ln, config.GetString("server.tlsCert"), config.GetString("server.tlsKey")); err != nil && err != http.ErrServerClosed {
 			ErrLogger.Println(err)
 			Stop()
 			return &Error{ExitHTTPError, err}

@@ -22,7 +22,7 @@ type JWTControllerTestSuite struct {
 }
 
 func (suite *JWTControllerTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 

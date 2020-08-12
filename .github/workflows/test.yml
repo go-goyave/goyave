@@ -16,15 +16,15 @@ jobs:
       matrix:
         go: [1.13, 1.14, 1.15]
     steps:
-      - run: |
-          mkdir ${{ matrix.go }}
-          cd ${{ matrix.go }}
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
         run: |
+          mkdir ../${{ matrix.go }}
+          cp -R . ../${{ matrix.go }}
+          cd ../${{ matrix.go }}
           echo "::set-env name=GOPATH::$(go env GOPATH)"
           echo "::add-path::$(go env GOPATH)/bin"
           sudo /etc/init.d/mysql start
@@ -38,7 +38,7 @@ jobs:
       - if: ${{ matrix.go == 1.15 }}
         uses: shogo82148/actions-goveralls@v1
         with:
-          path-to-profile: coverage.txt
+          path-to-profile: ../${{ matrix.go }}/coverage.txt
 
   lint:
     name: Lint

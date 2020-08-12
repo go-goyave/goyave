@@ -2,62 +2,65 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - "**"
     tags-ignore:
-      - 'v*.*.*'
+      - "v*.*.*"
   pull_request:
     branches:
-      - '**'
+      - "**"
 jobs:
   tests:
     name: Unit and integrations tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [1.13, 1.14]
+        go: [1.13, 1.14, 1.15]
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
-    - name: Run tests
-      run: |
-        echo "::set-env name=GOPATH::$(go env GOPATH)"
-        echo "::add-path::$(go env GOPATH)/bin"
-        sudo /etc/init.d/mysql start
-        while ! mysqladmin ping --silent; do
-          sleep 1
-        done
-        sudo mysql -proot -e 'CREATE DATABASE goyave CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
-        sudo mysql -proot -e 'CREATE USER "goyave"@"%" IDENTIFIED BY "secret"'
-        sudo mysql -proot -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
-        go test -v -p 1 -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
-    - if: ${{ matrix.go == 1.14 }}
-      uses: shogo82148/actions-goveralls@v1
-      with:
-        path-to-profile: coverage.txt
+      - run: |
+          mkdir ${{ matrix.go }}
+          cd ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Run tests
+        run: |
+          echo "::set-env name=GOPATH::$(go env GOPATH)"
+          echo "::add-path::$(go env GOPATH)/bin"
+          sudo /etc/init.d/mysql start
+          while ! mysqladmin ping --silent; do
+            sleep 1
+          done
+          sudo mysql -proot -e 'CREATE DATABASE goyave CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+          sudo mysql -proot -e 'CREATE USER "goyave"@"%" IDENTIFIED BY "secret"'
+          sudo mysql -proot -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
+      - if: ${{ matrix.go == 1.15 }}
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.txt
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Run lint
-      uses: golangci/golangci-lint-action@v1
-      with:
-        version: v1.27
+      - uses: actions/checkout@v2
+      - name: Run lint
+        uses: golangci/golangci-lint-action@v1
+        with:
+          version: v1.27
 
   spellcheck:
     name: Spellcheck docs
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-go@v2
-      with:
-        go-version: 1.14
-    - name: Run spellcheck
-      run: |
-        echo "::set-env name=GOPATH::$(go env GOPATH)"
-        echo "::add-path::$(go env GOPATH)/bin"
-        go get github.com/client9/misspell/cmd/misspell
-        misspell -error docs_src
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - name: Run spellcheck
+        run: |
+          echo "::set-env name=GOPATH::$(go env GOPATH)"
+          echo "::add-path::$(go env GOPATH)/bin"
+          go get github.com/client9/misspell/cmd/misspell
+          misspell -error docs_src

@@ -13,13 +13,15 @@ import (
 
 type object map[string]interface{}
 
+// Entry is the internal reprensentation of a config entry.
+// It contains the entry value, its expected type (for validation)
+// and a slice of authorized values (for validation too). If this slice
+// is empty, it means any value can be used, provided it is of the correct type.
 type Entry struct {
 	Value            interface{}
 	Type             reflect.Kind
 	AuthorizedValues []interface{} // Leave empty for "any"
 }
-
-// TODO default values are stored in another map, nil if it's not required
 
 var config object
 
@@ -124,9 +126,6 @@ func Get(key string) interface{} {
 }
 
 func get(key string) (interface{}, bool) {
-	// TODO getting a category should not be allowed
-	// because it could be modified without passing
-	// through the validation system
 	mutex.RLock()
 	defer mutex.RUnlock()
 	currentCategory := config
@@ -333,7 +332,7 @@ func (e *Entry) validate(key string) error {
 	return nil
 }
 
-func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
+func (e *Entry) tryIntConversion(kind reflect.Kind) bool { // TODO try not to use pointer
 	if kind == reflect.Float64 && e.Type == reflect.Int {
 		intVal := int(e.Value.(float64))
 		if e.Value == float64(intVal) {

@@ -28,8 +28,6 @@ func (suite *ConfigTestSuite) TestLoadDefaults() {
 
 // TODO test override
 
-// TODO test category Get
-
 func (suite *ConfigTestSuite) TestLocalOverride() {
 	os.Setenv("GOYAVE_ENV", "test")
 	Clear()
@@ -48,7 +46,17 @@ func (suite *ConfigTestSuite) TestLocalOverride() {
 func (suite *ConfigTestSuite) TestGet() {
 	suite.Equal("goyave", Get("app.name"))
 	suite.Panics(func() {
-		Get("missingKey") // TODO test with subcategory too
+		Get("missingKey")
+	})
+	suite.Panics(func() {
+		Get("app.missingKey")
+	})
+	suite.Panics(func() {
+		Get("app") // Cannot get a category
+	})
+
+	suite.Panics(func() {
+		Get("server.tlsCert") // Value is nil, so considered unset
 	})
 
 	suite.Equal("goyave", GetString("app.name"))
@@ -85,7 +93,6 @@ func (suite *ConfigTestSuite) TestGet() {
 	})
 
 	// TODO test with several depth levels
-	// TODO test unset with nil
 }
 
 func (suite *ConfigTestSuite) TestHas() {

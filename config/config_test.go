@@ -15,10 +15,17 @@ type ConfigTestSuite struct {
 
 func (suite *ConfigTestSuite) SetupSuite() {
 	suite.previousEnv = os.Getenv("GOYAVE_ENV")
+}
+
+func (suite *ConfigTestSuite) SetupTest() {
 	os.Setenv("GOYAVE_ENV", "test")
+	Clear()
 	if err := Load(); err != nil {
 		suite.FailNow(err.Error())
 	}
+}
+
+func (suite *ConfigTestSuite) TestIsLoaded() {
 	suite.True(IsLoaded())
 }
 
@@ -28,12 +35,7 @@ func (suite *ConfigTestSuite) TestLoadDefaults() {
 
 // TODO test override
 
-func (suite *ConfigTestSuite) TestLocalOverride() {
-	os.Setenv("GOYAVE_ENV", "test")
-	Clear()
-	if err := Load(); err != nil {
-		suite.FailNow(err.Error())
-	}
+func (suite *ConfigTestSuite) TestSet() {
 	suite.Equal("root level content", Get("rootLevel"))
 	Set("rootLevel", "root level content override")
 	suite.Equal("root level content override", Get("rootLevel"))
@@ -41,6 +43,81 @@ func (suite *ConfigTestSuite) TestLocalOverride() {
 	suite.Equal("test", Get("app.environment"))
 	Set("app.environment", "test_override")
 	suite.Equal("test_override", Get("app.environment"))
+
+	suite.Panics(func() { // empty key not allowed
+		Set("", "")
+	})
+
+	// Trying to convert an entry to a category
+	config["app"].(object)["category"] = object{"entry": &Entry{"value", reflect.String, []interface{}{}}}
+	suite.Panics(func() {
+		Set("app.category.entry.error", "override")
+	})
+
+	suite.Panics(func() {
+		Set("rootLevel.error", "override")
+	})
+
+	// Trying to replace a category
+	config["app"].(object)["category"] = object{"entry": &Entry{"value", reflect.String, []interface{}{}}}
+	suite.Panics(func() {
+		Set("app.category", "not a category")
+	})
+	suite.Panics(func() {
+		Set("app", "not a category")
+	})
+}
+
+func (suite *ConfigTestSuite) TestSetCreateCategories() {
+	// Entirely new categories
+	Set("rootCategory.subCategory.entry", "new")
+	suite.Equal("new", Get("rootCategory.subCategory.entry"))
+	rootCategory, ok := config["rootCategory"]
+	rootCategoryObj, okTA := rootCategory.(object)
+	suite.True(ok)
+	suite.True(okTA)
+
+	subCategory, ok := rootCategoryObj["subCategory"]
+	subCategoryObj, okTA := subCategory.(object)
+	suite.True(ok)
+	suite.True(okTA)
+
+	e, ok := subCategoryObj["entry"]
+	entry, okTA := e.(*Entry)
+	suite.True(ok)
+	suite.True(okTA)
+	suite.Equal("new", entry.Value)
+
+	// With a category that already exists
+	Set("app.subCategory.entry", "new")
+	suite.Equal("new", Get("app.subCategory.entry"))
+	appCategory, ok := config["app"]
+	appCategoryObj, okTA := appCategory.(object)
+	suite.True(ok)
+	suite.True(okTA)
+
+	subCategory, ok = appCategoryObj["subCategory"]
+	subCategoryObj, okTA = subCategory.(object)
+	suite.True(ok)
+	suite.True(okTA)
+
+	e, ok = subCategoryObj["entry"]
+	entry, okTA = e.(*Entry)
+	suite.True(ok)
+	suite.True(okTA)
+	suite.Equal("new", entry.Value)
+}
+
+func (suite *ConfigTestSuite) TestSetValidation() {
+	// TODO implement TestSetValidation
+}
+
+func (suite *ConfigTestSuite) TestUnset() {
+	suite.Equal("root level content", Get("rootLevel"))
+	Set("rootLevel", nil)
+	val, ok := get("rootLevel")
+	suite.False(ok)
+	suite.Nil(val)
 }
 
 func (suite *ConfigTestSuite) TestGet() {
@@ -51,6 +128,7 @@ func (suite *ConfigTestSuite) TestGet() {
 	suite.Panics(func() {
 		Get("app.missingKey")
 	})
+
 	suite.Panics(func() {
 		Get("app") // Cannot get a category
 	})
@@ -91,8 +169,39 @@ func (suite *ConfigTestSuite) TestGet() {
 	suite.Panics(func() {
 		GetFloat("app.name") // Not a float
 	})
+}
 
-	// TODO test with several depth levels
+func (suite *ConfigTestSuite) TestLowLevelGet() {
+	val, ok := get("rootLevel")
+	suite.True(ok)
+	suite.Equal("root level content", val)
+
+	val, ok = get("app")
+	suite.False(ok)
+	suite.Nil(val)
+
+	val, ok = get("app.environment")
+	suite.True(ok)
+	suite.Equal("test", val)
+
+	val, ok = get("app.notakey")
+	suite.False(ok)
+	suite.Nil(val)
+
+	// Existing but unset value (nil)
+	val, ok = get("server.tlsCert")
+	suite.False(ok)
+	suite.Nil(val)
+
+	// Ensure getting a category is not possible
+	config["app"].(object)["test"] = object{"this": &Entry{"that", reflect.String, []interface{}{}}}
+	val, ok = get("app.test")
+	suite.False(ok)
+	suite.Nil(val)
+
+	val, ok = get("app.test.this")
+	suite.True(ok)
+	suite.Equal("that", val)
 }
 
 func (suite *ConfigTestSuite) TestHas() {

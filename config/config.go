@@ -139,7 +139,6 @@ func get(key string) (interface{}, bool) {
 		if category, ok := entry.(object); ok {
 			currentCategory = category
 		} else {
-			// TODO test if we're at the end of the path
 			val := entry.(*Entry).Value
 			return val, val != nil // nil means unset
 		}
@@ -192,15 +191,39 @@ func Has(key string) bool {
 // Set a config entry.
 // The change is temporary and will not be saved for next boot.
 // Use "nil" to unset a value.
+//
+//  - A category cannot be replaced with an entry.
+//  - An entry cannot be replaced with a category.
+//  - New categories can be created with they don't already exist.
+//  - New entries can be created if they don't already exist. This new entry
+//    will be subsequently validated using the type of its initial value and
+//    have an empty slice as authorized values (meaning it can have any value of its type)
+//
+// Panics in case of error.
 func Set(key string, value interface{}) {
+	if key == "" {
+		panic("config.Set: empty key is not allowed")
+	}
+
 	mutex.Lock()
 	defer mutex.Unlock()
 	currentCategory := config
 	path := strings.Split(key, ".")
-	for _, catKey := range path {
+
+	for i, catKey := range path {
 		entry, ok := currentCategory[catKey]
 		if !ok {
-			// TODO document this behavior
+			// If categories are missing, create them
+			if i != len(path)-1 {
+				for j := i; j < len(path)-1; j++ {
+					catKey = path[j]
+					newCategory := object{}
+					currentCategory[catKey] = newCategory
+					currentCategory = newCategory
+				}
+				catKey = path[len(path)-1]
+			}
+
 			// If entry doesn't exist (and is not registered),
 			// register it with the type of the type given here
 			// and "any" authorized values.
@@ -211,7 +234,9 @@ func Set(key string, value interface{}) {
 		if category, ok := entry.(object); ok {
 			currentCategory = category
 		} else {
-			// TODO test if we're at the end of the path
+			if i != len(path)-1 {
+				panic(fmt.Sprintf("config.Set: attempted to add an entry to non-category %q", strings.Join(path[:i+1], ".")))
+			}
 			entry := currentCategory[catKey].(*Entry)
 			entry.Value = value
 			if err := entry.validate(key); err != nil {
@@ -221,6 +246,8 @@ func Set(key string, value interface{}) {
 			return
 		}
 	}
+
+	panic(fmt.Sprintf("config.Set: attempted to replace the %q category with an entry", key))
 }
 
 func loadDefaults(src object, dst object) {

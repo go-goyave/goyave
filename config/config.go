@@ -14,7 +14,6 @@ import (
 type object map[string]interface{}
 
 type Entry struct {
-	Key              string // Full key
 	Value            interface{}
 	Type             reflect.Kind
 	AuthorizedValues []interface{} // Leave empty for "any"
@@ -26,73 +25,45 @@ var config object
 
 var configDefaults object = object{
 	"app": object{
-		"name":            "goyave",
-		"environment":     "localhost",
-		"debug":           true,
-		"defaultLanguage": "en-US",
+		"name":            &Entry{"goyave", reflect.String, []interface{}{}},
+		"environment":     &Entry{"localhost", reflect.String, []interface{}{}},
+		"debug":           &Entry{true, reflect.Bool, []interface{}{}},
+		"defaultLanguage": &Entry{"en-US", reflect.String, []interface{}{}},
 	},
 	"server": object{
-		"host":          "127.0.0.1",
-		"domain":        "",
-		"protocol":      "http",
-		"port":          8080,
-		"httpsPort":     8081,
-		"timeout":       10,
-		"maxUploadSize": 10,
-		"maintenance":   false,
+		"host":          &Entry{"127.0.0.1", reflect.String, []interface{}{}},
+		"domain":        &Entry{"", reflect.String, []interface{}{}},
+		"protocol":      &Entry{"http", reflect.String, []interface{}{"http", "https"}},
+		"port":          &Entry{8080, reflect.Int, []interface{}{}},
+		"httpsPort":     &Entry{8081, reflect.Int, []interface{}{}},
+		"timeout":       &Entry{10, reflect.Int, []interface{}{}},
+		"maxUploadSize": &Entry{10, reflect.Int, []interface{}{}},
+		"maintenance":   &Entry{false, reflect.Bool, []interface{}{}},
+		"tlsCert":       &Entry{nil, reflect.String, []interface{}{}},
+		"tlsKey":        &Entry{nil, reflect.String, []interface{}{}},
 	},
 	"database": object{
-		"connection":         "none",
-		"host":               "127.0.0.1",
-		"port":               3306,
-		"name":               "goyave",
-		"username":           "root",
-		"password":           "root",
-		"options":            "charset=utf8&parseTime=true&loc=Local",
-		"maxOpenConnections": 20,
-		"maxIdleConnections": 20,
-		"maxLifetime":        300,
-		"autoMigrate":        false,
+		"connection":         &Entry{"none", reflect.String, []interface{}{"none", "mysql", "postgres", "sqlite3", "mssql"}}, // TODO add a dialect ?
+		"host":               &Entry{"127.0.0.1", reflect.String, []interface{}{}},
+		"port":               &Entry{3306, reflect.Int, []interface{}{}},
+		"name":               &Entry{"goyave", reflect.String, []interface{}{}},
+		"username":           &Entry{"root", reflect.String, []interface{}{}},
+		"password":           &Entry{"root", reflect.String, []interface{}{}},
+		"options":            &Entry{"charset=utf8&parseTime=true&loc=Local", reflect.String, []interface{}{}},
+		"maxOpenConnections": &Entry{20, reflect.Int, []interface{}{}},
+		"maxIdleConnections": &Entry{20, reflect.Int, []interface{}{}},
+		"maxLifetime":        &Entry{300, reflect.Int, []interface{}{}},
+		"autoMigrate":        &Entry{false, reflect.Bool, []interface{}{}},
 	},
-	"jwtExpiry": 300.0, // TODO move jwtExpry to auth package init func
-	// TODO don't forget optional entries (such as tlsCert)
+	"jwt": object{ // TODO move this config to auth package
+		"expiry": &Entry{300, reflect.Int, []interface{}{}},
+		"secret": &Entry{nil, reflect.String, []interface{}{}},
+	},
+	// TODO don't forget optional entries in docs (such as tlsCert)
 }
 
-// TODO implement RegisterDefault()
+// TODO implement Register()
 
-var configValidation = map[string]reflect.Kind{ // TODO is config validation really useful?
-	"appName":              reflect.String,
-	"environment":          reflect.String,
-	"maintenance":          reflect.Bool,
-	"host":                 reflect.String,
-	"domain":               reflect.String,
-	"port":                 reflect.Float64, // TODO if expected is int, but received is float and decimal is 0, cast
-	"httpsPort":            reflect.Float64,
-	"protocol":             reflect.String,
-	"debug":                reflect.Bool,
-	"timeout":              reflect.Float64,
-	"maxUploadSize":        reflect.Float64,
-	"defaultLanguage":      reflect.String,
-	"tlsCert":              reflect.String,
-	"tlsKey":               reflect.String,
-	"dbConnection":         reflect.String,
-	"dbHost":               reflect.String,
-	"dbPort":               reflect.Float64,
-	"dbName":               reflect.String,
-	"dbUsername":           reflect.String,
-	"dbPassword":           reflect.String,
-	"dbOptions":            reflect.String,
-	"dbMaxOpenConnections": reflect.Float64,
-	"dbMaxIdleConnections": reflect.Float64,
-	"dbMaxLifetime":        reflect.Float64,
-	"dbAutoMigrate":        reflect.Bool,
-	"jwtExpiry":            reflect.Float64,
-}
-
-var authorizedValues = map[string][]string{
-	"protocol":     {"http", "https"},
-	"dbConnection": {"none", "mysql", "postgres", "sqlite3", "mssql"}, // TODO how to add dialect?
-}
 var mutex = &sync.RWMutex{}
 
 // Load loads the config.json file in the current working directory.
@@ -121,8 +92,8 @@ func Load() error { // TODO allow loading from somewhere else
 		return err
 	}
 
-	if err := validateConfig(); err != nil {
-		return err
+	if err := config.validate(""); err != nil {
+		return fmt.Errorf("Invalid config:%s", err.Error())
 	}
 
 	return err
@@ -169,7 +140,9 @@ func get(key string) (interface{}, bool) {
 		if category, ok := entry.(object); ok {
 			currentCategory = category
 		} else {
-			return entry, true
+			// TODO test if we're at the end of the path
+			val := entry.(*Entry).Value
+			return val, val != nil // nil means unset
 		}
 	}
 	return nil, false
@@ -217,9 +190,9 @@ func Has(key string) bool {
 	return ok
 }
 
-// Set a config entry
-//
+// Set a config entry.
 // The change is temporary and will not be saved for next boot.
+// Use "nil" to unset a value.
 func Set(key string, value interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -228,18 +201,27 @@ func Set(key string, value interface{}) {
 	for _, catKey := range path {
 		entry, ok := currentCategory[catKey]
 		if !ok {
-			break
+			// TODO document this behavior
+			// If entry doesn't exist (and is not registered),
+			// register it with the type of the type given here
+			// and "any" authorized values.
+			currentCategory[catKey] = &Entry{value, reflect.TypeOf(value).Kind(), []interface{}{}}
+			return
 		}
 
 		if category, ok := entry.(object); ok {
 			currentCategory = category
 		} else {
-			// TODO validate here
-			// (all entries should be stored in a struct containing their types and authorized values)
-			currentCategory[catKey] = value
+			// TODO test if we're at the end of the path
+			entry := currentCategory[catKey].(*Entry)
+			entry.Value = value
+			if err := entry.validate(key); err != nil {
+				panic(err)
+			}
+			currentCategory[catKey] = entry
+			return
 		}
 	}
-	config[key] = value
 }
 
 func loadDefaults(src object, dst object) {
@@ -261,12 +243,17 @@ func override(src object, dst object) error { // TODO test override
 				dst[k] = make(object, len(obj))
 			} else if _, ok := dstObj.(object); !ok {
 				// Conflict: destination is not a category
-				return fmt.Errorf("Invalid config:\n\t- Cannot override entry \"%s\" because it is category", k)
-				// TODO find a way to retrieve full key
+				return fmt.Errorf("Invalid config:\n\t- Cannot override entry %q because it is a category", k)
 			}
 			override(obj, dst[k].(object))
+		} else if entry, ok := dst[k]; ok {
+			entry.(*Entry).Value = v
 		} else {
-			dst[k] = v
+			// TODO document this behavior
+			// If entry doesn't exist (and is not registered),
+			// register it with the type of the type given here
+			// and "any" authorized values.
+			dst[k] = &Entry{v, reflect.TypeOf(v).Kind(), []interface{}{}}
 		}
 	}
 	return nil
@@ -299,11 +286,22 @@ func getConfigFilePath() string {
 	return "config." + env + ".json"
 }
 
-func validateConfig() error { // TODO update validate config
-	message := "Invalid config:"
+func (o object) validate(key string) error {
+	message := ""
 	valid := true
-	for key, value := range config {
-		if err := validateEntry(value, key); err != nil {
+	for k, entry := range o {
+		var subKey string
+		if key == "" {
+			subKey = k
+		} else {
+			subKey = key + "." + k
+		}
+		if category, ok := entry.(object); ok {
+			if err := category.validate(subKey); err != nil {
+				message += err.Error()
+				valid = false
+			}
+		} else if err := entry.(*Entry).validate(subKey); err != nil {
 			message += "\n\t- " + err.Error()
 			valid = false
 		}
@@ -315,18 +313,34 @@ func validateConfig() error { // TODO update validate config
 	return nil
 }
 
-func validateEntry(value interface{}, key string) error { // TODO handle multi-level
-	if v, ok := configValidation[key]; ok {
-		t := reflect.TypeOf(value)
-		if t.Kind() != v {
-			return fmt.Errorf("%q type must be %s", key, v)
-		}
+func (e *Entry) validate(key string) error {
+	if e.Value == nil { // nil values means unset
+		return nil
+	}
 
-		if v, ok := authorizedValues[key]; ok {
-			if !helper.ContainsStr(v, value.(string)) {
-				return fmt.Errorf("%q must have one of the following values: %s", key, strings.Join(v, ", "))
-			}
+	kind := reflect.TypeOf(e.Value).Kind()
+	if kind != e.Type {
+		if !e.tryIntConversion(kind) {
+			return fmt.Errorf("%q type must be %s", key, e.Type)
+		}
+		return nil
+	}
+
+	if len(e.AuthorizedValues) > 0 && !helper.Contains(e.AuthorizedValues, e.Value) {
+		return fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
+	}
+
+	return nil
+}
+
+func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
+	if kind == reflect.Float64 && e.Type == reflect.Int {
+		intVal := int(e.Value.(float64))
+		if e.Value == float64(intVal) {
+			e.Value = intVal
+			return true
 		}
 	}
-	return nil
+
+	return false
 }

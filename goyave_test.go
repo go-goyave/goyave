@@ -441,7 +441,7 @@ func (suite *GoyaveTestSuite) TestConfigError() {
 		if err != nil {
 			e := err.(*Error)
 			suite.Equal(ExitInvalidConfig, e.ExitCode)
-			suite.Equal("Invalid config:\n\t- \"environment\" type must be string", e.Error())
+			suite.Equal("Invalid config:\n\t- \"app.environment\" type must be string", e.Error())
 		}
 	}
 }

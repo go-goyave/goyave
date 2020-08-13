@@ -133,7 +133,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.Equal("29", resp.Header.Get("Content-Length"))
+	suite.Equal("91", resp.Header.Get("Content-Length")) // TODO get length of the file instead of hardcoding it in the test
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
 
@@ -214,7 +214,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.Equal("29", resp.Header.Get("Content-Length"))
+	suite.Equal("91", resp.Header.Get("Content-Length")) // TODO get length of the file instead of hardcoding it in the test
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
 

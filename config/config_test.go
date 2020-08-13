@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -84,6 +85,7 @@ func (suite *ConfigTestSuite) TestGet() {
 	})
 
 	// TODO test with several depth levels
+	// TODO test unset with nil
 }
 
 func (suite *ConfigTestSuite) TestHas() {
@@ -136,6 +138,15 @@ func (suite *ConfigTestSuite) TestInvalidConfig() { // TODO add custom entry val
 	// config = nil
 	// suite.NotNil(Load())
 	// os.Setenv("GOYAVE_ENV", "test")
+}
+
+func (suite *ConfigTestSuite) TestTryIntConversion() {
+	e := Entry{1.42, reflect.Int, []interface{}{}}
+	suite.False(e.tryIntConversion(reflect.Float64))
+
+	e.Value = float64(2)
+	suite.True(e.tryIntConversion(reflect.Float64))
+	suite.Equal(2, e.Value)
 }
 
 func (suite *ConfigTestSuite) TearDownAllSuite() {

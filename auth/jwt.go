@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/System-Glitch/goyave/v2"
 	"github.com/System-Glitch/goyave/v2/config"
@@ -15,6 +16,19 @@ import (
 type JWTAuthenticator struct{}
 
 var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
+
+func init() {
+	config.Register("auth.jwt.secret", config.Entry{
+		Value:            nil,
+		Type:             reflect.String,
+		AuthorizedValues: []interface{}{},
+	})
+	config.Register("auth.jwt.expiry", config.Entry{
+		Value:            300,
+		Type:             reflect.Int,
+		AuthorizedValues: []interface{}{},
+	})
+}
 
 // Authenticate fetch the user corresponding to the token
 // found in the given request and puts the result in the given user pointer.

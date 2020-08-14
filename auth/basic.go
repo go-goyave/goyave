@@ -51,6 +51,19 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user interfac
 
 //--------------------------------------------
 
+func init() {
+	config.Register("auth.basic.username", config.Entry{
+		Value:            nil,
+		Type:             reflect.String,
+		AuthorizedValues: []interface{}{},
+	})
+	config.Register("auth.basic.password", config.Entry{
+		Value:            nil,
+		Type:             reflect.String,
+		AuthorizedValues: []interface{}{},
+	})
+}
+
 // BasicUser a simple user for config-based basic authentication.
 type BasicUser struct {
 	Name string

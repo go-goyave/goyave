@@ -57,21 +57,44 @@ var configDefaults object = object{
 		"maxLifetime":        &Entry{300, reflect.Int, []interface{}{}},
 		"autoMigrate":        &Entry{false, reflect.Bool, []interface{}{}},
 	},
-	"auth": object{ // TODO move this config to auth package
-		"basic": object{
-			"username": &Entry{nil, reflect.String, []interface{}{}},
-			"password": &Entry{nil, reflect.String, []interface{}{}},
-		},
-		"jwt": object{
-			"expiry": &Entry{300, reflect.Int, []interface{}{}},
-			"secret": &Entry{nil, reflect.String, []interface{}{}},
-		},
-	},
 }
 
 var mutex = &sync.RWMutex{}
 
-var mutex = &sync.RWMutex{}
+// Register a new config entry and its validation.
+//
+// Each module should register its config entries in an "init()"
+// function, even if they don't have a default value, in order to
+// ensure they will be validated.
+// Each module should use its own category and use a name both expressive
+// and unique to avoid collisions.
+// For example, the "auth" package registers, among others, "auth.basic.username"
+// and "auth.jwt.expiry", thus creating a category for its package, and two subcategories
+// for its features.
+//
+// To register an entry without a default value (only specify how it
+// will be validated), set "Entry.Value" to "nil".
+//
+// Panics if an entry already exists for this key and is not identical to the
+// one passed as parameter of this function. On the other hand, if the entries
+// are identical, no conflict is expected so the configuration is left in its
+// current state.
+func Register(key string, entry Entry) { // TODO test register
+	if key == "" {
+		panic("Empty key is not allowed")
+	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+	category, entryKey, exists := walk(configDefaults, key)
+	if exists {
+		if !reflect.DeepEqual(entry, category[entryKey].(*Entry)) {
+			panic(fmt.Sprintf("Attempted to override registered config entry %q", key))
+		}
+	} else {
+		category[entryKey] = &entry // TODO don't use pointer
+	}
+}
 
 // Load loads the config.json file in the current working directory.
 // If the "GOYAVE_ENV" env variable is set, the config file will be picked like so:
@@ -212,7 +235,23 @@ func Set(key string, value interface{}) {
 
 	mutex.Lock()
 	defer mutex.Unlock()
-	currentCategory := config
+	category, entryKey, exists := walk(config, key)
+	if exists {
+		entry := category[entryKey].(*Entry)
+		entry.Value = value
+		if err := entry.validate(key); err != nil {
+			panic(err)
+		}
+		category[entryKey] = entry
+	} else {
+		category[entryKey] = &Entry{value, reflect.TypeOf(value).Kind(), []interface{}{}}
+	}
+}
+
+// walk the config using the key. Returns the deepest category, the entry key
+// with its path stripped ("app.name" -> "name") and true if the entry already
+// exists, false if it's not registered.
+func walk(currentCategory object, key string) (object, string, bool) { // TODO test walk
 	path := strings.Split(key, ".")
 
 	for i, catKey := range path {
@@ -222,11 +261,8 @@ func Set(key string, value interface{}) {
 			currentCategory = createMissingCategories(currentCategory, i, path)
 			catKey = path[len(path)-1]
 
-			// If entry doesn't exist (and is not registered),
-			// register it with the type of the type given here
-			// and "any" authorized values.
-			currentCategory[catKey] = &Entry{value, reflect.TypeOf(value).Kind(), []interface{}{}}
-			return
+			// Entry doesn't exist and is not registered
+			return currentCategory, catKey, false
 		}
 
 		if category, ok := entry.(object); ok {
@@ -235,13 +271,9 @@ func Set(key string, value interface{}) {
 			if i != len(path)-1 {
 				panic(fmt.Sprintf("Attempted to add an entry to non-category %q", strings.Join(path[:i+1], ".")))
 			}
-			entry := currentCategory[catKey].(*Entry)
-			entry.Value = value
-			if err := entry.validate(key); err != nil {
-				panic(err)
-			}
-			currentCategory[catKey] = entry
-			return
+
+			// Entry exists
+			return currentCategory, catKey, true
 		}
 	}
 
@@ -252,8 +284,7 @@ func Set(key string, value interface{}) {
 // Doesn't create anything is not needed.
 // Returns the deepest category created, or the provided object if nothing has
 // been created.
-func createMissingCategories(category object, index int, path []string) object {
-	currentCategory := category
+func createMissingCategories(currentCategory object, index int, path []string) object {
 	for ; index < len(path)-1; index++ {
 		catKey := path[index]
 		newCategory := object{}
@@ -372,7 +403,7 @@ func (e *Entry) validate(key string) error {
 	return nil
 }
 
-func (e *Entry) tryIntConversion(kind reflect.Kind) bool { // TODO try not to use pointer
+func (e *Entry) tryIntConversion(kind reflect.Kind) bool { // TODO try not to use pointer (benchmark)
 	if kind == reflect.Float64 && e.Type == reflect.Int {
 		intVal := int(e.Value.(float64))
 		if e.Value == float64(intVal) {

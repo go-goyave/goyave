@@ -44,7 +44,7 @@ func (suite *JWTAuthenticatorTestSuite) createWrongToken(method jwt.SigningMetho
 		"exp":    exp.Unix(), // Expiry
 	})
 
-	return token.SignedString([]byte(config.GetString("jwt.secret")))
+	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
 }
 
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticate() {

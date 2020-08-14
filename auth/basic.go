@@ -61,13 +61,13 @@ type basicUserAuthenticator struct{}
 var _ Authenticator = (*basicUserAuthenticator)(nil) // implements Authenticator
 
 // Authenticate check if the request basic auth header matches the
-// "authUsername" and "authPassword" config entries.
+// "auth.basic.username" and "auth.basic.password" config entries.
 func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user interface{}) error {
 	username, password, ok := request.BasicAuth()
 
 	if !ok ||
-		username != config.GetString("auth.username") || // TODO update basic auth docs
-		password != config.GetString("auth.password") {
+		username != config.GetString("auth.basic.username") || // TODO update basic auth docs (also this is a breaking change)
+		password != config.GetString("auth.basic.password") {
 		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 	}
 	user.(*BasicUser).Name = username

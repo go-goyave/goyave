@@ -27,12 +27,14 @@
         "maxLifetime": 300,
         "autoMigrate": false
     },
-    "jwt": {
-        "expiry": 300.0,
-        "secret": "jwt-secret"
-    },
     "auth": {
-        "username": "admin",
-        "password": "admin"
+        "jwt": {
+            "expiry": 300.0,
+            "secret": "jwt-secret"
+        },
+        "basic": {
+            "username": "admin",
+            "password": "admin"
+        }
     }
 }

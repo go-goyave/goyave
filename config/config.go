@@ -57,14 +57,19 @@ var configDefaults object = object{
 		"maxLifetime":        &Entry{300, reflect.Int, []interface{}{}},
 		"autoMigrate":        &Entry{false, reflect.Bool, []interface{}{}},
 	},
-	"jwt": object{ // TODO move this config to auth package
-		"expiry": &Entry{300, reflect.Int, []interface{}{}},
-		"secret": &Entry{nil, reflect.String, []interface{}{}},
+	"auth": object{ // TODO move this config to auth package
+		"basic": object{
+			"username": &Entry{nil, reflect.String, []interface{}{}},
+			"password": &Entry{nil, reflect.String, []interface{}{}},
+		},
+		"jwt": object{
+			"expiry": &Entry{300, reflect.Int, []interface{}{}},
+			"secret": &Entry{nil, reflect.String, []interface{}{}},
+		},
 	},
-	// TODO don't forget optional entries in docs (such as tlsCert)
 }
 
-// TODO implement Register()
+var mutex = &sync.RWMutex{}
 
 var mutex = &sync.RWMutex{}
 
@@ -202,7 +207,7 @@ func Has(key string) bool {
 // Panics in case of error.
 func Set(key string, value interface{}) {
 	if key == "" {
-		panic("config.Set: empty key is not allowed")
+		panic("Empty key is not allowed")
 	}
 
 	mutex.Lock()
@@ -214,15 +219,8 @@ func Set(key string, value interface{}) {
 		entry, ok := currentCategory[catKey]
 		if !ok {
 			// If categories are missing, create them
-			if i != len(path)-1 {
-				for j := i; j < len(path)-1; j++ {
-					catKey = path[j]
-					newCategory := object{}
-					currentCategory[catKey] = newCategory
-					currentCategory = newCategory
-				}
-				catKey = path[len(path)-1]
-			}
+			currentCategory = createMissingCategories(currentCategory, i, path)
+			catKey = path[len(path)-1]
 
 			// If entry doesn't exist (and is not registered),
 			// register it with the type of the type given here
@@ -235,7 +233,7 @@ func Set(key string, value interface{}) {
 			currentCategory = category
 		} else {
 			if i != len(path)-1 {
-				panic(fmt.Sprintf("config.Set: attempted to add an entry to non-category %q", strings.Join(path[:i+1], ".")))
+				panic(fmt.Sprintf("Attempted to add an entry to non-category %q", strings.Join(path[:i+1], ".")))
 			}
 			entry := currentCategory[catKey].(*Entry)
 			entry.Value = value
@@ -247,7 +245,22 @@ func Set(key string, value interface{}) {
 		}
 	}
 
-	panic(fmt.Sprintf("config.Set: attempted to replace the %q category with an entry", key))
+	panic(fmt.Sprintf("Attempted to replace the %q category with an entry", key))
+}
+
+// createMissingCategories based on the key path, starting at the given index.
+// Doesn't create anything is not needed.
+// Returns the deepest category created, or the provided object if nothing has
+// been created.
+func createMissingCategories(category object, index int, path []string) object {
+	currentCategory := category
+	for ; index < len(path)-1; index++ {
+		catKey := path[index]
+		newCategory := object{}
+		currentCategory[catKey] = newCategory
+		currentCategory = newCategory
+	}
+	return currentCategory
 }
 
 func loadDefaults(src object, dst object) {

@@ -66,8 +66,8 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticate() {
 }
 
 func (suite *BasicAuthenticatorTestSuite) TestAuthenticateViaConfig() {
-	config.Set("auth.username", "admin")
-	config.Set("auth.password", "secret")
+	config.Set("auth.basic.username", "admin")
+	config.Set("auth.basic.password", "secret")
 
 	authenticator := ConfigBasicAuth()
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))

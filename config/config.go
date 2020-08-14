@@ -368,12 +368,16 @@ func override(src object, dst object) error { // TODO test override
 				dst[k] = make(object, len(obj))
 			} else if _, ok := dstObj.(object); !ok {
 				// Conflict: destination is not a category
-				return fmt.Errorf("Invalid config:\n\t- Cannot override entry %q because it is a category", k)
+				return fmt.Errorf("Invalid config:\n\t- Cannot override entry %q with a category", k)
 			}
 			override(obj, dst[k].(object))
 		} else if entry, ok := dst[k]; ok {
-			entry.(*Entry).Value = v
-			// TODO check conflicts ?
+			e, ok := entry.(*Entry)
+			if !ok {
+				// Conflict: override category with an entry
+				return fmt.Errorf("Invalid config:\n\t- Cannot override category %q with an entry", k)
+			}
+			e.Value = v
 		} else {
 			// TODO document this behavior
 			// If entry doesn't exist (and is not registered),

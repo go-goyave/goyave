@@ -25,7 +25,7 @@ type Entry struct {
 
 var config object
 
-var configDefaults object = object{
+var configDefaults object = object{ // TODO change documentation about validated config (All values from the framework's core are validated. -> not only the core now)
 	"app": object{
 		"name":            &Entry{"goyave", reflect.String, []interface{}{}},
 		"environment":     &Entry{"localhost", reflect.String, []interface{}{}},
@@ -140,7 +140,7 @@ func Clear() {
 	mutex.Unlock()
 }
 
-// Get a config entry.
+// Get a config entry. Panics if the entry doesn't exist.
 func Get(key string) interface{} {
 	if val, ok := get(key); ok {
 		return val
@@ -184,7 +184,8 @@ func get(key string) (interface{}, bool) {
 	return nil, false
 }
 
-// GetString a config entry as string. Panics if entry is not a string.
+// GetString a config entry as string.
+// Panics if entry is not a string or if it doesn't exist.
 func GetString(key string) string {
 	str, ok := Get(key).(string)
 	if !ok {
@@ -193,7 +194,8 @@ func GetString(key string) string {
 	return str
 }
 
-// GetBool a config entry as bool. Panics if entry is not a bool.
+// GetBool a config entry as bool.
+// Panics if entry is not a bool or if it doesn't exist.
 func GetBool(key string) bool {
 	val, ok := Get(key).(bool)
 	if !ok {
@@ -202,7 +204,8 @@ func GetBool(key string) bool {
 	return val
 }
 
-// GetInt a config entry as int. Panics if entry is not an int.
+// GetInt a config entry as int.
+// Panics if entry is not an int or if it doesn't exist.
 func GetInt(key string) int {
 	val, ok := Get(key).(int)
 	if !ok {
@@ -211,8 +214,9 @@ func GetInt(key string) int {
 	return val
 }
 
-// GetFloat a config entry as float64. Panics if entry is not a float64.
-func GetFloat(key string) float64 { // TODO update accessors docs
+// GetFloat a config entry as float64.
+// Panics if entry is not a float64 or if it doesn't exist.
+func GetFloat(key string) float64 {
 	val, ok := Get(key).(float64)
 	if !ok {
 		panic(fmt.Sprintf("Config entry \"%s\" is not a float64", key))
@@ -238,6 +242,7 @@ func Has(key string) bool {
 //    have an empty slice as authorized values (meaning it can have any value of its type)
 //
 // Panics in case of error.
+// TODO update set documentation
 func Set(key string, value interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()

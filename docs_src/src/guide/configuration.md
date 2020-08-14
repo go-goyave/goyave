@@ -58,9 +58,11 @@ config.Load()
 
 #### config.Get
 
-Get a generic config entry. You may need to type-assert it before being able to use it. You can do so safely as the config values and types are validated. Panics if the entry doesn't exist.
+Get a generic config entry. 
 
-TODO update config Get and Set
+Prefer using the `GetString`, `GetBool`, `GetInt` and `GetFloat` accessors. If you need a type not covered by those accessors, use `config.Get`. You may need to type-assert the returned value before using it. You can do so safely as the config values and types are validated.
+
+Panics if the entry doesn't exist.
 
 | Parameters   | Return                 |
 |--------------|------------------------|
@@ -73,7 +75,7 @@ config.Get("app.name") // "goyave"
 
 #### config.GetString
 
-Get a string config entry. Panics if the entry doesn't exist or is not a string.
+Get a string config entry. Panics if the entry doesn't exist or is not a `string` or if it doesn't exist.
 
 | Parameters   | Return            |
 |--------------|-------------------|
@@ -86,7 +88,7 @@ config.GetString("server.protocol") // "http"
 
 #### config.GetBool
 
-Get a bool config entry. Panics if the entry doesn't exist or is not a bool.
+Get a bool config entry. Panics if the entry doesn't exist or is not a `bool` or if it doesn't exist.
 
 | Parameters   | Return          |
 |--------------|-----------------|
@@ -95,6 +97,36 @@ Get a bool config entry. Panics if the entry doesn't exist or is not a bool.
 **Example:**
 ``` go
 config.GetBool("app.debug") // true
+```
+
+#### config.GetInt
+
+<p><Badge text="Since v3.0.0"/></p>
+
+Get an int config entry. Panics if the entry doesn't exist or is not an `int` or if it doesn't exist.
+
+| Parameters   | Return         |
+|--------------|----------------|
+| `key string` | `int` or panic |
+
+**Example:**
+``` go
+config.GetInt("server.port") // 8080
+```
+
+#### config.GetFloat
+
+<p><Badge text="Since v3.0.0"/></p>
+
+Get a float config entry. Panics if the entry doesn't exist or is not a `float64` or if it doesn't exist.
+
+| Parameters   | Return             |
+|--------------|--------------------|
+| `key string` | `float64` or panic |
+
+**Example:**
+``` go
+config.GetInt("server.port") // 8080
 ```
 
 #### config.Has

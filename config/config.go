@@ -92,7 +92,7 @@ func Register(key string, entry Entry) { // TODO test register
 			panic(fmt.Sprintf("Attempted to override registered config entry %q", key))
 		}
 	} else {
-		category[entryKey] = &entry // TODO don't use pointer
+		category[entryKey] = &entry
 	}
 }
 
@@ -157,9 +157,13 @@ func get(key string) (interface{}, bool) {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	currentCategory := config
-	path := strings.Split(key, ".")
-	for _, catKey := range path {
-		entry, ok := currentCategory[catKey]
+	b := 0
+	e := strings.Index(key, ".")
+	if e == -1 {
+		e = len(key)
+	}
+	for path := key[b:e]; ; path = key[b:e] {
+		entry, ok := currentCategory[path]
 		if !ok {
 			break
 		}
@@ -169,6 +173,16 @@ func get(key string) (interface{}, bool) {
 		} else {
 			val := entry.(*Entry).Value
 			return val, val != nil // nil means unset
+		}
+
+		if e+1 <= len(key) {
+			b = e + 1
+			newE := strings.Index(key[b:], ".")
+			if newE == -1 {
+				e = len(key)
+			} else {
+				e = newE + b
+			}
 		}
 	}
 	return nil, false
@@ -251,15 +265,23 @@ func Set(key string, value interface{}) {
 // walk the config using the key. Returns the deepest category, the entry key
 // with its path stripped ("app.name" -> "name") and true if the entry already
 // exists, false if it's not registered.
-func walk(currentCategory object, key string) (object, string, bool) { // TODO test walk
-	path := strings.Split(key, ".")
-
-	for i, catKey := range path {
+func walk(currentCategory object, key string) (object, string, bool) { // TODO test walk more extensively
+	b := 0
+	e := strings.Index(key, ".")
+	if e == -1 {
+		e = len(key)
+	}
+	for catKey := key[b:e]; ; catKey = key[b:e] {
 		entry, ok := currentCategory[catKey]
 		if !ok {
 			// If categories are missing, create them
-			currentCategory = createMissingCategories(currentCategory, i, path)
-			catKey = path[len(path)-1]
+			currentCategory = createMissingCategories(currentCategory, key[b:])
+			i := strings.LastIndex(key, ".")
+			if i == -1 {
+				catKey = key
+			} else {
+				catKey = key[i+1:]
+			}
 
 			// Entry doesn't exist and is not registered
 			return currentCategory, catKey, false
@@ -268,12 +290,24 @@ func walk(currentCategory object, key string) (object, string, bool) { // TODO t
 		if category, ok := entry.(object); ok {
 			currentCategory = category
 		} else {
-			if i != len(path)-1 {
-				panic(fmt.Sprintf("Attempted to add an entry to non-category %q", strings.Join(path[:i+1], ".")))
+			if e < len(key) {
+				panic(fmt.Sprintf("Attempted to add an entry to non-category %q", key[:e]))
 			}
 
 			// Entry exists
 			return currentCategory, catKey, true
+		}
+
+		if e+1 <= len(key) {
+			b = e + 1
+			newE := strings.Index(key[b:], ".")
+			if newE == -1 {
+				e = len(key)
+			} else {
+				e = newE + b
+			}
+		} else {
+			break
 		}
 	}
 
@@ -284,12 +318,27 @@ func walk(currentCategory object, key string) (object, string, bool) { // TODO t
 // Doesn't create anything is not needed.
 // Returns the deepest category created, or the provided object if nothing has
 // been created.
-func createMissingCategories(currentCategory object, index int, path []string) object {
-	for ; index < len(path)-1; index++ {
-		catKey := path[index]
+func createMissingCategories(currentCategory object, path string) object { // TODO create missing categories
+	b := 0
+	e := strings.Index(path, ".")
+	if e == -1 {
+		return currentCategory
+	}
+	for catKey := path[b:e]; ; catKey = path[b:e] {
 		newCategory := object{}
 		currentCategory[catKey] = newCategory
 		currentCategory = newCategory
+
+		if e+1 <= len(path) {
+			b = e + 1
+			newE := strings.Index(path[b:], ".")
+			if newE == -1 {
+				return currentCategory
+			}
+			e = newE + b
+		} else {
+			break
+		}
 	}
 	return currentCategory
 }
@@ -301,7 +350,8 @@ func loadDefaults(src object, dst object) {
 			loadDefaults(obj, sub)
 			dst[k] = sub
 		} else {
-			dst[k] = v
+			entry := v.(*Entry)
+			dst[k] = &Entry{entry.Value, entry.Type, entry.AuthorizedValues}
 		}
 	}
 }
@@ -318,6 +368,7 @@ func override(src object, dst object) error { // TODO test override
 			override(obj, dst[k].(object))
 		} else if entry, ok := dst[k]; ok {
 			entry.(*Entry).Value = v
+			// TODO check conflicts ?
 		} else {
 			// TODO document this behavior
 			// If entry doesn't exist (and is not registered),
@@ -403,7 +454,7 @@ func (e *Entry) validate(key string) error {
 	return nil
 }
 
-func (e *Entry) tryIntConversion(kind reflect.Kind) bool { // TODO try not to use pointer (benchmark)
+func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
 	if kind == reflect.Float64 && e.Type == reflect.Int {
 		intVal := int(e.Value.(float64))
 		if e.Value == float64(intVal) {

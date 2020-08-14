@@ -68,6 +68,69 @@ func (suite *ConfigTestSuite) TestSet() {
 	})
 }
 
+func (suite *ConfigTestSuite) TestWalk() {
+	config := object{
+		"rootLevel": &Entry{"root level content", reflect.String, []interface{}{}},
+		"app": object{
+			"environment": &Entry{"test", reflect.String, []interface{}{}},
+		},
+	}
+	category, entryKey, exists := walk(config, "app.environment")
+	suite.True(exists)
+	suite.Equal("environment", entryKey)
+	suite.Equal(config["app"], category)
+
+	category, entryKey, exists = walk(config, "category.subcategory.entry")
+	suite.False(exists)
+	suite.Equal("entry", entryKey)
+	n, ok := config["category"]
+	suite.True(ok)
+	newCat, ok := n.(object)
+	suite.True(ok)
+
+	s, ok := newCat["subcategory"]
+	suite.True(ok)
+	subCat, ok := s.(object)
+	suite.True(ok)
+	suite.Equal(subCat, category)
+
+	_, ok = subCat["entry"]
+	suite.False(ok)
+
+	category, entryKey, exists = walk(config, "category.subcategory.other")
+	suite.False(exists)
+	suite.Equal("other", entryKey)
+	n, ok = config["category"]
+	suite.True(ok)
+	newCat, ok = n.(object)
+	suite.True(ok)
+
+	s, ok = newCat["subcategory"]
+	suite.True(ok)
+	subCat, ok = s.(object)
+	suite.True(ok)
+	suite.Equal(subCat, category)
+
+	_, ok = subCat["other"]
+	suite.False(ok)
+
+	// Trying to convert an entry to a category
+	suite.Panics(func() {
+		walk(config, "app.environment.error")
+	})
+	suite.Panics(func() {
+		walk(config, "rootLevel.error")
+	})
+
+	// Trying to replace a category
+	suite.Panics(func() {
+		walk(config, "category.subcategory")
+	})
+	suite.Panics(func() {
+		walk(config, "app")
+	})
+}
+
 func (suite *ConfigTestSuite) TestSetCreateCategories() {
 	// Entirely new categories
 	Set("rootCategory.subCategory.entry", "new")
@@ -202,6 +265,8 @@ func (suite *ConfigTestSuite) TestLowLevelGet() {
 	val, ok = get("app.test.this")
 	suite.True(ok)
 	suite.Equal("that", val)
+
+	// Test path ending with a dot
 }
 
 func (suite *ConfigTestSuite) TestHas() {
@@ -257,12 +322,25 @@ func (suite *ConfigTestSuite) TestInvalidConfig() { // TODO add custom entry val
 }
 
 func (suite *ConfigTestSuite) TestTryIntConversion() {
-	e := Entry{1.42, reflect.Int, []interface{}{}}
+	e := &Entry{1.42, reflect.Int, []interface{}{}}
 	suite.False(e.tryIntConversion(reflect.Float64))
 
 	e.Value = float64(2)
 	suite.True(e.tryIntConversion(reflect.Float64))
 	suite.Equal(2, e.Value)
+}
+
+func (suite *ConfigTestSuite) TestValidateEntryWithConversion() {
+	e := &Entry{1.42, reflect.Int, []interface{}{}}
+	category := object{"number": e}
+	err := category.validate("")
+	suite.NotNil(err)
+	suite.Equal("\n\t- \"number\" type must be int", err.Error())
+
+	e.Value = float64(2)
+	err = category.validate("")
+	suite.Nil(err)
+	suite.Equal(2, category["number"].(*Entry).Value)
 }
 
 func (suite *ConfigTestSuite) TearDownAllSuite() {

@@ -404,9 +404,9 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 func (suite *GoyaveTestSuite) TestAutoMigrate() {
 	suite.loadConfig()
 	config.Set("database.connection", "mysql")
-	config.Set("database.AutoMigrate", true)
+	config.Set("database.autoMigrate", true)
 	suite.RunServer(func(router *Router) {}, func() {})
-	config.Set("database.AutoMigrate", false)
+	config.Set("database.autoMigrate", false)
 	config.Set("database.Connection", "none")
 }
 

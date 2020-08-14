@@ -129,6 +129,18 @@ func (suite *ConfigTestSuite) TestWalk() {
 	suite.Panics(func() {
 		walk(config, "app")
 	})
+
+	// Path ending with a dot
+	suite.Panics(func() {
+		walk(config, "paniccategory.subcategory.")
+	})
+	// Check nothing has been created
+	_, ok = config["paniccategory"]
+	suite.False(ok)
+
+	suite.Panics(func() { // empty key not allowed
+		walk(config, "")
+	})
 }
 
 func (suite *ConfigTestSuite) TestSetCreateCategories() {
@@ -266,7 +278,10 @@ func (suite *ConfigTestSuite) TestLowLevelGet() {
 	suite.True(ok)
 	suite.Equal("that", val)
 
-	// Test path ending with a dot
+	// Path ending with a dot
+	val, ok = get("app.test.")
+	suite.False(ok)
+	suite.Nil(val)
 }
 
 func (suite *ConfigTestSuite) TestHas() {

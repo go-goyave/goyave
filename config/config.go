@@ -80,10 +80,6 @@ var mutex = &sync.RWMutex{}
 // are identical, no conflict is expected so the configuration is left in its
 // current state.
 func Register(key string, entry Entry) { // TODO test register
-	if key == "" {
-		panic("Empty key is not allowed")
-	}
-
 	mutex.Lock()
 	defer mutex.Unlock()
 	category, entryKey, exists := walk(configDefaults, key)
@@ -243,10 +239,6 @@ func Has(key string) bool {
 //
 // Panics in case of error.
 func Set(key string, value interface{}) {
-	if key == "" {
-		panic("Empty key is not allowed")
-	}
-
 	mutex.Lock()
 	defer mutex.Unlock()
 	category, entryKey, exists := walk(config, key)
@@ -266,6 +258,14 @@ func Set(key string, value interface{}) {
 // with its path stripped ("app.name" -> "name") and true if the entry already
 // exists, false if it's not registered.
 func walk(currentCategory object, key string) (object, string, bool) { // TODO test walk more extensively
+	if key == "" {
+		panic("Empty key is not allowed")
+	}
+
+	if key[len(key)-1:] == "." {
+		panic("Keys ending with a dot are not allowed")
+	}
+
 	b := 0
 	e := strings.Index(key, ".")
 	if e == -1 {

@@ -323,7 +323,7 @@ func walk(currentCategory object, key string) (object, string, bool) { // TODO t
 // Doesn't create anything is not needed.
 // Returns the deepest category created, or the provided object if nothing has
 // been created.
-func createMissingCategories(currentCategory object, path string) object { // TODO create missing categories
+func createMissingCategories(currentCategory object, path string) object { // TODO test create missing categories at unit level
 	b := 0
 	e := strings.Index(path, ".")
 	if e == -1 {
@@ -348,7 +348,7 @@ func createMissingCategories(currentCategory object, path string) object { // TO
 	return currentCategory
 }
 
-func loadDefaults(src object, dst object) {
+func loadDefaults(src object, dst object) { // TODO test loadDefaults
 	for k, v := range src {
 		if obj, ok := v.(object); ok {
 			sub := make(object, len(obj))
@@ -389,7 +389,7 @@ func override(src object, dst object) error { // TODO test override
 	return nil
 }
 
-func readConfigFile(file string) (object, error) {
+func readConfigFile(file string) (object, error) { // TODO test this at unit level
 	conf := make(object, len(configDefaults))
 	configFile, err := os.Open(file)
 

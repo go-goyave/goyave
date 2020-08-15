@@ -33,8 +33,6 @@ func (suite *ConfigTestSuite) TestLoadDefaults() {
 	// TODO test loadDefaults
 }
 
-// TODO test override
-
 func (suite *ConfigTestSuite) TestSet() {
 	suite.Equal("root level content", Get("rootLevel"))
 	Set("rootLevel", "root level content override")
@@ -303,39 +301,6 @@ func (suite *ConfigTestSuite) TestGetEnv() {
 	os.Setenv("GOYAVE_ENV", "test")
 }
 
-func (suite *ConfigTestSuite) TestInvalidConfig() { // TODO add custom entry validation
-	// val := Get("app.name")
-
-	// TODO re-enable config validation tests
-	// config["app.name"] = true
-	// err := validateConfig()
-	// suite.NotNil(err)
-	// suite.Equal("Invalid config:\n\t- \"app.name\" type must be string", err.Error())
-	// config["app.name"] = val
-
-	// suite.Panics(func() {
-	// 	Set("app.name", true)
-	// })
-
-	// val = Get("database.connection")
-
-	// TODO re-enable config validation tests
-	// config["database.connection"] = "not a driver"
-	// err = validateConfig()
-	// suite.NotNil(err)
-	// suite.Equal("Invalid config:\n\t- \"database.connection\" must have one of the following values: none, mysql, postgres, sqlite3, mssql", err.Error())
-	// config["database.connection"] = val
-
-	// suite.Panics(func() {
-	// 	Set("server.protocol", "ftp") // Unsupported protocol
-	// })
-
-	// os.Setenv("GOYAVE_ENV", "test_invalid")
-	// config = nil
-	// suite.NotNil(Load())
-	// os.Setenv("GOYAVE_ENV", "test")
-}
-
 func (suite *ConfigTestSuite) TestTryIntConversion() {
 	e := &Entry{1.42, reflect.Int, []interface{}{}}
 	suite.False(e.tryIntConversion(reflect.Float64))
@@ -411,6 +376,39 @@ func (suite *ConfigTestSuite) TestValidateEntry() {
 
 	e = &Entry{1.42, reflect.Float64, []interface{}{1.2, 1.3, 2.4, 42.1, 1.4200000001, 1.42}}
 	err = e.validate("entry")
+	suite.Nil(err)
+}
+
+func (suite *ConfigTestSuite) TestValidateObject() {
+	config := object{
+		"rootLevel": &Entry{"root level content", reflect.Bool, []interface{}{}},
+		"app": object{
+			"environment": &Entry{true, reflect.String, []interface{}{}},
+			"subcategory": object{
+				"entry": &Entry{666, reflect.Int, []interface{}{1, 2, 3}},
+			},
+		},
+	}
+
+	err := config.validate("")
+	suite.NotNil(err)
+	if err != nil {
+		message := "\n\t- \"rootLevel\" type must be bool" +
+			"\n\t- \"app.environment\" type must be string" +
+			"\n\t- \"app.subcategory.entry\" must have one of the following values: [1 2 3]"
+		suite.Equal(message, err.Error())
+	}
+
+	config = object{
+		"rootLevel": &Entry{"root level content", reflect.String, []interface{}{}},
+		"app": object{
+			"environment": &Entry{"local", reflect.String, []interface{}{}},
+			"subcategory": object{
+				"entry": &Entry{2, reflect.Int, []interface{}{1, 2, 3}},
+			},
+		},
+	}
+	err = config.validate("")
 	suite.Nil(err)
 }
 

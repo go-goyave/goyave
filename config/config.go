@@ -389,7 +389,7 @@ func override(src object, dst object) error { // TODO test override
 	return nil
 }
 
-func readConfigFile(file string) (object, error) { // TODO test this at unit level
+func readConfigFile(file string) (object, error) {
 	conf := make(object, len(configDefaults))
 	configFile, err := os.Open(file)
 
@@ -405,6 +405,9 @@ func readConfigFile(file string) (object, error) { // TODO test this at unit lev
 	// TODO load environment variables
 	// if variable not set, config loading error
 	// if variable type is not string, try to convert
+	// to expected type defined in defaults
+	// Caution: only allow this conversion from file loading,
+	// not from the Set method
 	return conf, err
 }
 

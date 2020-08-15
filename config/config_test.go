@@ -1,10 +1,12 @@
 package config
 
 import (
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,6 +29,36 @@ func (suite *ConfigTestSuite) SetupTest() {
 
 func (suite *ConfigTestSuite) TestIsLoaded() {
 	suite.True(IsLoaded())
+}
+
+func (suite *ConfigTestSuite) TestReadConfigFile() {
+	obj, err := readConfigFile("config.test.json")
+	suite.Nil(err)
+	suite.NotEmpty(obj)
+	suite.Equal("root level content", obj["rootLevel"])
+	cat, ok := obj["app"]
+	suite.True(ok)
+	catObj, ok := cat.(map[string]interface{})
+	suite.True(ok)
+	suite.Equal("test", catObj["environment"])
+
+	_, ok = catObj["name"]
+	suite.False(ok)
+
+	// Error
+	err = ioutil.WriteFile("test-forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
+	if err != nil {
+		panic(err)
+	}
+	defer filesystem.Delete("test-forbidden.json")
+	obj, err = readConfigFile("test-forbidden.json")
+
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("open test-forbidden.json: permission denied", err.Error())
+	}
+
+	suite.Empty(obj)
 }
 
 func (suite *ConfigTestSuite) TestLoadDefaults() {
@@ -393,10 +425,13 @@ func (suite *ConfigTestSuite) TestValidateObject() {
 	err := config.validate("")
 	suite.NotNil(err)
 	if err != nil {
-		message := "\n\t- \"rootLevel\" type must be bool" +
-			"\n\t- \"app.environment\" type must be string" +
-			"\n\t- \"app.subcategory.entry\" must have one of the following values: [1 2 3]"
-		suite.Equal(message, err.Error())
+		message := []string{"\n\t- \"rootLevel\" type must be bool",
+			"\n\t- \"app.environment\" type must be string",
+			"\n\t- \"app.subcategory.entry\" must have one of the following values: [1 2 3]"}
+		// Maps are unordered, use a slice to make sure all messages are there
+		for _, m := range message {
+			suite.Contains(err.Error(), m)
+		}
 	}
 
 	config = object{

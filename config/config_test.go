@@ -358,6 +358,62 @@ func (suite *ConfigTestSuite) TestValidateEntryWithConversion() {
 	suite.Equal(2, category["number"].(*Entry).Value)
 }
 
+func (suite *ConfigTestSuite) TestValidateEntry() {
+	// Unset (no validation needed)
+	e := &Entry{nil, reflect.String, []interface{}{}}
+	err := e.validate("entry")
+	suite.Nil(err)
+
+	e = &Entry{nil, reflect.String, []interface{}{"val1", "val2"}}
+	err = e.validate("entry")
+	suite.Nil(err)
+
+	// Wrong type
+	e = &Entry{1, reflect.String, []interface{}{}}
+	err = e.validate("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" type must be string", err.Error())
+	}
+
+	// Int conversion
+	e = &Entry{1.0, reflect.Int, []interface{}{}}
+	err = e.validate("entry")
+	suite.Nil(err)
+	suite.Equal(1, e.Value)
+
+	e = &Entry{1.42, reflect.Int, []interface{}{}}
+	err = e.validate("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" type must be int", err.Error())
+	}
+
+	// Authorized values
+	e = &Entry{1.42, reflect.Float64, []interface{}{1.2, 1.3, 2.4, 42.1, 1.4200000001}}
+	err = e.validate("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" must have one of the following values: [1.2 1.3 2.4 42.1 1.4200000001]", err.Error())
+	}
+
+	e = &Entry{"test", reflect.String, []interface{}{"val1", "val2"}}
+	err = e.validate("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" must have one of the following values: [val1 val2]", err.Error())
+	}
+
+	// Everything's fine
+	e = &Entry{"val1", reflect.String, []interface{}{"val1", "val2"}}
+	err = e.validate("entry")
+	suite.Nil(err)
+
+	e = &Entry{1.42, reflect.Float64, []interface{}{1.2, 1.3, 2.4, 42.1, 1.4200000001, 1.42}}
+	err = e.validate("entry")
+	suite.Nil(err)
+}
+
 func (suite *ConfigTestSuite) TearDownAllSuite() {
 	config = map[string]interface{}{}
 	os.Setenv("GOYAVE_ENV", suite.previousEnv)

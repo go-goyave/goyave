@@ -323,7 +323,7 @@ func walk(currentCategory object, key string) (object, string, bool) { // TODO t
 // Doesn't create anything is not needed.
 // Returns the deepest category created, or the provided object if nothing has
 // been created.
-func createMissingCategories(currentCategory object, path string) object { // TODO test create missing categories at unit level
+func createMissingCategories(currentCategory object, path string) object {
 	b := 0
 	e := strings.Index(path, ".")
 	if e == -1 {
@@ -341,11 +341,8 @@ func createMissingCategories(currentCategory object, path string) object { // TO
 				return currentCategory
 			}
 			e = newE + b
-		} else {
-			break
 		}
 	}
-	return currentCategory
 }
 
 func loadDefaults(src object, dst object) {

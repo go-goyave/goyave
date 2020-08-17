@@ -279,6 +279,62 @@ func (suite *ConfigTestSuite) TestOverrideConflict() {
 	}
 }
 
+func (suite *ConfigTestSuite) TestCreateMissingCategories() {
+	config := object{}
+	created := createMissingCategories(config, "category.entry")
+	e, ok := config["category"]
+	suite.True(ok)
+	category, ok := e.(object)
+	suite.True(ok)
+
+	_, ok = category["entry"]
+	suite.False(ok)
+	suite.Equal(category, created)
+
+	// Depth
+	config = object{}
+	created = createMissingCategories(config, "category.subcategory.entry")
+	e, ok = config["category"]
+	suite.True(ok)
+	category, ok = e.(object)
+	suite.True(ok)
+
+	e, ok = category["subcategory"]
+	suite.True(ok)
+	subcategory, ok := e.(object)
+	suite.True(ok)
+
+	_, ok = subcategory["entry"]
+	suite.False(ok)
+	suite.Equal(subcategory, created)
+
+	// With partial existence
+	config = object{
+		"category": object{},
+	}
+	created = createMissingCategories(config, "category.subcategory.entry")
+	e, ok = config["category"]
+	suite.True(ok)
+	category, ok = e.(object)
+	suite.True(ok)
+
+	e, ok = category["subcategory"]
+	suite.True(ok)
+	subcategory, ok = e.(object)
+	suite.True(ok)
+
+	_, ok = subcategory["entry"]
+	suite.False(ok)
+	suite.Equal(subcategory, created)
+
+	config = object{}
+	created = createMissingCategories(config, "entry")
+	suite.Equal(config, created)
+
+	_, ok = config["entry"]
+	suite.False(ok)
+}
+
 func (suite *ConfigTestSuite) TestSet() {
 	suite.Equal("root level content", Get("rootLevel"))
 	Set("rootLevel", "root level content override")

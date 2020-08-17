@@ -361,7 +361,7 @@ func loadDefaults(src object, dst object) { // TODO test loadDefaults
 	}
 }
 
-func override(src object, dst object) error { // TODO test override
+func override(src object, dst object) error {
 	for k, v := range src {
 		if obj, ok := v.(map[string]interface{}); ok {
 			if dstObj, ok := dst[k]; !ok {
@@ -370,7 +370,9 @@ func override(src object, dst object) error { // TODO test override
 				// Conflict: destination is not a category
 				return fmt.Errorf("Invalid config:\n\t- Cannot override entry %q with a category", k)
 			}
-			override(obj, dst[k].(object))
+			if err := override(obj, dst[k].(object)); err != nil {
+				return err
+			}
 		} else if entry, ok := dst[k]; ok {
 			e, ok := entry.(*Entry)
 			if !ok {

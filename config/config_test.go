@@ -65,6 +65,163 @@ func (suite *ConfigTestSuite) TestLoadDefaults() {
 	// TODO test loadDefaults
 }
 
+func (suite *ConfigTestSuite) TestOverride() {
+	src := object{
+		"rootLevel": "root level content",
+		"app": map[string]interface{}{
+			"environment": "test",
+		},
+		"auth": map[string]interface{}{
+			"basic": map[string]interface{}{
+				"username": "test username",
+				"password": "test password",
+				"deepcategory": map[string]interface{}{
+					"deepentry": 1,
+				},
+			},
+		},
+	}
+	dst := object{
+		"app": object{
+			"name":        &Entry{"default name", reflect.String, []interface{}{}},
+			"environment": &Entry{"default env", reflect.String, []interface{}{}},
+		},
+	}
+	suite.Nil(override(src, dst))
+
+	e, ok := dst["rootLevel"]
+	suite.True(ok)
+	entry, ok := e.(*Entry)
+	suite.True(ok)
+	suite.Equal("root level content", entry.Value)
+	suite.Equal(reflect.String, entry.Type)
+	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+
+	e, ok = dst["app"]
+	suite.True(ok)
+	app, ok := e.(object)
+	suite.True(ok)
+
+	e, ok = app["name"]
+	suite.True(ok)
+	suite.Equal("default name", e.(*Entry).Value)
+
+	e, ok = app["environment"]
+	suite.True(ok)
+	suite.Equal("test", e.(*Entry).Value)
+
+	e, ok = dst["auth"]
+	suite.True(ok)
+	auth, ok := e.(object)
+	suite.True(ok)
+
+	e, ok = auth["basic"]
+	suite.True(ok)
+	basic, ok := e.(object)
+	suite.True(ok)
+
+	e, ok = basic["username"]
+	suite.True(ok)
+	entry, ok = e.(*Entry)
+	suite.True(ok)
+	suite.Equal("test username", entry.Value)
+	suite.Equal(reflect.String, entry.Type)
+	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+
+	e, ok = basic["password"]
+	suite.True(ok)
+	entry, ok = e.(*Entry)
+	suite.True(ok)
+	suite.Equal("test password", entry.Value)
+	suite.Equal(reflect.String, entry.Type)
+	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+
+	e, ok = basic["deepcategory"]
+	suite.True(ok)
+	deepCategory, ok := e.(object)
+	suite.True(ok)
+
+	e, ok = deepCategory["deepentry"]
+	suite.True(ok)
+	entry, ok = e.(*Entry)
+	suite.True(ok)
+	suite.Equal(1, entry.Value)
+	suite.Equal(reflect.Int, entry.Type)
+	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+}
+
+func (suite *ConfigTestSuite) TestOverrideConflict() {
+	// conflict override entry with category (depth == 0)
+	src := object{
+		"rootLevel": map[string]interface{}{
+			"environment": "test",
+		},
+	}
+	dst := object{
+		"rootLevel": &Entry{"root level content", reflect.String, []interface{}{}},
+	}
+	err := override(src, dst)
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("Invalid config:\n\t- Cannot override entry \"rootLevel\" with a category", err.Error())
+	}
+
+	// conflict override entry with category (depth > 0)
+	src = object{
+		"app": map[string]interface{}{
+			"environment": map[string]interface{}{
+				"prod": false,
+			},
+		},
+	}
+	dst = object{
+		"app": object{
+			"environment": &Entry{"default env", reflect.String, []interface{}{}},
+		},
+	}
+	err = override(src, dst)
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("Invalid config:\n\t- Cannot override entry \"environment\" with a category", err.Error())
+	}
+
+	// conflict override category with entry (depth == 0)
+	src = object{
+		"app": "test",
+	}
+	dst = object{
+		"app": object{
+			"name":        &Entry{"default name", reflect.String, []interface{}{}},
+			"environment": &Entry{"default env", reflect.String, []interface{}{}},
+		},
+	}
+	err = override(src, dst)
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("Invalid config:\n\t- Cannot override category \"app\" with an entry", err.Error())
+	}
+
+	// conflict override category with entry (depth > 0)
+	src = object{
+		"app": map[string]interface{}{
+			"environments": "test",
+		},
+	}
+	dst = object{
+		"app": object{
+			"name": &Entry{"default name", reflect.String, []interface{}{}},
+			"environments": object{
+				"prod": &Entry{false, reflect.Bool, []interface{}{}},
+			},
+		},
+	}
+	err = override(src, dst)
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("Invalid config:\n\t- Cannot override category \"environments\" with an entry", err.Error())
+	}
+}
+
 func (suite *ConfigTestSuite) TestSet() {
 	suite.Equal("root level content", Get("rootLevel"))
 	Set("rootLevel", "root level content override")

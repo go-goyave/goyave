@@ -27,7 +27,6 @@ func DisallowNonValidatedFields(next goyave.Handler) goyave.Handler {
 				}
 			} else {
 				for field := range request.Data {
-					// TODO document that handlers accessing request.Rules must be updated
 					if _, exists := request.Rules.Fields[field]; !exists && !strings.HasSuffix(field, "_confirmation") {
 						nonValidated[field] = append(nonValidated[field], langEntry)
 					}

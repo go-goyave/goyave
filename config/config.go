@@ -241,7 +241,7 @@ func Has(key string) bool {
 //    will be subsequently validated using the type of its initial value and
 //    have an empty slice as authorized values (meaning it can have any value of its type)
 //
-// Panics in case of error.
+// Panics and revert changes in case of error.
 // TODO update set documentation
 func Set(key string, value interface{}) {
 	mutex.Lock()
@@ -249,8 +249,10 @@ func Set(key string, value interface{}) {
 	category, entryKey, exists := walk(config, key)
 	if exists {
 		entry := category[entryKey].(*Entry)
+		previous := entry.Value
 		entry.Value = value
 		if err := entry.validate(key); err != nil {
+			entry.Value = previous
 			panic(err)
 		}
 		category[entryKey] = entry
@@ -262,7 +264,7 @@ func Set(key string, value interface{}) {
 // walk the config using the key. Returns the deepest category, the entry key
 // with its path stripped ("app.name" -> "name") and true if the entry already
 // exists, false if it's not registered.
-func walk(currentCategory object, key string) (object, string, bool) { // TODO test walk more extensively
+func walk(currentCategory object, key string) (object, string, bool) {
 	if key == "" {
 		panic("Empty key is not allowed")
 	}

@@ -484,7 +484,15 @@ func (suite *ConfigTestSuite) TestSetCreateCategories() {
 }
 
 func (suite *ConfigTestSuite) TestSetValidation() {
-	// TODO implement TestSetValidation
+	previous := Get("app.name")
+	suite.Panics(func() {
+		Set("app.name", 1)
+	})
+	suite.Equal(previous, Get("app.name"))
+
+	// Works with float64 without decimals
+	Set("server.port", 8080.0)
+	suite.Equal(8080, Get("server.port"))
 }
 
 func (suite *ConfigTestSuite) TestUnset() {

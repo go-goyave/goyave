@@ -348,7 +348,7 @@ func createMissingCategories(currentCategory object, path string) object { // TO
 	return currentCategory
 }
 
-func loadDefaults(src object, dst object) { // TODO test loadDefaults
+func loadDefaults(src object, dst object) {
 	for k, v := range src {
 		if obj, ok := v.(object); ok {
 			sub := make(object, len(obj))

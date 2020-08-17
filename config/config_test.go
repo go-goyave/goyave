@@ -62,7 +62,64 @@ func (suite *ConfigTestSuite) TestReadConfigFile() {
 }
 
 func (suite *ConfigTestSuite) TestLoadDefaults() {
-	// TODO test loadDefaults
+	src := object{
+		"rootLevel": &Entry{"root level content", reflect.String, []interface{}{}},
+		"app": object{
+			"environment": &Entry{"test", reflect.String, []interface{}{}},
+		},
+		"auth": object{
+			"basic": object{
+				"username": &Entry{"test username", reflect.String, []interface{}{}},
+				"password": &Entry{"test password", reflect.String, []interface{}{}},
+			},
+		},
+	}
+	dst := object{}
+	loadDefaults(src, dst)
+
+	e, ok := dst["rootLevel"]
+	suite.True(ok)
+	entry, ok := e.(*Entry)
+	suite.True(ok)
+	suite.Equal("root level content", entry.Value)
+	suite.Equal(reflect.String, entry.Type)
+	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.NotSame(src["rootLevel"], dst["rootLevel"])
+
+	e, ok = dst["app"]
+	suite.True(ok)
+	app, ok := e.(object)
+	suite.True(ok)
+
+	e, ok = app["environment"]
+	suite.True(ok)
+	suite.Equal("test", e.(*Entry).Value)
+
+	e, ok = dst["auth"]
+	suite.True(ok)
+	auth, ok := e.(object)
+	suite.True(ok)
+
+	e, ok = auth["basic"]
+	suite.True(ok)
+	basic, ok := e.(object)
+	suite.True(ok)
+
+	e, ok = basic["username"]
+	suite.True(ok)
+	entry, ok = e.(*Entry)
+	suite.True(ok)
+	suite.Equal("test username", entry.Value)
+	suite.Equal(reflect.String, entry.Type)
+	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+
+	e, ok = basic["password"]
+	suite.True(ok)
+	entry, ok = e.(*Entry)
+	suite.True(ok)
+	suite.Equal("test password", entry.Value)
+	suite.Equal(reflect.String, entry.Type)
+	suite.Equal([]interface{}{}, entry.AuthorizedValues)
 }
 
 func (suite *ConfigTestSuite) TestOverride() {

@@ -120,7 +120,7 @@ If you are using the `auth` package (basic auth, JWT), you will need to update y
   ...
   "auth": {
     "jwt": {
-      "expiry": 300.0,
+      "expiry": 300,
       "secret": "jwt-secret"
     },
     "basic": {

@@ -62,7 +62,7 @@ func parseRequestMiddleware(next Handler) Handler {
 	return func(response *Response, request *Request) {
 
 		request.Data = nil
-		maxSize := int64(config.GetInt("server.maxUploadSize") * 1024 * 1024)
+		maxSize := int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
 		maxValueBytes := maxSize
 		var bodyBuf bytes.Buffer
 		n, err := io.CopyN(&bodyBuf, request.httpRequest.Body, maxValueBytes+1)

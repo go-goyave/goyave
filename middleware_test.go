@@ -257,6 +257,16 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 	parseRequestMiddleware(nil)(response, request)
 	suite.Equal(http.StatusRequestEntityTooLarge, response.GetStatus())
 	config.Set("server.maxUploadSize", prev)
+
+	prev = config.Get("server.maxUploadSize")
+	config.Set("server.maxUploadSize", 0.0006)
+	rawRequest = createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
+
+	request = createTestRequest(rawRequest)
+	response = newResponse(httptest.NewRecorder(), nil)
+	parseRequestMiddleware(nil)(response, request)
+	suite.Equal(http.StatusRequestEntityTooLarge, response.GetStatus())
+	config.Set("server.maxUploadSize", prev)
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {

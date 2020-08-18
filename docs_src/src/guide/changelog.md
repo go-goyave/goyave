@@ -53,6 +53,7 @@ meta:
 - Fixed a bug triggering a panic if the client inputted a non-array value in an array-validated field.
 - `response.Render` and `response.RenderHTML` now execute and write the template to a `bytes.Buffer` instead of directly to the `goyave.Response`. This allows to catch and handle errors before the response header has been written, in order to return an error 500 if the template doesn't execute properly for example.
 - Test can now be run without the `-p 1` flag thanks to a lock added to the `goyave.RunTest` method. Therefore, `goyave.TestSuite` still **don't run in parallel** but are safe to use with the typical test command.
+- `maxUploadSize` config entry now supports decimal places.
 
 ## v2.10.x
 

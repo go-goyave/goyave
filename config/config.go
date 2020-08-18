@@ -39,7 +39,7 @@ var configDefaults object = object{ // TODO change documentation about validated
 		"port":          &Entry{8080, reflect.Int, []interface{}{}},
 		"httpsPort":     &Entry{8081, reflect.Int, []interface{}{}},
 		"timeout":       &Entry{10, reflect.Int, []interface{}{}},
-		"maxUploadSize": &Entry{10, reflect.Int, []interface{}{}},
+		"maxUploadSize": &Entry{10.0, reflect.Float64, []interface{}{}},
 		"maintenance":   &Entry{false, reflect.Bool, []interface{}{}},
 		"tls": object{
 			"cert": &Entry{nil, reflect.String, []interface{}{}},

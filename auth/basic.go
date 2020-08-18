@@ -90,7 +90,7 @@ func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user inte
 // ConfigBasicAuth create a new authenticator middleware for
 // config-based Basic authentication. On auth success, the request
 // user is set to a "BasicUser".
-// The user is authenticated if the "auth.username" and "auth.password" config entries
+// The user is authenticated if the "auth.basic.username" and "auth.basic.password" config entries
 // match the request's Authorization header.
 func ConfigBasicAuth() goyave.Middleware {
 	return Middleware(&BasicUser{}, &basicUserAuthenticator{})

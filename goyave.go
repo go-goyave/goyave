@@ -334,7 +334,7 @@ func startServer(router *Router) error {
 		s := server
 		mutex.Unlock()
 		runStartupHooks()
-		if err := s.ServeTLS(ln, config.GetString("server.tlsCert"), config.GetString("server.tlsKey")); err != nil && err != http.ErrServerClosed {
+		if err := s.ServeTLS(ln, config.GetString("server.tls.cert"), config.GetString("server.tls.key")); err != nil && err != http.ErrServerClosed {
 			ErrLogger.Println(err)
 			Stop()
 			return &Error{ExitHTTPError, err}

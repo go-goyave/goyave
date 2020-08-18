@@ -572,7 +572,7 @@ func (suite *ConfigTestSuite) TestGet() {
 	})
 
 	suite.Panics(func() {
-		Get("server.tlsCert") // Value is nil, so considered unset
+		Get("server.tls.cert") // Value is nil, so considered unset
 	})
 
 	suite.Equal("goyave", GetString("app.name"))
@@ -627,7 +627,7 @@ func (suite *ConfigTestSuite) TestLowLevelGet() {
 	suite.Nil(val)
 
 	// Existing but unset value (nil)
-	val, ok = get("server.tlsCert")
+	val, ok = get("server.tls.cert")
 	suite.False(ok)
 	suite.Nil(val)
 

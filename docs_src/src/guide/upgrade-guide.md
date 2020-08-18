@@ -83,8 +83,10 @@ The new configuration system does things very differently internally, but should
     "httpsPort": 8081,
     "timeout": 10,
     "maxUploadSize": 10,
-    "tlsCert": "/path/to/cert",
-    "tlsKey": "/path/to/key",
+    "tls": {
+      "cert": "/path/to/cert",
+      "key": "/path/to/key"
+    },
   },
   "database": {
     "connection": "mysql",

@@ -221,15 +221,19 @@ Numeric values are parsed as `float64` even if they are supposed to be integers 
 
 ## Setting up HTTPS
 
-Setting up HTTPS on your Goyave application is easy. First, turn `protocol` to `https` in the config. Then, add the `tlsCert` and `tlsKey` entries in the config. These two entries represent respectively the path to your TLS certificate and your TLS key.
+Setting up HTTPS on your Goyave application is easy. First, turn `server.protocol` to `https` in the config. Then, add the `server.tls.cert` and `server.tls.key` entries in the config. These two entries represent respectively the path to your TLS certificate and your TLS key.
 
 **Certbot example:**
 ``` json
 {
     ...
-    "protocol": "https",
-    "tlsCert": "/etc/letsencrypt/live/mydomain.com/cert.pem",
-    "tlsKey": "/etc/letsencrypt/live/mydomain.com/privkey.pem",
+    "server": {
+      "protocol": "https",
+      "tls": {
+        "cert": "/etc/letsencrypt/live/mydomain.com/cert.pem",
+        "key": "/etc/letsencrypt/live/mydomain.com/privkey.pem"
+      }
+    },
     ...
 }
 ```

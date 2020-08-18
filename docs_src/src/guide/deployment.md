@@ -20,13 +20,13 @@ There are some important details to think about before deploying your Goyave app
 
 Be sure to deploy your application with a `config.production.json` config file containing the correct values for your production environment and **set the `GOYAVE_ENV` environment variable to `production`.**
 
-1. Ensure that the `environment` entry is `production`.
-2. The `host` entry should be `0.0.0.0` if you want to open access to your service from anywhere. If you're using Apache or Nginx as a proxy on the same machine, keep it at `127.0.0.1` so the server will only be accessible through the proxy.
-3. Change the `domain` entry to your domain name, if you use one.
-4. The `port` and `httpsPort` will very likely require a change. Most of the time, you need `80` and `443` respectively.
-5. If you use `https`, be sure to provide the paths to your `tlsCert` and `tlsKey`. Learn more [here](./configuration.html#setting-up-https).
-6. `debug` **must** be set do `false`. You don't want anyone to get important information about your internal errors and therefore your code when an error occurs.
-7. Change your database connection credentials. `dbAutoMigrate` should be set to `false`.
+1. Ensure that the `app.environment` entry is `production`.
+2. The `server.host` entry should be `0.0.0.0` if you want to open access to your service from anywhere. If you're using Apache or Nginx as a proxy on the same machine, keep it at `127.0.0.1` so the server will only be accessible through the proxy.
+3. Change the `server.domain` entry to your domain name, if you use one.
+4. The `server.port` and `server.httpsPort` will very likely require a change. Most of the time, you need `80` and `443` respectively.
+5. If you use `https`, be sure to provide the paths to your `server.tls.cert` and `server.tls.key`. Learn more [here](./configuration.html#setting-up-https).
+6. `server.debug` **must** be set do `false`. You don't want anyone to get important information about your internal errors and therefore your code when an error occurs.
+7. Change your database connection credentials. `database.autoMigrate` should be set to `false`.
 
 ## Build
 

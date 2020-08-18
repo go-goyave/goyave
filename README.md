@@ -13,7 +13,7 @@
 
 <h2 align="center">An Elegant Golang Web Framework</h2>
 
-Goyave is a progressive and accessible web application framework focused on APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
+Goyave is a progressive and accessible web application framework focused on REST APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
 
 <table>
     <tr>

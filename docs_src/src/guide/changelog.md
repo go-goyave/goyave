@@ -41,7 +41,7 @@ meta:
     - Entries having a `nil` value are now considered unset.
     - Added accessors `GetInt()` and `GetFloat()`.
 
-**Motivation:** *Configuration was without a doubt one of the weakest and inflexible feature of the framework. It was possible to use objects in custom entries, but not for core config, but it was unconvenient because it required a lot of type assertions. Moreover, core config entries were not handled the same as custom ones, which was a lack of openness. Hopefully, this revamped system will cover more potential use-cases, ease plugin development and allow you to produce cleaner code and configuration files.*
+**Motivation:** *Configuration was without a doubt one of the weakest and inflexible feature of the framework. It was possible to use objects in custom entries, but not for core config, but it was inconvenient because it required a lot of type assertions. Moreover, core config entries were not handled the same as custom ones, which was a lack of openness. Hopefully, this revamped system will cover more potential use-cases, ease plugin development and allow you to produce cleaner code and configuration files.*
 
 - Rule functions don't check required parameters anymore. This is now done when the rules are parsed at startup time. The amount of required parameters is given when registering a new rule.
 - Optimized regex-based validation rules by compiling expressions once.

@@ -35,8 +35,8 @@ func (suite *GoyaveTestSuite) loadConfig() {
 	if err := config.Load(); err != nil {
 		suite.FailNow(err.Error())
 	}
-	config.Set("server.tlsKey", "resources/server.key")
-	config.Set("server.tlsCert", "resources/server.crt")
+	config.Set("server.tls.key", "resources/server.key")
+	config.Set("server.tls.cert", "resources/server.crt")
 }
 
 func (suite *GoyaveTestSuite) TestGetHost() {
@@ -279,8 +279,8 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		config.Set("server.protocol", protocol)
 		if protocol == "https" {
 			// Invalid certificates
-			config.Set("server.tlsKey", "doesntexist")
-			config.Set("server.tlsCert", "doesntexist")
+			config.Set("server.tls.key", "doesntexist")
+			config.Set("server.tls.cert", "doesntexist")
 		}
 
 		fmt.Println("test server error " + protocol)

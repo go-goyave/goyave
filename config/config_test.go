@@ -725,6 +725,61 @@ func (suite *ConfigTestSuite) TestValidateObject() {
 	suite.Nil(err)
 }
 
+func (suite *ConfigTestSuite) TestRegister() {
+	entry := Entry{"value", reflect.String, []interface{}{"value", "other value"}}
+	Register("rootLevel", entry)
+	newEntry, ok := configDefaults["rootLevel"]
+	suite.True(ok)
+	suite.Equal(&entry, newEntry)
+	suite.NotSame(&entry, newEntry)
+	delete(configDefaults, "rootLevel")
+
+	// Entry already exists and matches -> do nothing
+	appCategory := configDefaults["app"].(object)
+	entry = Entry{"goyave", reflect.String, []interface{}{}}
+	current := appCategory["name"]
+	Register("app.name", entry)
+	newEntry, ok = appCategory["name"]
+	suite.True(ok)
+	suite.Same(current, newEntry)
+	suite.NotSame(&entry, newEntry)
+
+	// Entry already exists but doesn't match -> panic
+
+	// Value doesn't match
+	entry = Entry{"not goyave", reflect.String, []interface{}{}}
+	current = appCategory["name"]
+	suite.Panics(func() {
+		Register("app.name", entry)
+	})
+	newEntry, ok = appCategory["name"]
+	suite.True(ok)
+	suite.Same(current, newEntry)
+	suite.Equal("goyave", newEntry.(*Entry).Value)
+
+	// Type doesn't match
+	entry = Entry{"goyave", reflect.Int, []interface{}{}}
+	current = appCategory["name"]
+	suite.Panics(func() {
+		Register("app.name", entry)
+	})
+	newEntry, ok = appCategory["name"]
+	suite.True(ok)
+	suite.Same(current, newEntry)
+	suite.Equal(reflect.String, newEntry.(*Entry).Type)
+
+	// Required values don't match
+	entry = Entry{"goyave", reflect.String, []interface{}{"app", "thing"}}
+	current = appCategory["name"]
+	suite.Panics(func() {
+		Register("app.name", entry)
+	})
+	newEntry, ok = appCategory["name"]
+	suite.True(ok)
+	suite.Same(current, newEntry)
+	suite.Equal([]interface{}{}, newEntry.(*Entry).AuthorizedValues)
+}
+
 func (suite *ConfigTestSuite) TearDownAllSuite() {
 	config = map[string]interface{}{}
 	os.Setenv("GOYAVE_ENV", suite.previousEnv)

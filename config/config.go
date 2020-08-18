@@ -79,12 +79,12 @@ var mutex = &sync.RWMutex{}
 // one passed as parameter of this function. On the other hand, if the entries
 // are identical, no conflict is expected so the configuration is left in its
 // current state.
-func Register(key string, entry Entry) { // TODO test register
+func Register(key string, entry Entry) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	category, entryKey, exists := walk(configDefaults, key)
 	if exists {
-		if !reflect.DeepEqual(entry, category[entryKey].(*Entry)) {
+		if !reflect.DeepEqual(&entry, category[entryKey].(*Entry)) {
 			panic(fmt.Sprintf("Attempted to override registered config entry %q", key))
 		}
 	} else {

@@ -29,20 +29,20 @@ import (
 
 ## Configuration
 
-Very few code is required to get started with databases. There are some [configuration](../configuration.html#configuration-reference) options that you need to change though:
-- `dbConnection`
-- `dbHost`
-- `dbPort`
-- `dbName`
-- `dbUsername`
-- `dbPassword`
-- `dbOptions`
-- `dbMaxOpenConnection`
-- `dbMaxIdleConnection`
-- `dbMaxLifetime`
+Very few code is required to get started with databases. There are some [configuration](../configuration.html#database-category) options that you need to change though:
+- `database.connection`
+- `database.host`
+- `database.port`
+- `database.name`
+- `database.username`
+- `database.password`
+- `database.options`
+- `database.maxOpenConnection`
+- `database.maxIdleConnection`
+- `database.maxLifetime`
 
 ::: tip
-`dbOptions` represents the additional connection options. For example, when using MySQL, you should use the `parseTime=true` option so `time.Time` can be handled correctly. Available options differ from one driver to another and can be found in their respective documentation.
+`database.options` represents the additional connection options. For example, when using MySQL, you should use the `parseTime=true` option so `time.Time` can be handled correctly. Available options differ from one driver to another and can be found in their respective documentation.
 :::
 
 ### Drivers
@@ -54,7 +54,7 @@ The framework supports the following sql drivers:
 - `sqlite3`
 - `mssql`
 
-Change the `dbConnection` config entry to the desired driver.
+Change the `database.connection` config entry to the desired driver.
 
 In order to be able connect to the database, Gorm needs a database driver to be imported. Add the following import to your `kernel.go`:
 ``` go
@@ -65,7 +65,7 @@ import _ "github.com/jinzhu/gorm/dialects/mysql"
 ```
 
 ::: tip
-For SQLite, only the `dbName` config entry is required.
+For SQLite, only the `database.name` config entry is required.
 :::
 
 ## Getting a database connection
@@ -184,7 +184,7 @@ You can also filter hidden fields by passing a struct to [`helper.RemoveHiddenFi
 
 ### Automatic migrations
 
-If the `dbAutoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.
+If the `database.autoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.
 
 ::: warning
 Automatic migrations **only create** tables, missing columns and missing indexes. They **wont't change** existing column’s type or delete unused columns.

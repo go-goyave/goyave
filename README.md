@@ -162,7 +162,10 @@ To configure your application, use the `config.json` file at your project's root
 }
 ```
 
-If this config file misses some config entries, the default values will be used. All values from the framework's core are **validated**. That means that the application will not start if you provided an invalid value in your config (For example if the specified port is not a number).
+If this config file misses some config entries, the default values will be used. 
+
+All entries are **validated**. That means that the application will not start if you provided an invalid value in your config (for example if the specified port is not a number). That also means that a goroutine trying to change a config entry with the incorrect type will panic.  
+Entries can be registered with a default value, their type and authorized values from any package. 
 
 **Getting a value:**
 ```go

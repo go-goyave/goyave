@@ -131,6 +131,8 @@ If you are using the `auth` package (basic auth, JWT), you will need to update y
 }
 ```
 
+Finally, `config.Register()` function has changed signature. See the [configuration documentation](./configuration.html#custom-config-entries) for more details on how to migrate.
+
 ### Minor changes
 
 - Recovery middleware now correctly handles panics with a `nil` value. You may have to update your custom status handler for the HTTP `500` error code.

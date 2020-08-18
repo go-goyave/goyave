@@ -14,12 +14,64 @@ meta:
 
 ## Introduction
 
+
 The Goyave framework lets you configure its core and your application.
 To configure your application, use the `config.json` file at your project's root. If you are using the template project, copy `config.example.json` to `config.json`. `config.json` should be ignored in your `.gitignore` file as it can differ from one developer to another. To avoid accidental commit or change to the default project's config, it is a good practice to ignore this file and define the project's default config in `config.example.json`.
 
-If this config file misses some config entries, the default values will be used. All values from the framework's core are **validated**. That means that the application will not start if you provided an invalid value in your config (For example if the specified port is not a number).  
-You can register your own configuration entries for them to be validated too.  
-See the [configuration reference](#configuration-reference) for more details.
+If this config file misses some config entries, the default values will be used. Refer to the [configuration reference](#configuration-reference) to know more. 
+
+All entries are **validated**. That means that the application will not start if you provided an invalid value in your config (for example if the specified port is not a number). That also means that a goroutine trying to change a config entry with the incorrect type will panic.  
+Entries can be registered with a default value, their type and authorized values from any package. 
+
+Configuration can be used concurrently safely.
+
+The following JSON file is an example of default configuration:
+
+```json
+{
+  "app": {
+    "name": "goyave_template",
+    "environment": "localhost",
+    "debug": true,
+    "defaultLanguage": "en-US"
+  },
+  "server": {
+    "host": "127.0.0.1",
+    "maintenance": false,
+    "protocol": "http",
+    "domain": "",
+    "port": 8080,
+    "httpsPort": 8081,
+    "timeout": 10,
+    "maxUploadSize": 10,
+    "tls": {
+      "cert": "/path/to/cert",
+      "key": "/path/to/key"
+    },
+  },
+  "database": {
+    "connection": "mysql",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "name": "goyave",
+    "username": "root",
+    "password": "root",
+    "options": "charset=utf8&parseTime=true&loc=Local",
+    "maxOpenConnections": 20,
+    "maxIdleConnections": 20,
+    "maxLifetime": 300,
+    "autoMigrate": false
+  }
+}
+```
+
+## Terminology
+
+**Entry**: a configuration entry is a value accessible using a key.
+
+**Registering an entry**: informs the framework that an entry with the given key is expected. Registering an entry allows to set a default value to be used if this entry is not provided in an app's configuration file, to enforce a certain type for this entry (for example if it needs to be an integer), and to set a list of allowed values.
+
+**Category**: a category is represented by a JSON object in your configuration file, delimited by braces. Sub-categories are categories that are not at root level, for example: `server.tls` is a sub-category of the `server` category.
 
 ## Environment configuration
 
@@ -43,6 +95,12 @@ import "github.com/System-Glitch/goyave/v2/config"
 
 The configuration is loaded automatically when the server starts, but you can reload it manually if needed.
 
+When the configuration is loaded, all default values are copied to the newly created map holding the configuration. Then, the configuration file is read, parsed and is applied over. This means that all entries from the file override the default ones. However, if an entry has a default value and the same entry is not present in the configuration file, then it is kept as it is. On the other hand, if an entry is present in the configuration file and not in the default values (meaning that this entry is not expected), a new entry will be registered.This new entry will be subsequently validated using the type of its initial value and have an empty slice as authorized values (meaning it can have any value of its type)
+
+The following cases will raise errors when the configuration is being overridden:
+- When the configuration file overrides an entry with a category
+- When the configuration file overrides a category with an entry
+
 #### config.Load
 
 | Parameters | Return  |
@@ -55,6 +113,8 @@ config.Load()
 ```
 
 ### Getting a value
+
+All entries are accessible using **dot-separated paths**. If you want to access the `name` entry in the `app` category, the key will be `app.name`.
 
 #### config.Get
 
@@ -144,7 +204,14 @@ config.Has("app.name") // true
 
 ### Setting a value
 
-You can set a config value at runtime with the `config.Set(key, value)` function. Bear in mind that this change **temporary** and will be lost after your application restarts or if the config is reloaded. This function is mainly used for testing purposes. Values set using this function are still being validated, and your application will panic if the validation doesn't pass.
+You can set a config value at runtime with the `config.Set(key, value)` function. Bear in mind that this change **temporary** and will be lost after your application restarts or if the config is reloaded. This function is mainly used for testing purposes. Values set using this function are still being validated: your application will panic and revert changes if the validation doesn't pass.
+
+Use `nil` to unset a value.
+
+- A category cannot be replaced with an entry.
+- An entry cannot be replaced with a category.
+- New categories can be created with they don't already exist.
+- New entries can be created if they don't already exist. This new entry will be subsequently validated using the type of its initial value and have an empty slice as authorized values (meaning it can have any value of its type)
 
 #### config.Set
 
@@ -160,64 +227,90 @@ config.Set("app.name", "my awesome app")
 
 ## Custom config entries
 
-The core of the framework contains default values covering most cases, but you can still add custom entries for your most specific needs to the config simply by appending a property to your application's config file. The custom properties are not validated, so you can use the data type you want.
-
-### Validating custom entries
+Configuration can be expanded. It is very likely that a plugin or a package you're developing is using some form of options. These options can be added to the configuration system so it is not needed to set them in the code or to make some wiring.
 
 #### config.Register
 
-Register a config entry for validation.
+Register a new config entry and its validation.
 
-If the entry identified by the given key is set or modified, its value will be validated according to the given kind. If the entry already exists, it will be revalidated.
+Each module should register its config entries in an `init()` function, even if they don't have a default value, in order to ensure they will be validated.
 
-This method doesn't allow to override existing validation. Once an entry is registered, its expected kind cannot be modified.
+Each module should use its own category and use a name both expressive and unique to avoid collisions. For example, the `auth` package registers, among others, `auth.basic.username` and `auth.jwt.expiry`, thus creating a category for its package, and two subcategories for its features.
+
+To register an entry without a default value (only specify how it will be validated), set `Entry.Value` to `nil`.
+
+Panics if an entry already exists for this key and is not identical to the one passed as parameter of this function. On the other hand, if the entries are identical, no conflict is expected so the configuration is left in its current state.
 
 | Parameters          | Return          |
 |---------------------|-----------------|
 | `key string`        | `void` or panic |
-| `kind reflect.Kind` |                 |
+| `kind config.Entry` |                 |
 
 **Example:**
 ``` go
-config.Register("pluginConfig", reflect.Struct)
+func init() {
+  config.Register("my-plugin.name", config.Entry{
+    Value:            "default value",
+    Type:             reflect.String,
+    AuthorizedValues: []interface{}{},
+  })
+  
+  // Without a default value (only validation)
+  config.Register("my-plugin.protocol", config.Entry{
+    Value:            nil,
+    Type:             reflect.String,
+    AuthorizedValues: []interface{}{"ftp", "sftp", "scp"},
+  })
+}
 ```
 
 ## Configuration reference
 
-TODO update configuration reference and categorize
+### App category
 
-| Entry                | Type      | Accepted values                                 | Default                                 | Note                                                                                                                                          |
-|----------------------|-----------|-------------------------------------------------|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| appName              | `string`  | any                                             | "goyave"                                |                                                                                                                                               |
-| environment          | `string`  | any                                             | "localhost"                             |                                                                                                                                               |
-| maintenance          | `bool`    | `true`, `false`                                 | `false`                                 | If `true`, start the server in maintenance mode. (Always return HTTP 503)                                                                     |
-| host                 | `string`  | any                                             | "127.0.0.1"                             |                                                                                                                                               |
-| domain               | `string`  | any                                             | ""                                      | Used for URL generation Leave empty to use IP instead.                                                                                        |
-| port                 | `float64` | any                                             | `8080`                                  |                                                                                                                                               |
-| httpsPort            | `float64` | any                                             | `8081`                                  |                                                                                                                                               |
-| protocol             | `string`  | "http", "https"                                 | "http"                                  | See the [HTTPS](#setting-up-https) section                                                                                                    |
-| tlsCert              | `string`  | any                                             | none                                    | Path to your TLS cert                                                                                                                         |
-| tlsKey               | `string`  | any                                             | none                                    | Path to your TLS key                                                                                                                          |
-| debug                | `bool`    | `true`, `false`                                 | `true`                                  | When activated, print stacktrace on error and sends error message in response. **Disable this in production!**                                |
-| timeout              | `float64` | any                                             | `10`                                    | Timeout in seconds                                                                                                                            |
-| maxUploadSize        | `float64` | any                                             | `10`                                    | Maximum size of the request, in MiB                                                                                                           |
-| defaultLanguage      | `string`  | any                                             | "en-US"                                 | See the [Localization](./advanced/localization.html) guide                                                                                    |
-| dbConnection         | `string`  | "none", "mysql", "postgres", "sqlite3", "mssql" | "none"                                  | See the [Database](./basics/database.html) guide                                                                                              |
-| dbHost               | `string`  | any                                             | "127.0.0.1"                             |                                                                                                                                               |
-| dbPort               | `float64` | any                                             | `3306`                                  |                                                                                                                                               |
-| dbName               | `string`  | any                                             | "goyave"                                |                                                                                                                                               |
-| dbUsername           | `string`  | any                                             | "root"                                  |                                                                                                                                               |
-| dbPassword           | `string`  | any                                             | "root"                                  |                                                                                                                                               |
-| dbOptions            | `string`  | any                                             | "charset=utf8&parseTime=true&loc=Local" |                                                                                                                                               |
-| dbMaxOpenConnections | `float64` | any                                             | `20`                                    |                                                                                                                                               |
-| dbMaxIdleConnections | `float64` | any                                             | `20`                                    |                                                                                                                                               |
-| dbMaxLifetime        | `float64` | any                                             | `300`                                   | The maximum time (in seconds) a connection may be reused.                                                                                     |
-| dbAutoMigrate        | `bool`    | `true`, `false`                                 | `false`                                 | When activated, migrate all registered models at startup                                                                                      |
-| jwtExpiry            | `float64` | any                                             | `300`                                   | The number of seconds a generated JWT token is valid for. See the [authentication](./advanced/authentication.htmll#json-web-token-jwt) guide. |
+| Entry           | Type     | Accepted values | Default     | Note                                                                                                           |
+|-----------------|----------|-----------------|-------------|----------------------------------------------------------------------------------------------------------------|
+| name            | `string` | any             | "goyave"    |                                                                                                                |
+| environment     | `string` | any             | "localhost" |                                                                                                                |
+| debug           | `bool`   | `true`, `false` | `true`      | When activated, print stacktrace on error and sends error message in response. **Disable this in production!** |
+| defaultLanguage | `string` | any             | "en-US"     | See the [Localization](./advanced/localization.html)                                                           |
 
-::: tip NOTE
-Numeric values are parsed as `float64` even if they are supposed to be integers so it covers the potential use-case of floats in the config.
-:::
+### Server category
+
+| Entry         | Type      | Accepted values | Default     | Note                                                                      |
+|---------------|-----------|-----------------|-------------|---------------------------------------------------------------------------|
+| host          | `string`  | any             | "127.0.0.1" |                                                                           |
+| domain        | `string`  | any             | ""          | Used for URL generation Leave empty to use IP instead.                    |
+| protocol      | `string`  | "http", "https" | "http"      | See the [HTTPS](#setting-up-https) section                                |
+| port          | `int`     | any             | `8080`      |                                                                           |
+| httpsPort     | `int`     | any             | `8081`      |                                                                           |
+| timeout       | `int`     | any             | `10`        | Timeout in seconds                                                        |
+| maxUploadSize | `float64` | any             | `10`        | Maximum size of the request, in MiB                                       |
+| maintenance   | `bool`    | `true`, `false` | `false`     | If `true`, start the server in maintenance mode. (Always return HTTP 503) |
+
+#### TLS sub-category
+
+| Entry | Type     | Accepted values | Default | Note                  |
+|-------|----------|-----------------|---------|-----------------------|
+| cert  | `string` | any             | none    | Path to your TLS cert |
+| key   | `string` | any             | none    | Path to your TLS key  |
+
+### Database category
+
+| Entry              | Type     | Accepted values                                 | Default                                 | Note                                                      |
+|--------------------|----------|-------------------------------------------------|-----------------------------------------|-----------------------------------------------------------|
+| connection         | `string` | "none", "mysql", "postgres", "sqlite3", "mssql" | "none"                                  | See the [Database](./basics/database.html) guide          |
+| host               | `string` | any                                             | "127.0.0.1"                             |                                                           |
+| port               | `int`    | any                                             | `3306`                                  |                                                           |
+| name               | `string` | any                                             | "goyave"                                |                                                           |
+| username           | `string` | any                                             | "root"                                  |                                                           |
+| password           | `string` | any                                             | "root"                                  |                                                           |
+| otions             | `string` | any                                             | "charset=utf8&parseTime=true&loc=Local" |                                                           |
+| maxOpenConnections | `int`    | any                                             | `20`                                    |                                                           |
+| maxIdleConnections | `int`    | any                                             | `20`                                    |                                                           |
+| maxLifetime        | `int`    | any                                             | `300`                                   | The maximum time (in seconds) a connection may be reused. |
+| autoMigrate        | `bool`   | `true`, `false`                                 | `false`                                 | When activated, migrate all registered models at startup  |
+
 
 ## Setting up HTTPS
 

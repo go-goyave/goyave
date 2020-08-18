@@ -25,7 +25,7 @@ type Entry struct {
 
 var config object
 
-var configDefaults object = object{ // TODO change documentation about validated config (All values from the framework's core are validated. -> not only the core now)
+var configDefaults object = object{
 	"app": object{
 		"name":            &Entry{"goyave", reflect.String, []interface{}{}},
 		"environment":     &Entry{"localhost", reflect.String, []interface{}{}},
@@ -107,7 +107,7 @@ func Load() error { // TODO allow loading from somewhere else
 
 	path := getConfigFilePath()
 	conf, err := readConfigFile(path)
-	if err != nil {
+	if err != nil { // TODO reset config to null if error while loading
 		return err
 	}
 
@@ -239,7 +239,6 @@ func Has(key string) bool {
 //    have an empty slice as authorized values (meaning it can have any value of its type)
 //
 // Panics and revert changes in case of error.
-// TODO update set documentation
 func Set(key string, value interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -377,7 +376,6 @@ func override(src object, dst object) error {
 			}
 			e.Value = v
 		} else {
-			// TODO document this behavior
 			// If entry doesn't exist (and is not registered),
 			// register it with the type of the type given here
 			// and "any" authorized values.

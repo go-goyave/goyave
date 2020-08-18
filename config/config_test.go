@@ -279,6 +279,61 @@ func (suite *ConfigTestSuite) TestOverrideConflict() {
 	}
 }
 
+func (suite *ConfigTestSuite) TestLoad() {
+	Clear()
+	err := Load()
+	suite.Nil(err)
+	suite.Equal(configDefaults["server"], config["server"])
+	suite.Equal(configDefaults["database"], config["database"])
+	suite.NotEqual(configDefaults["app"], config["app"])
+
+	defaultAppCategory := configDefaults["app"].(object)
+	appCategory := config["app"].(object)
+	suite.Equal(defaultAppCategory["name"], appCategory["name"])
+	suite.Equal(defaultAppCategory["debug"], appCategory["debug"])
+	suite.Equal(defaultAppCategory["defaultLanguage"], appCategory["defaultLanguage"])
+	suite.Equal(defaultAppCategory["name"], appCategory["name"])
+
+	// readConfigFile error
+	Clear()
+	err = ioutil.WriteFile("config.forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
+	if err != nil {
+		panic(err)
+	}
+	defer filesystem.Delete("config.forbidden.json")
+	if e := os.Setenv("GOYAVE_ENV", "forbidden"); e != nil {
+		panic(e)
+	}
+	err = Load()
+	if e := os.Setenv("GOYAVE_ENV", "test"); e != nil {
+		panic(e)
+	}
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("open config.forbidden.json: permission denied", err.Error())
+	}
+
+	// override error
+	Clear()
+	configDefaults["rootLevel"] = object{}
+	err = Load()
+	delete(configDefaults, "rootLevel")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("Invalid config:\n\t- Cannot override category \"rootLevel\" with an entry", err.Error())
+	}
+
+	// validation error
+	Clear()
+	configDefaults["rootLevel"] = &Entry{42, reflect.Int, []interface{}{}}
+	err = Load()
+	delete(configDefaults, "rootLevel")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("Invalid config:\n\t- \"rootLevel\" type must be int", err.Error())
+	}
+}
+
 func (suite *ConfigTestSuite) TestCreateMissingCategories() {
 	config := object{}
 	created := createMissingCategories(config, "category.entry")

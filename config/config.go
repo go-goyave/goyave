@@ -102,19 +102,14 @@ func Load() error { // TODO allow loading from somewhere else
 	defer mutex.Unlock()
 	config = make(object, len(configDefaults))
 	loadDefaults(configDefaults, config)
-	workingDir, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
 
 	path := getConfigFilePath()
-	conf, err := readConfigFile(fmt.Sprintf("%s%s%s", workingDir, string(os.PathSeparator), path))
+	conf, err := readConfigFile(path)
 	if err != nil {
 		return err
 	}
 
 	if err := override(conf, config); err != nil {
-		// TODO test override error
 		return err
 	}
 

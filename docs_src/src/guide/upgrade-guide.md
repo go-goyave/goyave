@@ -62,6 +62,73 @@ Although the validation changes are internally huge, there is only a tiny amount
 
 - The following rules now pass if the validated data type is not supported: `greater_than`, `greater_than_equal`, `lower_than`, `lower_than_equal`, `size`.
 
+### Configuration changes
+
+The new configuration system does things very differently internally, but should not require too many changes to make your project compatible. First, you will have to update your configuration files. Here is an example of configuration file containing all the core entries:
+
+```json
+{
+  "app": {
+    "name": "goyave_template",
+    "environment": "localhost",
+    "debug": true,
+    "defaultLanguage": "en-US"
+  },
+  "server": {
+    "host": "127.0.0.1",
+    "maintenance": false,
+    "protocol": "http",
+    "domain": "",
+    "port": 8080,
+    "httpsPort": 8081,
+    "timeout": 10,
+    "maxUploadSize": 10,
+    "tlsCert": "/path/to/cert",
+    "tlsKey": "/path/to/key",
+  },
+  "database": {
+    "connection": "mysql",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "name": "goyave",
+    "username": "root",
+    "password": "root",
+    "options": "charset=utf8&parseTime=true&loc=Local",
+    "maxOpenConnections": 20,
+    "maxIdleConnections": 20,
+    "maxLifetime": 300,
+    "autoMigrate": false
+  }
+}
+```
+
+If you were using any of the configuration entries above in your code, you should update the keys used in the calls of `config.Get()`, `config.GetString()`, `config.Bool()` and `config.Has()`. Keys are now **dot-separated** paths. For example, to access the database `host` entry, the key is `database.host`.
+
+For more information, refer to the [configuration reference](./configuration.html#configuration-reference).
+
+If you are using the `auth` package (basic auth, JWT), you will need to update your configuration entries too.
+
+- `authUsername` becomes `auth.basic.username`
+- `authPassword` becomes `auth.basic.password`
+- `jwtExpiry` becomes `auth.jwt.expiry`
+- `jwtSecret` becomes `auth.jwt.secret`
+
+```json
+{
+  ...
+  "auth": {
+    "jwt": {
+      "expiry": 300.0,
+      "secret": "jwt-secret"
+    },
+    "basic": {
+      "username": "admin",
+      "password": "admin"
+    }
+  }
+}
+```
+
 ### Minor changes
 
 - Recovery middleware now correctly handles panics with a `nil` value. You may have to update your custom status handler for the HTTP `500` error code.

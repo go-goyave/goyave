@@ -32,6 +32,17 @@ meta:
 
 **Motivation:** *Keeping in memory the full response has an important impact on memory when sending files or large responses. Using the response content in a log formatter is also a marginal use-case which doesn't justify the performance loss described previously. It is still possible to retrieve the content of the response by writing your own chained writer.*
 
+- Configuration system has been revamped.
+    - Added support for tree-like configurations, allowing for better categorization. Nested values can be accessed using dot-separated path.
+    - Improved validation: nested entries can now be validated too and all entries can have authorized values. Optional entries can now be validated too.
+    - Entries that are validated with the `int` type are now automatically converted from `float64` if they don't have decimal places. It is no longer necessary to manually cast `float64` that are supposed to be integers.
+    - More openness: entries can be registered with a default value, their type and authorized values from any package. This allows config entries required by a specific package to be loaded only if the latter is imported.
+    - Core configuration has been sorted in categories. This is a breaking change that will require you to update your configuration files.
+    - Entries having a `nil` value are now considered unset.
+    - Added accessors `GetInt()` and `GetFloat()`.
+
+**Motivation:** *Configuration was without a doubt one of the weakest and inflexible feature of the framework. It was possible to use objects in custom entries, but not for core config, but it was unconvenient because it required a lot of type assertions. Moreover, core config entries were not handled the same as custom ones, which was a lack of openness. Hopefully, this revamped system will cover more potential use-cases, ease plugin development and allow you to produce cleaner code and configuration files.*
+
 - Rule functions don't check required parameters anymore. This is now done when the rules are parsed at startup time. The amount of required parameters is given when registering a new rule.
 - Optimized regex-based validation rules by compiling expressions once.
 - A significant amount of untested cases are now tested.

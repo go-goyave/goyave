@@ -13,7 +13,7 @@
 
 <h2 align="center">An Elegant Golang Web Framework</h2>
 
-Goyave is a progressive and accessible web application framework focused on APIs, aimed at making development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
+Goyave is a progressive and accessible web application framework focused on APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
 
 <table>
     <tr>
@@ -137,6 +137,7 @@ To configure your application, use the `config.json` file at your project's root
         "defaultLanguage": "en-US"
     },
     "server": {
+        "host": "127.0.0.1",
         "maintenance": false,
         "protocol": "http",
         "domain": "",

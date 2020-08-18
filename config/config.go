@@ -41,7 +41,7 @@ var configDefaults object = object{ // TODO change documentation about validated
 		"timeout":       &Entry{10, reflect.Int, []interface{}{}},
 		"maxUploadSize": &Entry{10, reflect.Int, []interface{}{}},
 		"maintenance":   &Entry{false, reflect.Bool, []interface{}{}},
-		"tlsCert":       &Entry{nil, reflect.String, []interface{}{}},
+		"tlsCert":       &Entry{nil, reflect.String, []interface{}{}}, // TODO make a category for TLS too
 		"tlsKey":        &Entry{nil, reflect.String, []interface{}{}},
 	},
 	"database": object{

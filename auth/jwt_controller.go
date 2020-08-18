@@ -20,7 +20,7 @@ import (
 // the "auth.jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
 // the "auth.jwt.expiry" config entry.
-func GenerateToken(id interface{}) (string, error) { // TODO update jwt docs (also this is a breaking change)
+func GenerateToken(id interface{}) (string, error) {
 	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

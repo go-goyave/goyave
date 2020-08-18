@@ -79,7 +79,7 @@ func (a *basicUserAuthenticator) Authenticate(request *goyave.Request, user inte
 	username, password, ok := request.BasicAuth()
 
 	if !ok ||
-		username != config.GetString("auth.basic.username") || // TODO update basic auth docs (also this is a breaking change)
+		username != config.GetString("auth.basic.username") ||
 		password != config.GetString("auth.basic.password") {
 		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 	}

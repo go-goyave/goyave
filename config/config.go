@@ -407,9 +407,6 @@ func readConfigFile(file string) (object, error) {
 		defer configFile.Close()
 		jsonParser := json.NewDecoder(configFile)
 		err = jsonParser.Decode(&conf)
-		// TODO use interface or something to let users use
-		// other file formats such as toml, provided said format
-		// can unmarshal to map[string]interface{}
 	}
 	return conf, err
 }

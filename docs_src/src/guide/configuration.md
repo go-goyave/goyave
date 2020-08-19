@@ -161,6 +161,24 @@ func main() {
 }
 ```
 
+### Using environment variables
+
+<p><Badge text="Since v3.0.0"/></p>
+
+You can use environment variables in your configuration file. Environment variables are identified by the following syntax: `${VARIABLE_NAME}`.
+
+```json
+{
+  "database": {
+    "host": "${DB_HOST}"
+  }
+}
+```
+
+**Note:** *This syntax is strict. If the string doesn't start with `${` or doesn't end with `}`, it will not be considered an environment variable.*
+
+`int`, `float64` and `bool` values are supported. If the configuration entry is expected to be of one of these types, the content of the environment variable will be automatically converted. If the conversion fails, a configuration loading error will be returned.
+
 ### Getting a value
 
 All entries are accessible using **dot-separated paths**. If you want to access the `name` entry in the `app` category, the key will be `app.name`.

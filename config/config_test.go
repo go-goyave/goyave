@@ -312,6 +312,8 @@ func (suite *ConfigTestSuite) TestLoad() {
 	if err != nil {
 		suite.Equal("open config.forbidden.json: permission denied", err.Error())
 	}
+	suite.Nil(config)
+	suite.False(IsLoaded())
 
 	// override error
 	Clear()
@@ -322,6 +324,8 @@ func (suite *ConfigTestSuite) TestLoad() {
 	if err != nil {
 		suite.Equal("Invalid config:\n\t- Cannot override category \"rootLevel\" with an entry", err.Error())
 	}
+	suite.Nil(config)
+	suite.False(IsLoaded())
 
 	// validation error
 	Clear()
@@ -332,6 +336,8 @@ func (suite *ConfigTestSuite) TestLoad() {
 	if err != nil {
 		suite.Equal("Invalid config:\n\t- \"rootLevel\" type must be int", err.Error())
 	}
+	suite.Nil(config)
+	suite.False(IsLoaded())
 }
 
 func (suite *ConfigTestSuite) TestCreateMissingCategories() {

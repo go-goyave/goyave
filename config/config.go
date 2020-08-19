@@ -108,18 +108,21 @@ func Load() error { // TODO allow loading from somewhere else
 	path := getConfigFilePath()
 	conf, err := readConfigFile(path)
 	if err != nil { // TODO reset config to null if error while loading
+		config = nil
 		return err
 	}
 
 	if err := override(conf, config); err != nil {
+		config = nil
 		return err
 	}
 
 	if err := config.validate(""); err != nil {
+		config = nil
 		return fmt.Errorf("Invalid config:%s", err.Error())
 	}
 
-	return err
+	return nil
 }
 
 // IsLoaded returns true if the config have been loaded.

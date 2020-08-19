@@ -775,6 +775,17 @@ func (suite *ConfigTestSuite) TestValidateEntry() {
 	e = &Entry{1.42, reflect.Float64, []interface{}{1.2, 1.3, 2.4, 42.1, 1.4200000001, 1.42}}
 	err = e.validate("entry")
 	suite.Nil(err)
+
+	// From environment variable
+	e = &Entry{"${TEST_VAR}", reflect.Float64, []interface{}{}}
+	os.Setenv("TEST_VAR", "2..")
+	defer os.Unsetenv("TEST_VAR")
+	err = e.validate("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" could not be converted to float64 from environment variable \"TEST_VAR\" of value \"2..\"", err.Error())
+	}
+	suite.Equal("${TEST_VAR}", e.Value)
 }
 
 func (suite *ConfigTestSuite) TestValidateObject() {
@@ -866,6 +877,85 @@ func (suite *ConfigTestSuite) TestRegister() {
 	suite.True(ok)
 	suite.Same(current, newEntry)
 	suite.Equal([]interface{}{}, newEntry.(*Entry).AuthorizedValues)
+}
+
+func (suite *ConfigTestSuite) TestTryEnvVarConversion() {
+	entry := &Entry{"${TEST_VAR}", reflect.String, []interface{}{}}
+	err := entry.tryEnvVarConversion("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\": \"TEST_VAR\" environment variable is not set", err.Error())
+	}
+	suite.Equal("${TEST_VAR}", entry.Value)
+
+	os.Setenv("TEST_VAR", "")
+	defer os.Unsetenv("TEST_VAR")
+	err = entry.tryEnvVarConversion("entry")
+	suite.Nil(err)
+	suite.Equal("", entry.Value)
+	entry.Value = "${TEST_VAR}"
+
+	os.Setenv("TEST_VAR", "env var value")
+	err = entry.tryEnvVarConversion("entry")
+	suite.Nil(err)
+	suite.Equal("env var value", entry.Value)
+
+	// Int conversion
+	entry = &Entry{"${TEST_VAR}", reflect.Int, []interface{}{}}
+	os.Setenv("TEST_VAR", "29")
+	err = entry.tryEnvVarConversion("entry")
+	suite.Nil(err)
+	suite.Equal(29, entry.Value)
+	entry.Value = "${TEST_VAR}"
+
+	os.Setenv("TEST_VAR", "2.9")
+	err = entry.tryEnvVarConversion("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" could not be converted to int from environment variable \"TEST_VAR\" of value \"2.9\"", err.Error())
+	}
+	suite.Equal("${TEST_VAR}", entry.Value)
+
+	// Float conversion
+	entry = &Entry{"${TEST_VAR}", reflect.Float64, []interface{}{}}
+	os.Setenv("TEST_VAR", "2.9")
+	err = entry.tryEnvVarConversion("entry")
+	suite.Nil(err)
+	suite.Equal(2.9, entry.Value)
+	entry.Value = "${TEST_VAR}"
+
+	os.Setenv("TEST_VAR", "2..")
+	err = entry.tryEnvVarConversion("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" could not be converted to float64 from environment variable \"TEST_VAR\" of value \"2..\"", err.Error())
+	}
+	suite.Equal("${TEST_VAR}", entry.Value)
+
+	// Bool conversion
+	entry = &Entry{"${TEST_VAR}", reflect.Bool, []interface{}{}}
+	os.Setenv("TEST_VAR", "true")
+	err = entry.tryEnvVarConversion("entry")
+	suite.Nil(err)
+	suite.Equal(true, entry.Value)
+	entry.Value = "${TEST_VAR}"
+
+	os.Setenv("TEST_VAR", "no")
+	err = entry.tryEnvVarConversion("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\" could not be converted to bool from environment variable \"TEST_VAR\" of value \"no\"", err.Error())
+	}
+	suite.Equal("${TEST_VAR}", entry.Value)
+
+	// Empty name edge case
+	entry = &Entry{"${}", reflect.Bool, []interface{}{}}
+	err = entry.tryEnvVarConversion("entry")
+	suite.NotNil(err)
+	if err != nil {
+		suite.Equal("\"entry\": \"\" environment variable is not set", err.Error())
+	}
+	suite.Equal("${}", entry.Value)
 }
 
 func (suite *ConfigTestSuite) TearDownAllSuite() {

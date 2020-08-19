@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -410,13 +411,6 @@ func readConfigFile(file string) (object, error) {
 		// other file formats such as toml, provided said format
 		// can unmarshal to map[string]interface{}
 	}
-
-	// TODO load environment variables
-	// if variable not set, config loading error
-	// if variable type is not string, try to convert
-	// to expected type defined in defaults
-	// Caution: only allow this conversion from file loading,
-	// not from the Set method
 	return conf, err
 }
 
@@ -460,6 +454,10 @@ func (e *Entry) validate(key string) error {
 		return nil
 	}
 
+	if err := e.tryEnvVarConversion(key); err != nil {
+		return err
+	}
+
 	kind := reflect.TypeOf(e.Value).Kind()
 	if kind != e.Type {
 		if !e.tryIntConversion(kind) {
@@ -485,4 +483,41 @@ func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
 	}
 
 	return false
+}
+
+func (e *Entry) tryEnvVarConversion(key string) error {
+	str, ok := e.Value.(string)
+	if ok && strings.HasPrefix(str, "${") && strings.HasSuffix(str, "}") {
+		varName := str[2 : len(str)-1]
+		value, set := os.LookupEnv(varName)
+		if !set {
+			return fmt.Errorf("%q: %q environment variable is not set", key, varName)
+		}
+
+		switch e.Type {
+		case reflect.Int:
+			if i, err := strconv.Atoi(value); err == nil {
+				e.Value = i
+			} else {
+				return fmt.Errorf("%q could not be converted to int from environment variable %q of value %q", key, varName, value)
+			}
+		case reflect.Float64:
+			if f, err := strconv.ParseFloat(value, 64); err == nil {
+				e.Value = f
+			} else {
+				return fmt.Errorf("%q could not be converted to float64 from environment variable %q of value %q", key, varName, value)
+			}
+		case reflect.Bool:
+			if f, err := strconv.ParseBool(value); err == nil {
+				e.Value = f
+			} else {
+				return fmt.Errorf("%q could not be converted to bool from environment variable %q of value %q", key, varName, value)
+			}
+		default:
+			// Keep value as string if type is not supported and let validation do its job
+			e.Value = value
+		}
+	}
+
+	return nil
 }

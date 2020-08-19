@@ -112,6 +112,55 @@ The following cases will raise errors when the configuration is being overridden
 config.Load()
 ```
 
+#### config.LoadFrom
+
+You may need to load a configuration file from a custom path instead of using the standard one. `LoadFrom` lets you load a config file from the given path.
+
+| Parameters    | Return  |
+|---------------|---------|
+| `path string` | `error` |
+
+**Example:** load the config from the path given through a flag
+``` go
+import (
+  "flag"
+  "os"
+
+  "github.com/System-Glitch/goyave/v2"
+  "github.com/System-Glitch/goyave/v2/config"
+  
+  //...
+)
+
+func handleFlags() {
+	flag.Usage = func() {
+		goyave.ErrLogger.Println("usage: " + os.Args[0] + " -config=[config]")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	flag.String("config", "", "JSON config file")
+	flag.Parse()
+
+	configDir := flag.Lookup("config")
+	path := configDir.Value.String()
+	if path != configDir.DefValue {
+		if err := config.LoadFrom(path); err != nil {
+			goyave.ErrLogger.Println(err)
+			os.Exit(goyave.ExitInvalidConfig)
+		}
+	}
+}
+
+func main() {
+	handleFlags()
+
+	if err := goyave.Start(route.Register); err != nil {
+		os.Exit(err.(*goyave.Error).ExitCode)
+	}
+}
+```
+
 ### Getting a value
 
 All entries are accessible using **dot-separated paths**. If you want to access the `name` entry in the `app` category, the key will be `app.name`.

@@ -8,7 +8,9 @@ import (
 
 func setupConfigBench(b *testing.B) {
 	Clear()
-	Load()
+	if err := LoadFrom("config.test.json"); err != nil {
+		panic(err)
+	}
 	runtime.GC()
 	b.ReportAllocs()
 	b.ResetTimer()

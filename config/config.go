@@ -99,13 +99,17 @@ func Register(key string, entry Entry) {
 // - "production": "config.production.json"
 // - "test": "config.test.json"
 // - By default: "config.json"
-func Load() error { // TODO allow loading from somewhere else
+func Load() error {
+	return LoadFrom(getConfigFilePath())
+}
+
+// LoadFrom loads a config file from the given path.
+func LoadFrom(path string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 	config = make(object, len(configDefaults))
 	loadDefaults(configDefaults, config)
 
-	path := getConfigFilePath()
 	conf, err := readConfigFile(path)
 	if err != nil {
 		config = nil

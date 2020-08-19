@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"os"
 	"testing"
 
 	"github.com/System-Glitch/goyave/v2/config"
@@ -11,20 +10,13 @@ import (
 
 type PlaceholderTestSuite struct {
 	suite.Suite
-	previousEnv string
 }
 
 func (suite *PlaceholderTestSuite) SetupSuite() {
-	suite.previousEnv = os.Getenv("GOYAVE_ENV")
-	os.Setenv("GOYAVE_ENV", "test")
-
 	lang.LoadDefault()
-	// FIXME workaround waiting for load from path
-	os.Chdir("..")
-	if err := config.Load(); err != nil {
+	if err := config.LoadFrom("../config.test.json"); err != nil {
 		suite.FailNow(err.Error())
 	}
-	os.Chdir("lang")
 	config.Set("app.defaultLanguage", "en-US")
 }
 
@@ -52,10 +44,6 @@ func (suite *PlaceholderTestSuite) TestProcessPlaceholders() {
 	suite.Equal("The image must be a file with one of the following extensions: ppm.", processPlaceholders("image", "extension", []string{"ppm"}, "The :field must be a file with one of the following extensions: :values.", "en-US"))
 	suite.Equal("The image must be a file with one of the following extensions: ppm, png.", processPlaceholders("image", "extension", []string{"ppm", "png"}, "The :field must be a file with one of the following extensions: :values.", "en-US"))
 	suite.Equal("The image must have exactly 2 file(s).", processPlaceholders("image", "count", []string{"2"}, "The :field must have exactly :value file(s).", "en-US"))
-}
-
-func (suite *PlaceholderTestSuite) TearDownAllSuite() {
-	os.Setenv("GOYAVE_ENV", suite.previousEnv)
 }
 
 func TestPlaceholderTestSuite(t *testing.T) {

@@ -40,6 +40,7 @@ meta:
     - Core configuration has been sorted in categories. This is a breaking change that will require you to update your configuration files.
     - Entries having a `nil` value are now considered unset.
     - Added accessors `GetInt()` and `GetFloat()`.
+    - Added `LoadFrom()`, letting you load a configuration file from a custom path.
     - Bug fix: `config.IsLoaded()` returned `true` even if config failed to load.
 
 **Motivation:** *Configuration was without a doubt one of the weakest and inflexible feature of the framework. It was possible to use objects in custom entries, but not for core config, but it was inconvenient because it required a lot of type assertions. Moreover, core config entries were not handled the same as custom ones, which was a lack of openness. Hopefully, this revamped system will cover more potential use-cases, ease plugin development and allow you to produce cleaner code and configuration files.*

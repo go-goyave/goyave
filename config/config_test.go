@@ -340,6 +340,21 @@ func (suite *ConfigTestSuite) TestLoad() {
 	suite.False(IsLoaded())
 }
 
+func (suite *ConfigTestSuite) TestLoadFrom() {
+	Clear()
+	err := LoadFrom("../resources/custom_config.json")
+	suite.Nil(err)
+	suite.Equal(configDefaults["server"], config["server"])
+	suite.Equal(configDefaults["database"], config["database"])
+	suite.Equal(configDefaults["app"], config["app"])
+
+	e, ok := config["custom-entry"]
+	suite.True(ok)
+	entry, ok := e.(*Entry)
+	suite.True(ok)
+	suite.Equal("value", entry.Value)
+}
+
 func (suite *ConfigTestSuite) TestCreateMissingCategories() {
 	config := object{}
 	created := createMissingCategories(config, "category.entry")

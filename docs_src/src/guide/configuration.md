@@ -47,7 +47,7 @@ The following JSON file is an example of default configuration:
     "tls": {
       "cert": "/path/to/cert",
       "key": "/path/to/key"
-    },
+    }
   },
   "database": {
     "connection": "mysql",

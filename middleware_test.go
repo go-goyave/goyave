@@ -20,15 +20,13 @@ import (
 	"github.com/System-Glitch/goyave/v2/helper/filesystem"
 	"github.com/System-Glitch/goyave/v2/lang"
 	"github.com/System-Glitch/goyave/v2/validation"
-	"github.com/stretchr/testify/suite"
 )
 
 type MiddlewareTestSuite struct {
-	suite.Suite
+	TestSuite
 }
 
 func (suite *MiddlewareTestSuite) SetupSuite() {
-	config.Load()
 	lang.LoadDefault()
 }
 
@@ -450,5 +448,5 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 }
 
 func TestMiddlewareTestSuite(t *testing.T) {
-	suite.Run(t, new(MiddlewareTestSuite))
+	RunTest(t, new(MiddlewareTestSuite))
 }

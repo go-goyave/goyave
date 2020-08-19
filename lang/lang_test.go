@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"os"
 	"path"
 	"runtime"
 	"testing"
@@ -11,6 +12,7 @@ import (
 
 type LangTestSuite struct {
 	suite.Suite
+	previousEnv string
 }
 
 func loadTestLang(lang string) {
@@ -19,9 +21,17 @@ func loadTestLang(lang string) {
 }
 
 func (suite *LangTestSuite) SetupSuite() {
+	suite.previousEnv = os.Getenv("GOYAVE_ENV")
+	os.Setenv("GOYAVE_ENV", "test")
 	LoadDefault()
 	LoadAllAvailableLanguages()
-	config.Load()
+
+	// FIXME workaround waiting for load from path
+	os.Chdir("..")
+	if err := config.Load(); err != nil {
+		suite.FailNow(err.Error())
+	}
+	os.Chdir("lang")
 	config.Set("app.defaultLanguage", "en-US")
 }
 
@@ -137,6 +147,7 @@ func (suite *LangTestSuite) TestPlaceholders() {
 
 func (suite *LangTestSuite) TearDownAllSuite() {
 	languages = map[string]language{}
+	os.Setenv("GOYAVE_ENV", suite.previousEnv)
 }
 
 func TestLangTestSuite(t *testing.T) {

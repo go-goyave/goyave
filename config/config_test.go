@@ -427,6 +427,12 @@ func (suite *ConfigTestSuite) TestSet() {
 	suite.Panics(func() {
 		Set("app", "not a category")
 	})
+
+	// Config not loaded
+	Clear()
+	suite.Panics(func() {
+		Set("app.name", "config not loaded")
+	})
 }
 
 func (suite *ConfigTestSuite) TestWalk() {
@@ -651,6 +657,12 @@ func (suite *ConfigTestSuite) TestLowLevelGet() {
 	val, ok = get("app.test.")
 	suite.False(ok)
 	suite.Nil(val)
+
+	// Config not loaded
+	Clear()
+	suite.Panics(func() {
+		get("app.name")
+	})
 }
 
 func (suite *ConfigTestSuite) TestHas() {

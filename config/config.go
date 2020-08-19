@@ -107,7 +107,7 @@ func Load() error { // TODO allow loading from somewhere else
 
 	path := getConfigFilePath()
 	conf, err := readConfigFile(path)
-	if err != nil { // TODO reset config to null if error while loading
+	if err != nil {
 		config = nil
 		return err
 	}
@@ -152,6 +152,9 @@ func Get(key string) interface{} {
 func get(key string) (interface{}, bool) {
 	mutex.RLock()
 	defer mutex.RUnlock()
+	if config == nil {
+		panic("Config is not loaded")
+	}
 	currentCategory := config
 	b := 0
 	e := strings.Index(key, ".")
@@ -245,6 +248,9 @@ func Has(key string) bool {
 func Set(key string, value interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	if config == nil {
+		panic("Config is not loaded")
+	}
 	category, entryKey, exists := walk(config, key)
 	if exists {
 		entry := category[entryKey].(*Entry)

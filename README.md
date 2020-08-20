@@ -362,16 +362,16 @@ Database connections are managed by the framework and are long-lived. When the s
 
 Very few code is required to get started with databases. There are some [configuration](https://system-glitch.github.io/goyave/guide/configuration.html#configuration-reference) options that you need to change though:
 
-- `dbConnection`
-- `dbHost`
-- `dbPort`
-- `dbName`
-- `dbUsername`
-- `dbPassword`
-- `dbOptions`
-- `dbMaxOpenConnection`
-- `dbMaxIdleConnection`
-- `dbMaxLifetime`
+- `database.connection`
+- `database.host`
+- `database.port`
+- `database.name`
+- `database.username`
+- `database.password`
+- `database.options`
+- `database.maxOpenConnection`
+- `database.maxIdleConnection`
+- `database.maxLifetime`
 
 ``` go
 user := model.User{}

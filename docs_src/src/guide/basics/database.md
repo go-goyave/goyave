@@ -104,6 +104,39 @@ If you want to manually close the database connection, you can do it using `Clos
 database.Close()
 ```
 
+### Connection initializers
+
+You can modify the global instance of `*gorm.DB` when it's created (and re-created, after a `Close()` for example) using `Initializer` functions. This is useful if you want to set global settings such as `gorm:auto_preload` and make them effective for you whole application. It is recommended to register initializers **before** starting the application.
+
+In your initalizers, use `db.InstantSet()` and not `db.Set()`, since the latter clones the `gorm.DB` instance instead of modifying it.
+
+Initializer functions are called in order, meaning that functions added last can override settings defined by previous ones.
+
+```go
+database.AddInitializer(func(db *gorm.DB) {
+    db.InstantSet("gorm:auto_preload", true)
+})
+```
+
+#### database.AddInitializer
+
+| Parameters                         | Return |
+|------------------------------------|--------|
+| `initializer database.Initializer` | `void` |
+
+::: tip
+`database.Initializer` is an alias for `func(*gorm.DB)`
+:::
+
+#### database.ClearInitializers
+
+Remove all database connection initializer functions.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
+
 ## Models
 
 A model is a structure reflecting a database table structure. An instance of a model is a single database record. Each model is defined in its own file inside the `database/model` directory.

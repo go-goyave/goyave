@@ -7,6 +7,7 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
@@ -96,6 +97,42 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 	}
 
 	suite.True(found)
+}
+
+func (suite *DatabaseTestSuite) TestInitializers() {
+	initializer := func(db *gorm.DB) {
+		db.InstantSet("gorm:auto_preload", true)
+	}
+	AddInitializer(initializer)
+
+	suite.Len(initializers, 1)
+
+	db := GetConnection()
+	val, ok := db.Get("gorm:auto_preload")
+	suite.True(ok)
+	suite.Equal(true, val)
+
+	Close()
+
+	AddInitializer(func(db *gorm.DB) {
+		db.InstantSet("another_setting", "test")
+	})
+	suite.Len(initializers, 2)
+
+	db = GetConnection()
+	val, ok = db.Get("gorm:auto_preload")
+	suite.True(ok)
+	suite.Equal(true, val)
+
+	val, ok = db.Get("another_setting")
+	suite.True(ok)
+	suite.Equal("test", val)
+
+	Close()
+
+	ClearInitializers()
+	suite.Empty(initializers)
+
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

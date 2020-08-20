@@ -9,10 +9,19 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var dbConnection *gorm.DB
-var mu sync.Mutex
+// Initializer is a function meant to modify a connection settings
+// at the global scope when it's created.
+//
+// Use `db.InstantSet()` and not `db.Set()`, since the latter clones
+// the gorm.DB instance instead of modifying it.
+type Initializer func(*gorm.DB)
 
-var models []interface{}
+var (
+	dbConnection *gorm.DB
+	mu           sync.Mutex
+	models       []interface{}
+	initializers []Initializer
+)
 
 // GetConnection returns the global database connection pool.
 // Creates a new connection pool if no connection is available.
@@ -36,6 +45,24 @@ func Close() {
 		dbConnection.Close()
 		dbConnection = nil
 	}
+}
+
+// AddInitializer adds a database connection initializer function.
+// Initializer functions are meant to modify a connection settings
+// at the global scope when it's created.
+//
+// Initializer functions are called in order, meaning that functions
+// added last can override settings defined by previous ones.
+//
+// Use `db.InstantSet()` and not `db.Set()`, since the latter clones
+// the gorm.DB instance instead of modifying it.
+func AddInitializer(initializer Initializer) {
+	initializers = append(initializers, initializer)
+}
+
+// ClearInitializers remove all database connection initializer functions.
+func ClearInitializers() {
+	initializers = []Initializer{}
 }
 
 // RegisterModel registers a model for auto-migration.
@@ -85,6 +112,9 @@ func newConnection() *gorm.DB {
 	db.DB().SetMaxOpenConns(config.GetInt("database.maxOpenConnections"))
 	db.DB().SetMaxIdleConns(config.GetInt("database.maxIdleConnections"))
 	db.DB().SetConnMaxLifetime(time.Duration(config.GetInt("database.maxLifetime")) * time.Second)
+	for _, initializer := range initializers {
+		initializer(db)
+	}
 	return db
 }
 

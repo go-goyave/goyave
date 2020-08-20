@@ -58,6 +58,7 @@ meta:
 - Test can now be run without the `-p 1` flag thanks to a lock added to the `goyave.RunTest` method. Therefore, `goyave.TestSuite` still **don't run in parallel** but are safe to use with the typical test command.
 - `maxUploadSize` config entry now supports decimal places.
 - Added [database connection initializers](./basics/database.html#connection-initializers).
+- Re-organised the `goyave.Response` structure fields to save some memory.
 
 ## v2.10.x
 

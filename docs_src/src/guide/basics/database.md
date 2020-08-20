@@ -108,7 +108,7 @@ database.Close()
 
 You can modify the global instance of `*gorm.DB` when it's created (and re-created, after a `Close()` for example) using `Initializer` functions. This is useful if you want to set global settings such as `gorm:auto_preload` and make them effective for you whole application. It is recommended to register initializers **before** starting the application.
 
-In your initalizers, use `db.InstantSet()` and not `db.Set()`, since the latter clones the `gorm.DB` instance instead of modifying it.
+In your initializers, use `db.InstantSet()` and not `db.Set()`, since the latter clones the `gorm.DB` instance instead of modifying it.
 
 Initializer functions are called in order, meaning that functions added last can override settings defined by previous ones.
 

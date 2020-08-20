@@ -20,18 +20,19 @@ import (
 
 // Response represents a controller response.
 type Response struct {
+	responseWriter http.ResponseWriter
+	err            interface{}
+	stacktrace     string
+	status         int
+
 	// Used to check if controller didn't write anything so
 	// core can write default 204 No Content.
 	// See RFC 7231, 6.3.5
 	empty       bool
-	status      int
 	wroteHeader bool
-	err         interface{}
-	stacktrace  string
-	writer      io.Writer
 
-	httpRequest    *http.Request
-	responseWriter http.ResponseWriter
+	httpRequest *http.Request
+	writer      io.Writer
 }
 
 // newResponse create a new Response using the given http.ResponseWriter and raw request.

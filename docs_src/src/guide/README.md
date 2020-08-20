@@ -22,17 +22,15 @@ Most golang frameworks for web development don't have a strong directory structu
 Please feel free to sudgest changes, ask for more details, report grammar errors, or notice of uncovered scenarios by [creating an issue](https://github.com/System-Glitch/goyave/issues/new/choose) with the proposal template.
 :::
 
-::: img-row <img :src="$withBase('/undraw_to_do_list_a49b.svg')" height="150" alt="Roadmap"/>
-### Ideas for future releases
+## Discord
 
-- Permission system (guards)
-- CLI utility to help creating controllers, middleware, etc
-- Direct support for the HEAD method
-- Email helpers
-- Queues/Scheduler system
-- OpenAPI generator
-- And more!
-:::
+Come and learn about the framework, stay updated on the progress, be notified when there is a new release, get help, suggest new features or changes, contribute to the project, and more!
+
+<p align="center">
+  <a href="https://discord.gg/mfemDMc">
+    <img src="https://discord.com/api/guilds/744264895209537617/widget.png?style=banner2" alt="Discord">
+  </a>
+</p>
 
 ## Contributors
 

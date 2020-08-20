@@ -3,12 +3,17 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/System-Glitch/goyave/actions"><img src="https://github.com/System-Glitch/goyave/workflows/Test/badge.svg" alt="Build Status"/></a>
     <a href="https://github.com/System-Glitch/goyave/releases"><img src="https://img.shields.io/github/v/release/System-Glitch/goyave?include_prereleases" alt="Version"/></a>
-    <a href="https://goreportcard.com/report/github.com/System-Glitch/goyave"><img src="https://goreportcard.com/badge/github.com/System-Glitch/goyave" alt="Go Report"/></a>
+    <a href="https://github.com/System-Glitch/goyave/actions"><img src="https://github.com/System-Glitch/goyave/workflows/Test/badge.svg?branch=develop" alt="Build Status"/></a>
     <a href="https://coveralls.io/github/System-Glitch/goyave?branch=master"><img src="https://coveralls.io/repos/github/System-Glitch/goyave/badge.svg" alt="Coverage Status"/></a>
+    <a href="https://goreportcard.com/report/github.com/System-Glitch/goyave"><img src="https://goreportcard.com/badge/github.com/System-Glitch/goyave" alt="Go Report"/></a>
+    
+</p>
+
+<p align="center">
     <a href="https://github.com/System-Glitch/goyave/blob/master/LICENSE"><img src="https://img.shields.io/dub/l/vibe-d.svg" alt="License"/></a>
     <a href="https://github.com/avelino/awesome-go"><img src="https://awesome.re/mentioned-badge.svg" alt="Awesome"/></a>
+    <a href="https://discord.gg/mfemDMc"><img src="https://img.shields.io/discord/744264895209537617?logo=discord" alt="Discord"/></a>
 </p>
 
 <h2 align="center">An Elegant Golang Web Framework</h2>

@@ -48,7 +48,7 @@ var configDefaults object = object{
 		},
 	},
 	"database": object{
-		"connection":         &Entry{"none", reflect.String, []interface{}{"none", "mysql", "postgres", "sqlite3", "mssql"}}, // TODO add a dialect ?
+		"connection":         &Entry{"none", reflect.String, []interface{}{}},
 		"host":               &Entry{"127.0.0.1", reflect.String, []interface{}{}},
 		"port":               &Entry{3306, reflect.Int, []interface{}{}},
 		"name":               &Entry{"goyave", reflect.String, []interface{}{}},

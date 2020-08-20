@@ -59,6 +59,7 @@ meta:
 - `maxUploadSize` config entry now supports decimal places.
 - Added [database connection initializers](./basics/database.html#connection-initializers).
 - Re-organised the `goyave.Response` structure fields to save some memory.
+- Added the ability to regsiter new SQL dialects to use with GORM.
 
 ## v2.10.x
 

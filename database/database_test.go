@@ -69,7 +69,11 @@ func (suite *DatabaseTestSuite) TestGetConnectionPanic() {
 func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 	ClearRegisteredModels()
 	RegisterModel(&User{})
-	suite.Equal(1, len(models))
+	suite.Len(models, 1)
+
+	registeredModels := GetRegisteredModels()
+	suite.Len(registeredModels, 1)
+	suite.Same(models[0], registeredModels[0])
 
 	Migrate()
 	ClearRegisteredModels()
@@ -132,7 +136,25 @@ func (suite *DatabaseTestSuite) TestInitializers() {
 
 	ClearInitializers()
 	suite.Empty(initializers)
+}
 
+func (suite *DatabaseTestSuite) TestRegisterDialect() {
+	template := "{username}{username} {password} {host}:{port} {name} {options}"
+	RegisterDialect("newdialect", template)
+	defer delete(dialectOptions, "newdialect")
+
+	t, ok := dialectOptions["newdialect"]
+	suite.True(ok)
+	suite.Equal(template, t)
+
+	suite.Equal("goyave{username} secret 127.0.0.1:3306 goyave charset=utf8&parseTime=true&loc=Local", buildConnectionOptions("newdialect"))
+
+	suite.Panics(func() {
+		RegisterDialect("newdialect", "othertemplate")
+	})
+	t, ok = dialectOptions["newdialect"]
+	suite.True(ok)
+	suite.Equal(template, t)
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

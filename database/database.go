@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,6 +23,21 @@ var (
 	mu           sync.Mutex
 	models       []interface{}
 	initializers []Initializer
+
+	dialectOptions map[string]string = map[string]string{
+		"mysql":    "{username}:{password}@({host}:{port})/{name}?{options}",
+		"postgres": "host={host} port={port} user={username} dbname={name} password={password} {options}",
+		"sqlite3":  "{name}",
+		"mssql":    "sqlserver://{username}:{password}@{host}:{port}?database={name}&{options}",
+	}
+
+	optionPlaceholders map[string]string = map[string]string{
+		"{username}": "database.username",
+		"{password}": "database.password",
+		"{host}":     "database.host",
+		"{name}":     "database.name",
+		"{options}":  "database.options",
+	}
 )
 
 // GetConnection returns the global database connection pool.
@@ -96,6 +113,30 @@ func Migrate() {
 	}
 }
 
+// RegisterDialect registers a connection string template for the given dialect.
+//
+// You cannot override a dialect that already exists.
+//
+// Template format accepts the following placeholders, which will be replaced with
+// the corresponding configuration entries automatically:
+//  - "{username}"
+//  - "{password}"
+//  - "{host}"
+//  - "{port}"
+//  - "{name}"
+//  - "{options}"
+// Example template for the "mysql" dialect:
+//  {username}:{password}@({host}:{port})/{name}?{options}
+func RegisterDialect(name, template string) {
+	mu.Lock()
+	defer mu.Unlock()
+	if _, ok := dialectOptions[name]; ok {
+		panic(fmt.Sprintf("Dialect %q already exists", name))
+	}
+
+	dialectOptions[name] = template
+}
+
 func newConnection() *gorm.DB {
 	connection := config.GetString("database.connection")
 
@@ -118,41 +159,17 @@ func newConnection() *gorm.DB {
 	return db
 }
 
-func buildConnectionOptions(connection string) string { // TODO add a way to register a new dialect
-	switch connection {
-	case "mysql":
-		return fmt.Sprintf(
-			"%s:%s@(%s:%d)/%s?%s",
-			config.GetString("database.username"),
-			config.GetString("database.password"),
-			config.GetString("database.host"),
-			config.GetInt("database.port"),
-			config.GetString("database.name"),
-			config.GetString("database.options"),
-		)
-	case "postgres":
-		return fmt.Sprintf(
-			"host=%s port=%d user=%s dbname=%s password=%s %s",
-			config.GetString("database.host"),
-			config.GetInt("database.port"),
-			config.GetString("database.username"),
-			config.GetString("database.name"),
-			config.GetString("database.password"),
-			config.GetString("database.options"),
-		)
-	case "sqlite3":
-		return config.GetString("database.name")
-	case "mssql":
-		return fmt.Sprintf(
-			"sqlserver://%s:%s@%s:%d?database=%s&%s",
-			config.GetString("database.username"),
-			config.GetString("database.password"),
-			config.GetString("database.host"),
-			config.GetInt("database.port"),
-			config.GetString("database.name"),
-			config.GetString("database.options"),
-		)
+func buildConnectionOptions(driver string) string {
+	template, ok := dialectOptions[driver]
+	if !ok {
+		panic(fmt.Sprintf("DB Connection %q not supported", driver))
 	}
 
-	panic(fmt.Sprintf("DB Connection %s not supported", connection))
+	connStr := template
+	for k, v := range optionPlaceholders {
+		connStr = strings.Replace(connStr, k, config.GetString(v), 1)
+	}
+	connStr = strings.Replace(connStr, "{port}", strconv.Itoa(config.GetInt("database.port")), 1)
+
+	return connStr
 }

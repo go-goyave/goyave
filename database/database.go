@@ -133,7 +133,6 @@ func RegisterDialect(name, template string) {
 	if _, ok := dialectOptions[name]; ok {
 		panic(fmt.Sprintf("Dialect %q already exists", name))
 	}
-
 	dialectOptions[name] = template
 }
 

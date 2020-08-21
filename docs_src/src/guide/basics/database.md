@@ -47,7 +47,7 @@ Very few code is required to get started with databases. There are some [configu
 
 ### Drivers
 
-The framework supports the following sql drivers:
+The framework supports the following sql drivers out-of-the-box:
 - `none` (*Disable database features*)
 - `mysql`
 - `postgres`
@@ -67,6 +67,49 @@ import _ "github.com/jinzhu/gorm/dialects/mysql"
 ::: tip
 For SQLite, only the `database.name` config entry is required.
 :::
+
+---
+
+You can **register more dialects** for GORM [like you would usually do](http://gorm.io/docs/dialects.html). There is one more step required: you need to tell Goyave how to build the connection string for this dialect:
+
+```go
+import (
+  "github.com/System-Glitch/goyave/v2/database"
+  "github.com/jinzhu/gorm"
+  _ "example.com/user/my-dialect"
+)
+
+type myDialect struct{
+  db gorm.SQLCommon
+  gorm.DefaultForeignKeyNamer
+}
+
+// Dialect implementation...
+
+func init() {
+  gorm.RegisterDialect("my-dialect", &myDialect{})
+  database.RegisterDialect("my-dialect", "{username}:{password}@({host}:{port})/{name}?{options}")
+}
+```
+
+
+Template format accepts the following placeholders, which will be replaced with the corresponding configuration entries automatically:
+- `{username}`
+- `{password}`
+- `{host}`
+- `{port}`
+- `{name}`
+- `{options}`
+
+You cannot override a dialect that already exists.
+
+#### database.RegisterDialect
+
+| Parameters        | Return |
+|-------------------|--------|
+| `name string`     | `void` |
+| `template string` |        |
+
 
 ## Getting a database connection
 

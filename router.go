@@ -30,6 +30,8 @@ type Router struct {
 	parametrizeable
 }
 
+// TODO how to make it open enough so an OpenAPI generator can read it?
+
 var _ http.Handler = (*Router)(nil) // implements http.Handler
 var _ routeMatcher = (*Router)(nil) // implements routeMatcher
 

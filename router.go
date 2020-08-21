@@ -30,7 +30,7 @@ type Router struct {
 	parametrizeable
 }
 
-// TODO how to make it open enough so an OpenAPI generator can read it?
+// TODO openapi.go: make Router and Route implement methods for OpenAPI format conversion (native support)
 
 var _ http.Handler = (*Router)(nil) // implements http.Handler
 var _ routeMatcher = (*Router)(nil) // implements routeMatcher

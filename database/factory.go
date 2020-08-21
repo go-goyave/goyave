@@ -51,8 +51,7 @@ func (f *Factory) Save(count uint) []interface{} {
 	records := f.Generate(count)
 	for _, record := range records {
 		db.Create(record) // TODO batch insert for better performance
-		// Batch insert would require a lot of work to be made available
-		// for all supported databases.
+		// Migrate to GORM v2, which is supporting batch operations
 	}
 	return records
 }

@@ -60,6 +60,7 @@ meta:
 - Added [database connection initializers](./basics/database.html#connection-initializers).
 - Re-organised the `goyave.Response` structure fields to save some memory.
 - Added the ability to regsiter new SQL dialects to use with GORM.
+- `database.Close()` can now return errors.
 
 ## v2.10.x
 

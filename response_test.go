@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -27,6 +28,18 @@ func (suite *ResponseTestSuite) SetupSuite() {
 	if err := config.Load(); err != nil {
 		suite.FailNow(err.Error())
 	}
+}
+
+func (suite *ResponseTestSuite) getFileSize(path string) string {
+	file, err := os.Open(path)
+	if err != nil {
+		suite.FailNow(err.Error())
+	}
+	stats, err := file.Stat()
+	if err != nil {
+		suite.FailNow(err.Error())
+	}
+	return strconv.FormatInt(stats.Size(), 10)
 }
 
 func (suite *ResponseTestSuite) TestResponseStatus() {
@@ -124,6 +137,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 }
 
 func (suite *ResponseTestSuite) TestResponseFile() {
+	size := suite.getFileSize("config/config.test.json")
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)
 
@@ -133,7 +147,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.Equal("91", resp.Header.Get("Content-Length")) // TODO get length of the file instead of hardcoding it in the test
+	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
 
@@ -205,6 +219,7 @@ func (suite *ResponseTestSuite) TestResponseJSONHiddenFields() {
 }
 
 func (suite *ResponseTestSuite) TestResponseDownload() {
+	size := suite.getFileSize("config/config.test.json")
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)
 
@@ -214,7 +229,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.Equal("91", resp.Header.Get("Content-Length")) // TODO get length of the file instead of hardcoding it in the test
+	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
 

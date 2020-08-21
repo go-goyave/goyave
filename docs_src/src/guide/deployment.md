@@ -42,7 +42,7 @@ COPY . .
 
 RUN go build -ldflags "-w -s"
 
-FROM alpine:3.9
+FROM alpine:latest
 
 WORKDIR /app
 

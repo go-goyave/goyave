@@ -32,6 +32,9 @@ import "github.com/System-Glitch/goyave/v2"
 ::: table
 [GetStatus](#response-getstatus)
 [GetError](#response-geterror)
+[GetStacktrace](#response-getstacktrace)
+[IsEmpty](#response-isempty)
+[IsHeaderWritten](#response-isheaderwritten)
 [Header](#response-header)
 [Status](#response-status)
 [JSON](#response-json)
@@ -74,6 +77,47 @@ This method is mainly used in [status handlers](../advanced/status-handlers.html
 **Example:**
 ``` go
 fmt.Println(response.GetError()) // "panic: something wrong happened"
+```
+
+#### Response.GetStacktrace
+
+Return the stacktrace of when the error occurred, or an empty string. The stacktrace is captured by the recovery middleware.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Example:**
+``` go
+fmt.Println(response.GetStacktrace()) // "goroutine 1 [running]:
+									  //  main.main()
+									  //	/tmp/sandbox930868764/prog.go:8 +0x39"
+```
+
+#### Response.IsEmpty
+
+Return true if nothing has been written to the response body yet.
+
+| Parameters | Return |
+|------------|--------|
+|            | `bool` |
+
+**Example:**
+``` go
+fmt.Println(response.IsEmpty()) // true
+```
+
+#### Response.IsHeaderWritten
+
+return true if the response header has been written. Once the response header is written, you cannot change the response status and headers anymore.
+
+| Parameters | Return |
+|------------|--------|
+|            | `bool` |
+
+**Example:**
+``` go
+fmt.Println(response.IsHeaderWritten()) // false
 ```
 
 #### Response.Header

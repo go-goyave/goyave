@@ -61,7 +61,7 @@ var (
 	})
 )
 
-func panicStatusHandler(response *Response, request *Request) { // TODO think about more possibilities for the error handler (avoid printing twice for example, access to stacktrace, etc)
+func panicStatusHandler(response *Response, request *Request) {
 	response.error(response.GetError())
 	if response.empty {
 		message := map[string]string{

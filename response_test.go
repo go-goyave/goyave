@@ -136,6 +136,38 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	config.Set("app.debug", true)
 }
 
+func (suite *ResponseTestSuite) TestIsEmpty() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+
+	suite.True(response.IsEmpty())
+
+	response.String(http.StatusOK, "test")
+	suite.False(response.IsEmpty())
+}
+
+func (suite *ResponseTestSuite) TestIsHeaderWritten() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+
+	suite.False(response.IsHeaderWritten())
+
+	response.Status(http.StatusOK)
+	suite.False(response.IsHeaderWritten())
+
+	response.String(http.StatusOK, "test")
+	suite.True(response.IsHeaderWritten())
+}
+
+func (suite *ResponseTestSuite) TestGetStacktrace() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+	suite.Empty(response.GetStacktrace())
+
+	response.stacktrace = "fake stacktrace"
+	suite.Equal("fake stacktrace", response.GetStacktrace())
+}
+
 func (suite *ResponseTestSuite) TestResponseFile() {
 	size := suite.getFileSize("config/config.test.json")
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))

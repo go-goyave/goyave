@@ -99,6 +99,20 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanic() {
 		panic(err)
 	})(response, &Request{})
 	suite.Equal(err, response.GetError())
+	suite.Empty(response.GetStacktrace())
+	suite.Equal(500, response.status)
+
+	prev := config.GetBool("app.debug")
+	config.Set("app.debug", true)
+	defer config.Set("app.debug", prev)
+
+	response = newResponse(httptest.NewRecorder(), nil)
+	err = fmt.Errorf("error message")
+	recoveryMiddleware(func(response *Response, r *Request) {
+		panic(err)
+	})(response, &Request{})
+	suite.Equal(err, response.GetError())
+	suite.NotEmpty(response.GetStacktrace())
 	suite.Equal(500, response.status)
 }
 

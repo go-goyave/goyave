@@ -121,6 +121,27 @@ func (r *Response) GetError() interface{} {
 	return r.err
 }
 
+// GetStacktrace return the stacktrace of when the error occurred, or an empty string.
+// The stacktrace is captured by the recovery middleware.
+func (r *Response) GetStacktrace() string {
+	return r.stacktrace
+}
+
+// IsEmpty return true if nothing has been written to the response body yet.
+func (r *Response) IsEmpty() bool {
+	return r.empty
+}
+
+// IsHeaderWritten return true if the response header has been written.
+// Once the response header is written, you cannot change the response status
+// and headers anymore.
+func (r *Response) IsHeaderWritten() bool {
+	return r.wroteHeader
+}
+
+// --------------------------------------
+// Write methods
+
 // Status set the response status code.
 // Calling this method a second time will have no effect.
 func (r *Response) Status(status int) {

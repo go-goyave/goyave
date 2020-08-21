@@ -55,13 +55,16 @@ func GetConnection() *gorm.DB {
 }
 
 // Close the database connections if they exist.
-func Close() {
+func Close() error {
+	var err error = nil
 	mu.Lock()
 	defer mu.Unlock()
 	if dbConnection != nil {
-		dbConnection.Close()
+		err = dbConnection.Close()
 		dbConnection = nil
 	}
+
+	return err
 }
 
 // AddInitializer adds a database connection initializer function.

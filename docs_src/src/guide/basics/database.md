@@ -138,9 +138,9 @@ Learn how to use the CRUD interface and the query builder in the [Gorm documenta
 
 If you want to manually close the database connection, you can do it using `Close()`. New connections can be re-opened using `GetConnection()` as usual. This function does nothing if the database connection is already closed or has never been created.
 
-| Parameters | Return |
-|------------|--------|
-|            | `void` |
+| Parameters | Return  |
+|------------|---------|
+|            | `error` |
 
 **Example:**
 ``` go

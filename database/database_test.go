@@ -46,7 +46,7 @@ func (suite *DatabaseTestSuite) TestGetConnection() {
 	suite.NotNil(db)
 	suite.NotNil(dbConnection)
 	suite.Equal(dbConnection, db)
-	Close()
+	suite.Nil(Close())
 	suite.Nil(dbConnection)
 }
 
@@ -116,7 +116,7 @@ func (suite *DatabaseTestSuite) TestInitializers() {
 	suite.True(ok)
 	suite.Equal(true, val)
 
-	Close()
+	suite.Nil(Close())
 
 	AddInitializer(func(db *gorm.DB) {
 		db.InstantSet("another_setting", "test")
@@ -132,7 +132,7 @@ func (suite *DatabaseTestSuite) TestInitializers() {
 	suite.True(ok)
 	suite.Equal("test", val)
 
-	Close()
+	suite.Nil(Close())
 
 	ClearInitializers()
 	suite.Empty(initializers)

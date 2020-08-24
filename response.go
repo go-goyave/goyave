@@ -322,21 +322,3 @@ func (r *Response) HandleDatabaseError(db *gorm.DB) bool {
 	}
 	return true
 }
-
-// CreateTestResponse create an empty response with the given response writer.
-// This function is aimed at making it easier to unit test Responses.
-//
-// Deprecated: Use goyave.TestSuite.CreateTestResponse instead.
-//
-//  writer := httptest.NewRecorder()
-//  response := goyave.CreateTestResponse(writer)
-//  response.Status(http.StatusNoContent)
-//  result := writer.Result()
-//  fmt.Println(result.StatusCode) // 204
-func CreateTestResponse(recorder http.ResponseWriter) *Response {
-	return &Response{
-		responseWriter: recorder,
-		writer:         recorder,
-		empty:          true,
-	}
-}

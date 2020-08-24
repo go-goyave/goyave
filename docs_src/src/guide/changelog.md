@@ -62,6 +62,7 @@ meta:
 - Added the ability to regsiter new SQL dialects to use with GORM.
 - `database.Close()` can now return errors.
 - Added `response.GetStacktrace()`, `response.IsEmpty()` and `response.IsHeaderWritten()`.
+- Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
 
 ## v2.10.x
 

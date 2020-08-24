@@ -14,20 +14,10 @@ import (
 	"github.com/System-Glitch/goyave/v2/config"
 	"github.com/System-Glitch/goyave/v2/database"
 	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/suite"
 )
 
 type ResponseTestSuite struct {
-	suite.Suite
-	previousEnv string
-}
-
-func (suite *ResponseTestSuite) SetupSuite() {
-	suite.previousEnv = os.Getenv("GOYAVE_ENV")
-	os.Setenv("GOYAVE_ENV", "test")
-	if err := config.Load(); err != nil {
-		suite.FailNow(err.Error())
-	}
+	TestSuite
 }
 
 func (suite *ResponseTestSuite) getFileSize(path string) string {
@@ -339,7 +329,7 @@ func (suite *ResponseTestSuite) TestResponseWrite() {
 
 func (suite *ResponseTestSuite) TestCreateTestResponse() {
 	recorder := httptest.NewRecorder()
-	response := CreateTestResponse(recorder)
+	response := suite.CreateTestResponse(recorder)
 	suite.NotNil(response)
 	if response != nil {
 		suite.Equal(recorder, response.responseWriter)
@@ -349,7 +339,7 @@ func (suite *ResponseTestSuite) TestCreateTestResponse() {
 func (suite *ResponseTestSuite) TestRender() {
 	// With map data
 	recorder := httptest.NewRecorder()
-	response := CreateTestResponse(recorder)
+	response := suite.CreateTestResponse(recorder)
 
 	mapData := map[string]interface{}{
 		"Status":  http.StatusNotFound,
@@ -365,7 +355,7 @@ func (suite *ResponseTestSuite) TestRender() {
 
 	// With struct data
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	structData := struct {
 		Status  int
@@ -385,7 +375,7 @@ func (suite *ResponseTestSuite) TestRender() {
 
 	// Non-existing template and exec error
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	suite.NotNil(response.Render(http.StatusNotFound, "non-existing-template", nil))
 
@@ -399,7 +389,7 @@ func (suite *ResponseTestSuite) TestRender() {
 func (suite *ResponseTestSuite) TestRenderHTML() {
 	// With map data
 	recorder := httptest.NewRecorder()
-	response := CreateTestResponse(recorder)
+	response := suite.CreateTestResponse(recorder)
 
 	mapData := map[string]interface{}{
 		"Status":  http.StatusNotFound,
@@ -415,7 +405,7 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 
 	// With struct data
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	structData := struct {
 		Status  int
@@ -434,7 +424,7 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 
 	// Non-existing template and exec error
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	suite.NotNil(response.RenderHTML(http.StatusNotFound, "non-existing-template", nil))
 
@@ -536,10 +526,6 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	suite.Equal("hello world", string(body))
 }
 
-func (suite *ResponseTestSuite) TearDownAllSuite() {
-	os.Setenv("GOYAVE_ENV", suite.previousEnv)
-}
-
 func TestResponseTestSuite(t *testing.T) {
-	suite.Run(t, new(ResponseTestSuite))
+	RunTest(t, new(ResponseTestSuite))
 }

@@ -97,7 +97,7 @@ The new configuration system does things very differently internally, but should
     "name": "goyave",
     "username": "root",
     "password": "root",
-    "options": "charset=utf8&parseTime=true&loc=Local",
+    "options": "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local",
     "maxOpenConnections": 20,
     "maxIdleConnections": 20,
     "maxLifetime": 300,

@@ -10,7 +10,7 @@
         "name": "goyave",
         "username": "goyave",
         "password": "secret",
-        "options": "charset=utf8&parseTime=true&loc=Local",
+        "options": "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local",
         "maxOpenConnections": 20,
         "maxIdleConnections": 20,
         "maxLifetime": 300,

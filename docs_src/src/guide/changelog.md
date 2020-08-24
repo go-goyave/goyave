@@ -64,6 +64,7 @@ meta:
 - Added `response.GetStacktrace()`, `response.IsEmpty()` and `response.IsHeaderWritten()`.
 - Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
 - Export panic and error status handlers so they can be expanded easily.
+- Use `utf8mb4` by default in database options.
 
 ## v2.10.x
 

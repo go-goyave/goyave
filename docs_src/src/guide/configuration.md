@@ -56,7 +56,7 @@ The following JSON file is an example of default configuration:
     "name": "goyave",
     "username": "root",
     "password": "root",
-    "options": "charset=utf8&parseTime=true&loc=Local",
+    "options": "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local",
     "maxOpenConnections": 20,
     "maxIdleConnections": 20,
     "maxLifetime": 300,
@@ -364,19 +364,19 @@ func init() {
 
 ### Database category
 
-| Entry              | Type     | Accepted values | Default                                 | Note                                                      |
-|--------------------|----------|-----------------|-----------------------------------------|-----------------------------------------------------------|
-| connection         | `string` | any             | "none"                                  | See the [Database](./basics/database.html) guide          |
-| host               | `string` | any             | "127.0.0.1"                             |                                                           |
-| port               | `int`    | any             | `3306`                                  |                                                           |
-| name               | `string` | any             | "goyave"                                |                                                           |
-| username           | `string` | any             | "root"                                  |                                                           |
-| password           | `string` | any             | "root"                                  |                                                           |
-| otions             | `string` | any             | "charset=utf8&parseTime=true&loc=Local" |                                                           |
-| maxOpenConnections | `int`    | any             | `20`                                    |                                                           |
-| maxIdleConnections | `int`    | any             | `20`                                    |                                                           |
-| maxLifetime        | `int`    | any             | `300`                                   | The maximum time (in seconds) a connection may be reused. |
-| autoMigrate        | `bool`   | `true`, `false` | `false`                                 | When activated, migrate all registered models at startup  |
+| Entry              | Type     | Accepted values | Default                                                                 | Note                                                      |
+|--------------------|----------|-----------------|-------------------------------------------------------------------------|-----------------------------------------------------------|
+| connection         | `string` | any             | "none"                                                                  | See the [Database](./basics/database.html) guide          |
+| host               | `string` | any             | "127.0.0.1"                                                             |                                                           |
+| port               | `int`    | any             | `3306`                                                                  |                                                           |
+| name               | `string` | any             | "goyave"                                                                |                                                           |
+| username           | `string` | any             | "root"                                                                  |                                                           |
+| password           | `string` | any             | "root"                                                                  |                                                           |
+| otions             | `string` | any             | "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local" |                                                           |
+| maxOpenConnections | `int`    | any             | `20`                                                                    |                                                           |
+| maxIdleConnections | `int`    | any             | `20`                                                                    |                                                           |
+| maxLifetime        | `int`    | any             | `300`                                                                   | The maximum time (in seconds) a connection may be reused. |
+| autoMigrate        | `bool`   | `true`, `false` | `false`                                                                 | When activated, migrate all registered models at startup  |
 
 
 ## Setting up HTTPS

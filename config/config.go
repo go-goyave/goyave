@@ -54,7 +54,7 @@ var configDefaults object = object{
 		"name":               &Entry{"goyave", reflect.String, []interface{}{}},
 		"username":           &Entry{"root", reflect.String, []interface{}{}},
 		"password":           &Entry{"root", reflect.String, []interface{}{}},
-		"options":            &Entry{"charset=utf8&parseTime=true&loc=Local", reflect.String, []interface{}{}},
+		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", reflect.String, []interface{}{}},
 		"maxOpenConnections": &Entry{20, reflect.Int, []interface{}{}},
 		"maxIdleConnections": &Entry{20, reflect.Int, []interface{}{}},
 		"maxLifetime":        &Entry{300, reflect.Int, []interface{}{}},

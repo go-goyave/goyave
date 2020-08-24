@@ -158,7 +158,7 @@ To configure your application, use the `config.json` file at your project's root
         "name": "goyave",
         "username": "root",
         "password": "root",
-        "options": "charset=utf8&parseTime=true&loc=Local",
+        "options": "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local",
         "maxOpenConnections": 20,
         "maxIdleConnections": 20,
         "maxLifetime": 300,

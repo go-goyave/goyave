@@ -31,10 +31,10 @@ func (suite *DatabaseTestSuite) SetupSuite() {
 }
 
 func (suite *DatabaseTestSuite) TestBuildConnectionOptions() {
-	suite.Equal("goyave:secret@(127.0.0.1:3306)/goyave?charset=utf8&parseTime=true&loc=Local", buildConnectionOptions("mysql"))
-	suite.Equal("host=127.0.0.1 port=3306 user=goyave dbname=goyave password=secret charset=utf8&parseTime=true&loc=Local", buildConnectionOptions("postgres"))
+	suite.Equal("goyave:secret@(127.0.0.1:3306)/goyave?charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildConnectionOptions("mysql"))
+	suite.Equal("host=127.0.0.1 port=3306 user=goyave dbname=goyave password=secret charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildConnectionOptions("postgres"))
 	suite.Equal("goyave", buildConnectionOptions("sqlite3"))
-	suite.Equal("sqlserver://goyave:secret@127.0.0.1:3306?database=goyave&charset=utf8&parseTime=true&loc=Local", buildConnectionOptions("mssql"))
+	suite.Equal("sqlserver://goyave:secret@127.0.0.1:3306?database=goyave&charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildConnectionOptions("mssql"))
 
 	suite.Panics(func() {
 		buildConnectionOptions("test")
@@ -147,7 +147,7 @@ func (suite *DatabaseTestSuite) TestRegisterDialect() {
 	suite.True(ok)
 	suite.Equal(template, t)
 
-	suite.Equal("goyave{username} secret 127.0.0.1:3306 goyave charset=utf8&parseTime=true&loc=Local", buildConnectionOptions("newdialect"))
+	suite.Equal("goyave{username} secret 127.0.0.1:3306 goyave charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildConnectionOptions("newdialect"))
 
 	suite.Panics(func() {
 		RegisterDialect("newdialect", "othertemplate")

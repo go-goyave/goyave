@@ -61,7 +61,12 @@ var (
 	})
 )
 
-func panicStatusHandler(response *Response, request *Request) {
+// PanicStatusHandler for the HTTP 500 error.
+// If debugging is enabled, writes the error details to the response and
+// print stacktrace in the console.
+// If debugging is not enabled, writes `{"error": "Internal Server Error"}`
+// to the response.
+func PanicStatusHandler(response *Response, request *Request) {
 	response.error(response.GetError())
 	if response.empty {
 		message := map[string]string{
@@ -71,7 +76,9 @@ func panicStatusHandler(response *Response, request *Request) {
 	}
 }
 
-func errorStatusHandler(response *Response, request *Request) {
+// ErrorStatusHandler a generic status handler for non-success codes.
+// Writes the corresponding status message to the response.
+func ErrorStatusHandler(response *Response, request *Request) {
 	message := map[string]string{
 		"error": http.StatusText(response.GetStatus()),
 	}
@@ -94,15 +101,15 @@ func newRouter() *Router {
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
-	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
+	router.StatusHandler(PanicStatusHandler, http.StatusInternalServerError)
 	for i := 400; i <= 418; i++ {
-		router.StatusHandler(errorStatusHandler, i)
+		router.StatusHandler(ErrorStatusHandler, i)
 	}
 	for i := 421; i <= 426; i++ {
-		router.StatusHandler(errorStatusHandler, i)
+		router.StatusHandler(ErrorStatusHandler, i)
 	}
-	router.StatusHandler(errorStatusHandler, 428, 429, 431, 444, 451)
-	router.StatusHandler(errorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
+	router.StatusHandler(ErrorStatusHandler, 428, 429, 431, 444, 451)
+	router.StatusHandler(ErrorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }

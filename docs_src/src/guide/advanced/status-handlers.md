@@ -49,6 +49,17 @@ func NotFound(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
+### Expanding default status handlers
+
+You can expand default status handlers by calling them in your custom status handler. This is especially useful if you want to use error tracking software without altering the default behavior.
+
+```go
+func Panic(response *goyave.Response, request *goyave.Request) {
+    tracker.ReportError(response.GetError())
+    goyave.PanicStatusHandler(response, request)
+}
+```
+
 ## Registering status handlers
 
 Status handlers are registered in the **router**.

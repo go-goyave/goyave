@@ -249,7 +249,7 @@ func (suite *RouterTestSuite) TestCORS() {
 func (suite *RouterTestSuite) TestPanicStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.err = "random error"
-	panicStatusHandler(response, request)
+	PanicStatusHandler(response, request)
 	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(500, result.StatusCode)
 }
@@ -257,7 +257,7 @@ func (suite *RouterTestSuite) TestPanicStatusHandler() {
 func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.Status(404)
-	errorStatusHandler(response, request)
+	ErrorStatusHandler(response, request)
 	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(404, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))

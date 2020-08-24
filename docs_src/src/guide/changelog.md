@@ -63,6 +63,7 @@ meta:
 - `database.Close()` can now return errors.
 - Added `response.GetStacktrace()`, `response.IsEmpty()` and `response.IsHeaderWritten()`.
 - Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
+- Export panic and error status handlers so they can be expanded easily.
 
 ## v2.10.x
 

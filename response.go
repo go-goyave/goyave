@@ -218,7 +218,7 @@ func (r *Response) Download(file string, fileName string) error {
 // Error print the error in the console and return it with an error code 500.
 // If debugging is enabled in the config, the error is also written in the response
 // and the stacktrace is printed in the console.
-// If debugging is not enabled, only the stauts code is set, which means you can still
+// If debugging is not enabled, only the status code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err interface{}) error {
 	ErrLogger.Println(err)

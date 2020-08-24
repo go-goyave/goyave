@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/helper"
 )
 
 type gzipWriter struct {

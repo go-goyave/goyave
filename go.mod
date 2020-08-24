@@ -1,4 +1,4 @@
-module github.com/System-Glitch/goyave/v2
+module github.com/System-Glitch/goyave/v3
 
 go 1.13
 
@@ -10,6 +10,6 @@ require (
 	github.com/imdario/mergo v0.3.11
 	github.com/jinzhu/gorm v1.9.16
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )

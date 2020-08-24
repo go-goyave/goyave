@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v3/helper"
 )
 
 func validateNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

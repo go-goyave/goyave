@@ -31,7 +31,7 @@ You can customize the validation error messages by editing `resources/lang/<lang
 The following features require the `validation` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/validation"
+import "github.com/System-Glitch/goyave/v3/validation"
 ```
 
 ## Rules sets

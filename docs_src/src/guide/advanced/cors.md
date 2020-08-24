@@ -23,7 +23,7 @@ Most of the time, the API is using another domain as the clients. For security r
 All functions below require the `cors` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/cors"
+import "github.com/System-Glitch/goyave/v3/cors"
 ```
 
 CORS options are set on **routers**. If the passed options are not `nil`, the CORS core middleware is automatically added.

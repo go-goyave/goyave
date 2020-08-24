@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2"
+	"github.com/System-Glitch/goyave/v3"
 )
 
 type CommonTestSuite struct {

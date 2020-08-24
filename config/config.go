@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v3/helper"
 )
 
 type object map[string]interface{}

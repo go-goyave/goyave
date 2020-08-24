@@ -75,7 +75,7 @@ router.Get("/products", product.Index).Middleware(middleware.MyCustomMiddleware)
 
 Built-in middleware is located in the `middleware` package.
 ``` go
-import "github.com/System-Glitch/goyave/v2/middleware"
+import "github.com/System-Glitch/goyave/v3/middleware"
 ```
 
 ### DisallowNonValidatedFields

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/suite"
 )
 

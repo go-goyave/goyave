@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/validation"
 )
 
 type DisallowMiddlewareTestSuite struct {

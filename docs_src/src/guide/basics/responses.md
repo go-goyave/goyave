@@ -25,7 +25,7 @@ If you didn't write anything before the request lifecycle ends, `204 No Content`
 All functions below require the `goyave` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 ```
 
 **List of response methods**:
@@ -383,7 +383,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/System-Glitch/goyave/v2"
+	"github.com/System-Glitch/goyave/v3"
 )
 
 type LogWriter struct {

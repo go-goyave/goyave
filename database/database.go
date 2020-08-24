@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/jinzhu/gorm"
 )
 

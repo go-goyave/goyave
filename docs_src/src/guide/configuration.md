@@ -90,7 +90,7 @@ Since `v2.0.0`, you can use custom environments.
 
 Before being able to use the config, import the config package:
 ``` go
-import "github.com/System-Glitch/goyave/v2/config"
+import "github.com/System-Glitch/goyave/v3/config"
 ```
 
 The configuration is loaded automatically when the server starts, but you can reload it manually if needed.
@@ -126,8 +126,8 @@ import (
   "flag"
   "os"
 
-  "github.com/System-Glitch/goyave/v2"
-  "github.com/System-Glitch/goyave/v2/config"
+  "github.com/System-Glitch/goyave/v3"
+  "github.com/System-Glitch/goyave/v3/config"
   
   //...
 )

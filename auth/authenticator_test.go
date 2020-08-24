@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
 	"github.com/jinzhu/gorm"
 
 	_ "github.com/jinzhu/gorm/dialects/mysql"

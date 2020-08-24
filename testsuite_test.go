@@ -15,10 +15,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/assert"
 )
 

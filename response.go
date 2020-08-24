@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/helper"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/helper"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"github.com/jinzhu/gorm"
 )
 

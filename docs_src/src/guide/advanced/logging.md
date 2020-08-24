@@ -45,8 +45,8 @@ To enable logging of accesses using the [Common Log Format](https://en.wikipedia
 
 ``` go
 import (
-    "github.com/System-Glitch/goyave/v2/log"
-    "github.com/System-Glitch/goyave/v2"
+    "github.com/System-Glitch/goyave/v3/log"
+    "github.com/System-Glitch/goyave/v3"
 )
 
 func registerRoutes(router *goyave.Router) {

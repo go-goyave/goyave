@@ -19,7 +19,7 @@ Handlers receive a `goyave.Response` and a `goyave.Request` as parameters. This 
 All functions below require the `goyave` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 ```
 
 ## Methods

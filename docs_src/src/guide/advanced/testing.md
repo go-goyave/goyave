@@ -27,7 +27,7 @@ The following example is a **functional** test and would be located in the `test
 ``` go
 import (
     "my-project/http/route"
-    "github.com/System-Glitch/goyave/v2"
+    "github.com/System-Glitch/goyave/v3"
 )
 
 type CustomTestSuite struct {
@@ -490,7 +490,7 @@ It is a good practice to use a separate database dedicated for testing, named `m
 All functions below require the `database`package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/database"
+import "github.com/System-Glitch/goyave/v3/database"
 ```
 
 ::: tip
@@ -626,7 +626,7 @@ package seeder
 
 import (
     "my-project/database/model"
-    "github.com/System-Glitch/goyave/v2/database"
+    "github.com/System-Glitch/goyave/v3/database"
 )
 
 func User() {

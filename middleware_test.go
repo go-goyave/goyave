@@ -15,11 +15,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/cors"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/lang"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/cors"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/lang"
+	"github.com/System-Glitch/goyave/v3/validation"
 )
 
 type MiddlewareTestSuite struct {

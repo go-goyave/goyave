@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/validation"
 	"golang.org/x/crypto/bcrypt"
 )
 

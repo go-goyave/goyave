@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )

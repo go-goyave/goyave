@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v3/helper"
 	"github.com/google/uuid"
 )
 

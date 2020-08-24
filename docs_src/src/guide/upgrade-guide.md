@@ -16,6 +16,8 @@ Although Goyave is developed with backwards compatibility, breaking changes can 
 
 ## v2.x.x to v3.0.0
 
+First, replace `github.com/System-Glitch/goyave/v2` with `github.com/System-Glitch/goyave/v3`.
+
 ### Routing changes
 
 Routing has been improved by changing how validation and route-specific middleware are registered. The signature of the router functions have been simplified by removing the validation and middleware parameters from `Route()`, `Get()`, `Post()`, etc. This is now done through two new chainable methods on the `Route`:

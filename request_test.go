@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/cors"
+	"github.com/System-Glitch/goyave/v3/cors"
 
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/validation"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )

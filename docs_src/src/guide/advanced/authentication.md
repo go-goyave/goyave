@@ -17,7 +17,7 @@ meta:
 Goyave provides a convenient and expandable way of handling authentication in your application. Authentication can be enabled when registering your routes:
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/auth"
+import "github.com/System-Glitch/goyave/v3/auth"
 
 //...
 

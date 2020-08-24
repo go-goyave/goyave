@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/lang"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/validation"
 )
 
 // DisallowNonValidatedFields validates that all fields in the request

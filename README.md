@@ -53,7 +53,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
 
-<a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v2"><h3 align="center">pkg.go.dev</h3></a>
+<a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v3"><h3 align="center">pkg.go.dev</h3></a>
 
 ## Getting started
 
@@ -94,7 +94,7 @@ abc 123
 
 ## Features tour
 
-This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
+This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v3) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
 
 - [Hello world from scratch](#hello-world-from-scratch)
 - [Configuration](#configuration)
@@ -114,7 +114,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 The example below shows a basic `Hello world` application using Goyave.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 
 func registerRoutes(router *goyave.Router) {
     router.Get("/hello", func(response *goyave.Response, request *goyave.Request) {
@@ -481,7 +481,7 @@ The following example is a **functional** test and would be located in the `test
 ``` go
 import (
     "my-project/http/route"
-    "github.com/System-Glitch/goyave/v2"
+    "github.com/System-Glitch/goyave/v3"
 )
 
 type CustomTestSuite struct {
@@ -573,7 +573,7 @@ The following file `http/controller/status/status.go` is an example of custom 40
 ``` go
 package status
 
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 
 func NotFound(response *goyave.Response, request *goyave.Request) {
     if err := response.RenderHTML(response.GetStatus(), "errors/404.html", nil); err != nil {
@@ -617,7 +617,7 @@ router.CORS(options)
 Goyave provides a convenient and expandable way of handling authentication in your application. Authentication can be enabled when registering your routes:
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/auth"
+import "github.com/System-Glitch/goyave/v3/auth"
 
 //...
 

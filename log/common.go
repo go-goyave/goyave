@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2"
+	"github.com/System-Glitch/goyave/v3"
 )
 
 const (

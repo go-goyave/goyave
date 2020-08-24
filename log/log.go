@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2"
+	"github.com/System-Glitch/goyave/v3"
 )
 
 // Formatter is a function that builds a log entry.

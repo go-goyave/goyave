@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/cors"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/cors"
 )
 
 type RouterTestSuite struct {

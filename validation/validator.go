@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/lang"
 )
 
 // Ruler adapter interface for method dispatching between RuleSet and Rules

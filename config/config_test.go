@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"github.com/stretchr/testify/suite"
 )
 

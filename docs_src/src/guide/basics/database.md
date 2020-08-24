@@ -22,7 +22,7 @@ All functions below require the `database` and the `gorm` packages to be importe
 
 ``` go
 import (
-  "github.com/System-Glitch/goyave/v2/database"
+  "github.com/System-Glitch/goyave/v3/database"
   "github.com/jinzhu/gorm"
 )
 ```
@@ -74,7 +74,7 @@ You can **register more dialects** for GORM [like you would usually do](http://g
 
 ```go
 import (
-  "github.com/System-Glitch/goyave/v2/database"
+  "github.com/System-Glitch/goyave/v3/database"
   "github.com/jinzhu/gorm"
   _ "example.com/user/my-dialect"
 )

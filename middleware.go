@@ -10,9 +10,9 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/lang"
 )
 
 // Middleware function generating middleware handler function.

@@ -125,7 +125,7 @@ func TestRequestValidate(t *testing.T) {
 	}
 	errors = request.validate()
 	assert.NotNil(t, errors)
-	assert.Equal(t, 2, len(errors["validationError"]["number"]))
+	assert.Equal(t, 2, len(errors["number"]))
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/json")

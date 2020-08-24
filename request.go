@@ -245,14 +245,14 @@ func (r *Request) Date(field string) time.Time {
 	return str
 }
 
-func (r *Request) validate() map[string]validation.Errors {
+func (r *Request) validate() validation.Errors {
 	if r.Rules == nil {
 		return nil
 	}
 
 	errors := validation.Validate(r.Data, r.Rules, r.httpRequest.Header.Get("Content-Type") == "application/json", r.Lang)
 	if len(errors) > 0 {
-		return map[string]validation.Errors{"validationError": errors}
+		return errors
 	}
 
 	return nil

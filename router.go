@@ -85,6 +85,13 @@ func ErrorStatusHandler(response *Response, request *Request) {
 	response.JSON(response.GetStatus(), message)
 }
 
+// ValidationStatusHandler for HTTP 400 and HTTP 422 errors.
+// Writes the validation errors to the response.
+func ValidationStatusHandler(response *Response, request *Request) {
+	message := map[string]interface{}{"validationError": response.GetError()}
+	response.JSON(response.GetStatus(), message)
+}
+
 func newRouter() *Router {
 	methodNotAllowedRoute.name = "method-not-allowed"
 	// Create a fresh regex cache
@@ -102,13 +109,14 @@ func newRouter() *Router {
 		},
 	}
 	router.StatusHandler(PanicStatusHandler, http.StatusInternalServerError)
-	for i := 400; i <= 418; i++ {
+	router.StatusHandler(ValidationStatusHandler, http.StatusBadRequest, http.StatusUnprocessableEntity)
+	for i := 401; i <= 418; i++ {
 		router.StatusHandler(ErrorStatusHandler, i)
 	}
-	for i := 421; i <= 426; i++ {
+	for i := 423; i <= 426; i++ {
 		router.StatusHandler(ErrorStatusHandler, i)
 	}
-	router.StatusHandler(ErrorStatusHandler, 428, 429, 431, 444, 451)
+	router.StatusHandler(ErrorStatusHandler, 421, 428, 429, 431, 444, 451)
 	router.StatusHandler(ErrorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router

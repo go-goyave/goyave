@@ -366,8 +366,11 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:10"},
 	}
-	result := testMiddleware(validateRequestMiddleware, rawRequest, data, rules, nil, func(response *Response, r *Request) {})
-	suite.Equal(200, result.StatusCode)
+	request := suite.CreateTestRequest(rawRequest)
+	request.Data = data
+	request.Rules = rules.AsRules()
+	result := suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
+	suite.Equal(http.StatusNoContent, result.StatusCode)
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/json")
@@ -379,22 +382,29 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:50"},
 	}
-	result = testMiddleware(validateRequestMiddleware, rawRequest, data, rules, nil, func(response *Response, r *Request) {})
+
+	request = suite.CreateTestRequest(rawRequest)
+	request.Data = data
+	request.Rules = rules.AsRules()
+	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
 	body, err := ioutil.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
-	suite.Equal(422, result.StatusCode)
+	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
 	suite.Equal("{\"validationError\":{\"number\":[\"The number must be at least 50.\"]}}\n", string(body))
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", nil)
 	rawRequest.Header.Set("Content-Type", "application/json")
-	result = testMiddleware(validateRequestMiddleware, rawRequest, nil, rules, nil, func(response *Response, r *Request) {})
+	request = suite.CreateTestRequest(rawRequest)
+	request.Data = nil
+	request.Rules = rules.AsRules()
+	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
 	body, err = ioutil.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
-	suite.Equal(400, result.StatusCode)
+	suite.Equal(http.StatusBadRequest, result.StatusCode)
 	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
 }
 

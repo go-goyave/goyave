@@ -65,6 +65,7 @@ meta:
 - Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
 - Export panic and error status handlers so they can be expanded easily.
 - Use `utf8mb4` by default in database options.
+- Added `goyave.ValidationStatusHandler()`, a status handler for validation errors. Therefore, the format in which validation errors are sent to the client can be customized by using your own status handler for the HTTP status 400 and 422.
 
 ## v2.10.x
 

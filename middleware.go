@@ -179,8 +179,11 @@ func corsMiddleware(next Handler) Handler {
 	}
 }
 
-// validateRequestMiddleware is a middleware that validates the request and sends a 422 error code
-// if the validation rules are not met.
+// validateRequestMiddleware is a middleware that validates the request.
+// If validation is not rules are not met, sets the response status to 422 Unprocessable Entity
+// or 400 Bad Request and the response error (which can be retrieved with `GetError()`) to the
+// `validation.Errors` returned by the validator.
+// This data can then be used in a status handler.
 func validateRequestMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
 		errsBag := r.validate()
@@ -195,7 +198,8 @@ func validateRequestMiddleware(next Handler) Handler {
 		} else {
 			code = http.StatusUnprocessableEntity
 		}
-		response.JSON(code, errsBag)
+		response.err = errsBag
+		response.Status(code)
 	}
 }
 

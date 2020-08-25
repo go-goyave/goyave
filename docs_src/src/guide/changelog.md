@@ -21,6 +21,12 @@ meta:
 **Motivation**: *Separating the requests in another package added unnecessary complexity to the directory structure and was not convenient to use. Package naming was far from ideal with the "request" suffix. Moving requests to the same package as the controller is more intuitive and requires less imports and makes route definition cleaner and easier.*
 
 - Validation system overhaul, allowing rule sets to be parsed only once instead of every time a request is received, giving better overall performance. This new system also allows a more verbose syntax for validation, solving the comma rule parameter value and a much easier use in your handlers.
+    - Rule functions don't check required parameters anymore. This is now done when the rules are parsed at startup time. The amount of required parameters is given when registering a new rule.
+    - Optimized regex-based validation rules by compiling expressions once.
+    - A significant amount of untested cases are now tested.
+    - The following rules now pass if the validated data type is not supported: `greater_than`, `greater_than_equal`, `lower_than`, `lower_than_equal`, `size`.
+    - Type-dependent rules now try to determine what is the expected type by looking up in the rule set for a type rule. If no type rule is present, falls back to the inputted type. This change makes it so the validation message is correct even if the client didn't input the expected type.
+    - Fixed a bug triggering a panic if the client inputted a non-array value in an array-validated field.
 
 **Motivation**: *The validation system had a lot of room for improvement when it comes to performance, as `RuleSet` were parsed every time a request was received. Moving this process out of the request life-cycle to execute it only once saves a good amount of execution time. Moreover, any handler who would want to read the rules applied to the current request needed to parse them too, which was inconvenient and not effective. With a structure containing everything you need, making middleware interacting with the request's rules is much easier.*
 
@@ -43,29 +49,26 @@ meta:
     - Added `LoadFrom()`, letting you load a configuration file from a custom path.
     - Added the ability to use environment variables in configuration files.
     - Bug fix: `config.IsLoaded()` returned `true` even if config failed to load.
+    - `maxUploadSize` config entry now supports decimal places.
 
 **Motivation:** *Configuration was without a doubt one of the weakest and inflexible feature of the framework. It was possible to use objects in custom entries, but not for core config, but it was inconvenient because it required a lot of type assertions. Moreover, core config entries were not handled the same as custom ones, which was a lack of openness. Hopefully, this revamped system will cover more potential use-cases, ease plugin development and allow you to produce cleaner code and configuration files.*
 
-- Rule functions don't check required parameters anymore. This is now done when the rules are parsed at startup time. The amount of required parameters is given when registering a new rule.
-- Optimized regex-based validation rules by compiling expressions once.
-- A significant amount of untested cases are now tested.
-- Protect the database instance with mutex.
+- Database improvements
+    - Protect the database instance with mutex.
+    - `database.Close()` can now return errors.
+    - Added [database connection initializers](./basics/database.html#connection-initializers).
+    - Added the ability to regsiter new SQL dialects to use with GORM.
+    - Use `utf8mb4` by default in database options.
+- Status handlers improvements
+    - Export panic and error status handlers so they can be expanded easily.
+    - Added `goyave.ValidationStatusHandler()`, a status handler for validation errors. Therefore, the format in which validation errors are sent to the client can be customized by using your own status handler for the HTTP status 400 and 422.
+- `goyave.Response` improvements
+    - `response.Render` and `response.RenderHTML` now execute and write the template to a `bytes.Buffer` instead of directly to the `goyave.Response`. This allows to catch and handle errors before the response header has been written, in order to return an error 500 if the template doesn't execute properly for example.
+    - Added `response.GetStacktrace()`, `response.IsEmpty()` and `response.IsHeaderWritten()`.
+    - Re-organised the `goyave.Response` structure fields to save some memory.
+    - Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
 - Recovery middleware now correctly handles panics with a `nil` value.
-- The following rules now pass if the validated data type is not supported: `greater_than`, `greater_than_equal`, `lower_than`, `lower_than_equal`, `size`.
-- Type-dependent rules now try to determine what is the expected type by looking up in the rule set for a type rule. If no type rule is present, falls back to the inputted type. This change makes it so the validation message is correct even if the client didn't input the expected type.
-- Fixed a bug triggering a panic if the client inputted a non-array value in an array-validated field.
-- `response.Render` and `response.RenderHTML` now execute and write the template to a `bytes.Buffer` instead of directly to the `goyave.Response`. This allows to catch and handle errors before the response header has been written, in order to return an error 500 if the template doesn't execute properly for example.
 - Test can now be run without the `-p 1` flag thanks to a lock added to the `goyave.RunTest` method. Therefore, `goyave.TestSuite` still **don't run in parallel** but are safe to use with the typical test command.
-- `maxUploadSize` config entry now supports decimal places.
-- Added [database connection initializers](./basics/database.html#connection-initializers).
-- Re-organised the `goyave.Response` structure fields to save some memory.
-- Added the ability to regsiter new SQL dialects to use with GORM.
-- `database.Close()` can now return errors.
-- Added `response.GetStacktrace()`, `response.IsEmpty()` and `response.IsHeaderWritten()`.
-- Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
-- Export panic and error status handlers so they can be expanded easily.
-- Use `utf8mb4` by default in database options.
-- Added `goyave.ValidationStatusHandler()`, a status handler for validation errors. Therefore, the format in which validation errors are sent to the client can be customized by using your own status handler for the HTTP status 400 and 422.
 
 ## v2.10.x
 

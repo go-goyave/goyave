@@ -29,8 +29,7 @@ func Index(response *goyave.Response, request *goyave.Request) {
 
 func Show(response *goyave.Response, request *goyave.Request) {
 	product := model.Product{}
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-	result := database.GetConnection().First(&product, id)
+	result := database.GetConnection().First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		response.JSON(http.StatusOK, product)
 	}
@@ -49,10 +48,9 @@ func Store(response *goyave.Response, request *goyave.Request) {
 }
 
 func Update(response *goyave.Response, request *goyave.Request) {
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
 	product := model.Product{}
 	db := database.GetConnection()
-	result := db.Select("id").First(&product, id)
+	result := db.Select("id").First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
 			response.Error(err)
@@ -61,10 +59,9 @@ func Update(response *goyave.Response, request *goyave.Request) {
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
 	product := model.Product{}
 	db := database.GetConnection()
-	result := db.Select("id").First(&product, id)
+	result := db.Select("id").First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		if err := db.Delete(&product).Error; err != nil {
 			response.Error(err)

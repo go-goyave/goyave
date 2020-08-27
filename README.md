@@ -252,8 +252,7 @@ func Index(response *goyave.Response, request *goyave.Request) {
 
 func Show(response *goyave.Response, request *goyave.Request) {
     product := model.Product{}
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-    result := database.GetConnection().First(&product, id)
+    result := database.GetConnection().First(&product, request.Params["id"])
     if response.HandleDatabaseError(result) {
         response.JSON(http.StatusOK, product)
     }
@@ -272,10 +271,9 @@ func Store(response *goyave.Response, request *goyave.Request) {
 }
 
 func Update(response *goyave.Response, request *goyave.Request) {
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
     product := model.Product{}
     db := database.GetConnection()
-    result := db.Select("id").First(&product, id)
+    result := db.Select("id").First(&product, request.Params["id"])
     if response.HandleDatabaseError(result) {
         if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
             response.Error(err)
@@ -284,10 +282,9 @@ func Update(response *goyave.Response, request *goyave.Request) {
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
     product := model.Product{}
     db := database.GetConnection()
-    result := db.Select("id").First(&product, id)
+    result := db.Select("id").First(&product, request.Params["id"])
     if response.HandleDatabaseError(result) {
         if err := db.Delete(&product).Error; err != nil {
             response.Error(err)
@@ -631,10 +628,10 @@ Authenticators use their model's struct fields tags to know which field to use f
 
 ``` go
 type User struct {
-	gorm.Model
-	Email    string `gorm:"type:char(100);unique_index" auth:"username"`
-	Name     string `gorm:"type:char(100)"`
-	Password string `gorm:"type:char(60)" auth:"password"`
+    gorm.Model
+    Email    string `gorm:"type:char(100);unique_index" auth:"username"`
+    Name     string `gorm:"type:char(100)"`
+    Password string `gorm:"type:char(60)" auth:"password"`
 }
 ```
 
@@ -642,8 +639,8 @@ When a user is successfully authenticated on a protected route, its information 
 
 ``` go
 func Hello(response *goyave.Response, request *goyave.Request) {
-	user := request.User.(*model.User)
-	response.String(http.StatusOK, "Hello " + user.Name)
+    user := request.User.(*model.User)
+    response.String(http.StatusOK, "Hello " + user.Name)
 }
 ```
 

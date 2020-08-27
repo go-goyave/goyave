@@ -95,7 +95,7 @@ import "github.com/System-Glitch/goyave/v3/config"
 
 The configuration is loaded automatically when the server starts, but you can reload it manually if needed.
 
-When the configuration is loaded, all default values are copied to the newly created map holding the configuration. Then, the configuration file is read, parsed and is applied over. This means that all entries from the file override the default ones. However, if an entry has a default value and the same entry is not present in the configuration file, then it is kept as it is. On the other hand, if an entry is present in the configuration file and not in the default values (meaning that this entry is not expected), a new entry will be registered.This new entry will be subsequently validated using the type of its initial value and have an empty slice as authorized values (meaning it can have any value of its type)
+When the configuration is loaded, all default values are copied to the newly created map holding the configuration. Then, the configuration file is read, parsed and is applied over. This means that all entries from the file override the default ones. However, if an entry has a default value and the same entry is not present in the configuration file, then it is kept as it is. On the other hand, if an entry is present in the configuration file and not in the default values (meaning that this entry is not expected), a new entry will be registered. This new entry will be subsequently validated using the type of its initial value and have an empty slice as authorized values (meaning it can have any value of its type).
 
 The following cases will raise errors when the configuration is being overridden:
 - When the configuration file overrides an entry with a category
@@ -179,6 +179,8 @@ You can use environment variables in your configuration file. Environment variab
 
 `int`, `float64` and `bool` values are supported. If the configuration entry is expected to be of one of these types, the content of the environment variable will be automatically converted. If the conversion fails, a configuration loading error will be returned.
 
+If an environment variable mentioned in a configuration file is not set, the configuration validation will not pass.
+
 ### Getting a value
 
 All entries are accessible using **dot-separated paths**. If you want to access the `name` entry in the `app` category, the key will be `app.name`.
@@ -202,7 +204,7 @@ config.Get("app.name") // "goyave"
 
 #### config.GetString
 
-Get a string config entry. Panics if the entry doesn't exist or is not a `string` or if it doesn't exist.
+Get a string config entry. Panics if the entry doesn't exist or is not a `string`.
 
 | Parameters   | Return            |
 |--------------|-------------------|
@@ -215,7 +217,7 @@ config.GetString("server.protocol") // "http"
 
 #### config.GetBool
 
-Get a bool config entry. Panics if the entry doesn't exist or is not a `bool` or if it doesn't exist.
+Get a bool config entry. Panics if the entry doesn't exist or is not a `bool`.
 
 | Parameters   | Return          |
 |--------------|-----------------|
@@ -230,7 +232,7 @@ config.GetBool("app.debug") // true
 
 <p><Badge text="Since v3.0.0"/></p>
 
-Get an int config entry. Panics if the entry doesn't exist or is not an `int` or if it doesn't exist.
+Get an int config entry. Panics if the entry doesn't exist or is not an `int`.
 
 | Parameters   | Return         |
 |--------------|----------------|
@@ -245,7 +247,7 @@ config.GetInt("server.port") // 8080
 
 <p><Badge text="Since v3.0.0"/></p>
 
-Get a float config entry. Panics if the entry doesn't exist or is not a `float64` or if it doesn't exist.
+Get a float config entry. Panics if the entry doesn't exist or is not a `float64`.
 
 | Parameters   | Return             |
 |--------------|--------------------|
@@ -271,7 +273,7 @@ config.Has("app.name") // true
 
 ### Setting a value
 
-You can set a config value at runtime with the `config.Set(key, value)` function. Bear in mind that this change **temporary** and will be lost after your application restarts or if the config is reloaded. This function is mainly used for testing purposes. Values set using this function are still being validated: your application will panic and revert changes if the validation doesn't pass.
+You can set a config value at runtime with the `config.Set(key, value)` function. Bear in mind that this change is **temporary** and will be lost after your application restarts or if the config is reloaded. This function is mainly used for testing purposes. Values set using this function are still being validated: your application will panic and revert changes if the validation doesn't pass.
 
 Use `nil` to unset a value.
 
@@ -293,6 +295,8 @@ config.Set("app.name", "my awesome app")
 ```
 
 ## Custom config entries
+
+<p><Badge text="Since v3.0.0"/></p>
 
 Configuration can be expanded. It is very likely that a plugin or a package you're developing is using some form of options. These options can be added to the configuration system so it is not needed to set them in the code or to make some wiring.
 
@@ -335,48 +339,48 @@ func init() {
 
 ### App category
 
-| Entry           | Type     | Accepted values | Default     | Note                                                                                                           |
-|-----------------|----------|-----------------|-------------|----------------------------------------------------------------------------------------------------------------|
-| name            | `string` | any             | "goyave"    |                                                                                                                |
-| environment     | `string` | any             | "localhost" |                                                                                                                |
-| debug           | `bool`   | `true`, `false` | `true`      | When activated, print stacktrace on error and sends error message in response. **Disable this in production!** |
-| defaultLanguage | `string` | any             | "en-US"     | See the [Localization](./advanced/localization.html)                                                           |
+| Entry           | Type     | Default     | Note                                                                                                           |
+|-----------------|----------|-------------|----------------------------------------------------------------------------------------------------------------|
+| name            | `string` | "goyave"    |                                                                                                                |
+| environment     | `string` | "localhost" |                                                                                                                |
+| debug           | `bool`   | `true`      | When activated, print stacktrace on error and sends error message in response. **Disable this in production!** |
+| defaultLanguage | `string` | "en-US"     | See the [Localization](./advanced/localization.html) section                                                   |
 
 ### Server category
 
 | Entry         | Type      | Accepted values | Default     | Note                                                                      |
 |---------------|-----------|-----------------|-------------|---------------------------------------------------------------------------|
 | host          | `string`  | any             | "127.0.0.1" |                                                                           |
-| domain        | `string`  | any             | ""          | Used for URL generation Leave empty to use IP instead.                    |
+| domain        | `string`  | any             | ""          | Used for URL generation. Leave empty to use IP instead.                   |
 | protocol      | `string`  | "http", "https" | "http"      | See the [HTTPS](#setting-up-https) section                                |
 | port          | `int`     | any             | `8080`      |                                                                           |
 | httpsPort     | `int`     | any             | `8081`      |                                                                           |
 | timeout       | `int`     | any             | `10`        | Timeout in seconds                                                        |
 | maxUploadSize | `float64` | any             | `10`        | Maximum size of the request, in MiB                                       |
-| maintenance   | `bool`    | `true`, `false` | `false`     | If `true`, start the server in maintenance mode. (Always return HTTP 503) |
+| maintenance   | `bool`    | any             | `false`     | If `true`, start the server in maintenance mode. (Always return HTTP 503) |
 
 #### TLS sub-category
 
-| Entry | Type     | Accepted values | Default | Note                  |
-|-------|----------|-----------------|---------|-----------------------|
-| cert  | `string` | any             | none    | Path to your TLS cert |
-| key   | `string` | any             | none    | Path to your TLS key  |
+| Entry | Type     | Default | Note                  |
+|-------|----------|---------|-----------------------|
+| cert  | `string` | none    | Path to your TLS cert |
+| key   | `string` | none    | Path to your TLS key  |
 
 ### Database category
 
-| Entry              | Type     | Accepted values | Default                                                                 | Note                                                      |
-|--------------------|----------|-----------------|-------------------------------------------------------------------------|-----------------------------------------------------------|
-| connection         | `string` | any             | "none"                                                                  | See the [Database](./basics/database.html) guide          |
-| host               | `string` | any             | "127.0.0.1"                                                             |                                                           |
-| port               | `int`    | any             | `3306`                                                                  |                                                           |
-| name               | `string` | any             | "goyave"                                                                |                                                           |
-| username           | `string` | any             | "root"                                                                  |                                                           |
-| password           | `string` | any             | "root"                                                                  |                                                           |
-| otions             | `string` | any             | "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local" |                                                           |
-| maxOpenConnections | `int`    | any             | `20`                                                                    |                                                           |
-| maxIdleConnections | `int`    | any             | `20`                                                                    |                                                           |
-| maxLifetime        | `int`    | any             | `300`                                                                   | The maximum time (in seconds) a connection may be reused. |
-| autoMigrate        | `bool`   | `true`, `false` | `false`                                                                 | When activated, migrate all registered models at startup  |
+| Entry              | Type     | Default                                                                 | Note                                                      |
+|--------------------|----------|-------------------------------------------------------------------------|-----------------------------------------------------------|
+| connection         | `string` | "none"                                                                  | See the [Database](./basics/database.html) guide          |
+| host               | `string` | "127.0.0.1"                                                             |                                                           |
+| port               | `int`    | `3306`                                                                  |                                                           |
+| name               | `string` | "goyave"                                                                |                                                           |
+| username           | `string` | "root"                                                                  |                                                           |
+| password           | `string` | "root"                                                                  |                                                           |
+| otions             | `string` | "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local" |                                                           |
+| maxOpenConnections | `int`    | `20`                                                                    |                                                           |
+| maxIdleConnections | `int`    | `20`                                                                    |                                                           |
+| maxLifetime        | `int`    | `300`                                                                   | The maximum time (in seconds) a connection may be reused. |
+| autoMigrate        | `bool`   | `false`                                                                 | When activated, migrate all registered models at startup  |
 
 
 ## Setting up HTTPS

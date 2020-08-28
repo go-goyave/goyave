@@ -58,7 +58,7 @@ The HTTP method (GET, POST, PUT, etc.).
 
 **Example:**
 ``` go
-fmt.Println(request.Method()) // GET
+fmt.Println(request.Method()) // "GET"
 ```
 
 #### Request.Protocol
@@ -195,9 +195,9 @@ Returns the CORS options applied to this request, or `nil`. Learn more about COR
 
 The returned object is a copy of the options applied to the router. Therefore, altering the returned object will not alter the router's options.
 
-| Parameters | Return   |
-|------------|----------|
-|            | `string` |
+| Parameters | Return          |
+|------------|-----------------|
+|            | `*cors.Options` |
 
 **Example:**
 ``` go

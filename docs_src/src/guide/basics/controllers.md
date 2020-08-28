@@ -17,7 +17,7 @@ meta:
 Controllers are files containing a collection of Handlers related to a specific feature. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project.
 
 Let's take a very simple CRUD as an example for a controller definition:
-**http/controllers/product/product.go**:
+**http/controller/product/product.go**:
 ``` go
 func Index(response *goyave.Response, request *goyave.Request) {
 	products := []model.Product{}
@@ -96,7 +96,7 @@ Setting the `Content-Type` header is not necessary. `response.Write` automatical
 
 ## Naming conventions
 
-- Controller packages are named after the model they are mostly using, in a singular form. For example a controller for a `Product` model would be called `http/controllers/product`. If a controller isn't related to a model, then give it an expressive name.
+- Controller packages are named after the model they are mostly using, in a singular form. For example a controller for a `Product` model would be called `http/controller/product`. If a controller isn't related to a model, then give it an expressive name.
 - Controller handlers are always **exported** so they can be used when registering routes. All functions which aren't handlers **must be unexported**.
 - CRUD operations naming and routing:
 

@@ -136,7 +136,7 @@ header.Set("Content-Type", "application/json")
 
 #### Response.Status
 
-Write the given status code. Calling this method a second time will have no effect.
+Set the response status code. Calling this method a second time will have no effect.
 
 | Parameters   | Return |
 |--------------|--------|

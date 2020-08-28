@@ -124,7 +124,7 @@ Get the name of this route.
 
 **Examples:**
 ``` go
-fmt.Println(route.GetName()) // "product-create"
+fmt.Println(route.GetName()) // "product.create"
 ```
 
 #### Route.BuildURL
@@ -161,7 +161,7 @@ fmt.Println(route.GetURI()) // "/{id:[0-9]+}"
 
 #### Route.GetFullURI
 
-Get the URI of this route.
+Get the full URI of this route.
 
 Note that this URI may contain route parameters in their définition format. Use the request's URI if you want to see the URI as it was requested by the client.
 
@@ -338,13 +338,13 @@ userRouter := router.Subrouter("/user")
 
 In our application, user profiles are public: anyone can see the user profiles without being authenticated. However, only authenticated users can modify their information and delete their account. We don't want to add some redundancy and apply the authentication middleware for each route needing it, so we are going to create another sub-router. Sub-routers having an empty prefix are called **route groups**.
 ```go
-userRouter.Route("GET", "/{username}", user.Show)
-userRouter.Route("POST", "", user.Register).Validate(user.RegisterRequest)
+userRouter.Get("/{username}", user.Show)
+userRouter.Post("", user.Register).Validate(user.RegisterRequest)
 
 authUserRouter := userRouter.Subrouter("") // Don't add a prefix
 authUserRouter.Middleware(authenticationMiddleware)
-authUserRouter.Route("PUT", "/{id}", user.Update).Validate(user.UpdateRequest)
-authUserRouter.Route("DELETE", "/{id}", user.Delete)
+authUserRouter.Put("/{id}", user.Update).Validate(user.UpdateRequest)
+authUserRouter.Delete("/{id}", user.Delete)
 ```
 
 To improve your routes definition readability, you should create a new route registrer for each feature. In our example, our definitions would look like this:
@@ -364,10 +364,10 @@ func Register(router *goyave.Router) {
 Sub-routers are checked before routes, meaning that they have priority over the latter. If you have a router sharing a prefix with a higher-level level route, **it will never match** because the sub-router will match first.
 ``` go
 subrouter := router.Subrouter("/product")
-subrouter.Route("GET", "/{id:[0-9]+}", handler)
+subrouter.Get("/{id:[0-9]+}", handler)
 
-router.Route("GET", "/product/{id:[0-9]+}", handler) // This route will never match
-router.Route("GET", "/product/category", handler)    // This one neither
+router.Get("/product/{id:[0-9]+}", handler) // This route will never match
+router.Get("/product/category", handler)    // This one neither
 ```
 
 ## Serve static resources

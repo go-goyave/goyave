@@ -48,6 +48,11 @@ func (suite *DatabaseTestSuite) TestGetConnection() {
 	suite.Equal(dbConnection, db)
 	suite.Nil(Close())
 	suite.Nil(dbConnection)
+
+	db = Conn()
+	suite.NotNil(db)
+	suite.Equal(dbConnection, db)
+	Close()
 }
 
 func (suite *DatabaseTestSuite) TestGetConnectionPanic() {

@@ -59,6 +59,7 @@ meta:
     - Added [database connection initializers](./basics/database.html#connection-initializers).
     - Added the ability to regsiter new SQL dialects to use with GORM.
     - Use `utf8mb4` by default in database options.
+    - Added a short alias for `database.GetConnection()`: `database.Conn()`.
 - Status handlers improvements
     - Export panic and error status handlers so they can be expanded easily.
     - Added `goyave.ValidationStatusHandler()`, a status handler for validation errors. Therefore, the format in which validation errors are sent to the client can be customized by using your own status handler for the HTTP status 400 and 422.

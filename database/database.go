@@ -54,6 +54,11 @@ func GetConnection() *gorm.DB {
 	return dbConnection
 }
 
+// Conn alias for GetConnection.
+func Conn() *gorm.DB {
+	return GetConnection()
+}
+
 // Close the database connections if they exist.
 func Close() error {
 	var err error = nil

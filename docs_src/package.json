@@ -10,8 +10,8 @@
   "author": "Jérémy LAMBERT (System-Glitch)",
   "license": "MIT",
   "devDependencies": {
-    "@vuepress/plugin-back-to-top": "^1.5.3",
-    "vuepress": "^1.5.3",
+    "@vuepress/plugin-back-to-top": "^1.5.4",
+    "vuepress": "^1.5.4",
     "vuepress-plugin-container": "^2.1.4"
   }
 }

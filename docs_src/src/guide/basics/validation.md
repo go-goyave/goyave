@@ -538,17 +538,17 @@ Finally, you may want to add a custom validation message for your rule so the cl
 }
 ```
 
-If you are supporting multiple languages, don't forget to add this to your other `rules.json` files too.
-
 ::: tip
-Learn more about validation rules messages in the [Localization documentation](../advanced/localization.html#rules).
+- If you are supporting multiple languages, don't forget to add this to your other `rules.json` files too.
+- Learn more about validation rules messages in the [Localization documentation](../advanced/localization.html#rules).
+- The `:field` part of the message is a [placeholder](#placeholders).
 :::
 
 #### validation.GetFieldType
 
 <p><Badge text="Since v2.0.0"/></p>
 
-returns the non-technical type of the given `value` interface.
+Returns the non-technical type of the given `value` interface.
 This is used by validation rules to know if the input data is a candidate
 for validation or not and is especially useful for type-dependent rules.
 - `numeric` if the value is an int, uint or a float
@@ -593,7 +593,7 @@ var arrayValidation = RuleSet{
     "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
 }
 ```
-In this example, we are validating a three-dimensional array of numeric values. The second dimension must be made of arrays with a size of 3 or less. The third dimension must contain numbers inferior or equal to 4. The following JSON input passes the validation:
+In this example, we are validating a three-dimensional array of numeric values. The first dimension must be made of arrays with a size of 3 or less (`>array` and `>max:3`). The second dimension must be made of arrays containing numbers (`>>array:numeric`). The third dimension must be numbers inferior or equal to 4 (`>>>max:4`). The following JSON input passes the validation:
 ```json
 {
     "array": [
@@ -653,11 +653,11 @@ validation.SetPlaceholder("min", func(field string, rule string, parameters []st
 
 #### :field
 
-`:field` is replaced by the name of the field. If it exists, the replacer with favor the language lines in `fields.json`.
+`:field` is replaced by the name of the field. If it exists, the replacer will favor the language lines in `fields.json`.
 
 #### :other
 
-`:other` is replaced by the name of the field given as first parameter in the rule definition. If it exists, the replacer with favor the language lines in `fields.json`.
+`:other` is replaced by the name of the field given as first parameter in the rule definition. If it exists, the replacer will favor the language lines in `fields.json`.
 
 For example, the `same:password_confirmation` rule compares two fields together and returns the following message if the validation fails: 
 ```
@@ -749,7 +749,7 @@ func Store(response *goyave.Response, request *goyave.Request) {
 
 <p><Badge text="Since v3.0.0"/></p>
 
-Internally, `validation.RuleSet` is parsed and replaced with a more complex structure the first time it is used: `validation.Rules`. This avoids having to parse rules everytime a request is received. Both `validation.RuleSet` and `validation.Rules` can be used when calling `validation.Validate()`, as they both implement the `validation.Ruler` interface. The syntax for `validation.Rules` is significantly more verbose and harder to read,
+Internally, `validation.RuleSet` is parsed and replaced with a more complex structure the first time it is used: `validation.Rules`. This avoids having to parse rules everytime a request is received. Both `validation.RuleSet` and `validation.Rules` can be used when calling `validation.Validate()`, as they both implement the `validation.Ruler` interface. The syntax for `validation.Rules` is significantly more verbose and harder to read, but more practical for use with code.
 
 Here is an example of rule definition using `validation.Rules` instead of `validation.RuleSet`:
 

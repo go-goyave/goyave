@@ -65,47 +65,47 @@ Find the options reference below:
 
 A list of origins a cross-domain request can be executed from. If the first value in the slice is `*` or if the slice is empty, all origins will be allowed.
 
-**Type:** `[]string`
+**Type:** `[]string`  
 **Default:** `["*"]`
 
 ### AllowedMethods
 
 A list of methods the client is allowed to use with cross-domain requests.
 
-**Type:** `[]string`
+**Type:** `[]string`  
 **Default:** `["HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"]`
 
 ### AllowedHeaders
 
 A list of non simple headers the client is allowed to use with cross-domain requests. If the first value in the slice is `*`, all headers will be allowed. If the slice is empty, the request's headers will be reflected.
 
-**Type:** `[]string`
+**Type:** `[]string`  
 **Default:** `["Origin", "Accept", "Content-Type", "X-Requested-With", "Authorization"]`
 
 ### ExposedHeaders
 
 Indicates which headers are safe to expose to the API of a CORS API specification.
 
-**Type:** `[]string`
+**Type:** `[]string`  
 **Default:** `[]`
 
 ### MaxAge
 
 Indicates how long the results of a preflight request can be cached.
 
-**Type:** `time.Duration`
+**Type:** `time.Duration`  
 **Default:** `12 hours (43200 seconds)`
 
 ### AllowCredentials
 
 Indicates whether the request can include user credentials like cookies, HTTP authentication or client side SSL certificates.
 
-**Type:** `bool`
+**Type:** `bool`  
 **Default:** `false`
 
 ### OptionsPassthrough
 
 Instructs **pre-flight** to let other potential next handlers to process the `OPTIONS` method. Turn this on if your application handles `OPTIONS`.
 
-**Type:** `bool`
+**Type:** `bool`  
 **Default:** `false`

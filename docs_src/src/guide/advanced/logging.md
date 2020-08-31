@@ -19,7 +19,7 @@ Logging is an important part of all applications. The framework provides a stand
 ## Custom loggers
 
 The framework provides three [Go standard loggers](https://golang.org/pkg/log/):
-- `goyave.Logger`: the logger for regular and miscellaneous information. Outputs to `os.Stdout` with `log.LstdFlags` by default. This logger is not used by any of the framework's internal features.
+- `goyave.Logger`: the logger for regular and miscellaneous information. Outputs to `os.Stdout` with `log.LstdFlags` by default.
 - `goyave.AccessLogger`: the logger used by the logging middleware (see below). Outputs to `os.Stdout` with no flags by default.
 - `goyave.ErrLogger`: the logger for errors and stacktraces. Outputs to `os.Stderr` with `log.LstdFlags` by default.
 

@@ -24,7 +24,7 @@ import "github.com/System-Glitch/goyave/v3"
 
 ## Startup hooks
 
-Startup hooks are function executed in a goroutine after the server finished initializing. This is especially useful when you want to start other services or execute specific commands while being sure the server is up and running, ready to respond to incoming requests. Startup hooks must be registered **before** the `goyave.Start()` call.
+Startup hooks are functions executed in a goroutine after the server finished initializing. This is especially useful when you want to start other services or execute specific commands while being sure the server is up and running, ready to respond to incoming requests. Startup hooks must be registered **before** the `goyave.Start()` call.
 
 #### goyave.RegisterStartupHook
 

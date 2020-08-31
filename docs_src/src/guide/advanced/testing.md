@@ -464,7 +464,7 @@ Drop all tables. This function only clears the tables of registered models.
 
 #### goyave.RunTest
 
-Run a test suite with prior initialization of a test environment. The GOYAVE_ENV environment variable is automatically set to "test" and restored to its original value at the end of the test run.
+Run a test suite with prior initialization of a test environment. The `GOYAVE_ENV` environment variable is automatically set to "test" and restored to its original value at the end of the test run.
 
 All tests are run using your project's root as working directory. This directory is determined by the presence of a `go.mod` file.
 
@@ -617,9 +617,9 @@ Generate a number of records using the given factory and return the inserted rec
 
 ### Seeders
 
-Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. Seeders are written in the `database/seeder` package.
+Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. Seeders can also generate records for your models' relations.
 
-Each seeder should have its own file. A seeder's responsibilities are limited to a single table or model. For example, the `seeder.User` should only seed the `users` table. Moreover, seeders should have the same name as the model they are using.
+Seeders are written in the `database/seeder` package. Each seeder should have its own file. 
 
 ``` go
 package seeder

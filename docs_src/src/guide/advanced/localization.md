@@ -103,6 +103,7 @@ The following rules have **type-dependent** messages. That means that their mess
 - `greater_than_equal`
 - `lower_than`
 - `lower_than_equal`
+- `between`
 
 Type-dependent rules must have a language line for the four following types:
 - `string`
@@ -170,6 +171,8 @@ func ControllerHandler(response *goyave.Response, request *goyave.Request) {
 ```
 
 ### Placeholders
+
+<p><Badge text="Since v2.10.0"/></p>
 
 Language lines can contain **placeholders**. Placeholders are identified by a colon directly followed by the placeholder name:
 

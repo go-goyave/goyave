@@ -130,6 +130,20 @@ db := database.GetConnection()
 db.First(&user)
 ```
 
+#### database.Conn
+
+`Conn()` is a short alias for `GetConnection()`.
+
+| Parameters | Return     |
+|------------|------------|
+|            | `*gorm.DB` |
+
+**Example:**
+``` go
+db := database.Conn()
+db.First(&user)
+```
+
 ::: tip
 Learn how to use the CRUD interface and the query builder in the [Gorm documentation](https://gorm.io/docs/index.html).
 :::

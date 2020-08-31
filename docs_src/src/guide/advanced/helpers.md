@@ -117,7 +117,7 @@ fmt.Println(helper.SliceEqual(first, second)) // false
 
 #### helper.ToFloat64
 
-Check if two generic slices are the same.
+Convert a numeric value to `float64`.
 
 | Parameters          | Return    |
 |---------------------|-----------|
@@ -129,8 +129,8 @@ Check if two generic slices are the same.
 fmt.Println(helper.ToFloat64(1.42)) // 1.42 nil
 fmt.Println(helper.ToFloat64(1)) // 1.0 nil
 fmt.Println(helper.ToFloat64("1.42")) // 1.42 nil
-fmt.Println(helper.ToFloat64("NaN")) // 0 nil
-fmt.Println(helper.ToFloat64([]string{})) // 0 nil
+fmt.Println(helper.ToFloat64("NaN")) // NaN nil
+fmt.Println(helper.ToFloat64([]string{})) // 0 'strconv.ParseFloat: parsing "[]": invalid syntax'
 ```
 
 #### helper.ToString
@@ -203,13 +203,13 @@ fmt.Println(model) // &{ Jeff}
 
 ## Filesystem
 
-The filesystem helpers require the `filesystem`  package to be imported.
+The filesystem helpers require the `helper/filesystem`  package to be imported.
 
 ``` go
 import "github.com/System-Glitch/goyave/v3/helper/filesystem"
 ```
 
-All files received in a requests are stored in the `filesystem.File` structure. This structres gives all the information you need on a file and its content, as well as a helper function to save it easily.
+All files received in a request are stored in the `filesystem.File` structure. This structres gives all the information you need on a file and its content, as well as a helper function to save it easily.
 
 | Attribute  | Type                    |
 |------------|-------------------------|
@@ -246,14 +246,14 @@ Returns the actual file name.
 
 **Example:**
 ``` go
-image := request.Data["image"].([]filesystem.File)[0]
+image := request.File("image")[0]
 // As file fields can be multi-files uploads, a file field
 // is always a slice.
 
-name := request.Data["name"].(string)
+name := request.String("name")
 product := model.Product{
     Name: name,
-    Price: request.Data["price"].(float64),
+    Price: request.Numeric("price"),
     Image: image.Save("storage/img", name)
 }
 database.GetConnection().Create(&product)
@@ -291,7 +291,7 @@ fmt.Println(filesystem.GetFileExtension("index.html")) // "text/html; charset=ut
 
 #### filesystem.FileExists
 
-Returns true if the file at the given path exists and is readable. Returns false if the given file is a directory
+Returns true if the file at the given path exists and is readable. Returns false if the given file is a directory.
 
 | Parameters    | Return |
 |---------------|--------|

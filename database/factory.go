@@ -45,13 +45,17 @@ func (f *Factory) Generate(count uint) []interface{} {
 	return records
 }
 
-// Save generate a number of records using the given factory and return the inserted records.
+// Save generate a number of records using the given factory,
+// insert them in the database and return the inserted records.
 func (f *Factory) Save(count uint) []interface{} {
 	db := GetConnection()
 	records := f.Generate(count)
 	for _, record := range records {
-		db.Create(record) // TODO batch insert for better performance
-		// Migrate to GORM v2, which is supporting batch operations
+		if err := db.Create(record).Error; err != nil {
+			panic(err)
+		}
+		// TODO []interface{} is unsupported for batch insert -> how to do that without generics?
+		// maybe create an issue on gorm repo
 	}
 	return records
 }

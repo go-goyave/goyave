@@ -430,7 +430,10 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	}
 
 	writer := httptest.NewRecorder()
+	prev := config.Get("app.debug")
+	config.Set("app.debug", false)
 	router.requestHandler(match, writer, httptest.NewRequest("GET", "/uri", nil))
+	config.Set("app.debug", prev)
 
 	result := writer.Result()
 	body, err := ioutil.ReadAll(result.Body)

@@ -608,7 +608,7 @@ Generate a number of records using the given factory.
 
 #### Factory.Save
 
-Generate a number of records using the given factory and return the inserted records.
+Generate a number of records using the given factory, insert them in the database and return the inserted records.
 
 | Parameters   | Return          |
 |--------------|-----------------|

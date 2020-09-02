@@ -20,6 +20,7 @@ import (
 
 	"github.com/System-Glitch/goyave/v3/database"
 	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"gorm.io/gorm"
 
 	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/System-Glitch/goyave/v3/lang"
@@ -328,7 +329,10 @@ func (s *TestSuite) getHTTPClient() *http.Client {
 func (s *TestSuite) ClearDatabase() {
 	db := database.GetConnection()
 	for _, m := range database.GetRegisteredModels() {
-		db.Unscoped().Delete(m)
+		tx := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(m)
+		if tx.Error != nil {
+			panic(tx.Error)
+		}
 	}
 }
 
@@ -337,7 +341,9 @@ func (s *TestSuite) ClearDatabase() {
 func (s *TestSuite) ClearDatabaseTables() {
 	db := database.GetConnection()
 	for _, m := range database.GetRegisteredModels() {
-		db.DropTableIfExists(m)
+		if err := db.Migrator().DropTable(m); err != nil {
+			panic(err)
+		}
 	}
 }
 

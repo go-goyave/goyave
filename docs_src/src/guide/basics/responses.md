@@ -365,7 +365,7 @@ Returns `true` if there is no error.
 **Example:**
 ``` go
 product := model.Product{}
-result := database.GetConnection().First(&product, id)
+result := database.Conn().First(&product, id)
 if response.HandleDatabaseError(result) {
     response.JSON(http.StatusOK, product)
 }

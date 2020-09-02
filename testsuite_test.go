@@ -338,18 +338,18 @@ func (suite *CustomTestSuite) TestClearDatabase() {
 	for i := 0; i < 5; i++ {
 		db.Create(&TestModel{Name: fmt.Sprintf("Test %d", i)})
 	}
-	count := 0
+	count := int64(0)
 	db.Model(&TestModel{}).Count(&count)
-	suite.Equal(5, count)
+	suite.Equal(int64(5), count)
 
 	database.RegisterModel(&TestModel{})
 	suite.ClearDatabase()
 	database.ClearRegisteredModels()
 
 	db.Model(&TestModel{}).Count(&count)
-	suite.Equal(0, count)
+	suite.Equal(int64(0), count)
 
-	db.DropTable(&TestModel{})
+	db.Migrator().DropTable(&TestModel{})
 	config.Set("database.connection", "none")
 }
 

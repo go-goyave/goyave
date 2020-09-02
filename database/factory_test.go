@@ -15,6 +15,16 @@ func userGenerator() interface{} {
 	}
 }
 
+type NoTable struct {
+	Name string
+}
+
+func noTableGenerator() interface{} {
+	return &NoTable{
+		Name: "John Doe",
+	}
+}
+
 type FactoryTestSuite struct {
 	suite.Suite
 	previousEnv string
@@ -82,7 +92,7 @@ func (suite *FactoryTestSuite) TestSave() {
 
 	db := GetConnection()
 	db.AutoMigrate(&User{})
-	defer db.DropTable(&User{})
+	defer db.Migrator().DropTable(&User{})
 
 	records := NewFactory(userGenerator).Save(2)
 	suite.Equal(2, len(records))
@@ -97,6 +107,10 @@ func (suite *FactoryTestSuite) TestSave() {
 		suite.Equal("John Doe", user.Name)
 		suite.Equal("johndoe@example.org", user.Email)
 	}
+
+	suite.Panics(func() {
+		NewFactory(noTableGenerator).Save(2)
+	})
 }
 
 func (suite *FactoryTestSuite) TearDownAllSuite() {

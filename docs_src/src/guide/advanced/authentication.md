@@ -295,7 +295,7 @@ func (a *MyAuthenticator) Authenticate(request *goyave.Request, user interface{}
 	columns := auth.FindColumns(user, "token")
 
 	// Find the user in the database using its token
-	result := database.GetConnection().Where(columns[0].Name+" = ?", token).First(user)
+	result := database.Conn().Where(columns[0].Name+" = ?", token).First(user)
 
 	if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
 		// Database error

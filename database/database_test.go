@@ -7,8 +7,9 @@ import (
 	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type User struct {
@@ -55,6 +56,18 @@ func (suite *DatabaseTestSuite) TestGetConnection() {
 	Close()
 }
 
+func (suite *DatabaseTestSuite) TestLogLevel() {
+	db := GetConnection()
+	suite.Equal(logger.Default.LogMode(logger.Silent), db.Logger)
+	Close()
+	prev := config.Get("app.debug")
+	config.Set("app.debug", true)
+	defer config.Set("app.debug", prev)
+	db = GetConnection()
+	suite.Equal(logger.Default.LogMode(logger.Info), db.Logger)
+	Close()
+}
+
 func (suite *DatabaseTestSuite) TestGetConnectionPanic() {
 	tmpConnection := config.Get("database.connection")
 	config.Set("database.connection", "none")
@@ -85,7 +98,7 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 	suite.Equal(0, len(models))
 
 	db := GetConnection()
-	defer db.DropTable(&User{})
+	defer db.Migrator().DropTable(&User{})
 
 	rows, err := db.Raw("SHOW TABLES;").Rows()
 	if err != nil {
@@ -110,32 +123,28 @@ func (suite *DatabaseTestSuite) TestModelAndMigrate() {
 
 func (suite *DatabaseTestSuite) TestInitializers() {
 	initializer := func(db *gorm.DB) {
-		db.InstantSet("gorm:auto_preload", true)
+		db.Config.SkipDefaultTransaction = true
 	}
 	AddInitializer(initializer)
 
 	suite.Len(initializers, 1)
 
 	db := GetConnection()
-	val, ok := db.Get("gorm:auto_preload")
-	suite.True(ok)
-	suite.Equal(true, val)
+	suite.True(db.Config.SkipDefaultTransaction)
 
 	suite.Nil(Close())
 
 	AddInitializer(func(db *gorm.DB) {
-		db.InstantSet("another_setting", "test")
+		db.Statement.Settings.Store("gorm:table_options", "ENGINE=InnoDB")
+		// TODO update docs for initializers
 	})
 	suite.Len(initializers, 2)
 
 	db = GetConnection()
-	val, ok = db.Get("gorm:auto_preload")
+	suite.True(db.Config.SkipDefaultTransaction)
+	val, ok := db.Get("gorm:table_options")
 	suite.True(ok)
-	suite.Equal(true, val)
-
-	val, ok = db.Get("another_setting")
-	suite.True(ok)
-	suite.Equal("test", val)
+	suite.Equal("ENGINE=InnoDB", val)
 
 	suite.Nil(Close())
 

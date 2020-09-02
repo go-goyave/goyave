@@ -13,7 +13,7 @@ import (
 
 	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type ResponseTestSuite struct {
@@ -449,9 +449,10 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	suite.Equal(http.StatusInternalServerError, response.status)
 
 	db.AutoMigrate(&TestRecord{})
-	defer db.DropTable(&TestRecord{})
+	defer db.Migrator().DropTable(&TestRecord{})
 	response = newResponse(httptest.NewRecorder(), nil)
-	suite.False(response.HandleDatabaseError(db.Where("id = ?", -1).Find(&TestRecord{})))
+
+	suite.False(response.HandleDatabaseError(db.First(&TestRecord{}, -1)))
 
 	suite.Equal(http.StatusNotFound, response.status)
 

@@ -23,7 +23,7 @@ All functions below require the `database` and the `gorm` packages to be importe
 ``` go
 import (
   "github.com/System-Glitch/goyave/v3/database"
-  "github.com/jinzhu/gorm"
+  "gorm.io/gorm"
 )
 ```
 
@@ -58,10 +58,10 @@ Change the `database.connection` config entry to the desired driver.
 
 In order to be able connect to the database, Gorm needs a database driver to be imported. Add the following import to your `kernel.go`:
 ``` go
-import _ "github.com/jinzhu/gorm/dialects/mysql"
-// import _ "github.com/jinzhu/gorm/dialects/postgres"
-// import _ "github.com/jinzhu/gorm/dialects/sqlite"
-// import _ "github.com/jinzhu/gorm/dialects/mssql"
+import _ "gorm.io/driver/mysql"
+// import _ "gorm.io/driver/postgres"
+// import _ "gorm.io/driver/sqlite"
+// import _ "gorm.io/driver/mssql"
 ```
 
 ::: tip
@@ -75,7 +75,7 @@ You can **register more dialects** for GORM [like you would usually do](http://g
 ```go
 import (
   "github.com/System-Glitch/goyave/v3/database"
-  "github.com/jinzhu/gorm"
+  "gorm.io/gorm"
   _ "example.com/user/my-dialect"
 )
 
@@ -277,7 +277,7 @@ You can also filter hidden fields by passing a struct to [`helper.RemoveHiddenFi
 If the `database.autoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.
 
 ::: warning
-Automatic migrations **only create** tables, missing columns and missing indexes. They **wont't change** existing column’s type or delete unused columns.
+Automatic migrations create tables, missing foreign keys, constraints, columns and indexes, and will change existing column’s type if it’s size, precision or nullable changed. They **wont't** delete unused columns.
 :::
 
 If you would like to know more about migrations using Gorm, read their [documentation](https://gorm.io/docs/migration.html).

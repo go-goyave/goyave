@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 	"reflect"
 	"time"
@@ -11,8 +12,8 @@ import (
 	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/System-Glitch/goyave/v3/validation"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // GenerateToken generate a new JWT.
@@ -58,13 +59,14 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 	columns := FindColumns(user, "username", "password")
 
 	result := database.GetConnection().Where(columns[0].Name+" = ?", username).First(user)
+	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 
-	if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
-		panic(errors)
+	if result.Error != nil && !notFound {
+		panic(result.Error)
 	}
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
-	if !result.RecordNotFound() && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String("password"))) == nil {
+	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String("password"))) == nil {
 		token, err := GenerateToken(username)
 		if err != nil {
 			panic(err)

@@ -3,6 +3,7 @@ package goyave
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	htmltemplate "html/template"
 	"io"
@@ -15,7 +16,7 @@ import (
 	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/System-Glitch/goyave/v3/helper"
 	"github.com/System-Glitch/goyave/v3/helper/filesystem"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // Response represents a controller response.
@@ -313,7 +314,7 @@ func (r *Response) getTemplateDirectory() string {
 // Returns true if there is no error.
 func (r *Response) HandleDatabaseError(db *gorm.DB) bool {
 	if db.Error != nil {
-		if gorm.IsRecordNotFoundError(db.Error) {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 			r.Status(http.StatusNotFound)
 		} else {
 			r.Error(db.Error)

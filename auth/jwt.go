@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/System-Glitch/goyave/v3/database"
 	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
@@ -58,12 +59,11 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 			column := FindColumns(user, "username")[0]
 			result := database.GetConnection().Where(column.Name+" = ?", claims["userid"]).First(user)
 
-			if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
-				panic(errors)
-			}
-
-			if result.RecordNotFound() {
-				return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
+			if result.Error != nil {
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+					return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
+				}
+				panic(result.Error)
 			}
 
 			return nil

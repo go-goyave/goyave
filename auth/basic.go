@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -8,8 +9,8 @@ import (
 	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/System-Glitch/goyave/v3/database"
 	"github.com/System-Glitch/goyave/v3/lang"
-	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // BasicAuthenticator implementation of Authenticator with the Basic
@@ -35,14 +36,15 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user interfac
 	columns := FindColumns(user, "username", "password")
 
 	result := database.GetConnection().Where(columns[0].Name+" = ?", username).First(user)
+	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 
-	if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
-		panic(errors)
+	if result.Error != nil && !notFound {
+		panic(result.Error)
 	}
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
 
-	if result.RecordNotFound() || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
+	if notFound || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
 		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
 	}
 

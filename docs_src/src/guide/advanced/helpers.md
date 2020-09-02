@@ -256,7 +256,7 @@ product := model.Product{
     Price: request.Numeric("price"),
     Image: image.Save("storage/img", name)
 }
-database.GetConnection().Create(&product)
+database.Conn().Create(&product)
 ```
 
 #### filesystem.GetFileExtension

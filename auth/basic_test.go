@@ -10,7 +10,7 @@ import (
 	"github.com/System-Glitch/goyave/v3"
 	"github.com/System-Glitch/goyave/v3/database"
 
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "gorm.io/driver/mysql"
 )
 
 type BasicAuthenticatorTestSuite struct {
@@ -92,7 +92,7 @@ func (suite *BasicAuthenticatorTestSuite) TearDownTest() {
 }
 
 func (suite *BasicAuthenticatorTestSuite) TearDownSuite() {
-	database.GetConnection().DropTable(&TestUser{})
+	database.Conn().Migrator().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

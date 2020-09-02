@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // Initializer is a function meant to modify a connection settings
@@ -65,7 +67,8 @@ func Close() error {
 	mu.Lock()
 	defer mu.Unlock()
 	if dbConnection != nil {
-		err = dbConnection.Close()
+		// err = dbConnection.Close()
+		// TODO decide what to do with Close
 		dbConnection = nil
 	}
 
@@ -115,7 +118,7 @@ func ClearRegisteredModels() {
 func Migrate() {
 	db := GetConnection()
 	for _, model := range models {
-		if err := db.AutoMigrate(model).Error; err != nil {
+		if err := db.AutoMigrate(model); err != nil {
 			panic(err)
 		}
 	}
@@ -151,15 +154,27 @@ func newConnection() *gorm.DB {
 		panic("Cannot create DB connection. Database is set to \"none\" in the config")
 	}
 
-	db, err := gorm.Open(connection, buildConnectionOptions(connection))
+	logLevel := logger.Silent
+	if config.GetBool("app.debug") {
+		logLevel = logger.Info
+	}
+
+	connectionString := buildConnectionOptions(connection)
+	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{
+		Logger: logger.Default.LogMode(logLevel),
+	}) // TODO gorm config and support for other db
 	if err != nil {
 		panic(err)
 	}
 
-	db.LogMode(config.GetBool("app.debug"))
-	db.DB().SetMaxOpenConns(config.GetInt("database.maxOpenConnections"))
-	db.DB().SetMaxIdleConns(config.GetInt("database.maxIdleConnections"))
-	db.DB().SetConnMaxLifetime(time.Duration(config.GetInt("database.maxLifetime")) * time.Second)
+	sql, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+	sql.SetMaxOpenConns(config.GetInt("database.maxOpenConnections"))
+	sql.SetMaxIdleConns(config.GetInt("database.maxIdleConnections"))
+	sql.SetConnMaxLifetime(time.Duration(config.GetInt("database.maxLifetime")) * time.Second)
+
 	for _, initializer := range initializers {
 		initializer(db)
 	}

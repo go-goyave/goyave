@@ -21,7 +21,7 @@ Let's take a very simple CRUD as an example for a controller definition:
 ``` go
 func Index(response *goyave.Response, request *goyave.Request) {
 	products := []model.Product{}
-	result := database.GetConnection().Find(&products)
+	result := database.Conn().Find(&products)
 	if response.HandleDatabaseError(result) {
 		response.JSON(http.StatusOK, products)
 	}
@@ -29,7 +29,7 @@ func Index(response *goyave.Response, request *goyave.Request) {
 
 func Show(response *goyave.Response, request *goyave.Request) {
 	product := model.Product{}
-	result := database.GetConnection().First(&product, request.Params["id"])
+	result := database.Conn().First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		response.JSON(http.StatusOK, product)
 	}
@@ -40,7 +40,7 @@ func Store(response *goyave.Response, request *goyave.Request) {
 		Name:  request.String("name"),
 		Price: request.Numeric("price"),
 	}
-	if err := database.GetConnection().Create(&product).Error; err != nil {
+	if err := database.Conn().Create(&product).Error; err != nil {
 		response.Error(err)
 	} else {
 		response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
@@ -49,7 +49,7 @@ func Store(response *goyave.Response, request *goyave.Request) {
 
 func Update(response *goyave.Response, request *goyave.Request) {
 	product := model.Product{}
-	db := database.GetConnection()
+	db := database.Conn()
 	result := db.Select("id").First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
@@ -60,7 +60,7 @@ func Update(response *goyave.Response, request *goyave.Request) {
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
 	product := model.Product{}
-	db := database.GetConnection()
+	db := database.Conn()
 	result := db.Select("id").First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		if err := db.Delete(&product).Error; err != nil {

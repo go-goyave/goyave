@@ -15,7 +15,7 @@ import (
 	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "gorm.io/driver/mysql"
 )
 
 type GoyaveTestSuite struct {

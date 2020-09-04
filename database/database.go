@@ -67,8 +67,8 @@ func Close() error {
 	mu.Lock()
 	defer mu.Unlock()
 	if dbConnection != nil {
-		// err = dbConnection.Close()
-		// TODO decide what to do with Close
+		db, _ := dbConnection.DB()
+		err = db.Close()
 		dbConnection = nil
 	}
 

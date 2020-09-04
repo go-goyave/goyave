@@ -19,6 +19,6 @@ func setupDatabaseBench(b *testing.B) {
 func BenchmarkBuildConnectionOptions(b *testing.B) {
 	setupDatabaseBench(b)
 	for n := 0; n < b.N; n++ {
-		buildConnectionOptions("mysql")
+		buildDSN("mysql")
 	}
 }

@@ -20,6 +20,10 @@ import (
 // the gorm.DB instance instead of modifying it.
 type Initializer func(*gorm.DB)
 
+// DialectorInitializer function initializing a GORM Dialector using the given
+// data source name (DSN).
+type DialectorInitializer func(dsn string) gorm.Dialector
+
 var (
 	dbConnection *gorm.DB
 	mu           sync.Mutex
@@ -51,7 +55,11 @@ func GetConnection() *gorm.DB {
 	mu.Lock()
 	defer mu.Unlock()
 	if dbConnection == nil {
-		dbConnection = newConnection()
+		dbConnection = newConnection(mysql.Open)
+		// TODO associate database.connection config to a DialectorInitializer
+		// how to do that without importing ?
+		// solution 1: like GORM, make a package for each, which registers each DI
+		// -> expand the RegisterDialect feature by adding a parameter for DialectorInitializer
 	}
 	return dbConnection
 }
@@ -147,7 +155,7 @@ func RegisterDialect(name, template string) {
 	dialectOptions[name] = template
 }
 
-func newConnection() *gorm.DB {
+func newConnection(dialector DialectorInitializer) *gorm.DB {
 	connection := config.GetString("database.connection")
 
 	if connection == "none" {
@@ -159,8 +167,8 @@ func newConnection() *gorm.DB {
 		logLevel = logger.Info
 	}
 
-	connectionString := buildConnectionOptions(connection)
-	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{
+	dsn := buildDSN(connection)
+	db, err := gorm.Open(dialector(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logLevel),
 	}) // TODO gorm config and support for other db
 	if err != nil {
@@ -181,7 +189,7 @@ func newConnection() *gorm.DB {
 	return db
 }
 
-func buildConnectionOptions(driver string) string {
+func buildDSN(driver string) string {
 	template, ok := dialectOptions[driver]
 	if !ok {
 		panic(fmt.Sprintf("DB Connection %q not supported", driver))

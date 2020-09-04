@@ -88,7 +88,7 @@ Hi!
 
 There is also an `echo` route, with basic validation of query parameters.
 ```
-$ curl http://localhost:8080/echo?text=abc%20123
+$ curl -H "Content-Type: application/json" -X POST -d '{"text":"abc 123"}' http://localhost:8080/echo
 abc 123
 ```
 

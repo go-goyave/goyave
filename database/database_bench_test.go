@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/System-Glitch/goyave/v3/config"
+	"gorm.io/driver/mysql"
 )
 
 func setupDatabaseBench(b *testing.B) {
@@ -17,8 +18,9 @@ func setupDatabaseBench(b *testing.B) {
 }
 
 func BenchmarkBuildConnectionOptions(b *testing.B) {
+	d := dialect{"{username}:{password}@({host}:{port})/{name}?{options}", mysql.Open}
 	setupDatabaseBench(b)
 	for n := 0; n < b.N; n++ {
-		buildDSN("mysql")
+		d.buildDSN()
 	}
 }

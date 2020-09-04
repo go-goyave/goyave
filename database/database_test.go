@@ -7,7 +7,7 @@ import (
 	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/stretchr/testify/suite"
 
-	_ "gorm.io/driver/mysql"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -24,6 +24,9 @@ type DatabaseTestSuite struct {
 }
 
 func (suite *DatabaseTestSuite) SetupSuite() {
+	if _, ok := dialects["mysql"]; !ok {
+		RegisterDialect("mysql", "{username}:{password}@({host}:{port})/{name}?{options}", mysql.Open)
+	}
 	suite.previousEnv = os.Getenv("GOYAVE_ENV")
 	os.Setenv("GOYAVE_ENV", "test")
 	if err := config.Load(); err != nil {
@@ -31,15 +34,9 @@ func (suite *DatabaseTestSuite) SetupSuite() {
 	}
 }
 
-func (suite *DatabaseTestSuite) TestbuildDSN() {
-	suite.Equal("goyave:secret@(127.0.0.1:3306)/goyave?charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildDSN("mysql"))
-	suite.Equal("host=127.0.0.1 port=3306 user=goyave dbname=goyave password=secret charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildDSN("postgres"))
-	suite.Equal("goyave", buildDSN("sqlite3"))
-	suite.Equal("sqlserver://goyave:secret@127.0.0.1:3306?database=goyave&charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildDSN("mssql"))
-
-	suite.Panics(func() {
-		buildDSN("test")
-	})
+func (suite *DatabaseTestSuite) TestBuildDSN() {
+	d := dialect{"{username}:{password}@({host}:{port})/{name}?{options}", nil}
+	suite.Equal("goyave:secret@(127.0.0.1:3306)/goyave?charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", d.buildDSN())
 }
 
 func (suite *DatabaseTestSuite) TestGetConnection() {
@@ -77,11 +74,18 @@ func (suite *DatabaseTestSuite) TestGetConnectionPanic() {
 	config.Set("database.connection", tmpConnection)
 
 	tmpPort := config.Get("database.port")
-	config.Set("database.port", 0.0)
+	config.Set("database.port", 0)
 	suite.Panics(func() {
 		GetConnection()
 	})
 	config.Set("database.port", tmpPort)
+
+	tmpConnection = config.Get("database.connection")
+	config.Set("database.connection", "notadriver")
+	suite.Panics(func() {
+		GetConnection()
+	})
+	config.Set("database.connection", tmpConnection)
 }
 
 func (suite *DatabaseTestSuite) TestModelAndMigrate() {
@@ -154,21 +158,21 @@ func (suite *DatabaseTestSuite) TestInitializers() {
 
 func (suite *DatabaseTestSuite) TestRegisterDialect() {
 	template := "{username}{username} {password} {host}:{port} {name} {options}"
-	RegisterDialect("newdialect", template)
-	defer delete(dialectOptions, "newdialect")
+	RegisterDialect("newdialect", template, nil)
+	defer delete(dialects, "newdialect")
 
-	t, ok := dialectOptions["newdialect"]
+	t, ok := dialects["newdialect"]
 	suite.True(ok)
-	suite.Equal(template, t)
+	suite.Equal(template, t.template)
 
-	suite.Equal("goyave{username} secret 127.0.0.1:3306 goyave charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", buildDSN("newdialect"))
+	suite.Equal("goyave{username} secret 127.0.0.1:3306 goyave charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", t.buildDSN())
 
 	suite.Panics(func() {
-		RegisterDialect("newdialect", "othertemplate")
+		RegisterDialect("newdialect", "othertemplate", nil)
 	})
-	t, ok = dialectOptions["newdialect"]
+	t, ok = dialects["newdialect"]
 	suite.True(ok)
-	suite.Equal(template, t)
+	suite.Equal(template, t.template)
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

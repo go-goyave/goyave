@@ -58,10 +58,10 @@ Change the `database.connection` config entry to the desired driver.
 
 In order to be able connect to the database, Gorm needs a database driver to be imported. Add the following import to your `kernel.go`:
 ``` go
-import _ "gorm.io/driver/mysql"
-// import _ "gorm.io/driver/postgres"
-// import _ "gorm.io/driver/sqlite"
-// import _ "gorm.io/driver/mssql"
+import _ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
+// import _ "github.com/System-Glitch/goyave/v3/database/dialect/postgres"
+// import _ "github.com/System-Glitch/goyave/v3/database/dialect/sqlite"
+// import _ "github.com/System-Glitch/goyave/v3/database/dialect/mssql"
 ```
 
 ::: tip
@@ -76,7 +76,7 @@ You can **register more dialects** for GORM [like you would usually do](http://g
 import (
   "github.com/System-Glitch/goyave/v3/database"
   "gorm.io/gorm"
-  _ "example.com/user/my-dialect"
+  _ "example.com/user/mydriver"
 )
 
 type myDialect struct{
@@ -87,11 +87,10 @@ type myDialect struct{
 // Dialect implementation...
 
 func init() {
-  gorm.RegisterDialect("my-dialect", &myDialect{})
-  database.RegisterDialect("my-dialect", "{username}:{password}@({host}:{port})/{name}?{options}")
+  gorm.RegisterDialect("my-driver", &myDialect{})
+  database.RegisterDialect("my-driver", "{username}:{password}@({host}:{port})/{name}?{options}", mydriver.Open)
 }
 ```
-
 
 Template format accepts the following placeholders, which will be replaced with the corresponding configuration entries automatically:
 - `{username}`
@@ -105,11 +104,15 @@ You cannot override a dialect that already exists.
 
 #### database.RegisterDialect
 
-| Parameters        | Return |
-|-------------------|--------|
-| `name string`     | `void` |
-| `template string` |        |
+| Parameters                         | Return |
+|------------------------------------|--------|
+| `name string`                      | `void` |
+| `template string`                  |        |
+| `initializer DialectorInitializer` |        |
 
+::: tip
+`DialectorInitializer` is an alias for `func(dsn string) gorm.Dialector`
+:::
 
 ## Getting a database connection
 

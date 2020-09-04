@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/v3/config"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -24,18 +23,18 @@ type Initializer func(*gorm.DB)
 // data source name (DSN).
 type DialectorInitializer func(dsn string) gorm.Dialector
 
+type dialect struct {
+	template    string
+	initializer DialectorInitializer
+}
+
 var (
 	dbConnection *gorm.DB
 	mu           sync.Mutex
 	models       []interface{}
 	initializers []Initializer
 
-	dialectOptions map[string]string = map[string]string{
-		"mysql":    "{username}:{password}@({host}:{port})/{name}?{options}",
-		"postgres": "host={host} port={port} user={username} dbname={name} password={password} {options}",
-		"sqlite3":  "{name}",
-		"mssql":    "sqlserver://{username}:{password}@{host}:{port}?database={name}&{options}",
-	}
+	dialects map[string]dialect = map[string]dialect{}
 
 	optionPlaceholders map[string]string = map[string]string{
 		"{username}": "database.username",
@@ -55,11 +54,7 @@ func GetConnection() *gorm.DB {
 	mu.Lock()
 	defer mu.Unlock()
 	if dbConnection == nil {
-		dbConnection = newConnection(mysql.Open)
-		// TODO associate database.connection config to a DialectorInitializer
-		// how to do that without importing ?
-		// solution 1: like GORM, make a package for each, which registers each DI
-		// -> expand the RegisterDialect feature by adding a parameter for DialectorInitializer
+		dbConnection = newConnection()
 	}
 	return dbConnection
 }
@@ -146,19 +141,19 @@ func Migrate() {
 //  - "{options}"
 // Example template for the "mysql" dialect:
 //  {username}:{password}@({host}:{port})/{name}?{options}
-func RegisterDialect(name, template string) {
+func RegisterDialect(name, template string, initializer DialectorInitializer) {
 	mu.Lock()
 	defer mu.Unlock()
-	if _, ok := dialectOptions[name]; ok {
+	if _, ok := dialects[name]; ok {
 		panic(fmt.Sprintf("Dialect %q already exists", name))
 	}
-	dialectOptions[name] = template
+	dialects[name] = dialect{template, initializer}
 }
 
-func newConnection(dialector DialectorInitializer) *gorm.DB {
-	connection := config.GetString("database.connection")
+func newConnection() *gorm.DB {
+	driver := config.GetString("database.connection")
 
-	if connection == "none" {
+	if driver == "none" {
 		panic("Cannot create DB connection. Database is set to \"none\" in the config")
 	}
 
@@ -167,10 +162,15 @@ func newConnection(dialector DialectorInitializer) *gorm.DB {
 		logLevel = logger.Info
 	}
 
-	dsn := buildDSN(connection)
-	db, err := gorm.Open(dialector(dsn), &gorm.Config{
+	dialect, ok := dialects[driver]
+	if !ok {
+		panic(fmt.Sprintf("DB Connection %q not supported, forgotten import?", driver))
+	}
+
+	dsn := dialect.buildDSN()
+	db, err := gorm.Open(dialect.initializer(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logLevel),
-	}) // TODO gorm config and support for other db
+	}) // TODO gorm config
 	if err != nil {
 		panic(err)
 	}
@@ -189,13 +189,8 @@ func newConnection(dialector DialectorInitializer) *gorm.DB {
 	return db
 }
 
-func buildDSN(driver string) string {
-	template, ok := dialectOptions[driver]
-	if !ok {
-		panic(fmt.Sprintf("DB Connection %q not supported", driver))
-	}
-
-	connStr := template
+func (d dialect) buildDSN() string {
+	connStr := d.template
 	for k, v := range optionPlaceholders {
 		connStr = strings.Replace(connStr, k, config.GetString(v), 1)
 	}

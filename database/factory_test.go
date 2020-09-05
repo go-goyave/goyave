@@ -40,44 +40,32 @@ func (suite *FactoryTestSuite) SetupSuite() {
 
 func (suite *FactoryTestSuite) TestGenerate() {
 	factory := NewFactory(userGenerator)
-	records := factory.Generate(2)
+	records := factory.Generate(2).([]*User)
 	suite.Equal(2, len(records))
-	for _, r := range records {
-		user, ok := r.(*User)
-		suite.True(ok)
-		if ok {
-			suite.Equal("John Doe", user.Name)
-			suite.Equal("johndoe@example.org", user.Email)
-		}
+	for _, user := range records {
+		suite.Equal("John Doe", user.Name)
+		suite.Equal("johndoe@example.org", user.Email)
 	}
 
 	override := &User{
 		Name:  "name override",
 		Email: "email override",
 	}
-	records = factory.Override(override).Generate(2)
+	records = factory.Override(override).Generate(2).([]*User)
 	suite.Equal(2, len(records))
-	for _, r := range records {
-		user, ok := r.(*User)
-		suite.True(ok)
-		if ok {
-			suite.Equal("name override", user.Name)
-			suite.Equal("email override", user.Email)
-		}
+	for _, user := range records {
+		suite.Equal("name override", user.Name)
+		suite.Equal("email override", user.Email)
 	}
 
 	override = &User{
 		Name: "name override",
 	}
-	records = factory.Override(override).Generate(2)
+	records = factory.Override(override).Generate(2).([]*User)
 	suite.Equal(2, len(records))
-	for _, r := range records {
-		user, ok := r.(*User)
-		suite.True(ok)
-		if ok {
-			suite.Equal("name override", user.Name)
-			suite.Equal("johndoe@example.org", user.Email)
-		}
+	for _, user := range records {
+		suite.Equal("name override", user.Name)
+		suite.Equal("johndoe@example.org", user.Email)
 	}
 
 	suite.Panics(func() {
@@ -94,10 +82,10 @@ func (suite *FactoryTestSuite) TestSave() {
 	db.AutoMigrate(&User{})
 	defer db.Migrator().DropTable(&User{})
 
-	records := NewFactory(userGenerator).Save(2)
+	records := NewFactory(userGenerator).Save(2).([]*User)
 	suite.Equal(2, len(records))
 	for i := uint(0); i < 2; i++ {
-		suite.Equal(i+1, records[i].(*User).ID)
+		suite.Equal(i+1, records[i].ID)
 	}
 
 	users := make([]*User, 0, 2)

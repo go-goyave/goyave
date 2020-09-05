@@ -535,7 +535,7 @@ func UserGenerator() interface{} {
 
     // Generate between 0 and 10 blog posts
     rand.Seed(time.Now().UnixNano())
-    user.Posts = database.NewFactory(PostGenerator).Generate(rand.Intn(10))
+    user.Posts = database.NewFactory(PostGenerator).Generate(rand.Intn(10)).([]*model.Post)
 
     return user
 }
@@ -549,10 +549,10 @@ You can create a factory from any `database.Generator`.
 factory := database.NewFactory(model.UserGenerator)
 
 // Generate 5 random users
-records := factory.Generate(5)
+records := factory.Generate(5).([]*model.User)
 
 // Generate and insert 5 random users into the database
-insertedRecords := factory.Save(5)
+insertedRecords := factory.Save(5).([]*model.User)
 ```
 
 Note that generated records will not have an ID if they are not inserted into the database.
@@ -567,7 +567,7 @@ It is possible to override some of the generated data if needed, for example if 
 override := &model.User{
     Name: "Jérémy",
 }
-records := factory.Override(override).Generate(10)
+records := factory.Override(override).Generate(10).([]*model.User)
 // All generated records will have the same name: "Jérémy"
 ```
 
@@ -602,17 +602,21 @@ Set an override model for generated records. Values present in the override mode
 
 Generate a number of records using the given factory.
 
-| Parameters   | Return          |
-|--------------|-----------------|
-| `count uint` | `[]interface{}` |
+Returns a slice of the actual type of the generated records, meaning you can type-assert safely.
+
+| Parameters  | Return        |
+|-------------|---------------|
+| `count int` | `interface{}` |
 
 #### Factory.Save
 
-Generate a number of records using the given factory, insert them in the database and return the inserted records.
+Save generate a number of records using the given factory, insert them in the database and return the inserted records.
 
-| Parameters   | Return          |
-|--------------|-----------------|
-| `count uint` | `[]interface{}` |
+The returned slice is a slice of the actual type of the generated records, meaning you can type-assert safely.
+
+| Parameters  | Return        |
+|-------------|---------------|
+| `count int` | `interface{}` |
 
 
 ### Seeders

@@ -60,6 +60,8 @@ meta:
     - Added the ability to regsiter new SQL dialects to use with GORM.
     - Use `utf8mb4` by default in database options.
     - Added a short alias for `database.GetConnection()`: `database.Conn()`.
+    - Factories now use batch insert.
+    - Factories now return `interface{}` instead of `[]interface{}`. The actual type of the returned value is a slice of the the type of what is returned by your generator, so you can type-assert safely.
 - Status handlers improvements
     - Export panic and error status handlers so they can be expanded easily.
     - Added `goyave.ValidationStatusHandler()`, a status handler for validation errors. Therefore, the format in which validation errors are sent to the client can be customized by using your own status handler for the HTTP status 400 and 422.

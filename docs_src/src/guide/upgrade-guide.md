@@ -143,6 +143,16 @@ Finally, `config.Register()` function has changed signature. See the [configurat
   - If you were just using `len(body)`, just replace it with `length`.
   - If you were using the content of the body in your logger, you will have to implement a [chained writer](./basics/responses.html#chained-writers).
 - Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
+- Factories now return `interface{}` instead of `[]interface{}`. The actual type of the returned value is a slice of the the type of what is returned by your generator, so you can type-assert safely.
+
+```go
+records := factory.Generate(5)
+insertedRecords := factory.Save(5)
+
+// Becomes
+records := factory.Generate(5).([]*model.User)
+insertedRecords := factory.Save(5).([]*model.User)
+```
 
 ## v1.0.0 to v2.0.0
 

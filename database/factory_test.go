@@ -74,6 +74,11 @@ func (suite *FactoryTestSuite) TestGenerate() {
 		}
 		factory.Override(override).Generate(2)
 	})
+
+	empty := factory.Generate(0)
+	emptySlice, ok := empty.([]interface{})
+	suite.True(ok)
+	suite.Empty(emptySlice)
 }
 
 func (suite *FactoryTestSuite) TestSave() {

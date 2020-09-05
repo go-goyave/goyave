@@ -22,6 +22,7 @@ type Entry struct {
 	Value            interface{}
 	Type             reflect.Kind
 	AuthorizedValues []interface{} // Leave empty for "any"
+	// TODO validate slices too? slices of objects?
 }
 
 var config object

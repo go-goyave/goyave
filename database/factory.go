@@ -40,6 +40,9 @@ func (f *Factory) Override(override interface{}) *Factory {
 //
 //  factory.Generate(5).([]*User)
 func (f *Factory) Generate(count int) interface{} {
+	if count <= 0 {
+		return []interface{}{}
+	}
 	var t reflect.Type
 	var slice reflect.Value
 	for i := 0; i < count; i++ {

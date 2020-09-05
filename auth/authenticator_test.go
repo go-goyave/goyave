@@ -10,7 +10,7 @@ import (
 	"github.com/System-Glitch/goyave/v3/database"
 	"gorm.io/gorm"
 
-	_ "gorm.io/driver/mysql"
+	_ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
 )
 
 type TestUser struct {

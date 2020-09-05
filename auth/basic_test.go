@@ -10,7 +10,7 @@ import (
 	"github.com/System-Glitch/goyave/v3"
 	"github.com/System-Glitch/goyave/v3/database"
 
-	_ "gorm.io/driver/mysql"
+	_ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
 )
 
 type BasicAuthenticatorTestSuite struct {

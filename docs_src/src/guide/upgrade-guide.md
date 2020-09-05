@@ -135,14 +135,12 @@ If you are using the `auth` package (basic auth, JWT), you will need to update y
 
 Finally, `config.Register()` function has changed signature. See the [configuration documentation](./configuration.html#custom-config-entries) for more details on how to migrate.
 
-### Minor changes
+### Database changes
 
-- Recovery middleware now correctly handles panics with a `nil` value. You may have to update your custom status handler for the HTTP `500` error code.
-- Log `Formatter` now receive the length of the response (in bytes) instead of the full body.
-  - `log.Formatter` is now `func(now time.Time, response *goyave.Response, request *goyave.Request, length int) string`.
-  - If you were just using `len(body)`, just replace it with `length`.
-  - If you were using the content of the body in your logger, you will have to implement a [chained writer](./basics/responses.html#chained-writers).
-- Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
+- Goyave has moved to [GORM v2](https://gorm.io/). Read the [release note](https://gorm.io/docs/v2_release_note.html) to learn more about what changed.
+  - In your imports, replace all occurrences of `github.com/jinzhu/gorm` with `gorm.io/gorm`.
+  - In your imports, replace all occurrences of `github.com/jinzhu/gorm/dialects/(.*?)` with `github.com/System-Glitch/goyave/v3/database/dialect/$1`.
+  - Run `go mod tidy` to remove the old version of gorm.
 - Factories now return `interface{}` instead of `[]interface{}`. The actual type of the returned value is a slice of the the type of what is returned by your generator, so you can type-assert safely.
 
 ```go
@@ -153,6 +151,15 @@ insertedRecords := factory.Save(5)
 records := factory.Generate(5).([]*model.User)
 insertedRecords := factory.Save(5).([]*model.User)
 ```
+
+### Minor changes
+
+- Recovery middleware now correctly handles panics with a `nil` value. You may have to update your custom status handler for the HTTP `500` error code.
+- Log `Formatter` now receive the length of the response (in bytes) instead of the full body.
+  - `log.Formatter` is now `func(now time.Time, response *goyave.Response, request *goyave.Request, length int) string`.
+  - If you were just using `len(body)`, just replace it with `length`.
+  - If you were using the content of the body in your logger, you will have to implement a [chained writer](./basics/responses.html#chained-writers).
+- Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
 
 ## v1.0.0 to v2.0.0
 

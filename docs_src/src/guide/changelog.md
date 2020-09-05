@@ -54,6 +54,7 @@ meta:
 **Motivation:** *Configuration was without a doubt one of the weakest and inflexible feature of the framework. It was possible to use objects in custom entries, but not for core config, but it was inconvenient because it required a lot of type assertions. Moreover, core config entries were not handled the same as custom ones, which was a lack of openness. Hopefully, this revamped system will cover more potential use-cases, ease plugin development and allow you to produce cleaner code and configuration files.*
 
 - Database improvements
+    - Goyave has moved to [GORM v2](https://gorm.io/). Read the [release note](https://gorm.io/docs/v2_release_note.html) to learn more about what changed.
     - Protect the database instance with mutex.
     - `database.Close()` can now return errors.
     - Added [database connection initializers](./basics/database.html#connection-initializers).

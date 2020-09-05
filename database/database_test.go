@@ -140,7 +140,6 @@ func (suite *DatabaseTestSuite) TestInitializers() {
 
 	AddInitializer(func(db *gorm.DB) {
 		db.Statement.Settings.Store("gorm:table_options", "ENGINE=InnoDB")
-		// TODO update docs for initializers
 	})
 	suite.Len(initializers, 2)
 

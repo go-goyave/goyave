@@ -120,6 +120,8 @@ You cannot override a dialect that already exists.
 
 Returns the global database connection pool. Creates a new connection pool if no connection is available.
 
+By default, the [`PrepareStmt`](https://gorm.io/docs/performance.html#Caches-Prepared-Statement) option is **enabled**.
+
 The connections will be closed automatically on server shutdown so you don't need to call `Close()` when you're done with the database.
 
 
@@ -166,15 +168,14 @@ database.Close()
 
 ### Connection initializers
 
-You can modify the global instance of `*gorm.DB` when it's created (and re-created, after a `Close()` for example) using `Initializer` functions. This is useful if you want to set global settings such as `gorm:auto_preload` and make them effective for you whole application. It is recommended to register initializers **before** starting the application.
-
-In your initializers, use `db.InstantSet()` and not `db.Set()`, since the latter clones the `gorm.DB` instance instead of modifying it.
+You can modify the global instance of `*gorm.DB` when it's created (and re-created, after a `Close()` for example) using `Initializer` functions. This is useful if you want to set global settings such as `gorm:table_options` and make them effective for you whole application. It is recommended to register initializers **before** starting the application.
 
 Initializer functions are called in order, meaning that functions added last can override settings defined by previous ones.
 
 ```go
 database.AddInitializer(func(db *gorm.DB) {
-    db.InstantSet("gorm:auto_preload", true)
+    db.Config.SkipDefaultTransaction = true
+    db.Statement.Settings.Store("gorm:table_options", "ENGINE=InnoDB")
 })
 ```
 
@@ -185,7 +186,8 @@ database.AddInitializer(func(db *gorm.DB) {
 | `initializer database.Initializer` | `void` |
 
 ::: tip
-`database.Initializer` is an alias for `func(*gorm.DB)`
+- `database.Initializer` is an alias for `func(*gorm.DB)`
+- Useful link related to initializers: [GORM config](https://gorm.io/docs/gorm_config.html)
 :::
 
 #### database.ClearInitializers

@@ -84,9 +84,6 @@ func Close() error {
 //
 // Initializer functions are called in order, meaning that functions
 // added last can override settings defined by previous ones.
-//
-// Use `db.InstantSet()` and not `db.Set()`, since the latter clones
-// the gorm.DB instance instead of modifying it.
 func AddInitializer(initializer Initializer) {
 	initializers = append(initializers, initializer)
 }
@@ -169,8 +166,9 @@ func newConnection() *gorm.DB {
 
 	dsn := dialect.buildDSN()
 	db, err := gorm.Open(dialect.initializer(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logLevel),
-	}) // TODO gorm config
+		PrepareStmt: true,
+		Logger:      logger.Default.LogMode(logLevel),
+	})
 	if err != nil {
 		panic(err)
 	}

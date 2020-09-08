@@ -53,7 +53,7 @@ func GzipLevel(level int) goyave.Middleware {
 	}
 	return func(next goyave.Handler) goyave.Handler {
 		return func(response *goyave.Response, request *goyave.Request) {
-			if !acceptsGzip(request) {
+			if !acceptsGzip(request) || request.Header().Get("Upgrade") != "" {
 				next(response, request)
 				return
 			}

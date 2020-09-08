@@ -112,6 +112,56 @@ func (suite *GzipMiddlewareTestSuite) TestGzipMiddlewareInvalidLevel() {
 	suite.Panics(func() { GzipLevel(10) })
 }
 
+func (suite *GzipMiddlewareTestSuite) TestUpgrade() {
+	suite.RunServer(func(router *goyave.Router) {
+		router.Middleware(Gzip())
+		router.Route("GET", "/test", func(response *goyave.Response, r *goyave.Request) {
+			response.String(http.StatusOK, "hello world")
+		})
+	}, func() {
+		headers := map[string]string{
+			"Accept-Encoding": "gzip",
+			"Upgrade":         "example/1, foo/2",
+		}
+		resp, err := suite.Get("/test", headers)
+		if err != nil {
+			suite.Fail(err.Error())
+		}
+		defer resp.Body.Close()
+		body := suite.GetBody(resp)
+		suite.Equal("hello world", string(body))
+		suite.NotEqual("gzip", resp.Header.Get("Content-Encoding"))
+	})
+}
+
+func (suite *GzipMiddlewareTestSuite) TestWriteFile() {
+	suite.RunServer(func(router *goyave.Router) {
+		router.Middleware(Gzip())
+		router.Route("GET", "/test", func(response *goyave.Response, r *goyave.Request) {
+			response.File("resources/custom_config.json")
+		})
+	}, func() {
+		resp, err := suite.Get("/test", map[string]string{"Accept-Encoding": "gzip"})
+		if err != nil {
+			suite.Fail(err.Error())
+		}
+		defer resp.Body.Close()
+
+		// reader, err := gzip.NewReader(resp.Body)
+		// if err != nil {
+		// 	panic(err)
+		// }
+
+		// body, err := ioutil.ReadAll(reader)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		body, _ := ioutil.ReadAll(resp.Body)
+		suite.Equal("application/json", resp.Header.Get("Content-Type"))
+		suite.Equal("{\n    \"custom-entry\": \"value\"\n}", string(body))
+	})
+}
+
 func TestGzipMiddlewareTestSuite(t *testing.T) {
 	goyave.RunTest(t, new(GzipMiddlewareTestSuite))
 }

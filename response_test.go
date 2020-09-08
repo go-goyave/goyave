@@ -467,6 +467,24 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	suite.Equal(0, response.status)
 }
 
+func (suite *ResponseTestSuite) TestHead() {
+	suite.RunServer(func(router *Router) {
+		router.Route("GET", "/test", func(response *Response, r *Request) {
+			response.String(http.StatusOK, "hello world")
+		})
+	}, func() {
+		resp, err := suite.Request("HEAD", "/test", nil, nil)
+		if err != nil {
+			suite.Fail(err.Error())
+		}
+		defer resp.Body.Close()
+
+		body := suite.GetBody(resp)
+		suite.Equal("application/json", resp.Header.Get("Content-Type"))
+		suite.Empty(body)
+	})
+}
+
 // ------------------------
 
 type testWriter struct {

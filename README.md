@@ -658,9 +658,10 @@ You can support also me on Patreon:
     <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
 
-I'm very grateful to my patron:
+I'm very grateful to my patrons:
 
 - Ben Hyrman
+- Massimiliano Bertinetti
 
 ### Contributors
 

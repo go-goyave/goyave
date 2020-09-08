@@ -41,11 +41,13 @@ meta:
 - Configuration system has been revamped.
     - Added support for tree-like configurations, allowing for better categorization. Nested values can be accessed using dot-separated path.
     - Improved validation: nested entries can now be validated too and all entries can have authorized values. Optional entries can now be validated too.
+    - Improved support for slices. The validation system is also able to check slices.
     - Entries that are validated with the `int` type are now automatically converted from `float64` if they don't have decimal places. It is no longer necessary to manually cast `float64` that are supposed to be integers.
     - More openness: entries can be registered with a default value, their type and authorized values from any package. This allows config entries required by a specific package to be loaded only if the latter is imported.
     - Core configuration has been sorted in categories. This is a breaking change that will require you to update your configuration files.
     - Entries having a `nil` value are now considered unset.
     - Added accessors `GetInt()` and `GetFloat()`.
+    - Added slice accessors: `GetStringSlice()`, `GetBoolSlice()`, `GetIntSlice()`, `GetFloatSlice()`
     - Added `LoadFrom()`, letting you load a configuration file from a custom path.
     - Added the ability to use environment variables in configuration files.
     - Bug fix: `config.IsLoaded()` returned `true` even if config failed to load.

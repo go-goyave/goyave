@@ -22,11 +22,13 @@ func init() {
 	config.Register("auth.jwt.secret", config.Entry{
 		Value:            nil,
 		Type:             reflect.String,
+		IsSlice:          false,
 		AuthorizedValues: []interface{}{},
 	})
 	config.Register("auth.jwt.expiry", config.Entry{
 		Value:            300,
 		Type:             reflect.Int,
+		IsSlice:          false,
 		AuthorizedValues: []interface{}{},
 	})
 }

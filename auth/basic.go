@@ -57,11 +57,13 @@ func init() {
 	config.Register("auth.basic.username", config.Entry{
 		Value:            nil,
 		Type:             reflect.String,
+		IsSlice:          false,
 		AuthorizedValues: []interface{}{},
 	})
 	config.Register("auth.basic.password", config.Entry{
 		Value:            nil,
 		Type:             reflect.String,
+		IsSlice:          false,
 		AuthorizedValues: []interface{}{},
 	})
 }

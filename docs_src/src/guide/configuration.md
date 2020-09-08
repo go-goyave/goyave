@@ -179,17 +179,30 @@ You can use environment variables in your configuration file. Environment variab
 
 `int`, `float64` and `bool` values are supported. If the configuration entry is expected to be of one of these types, the content of the environment variable will be automatically converted. If the conversion fails, a configuration loading error will be returned.
 
-If an environment variable mentioned in a configuration file is not set, the configuration validation will not pass.
+If an environment variable mentioned in a configuration file is not set, the configuration validation will not pass. Environment variables are not supported inside slices.
 
 ### Getting a value
 
 All entries are accessible using **dot-separated paths**. If you want to access the `name` entry in the `app` category, the key will be `app.name`.
 
+::: table
+[Get](#config-get)
+[GetString](#config-getstring)
+[GetBool](#config-getbool)
+[GetInt](#config-getint)
+[GetFloat](#config-getfloat)
+[GetStringSlice](#config-getstringslice)
+[GetBoolSlice](#config-getboolslice)
+[GetIntSlice](#config-getintslice)
+[GetFloatSlice](#config-getfloatslice)
+[Has](#config-has)
+:::
+
 #### config.Get
 
 Get a generic config entry. 
 
-Prefer using the `GetString`, `GetBool`, `GetInt` and `GetFloat` accessors. If you need a type not covered by those accessors, use `config.Get`. You may need to type-assert the returned value before using it. You can do so safely as the config values and types are validated.
+Prefer using the `GetString`, `GetBool`, `GetInt`, `GetFloat`, ... accessors. If you need a type not covered by those accessors, use `config.Get`. You may need to type-assert the returned value before using it. You can do so safely as the config values and types are validated.
 
 Panics if the entry doesn't exist.
 
@@ -258,6 +271,66 @@ Get a float config entry. Panics if the entry doesn't exist or is not a `float64
 config.GetInt("server.port") // 8080
 ```
 
+#### config.GetStringSlice
+
+<p><Badge text="Since v3.0.0"/></p>
+
+Get a string slice config entry. Panics if the entry doesn't exist or is not a `[]string`.
+
+| Parameters   | Return              |
+|--------------|---------------------|
+| `key string` | `[]string` or panic |
+
+**Example:**
+``` go
+config.GetStringSlice("stringSlice") // [val1 val2]
+```
+
+#### config.GetBoolSlice
+
+<p><Badge text="Since v3.0.0"/></p>
+
+Get a bool slice config entry. Panics if the entry doesn't exist or is not a `[]bool`.
+
+| Parameters   | Return            |
+|--------------|-------------------|
+| `key string` | `[]bool` or panic |
+
+**Example:**
+``` go
+config.GetBoolSlice("boolSlice") // [true false]
+```
+
+#### config.GetIntSlice
+
+<p><Badge text="Since v3.0.0"/></p>
+
+Get an int slice config entry. Panics if the entry doesn't exist or is not a `[]int`.
+
+| Parameters   | Return           |
+|--------------|------------------|
+| `key string` | `[]int` or panic |
+
+**Example:**
+``` go
+config.GetIntSlice("intSlice") // [3 5]
+```
+
+#### config.GetFloatSlice
+
+<p><Badge text="Since v3.0.0"/></p>
+
+Get a float64 slice config entry. Panics if the entry doesn't exist or is not a `[]float64`.
+
+| Parameters   | Return               |
+|--------------|----------------------|
+| `key string` | `[]float64` or panic |
+
+**Example:**
+``` go
+config.GetFloatSlice("floatSlice") // [1.42 3.24]
+```
+
 #### config.Has
 
 Check if a config entry exists.
@@ -310,6 +383,8 @@ Each module should use its own category and use a name both expressive and uniqu
 
 To register an entry without a default value (only specify how it will be validated), set `Entry.Value` to `nil`.
 
+Is `IsSlice` is `true`, the value of the entry will be a slice of the given `Type`. Authorized values for slices define the values that can be used inside the slice. It doesn't represent the value of the slice itself (content and order).
+
 Panics if an entry already exists for this key and is not identical to the one passed as parameter of this function. On the other hand, if the entries are identical, no conflict is expected so the configuration is left in its current state.
 
 | Parameters          | Return          |
@@ -323,6 +398,7 @@ func init() {
   config.Register("my-plugin.name", config.Entry{
     Value:            "default value",
     Type:             reflect.String,
+    IsSlice:          false,
     AuthorizedValues: []interface{}{},
   })
   
@@ -330,7 +406,16 @@ func init() {
   config.Register("my-plugin.protocol", config.Entry{
     Value:            nil,
     Type:             reflect.String,
+    IsSlice:          false,
     AuthorizedValues: []interface{}{"ftp", "sftp", "scp"},
+  })
+
+  // Slice
+  config.Register("my-plugin.remoteHosts", config.Entry{
+    Value:            []string{"first host", "second host"},
+    Type:             reflect.String,
+    IsSlice:          true,
+    AuthorizedValues: []interface{}{},
   })
 }
 ```

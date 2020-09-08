@@ -21,45 +21,45 @@ type object map[string]interface{}
 type Entry struct {
 	Value            interface{}
 	Type             reflect.Kind
+	IsSlice          bool
 	AuthorizedValues []interface{} // Leave empty for "any"
-	// TODO validate slices too? slices of objects?
 }
 
 var config object
 
 var configDefaults object = object{
 	"app": object{
-		"name":            &Entry{"goyave", reflect.String, []interface{}{}},
-		"environment":     &Entry{"localhost", reflect.String, []interface{}{}},
-		"debug":           &Entry{true, reflect.Bool, []interface{}{}},
-		"defaultLanguage": &Entry{"en-US", reflect.String, []interface{}{}},
+		"name":            &Entry{"goyave", reflect.String, false, []interface{}{}},
+		"environment":     &Entry{"localhost", reflect.String, false, []interface{}{}},
+		"debug":           &Entry{true, reflect.Bool, false, []interface{}{}},
+		"defaultLanguage": &Entry{"en-US", reflect.String, false, []interface{}{}},
 	},
 	"server": object{
-		"host":          &Entry{"127.0.0.1", reflect.String, []interface{}{}},
-		"domain":        &Entry{"", reflect.String, []interface{}{}},
-		"protocol":      &Entry{"http", reflect.String, []interface{}{"http", "https"}},
-		"port":          &Entry{8080, reflect.Int, []interface{}{}},
-		"httpsPort":     &Entry{8081, reflect.Int, []interface{}{}},
-		"timeout":       &Entry{10, reflect.Int, []interface{}{}},
-		"maxUploadSize": &Entry{10.0, reflect.Float64, []interface{}{}},
-		"maintenance":   &Entry{false, reflect.Bool, []interface{}{}},
+		"host":          &Entry{"127.0.0.1", reflect.String, false, []interface{}{}},
+		"domain":        &Entry{"", reflect.String, false, []interface{}{}},
+		"protocol":      &Entry{"http", reflect.String, false, []interface{}{"http", "https"}},
+		"port":          &Entry{8080, reflect.Int, false, []interface{}{}},
+		"httpsPort":     &Entry{8081, reflect.Int, false, []interface{}{}},
+		"timeout":       &Entry{10, reflect.Int, false, []interface{}{}},
+		"maxUploadSize": &Entry{10.0, reflect.Float64, false, []interface{}{}},
+		"maintenance":   &Entry{false, reflect.Bool, false, []interface{}{}},
 		"tls": object{
-			"cert": &Entry{nil, reflect.String, []interface{}{}},
-			"key":  &Entry{nil, reflect.String, []interface{}{}},
+			"cert": &Entry{nil, reflect.String, false, []interface{}{}},
+			"key":  &Entry{nil, reflect.String, false, []interface{}{}},
 		},
 	},
 	"database": object{
-		"connection":         &Entry{"none", reflect.String, []interface{}{}},
-		"host":               &Entry{"127.0.0.1", reflect.String, []interface{}{}},
-		"port":               &Entry{3306, reflect.Int, []interface{}{}},
-		"name":               &Entry{"goyave", reflect.String, []interface{}{}},
-		"username":           &Entry{"root", reflect.String, []interface{}{}},
-		"password":           &Entry{"root", reflect.String, []interface{}{}},
-		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", reflect.String, []interface{}{}},
-		"maxOpenConnections": &Entry{20, reflect.Int, []interface{}{}},
-		"maxIdleConnections": &Entry{20, reflect.Int, []interface{}{}},
-		"maxLifetime":        &Entry{300, reflect.Int, []interface{}{}},
-		"autoMigrate":        &Entry{false, reflect.Bool, []interface{}{}},
+		"connection":         &Entry{"none", reflect.String, false, []interface{}{}},
+		"host":               &Entry{"127.0.0.1", reflect.String, false, []interface{}{}},
+		"port":               &Entry{3306, reflect.Int, false, []interface{}{}},
+		"name":               &Entry{"goyave", reflect.String, false, []interface{}{}},
+		"username":           &Entry{"root", reflect.String, false, []interface{}{}},
+		"password":           &Entry{"root", reflect.String, false, []interface{}{}},
+		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", reflect.String, false, []interface{}{}},
+		"maxOpenConnections": &Entry{20, reflect.Int, false, []interface{}{}},
+		"maxIdleConnections": &Entry{20, reflect.Int, false, []interface{}{}},
+		"maxLifetime":        &Entry{300, reflect.Int, false, []interface{}{}},
+		"autoMigrate":        &Entry{false, reflect.Bool, false, []interface{}{}},
 	},
 }
 
@@ -233,6 +233,46 @@ func GetFloat(key string) float64 {
 	return val
 }
 
+// GetStringSlice a config entry as []string.
+// Panics if entry is not a string slice or if it doesn't exist.
+func GetStringSlice(key string) []string {
+	str, ok := Get(key).([]string)
+	if !ok {
+		panic(fmt.Sprintf("Config entry \"%s\" is not a string slice", key))
+	}
+	return str
+}
+
+// GetBoolSlice a config entry as []bool.
+// Panics if entry is not a bool slice or if it doesn't exist.
+func GetBoolSlice(key string) []bool {
+	str, ok := Get(key).([]bool)
+	if !ok {
+		panic(fmt.Sprintf("Config entry \"%s\" is not a bool slice", key))
+	}
+	return str
+}
+
+// GetIntSlice a config entry as []int.
+// Panics if entry is not an int slice or if it doesn't exist.
+func GetIntSlice(key string) []int {
+	str, ok := Get(key).([]int)
+	if !ok {
+		panic(fmt.Sprintf("Config entry \"%s\" is not an int slice", key))
+	}
+	return str
+}
+
+// GetFloatSlice a config entry as []float64.
+// Panics if entry is not a float slice or if it doesn't exist.
+func GetFloatSlice(key string) []float64 {
+	str, ok := Get(key).([]float64)
+	if !ok {
+		panic(fmt.Sprintf("Config entry \"%s\" is not a float64 slice", key))
+	}
+	return str
+}
+
 // Has check if a config entry exists.
 func Has(key string) bool {
 	_, ok := get(key)
@@ -268,7 +308,7 @@ func Set(key string, value interface{}) {
 		}
 		category[entryKey] = entry
 	} else {
-		category[entryKey] = &Entry{value, reflect.TypeOf(value).Kind(), []interface{}{}}
+		category[entryKey] = makeEntryFromValue(value)
 	}
 }
 
@@ -366,7 +406,18 @@ func loadDefaults(src object, dst object) {
 			dst[k] = sub
 		} else {
 			entry := v.(*Entry)
-			dst[k] = &Entry{entry.Value, entry.Type, entry.AuthorizedValues}
+			value := entry.Value
+			t := reflect.TypeOf(value)
+			if t != nil && t.Kind() == reflect.Slice {
+				list := reflect.ValueOf(value)
+				length := list.Len()
+				slice := reflect.MakeSlice(reflect.SliceOf(t.Elem()), 0, length)
+				for i := 0; i < length; i++ {
+					slice = reflect.Append(slice, list.Index(i))
+				}
+				value = slice.Interface()
+			}
+			dst[k] = &Entry{value, entry.Type, entry.IsSlice, entry.AuthorizedValues}
 		}
 	}
 }
@@ -394,10 +445,21 @@ func override(src object, dst object) error {
 			// If entry doesn't exist (and is not registered),
 			// register it with the type of the type given here
 			// and "any" authorized values.
-			dst[k] = &Entry{v, reflect.TypeOf(v).Kind(), []interface{}{}}
+			dst[k] = makeEntryFromValue(v)
 		}
 	}
 	return nil
+}
+
+func makeEntryFromValue(value interface{}) *Entry {
+	isSlice := false
+	t := reflect.TypeOf(value)
+	kind := t.Kind()
+	if kind == reflect.Slice {
+		kind = t.Elem().Kind()
+		isSlice = true
+	}
+	return &Entry{value, kind, isSlice, []interface{}{}}
 }
 
 func readConfigFile(file string) (object, error) {
@@ -456,25 +518,64 @@ func (e *Entry) validate(key string) error {
 		return err
 	}
 
-	kind := reflect.TypeOf(e.Value).Kind()
+	t := reflect.TypeOf(e.Value)
+	kind := t.Kind()
+	if e.IsSlice && kind == reflect.Slice {
+		kind = t.Elem().Kind()
+	}
 	if kind != e.Type {
 		if !e.tryIntConversion(kind) {
-			return fmt.Errorf("%q type must be %s", key, e.Type)
+			var message string
+			if e.IsSlice {
+				message = "%q must be a slice of %s"
+			} else {
+				message = "%q type must be %s"
+			}
+
+			return fmt.Errorf(message, key, e.Type)
 		}
 		return nil
 	}
 
-	if len(e.AuthorizedValues) > 0 && !helper.Contains(e.AuthorizedValues, e.Value) {
-		return fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
+	if len(e.AuthorizedValues) > 0 {
+		if e.IsSlice {
+			// Accepted values for slices define the values that can be used inside the slice
+			// It doesn't represent the value of the slice itself (content and order)
+			list := reflect.ValueOf(e.Value)
+			length := list.Len()
+			authorizedValuesList := reflect.ValueOf(e.AuthorizedValues)
+			for i := 0; i < length; i++ {
+				if !e.authorizedValuesContains(authorizedValuesList, list.Index(i).Interface()) {
+					return fmt.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
+				}
+			}
+		} else if !helper.Contains(e.AuthorizedValues, e.Value) {
+			return fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
+		}
 	}
 
 	return nil
 }
 
+// authorizedValuesContains avoids to recreate the reflect.Value of the list for every check
+func (e *Entry) authorizedValuesContains(list reflect.Value, value interface{}) bool {
+	length := list.Len()
+	for i := 0; i < length; i++ {
+		if list.Index(i).Interface() == value {
+			return true
+		}
+	}
+	return false
+}
+
 func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
 	if kind == reflect.Float64 && e.Type == reflect.Int {
-		intVal := int(e.Value.(float64))
-		if e.Value == float64(intVal) {
+		if e.IsSlice {
+			return e.convertIntSlice()
+		}
+
+		intVal, ok := e.convertInt(e.Value.(float64))
+		if ok {
 			e.Value = intVal
 			return true
 		}
@@ -483,39 +584,72 @@ func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
 	return false
 }
 
+func (e *Entry) convertInt(value float64) (int, bool) {
+	intVal := int(value)
+	if value == float64(intVal) {
+		return intVal, true
+	}
+	return 0, false
+}
+
+func (e *Entry) convertIntSlice() bool {
+	original := e.Value.([]float64)
+	slice := make([]int, len(original))
+	for k, v := range original {
+		intVal, ok := e.convertInt(v)
+		if !ok {
+			return false
+		}
+		slice[k] = intVal
+	}
+	e.Value = slice
+	return true
+}
+
 func (e *Entry) tryEnvVarConversion(key string) error {
 	str, ok := e.Value.(string)
-	if ok && strings.HasPrefix(str, "${") && strings.HasSuffix(str, "}") {
+	if ok {
+		val, err := e.convertEnvVar(str, key)
+		if err == nil && val != nil {
+			e.Value = val
+		}
+		return err
+	}
+
+	// TODO support env vars in slices? (would require creating new slices with reflection)
+
+	return nil
+}
+
+func (e *Entry) convertEnvVar(str, key string) (interface{}, error) {
+	if strings.HasPrefix(str, "${") && strings.HasSuffix(str, "}") {
 		varName := str[2 : len(str)-1]
 		value, set := os.LookupEnv(varName)
 		if !set {
-			return fmt.Errorf("%q: %q environment variable is not set", key, varName)
+			return nil, fmt.Errorf("%q: %q environment variable is not set", key, varName)
 		}
 
 		switch e.Type {
 		case reflect.Int:
 			if i, err := strconv.Atoi(value); err == nil {
-				e.Value = i
-			} else {
-				return fmt.Errorf("%q could not be converted to int from environment variable %q of value %q", key, varName, value)
+				return i, nil
 			}
+			return nil, fmt.Errorf("%q could not be converted to int from environment variable %q of value %q", key, varName, value)
 		case reflect.Float64:
 			if f, err := strconv.ParseFloat(value, 64); err == nil {
-				e.Value = f
-			} else {
-				return fmt.Errorf("%q could not be converted to float64 from environment variable %q of value %q", key, varName, value)
+				return f, nil
 			}
+			return nil, fmt.Errorf("%q could not be converted to float64 from environment variable %q of value %q", key, varName, value)
 		case reflect.Bool:
-			if f, err := strconv.ParseBool(value); err == nil {
-				e.Value = f
-			} else {
-				return fmt.Errorf("%q could not be converted to bool from environment variable %q of value %q", key, varName, value)
+			if b, err := strconv.ParseBool(value); err == nil {
+				return b, nil
 			}
+			return nil, fmt.Errorf("%q could not be converted to bool from environment variable %q of value %q", key, varName, value)
 		default:
 			// Keep value as string if type is not supported and let validation do its job
-			e.Value = value
+			return value, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }

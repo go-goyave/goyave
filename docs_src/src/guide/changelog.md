@@ -74,6 +74,7 @@ meta:
 - Recovery middleware now correctly handles panics with a `nil` value.
 - Test can now be run without the `-p 1` flag thanks to a lock added to the `goyave.RunTest` method. Therefore, `goyave.TestSuite` still **don't run in parallel** but are safe to use with the typical test command.
 - Cache the regex used by `helper.ParseMultiValuesHeader()` to improve performance. This also improves the performance of the language middleware.
+- Bug fix: data under validation wasn't considered from JSON payload if the content type included the charset.
 
 ## v2.10.x
 

@@ -17,11 +17,22 @@ type GzipMiddlewareTestSuite struct {
 
 type closeableChildWriter struct {
 	io.Writer
-	closed bool
+	closed     bool
+	preWritten bool
+}
+
+func (w *closeableChildWriter) PreWrite(b []byte) {
+	w.preWritten = true
+	if pr, ok := w.Writer.(goyave.PreWriter); ok {
+		pr.PreWrite(b)
+	}
 }
 
 func (w *closeableChildWriter) Close() error {
 	w.closed = true
+	if wr, ok := w.Writer.(io.Closer); ok {
+		return wr.Close()
+	}
 	return nil
 }
 
@@ -64,7 +75,9 @@ func (suite *GzipMiddlewareTestSuite) TestCloseNonCloseable() {
 		Writer:         writer,
 		ResponseWriter: recorder,
 	}
-	if _, err := compressWriter.Write([]byte("hello world")); err != nil {
+	data := []byte("hello world")
+	compressWriter.PreWrite(data)
+	if _, err := compressWriter.Write(data); err != nil {
 		panic(err)
 	}
 	compressWriter.Close()
@@ -98,12 +111,24 @@ func (suite *GzipMiddlewareTestSuite) TestCloseChild() {
 			response.String(http.StatusOK, "hello world")
 		})
 	}, func() {
-		resp, err := suite.Get("/test", nil)
+		resp, err := suite.Get("/test", map[string]string{"Accept-Encoding": "gzip"})
 		if err != nil {
 			suite.Fail(err.Error())
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+		reader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			panic(err)
+		}
+
+		body, err := ioutil.ReadAll(reader)
+		if err != nil {
+			panic(err)
+		}
+
+		suite.Equal("hello world", string(body))
 		suite.True(closeableWriter.closed)
+		suite.True(closeableWriter.preWritten)
 	})
 }
 
@@ -147,16 +172,15 @@ func (suite *GzipMiddlewareTestSuite) TestWriteFile() {
 		}
 		defer resp.Body.Close()
 
-		// reader, err := gzip.NewReader(resp.Body)
-		// if err != nil {
-		// 	panic(err)
-		// }
+		reader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			panic(err)
+		}
 
-		// body, err := ioutil.ReadAll(reader)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(reader)
+		if err != nil {
+			panic(err)
+		}
 		suite.Equal("application/json", resp.Header.Get("Content-Type"))
 		suite.Equal("{\n    \"custom-entry\": \"value\"\n}", string(body))
 	})

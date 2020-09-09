@@ -19,6 +19,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// PreWriter is a writter that needs to alter the response headers or status
+// before they are written.
+// If implemented, PreWrite will be called right before the Write operation.
+type PreWriter interface {
+	PreWrite(b []byte)
+}
+
 // Response represents a controller response.
 type Response struct {
 	responseWriter http.ResponseWriter
@@ -50,19 +57,30 @@ func newResponse(writer http.ResponseWriter, rawRequest *http.Request) *Response
 }
 
 // --------------------------------------
-// http.ResponseWriter implementation
+// PreWriter implementation
 
-// Write writes the data as a response.
-// See http.ResponseWriter.Write
-func (r *Response) Write(data []byte) (int, error) {
+// PreWrite writes the response header after calling PreWrite on the
+// child writer if it implements PreWriter.
+func (r *Response) PreWrite(b []byte) {
 	r.empty = false
+	if pr, ok := r.writer.(PreWriter); ok {
+		pr.PreWrite(b)
+	}
 	if !r.wroteHeader {
 		if r.status == 0 {
 			r.status = 200
 		}
 		r.WriteHeader(r.status)
 	}
+}
 
+// --------------------------------------
+// http.ResponseWriter implementation
+
+// Write writes the data as a response.
+// See http.ResponseWriter.Write
+func (r *Response) Write(data []byte) (int, error) {
+	r.PreWrite(data)
 	return r.writer.Write(data)
 }
 
@@ -159,13 +177,13 @@ func (r *Response) JSON(responseCode int, data interface{}) error {
 	helper.RemoveHiddenFields(data)
 
 	r.responseWriter.Header().Set("Content-Type", "application/json")
-	r.WriteHeader(responseCode)
+	r.status = responseCode
 	return json.NewEncoder(r).Encode(data)
 }
 
 // String write a string as a response
 func (r *Response) String(responseCode int, message string) error {
-	r.WriteHeader(responseCode)
+	r.status = responseCode
 	_, err := r.Write([]byte(message))
 	return err
 }
@@ -184,6 +202,7 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	if header.Get("Content-Type") == "" {
 		header.Set("Content-Type", mime)
 	}
+
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := os.Open(file)

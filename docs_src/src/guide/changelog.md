@@ -78,6 +78,10 @@ meta:
 - Cache the regex used by `helper.ParseMultiValuesHeader()` to improve performance. This also improves the performance of the language middleware.
 - Bug fix: data under validation wasn't considered from JSON payload if the content type included the charset.
 - The Gzip middleware will now skip requests that have the `Upgrade` HTTP header set to any value.
+- `response.String()` and `response.JSON()` don't write header before calling `Write` anymore. This behavior prevented middleware and chained writers to alter the response headers.
+- Added `goyave.PreWriter` interface for chained writers needing to alter headers or status before they are written.
+    - Even if this change is not breaking, it is recommended to update all your chained writers to call `PreWrite()` on their child writer if they implement the interface.
+    - Thanks to this change, a bug with the gzip middleware has been fixed: header `Content-Length` wasn't removed, resulting in false information sent to the clients, which in turn failed to decompress the response.
 
 ## v2.10.x
 

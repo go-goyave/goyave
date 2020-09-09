@@ -616,8 +616,6 @@ func (e *Entry) tryEnvVarConversion(key string) error {
 		return err
 	}
 
-	// TODO support env vars in slices? (would require creating new slices with reflection)
-
 	return nil
 }
 

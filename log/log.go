@@ -25,6 +25,7 @@ type Writer struct {
 }
 
 var _ io.Closer = (*Writer)(nil)
+var _ goyave.PreWriter = (*Writer)(nil)
 
 // NewWriter create a new LogWriter.
 // The given Request and Response will be used and passed to the given
@@ -36,6 +37,14 @@ func NewWriter(response *goyave.Response, request *goyave.Request, formatter For
 		writer:    response.Writer(),
 		response:  response,
 		formatter: formatter,
+	}
+}
+
+// PreWrite calls PreWrite on the
+// child writer if it implements PreWriter.
+func (w *Writer) PreWrite(b []byte) {
+	if pr, ok := w.writer.(goyave.PreWriter); ok {
+		pr.PreWrite(b)
 	}
 }
 

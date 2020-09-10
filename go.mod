@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/Code-Hex/uniseg v0.2.0
-	github.com/denisenkom/go-mssqldb v0.0.0-20200831201914-36b6ff1bbc10 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/google/uuid v1.1.2
 	github.com/imdario/mergo v0.3.11

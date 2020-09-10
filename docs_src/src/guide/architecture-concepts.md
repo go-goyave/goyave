@@ -14,7 +14,7 @@ meta:
 
 ## Introduction
 
-Understanding your development tools and knowing what happens in the background is crucial. Mastering your tools and environment incredibly decreases the risk of errors, the ease of debugging and helps making your code work in harmony with the framework. The goal of this section is to give you an overview of the general functioning and design of the framework, to make you more comfortable and confident using it.
+Understanding your development tools and knowing what happens in the background is crucial. Mastering your tools and environment incredibly decreases the risk of errors, eases debugging and helps making your code work in harmony with the framework. The goal of this section is to give you an overview of the general functioning and design of the framework, to make you more comfortable and confident using it.
 
 ## Terminology
 
@@ -108,10 +108,9 @@ The typical and recommended directory structure for Goyave applications is as fo
 │   │   └── *...*
 │   ├── middleware
 │   │   └── *...*
-│   ├── request
-│   │   ├── placeholders.go (*optional*)
-│   │   ├── validation.go (*optional*)
-│   │   └── *...*
+│   ├── validation (*optional*)
+│   │   ├── placeholder.go (*optional*)
+│   │   └── validation.go (*optional*)
 │   └── route
 │       └── routes.go
 │
@@ -149,19 +148,34 @@ The `http` directory contains all the HTTP-related code. This is where most of y
 
 #### HTTP controllers
 
-The `http/controller` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project. Learn more [here](./basics/controllers.html).
+The `http/controller` directory contains the controller packages. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Controller packages typically contain at least two files:
+
+:::vue
+controller
+└── user
+     ├── user.go
+     └── request.go
+:::
+
+The `user.go` file contains the controller hanlders, while the `request.go` file contains the validation rules for each of them.
+
+Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project.
+
+Learn more about controllers [here](./basics/controllers.html), and about validation [here](./basics/validation.html).
 
 #### HTTP middleware
 
 The `http/middleware` directory contains the application middleware. Each middleware should have its own file. Learn more [here](./basics/middleware.html).
     
-#### HTTP request
+#### HTTP validation
 
-The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller.
+The `http/validation` directory contains the custom validation-related code.
 
-This directory can also contain a `placeholders.go` file, which will define validation rule messages placeholders. Learn more [here](./basics/validation.html#placeholders).
+This directory can contain a `validation.go` file, which will define custom validation rules. Learn more [here](./basics/validation.html#custom-rules).
 
-This directory can also contain a `validation.go` file, which will define custom validation rules. Learn more [here](./basics/validation.html#custom-rules).
+This directory can also contain a `placeholder.go` file, which will define validation rule messages placeholders. Learn more [here](./basics/validation.html#placeholders).
+
+This package is usually imported in `kernel.go` to call the `init()` functions defined in the two files mentionned above.
 
 #### HTTP Routes
 

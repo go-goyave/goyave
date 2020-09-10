@@ -5,12 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/jinzhu/gorm"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"gorm.io/gorm"
 
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
 )
 
 type TestUser struct {
@@ -36,7 +36,7 @@ type AuthenticationTestSuite struct {
 }
 
 func (suite *AuthenticationTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 
@@ -111,7 +111,7 @@ func (suite *AuthenticationTestSuite) TearDownTest() {
 }
 
 func (suite *AuthenticationTestSuite) TearDownSuite() {
-	database.GetConnection().DropTable(&TestUser{})
+	database.Conn().Migrator().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

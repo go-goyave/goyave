@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/cors"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/cors"
 )
 
 type RouterTestSuite struct {
@@ -54,15 +54,15 @@ func (suite *RouterTestSuite) TestNewRouter() {
 
 func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 	router := newRouter()
-	route := router.Route("GET", "/uri", func(resp *Response, r *Request) {}, nil)
+	route := router.Route("GET", "/uri", func(resp *Response, r *Request) {})
 	suite.Contains(router.routes, route)
 	suite.Equal(router, route.parent)
 
-	route = router.Route("GET", "/", func(resp *Response, r *Request) {}, nil)
+	route = router.Route("GET", "/", func(resp *Response, r *Request) {})
 	suite.Equal("", route.uri)
 	suite.Equal(router, route.parent)
 
-	route = router.Route("GET|POST", "/", func(resp *Response, r *Request) {}, nil)
+	route = router.Route("GET|POST", "/", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"GET", "POST"}, route.methods)
 	suite.Equal(router, route.parent)
 }
@@ -220,7 +220,7 @@ func (suite *RouterTestSuite) TestCORS() {
 	suite.NotNil(router.corsOptions)
 	suite.True(router.hasCORSMiddleware)
 
-	route := router.registerRoute("GET", "/cors", helloHandler, nil)
+	route := router.registerRoute("GET", "/cors", helloHandler)
 	suite.Equal([]string{"GET", "OPTIONS"}, route.methods)
 
 	match := routeMatch{currentPath: "/cors"}
@@ -249,7 +249,7 @@ func (suite *RouterTestSuite) TestCORS() {
 func (suite *RouterTestSuite) TestPanicStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.err = "random error"
-	panicStatusHandler(response, request)
+	PanicStatusHandler(response, request)
 	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(500, result.StatusCode)
 }
@@ -257,7 +257,7 @@ func (suite *RouterTestSuite) TestPanicStatusHandler() {
 func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.Status(404)
-	errorStatusHandler(response, request)
+	ErrorStatusHandler(response, request)
 	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(404, result.StatusCode)
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
@@ -371,7 +371,7 @@ func (suite *RouterTestSuite) TestRouteNoMatch() {
 
 func (suite *RouterTestSuite) TestNamedRoutes() {
 	r := newRouter()
-	route := r.Route("GET", "/uri", func(resp *Response, r *Request) {}, nil)
+	route := r.Route("GET", "/uri", func(resp *Response, r *Request) {})
 	route.Name("get-uri")
 	suite.Equal(route, r.namedRoutes["get-uri"])
 	suite.Equal(route, r.GetRoute("get-uri"))
@@ -379,7 +379,7 @@ func (suite *RouterTestSuite) TestNamedRoutes() {
 	subrouter := r.Subrouter("/sub")
 	suite.Equal(route, subrouter.GetRoute("get-uri"))
 
-	route2 := r.Route("GET", "/other-route", func(resp *Response, r *Request) {}, nil)
+	route2 := r.Route("GET", "/other-route", func(resp *Response, r *Request) {})
 	suite.Panics(func() {
 		route2.Name("get-uri")
 	})
@@ -407,7 +407,7 @@ func (suite *RouterTestSuite) TestMiddleware() {
 	handler := func(response *Response, r *Request) {
 		result += "5"
 	}
-	route := subrouter.Route("GET", "/hello", handler, nil, middleware[2], middleware[3])
+	route := subrouter.Route("GET", "/hello", handler).Middleware(middleware[2], middleware[3])
 
 	rawRequest := httptest.NewRequest("GET", "/hello", nil)
 	match := routeMatch{
@@ -430,7 +430,10 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	}
 
 	writer := httptest.NewRecorder()
+	prev := config.Get("app.debug")
+	config.Set("app.debug", false)
 	router.requestHandler(match, writer, httptest.NewRequest("GET", "/uri", nil))
+	config.Set("app.debug", prev)
 
 	result := writer.Result()
 	body, err := ioutil.ReadAll(result.Body)
@@ -495,18 +498,18 @@ func (suite *RouterTestSuite) TestMatch() {
 	}
 
 	router := newRouter()
-	router.Route("GET|POST", "/hello", handler, nil).Name("hello")
-	router.Route("PUT", "/hello", handler, nil).Name("hello.put")
-	router.Route("GET", "/hello/sub", handler, nil).Name("hello.sub")
+	router.Route("GET|POST", "/hello", handler).Name("hello")
+	router.Route("PUT", "/hello", handler).Name("hello.put")
+	router.Route("GET", "/hello/sub", handler).Name("hello.sub")
 
 	productRouter := router.Subrouter("/product")
-	productRouter.Route("GET", "/", handler, nil).Name("product.index")
-	productRouter.Route("GET", "/{id:[0-9]+}", handler, nil).Name("product.show")
-	productRouter.Route("GET", "/{id:[0-9]+}/details", handler, nil).Name("product.show.details")
+	productRouter.Route("GET", "/", handler).Name("product.index")
+	productRouter.Route("GET", "/{id:[0-9]+}", handler).Name("product.show")
+	productRouter.Route("GET", "/{id:[0-9]+}/details", handler).Name("product.show.details")
 
 	userRouter := router.Subrouter("/user")
-	userRouter.Route("GET", "/", handler, nil).Name("user.index")
-	userRouter.Route("GET", "/{id:[0-9]+}", handler, nil).Name("user.show")
+	userRouter.Route("GET", "/", handler).Name("user.index")
+	userRouter.Route("GET", "/{id:[0-9]+}", handler).Name("user.show")
 
 	router.Subrouter("/empty")
 
@@ -556,7 +559,7 @@ func (suite *RouterTestSuite) TestMatch() {
 	// ------------
 
 	paramSubrouter := router.Subrouter("/{param}")
-	route := paramSubrouter.Route("GET", "/{subparam}", handler, nil).Name("param.name")
+	route := paramSubrouter.Route("GET", "/{subparam}", handler).Name("param.name")
 	match = routeMatch{currentPath: "/name/surname"}
 	suite.True(router.match(httptest.NewRequest("GET", "/name/surname", nil), &match))
 	suite.Equal(route, match.route)
@@ -578,7 +581,7 @@ func (suite *RouterTestSuite) TestMatch() {
 
 func (suite *RouterTestSuite) TestScheme() {
 	// From HTTP to HTTPS
-	config.Set("protocol", "https")
+	config.Set("server.protocol", "https")
 	router := newRouter()
 
 	recorder := httptest.NewRecorder()
@@ -591,7 +594,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	suite.Equal("<a href=\"https://127.0.0.1:1236/test?param=1\">Permanent Redirect</a>.\n\n", string(body))
 
 	// From HTTPS to HTTP
-	config.Set("protocol", "http")
+	config.Set("server.protocol", "http")
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "https://localhost:80/test?param=1", nil))
 	result = recorder.Result()
@@ -620,9 +623,9 @@ func (suite *RouterTestSuite) TestConflictingRoutes() {
 	router := newRouter()
 
 	subrouter := router.Subrouter("/product")
-	routeSub := subrouter.Route("GET", "/{id:[0-9]+}", handler, nil)
+	routeSub := subrouter.Route("GET", "/{id:[0-9]+}", handler)
 
-	router.Route("GET", "/product/{id:[0-9]+}", handler, nil)
+	router.Route("GET", "/product/{id:[0-9]+}", handler)
 
 	req := httptest.NewRequest("GET", "/product/2", nil)
 	match := routeMatch{currentPath: req.URL.Path}
@@ -632,7 +635,7 @@ func (suite *RouterTestSuite) TestConflictingRoutes() {
 
 	// Test when route not in subrouter but first segment matches
 	// Should not match
-	router.Route("GET", "/product/test", handler, nil)
+	router.Route("GET", "/product/test", handler)
 
 	req = httptest.NewRequest("GET", "/product/test", nil)
 	match = routeMatch{currentPath: req.URL.Path}
@@ -647,21 +650,21 @@ func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
 	router := newRouter()
 
 	productRouter := router.Subrouter("/product")
-	productRouter.Route("GET", "/", handler, nil).Name("product.index")
-	productRouter.Route("GET", "/{id:[0-9]+}", handler, nil).Name("product.show")
-	productRouter.Route("POST", "/hardpath", handler, nil).Name("product.hardpath.post")
-	productRouter.Route("GET", "/conflict", handler, nil).Name("product.conflict")
+	productRouter.Route("GET", "/", handler).Name("product.index")
+	productRouter.Route("GET", "/{id:[0-9]+}", handler).Name("product.show")
+	productRouter.Route("POST", "/hardpath", handler).Name("product.hardpath.post")
+	productRouter.Route("GET", "/conflict", handler).Name("product.conflict")
 
 	// This route group has an empty prefix, the full path is identical to productRouter.
 	// However this group has a middleware and some conflicting routes with productRouter.
 	// Conflict should be resolved and both routes should be able to match.
 	groupProductRouter := productRouter.Subrouter("/")
 	groupProductRouter.Middleware(suite.createOrderedTestMiddleware(&result, "1"))
-	groupProductRouter.Route("POST", "/", handler, nil).Name("product.store")
-	groupProductRouter.Route("GET", "/hardpath", handler, nil).Name("product.hardpath.get")
-	groupProductRouter.Route("PUT", "/{id:[0-9]+}", handler, nil).Name("product.update")
-	groupProductRouter.Route("GET", "/conflict", handler, nil).Name("product.conflict.group")
-	groupProductRouter.Route("POST", "/method", handler, nil).Name("product.method")
+	groupProductRouter.Route("POST", "/", handler).Name("product.store")
+	groupProductRouter.Route("GET", "/hardpath", handler).Name("product.hardpath.get")
+	groupProductRouter.Route("PUT", "/{id:[0-9]+}", handler).Name("product.update")
+	groupProductRouter.Route("GET", "/conflict", handler).Name("product.conflict.group")
+	groupProductRouter.Route("POST", "/method", handler).Name("product.method")
 
 	req := httptest.NewRequest("GET", "/product", nil)
 	match := routeMatch{currentPath: req.URL.Path}
@@ -737,7 +740,7 @@ func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 		})
 		router.Route("GET", "/panic", func(response *Response, req *Request) {
 			panic("chained writer panic")
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/panic", nil)
 		if err != nil {
@@ -754,22 +757,22 @@ func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 
 func (suite *RouterTestSuite) TestMethodRouteRegistration() {
 	router := newRouter()
-	route := router.Get("/uri", func(resp *Response, r *Request) {}, nil)
+	route := router.Get("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"GET"}, route.methods)
 
-	route = router.Post("/uri", func(resp *Response, r *Request) {}, nil)
+	route = router.Post("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"POST"}, route.methods)
 
-	route = router.Put("/uri", func(resp *Response, r *Request) {}, nil)
+	route = router.Put("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"PUT"}, route.methods)
 
-	route = router.Patch("/uri", func(resp *Response, r *Request) {}, nil)
+	route = router.Patch("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"PATCH"}, route.methods)
 
-	route = router.Delete("/uri", func(resp *Response, r *Request) {}, nil)
+	route = router.Delete("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"DELETE"}, route.methods)
 
-	route = router.Options("/uri", func(resp *Response, r *Request) {}, nil)
+	route = router.Options("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"OPTIONS"}, route.methods)
 }
 

@@ -19,12 +19,12 @@ Sometimes you need to run several services in the same executable. For example i
 All functions below are features that require the `goyave` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 ```
 
 ## Startup hooks
 
-Startup hooks are function executed in a goroutine after the server finished initializing. This is especially useful when you want to start other services or execute specific commands while being sure the server is up and running, ready to respond to incoming requests. Startup hooks must be registered **before** the `goyave.Start()` call.
+Startup hooks are functions executed in a goroutine after the server finished initializing. This is especially useful when you want to start other services or execute specific commands while being sure the server is up and running, ready to respond to incoming requests. Startup hooks must be registered **before** the `goyave.Start()` call.
 
 #### goyave.RegisterStartupHook
 
@@ -37,7 +37,7 @@ Register a startup hook to execute some code once the server is ready and runnin
 **Example:**
 ``` go
 goyave.RegsiterStartupHook(func() {
-    fmt.Println("Server ready.")
+    goyave.Logger.Println("Server ready.")
 })
 ```
 
@@ -137,7 +137,7 @@ Returns true if the server is ready to receive and serve incoming requests.
 **Example:**
 ``` go
 if goyave.IsReady() {
-    fmt.Println("Server is ready")
+    goyave.Logger.Println("Server is ready")
 }
 ```
 

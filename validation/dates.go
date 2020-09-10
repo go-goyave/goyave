@@ -63,42 +63,31 @@ func validateDate(field string, value interface{}, parameters []string, form map
 }
 
 func validateBefore(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("before", parameters, 1)
-
 	dates, err := getDates(value, parameters, form)
 	return err == nil && dates[0].Before(dates[1])
 }
 
 func validateBeforeEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("before_equal", parameters, 1)
-
 	dates, err := getDates(value, parameters, form)
 	return err == nil && (dates[0].Before(dates[1]) || dates[0].Equal(dates[1]))
 }
 
 func validateAfter(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("after", parameters, 1)
-
 	dates, err := getDates(value, parameters, form)
 	return err == nil && dates[0].After(dates[1])
 }
 
 func validateAfterEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("after_equal", parameters, 1)
-
 	dates, err := getDates(value, parameters, form)
 	return err == nil && (dates[0].After(dates[1]) || dates[0].Equal(dates[1]))
 }
 
 func validateDateEquals(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("date_equals", parameters, 1)
-
 	dates, err := getDates(value, parameters, form)
 	return err == nil && dates[0].Equal(dates[1])
 }
 
 func validateDateBetween(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("date_between", parameters, 2)
 	dates, err := getDates(value, parameters, form)
 	return err == nil && (dates[0].After(dates[1]) || dates[0].Equal(dates[1])) && (dates[0].Before(dates[2]) || dates[0].Equal(dates[2]))
 }

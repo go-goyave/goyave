@@ -12,6 +12,77 @@ meta:
 
 [[toc]]
 
+## v3.0.0
+
+- Changed conventions:
+    - `validation.go` and `placeholders.go` moved to a new `http/validation` package.
+    - Validation rule sets are now located in a `request.go` file in the same package as the controller.
+    
+**Motivation**: *Separating the requests in another package added unnecessary complexity to the directory structure and was not convenient to use. Package naming was far from ideal with the "request" suffix. Moving requests to the same package as the controller is more intuitive and requires less imports and makes route definition cleaner and easier.*
+
+- Validation system overhaul, allowing rule sets to be parsed only once instead of every time a request is received, giving better overall performance. This new system also allows a more verbose syntax for validation, solving the comma rule parameter value and a much easier use in your handlers.
+    - Rule functions don't check required parameters anymore. This is now done when the rules are parsed at startup time. The amount of required parameters is given when registering a new rule.
+    - Optimized regex-based validation rules by compiling expressions once.
+    - A significant amount of untested cases are now tested.
+    - The following rules now pass if the validated data type is not supported: `greater_than`, `greater_than_equal`, `lower_than`, `lower_than_equal`, `size`.
+    - Type-dependent rules now try to determine what is the expected type by looking up in the rule set for a type rule. If no type rule is present, falls back to the inputted type. This change makes it so the validation message is correct even if the client didn't input the expected type.
+    - Fixed a bug triggering a panic if the client inputted a non-array value in an array-validated field.
+
+**Motivation**: *The validation system had a lot of room for improvement when it comes to performance, as `RuleSet` were parsed every time a request was received. Moving this process out of the request life-cycle to execute it only once saves a good amount of execution time. Moreover, any handler who would want to read the rules applied to the current request needed to parse them too, which was inconvenient and not effective. With a structure containing everything you need, making middleware interacting with the request's rules is much easier.*
+
+- Routing has been improved by changing how validation and route-specific middleware are registered. The signature of the router functions have been simplified by removing the validation and middleware parameters from `Route()`, `Get()`, `Post()`, etc. This is now done through two new chainable methods on the `Route`: `route.Validate()` and  `route.Middleware()`.
+
+**Motivation**: *In the original design, the validation parameter was included in the main route definition function because most routes were expected to be validated, which turned out not to be the case. In a typical CRUD, only the create and update actions are validated, which made the route definition dirty and filled with `nil` parameters. Separating the rules and middleware definition is more in line with their optional nature and makes routes definition cleaner and more readable, although sometimes slightly longer.*
+
+- Log `Formatter` now receive the length of the response (in bytes) instead of the full body.
+
+**Motivation:** *Keeping in memory the full response has an important impact on memory when sending files or large responses. Using the response content in a log formatter is also a marginal use-case which doesn't justify the performance loss described previously. It is still possible to retrieve the content of the response by writing your own chained writer.*
+
+- Configuration system has been revamped.
+    - Added support for tree-like configurations, allowing for better categorization. Nested values can be accessed using dot-separated path.
+    - Improved validation: nested entries can now be validated too and all entries can have authorized values. Optional entries can now be validated too.
+    - Improved support for slices. The validation system is also able to check slices.
+    - Entries that are validated with the `int` type are now automatically converted from `float64` if they don't have decimal places. It is no longer necessary to manually cast `float64` that are supposed to be integers.
+    - More openness: entries can be registered with a default value, their type and authorized values from any package. This allows config entries required by a specific package to be loaded only if the latter is imported.
+    - Core configuration has been sorted in categories. This is a breaking change that will require you to update your configuration files.
+    - Entries having a `nil` value are now considered unset.
+    - Added accessors `GetInt()` and `GetFloat()`.
+    - Added slice accessors: `GetStringSlice()`, `GetBoolSlice()`, `GetIntSlice()`, `GetFloatSlice()`
+    - Added `LoadFrom()`, letting you load a configuration file from a custom path.
+    - Added the ability to use environment variables in configuration files.
+    - Bug fix: `config.IsLoaded()` returned `true` even if config failed to load.
+    - `maxUploadSize` config entry now supports decimal places.
+
+**Motivation:** *Configuration was without a doubt one of the weakest and inflexible feature of the framework. It was possible to use objects in custom entries, but not for core config, but it was inconvenient because it required a lot of type assertions. Moreover, core config entries were not handled the same as custom ones, which was a lack of openness. Hopefully, this revamped system will cover more potential use-cases, ease plugin development and allow you to produce cleaner code and configuration files.*
+
+- Database improvements
+    - Goyave has moved to [GORM v2](https://gorm.io/). Read the [release note](https://gorm.io/docs/v2_release_note.html) to learn more about what changed.
+    - Protect the database instance with mutex.
+    - `database.Close()` can now return errors.
+    - Added [database connection initializers](./basics/database.html#connection-initializers).
+    - Added the ability to regsiter new SQL dialects to use with GORM.
+    - Use `utf8mb4` by default in database options.
+    - Added a short alias for `database.GetConnection()`: `database.Conn()`.
+    - Factories now use batch insert.
+    - Factories now return `interface{}` instead of `[]interface{}`. The actual type of the returned value is a slice of the the type of what is returned by your generator, so you can type-assert safely.
+- Status handlers improvements
+    - Export panic and error status handlers so they can be expanded easily.
+    - Added `goyave.ValidationStatusHandler()`, a status handler for validation errors. Therefore, the format in which validation errors are sent to the client can be customized by using your own status handler for the HTTP status 400 and 422.
+- `goyave.Response` improvements
+    - `response.Render` and `response.RenderHTML` now execute and write the template to a `bytes.Buffer` instead of directly to the `goyave.Response`. This allows to catch and handle errors before the response header has been written, in order to return an error 500 if the template doesn't execute properly for example.
+    - Added `response.GetStacktrace()`, `response.IsEmpty()` and `response.IsHeaderWritten()`.
+    - Re-organised the `goyave.Response` structure fields to save some memory.
+    - Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
+- Recovery middleware now correctly handles panics with a `nil` value.
+- Test can now be run without the `-p 1` flag thanks to a lock added to the `goyave.RunTest` method. Therefore, `goyave.TestSuite` still **don't run in parallel** but are safe to use with the typical test command.
+- Cache the regex used by `helper.ParseMultiValuesHeader()` to improve performance. This also improves the performance of the language middleware.
+- Bug fix: data under validation wasn't considered from JSON payload if the content type included the charset.
+- The Gzip middleware will now skip requests that have the `Upgrade` HTTP header set to any value.
+- `response.String()` and `response.JSON()` don't write header before calling `Write` anymore. This behavior prevented middleware and chained writers to alter the response headers.
+- Added `goyave.PreWriter` interface for chained writers needing to alter headers or status before they are written.
+    - Even if this change is not breaking, it is recommended to update all your chained writers to call `PreWrite()` on their child writer if they implement the interface.
+    - Thanks to this change, a bug with the gzip middleware has been fixed: header `Content-Length` wasn't removed, resulting in false information sent to the clients, which in turn failed to decompress the response.
+
 ## v2.10.x
 
 ### v2.10.2

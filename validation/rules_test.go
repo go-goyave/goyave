@@ -44,6 +44,15 @@ func TestValidateMin(t *testing.T) {
 	assert.True(t, validateMin("file", createTestFiles(mediumLogoPath, largeLogoPath), []string{"1"}, map[string]interface{}{}))
 	assert.False(t, validateMin("file", createTestFiles(logoPath), []string{"1"}, map[string]interface{}{}))
 	assert.False(t, validateMin("file", createTestFiles(logoPath, largeLogoPath), []string{"1"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "min"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateMax(t *testing.T) {
@@ -74,6 +83,15 @@ func TestValidateMax(t *testing.T) {
 	assert.False(t, validateMax("file", createTestFiles(mediumLogoPath, largeLogoPath), []string{"1"}, map[string]interface{}{}))
 	assert.True(t, validateMax("file", createTestFiles(logoPath), []string{"1"}, map[string]interface{}{}))
 	assert.True(t, validateMax("file", createTestFiles(logoPath, configPath), []string{"1"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "max"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateBetween(t *testing.T) {
@@ -119,6 +137,24 @@ func TestValidateBetween(t *testing.T) {
 	assert.True(t, validateBetween("file", createTestFiles(mediumLogoPath, largeLogoPath), []string{"8", "42"}, map[string]interface{}{}))
 	assert.False(t, validateBetween("file", createTestFiles(logoPath), []string{"5", "10"}, map[string]interface{}{}))
 	assert.False(t, validateBetween("file", createTestFiles(logoPath, mediumLogoPath), []string{"5", "10"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "between"},
+			},
+		}
+		field.check()
+	})
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "between", Params: []string{"2"}},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateGreaterThan(t *testing.T) {
@@ -143,13 +179,23 @@ func TestValidateGreaterThan(t *testing.T) {
 	// Missing field
 	assert.False(t, validateGreaterThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateGreaterThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateGreaterThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(largeLogoPath)
 	otherFiles := createTestFiles(logoPath)
 	assert.True(t, validateGreaterThan("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
 	assert.False(t, validateGreaterThan("file", otherFiles, []string{"file"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "greater_than"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateGreaterThanEqual(t *testing.T) {
@@ -180,8 +226,9 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 	// Missing field
 	assert.False(t, validateGreaterThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateGreaterThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateGreaterThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(largeLogoPath)
 	otherFiles := createTestFiles(logoPath)
@@ -191,6 +238,15 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 	files = createTestFiles(logoPath)
 	otherFiles = createTestFiles(logoPath)
 	assert.True(t, validateGreaterThanEqual("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "greater_than_equal"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateLowerThan(t *testing.T) {
@@ -215,13 +271,23 @@ func TestValidateLowerThan(t *testing.T) {
 	// Missing field
 	assert.False(t, validateLowerThan("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateLowerThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateLowerThan("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(logoPath)
 	otherFiles := createTestFiles(largeLogoPath)
 	assert.True(t, validateLowerThan("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
 	assert.False(t, validateLowerThan("file", otherFiles, []string{"file"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "lower_than"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateLowerThanEqual(t *testing.T) {
@@ -252,8 +318,9 @@ func TestValidateLowerThanEqual(t *testing.T) {
 	// Missing field
 	assert.False(t, validateLowerThanEqual("field", "string", []string{"comparison"}, map[string]interface{}{"field": "string"}))
 
+	// Unsupported type
 	test := "string"
-	assert.False(t, validateLowerThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
+	assert.True(t, validateLowerThanEqual("field", &test, []string{"comparison"}, map[string]interface{}{"field": "string", "comparison": &test}))
 
 	files := createTestFiles(logoPath)
 	otherFiles := createTestFiles(largeLogoPath)
@@ -263,6 +330,15 @@ func TestValidateLowerThanEqual(t *testing.T) {
 	files = createTestFiles(logoPath)
 	otherFiles = createTestFiles(logoPath)
 	assert.True(t, validateLowerThanEqual("file", files, []string{"otherFiles"}, map[string]interface{}{"file": files, "otherFiles": otherFiles}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "lower_than_equal"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateBool(t *testing.T) {
@@ -320,6 +396,15 @@ func TestValidateSame(t *testing.T) {
 	assert.False(t, validateSame("field", "password", []string{"other"}, map[string]interface{}{"field": "password", "other": "not password"}))
 	assert.False(t, validateSame("field", "no other", []string{"other"}, map[string]interface{}{"field": "no other"}))
 	assert.False(t, validateSame("field", []string{"one", "two"}, []string{"other"}, map[string]interface{}{"field": []string{"one", "two"}, "other": []string{"one", "two", "three"}}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "same"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateDifferent(t *testing.T) {
@@ -333,6 +418,15 @@ func TestValidateDifferent(t *testing.T) {
 	assert.True(t, validateDifferent("field", "password", []string{"other"}, map[string]interface{}{"field": "password", "other": "not password"}))
 	assert.True(t, validateDifferent("field", "no other", []string{"other"}, map[string]interface{}{"field": "no other"}))
 	assert.True(t, validateDifferent("field", []string{"one", "two"}, []string{"other"}, map[string]interface{}{"field": []string{"one", "two"}, "other": []string{"one", "two", "three"}}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "different"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateConfirmed(t *testing.T) {
@@ -360,7 +454,9 @@ func TestValidateSize(t *testing.T) {
 
 	assert.False(t, validateSize("field", 4567, []string{"2"}, map[string]interface{}{}))
 	assert.False(t, validateSize("field", 4567.8, []string{"2"}, map[string]interface{}{}))
-	assert.False(t, validateSize("field", true, []string{"2"}, map[string]interface{}{}))
+
+	// Unsupported type
+	assert.True(t, validateSize("field", true, []string{"2"}, map[string]interface{}{}))
 
 	assert.Panics(t, func() { validateSize("field", "123", []string{"test"}, map[string]interface{}{}) })
 
@@ -373,4 +469,13 @@ func TestValidateSize(t *testing.T) {
 	assert.True(t, validateSize("file", createTestFiles(logoPath), []string{"1"}, map[string]interface{}{}))
 	assert.True(t, validateSize("file", createTestFiles(largeLogoPath), []string{"42"}, map[string]interface{}{}))
 	assert.False(t, validateSize("file", createTestFiles(logoPath), []string{"3"}, map[string]interface{}{}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "size"},
+			},
+		}
+		field.check()
+	})
 }

@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
@@ -10,13 +11,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,6 +28,11 @@ type CustomTestSuite struct {
 
 type FailingTestSuite struct {
 	TestSuite
+}
+
+type ConcurrentTestSuite struct {
+	TestSuite
+	res *int
 }
 
 type TestModel struct {
@@ -41,7 +48,7 @@ func genericHandler(message string) func(response *Response, request *Request) {
 
 func (suite *CustomTestSuite) TestEnv() {
 	suite.Equal("test", os.Getenv("GOYAVE_ENV"))
-	suite.Equal("test", config.GetString("environment"))
+	suite.Equal("test", config.GetString("app.environment"))
 	suite.Equal("Malformed JSON", lang.Get("en-US", "malformed-json"))
 }
 
@@ -62,17 +69,17 @@ func (suite *CustomTestSuite) TestRunServer() {
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", func(response *Response, request *Request) {
 			response.String(http.StatusOK, "Hi!")
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/hello", nil)
 		suite.Nil(err)
 		if err != nil {
 			suite.Fail(err.Error())
 		}
-		defer resp.Body.Close()
 
 		suite.NotNil(resp)
 		if resp != nil {
+			defer resp.Body.Close()
 			suite.Equal(200, resp.StatusCode)
 			suite.Equal("Hi!", string(suite.GetBody(resp)))
 		}
@@ -129,14 +136,14 @@ func (suite *CustomTestSuite) TestMiddleware() {
 
 func (suite *CustomTestSuite) TestRequests() {
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/get", genericHandler("get"), nil)
-		router.Route("POST", "/post", genericHandler("post"), nil)
-		router.Route("PUT", "/put", genericHandler("put"), nil)
-		router.Route("PATCH", "/patch", genericHandler("patch"), nil)
-		router.Route("DELETE", "/delete", genericHandler("delete"), nil)
+		router.Route("GET", "/get", genericHandler("get"))
+		router.Route("POST", "/post", genericHandler("post"))
+		router.Route("PUT", "/put", genericHandler("put"))
+		router.Route("PATCH", "/patch", genericHandler("patch"))
+		router.Route("DELETE", "/delete", genericHandler("delete"))
 		router.Route("GET", "/headers", func(response *Response, request *Request) {
 			response.String(http.StatusOK, request.Header().Get("Accept-Language"))
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
@@ -195,13 +202,13 @@ func (suite *CustomTestSuite) TestRequests() {
 
 func (suite *CustomTestSuite) TestJSON() {
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/invalid", genericHandler("get"), nil)
+		router.Route("GET", "/invalid", genericHandler("get"))
 		router.Route("GET", "/get", func(response *Response, request *Request) {
 			response.JSON(http.StatusOK, map[string]interface{}{
 				"field":  "value",
 				"number": 42,
 			})
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
@@ -238,7 +245,7 @@ func (suite *CustomTestSuite) TestJSONSlice() {
 				{"field": "value", "number": 42},
 				{"field": "other value", "number": 12},
 			})
-		}, nil)
+		})
 	}, func() {
 		resp, err := suite.Get("/get", nil)
 		suite.Nil(err)
@@ -299,7 +306,7 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 				"file":  string(content),
 				"field": request.String("field"),
 			})
-		}, nil)
+		})
 	}, func() {
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
@@ -324,30 +331,30 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 }
 
 func (suite *CustomTestSuite) TestClearDatabase() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	db := database.GetConnection()
 	db.AutoMigrate(&TestModel{})
 
 	for i := 0; i < 5; i++ {
 		db.Create(&TestModel{Name: fmt.Sprintf("Test %d", i)})
 	}
-	count := 0
+	count := int64(0)
 	db.Model(&TestModel{}).Count(&count)
-	suite.Equal(5, count)
+	suite.Equal(int64(5), count)
 
 	database.RegisterModel(&TestModel{})
 	suite.ClearDatabase()
 	database.ClearRegisteredModels()
 
 	db.Model(&TestModel{}).Count(&count)
-	suite.Equal(0, count)
+	suite.Equal(int64(0), count)
 
-	db.DropTable(&TestModel{})
-	config.Set("dbConnection", "none")
+	db.Migrator().DropTable(&TestModel{})
+	config.Set("database.connection", "none")
 }
 
 func (suite *CustomTestSuite) TestClearDatabaseTables() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	db := database.GetConnection()
 	db.AutoMigrate(&TestModel{})
 
@@ -373,7 +380,52 @@ func (suite *CustomTestSuite) TestClearDatabaseTables() {
 
 	suite.False(found)
 
-	config.Set("dbConnection", "none")
+	config.Set("database.connection", "none")
+}
+
+func TestConcurrentSuiteExecution(t *testing.T) { // Suites should not execute in parallel
+	// This test is only useful if the race detector is enabled
+	res := 0
+	suite1 := new(ConcurrentTestSuite)
+	suite2 := new(ConcurrentTestSuite)
+	suite1.res = &res
+	suite2.res = &res
+
+	c := make(chan bool, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		// Executing this ten times almost guarantees
+		// there WILL be a race condition.
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			RunTest(t, suite1)
+		}()
+		go func() {
+			defer wg.Done()
+			RunTest(t, suite2)
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		c <- true
+	}()
+
+	select {
+	case <-ctx.Done():
+		assert.Fail(t, "Timeout exceeded in concurrent suites test")
+	case val := <-c:
+		assert.True(t, val)
+	}
+
+}
+
+func (suite *ConcurrentTestSuite) TestExecutionOrder() {
+	*suite.res++
 }
 
 func TestTestSuite(t *testing.T) {
@@ -392,10 +444,12 @@ func TestTestSuiteFail(t *testing.T) {
 	if err := os.Rename("config.test.json", "config.test.json.bak"); err != nil {
 		panic(err)
 	}
+	defer func() {
+		if err := os.Rename("config.test.json.bak", "config.test.json"); err != nil {
+			panic(err)
+		}
+	}()
 	mockT := new(testing.T)
 	RunTest(mockT, new(FailingTestSuite))
 	assert.True(t, mockT.Failed())
-	if err := os.Rename("config.test.json.bak", "config.test.json"); err != nil {
-		panic(err)
-	}
 }

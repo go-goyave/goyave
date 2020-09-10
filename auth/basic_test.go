@@ -5,12 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v3/config"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/database"
 
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
 )
 
 type BasicAuthenticatorTestSuite struct {
@@ -18,7 +18,7 @@ type BasicAuthenticatorTestSuite struct {
 }
 
 func (suite *BasicAuthenticatorTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 
@@ -66,8 +66,8 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticate() {
 }
 
 func (suite *BasicAuthenticatorTestSuite) TestAuthenticateViaConfig() {
-	config.Set("authUsername", "admin")
-	config.Set("authPassword", "secret")
+	config.Set("auth.basic.username", "admin")
+	config.Set("auth.basic.password", "secret")
 
 	authenticator := ConfigBasicAuth()
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
@@ -92,7 +92,7 @@ func (suite *BasicAuthenticatorTestSuite) TearDownTest() {
 }
 
 func (suite *BasicAuthenticatorTestSuite) TearDownSuite() {
-	database.GetConnection().DropTable(&TestUser{})
+	database.Conn().Migrator().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

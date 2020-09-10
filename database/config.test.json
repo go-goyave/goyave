@@ -1,14 +1,19 @@
 {
-    "environment": "test",
-    "dbConnection": "mysql",
-    "dbHost": "127.0.0.1",
-    "dbPort": 3306,
-    "debug": false,
-    "dbName": "goyave",
-    "dbUsername": "goyave",
-    "dbPassword": "secret",
-    "dbOptions": "charset=utf8&parseTime=true&loc=Local",
-    "dbMaxOpenConnections": 20,
-    "dbMaxIdleConnections": 20,
-    "dbAutoMigrate": false
+    "app": {
+        "environment": "test",
+        "debug": false
+    },
+    "database": {
+        "connection": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "name": "goyave",
+        "username": "goyave",
+        "password": "secret",
+        "options": "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local",
+        "maxOpenConnections": 20,
+        "maxIdleConnections": 20,
+        "maxLifetime": 300,
+        "autoMigrate": false
+    }
 }

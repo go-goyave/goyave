@@ -1,15 +1,17 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/validation"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,7 +22,7 @@ type JWTControllerTestSuite struct {
 }
 
 func (suite *JWTControllerTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 
@@ -88,6 +90,28 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 	}
 }
 
+func (suite *JWTControllerTestSuite) TestValidation() {
+	suite.RunServer(func(router *goyave.Router) {
+		JWTRoutes(router, &TestUser{})
+	}, func() {
+		headers := map[string]string{"Content-Type": "application/json"}
+		data := map[string]interface{}{}
+		body, _ := json.Marshal(data)
+		resp, err := suite.Post("/auth/login", headers, bytes.NewReader(body))
+		suite.Nil(err)
+		if err == nil {
+			defer resp.Body.Close()
+			json := map[string]validation.Errors{}
+			err := suite.GetJSONBody(resp, &json)
+			suite.Nil(err)
+			if err == nil {
+				suite.Len(json["validationError"]["username"], 2)
+				suite.Len(json["validationError"]["password"], 2)
+			}
+		}
+	})
+}
+
 func (suite *JWTControllerTestSuite) TestLoginPanic() {
 	suite.Panics(func() {
 		request := suite.CreateTestRequest(nil)
@@ -127,7 +151,7 @@ func (suite *JWTControllerTestSuite) TearDownTest() {
 }
 
 func (suite *JWTControllerTestSuite) TearDownSuite() {
-	database.GetConnection().DropTable(&TestUser{})
+	database.Conn().Migrator().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

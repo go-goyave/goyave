@@ -132,3 +132,13 @@ func TestSaveDelete(t *testing.T) {
 		Delete(actualPath)
 	})
 }
+
+func TestOpenFileError(t *testing.T) {
+	dir := "./forbidden_directory"
+	assert.Panics(t, func() {
+		os.Mkdir(dir, 0500)
+		defer os.RemoveAll(dir)
+		file := createTestFiles("resources/img/logo/goyave_16.png")[0]
+		file.Save(dir, "saved.png")
+	})
+}

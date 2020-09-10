@@ -40,10 +40,27 @@ As said earlier, status handlers are regular handlers. The only difference is th
 ``` go
 package status
 
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 
 func NotFound(response *goyave.Response, request *goyave.Request) {
-    response.RenderHTML(response.GetStatus(), "errors/404.html", nil)
+    if err := response.RenderHTML(response.GetStatus(), "errors/404.html", nil); err != nil {
+        response.Error(err)
+    }
+}
+```
+
+::: warning
+Avoid panicking in status handlers, as they are **not protected** by the recovery middleware!
+:::
+
+### Expanding default status handlers
+
+You can expand default status handlers by calling them in your custom status handler. This is especially useful if you want to use error tracking software without altering the default behavior.
+
+```go
+func Panic(response *goyave.Response, request *goyave.Request) {
+    tracker.ReportError(response.GetError())
+    goyave.PanicStatusHandler(response, request)
 }
 ```
 

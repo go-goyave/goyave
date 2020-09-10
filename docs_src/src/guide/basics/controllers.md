@@ -17,11 +17,11 @@ meta:
 Controllers are files containing a collection of Handlers related to a specific feature. Each feature should have its own package. For example, if you have a controller handling user registration, user profiles, etc, you should create a `http/controller/user` package. Creating a package for each feature has the advantage of cleaning up route definitions a lot and helps keeping a clean structure for your project.
 
 Let's take a very simple CRUD as an example for a controller definition:
-**http/controllers/product/product.go**:
+**http/controller/product/product.go**:
 ``` go
 func Index(response *goyave.Response, request *goyave.Request) {
 	products := []model.Product{}
-	result := database.GetConnection().Find(&products)
+	result := database.Conn().Find(&products)
 	if response.HandleDatabaseError(result) {
 		response.JSON(http.StatusOK, products)
 	}
@@ -29,8 +29,7 @@ func Index(response *goyave.Response, request *goyave.Request) {
 
 func Show(response *goyave.Response, request *goyave.Request) {
 	product := model.Product{}
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-	result := database.GetConnection().First(&product, id)
+	result := database.Conn().First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		response.JSON(http.StatusOK, product)
 	}
@@ -41,7 +40,7 @@ func Store(response *goyave.Response, request *goyave.Request) {
 		Name:  request.String("name"),
 		Price: request.Numeric("price"),
 	}
-	if err := database.GetConnection().Create(&product).Error; err != nil {
+	if err := database.Conn().Create(&product).Error; err != nil {
 		response.Error(err)
 	} else {
 		response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
@@ -49,10 +48,9 @@ func Store(response *goyave.Response, request *goyave.Request) {
 }
 
 func Update(response *goyave.Response, request *goyave.Request) {
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
 	product := model.Product{}
-	db := database.GetConnection()
-	result := db.Select("id").First(&product, id)
+	db := database.Conn()
+	result := db.Select("id").First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
 			response.Error(err)
@@ -61,10 +59,9 @@ func Update(response *goyave.Response, request *goyave.Request) {
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
-	id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
 	product := model.Product{}
-	db := database.GetConnection()
-	result := db.Select("id").First(&product, id)
+	db := database.Conn()
+	result := db.Select("id").First(&product, request.Params["id"])
 	if response.HandleDatabaseError(result) {
 		if err := db.Delete(&product).Error; err != nil {
 			response.Error(err)
@@ -99,7 +96,7 @@ Setting the `Content-Type` header is not necessary. `response.Write` automatical
 
 ## Naming conventions
 
-- Controller packages are named after the model they are mostly using, in a singular form. For example a controller for a `Product` model would be called `http/controllers/product`. If a controller isn't related to a model, then give it an expressive name.
+- Controller packages are named after the model they are mostly using, in a singular form. For example a controller for a `Product` model would be called `http/controller/product`. If a controller isn't related to a model, then give it an expressive name.
 - Controller handlers are always **exported** so they can be used when registering routes. All functions which aren't handlers **must be unexported**.
 - CRUD operations naming and routing:
 

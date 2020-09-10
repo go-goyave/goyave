@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2"
+	"github.com/System-Glitch/goyave/v3"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 )
 
 // CommonLogFormatter build a log entry using the Common Log Format.
-func CommonLogFormatter(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string {
+func CommonLogFormatter(now time.Time, response *goyave.Response, request *goyave.Request, length int) string {
 	req := request.Request()
 	url := request.URI()
 
@@ -56,11 +56,11 @@ func CommonLogFormatter(now time.Time, response *goyave.Response, request *goyav
 		strconv.QuoteToASCII(uri),
 		req.Proto,
 		response.GetStatus(),
-		len(body),
+		length,
 	)
 }
 
 // CombinedLogFormatter build a log entry using the Combined Log Format.
-func CombinedLogFormatter(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string {
-	return fmt.Sprintf("%s \"%s\" \"%s\"", CommonLogFormatter(now, response, request, body), request.Referrer(), request.UserAgent())
+func CombinedLogFormatter(now time.Time, response *goyave.Response, request *goyave.Request, length int) string {
+	return fmt.Sprintf("%s \"%s\" \"%s\"", CommonLogFormatter(now, response, request, length), request.Referrer(), request.UserAgent())
 }

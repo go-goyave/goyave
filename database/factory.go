@@ -1,6 +1,10 @@
 package database
 
-import "github.com/imdario/mergo"
+import (
+	"reflect"
+
+	"github.com/imdario/mergo"
+)
 
 // Generator a generator function generates a single record.
 type Generator func() interface{}
@@ -31,28 +35,44 @@ func (f *Factory) Override(override interface{}) *Factory {
 }
 
 // Generate a number of records using the given factory.
-func (f *Factory) Generate(count uint) []interface{} {
-	records := make([]interface{}, 0, count)
-	for i := uint(0); i < count; i++ {
+// Returns a slice of the actual type of the generated records,
+// meaning you can type-assert safely.
+//
+//  factory.Generate(5).([]*User)
+func (f *Factory) Generate(count int) interface{} {
+	if count <= 0 {
+		return []interface{}{}
+	}
+	var t reflect.Type
+	var slice reflect.Value
+	for i := 0; i < count; i++ {
 		record := f.generator()
+		if t == nil {
+			t = reflect.TypeOf(record)
+			slice = reflect.MakeSlice(reflect.SliceOf(t), 0, count)
+		}
 		if f.override != nil {
 			if err := mergo.Merge(record, f.override, mergo.WithOverride); err != nil {
 				panic(err)
 			}
 		}
-		records = append(records, record)
+		slice = reflect.Append(slice, reflect.ValueOf(record))
 	}
-	return records
+	return slice.Interface()
 }
 
-// Save generate a number of records using the given factory and return the inserted records.
-func (f *Factory) Save(count uint) []interface{} {
+// Save generate a number of records using the given factory,
+// insert them in the database and return the inserted records.
+// The returned slice is a slice of the actual type of the generated records,
+// meaning you can type-assert safely.
+//
+//  factory.Save(5).([]*User)
+func (f *Factory) Save(count int) interface{} {
 	db := GetConnection()
 	records := f.Generate(count)
-	for _, record := range records {
-		db.Create(record) // TODO batch insert for better performance
-		// Batch insert would require a lot of work to be made available
-		// for all supported databases.
+
+	if err := db.Create(records).Error; err != nil {
+		panic(err)
 	}
 	return records
 }

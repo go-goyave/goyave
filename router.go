@@ -6,10 +6,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/cors"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/cors"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 )
 
 type routeMatcher interface {
@@ -30,6 +29,8 @@ type Router struct {
 	middlewareHolder
 	parametrizeable
 }
+
+// TODO openapi.go: make Router and Route implement methods for OpenAPI format conversion (native support)
 
 var _ http.Handler = (*Router)(nil) // implements http.Handler
 var _ routeMatcher = (*Router)(nil) // implements routeMatcher
@@ -60,8 +61,13 @@ var (
 	})
 )
 
-func panicStatusHandler(response *Response, request *Request) {
-	response.Error(response.GetError())
+// PanicStatusHandler for the HTTP 500 error.
+// If debugging is enabled, writes the error details to the response and
+// print stacktrace in the console.
+// If debugging is not enabled, writes `{"error": "Internal Server Error"}`
+// to the response.
+func PanicStatusHandler(response *Response, request *Request) {
+	response.error(response.GetError())
 	if response.empty {
 		message := map[string]string{
 			"error": http.StatusText(response.GetStatus()),
@@ -70,10 +76,19 @@ func panicStatusHandler(response *Response, request *Request) {
 	}
 }
 
-func errorStatusHandler(response *Response, request *Request) {
+// ErrorStatusHandler a generic status handler for non-success codes.
+// Writes the corresponding status message to the response.
+func ErrorStatusHandler(response *Response, request *Request) {
 	message := map[string]string{
 		"error": http.StatusText(response.GetStatus()),
 	}
+	response.JSON(response.GetStatus(), message)
+}
+
+// ValidationStatusHandler for HTTP 400 and HTTP 422 errors.
+// Writes the validation errors to the response.
+func ValidationStatusHandler(response *Response, request *Request) {
+	message := map[string]interface{}{"validationError": response.GetError()}
 	response.JSON(response.GetStatus(), message)
 }
 
@@ -93,22 +108,23 @@ func newRouter() *Router {
 			middleware: make([]Middleware, 0, 3),
 		},
 	}
-	router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
-	for i := 400; i <= 418; i++ {
-		router.StatusHandler(errorStatusHandler, i)
+	router.StatusHandler(PanicStatusHandler, http.StatusInternalServerError)
+	router.StatusHandler(ValidationStatusHandler, http.StatusBadRequest, http.StatusUnprocessableEntity)
+	for i := 401; i <= 418; i++ {
+		router.StatusHandler(ErrorStatusHandler, i)
 	}
-	for i := 421; i <= 426; i++ {
-		router.StatusHandler(errorStatusHandler, i)
+	for i := 423; i <= 426; i++ {
+		router.StatusHandler(ErrorStatusHandler, i)
 	}
-	router.StatusHandler(errorStatusHandler, 428, 429, 431, 444, 451)
-	router.StatusHandler(errorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
+	router.StatusHandler(ErrorStatusHandler, 421, 428, 429, 431, 444, 451)
+	router.StatusHandler(ErrorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
 
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	protocol := config.GetString("protocol")
+	protocol := config.GetString("server.protocol")
 	if req.URL.Scheme != "" && req.URL.Scheme != protocol {
 		address := getAddress(protocol) + req.URL.Path
 		query := req.URL.Query()
@@ -216,11 +232,11 @@ func (r *Router) Middleware(middleware ...Middleware) {
 // to the matcher if it's missing, so it allows preflight requests.
 //
 // Returns the generated route.
-func (r *Router) Route(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(methods, uri, handler, validationRules, middleware...)
+func (r *Router) Route(methods string, uri string, handler Handler) *Route {
+	return r.registerRoute(methods, uri, handler)
 }
 
-func (r *Router) registerRoute(methods string, uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
+func (r *Router) registerRoute(methods string, uri string, handler Handler) *Route {
 	if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
 		methods += "|OPTIONS"
 	}
@@ -230,15 +246,11 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 	}
 
 	route := &Route{
-		name:            "",
-		uri:             uri,
-		methods:         strings.Split(methods, "|"),
-		parent:          r,
-		handler:         handler,
-		validationRules: validationRules,
-		middlewareHolder: middlewareHolder{
-			middleware: middleware,
-		},
+		name:    "",
+		uri:     uri,
+		methods: strings.Split(methods, "|"),
+		parent:  r,
+		handler: handler,
 	}
 	route.compileParameters(route.uri, true)
 	r.routes = append(r.routes, route)
@@ -246,33 +258,33 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler, vali
 }
 
 // Get registers a new route wit the GET method.
-func (r *Router) Get(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodGet, uri, handler, validationRules, middleware...)
+func (r *Router) Get(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodGet, uri, handler)
 }
 
 // Post registers a new route wit the POST method.
-func (r *Router) Post(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodPost, uri, handler, validationRules, middleware...)
+func (r *Router) Post(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodPost, uri, handler)
 }
 
 // Put registers a new route wit the PUT method.
-func (r *Router) Put(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodPut, uri, handler, validationRules, middleware...)
+func (r *Router) Put(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodPut, uri, handler)
 }
 
 // Patch registers a new route wit the PATCH method.
-func (r *Router) Patch(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodPatch, uri, handler, validationRules, middleware...)
+func (r *Router) Patch(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodPatch, uri, handler)
 }
 
 // Delete registers a new route wit the DELETE method.
-func (r *Router) Delete(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodDelete, uri, handler, validationRules, middleware...)
+func (r *Router) Delete(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodDelete, uri, handler)
 }
 
 // Options registers a new route wit the OPTIONS method.
-func (r *Router) Options(uri string, handler Handler, validationRules validation.RuleSet, middleware ...Middleware) *Route {
-	return r.registerRoute(http.MethodOptions, uri, handler, validationRules, middleware...)
+func (r *Router) Options(uri string, handler Handler) *Route {
+	return r.registerRoute(http.MethodOptions, uri, handler)
 }
 
 // GetRoute get a named route.
@@ -288,7 +300,7 @@ func (r *Router) GetRoute(name string) *Route {
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
 func (r *Router) Static(uri string, directory string, download bool, middleware ...Middleware) {
-	r.registerRoute(http.MethodGet, uri+"{resource:.*}", staticHandler(directory, download), nil, middleware...)
+	r.registerRoute(http.MethodGet, uri+"{resource:.*}", staticHandler(directory, download)).Middleware(middleware...)
 }
 
 // CORS set the CORS options for this route group.

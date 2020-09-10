@@ -15,20 +15,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/cors"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/lang"
-	"github.com/System-Glitch/goyave/v2/validation"
-	"github.com/stretchr/testify/suite"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/cors"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/lang"
+	"github.com/System-Glitch/goyave/v3/validation"
 )
 
 type MiddlewareTestSuite struct {
-	suite.Suite
+	TestSuite
 }
 
 func (suite *MiddlewareTestSuite) SetupSuite() {
-	config.Load()
 	lang.LoadDefault()
 }
 
@@ -84,7 +82,7 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 		httpRequest: rawRequest,
 		corsOptions: corsOptions,
 		Data:        data,
-		Rules:       rules,
+		Rules:       rules.AsRules(),
 		Lang:        "en-US",
 		Params:      map[string]string{},
 	}
@@ -96,9 +94,25 @@ func testMiddleware(middleware Middleware, rawRequest *http.Request, data map[st
 
 func (suite *MiddlewareTestSuite) TestRecoveryMiddlewarePanic() {
 	response := newResponse(httptest.NewRecorder(), nil)
+	err := fmt.Errorf("error message")
 	recoveryMiddleware(func(response *Response, r *Request) {
-		panic(fmt.Errorf("error message"))
+		panic(err)
 	})(response, &Request{})
+	suite.Equal(err, response.GetError())
+	suite.Empty(response.GetStacktrace())
+	suite.Equal(500, response.status)
+
+	prev := config.GetBool("app.debug")
+	config.Set("app.debug", true)
+	defer config.Set("app.debug", prev)
+
+	response = newResponse(httptest.NewRecorder(), nil)
+	err = fmt.Errorf("error message")
+	recoveryMiddleware(func(response *Response, r *Request) {
+		panic(err)
+	})(response, &Request{})
+	suite.Equal(err, response.GetError())
+	suite.NotEmpty(response.GetStacktrace())
 	suite.Equal(500, response.status)
 }
 
@@ -109,12 +123,23 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 	})(response, &Request{})
 
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
+	suite.Nil(response.GetError())
 	suite.Equal(200, response.status)
 	suite.Equal(200, resp.StatusCode)
 
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("message", string(body))
+}
+
+func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNilPanic() {
+	response := newResponse(httptest.NewRecorder(), nil)
+	recoveryMiddleware(func(response *Response, r *Request) {
+		panic(nil)
+	})(response, &Request{})
+	suite.Nil(response.GetError())
+	suite.Equal(500, response.status)
 }
 
 func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {
@@ -235,15 +260,25 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 	suite.True(executed)
 
 	// Test payload too large
-	prev := config.Get("maxUploadSize")
-	config.Set("maxUploadSize", -10.0)
+	prev := config.Get("server.maxUploadSize")
+	config.Set("server.maxUploadSize", -10.0)
 	rawRequest = createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
 
 	request := createTestRequest(rawRequest)
 	response := newResponse(httptest.NewRecorder(), nil)
 	parseRequestMiddleware(nil)(response, request)
 	suite.Equal(http.StatusRequestEntityTooLarge, response.GetStatus())
-	config.Set("maxUploadSize", prev)
+	config.Set("server.maxUploadSize", prev)
+
+	prev = config.Get("server.maxUploadSize")
+	config.Set("server.maxUploadSize", 0.0006)
+	rawRequest = createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
+
+	request = createTestRequest(rawRequest)
+	response = newResponse(httptest.NewRecorder(), nil)
+	parseRequestMiddleware(nil)(response, request)
+	suite.Equal(http.StatusRequestEntityTooLarge, response.GetStatus())
+	config.Set("server.maxUploadSize", prev)
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
@@ -331,8 +366,11 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:10"},
 	}
-	result := testMiddleware(validateRequestMiddleware, rawRequest, data, rules, nil, func(response *Response, r *Request) {})
-	suite.Equal(200, result.StatusCode)
+	request := suite.CreateTestRequest(rawRequest)
+	request.Data = data
+	request.Rules = rules.AsRules()
+	result := suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
+	suite.Equal(http.StatusNoContent, result.StatusCode)
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/json")
@@ -344,22 +382,29 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:50"},
 	}
-	result = testMiddleware(validateRequestMiddleware, rawRequest, data, rules, nil, func(response *Response, r *Request) {})
+
+	request = suite.CreateTestRequest(rawRequest)
+	request.Data = data
+	request.Rules = rules.AsRules()
+	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
 	body, err := ioutil.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
-	suite.Equal(422, result.StatusCode)
+	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
 	suite.Equal("{\"validationError\":{\"number\":[\"The number must be at least 50.\"]}}\n", string(body))
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", nil)
 	rawRequest.Header.Set("Content-Type", "application/json")
-	result = testMiddleware(validateRequestMiddleware, rawRequest, nil, rules, nil, func(response *Response, r *Request) {})
+	request = suite.CreateTestRequest(rawRequest)
+	request.Data = nil
+	request.Rules = rules.AsRules()
+	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
 	body, err = ioutil.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
-	suite.Equal(400, result.StatusCode)
+	suite.Equal(http.StatusBadRequest, result.StatusCode)
 	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
 }
 
@@ -427,5 +472,5 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 }
 
 func TestMiddlewareTestSuite(t *testing.T) {
-	suite.Run(t, new(MiddlewareTestSuite))
+	RunTest(t, new(MiddlewareTestSuite))
 }

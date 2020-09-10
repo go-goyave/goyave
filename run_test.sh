@@ -7,14 +7,15 @@
 # This script requires:
 # - docker
 # - gotest: https://github.com/rakyll/gotest
-# - mysql client
-# - gcc (for race detection, recommended but optional)
+# - gcc (for race detection, strongly recommended but optional)
+
+container=goyave-mariadb
 
 echo -e "\033[1mStarting database containers...\033[0m"
-if [ ! "$(docker ps -a | grep goyave-mariadb)" ]; then
-	container=`docker run --name goyave-mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret -e MYSQL_USER=goyave -e MYSQL_PASSWORD=secret -e MYSQL_DATABASE=goyave -d mariadb:latest`
+if [ ! "$(docker ps -a | grep $container)" ]; then
+	docker run --name $container -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret -e MYSQL_USER=goyave -e MYSQL_PASSWORD=secret -e MYSQL_DATABASE=goyave -d mariadb:latest >/dev/null
 else
-	container=`docker start goyave-mariadb`
+	docker start $container >/dev/null
 fi
 
 if [ $? -ne 0 ]; then
@@ -25,16 +26,16 @@ fi
 health=1
 tries=0
 while [ $health -ne 0 ]; do
-	mysql -h 127.0.0.1 --protocol=tcp -u goyave --password=secret goyave -e "SHOW TABLES;" >/dev/null 2>&1
+	docker exec -it $container mysqladmin status -u goyave --password=secret >/dev/null 2>&1
 	health=$?
 	((tries++))
-	if [ $tries -gt 50 ]; then
+	if [ $tries -gt 100 ]; then
 		docker stop $container
-		echo -e "\033[31mError: couldn't connect to container database after 50 retries.\033[0m"
+		echo -e "\033[31mError: couldn't connect to container database after 100 retries.\033[0m"
 		exit 2
 	fi
-	echo -e "\033[33mCouldn't connect to container database. Retrying in 10 seconds...\033[0m"
-	sleep 10
+	echo -e "\033[33mCouldn't connect to container database. Retrying in 5 seconds...\033[0m"
+	sleep 5
 done
 
 echo -e "\033[92m\033[1mDatabase ready. Running tests...\033[0m"

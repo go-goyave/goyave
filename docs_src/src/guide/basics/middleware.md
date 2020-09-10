@@ -58,19 +58,29 @@ func CustomAuthentication(next goyave.Handler) goyave.Handler {
 ```
 
 ::: tip
-When a middleware stops a request, following middleware are **not** executed either.
+When a middleware stops a request, following middleware are **not** executed neither.
 :::
+
+## Applying Middleware
+
+When your middleware is ready, you will need to apply it to a router or a specific route. When applying a middleware to a router, all routes and subrouters will execute this middleware when matched.
+
+```go
+router.Middleware(middleware.MyCustomMiddleware)
+
+router.Get("/products", product.Index).Middleware(middleware.MyCustomMiddleware)
+```
 
 ## Built-in middleware
 
 Built-in middleware is located in the `middleware` package.
 ``` go
-import "github.com/System-Glitch/goyave/v2/middleware"
+import "github.com/System-Glitch/goyave/v3/middleware"
 ```
 
 ### DisallowNonValidatedFields
 
-DisallowNonValidatedFields validates that all fields in the request are validated by the RuleSet. The middleware stops the request and sends "422 Unprocessable Entity" and an error message if the user has sent non-validated field(s). Fields ending with `_confirmation` are ignored.
+DisallowNonValidatedFields validates that all fields in the request are validated by the rule set. The middleware stops the request and sends "422 Unprocessable Entity" and an error message if the user has sent non-validated field(s). Fields ending with `_confirmation` are ignored.
 
 If the body parsing failed, this middleware immediately passes to the next handler. **This middleware shall only be used with requests having a rule set defined.**
 

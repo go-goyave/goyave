@@ -25,13 +25,16 @@ If you didn't write anything before the request lifecycle ends, `204 No Content`
 All functions below require the `goyave` package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 ```
 
 **List of response methods**:
 ::: table
 [GetStatus](#response-getstatus)
 [GetError](#response-geterror)
+[GetStacktrace](#response-getstacktrace)
+[IsEmpty](#response-isempty)
+[IsHeaderWritten](#response-isheaderwritten)
 [Header](#response-header)
 [Status](#response-status)
 [JSON](#response-json)
@@ -76,6 +79,47 @@ This method is mainly used in [status handlers](../advanced/status-handlers.html
 fmt.Println(response.GetError()) // "panic: something wrong happened"
 ```
 
+#### Response.GetStacktrace
+
+Return the stacktrace of when the error occurred, or an empty string. The stacktrace is captured by the recovery middleware.
+
+| Parameters | Return   |
+|------------|----------|
+|            | `string` |
+
+**Example:**
+``` go
+fmt.Println(response.GetStacktrace()) // "goroutine 1 [running]:
+									  //  main.main()
+									  //	/tmp/sandbox930868764/prog.go:8 +0x39"
+```
+
+#### Response.IsEmpty
+
+Return true if nothing has been written to the response body yet.
+
+| Parameters | Return |
+|------------|--------|
+|            | `bool` |
+
+**Example:**
+``` go
+fmt.Println(response.IsEmpty()) // true
+```
+
+#### Response.IsHeaderWritten
+
+return true if the response header has been written. Once the response header is written, you cannot change the response status and headers anymore.
+
+| Parameters | Return |
+|------------|--------|
+|            | `bool` |
+
+**Example:**
+``` go
+fmt.Println(response.IsHeaderWritten()) // false
+```
+
 #### Response.Header
 
 Returns the Header map that will be sent.
@@ -92,7 +136,7 @@ header.Set("Content-Type", "application/json")
 
 #### Response.Status
 
-Write the given status code. Calling this method a second time will have no effect.
+Set the response status code. Calling this method a second time will have no effect.
 
 | Parameters   | Return |
 |--------------|--------|
@@ -273,7 +317,9 @@ sweaters := Inventory{"wool", 17}
 
 // data can also be a map[string]interface{}
 // Here, "resources/template/template.txt" will be used.
-response.Render(http.StatusOK, "template.txt", sweaters)
+if err := response.Render(http.StatusOK, "template.txt", sweaters); err != nil {
+	response.Error(err)
+}
 ```
 
 #### Response.RenderHTML
@@ -299,7 +345,9 @@ sweaters := Inventory{"wool", 17}
 
 // data can also be a map[string]interface{}
 // Here, "resources/template/inventory.html" will be used.
-response.RenderHTML(http.StatusOK, "inventory.html", sweaters)
+if err := response.RenderHTML(http.StatusOK, "inventory.html", sweaters); err != nil {
+	response.Error(err)
+}
 ```
 
 #### Response.HandleDatabaseError
@@ -317,7 +365,7 @@ Returns `true` if there is no error.
 **Example:**
 ``` go
 product := model.Product{}
-result := database.GetConnection().First(&product, id)
+result := database.Conn().First(&product, id)
 if response.HandleDatabaseError(result) {
     response.JSON(http.StatusOK, product)
 }
@@ -327,21 +375,34 @@ if response.HandleDatabaseError(result) {
 
 <p><Badge text="Since v2.7.0"/></p>
 
-It is possible to replace the `io.Writer` used by the `Response` object. This allows for more flexibility when manipulating the data you send to the client. It makes it easier to compress your response, write it to logs, etc. You can chain as many writers as you want. The writer replacement is most often done in a middleware. If your writer implements `io.Closer`, it will be automatically closed at the end of the request's lifecycle.
+It is possible to replace the `io.Writer` used by the `Response` object. This allows for more flexibility when manipulating the data you send to the client. It makes it easier to compress your response, write it to logs, etc. You can chain as many writers as you want.
 
-The following example is a simple implementation of a logging middleware.
+Note that at the time your writer's `Write()` method is called, the request header **is already written**, therefore, changing headers or status doesn't have any effect. If you want to alter the headers, do so in a `PreWrite(b []byte)` function (from the `goyave.PreWriter` interface).
+
+The writer replacement is most often done in a middleware. If your writer implements `io.Closer`, it will be automatically closed at the end of the request's lifecycle.
+
+The following example is a simple implementation of a middleware logging everything sent by the server to the client.
 ``` go
 import (
 	"io"
 	"log"
 
-	"github.com/System-Glitch/goyave/v2"
+	"github.com/System-Glitch/goyave/v3"
 )
 
 type LogWriter struct {
 	writer   io.Writer
 	response *goyave.Response
 	body     []byte
+}
+
+func (w *LogWriter) PreWrite(b []byte) {
+	// All chained writers should implement goyave.PreWriter
+	// to allow the modification of headers and status before
+	// they are written.
+	if pr, ok := w.writer.(goyave.PreWriter); ok {
+		pr.PreWrite(b)
+	}
 }
 
 func (w *LogWriter) Write(b []byte) (int, error) {
@@ -353,7 +414,7 @@ func (w *LogWriter) Close() error {
     // The chained writer MUST be closed if it's closeable.
 	// Therefore, all chained writers should implement io.Closer.
 
-	log.Println("RESPONSE", w.response.GetStatus(), string(w.body))
+	goyave.Logger.Println("RESPONSE", w.response.GetStatus(), string(w.body))
 
 	if wr, ok := w.writer.(io.Closer); ok {
 		return wr.Close()

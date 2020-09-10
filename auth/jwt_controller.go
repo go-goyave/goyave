@@ -1,27 +1,28 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 	"reflect"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/System-Glitch/goyave/v2/lang"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/lang"
+	"github.com/System-Glitch/goyave/v3/validation"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // GenerateToken generate a new JWT.
 // The token is created using the HMAC SHA256 method and signed using
-// the "jwtSecret" config entry.
+// the "auth.jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
-// the "jwtExpiry" config entry.
+// the "auth.jwt.expiry" config entry.
 func GenerateToken(id interface{}) (string, error) {
-	expiry := time.Duration(config.Get("jwtExpiry").(float64)) * time.Second
+	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userid": id,
@@ -29,7 +30,7 @@ func GenerateToken(id interface{}) (string, error) {
 		"exp":    now.Add(expiry).Unix(), // Expiry
 	})
 
-	return token.SignedString([]byte(config.GetString("jwtSecret")))
+	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
 }
 
 // JWTController a controller for JWT-based authentication, using HMAC SHA256.
@@ -58,13 +59,14 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 	columns := FindColumns(user, "username", "password")
 
 	result := database.GetConnection().Where(columns[0].Name+" = ?", username).First(user)
+	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 
-	if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
-		panic(errors)
+	if result.Error != nil && !notFound {
+		panic(result.Error)
 	}
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
-	if !result.RecordNotFound() && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String("password"))) == nil {
+	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String("password"))) == nil {
 		token, err := GenerateToken(username)
 		if err != nil {
 			panic(err)
@@ -92,9 +94,21 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 // instantiating an authenticated request's user.
 func JWTRoutes(router *goyave.Router, model interface{}) *goyave.Router {
 	jwtRouter := router.Subrouter("/auth")
-	jwtRouter.Route("POST", "/login", NewJWTController(model).Login, validation.RuleSet{
-		"username": {"required", "string"},
-		"password": {"required", "string"},
+	jwtRouter.Route("POST", "/login", NewJWTController(model).Login).Validate(&validation.Rules{
+		Fields: validation.FieldMap{
+			"username": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "string"},
+				},
+			},
+			"password": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "string"},
+				},
+			},
+		},
 	})
 	return jwtRouter
 }

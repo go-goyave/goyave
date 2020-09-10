@@ -160,6 +160,15 @@ insertedRecords := factory.Save(5).([]*model.User)
   - If you were just using `len(body)`, just replace it with `length`.
   - If you were using the content of the body in your logger, you will have to implement a [chained writer](./basics/responses.html#chained-writers).
 - Removed deprecated method `goyave.CreateTestResponse()`. Use `goyave.TestSuite.CreateTestResponse()` instead.
+- Although it is not a breaking change, chained writers should now implement `goyave.PreWriter` and call `PreWrite()` on their child writer if they implement the interface.
+
+```go
+func (w *customWriter) PreWrite(b []byte) {
+	if pr, ok := w.Writer.(goyave.PreWriter); ok {
+		pr.PreWrite(b)
+	}
+}
+```
 
 ## v1.0.0 to v2.0.0
 

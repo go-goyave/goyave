@@ -375,7 +375,11 @@ if response.HandleDatabaseError(result) {
 
 <p><Badge text="Since v2.7.0"/></p>
 
-It is possible to replace the `io.Writer` used by the `Response` object. This allows for more flexibility when manipulating the data you send to the client. It makes it easier to compress your response, write it to logs, etc. You can chain as many writers as you want. The writer replacement is most often done in a middleware. If your writer implements `io.Closer`, it will be automatically closed at the end of the request's lifecycle.
+It is possible to replace the `io.Writer` used by the `Response` object. This allows for more flexibility when manipulating the data you send to the client. It makes it easier to compress your response, write it to logs, etc. You can chain as many writers as you want.
+
+Note that at the time your writer's `Write()` method is called, the request header **is already written**, therefore, changing headers or status doesn't have any effect. If you want to alter the headers, do so in a `PreWrite(b []byte)` function (from the `goyave.PreWriter` interface).
+
+The writer replacement is most often done in a middleware. If your writer implements `io.Closer`, it will be automatically closed at the end of the request's lifecycle.
 
 The following example is a simple implementation of a middleware logging everything sent by the server to the client.
 ``` go
@@ -390,6 +394,15 @@ type LogWriter struct {
 	writer   io.Writer
 	response *goyave.Response
 	body     []byte
+}
+
+func (w *LogWriter) PreWrite(b []byte) {
+	// All chained writers should implement goyave.PreWriter
+	// to allow the modification of headers and status before
+	// they are written.
+	if pr, ok := w.writer.(goyave.PreWriter); ok {
+		pr.PreWrite(b)
+	}
 }
 
 func (w *LogWriter) Write(b []byte) (int, error) {

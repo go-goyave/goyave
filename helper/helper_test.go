@@ -2,6 +2,8 @@ package helper
 
 import (
 	"encoding/json"
+	"fmt"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,6 +59,15 @@ func TestToFloat64(t *testing.T) {
 	v, err = ToFloat64(1.5)
 	assert.Nil(t, err)
 	assert.Equal(t, 1.5, v)
+
+	v, err = ToFloat64("NaN")
+	assert.Nil(t, err)
+	assert.True(t, math.IsNaN(v))
+
+	v, err = ToFloat64([]string{})
+	fmt.Println(err)
+	assert.NotNil(t, err)
+	assert.Equal(t, float64(0), v)
 }
 
 func TestToString(t *testing.T) {

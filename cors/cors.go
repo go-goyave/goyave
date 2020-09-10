@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v3/helper"
 )
 
 // Options holds the CORS configuration for a router.

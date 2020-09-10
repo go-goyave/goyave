@@ -3,17 +3,22 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/System-Glitch/goyave/actions"><img src="https://github.com/System-Glitch/goyave/workflows/Test/badge.svg" alt="Build Status"/></a>
     <a href="https://github.com/System-Glitch/goyave/releases"><img src="https://img.shields.io/github/v/release/System-Glitch/goyave?include_prereleases" alt="Version"/></a>
-    <a href="https://goreportcard.com/report/github.com/System-Glitch/goyave"><img src="https://goreportcard.com/badge/github.com/System-Glitch/goyave" alt="Go Report"/></a>
+    <a href="https://github.com/System-Glitch/goyave/actions"><img src="https://github.com/System-Glitch/goyave/workflows/Test/badge.svg?branch=develop" alt="Build Status"/></a>
     <a href="https://coveralls.io/github/System-Glitch/goyave?branch=master"><img src="https://coveralls.io/repos/github/System-Glitch/goyave/badge.svg" alt="Coverage Status"/></a>
+    <a href="https://goreportcard.com/report/github.com/System-Glitch/goyave"><img src="https://goreportcard.com/badge/github.com/System-Glitch/goyave" alt="Go Report"/></a>
+    
+</p>
+
+<p align="center">
     <a href="https://github.com/System-Glitch/goyave/blob/master/LICENSE"><img src="https://img.shields.io/dub/l/vibe-d.svg" alt="License"/></a>
     <a href="https://github.com/avelino/awesome-go"><img src="https://awesome.re/mentioned-badge.svg" alt="Awesome"/></a>
+    <a href="https://discord.gg/mfemDMc"><img src="https://img.shields.io/discord/744264895209537617?logo=discord" alt="Discord"/></a>
 </p>
 
 <h2 align="center">An Elegant Golang Web Framework</h2>
 
-Goyave is a progressive and accessible web application framework focused on APIs, aimed at making development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
+Goyave is a progressive and accessible web application framework focused on REST APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
 
 <table>
     <tr>
@@ -48,7 +53,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
 
-<a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v2"><h3 align="center">pkg.go.dev</h3></a>
+<a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v3"><h3 align="center">pkg.go.dev</h3></a>
 
 ## Getting started
 
@@ -83,13 +88,13 @@ Hi!
 
 There is also an `echo` route, with basic validation of query parameters.
 ```
-$ curl http://localhost:8080/echo?text=abc%20123
+$ curl -H "Content-Type: application/json" -X POST -d '{"text":"abc 123"}' http://localhost:8080/echo
 abc 123
 ```
 
 ## Features tour
 
-This section's goal is to give a **brief** look at the main features of the framework. Don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v2) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
+This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v3) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
 
 - [Hello world from scratch](#hello-world-from-scratch)
 - [Configuration](#configuration)
@@ -109,12 +114,12 @@ This section's goal is to give a **brief** look at the main features of the fram
 The example below shows a basic `Hello world` application using Goyave.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 
 func registerRoutes(router *goyave.Router) {
     router.Get("/hello", func(response *goyave.Response, request *goyave.Request) {
         response.String(http.StatusOK, "Hello world!")
-    }, nil)
+    })
 }
 
 func main() {
@@ -130,42 +135,54 @@ To configure your application, use the `config.json` file at your project's root
 
 ```json
 {
-    "appName": "goyave_template",
-    "environment": "localhost",
-    "host": "127.0.0.1",
-    "port": 8080,
-    "httpsPort": 8081,
-    "protocol": "http",
-    "debug": true,
-    "timeout": 10,
-    "maxUploadSize": 10,
-    "defaultLanguage": "en-US",
-    "dbConnection": "mysql",
-    "dbHost": "127.0.0.1",
-    "dbPort": 3306,
-    "dbName": "goyave",
-    "dbUsername": "root",
-    "dbPassword": "root",
-    "dbOptions": "charset=utf8&parseTime=true&loc=Local",
-    "dbMaxOpenConnections": 20,
-    "dbMaxIdleConnections": 20,
-    "dbMaxLifetime": 300,
-    "dbAutoMigrate": false
+    "app": {
+        "name": "goyave_template",
+        "environment": "localhost",
+        "debug": true,
+        "defaultLanguage": "en-US"
+    },
+    "server": {
+        "host": "127.0.0.1",
+        "maintenance": false,
+        "protocol": "http",
+        "domain": "",
+        "port": 8080,
+        "httpsPort": 8081,
+        "timeout": 10,
+        "maxUploadSize": 10
+    },
+    "database": {
+        "connection": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "name": "goyave",
+        "username": "root",
+        "password": "root",
+        "options": "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local",
+        "maxOpenConnections": 20,
+        "maxIdleConnections": 20,
+        "maxLifetime": 300,
+        "autoMigrate": false
+    }
 }
 ```
 
-If this config file misses some config entries, the default values will be used. All values from the framework's core are **validated**. That means that the application will not start if you provided an invalid value in your config (For example if the specified port is not a number).
+If this config file misses some config entries, the default values will be used. 
+
+All entries are **validated**. That means that the application will not start if you provided an invalid value in your config (for example if the specified port is not a number). That also means that a goroutine trying to change a config entry with the incorrect type will panic.  
+Entries can be registered with a default value, their type and authorized values from any package. 
 
 **Getting a value:**
 ```go
-config.GetString("appName") // "goyave"
-config.GetBool("debug") // true
-config.Has("appName") // true
+config.GetString("app.name") // "goyave"
+config.GetBool("app.debug") // true
+config.GetInt("server.port") // 80
+config.Has("app.name") // true
 ```
 
 **Setting a value:**
 ```go
-config.Set("appName", "my awesome app")
+config.Set("app.name", "my awesome app")
 ```
 
 **Learn more about configuration in the [documentation](https://system-glitch.github.io/goyave/guide/configuration.html).**
@@ -183,33 +200,22 @@ func Register(router *goyave.Router) {
     // With closure, not recommended
     router.Get("GET", "/hello", func(response *goyave.Response, r *goyave.Request) {
         response.String(http.StatusOK, "Hi!")
-    }, nil)
+    })
 
-    router.Get("/hello", myHandlerFunction, nil)
-    router.Post("/user", user.Register, userrequest.Register)
-    router.Route("PUT|PATCH", "/user", user.Update, userrequest.Update)
-    router.Route("POST", "/product", product.Store, productrequest.Store, middleware.Trim)
+    router.Get("/hello", myHandlerFunction)
+    router.Post("/user", user.Register).Validate(user.RegisterRequest)
+    router.Route("PUT|PATCH", "/user", user.Update).Validate(user.UpdateRequest)
+    router.Route("POST", "/product", product.Store).Validate(product.StoreRequest).Middleware(middleware.Trim)
 }
 ```
-
-**`Route` Method signature:**
-
-| Parameters                           | Return          |
-|--------------------------------------|-----------------|
-| `methods string`                     | `*goyave.Route` |
-| `uri string`                         |                 |
-| `handler goyave.Handler`             |                 |
-| `validationRules validation.RuleSet` |                 |
-| `middleware ...goyave.Middleware`    |                 |
-
 
 URIs can have parameters, defined using the format `{name}` or `{name:pattern}`. If a regular expression pattern is not defined, the matched variable will be anything until the next slash. 
 
 **Example:**
 ``` go
-router.Get("/product/{key}", product.Show, nil)
-router.Get("/product/{id:[0-9]+}", product.ShowById, nil)
-router.Get("/category/{category}/{id:[0-9]+}", category.Show, nil)
+router.Get("/product/{key}", product.Show)
+router.Get("/product/{id:[0-9]+}", product.ShowById)
+router.Get("/category/{category}/{id:[0-9]+}", category.Show)
 ```
 
 Route parameters can be retrieved as a `map[string]string` in handlers using the request's `Params` attribute.
@@ -234,11 +240,11 @@ Handlers receive a `goyave.Response` and a `goyave.Request` as parameters.
 `goyave.Response` implements `http.ResponseWriter` and is used to write a response. If you didn't write anything before the request lifecycle ends, `204 No Content` is automatically written. Learn everything about reponses [here](https://system-glitch.github.io/goyave/guide/basics/responses.html).
 
 Let's take a very simple CRUD as an example for a controller definition:
-**http/controllers/product/product.go**:
+**http/controller/product/product.go**:
 ``` go
 func Index(response *goyave.Response, request *goyave.Request) {
     products := []model.Product{}
-    result := database.GetConnection().Find(&products)
+    result := database.Conn().Find(&products)
     if response.HandleDatabaseError(result) {
         response.JSON(http.StatusOK, products)
     }
@@ -246,8 +252,7 @@ func Index(response *goyave.Response, request *goyave.Request) {
 
 func Show(response *goyave.Response, request *goyave.Request) {
     product := model.Product{}
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
-    result := database.GetConnection().First(&product, id)
+    result := database.Conn().First(&product, request.Params["id"])
     if response.HandleDatabaseError(result) {
         response.JSON(http.StatusOK, product)
     }
@@ -258,7 +263,7 @@ func Store(response *goyave.Response, request *goyave.Request) {
         Name:  request.String("name"),
         Price: request.Numeric("price"),
     }
-    if err := database.GetConnection().Create(&product).Error; err != nil {
+    if err := database.Conn().Create(&product).Error; err != nil {
         response.Error(err)
     } else {
         response.JSON(http.StatusCreated, map[string]uint{"id": product.ID})
@@ -266,10 +271,9 @@ func Store(response *goyave.Response, request *goyave.Request) {
 }
 
 func Update(response *goyave.Response, request *goyave.Request) {
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
     product := model.Product{}
-    db := database.GetConnection()
-    result := db.Select("id").First(&product, id)
+    db := database.Conn()
+    result := db.Select("id").First(&product, request.Params["id"])
     if response.HandleDatabaseError(result) {
         if err := db.Model(&product).Update("name", request.String("name")).Error; err != nil {
             response.Error(err)
@@ -278,10 +282,9 @@ func Update(response *goyave.Response, request *goyave.Request) {
 }
 
 func Destroy(response *goyave.Response, request *goyave.Request) {
-    id, _ := strconv.ParseUint(request.Params["id"], 10, 64)
     product := model.Product{}
-    db := database.GetConnection()
-    result := db.Select("id").First(&product, id)
+    db := database.Conn()
+    result := db.Select("id").First(&product, request.Params["id"])
     if response.HandleDatabaseError(result) {
         if err := db.Delete(&product).Error; err != nil {
             response.Error(err)
@@ -324,12 +327,12 @@ Validation rules can **alter the raw data**. That means that when you validate a
 
 Validation is automatic. You just have to define a rules set and assign it to a route. When the validation doesn't pass, the request is stopped and the validation errors messages are sent as a response.
 
-The `http/request` directory contains the requests validation rules sets. You should have one package per feature, regrouping all requests handled by the same controller. The package should be named `<feature_name>request`.
+Rule sets are defined in the same package as the controller, typically in a separate file named `request.go`. Rule sets are named after the name of the controller handler they will be used with, and end with `Request`. For example, a rule set for the `Store` handler will be named `StoreRequest`. If a rule set can be used for multiple handlers, consider using a name suited for all of them. The rules for a store operation are often the same for update operations, so instead of duplicating the set, create one unique set called `UpsertRequest`.
 
-**Example:** (`http/request/productrequest/product.go`)
+**Example:** (`http/controller/product/request.go`)
 ``` go
 var (
-    Store validation.RuleSet = validation.RuleSet{
+    StoreRequest validation.RuleSet = validation.RuleSet{
         "name":  {"required", "string", "between:3,50"},
         "price": {"required", "numeric", "min:0.01"},
         "image": {"nullable", "file", "image", "max:2048", "count:1"},
@@ -339,10 +342,10 @@ var (
 )
 ```
 
-Once your rules sets are defined, you need to assign them to your routes. The rule set for a route is the last parameter of the route definition.
+Once your rules sets are defined, you need to assign them to your routes using the `Validate()` method.
 
 ``` go
-router.Post("/product", product.Store, productrequest.Store)
+router.Post("/product", product.Store).Validate(product.StoreRequest)
 ```
 
 
@@ -356,20 +359,20 @@ Database connections are managed by the framework and are long-lived. When the s
 
 Very few code is required to get started with databases. There are some [configuration](https://system-glitch.github.io/goyave/guide/configuration.html#configuration-reference) options that you need to change though:
 
-- `dbConnection`
-- `dbHost`
-- `dbPort`
-- `dbName`
-- `dbUsername`
-- `dbPassword`
-- `dbOptions`
-- `dbMaxOpenConnection`
-- `dbMaxIdleConnection`
-- `dbMaxLifetime`
+- `database.connection`
+- `database.host`
+- `database.port`
+- `database.name`
+- `database.username`
+- `database.password`
+- `database.options`
+- `database.maxOpenConnection`
+- `database.maxIdleConnection`
+- `database.maxLifetime`
 
 ``` go
 user := model.User{}
-db := database.GetConnection()
+db := database.Conn()
 db.First(&user)
 
 fmt.Println(user)
@@ -475,7 +478,7 @@ The following example is a **functional** test and would be located in the `test
 ``` go
 import (
     "my-project/http/route"
-    "github.com/System-Glitch/goyave/v2"
+    "github.com/System-Glitch/goyave/v3"
 )
 
 type CustomTestSuite struct {
@@ -518,6 +521,7 @@ headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded;
 resp, err := suite.Post("/product", headers, strings.NewReader("field=value"))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -530,6 +534,7 @@ body, _ := json.Marshal(map[string]interface{}{"name": "Pizza", "price": 12.5})
 resp, err := suite.Post("/product", headers, bytes.NewReader(body))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -565,10 +570,12 @@ The following file `http/controller/status/status.go` is an example of custom 40
 ``` go
 package status
 
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 
 func NotFound(response *goyave.Response, request *goyave.Request) {
-    response.RenderHTML(response.GetStatus(), "errors/404.html", nil)
+    if err := response.RenderHTML(response.GetStatus(), "errors/404.html", nil); err != nil {
+        response.Error(err)
+    }
 }
 ```
 
@@ -607,7 +614,7 @@ router.CORS(options)
 Goyave provides a convenient and expandable way of handling authentication in your application. Authentication can be enabled when registering your routes:
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/auth"
+import "github.com/System-Glitch/goyave/v3/auth"
 
 //...
 
@@ -621,10 +628,10 @@ Authenticators use their model's struct fields tags to know which field to use f
 
 ``` go
 type User struct {
-	gorm.Model
-	Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
-	Name     string `gorm:"type:varchar(100)"`
-	Password string `gorm:"type:varchar(60)" auth:"password"`
+    gorm.Model
+    Email    string `gorm:"type:char(100);unique_index" auth:"username"`
+    Name     string `gorm:"type:char(100)"`
+    Password string `gorm:"type:char(60)" auth:"password"`
 }
 ```
 
@@ -632,8 +639,8 @@ When a user is successfully authenticated on a protected route, its information 
 
 ``` go
 func Hello(response *goyave.Response, request *goyave.Request) {
-	user := request.User.(*model.User)
-	response.String(http.StatusOK, "Hello " + user.Name)
+    user := request.User.(*model.User)
+    response.String(http.StatusOK, "Hello " + user.Name)
 }
 ```
 
@@ -651,9 +658,10 @@ You can support also me on Patreon:
     <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
 
-I'm very grateful to my patron:
+I'm very grateful to my patrons:
 
 - Ben Hyrman
+- Massimiliano Bertinetti
 
 ### Contributors
 

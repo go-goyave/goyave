@@ -17,7 +17,7 @@ meta:
 Goyave provides a convenient and expandable way of handling authentication in your application. Authentication can be enabled when registering your routes:
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/auth"
+import "github.com/System-Glitch/goyave/v3/auth"
 
 //...
 
@@ -61,9 +61,9 @@ Authenticators use their model's struct fields tags to know which field to use f
 ``` go
 type User struct {
 	gorm.Model
-	Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
-	Name     string `gorm:"type:varchar(100)"`
-	Password string `gorm:"type:varchar(60)" auth:"password"`
+	Email    string `gorm:"type:char(100);unique_index" auth:"username"`
+	Name     string `gorm:"type:char(100)"`
+	Password string `gorm:"type:char(60)" auth:"password"`
 }
 ```
 
@@ -114,10 +114,24 @@ Hello Jérémy
 
 This Authenticator fetches the user information from the config. This method is good for quick proof-of-concepts, as it requires minimum setup, but shouldn't be used in real-world applications.
 
-- The `authUsername` config entry defines the username that must be matched.
-- The `authPassword` config entry defines the password that must be matched.
+- The `auth.basic.username` config entry defines the username that must be matched.
+- The `auth.basic.password` config entry defines the password that must be matched.
 
-To apply this protection to your routes, add the following middleware:
+To apply this protection to your routes, start by adding the following content to your configuration:
+
+```json
+{
+  ...
+  "auth": {
+    "basic": {
+      "username": "admin",
+      "password": "admin"
+    }
+  }
+}
+```
+
+Then, add the following middleware:
 
 ``` go
 router.Middleware(auth.ConfigBasicAuth())
@@ -138,7 +152,7 @@ $ curl -u username:password http://localhost:8080/hello
 #### auth.ConfigBasicAuth
 
 Create a new authenticator middleware for config-based Basic authentication. On auth success, the request user is set to a `auth.BasicUser`.
-The user is authenticated if the `authUsername` and `authPassword` config entries match the request's Authorization header.
+The user is authenticated if the `auth.basic.username` and `auth.basic.password` config entries match the request's Authorization header.
 
 | Parameters | Return              |
 |------------|---------------------|
@@ -150,10 +164,24 @@ JWT, or [JSON Web Token](https://en.wikipedia.org/wiki/JSON_Web_Token), is an op
 
 JTW Authentication comes with two configuration entries:
 
-- `jwtExpiry`: the number of seconds a token is valid for. Defaults to `300` (5 minutes).
-- `jwtSecret`: the secret used for the HMAC signature. This entry **doesn't have a default value**, you need to define it yourself. Use a key that is **at least 256 bits long**.
+- `auth.jwt.expiry`: the number of seconds a token is valid for. Defaults to `300` (5 minutes).
+- `auth.jwt.secret`: the secret used for the HMAC signature. This entry **doesn't have a default value**, you need to define it yourself. Use a key that is **at least 256 bits long**.
 
-To apply JWT protection to your routes, add the following middleware:
+To apply JWT protection to your routes, start by adding the following content to your configuration:
+
+```json
+{
+  ...
+  "auth": {
+    "jwt": {
+      "expiry": 300,
+      "secret": "jwt-secret"
+    }
+  }
+}
+```
+
+Then, add the following middleware:
 
 ``` go
 authenticator := auth.Middleware(&model.User{}, &auth.JWTAuthenticator{})
@@ -208,7 +236,7 @@ A `JWTController` contains one handler called `Login`.
 **Example:**
 ``` go
 jwtRouter := router.Subrouter("/auth")
-jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login, validation.RuleSet{
+jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login).Validate(validation.RuleSet{
 	"username": {"required", "string"},
 	"password": {"required", "string"},
 })
@@ -218,13 +246,13 @@ jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login, va
 
 You may need to generate a token yourself outside of the login route. This function generates a new JWT.
 
-The token is created using the HMAC SHA256 method and signed using the `jwtSecret` config entry.  
-The token is set to expire in the amount of seconds defined by the `jwtExpiry` config entry.
+The token is created using the HMAC SHA256 method and signed using the `auth.jwt.secret` config entry.  
+The token is set to expire in the amount of seconds defined by the `auth.jwt.expiry` config entry.
 
 The generated token will contain the following claims:
 - `userid`: has the value of the `id` parameter
 - `nbf`: "Not before", the current timestamp is used
-- `exp`: "Expriy", the current timestamp plus the `jwtExpiry` config entry.
+- `exp`: "Expriy", the current timestamp plus the `auth.jwt.expiry` config entry.
 
 | Parameters       | Return   |
 |------------------|----------|
@@ -267,7 +295,7 @@ func (a *MyAuthenticator) Authenticate(request *goyave.Request, user interface{}
 	columns := auth.FindColumns(user, "token")
 
 	// Find the user in the database using its token
-	result := database.GetConnection().Where(columns[0].Name+" = ?", token).First(user)
+	result := database.Conn().Where(columns[0].Name+" = ?", token).First(user)
 
 	if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
 		// Database error

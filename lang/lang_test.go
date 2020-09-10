@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
+	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -21,8 +21,11 @@ func loadTestLang(lang string) {
 func (suite *LangTestSuite) SetupSuite() {
 	LoadDefault()
 	LoadAllAvailableLanguages()
-	config.Load()
-	config.Set("defaultLanguage", "en-US")
+
+	if err := config.LoadFrom("../config.test.json"); err != nil {
+		suite.FailNow(err.Error())
+	}
+	config.Set("app.defaultLanguage", "en-US")
 }
 
 func (suite *LangTestSuite) TestLang() {

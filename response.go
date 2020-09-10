@@ -1,7 +1,9 @@
 package goyave
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	htmltemplate "html/template"
 	"io"
@@ -11,26 +13,34 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/helper"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/jinzhu/gorm"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/helper"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"gorm.io/gorm"
 )
+
+// PreWriter is a writter that needs to alter the response headers or status
+// before they are written.
+// If implemented, PreWrite will be called right before the Write operation.
+type PreWriter interface {
+	PreWrite(b []byte)
+}
 
 // Response represents a controller response.
 type Response struct {
+	responseWriter http.ResponseWriter
+	err            interface{}
+	stacktrace     string
+	status         int
+
 	// Used to check if controller didn't write anything so
 	// core can write default 204 No Content.
 	// See RFC 7231, 6.3.5
 	empty       bool
-	status      int
 	wroteHeader bool
-	err         interface{}
-	stacktrace  string
-	writer      io.Writer
 
-	httpRequest    *http.Request
-	responseWriter http.ResponseWriter
+	httpRequest *http.Request
+	writer      io.Writer
 }
 
 // newResponse create a new Response using the given http.ResponseWriter and raw request.
@@ -47,19 +57,30 @@ func newResponse(writer http.ResponseWriter, rawRequest *http.Request) *Response
 }
 
 // --------------------------------------
-// http.ResponseWriter implementation
+// PreWriter implementation
 
-// Write writes the data as a response.
-// See http.ResponseWriter.Write
-func (r *Response) Write(data []byte) (int, error) {
+// PreWrite writes the response header after calling PreWrite on the
+// child writer if it implements PreWriter.
+func (r *Response) PreWrite(b []byte) {
 	r.empty = false
+	if pr, ok := r.writer.(PreWriter); ok {
+		pr.PreWrite(b)
+	}
 	if !r.wroteHeader {
 		if r.status == 0 {
 			r.status = 200
 		}
 		r.WriteHeader(r.status)
 	}
+}
 
+// --------------------------------------
+// http.ResponseWriter implementation
+
+// Write writes the data as a response.
+// See http.ResponseWriter.Write
+func (r *Response) Write(data []byte) (int, error) {
+	r.PreWrite(data)
 	return r.writer.Write(data)
 }
 
@@ -119,6 +140,27 @@ func (r *Response) GetError() interface{} {
 	return r.err
 }
 
+// GetStacktrace return the stacktrace of when the error occurred, or an empty string.
+// The stacktrace is captured by the recovery middleware.
+func (r *Response) GetStacktrace() string {
+	return r.stacktrace
+}
+
+// IsEmpty return true if nothing has been written to the response body yet.
+func (r *Response) IsEmpty() bool {
+	return r.empty
+}
+
+// IsHeaderWritten return true if the response header has been written.
+// Once the response header is written, you cannot change the response status
+// and headers anymore.
+func (r *Response) IsHeaderWritten() bool {
+	return r.wroteHeader
+}
+
+// --------------------------------------
+// Write methods
+
 // Status set the response status code.
 // Calling this method a second time will have no effect.
 func (r *Response) Status(status int) {
@@ -135,13 +177,13 @@ func (r *Response) JSON(responseCode int, data interface{}) error {
 	helper.RemoveHiddenFields(data)
 
 	r.responseWriter.Header().Set("Content-Type", "application/json")
-	r.WriteHeader(responseCode)
+	r.status = responseCode
 	return json.NewEncoder(r).Encode(data)
 }
 
 // String write a string as a response
 func (r *Response) String(responseCode int, message string) error {
-	r.WriteHeader(responseCode)
+	r.status = responseCode
 	_, err := r.Write([]byte(message))
 	return err
 }
@@ -160,6 +202,7 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	if header.Get("Content-Type") == "" {
 		header.Set("Content-Type", mime)
 	}
+
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := os.Open(file)
@@ -195,14 +238,16 @@ func (r *Response) Download(file string, fileName string) error {
 // Error print the error in the console and return it with an error code 500.
 // If debugging is enabled in the config, the error is also written in the response
 // and the stacktrace is printed in the console.
-// If debugging is not enabled, only the stauts code is set, which means you can still
+// If debugging is not enabled, only the status code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err interface{}) error {
-	if r.err == nil {
-		ErrLogger.Println(err)
-	}
+	ErrLogger.Println(err)
+	return r.error(err)
+}
+
+func (r *Response) error(err interface{}) error {
 	r.err = err
-	if config.GetBool("debug") {
+	if config.GetBool("app.debug") {
 		stacktrace := r.stacktrace
 		if stacktrace == "" {
 			stacktrace = string(debug.Stack())
@@ -242,23 +287,33 @@ func (r *Response) TemporaryRedirect(url string) {
 // Render a text template with the given data.
 // The template path is relative to the "resources/template" directory.
 func (r *Response) Render(responseCode int, templatePath string, data interface{}) error {
-	r.WriteHeader(responseCode)
 	tmplt, err := template.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
 		return err
 	}
-	return tmplt.Execute(r, data)
+
+	var b bytes.Buffer
+	if err := tmplt.Execute(&b, data); err != nil {
+		return err
+	}
+
+	return r.String(responseCode, b.String())
 }
 
 // RenderHTML an HTML template with the given data.
 // The template path is relative to the "resources/template" directory.
 func (r *Response) RenderHTML(responseCode int, templatePath string, data interface{}) error {
-	r.WriteHeader(responseCode)
 	tmplt, err := htmltemplate.ParseFiles(r.getTemplateDirectory() + templatePath)
 	if err != nil {
 		return err
 	}
-	return tmplt.Execute(r, data)
+
+	var b bytes.Buffer
+	if err := tmplt.Execute(&b, data); err != nil {
+		return err
+	}
+
+	return r.String(responseCode, b.String())
 }
 
 func (r *Response) getTemplateDirectory() string {
@@ -278,7 +333,7 @@ func (r *Response) getTemplateDirectory() string {
 // Returns true if there is no error.
 func (r *Response) HandleDatabaseError(db *gorm.DB) bool {
 	if db.Error != nil {
-		if gorm.IsRecordNotFoundError(db.Error) {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 			r.Status(http.StatusNotFound)
 		} else {
 			r.Error(db.Error)
@@ -286,22 +341,4 @@ func (r *Response) HandleDatabaseError(db *gorm.DB) bool {
 		return false
 	}
 	return true
-}
-
-// CreateTestResponse create an empty response with the given response writer.
-// This function is aimed at making it easier to unit test Responses.
-//
-// Deprecated: Use goyave.TestSuite.CreateTestResponse instead.
-//
-//  writer := httptest.NewRecorder()
-//  response := goyave.CreateTestResponse(writer)
-//  response.Status(http.StatusNoContent)
-//  result := writer.Result()
-//  fmt.Println(result.StatusCode) // 204
-func CreateTestResponse(recorder http.ResponseWriter) *Response {
-	return &Response{
-		responseWriter: recorder,
-		writer:         recorder,
-		empty:          true,
-	}
 }

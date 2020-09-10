@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/cors"
+	"github.com/System-Glitch/goyave/v3/cors"
 
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/validation"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,7 +20,7 @@ import (
 func createTestRequest(rawRequest *http.Request) *Request {
 	return &Request{
 		httpRequest: rawRequest,
-		Rules:       validation.RuleSet{},
+		Rules:       &validation.Rules{},
 		Params:      map[string]string{},
 	}
 }
@@ -95,7 +95,7 @@ func TestRequestValidate(t *testing.T) {
 	request.Rules = validation.RuleSet{
 		"string": {"required", "string"},
 		"number": {"required", "numeric", "min:10"},
-	}
+	}.AsRules()
 	errors := request.validate()
 	assert.Nil(t, errors)
 
@@ -105,13 +105,27 @@ func TestRequestValidate(t *testing.T) {
 	request.Data = map[string]interface{}{
 		"string": "hello world",
 	}
-	request.Rules = validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:50"},
+
+	request.Rules = &validation.Rules{
+		Fields: validation.FieldMap{
+			"string": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "string"},
+				},
+			},
+			"number": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "numeric"},
+					{Name: "min", Params: []string{"50"}},
+				},
+			},
+		},
 	}
 	errors = request.validate()
 	assert.NotNil(t, errors)
-	assert.Equal(t, 2, len(errors["validationError"]["number"]))
+	assert.Equal(t, 2, len(errors["number"]))
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/json")

@@ -26,6 +26,9 @@ func TestValidateArray(t *testing.T) {
 		validateArray("field", []float64{5.5}, []string{"file"}, map[string]interface{}{})
 	})
 	assert.Panics(t, func() {
+		validateArray("field", []float64{5.5}, []string{"array"}, map[string]interface{}{})
+	})
+	assert.Panics(t, func() {
 		validateArray("field", []float64{5.5}, []string{"not a type"}, map[string]interface{}{})
 	})
 	assert.False(t, validateArray("field", []string{"0.5", "not numeric"}, []string{"numeric"}, map[string]interface{}{}))
@@ -153,7 +156,15 @@ func TestValidateIn(t *testing.T) {
 	assert.False(t, validateIn("field", 2.51, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
 
 	assert.False(t, validateIn("field", []string{"1"}, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateIn("field", "hi", []string{}, map[string]interface{}{}) })
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "in"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateNotIn(t *testing.T) {
@@ -165,7 +176,15 @@ func TestValidateNotIn(t *testing.T) {
 	assert.True(t, validateNotIn("field", 2.51, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
 
 	assert.False(t, validateNotIn("field", []string{"1"}, []string{"1", "2.4", "2.65", "87", "2.5"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateNotIn("field", "hi", []string{}, map[string]interface{}{}) })
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "not_in"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateInArray(t *testing.T) {
@@ -181,6 +200,15 @@ func TestValidateInArray(t *testing.T) {
 	assert.False(t, validateInArray("field", false, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []bool{true}}))
 	assert.False(t, validateInArray("field", []string{"test"}, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []bool{true}}))
 	assert.False(t, validateInArray("field", []string{"test"}, []string{"other"}, map[string]interface{}{"field": "dolors", "other": 1}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "in_array"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateNotInArray(t *testing.T) {
@@ -196,4 +224,13 @@ func TestValidateNotInArray(t *testing.T) {
 	assert.True(t, validateNotInArray("field", 2.3, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []float64{1.1, 2.2, 3.3, 4.4, 5.5}}))
 	assert.True(t, validateNotInArray("field", false, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []bool{true}}))
 	assert.True(t, validateNotInArray("field", []string{"test"}, []string{"other"}, map[string]interface{}{"field": "dolors", "other": []bool{true}}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "not_in_array"},
+			},
+		}
+		field.check()
+	})
 }

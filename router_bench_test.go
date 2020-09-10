@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3/validation"
 )
 
 type routerDefinition struct {
@@ -125,7 +125,7 @@ func registerRouter(router *Router, def *routerDefinition) {
 		registerRouter(subrouter, subdef)
 	}
 	for _, routeDef := range def.routes {
-		router.registerRoute(routeDef.methods, routeDef.uri, routeDef.handler, routeDef.rules).Name(routeDef.name)
+		router.registerRoute(routeDef.methods, routeDef.uri, routeDef.handler).Validate(routeDef.rules).Name(routeDef.name)
 	}
 }
 

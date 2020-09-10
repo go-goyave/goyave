@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v3/helper"
 	"github.com/google/uuid"
 )
 
@@ -56,7 +56,11 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 			return true
 		}
 
-		if !isArrayType(parameters[0]) {
+		if parameters[0] == "array" {
+			panic("Cannot use array type for array validation. Use \">array\" instead")
+		}
+
+		if !validationRules[parameters[0]].IsType {
 			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", parameters[0]))
 		}
 
@@ -69,7 +73,7 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 		for i := 0; i < length; i++ {
 			val := list.Index(i).Interface()
 			tmpData := map[string]interface{}{field: val}
-			if !validationRules[parameters[0]](field, val, params, tmpData) {
+			if !validationRules[parameters[0]].Function(field, val, params, tmpData) {
 				return false
 			}
 			arr.Set(reflect.Append(arr, reflect.ValueOf(tmpData[field])))
@@ -112,7 +116,6 @@ func checkInNumeric(parameters []string, value interface{}) bool {
 }
 
 func validateIn(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("in", parameters, 1)
 	switch GetFieldType(value) {
 	case "numeric":
 		return checkInNumeric(parameters, value)
@@ -124,19 +127,17 @@ func validateIn(field string, value interface{}, parameters []string, form map[s
 }
 
 func validateNotIn(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("not_in", parameters, 1)
 	switch GetFieldType(value) {
 	case "numeric":
 		return !checkInNumeric(parameters, value)
 	case "string":
-		return !helper.Contains(parameters, value)
+		return !helper.ContainsStr(parameters, value.(string))
 	}
 	// Don't check arrays and files
 	return false
 }
 
 func validateInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("in_array", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists && GetFieldType(other) == "array" {
 		return helper.Contains(other, value)
@@ -145,7 +146,6 @@ func validateInArray(field string, value interface{}, parameters []string, form 
 }
 
 func validateNotInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("not_in_array", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists && GetFieldType(other) == "array" {
 		return !helper.Contains(other, value)

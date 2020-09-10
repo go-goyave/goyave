@@ -18,11 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"gorm.io/gorm"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/assert"
 	testify "github.com/stretchr/testify/suite"
 )
@@ -65,6 +66,9 @@ type TestSuite struct {
 }
 
 var _ ITestSuite = (*TestSuite)(nil) // implements ITestSuite
+
+// Use a mutex to avoid parallel goyave test suites to be run concurrently.
+var mu sync.Mutex
 
 // Timeout get the timeout for test failure when using RunServer or requests.
 func (s *TestSuite) Timeout() time.Duration {
@@ -216,7 +220,7 @@ func (s *TestSuite) Delete(route string, headers map[string]string, body io.Read
 // Request execute a request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Request(method, route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	protocol := config.GetString("protocol")
+	protocol := config.GetString("server.protocol")
 	req, err := http.NewRequest(method, getAddress(protocol)+route, body)
 	if err != nil {
 		return nil, err
@@ -325,7 +329,10 @@ func (s *TestSuite) getHTTPClient() *http.Client {
 func (s *TestSuite) ClearDatabase() {
 	db := database.GetConnection()
 	for _, m := range database.GetRegisteredModels() {
-		db.Unscoped().Delete(m)
+		tx := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(m)
+		if tx.Error != nil {
+			panic(tx.Error)
+		}
 	}
 }
 
@@ -334,7 +341,9 @@ func (s *TestSuite) ClearDatabase() {
 func (s *TestSuite) ClearDatabaseTables() {
 	db := database.GetConnection()
 	for _, m := range database.GetRegisteredModels() {
-		db.DropTableIfExists(m)
+		if err := db.Migrator().DropTable(m); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -344,6 +353,8 @@ func (s *TestSuite) ClearDatabaseTables() {
 // All tests are run using your project's root as working directory. This directory is determined
 // by the presence of a "go.mod" file.
 func RunTest(t *testing.T, suite ITestSuite) bool {
+	mu.Lock()
+	defer mu.Unlock()
 	if suite.Timeout() == 0 {
 		suite.SetTimeout(5 * time.Second)
 	}
@@ -354,6 +365,7 @@ func RunTest(t *testing.T, suite ITestSuite) bool {
 	if err := config.Load(); err != nil {
 		return assert.Fail(t, "Failed to load config", err)
 	}
+	defer config.Clear()
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
 

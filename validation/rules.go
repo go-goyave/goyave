@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/Code-Hex/uniseg"
-	"github.com/System-Glitch/goyave/v2/helper"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/helper"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 )
 
 func validateRequired(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -22,7 +22,6 @@ func validateRequired(field string, value interface{}, parameters []string, form
 }
 
 func validateMin(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("min", parameters, 1)
 	min, err := strconv.ParseFloat(parameters[0], 64)
 	if err != nil {
 		panic(err)
@@ -50,7 +49,6 @@ func validateMin(field string, value interface{}, parameters []string, form map[
 }
 
 func validateMax(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("max", parameters, 1)
 	max, err := strconv.ParseFloat(parameters[0], 64)
 	if err != nil {
 		panic(err)
@@ -78,7 +76,6 @@ func validateMax(field string, value interface{}, parameters []string, form map[
 }
 
 func validateBetween(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("between", parameters, 2)
 	min, errMin := strconv.ParseFloat(parameters[0], 64)
 	max, errMax := strconv.ParseFloat(parameters[1], 64)
 	if errMin != nil {
@@ -115,7 +112,6 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 }
 
 func validateGreaterThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("greater_than", parameters, 1)
 	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -145,11 +141,10 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("greater_than_equal", parameters, 1)
 	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -179,11 +174,10 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("lower_than", parameters, 1)
 	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -213,11 +207,10 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("lower_than_equal", parameters, 1)
 	valueType := GetFieldType(value)
 
 	compared, exists := form[parameters[0]]
@@ -247,7 +240,7 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 		return true
 	}
 
-	return false
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
 func validateBool(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -280,7 +273,6 @@ func validateBool(field string, value interface{}, parameters []string, form map
 }
 
 func validateSame(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("same", parameters, 1)
 	other, exists := form[parameters[0]]
 	if exists {
 		valueType := GetFieldType(value)
@@ -314,7 +306,6 @@ func validateConfirmed(field string, value interface{}, parameters []string, for
 }
 
 func validateSize(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("size", parameters, 1)
 	size, err := strconv.Atoi(parameters[0])
 	if err != nil {
 		panic(err)
@@ -338,5 +329,6 @@ func validateSize(field string, value interface{}, parameters []string, form map
 		}
 		return true
 	}
-	return false
+
+	return true // Pass if field type cannot be checked (bool, dates, ...)
 }

@@ -103,6 +103,7 @@ The following rules have **type-dependent** messages. That means that their mess
 - `greater_than_equal`
 - `lower_than`
 - `lower_than_equal`
+- `between`
 
 Type-dependent rules must have a language line for the four following types:
 - `string`
@@ -146,7 +147,7 @@ When an incoming request enters your application, the core language middleware c
 
 To use the localization feature, import the `lang` package:
 ``` go
-import "github.com/System-Glitch/goyave/v2/lang"
+import "github.com/System-Glitch/goyave/v3/lang"
 ```
 
 The main function of the localization feature is `lang.Get(language, line string)`. This function lets you retrieve a language entry.
@@ -170,6 +171,8 @@ func ControllerHandler(response *goyave.Response, request *goyave.Request) {
 ```
 
 ### Placeholders
+
+<p><Badge text="Since v2.10.0"/></p>
 
 Language lines can contain **placeholders**. Placeholders are identified by a colon directly followed by the placeholder name:
 

@@ -2,15 +2,48 @@ package database
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/jinzhu/gorm"
+	"github.com/System-Glitch/goyave/v3/config"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-var dbConnection *gorm.DB
+// Initializer is a function meant to modify a connection settings
+// at the global scope when it's created.
+//
+// Use `db.InstantSet()` and not `db.Set()`, since the latter clones
+// the gorm.DB instance instead of modifying it.
+type Initializer func(*gorm.DB)
 
-var models []interface{}
+// DialectorInitializer function initializing a GORM Dialector using the given
+// data source name (DSN).
+type DialectorInitializer func(dsn string) gorm.Dialector
+
+type dialect struct {
+	template    string
+	initializer DialectorInitializer
+}
+
+var (
+	dbConnection *gorm.DB
+	mu           sync.Mutex
+	models       []interface{}
+	initializers []Initializer
+
+	dialects map[string]dialect = map[string]dialect{}
+
+	optionPlaceholders map[string]string = map[string]string{
+		"{username}": "database.username",
+		"{password}": "database.password",
+		"{host}":     "database.host",
+		"{name}":     "database.name",
+		"{options}":  "database.options",
+	}
+)
 
 // GetConnection returns the global database connection pool.
 // Creates a new connection pool if no connection is available.
@@ -18,18 +51,46 @@ var models []interface{}
 // The connections will be closed automatically on server shutdown so you
 // don't need to call "Close()" when you're done with the database.
 func GetConnection() *gorm.DB {
+	mu.Lock()
+	defer mu.Unlock()
 	if dbConnection == nil {
 		dbConnection = newConnection()
 	}
 	return dbConnection
 }
 
+// Conn alias for GetConnection.
+func Conn() *gorm.DB {
+	return GetConnection()
+}
+
 // Close the database connections if they exist.
-func Close() {
+func Close() error {
+	var err error = nil
+	mu.Lock()
+	defer mu.Unlock()
 	if dbConnection != nil {
-		dbConnection.Close()
+		db, _ := dbConnection.DB()
+		err = db.Close()
 		dbConnection = nil
 	}
+
+	return err
+}
+
+// AddInitializer adds a database connection initializer function.
+// Initializer functions are meant to modify a connection settings
+// at the global scope when it's created.
+//
+// Initializer functions are called in order, meaning that functions
+// added last can override settings defined by previous ones.
+func AddInitializer(initializer Initializer) {
+	initializers = append(initializers, initializer)
+}
+
+// ClearInitializers remove all database connection initializer functions.
+func ClearInitializers() {
+	initializers = []Initializer{}
 }
 
 // RegisterModel registers a model for auto-migration.
@@ -57,66 +118,81 @@ func ClearRegisteredModels() {
 func Migrate() {
 	db := GetConnection()
 	for _, model := range models {
-		if err := db.AutoMigrate(model).Error; err != nil {
+		if err := db.AutoMigrate(model); err != nil {
 			panic(err)
 		}
 	}
 }
 
-func newConnection() *gorm.DB {
-	connection := config.GetString("dbConnection")
+// RegisterDialect registers a connection string template for the given dialect.
+//
+// You cannot override a dialect that already exists.
+//
+// Template format accepts the following placeholders, which will be replaced with
+// the corresponding configuration entries automatically:
+//  - "{username}"
+//  - "{password}"
+//  - "{host}"
+//  - "{port}"
+//  - "{name}"
+//  - "{options}"
+// Example template for the "mysql" dialect:
+//  {username}:{password}@({host}:{port})/{name}?{options}
+func RegisterDialect(name, template string, initializer DialectorInitializer) {
+	mu.Lock()
+	defer mu.Unlock()
+	if _, ok := dialects[name]; ok {
+		panic(fmt.Sprintf("Dialect %q already exists", name))
+	}
+	dialects[name] = dialect{template, initializer}
+}
 
-	if connection == "none" {
+func newConnection() *gorm.DB {
+	driver := config.GetString("database.connection")
+
+	if driver == "none" {
 		panic("Cannot create DB connection. Database is set to \"none\" in the config")
 	}
 
-	db, err := gorm.Open(connection, buildConnectionOptions(connection))
+	logLevel := logger.Silent
+	if config.GetBool("app.debug") {
+		logLevel = logger.Info
+	}
+
+	dialect, ok := dialects[driver]
+	if !ok {
+		panic(fmt.Sprintf("DB Connection %q not supported, forgotten import?", driver))
+	}
+
+	dsn := dialect.buildDSN()
+	db, err := gorm.Open(dialect.initializer(dsn), &gorm.Config{
+		PrepareStmt: true,
+		Logger:      logger.Default.LogMode(logLevel),
+	})
 	if err != nil {
 		panic(err)
 	}
 
-	db.LogMode(config.GetBool("debug"))
-	db.DB().SetMaxOpenConns(int(config.Get("dbMaxOpenConnections").(float64)))
-	db.DB().SetMaxIdleConns(int(config.Get("dbMaxIdleConnections").(float64)))
-	db.DB().SetConnMaxLifetime(time.Duration(config.Get("dbMaxLifetime").(float64)) * time.Second)
+	sql, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+	sql.SetMaxOpenConns(config.GetInt("database.maxOpenConnections"))
+	sql.SetMaxIdleConns(config.GetInt("database.maxIdleConnections"))
+	sql.SetConnMaxLifetime(time.Duration(config.GetInt("database.maxLifetime")) * time.Second)
+
+	for _, initializer := range initializers {
+		initializer(db)
+	}
 	return db
 }
 
-func buildConnectionOptions(connection string) string {
-	switch connection {
-	case "mysql":
-		return fmt.Sprintf(
-			"%s:%s@(%s:%d)/%s?%s",
-			config.GetString("dbUsername"),
-			config.GetString("dbPassword"),
-			config.GetString("dbHost"),
-			int64(config.Get("dbPort").(float64)),
-			config.GetString("dbName"),
-			config.GetString("dbOptions"),
-		)
-	case "postgres":
-		return fmt.Sprintf(
-			"host=%s port=%d user=%s dbname=%s password=%s %s",
-			config.GetString("dbHost"),
-			int64(config.Get("dbPort").(float64)),
-			config.GetString("dbUsername"),
-			config.GetString("dbName"),
-			config.GetString("dbPassword"),
-			config.GetString("dbOptions"),
-		)
-	case "sqlite3":
-		return config.GetString("dbName")
-	case "mssql":
-		return fmt.Sprintf(
-			"sqlserver://%s:%s@%s:%d?database=%s&%s",
-			config.GetString("dbUsername"),
-			config.GetString("dbPassword"),
-			config.GetString("dbHost"),
-			int64(config.Get("dbPort").(float64)),
-			config.GetString("dbName"),
-			config.GetString("dbOptions"),
-		)
+func (d dialect) buildDSN() string {
+	connStr := d.template
+	for k, v := range optionPlaceholders {
+		connStr = strings.Replace(connStr, k, config.GetString(v), 1)
 	}
+	connStr = strings.Replace(connStr, "{port}", strconv.Itoa(config.GetInt("database.port")), 1)
 
-	panic(fmt.Sprintf("DB Connection %s not supported", connection))
+	return connStr
 }

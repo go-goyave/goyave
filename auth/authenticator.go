@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/helper"
-	"github.com/jinzhu/gorm"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/database"
+	"github.com/System-Glitch/goyave/v3/helper"
 )
 
 // Column matches a column name with a struct field.
@@ -101,5 +101,5 @@ func columnName(field *reflect.StructField) string {
 		}
 	}
 
-	return gorm.ToColumnName(field.Name)
+	return database.Conn().Config.NamingStrategy.ColumnName("", field.Name)
 }

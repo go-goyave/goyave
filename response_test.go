@@ -7,26 +7,29 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
-	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/suite"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
+	"gorm.io/gorm"
 )
 
 type ResponseTestSuite struct {
-	suite.Suite
-	previousEnv string
+	TestSuite
 }
 
-func (suite *ResponseTestSuite) SetupSuite() {
-	suite.previousEnv = os.Getenv("GOYAVE_ENV")
-	os.Setenv("GOYAVE_ENV", "test")
-	if err := config.Load(); err != nil {
+func (suite *ResponseTestSuite) getFileSize(path string) string {
+	file, err := os.Open(path)
+	if err != nil {
 		suite.FailNow(err.Error())
 	}
+	stats, err := file.Stat()
+	if err != nil {
+		suite.FailNow(err.Error())
+	}
+	return strconv.FormatInt(stats.Size(), 10)
 }
 
 func (suite *ResponseTestSuite) TestResponseStatus() {
@@ -73,7 +76,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
-	config.Set("debug", true)
+	config.Set("app.debug", true)
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Error(fmt.Errorf("random error"))
@@ -82,6 +85,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Equal(500, resp.StatusCode)
 
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
@@ -97,13 +101,14 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.NotNil(response.err)
 
 	body, err = ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
 	suite.False(response.empty)
 	suite.Equal(500, response.status)
 	suite.NotNil(response.err)
 
-	config.Set("debug", false)
+	config.Set("app.debug", false)
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
 	response.Error("random error")
@@ -112,15 +117,49 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Equal(500, response.GetStatus())
 
 	body, err = ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Empty("", string(body))
 	suite.True(response.empty)
 	suite.Equal("random error", response.GetError())
 	suite.Equal(500, response.status)
-	config.Set("debug", true)
+	config.Set("app.debug", true)
+}
+
+func (suite *ResponseTestSuite) TestIsEmpty() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+
+	suite.True(response.IsEmpty())
+
+	response.String(http.StatusOK, "test")
+	suite.False(response.IsEmpty())
+}
+
+func (suite *ResponseTestSuite) TestIsHeaderWritten() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+
+	suite.False(response.IsHeaderWritten())
+
+	response.Status(http.StatusOK)
+	suite.False(response.IsHeaderWritten())
+
+	response.String(http.StatusOK, "test")
+	suite.True(response.IsHeaderWritten())
+}
+
+func (suite *ResponseTestSuite) TestGetStacktrace() {
+	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response := newResponse(httptest.NewRecorder(), rawRequest)
+	suite.Empty(response.GetStacktrace())
+
+	response.stacktrace = "fake stacktrace"
+	suite.Equal("fake stacktrace", response.GetStacktrace())
 }
 
 func (suite *ResponseTestSuite) TestResponseFile() {
+	size := suite.getFileSize("config/config.test.json")
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)
 
@@ -130,7 +169,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("inline", resp.Header.Get("Content-Disposition"))
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.Equal("29", resp.Header.Get("Content-Length"))
+	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
 
@@ -170,6 +209,7 @@ func (suite *ResponseTestSuite) TestResponseJSON() {
 	suite.False(response.empty)
 
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -193,6 +233,7 @@ func (suite *ResponseTestSuite) TestResponseJSONHiddenFields() {
 	response.JSON(http.StatusOK, model)
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -200,6 +241,7 @@ func (suite *ResponseTestSuite) TestResponseJSONHiddenFields() {
 }
 
 func (suite *ResponseTestSuite) TestResponseDownload() {
+	size := suite.getFileSize("config/config.test.json")
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response := newResponse(httptest.NewRecorder(), rawRequest)
 
@@ -209,7 +251,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal(200, resp.StatusCode)
 	suite.Equal("attachment; filename=\"config.json\"", resp.Header.Get("Content-Disposition"))
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
-	suite.Equal("29", resp.Header.Get("Content-Length"))
+	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
 
@@ -235,6 +277,7 @@ func (suite *ResponseTestSuite) TestResponseRedirect() {
 
 	suite.Equal(308, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Permanent Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
@@ -250,6 +293,7 @@ func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 
 	suite.Equal(307, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Temporary Redirect</a>.\n\n", string(body))
 	suite.False(response.empty)
@@ -277,6 +321,7 @@ func (suite *ResponseTestSuite) TestResponseWrite() {
 	response.Write([]byte("byte array"))
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("byte array", string(body))
 	suite.False(response.empty)
@@ -284,7 +329,7 @@ func (suite *ResponseTestSuite) TestResponseWrite() {
 
 func (suite *ResponseTestSuite) TestCreateTestResponse() {
 	recorder := httptest.NewRecorder()
-	response := CreateTestResponse(recorder)
+	response := suite.CreateTestResponse(recorder)
 	suite.NotNil(response)
 	if response != nil {
 		suite.Equal(recorder, response.responseWriter)
@@ -294,7 +339,7 @@ func (suite *ResponseTestSuite) TestCreateTestResponse() {
 func (suite *ResponseTestSuite) TestRender() {
 	// With map data
 	recorder := httptest.NewRecorder()
-	response := CreateTestResponse(recorder)
+	response := suite.CreateTestResponse(recorder)
 
 	mapData := map[string]interface{}{
 		"Status":  http.StatusNotFound,
@@ -304,12 +349,13 @@ func (suite *ResponseTestSuite) TestRender() {
 	resp := recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("Error 404: Not Found.", string(body))
 
 	// With struct data
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	structData := struct {
 		Status  int
@@ -322,21 +368,28 @@ func (suite *ResponseTestSuite) TestRender() {
 	resp = recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err = ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("Error 404: Not Found.", string(body))
+	resp.Body.Close()
 
 	// Non-existing template and exec error
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	suite.NotNil(response.Render(http.StatusNotFound, "non-existing-template", nil))
+
 	suite.NotNil(response.Render(http.StatusNotFound, "invalid.txt", nil))
+	resp = recorder.Result()
+	suite.Equal(0, response.status)
+	suite.Equal(200, resp.StatusCode) // Status not written in case of error
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestRenderHTML() {
 	// With map data
 	recorder := httptest.NewRecorder()
-	response := CreateTestResponse(recorder)
+	response := suite.CreateTestResponse(recorder)
 
 	mapData := map[string]interface{}{
 		"Status":  http.StatusNotFound,
@@ -346,12 +399,13 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 	resp := recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
 
 	// With struct data
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	structData := struct {
 		Status  int
@@ -364,23 +418,29 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 	resp = recorder.Result()
 	suite.Equal(404, resp.StatusCode)
 	body, err = ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
 
 	// Non-existing template and exec error
 	recorder = httptest.NewRecorder()
-	response = CreateTestResponse(recorder)
+	response = suite.CreateTestResponse(recorder)
 
 	suite.NotNil(response.RenderHTML(http.StatusNotFound, "non-existing-template", nil))
+
 	suite.NotNil(response.RenderHTML(http.StatusNotFound, "invalid.txt", nil))
+	resp = recorder.Result()
+	suite.Equal(0, response.status)
+	suite.Equal(200, resp.StatusCode) // Status not written in case of error
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	type TestRecord struct {
 		gorm.Model
 	}
-	config.Set("dbConnection", "mysql")
-	defer config.Set("dbConnection", "none")
+	config.Set("database.connection", "mysql")
+	defer config.Set("database.connection", "none")
 	db := database.GetConnection()
 
 	response := newResponse(httptest.NewRecorder(), nil)
@@ -389,9 +449,10 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	suite.Equal(http.StatusInternalServerError, response.status)
 
 	db.AutoMigrate(&TestRecord{})
-	defer db.DropTable(&TestRecord{})
+	defer db.Migrator().DropTable(&TestRecord{})
 	response = newResponse(httptest.NewRecorder(), nil)
-	suite.False(response.HandleDatabaseError(db.Where("id = ?", -1).Find(&TestRecord{})))
+
+	suite.False(response.HandleDatabaseError(db.First(&TestRecord{}, -1)))
 
 	suite.Equal(http.StatusNotFound, response.status)
 
@@ -404,6 +465,24 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 	results := []TestRecord{}
 	suite.True(response.HandleDatabaseError(db.Find(&results))) // Get all but empty result should not be an error
 	suite.Equal(0, response.status)
+}
+
+func (suite *ResponseTestSuite) TestHead() {
+	suite.RunServer(func(router *Router) {
+		router.Route("GET", "/test", func(response *Response, r *Request) {
+			response.String(http.StatusOK, "hello world")
+		})
+	}, func() {
+		resp, err := suite.Request("HEAD", "/test", nil, nil)
+		if err != nil {
+			suite.Fail(err.Error())
+		}
+		defer resp.Body.Close()
+
+		body := suite.GetBody(resp)
+		suite.Equal("application/json", resp.Header.Get("Content-Type"))
+		suite.Empty(body)
+	})
 }
 
 // ------------------------
@@ -444,6 +523,7 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 
 	resp := writer.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Equal("hello world", string(body))
 
 	// Test double chained writer
@@ -461,13 +541,10 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	suite.False(response.empty)
 	resp = writer.Result()
 	body, _ = ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	suite.Equal("hello world", string(body))
 }
 
-func (suite *ResponseTestSuite) TearDownAllSuite() {
-	os.Setenv("GOYAVE_ENV", suite.previousEnv)
-}
-
 func TestResponseTestSuite(t *testing.T) {
-	suite.Run(t, new(ResponseTestSuite))
+	RunTest(t, new(ResponseTestSuite))
 }

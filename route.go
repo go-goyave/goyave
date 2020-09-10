@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/validation"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/validation"
 )
 
 // Route stores information for matching and serving.
@@ -16,7 +16,7 @@ type Route struct {
 	methods         []string
 	parent          *Router
 	handler         Handler
-	validationRules validation.RuleSet
+	validationRules *validation.Rules
 	middlewareHolder
 	parametrizeable
 }
@@ -89,6 +89,24 @@ func (r *Route) Name(name string) *Route {
 	return r
 }
 
+// Validate adds validation rules to this route. If the user-submitted data
+// doesn't pass validation, the user will receive an error and messages explaining
+// what is wrong.
+//
+// Returns itself.
+func (r *Route) Validate(validationRules validation.Ruler) *Route {
+	r.validationRules = validationRules.AsRules()
+	return r
+}
+
+// Middleware register middleware for this route only.
+//
+// Returns itself.
+func (r *Route) Middleware(middleware ...Middleware) *Route {
+	r.middleware = middleware
+	return r
+}
+
 // BuildURL build a full URL pointing to this route.
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
@@ -99,7 +117,7 @@ func (r *Route) BuildURL(parameters ...string) string {
 		panic(fmt.Errorf("BuildURL: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
-	address := getAddress(config.GetString("protocol"))
+	address := getAddress(config.GetString("server.protocol"))
 
 	var builder strings.Builder
 	builder.Grow(len(fullURI) + len(address))

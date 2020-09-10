@@ -27,7 +27,7 @@ The following example is a **functional** test and would be located in the `test
 ``` go
 import (
     "my-project/http/route"
-    "github.com/System-Glitch/goyave/v2"
+    "github.com/System-Glitch/goyave/v3"
 )
 
 type CustomTestSuite struct {
@@ -57,7 +57,7 @@ We will explain in more details what this test does in the following sections, b
 This test is a **functional** test. Therefore, it requires route registration and should be located in the `test` package.
 
 ::: warning
-You cannot run Goyave test suites in parallel.
+Because tests using `goyave.TestSuite` are using the global config, are changing environment variables and working directory and often bind a port, they are **not run in parallel** to avoid conflicts. You don't have to use `-p 1` in your test command, test suites execution is locked by a mutex.
 :::
 
 ## HTTP Tests
@@ -107,6 +107,7 @@ headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded;
 resp, err := suite.Post("/product", headers, strings.NewReader("field=value"))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -119,6 +120,7 @@ body, _ := json.Marshal(map[string]interface{}{"name": "Pizza", "price": 12.5})
 resp, err := suite.Post("/product", headers, bytes.NewReader(body))
 suite.Nil(err)
 if err == nil {
+    defer resp.Body.Close()
     suite.Equal("response content", string(suite.GetBody(resp)))
 }
 ```
@@ -462,7 +464,7 @@ Drop all tables. This function only clears the tables of registered models.
 
 #### goyave.RunTest
 
-Run a test suite with prior initialization of a test environment. The GOYAVE_ENV environment variable is automatically set to "test" and restored to its original value at the end of the test run.
+Run a test suite with prior initialization of a test environment. The `GOYAVE_ENV` environment variable is automatically set to "test" and restored to its original value at the end of the test run.
 
 All tests are run using your project's root as working directory. This directory is determined by the presence of a `go.mod` file.
 
@@ -488,7 +490,7 @@ It is a good practice to use a separate database dedicated for testing, named `m
 All functions below require the `database`package to be imported.
 
 ``` go
-import "github.com/System-Glitch/goyave/v2/database"
+import "github.com/System-Glitch/goyave/v3/database"
 ```
 
 ::: tip
@@ -533,7 +535,7 @@ func UserGenerator() interface{} {
 
     // Generate between 0 and 10 blog posts
     rand.Seed(time.Now().UnixNano())
-    user.Posts = database.NewFactory(PostGenerator).Generate(rand.Intn(10))
+    user.Posts = database.NewFactory(PostGenerator).Generate(rand.Intn(10)).([]*model.Post)
 
     return user
 }
@@ -547,10 +549,10 @@ You can create a factory from any `database.Generator`.
 factory := database.NewFactory(model.UserGenerator)
 
 // Generate 5 random users
-records := factory.Generate(5)
+records := factory.Generate(5).([]*model.User)
 
 // Generate and insert 5 random users into the database
-insertedRecords := factory.Save(5)
+insertedRecords := factory.Save(5).([]*model.User)
 ```
 
 Note that generated records will not have an ID if they are not inserted into the database.
@@ -565,7 +567,7 @@ It is possible to override some of the generated data if needed, for example if 
 override := &model.User{
     Name: "Jérémy",
 }
-records := factory.Override(override).Generate(10)
+records := factory.Override(override).Generate(10).([]*model.User)
 // All generated records will have the same name: "Jérémy"
 ```
 
@@ -600,31 +602,35 @@ Set an override model for generated records. Values present in the override mode
 
 Generate a number of records using the given factory.
 
-| Parameters   | Return          |
-|--------------|-----------------|
-| `count uint` | `[]interface{}` |
+Returns a slice of the actual type of the generated records, meaning you can type-assert safely.
+
+| Parameters  | Return        |
+|-------------|---------------|
+| `count int` | `interface{}` |
 
 #### Factory.Save
 
-Generate a number of records using the given factory and return the inserted records.
+Save generate a number of records using the given factory, insert them in the database and return the inserted records.
 
-| Parameters   | Return          |
-|--------------|-----------------|
-| `count uint` | `[]interface{}` |
+The returned slice is a slice of the actual type of the generated records, meaning you can type-assert safely.
+
+| Parameters  | Return        |
+|-------------|---------------|
+| `count int` | `interface{}` |
 
 
 ### Seeders
 
-Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. Seeders are written in the `database/seeder` package.
+Seeders are functions which create a number of random records in the database in order to create a full and realistic test environment. Seeders can also generate records for your models' relations.
 
-Each seeder should have its own file. A seeder's responsibilities are limited to a single table or model. For example, the `seeder.User` should only seed the `users` table. Moreover, seeders should have the same name as the model they are using.
+Seeders are written in the `database/seeder` package. Each seeder should have its own file. 
 
 ``` go
 package seeder
 
 import (
     "my-project/database/model"
-    "github.com/System-Glitch/goyave/v2/database"
+    "github.com/System-Glitch/goyave/v3/database"
 )
 
 func User() {

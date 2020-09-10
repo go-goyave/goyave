@@ -10,9 +10,9 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/lang"
 )
 
 // Middleware function generating middleware handler function.
@@ -27,11 +27,12 @@ type Middleware func(Handler) Handler
 // had not been changed, the error is also written in the response.
 func recoveryMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
+		panicked := true
 		defer func() {
-			if err := recover(); err != nil {
+			if err := recover(); err != nil || panicked {
 				ErrLogger.Println(err)
 				response.err = err
-				if config.GetBool("debug") {
+				if config.GetBool("app.debug") {
 					response.stacktrace = string(debug.Stack())
 				}
 				response.Status(http.StatusInternalServerError)
@@ -39,6 +40,7 @@ func recoveryMiddleware(next Handler) Handler {
 		}()
 
 		next(response, r)
+		panicked = false
 	}
 }
 
@@ -60,7 +62,7 @@ func parseRequestMiddleware(next Handler) Handler {
 	return func(response *Response, request *Request) {
 
 		request.Data = nil
-		maxSize := int64(config.Get("maxUploadSize").(float64) * 1024 * 1024)
+		maxSize := int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
 		maxValueBytes := maxSize
 		var bodyBuf bytes.Buffer
 		n, err := io.CopyN(&bodyBuf, request.httpRequest.Body, maxValueBytes+1)
@@ -177,8 +179,11 @@ func corsMiddleware(next Handler) Handler {
 	}
 }
 
-// validateRequestMiddleware is a middleware that validates the request and sends a 422 error code
-// if the validation rules are not met.
+// validateRequestMiddleware is a middleware that validates the request.
+// If validation is not rules are not met, sets the response status to 422 Unprocessable Entity
+// or 400 Bad Request and the response error (which can be retrieved with `GetError()`) to the
+// `validation.Errors` returned by the validator.
+// This data can then be used in a status handler.
 func validateRequestMiddleware(next Handler) Handler {
 	return func(response *Response, r *Request) {
 		errsBag := r.validate()
@@ -193,7 +198,8 @@ func validateRequestMiddleware(next Handler) Handler {
 		} else {
 			code = http.StatusUnprocessableEntity
 		}
-		response.JSON(code, errsBag)
+		response.err = errsBag
+		response.Status(code)
 	}
 }
 
@@ -214,7 +220,7 @@ func languageMiddleware(next Handler) Handler {
 		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
 			request.Lang = lang.DetectLanguage(header)
 		} else {
-			request.Lang = config.GetString("defaultLanguage")
+			request.Lang = config.GetString("app.defaultLanguage")
 		}
 		next(response, request)
 	}

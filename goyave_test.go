@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/helper/filesystem"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
 )
 
 type GoyaveTestSuite struct {
@@ -35,8 +35,8 @@ func (suite *GoyaveTestSuite) loadConfig() {
 	if err := config.Load(); err != nil {
 		suite.FailNow(err.Error())
 	}
-	config.Set("tlsKey", "resources/server.key")
-	config.Set("tlsCert", "resources/server.crt")
+	config.Set("server.tls.key", "resources/server.key")
+	config.Set("server.tls.cert", "resources/server.crt")
 }
 
 func (suite *GoyaveTestSuite) TestGetHost() {
@@ -50,12 +50,12 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
 	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
 
-	config.Set("domain", "test.system-glitch.me")
+	config.Set("server.domain", "test.system-glitch.me")
 	suite.Equal("http://test.system-glitch.me:1235", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me:1236", getAddress("https"))
 
-	config.Set("port", 80.0)
-	config.Set("httpsPort", 443.0)
+	config.Set("server.port", 80.0)
+	config.Set("server.httpsPort", 443.0)
 	suite.Equal("http://test.system-glitch.me", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me", getAddress("https"))
 }
@@ -112,9 +112,9 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 
 func (suite *GoyaveTestSuite) TestTLSServer() {
 	suite.loadConfig()
-	config.Set("protocol", "https")
+	config.Set("server.protocol", "https")
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/hello", helloHandler, nil)
+		router.Route("GET", "/hello", helloHandler)
 	}, func() {
 		netClient := suite.getHTTPClient()
 		resp, err := netClient.Get("http://127.0.0.1:1235/hello")
@@ -128,6 +128,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Equal(308, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello\">Permanent Redirect</a>.\n\n", string(body))
 		}
@@ -143,6 +144,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Equal(308, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello?param=1\">Permanent Redirect</a>.\n\n", string(body))
 		}
@@ -158,12 +160,13 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
 		}
 	})
 
-	config.Set("protocol", "http")
+	config.Set("server.protocol", "http")
 }
 
 func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
@@ -187,9 +190,9 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 			c2 <- true
 		}()
 		<-c2
-		config.Set("protocol", "https")
+		config.Set("server.protocol", "https")
 		suite.RunServer(func(router *Router) {}, func() {})
-		config.Set("protocol", "http")
+		config.Set("server.protocol", "http")
 		c2 <- true
 		<-c2
 		c <- true
@@ -235,6 +238,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("test-content", string(body))
 		}
@@ -272,16 +276,16 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 			c2 <- true
 		}()
 		<-c2
-		config.Set("protocol", protocol)
+		config.Set("server.protocol", protocol)
 		if protocol == "https" {
 			// Invalid certificates
-			config.Set("tlsKey", "doesntexist")
-			config.Set("tlsCert", "doesntexist")
+			config.Set("server.tls.key", "doesntexist")
+			config.Set("server.tls.cert", "doesntexist")
 		}
 
 		fmt.Println("test server error " + protocol)
 		err := Start(func(router *Router) {})
-		config.Set("protocol", "http")
+		config.Set("server.protocol", "http")
 		c <- err
 	}()
 
@@ -319,7 +323,7 @@ func (suite *GoyaveTestSuite) TestServerAlreadyRunning() {
 func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 	suite.loadConfig()
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/hello", helloHandler, nil)
+		router.Route("GET", "/hello", helloHandler)
 	}, func() {
 		EnableMaintenance()
 		suite.True(IsMaintenanceEnabled())
@@ -350,14 +354,15 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
 		}
 	})
 
-	config.Set("maintenance", true)
+	config.Set("server.maintenance", true)
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/hello", helloHandler, nil)
+		router.Route("GET", "/hello", helloHandler)
 	}, func() {
 		suite.True(IsMaintenanceEnabled())
 
@@ -388,20 +393,21 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 			suite.Equal(200, resp.StatusCode)
 
 			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
 		}
 	})
-	config.Set("maintenance", false)
+	config.Set("server.maintenance", false)
 }
 
 func (suite *GoyaveTestSuite) TestAutoMigrate() {
 	suite.loadConfig()
-	config.Set("dbConnection", "mysql")
-	config.Set("dbAutoMigrate", true)
+	config.Set("database.connection", "mysql")
+	config.Set("database.autoMigrate", true)
 	suite.RunServer(func(router *Router) {}, func() {})
-	config.Set("dbAutoMigrate", false)
-	config.Set("dbConnection", "none")
+	config.Set("database.autoMigrate", false)
+	config.Set("database.Connection", "none")
 }
 
 func (suite *GoyaveTestSuite) TestError() {
@@ -435,7 +441,7 @@ func (suite *GoyaveTestSuite) TestConfigError() {
 		if err != nil {
 			e := err.(*Error)
 			suite.Equal(ExitInvalidConfig, e.ExitCode)
-			suite.Equal("Invalid config:\n\t- \"environment\" type must be string", e.Error())
+			suite.Equal("Invalid config:\n\t- \"app.environment\" type must be string", e.Error())
 		}
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,7 +19,7 @@ func validateString(field string, value interface{}, parameters []string, form m
 func validateDigits(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	str, ok := value.(string)
 	if ok {
-		return regexDigits.FindAllString(str, 1) == nil
+		return getRegex(patternDigits).FindAllString(str, 1) == nil
 	}
 	return false
 }
@@ -46,7 +45,6 @@ func validateEmail(field string, value interface{}, parameters []string, form ma
 }
 
 func validateStartsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("starts_with", parameters, 1)
 	str, ok := value.(string)
 	if ok {
 		for _, prefix := range parameters {
@@ -59,7 +57,6 @@ func validateStartsWith(field string, value interface{}, parameters []string, fo
 }
 
 func validateEndsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("ends_with", parameters, 1)
 	str, ok := value.(string)
 	if ok {
 		for _, prefix := range parameters {
@@ -112,10 +109,9 @@ func validateJSON(field string, value interface{}, parameters []string, form map
 }
 
 func validateRegex(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	RequireParametersCount("regex", parameters, 1)
 	str, ok := value.(string)
 	if ok {
-		return regexp.MustCompile(parameters[0]).MatchString(str)
+		return getRegex(parameters[0]).MatchString(str)
 	}
 	return false
 }

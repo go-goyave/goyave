@@ -43,7 +43,7 @@ Hi!
 
 There is also an `echo` route, with basic validation of query parameters.
 ```
-$ curl http://localhost:8080/echo?text=abc%20123
+$ curl -H "Content-Type: application/json" -X POST -d '{"text":"abc 123"}' http://localhost:8080/echo
 abc 123
 ```
 
@@ -59,7 +59,7 @@ In a terminal, run:
 ```
 $ mkdir myproject && cd myproject
 $ go mod init my-project
-$ go get -u github.com/System-Glitch/goyave/v2
+$ go get -u github.com/System-Glitch/goyave/v3
 ```
 
 Now that your project directory is set up and the dependencies are installed, let's start with the program entry point, `kernel.go`:
@@ -68,11 +68,13 @@ package main
 
 import (
     "my-project/http/route"
-    "github.com/System-Glitch/goyave/v2"
+    "github.com/System-Glitch/goyave/v3"
 )
 
 func main() {
-    goyave.Start(route.Register)
+    if err := goyave.Start(route.Register); err != nil {
+      os.Exit(err.(*goyave.Error).ExitCode)
+    }
 }
 ```
 
@@ -90,11 +92,11 @@ Create `http/route/route.go`:
 ``` go
 package routes
 
-import "github.com/System-Glitch/goyave/v2"
+import "github.com/System-Glitch/goyave/v3"
 
 // Register all the routes
 func Register(router *goyave.Router) {
-	router.Get("GET", "/hello", hello, nil)
+	router.Get("GET", "/hello", hello)
 }
 
 // Handler function for the "/hello" route

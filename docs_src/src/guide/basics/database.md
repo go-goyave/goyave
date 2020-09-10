@@ -22,50 +22,96 @@ All functions below require the `database` and the `gorm` packages to be importe
 
 ``` go
 import (
-  "github.com/System-Glitch/goyave/v2/database"
-  "github.com/jinzhu/gorm"
+  "github.com/System-Glitch/goyave/v3/database"
+  "gorm.io/gorm"
 )
 ```
 
 ## Configuration
 
-Very few code is required to get started with databases. There are some [configuration](../configuration.html#configuration-reference) options that you need to change though:
-- `dbConnection`
-- `dbHost`
-- `dbPort`
-- `dbName`
-- `dbUsername`
-- `dbPassword`
-- `dbOptions`
-- `dbMaxOpenConnection`
-- `dbMaxIdleConnection`
-- `dbMaxLifetime`
+Very few code is required to get started with databases. There are some [configuration](../configuration.html#database-category) options that you need to change though:
+- `database.connection`
+- `database.host`
+- `database.port`
+- `database.name`
+- `database.username`
+- `database.password`
+- `database.options`
+- `database.maxOpenConnection`
+- `database.maxIdleConnection`
+- `database.maxLifetime`
 
 ::: tip
-`dbOptions` represents the additional connection options. For example, when using MySQL, you should use the `parseTime=true` option so `time.Time` can be handled correctly. Available options differ from one driver to another and can be found in their respective documentation.
+`database.options` represents the additional connection options. For example, when using MySQL, you should use the `parseTime=true` option so `time.Time` can be handled correctly. Available options differ from one driver to another and can be found in their respective documentation.
 :::
 
 ### Drivers
 
-The framework supports the following sql drivers:
+The framework supports the following sql drivers out-of-the-box:
 - `none` (*Disable database features*)
 - `mysql`
 - `postgres`
 - `sqlite3`
 - `mssql`
 
-Change the `dbConnection` config entry to the desired driver.
+Change the `database.connection` config entry to the desired driver.
 
 In order to be able connect to the database, Gorm needs a database driver to be imported. Add the following import to your `kernel.go`:
 ``` go
-import _ "github.com/jinzhu/gorm/dialects/mysql"
-// import _ "github.com/jinzhu/gorm/dialects/postgres"
-// import _ "github.com/jinzhu/gorm/dialects/sqlite"
-// import _ "github.com/jinzhu/gorm/dialects/mssql"
+import _ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
+// import _ "github.com/System-Glitch/goyave/v3/database/dialect/postgres"
+// import _ "github.com/System-Glitch/goyave/v3/database/dialect/sqlite"
+// import _ "github.com/System-Glitch/goyave/v3/database/dialect/mssql"
 ```
 
 ::: tip
-For SQLite, only the `dbName` config entry is required.
+For SQLite, only the `database.name` config entry is required.
+:::
+
+---
+
+You can **register more dialects** for GORM [like you would usually do](http://gorm.io/docs/dialects.html). There is one more step required: you need to tell Goyave how to build the connection string for this dialect:
+
+```go
+import (
+  "github.com/System-Glitch/goyave/v3/database"
+  "gorm.io/gorm"
+  _ "example.com/user/mydriver"
+)
+
+type myDialect struct{
+  db gorm.SQLCommon
+  gorm.DefaultForeignKeyNamer
+}
+
+// Dialect implementation...
+
+func init() {
+  gorm.RegisterDialect("my-driver", &myDialect{})
+  database.RegisterDialect("my-driver", "{username}:{password}@({host}:{port})/{name}?{options}", mydriver.Open)
+}
+```
+
+Template format accepts the following placeholders, which will be replaced with the corresponding configuration entries automatically:
+- `{username}`
+- `{password}`
+- `{host}`
+- `{port}`
+- `{name}`
+- `{options}`
+
+You cannot override a dialect that already exists.
+
+#### database.RegisterDialect
+
+| Parameters                         | Return |
+|------------------------------------|--------|
+| `name string`                      | `void` |
+| `template string`                  |        |
+| `initializer DialectorInitializer` |        |
+
+::: tip
+`DialectorInitializer` is an alias for `func(dsn string) gorm.Dialector`
 :::
 
 ## Getting a database connection
@@ -73,6 +119,8 @@ For SQLite, only the `dbName` config entry is required.
 #### database.GetConnection
 
 Returns the global database connection pool. Creates a new connection pool if no connection is available.
+
+By default, the [`PrepareStmt`](https://gorm.io/docs/performance.html#Caches-Prepared-Statement) option is **enabled**.
 
 The connections will be closed automatically on server shutdown so you don't need to call `Close()` when you're done with the database.
 
@@ -87,6 +135,20 @@ db := database.GetConnection()
 db.First(&user)
 ```
 
+#### database.Conn
+
+`Conn()` is a short alias for `GetConnection()`.
+
+| Parameters | Return     |
+|------------|------------|
+|            | `*gorm.DB` |
+
+**Example:**
+``` go
+db := database.Conn()
+db.First(&user)
+```
+
 ::: tip
 Learn how to use the CRUD interface and the query builder in the [Gorm documentation](https://gorm.io/docs/index.html).
 :::
@@ -95,14 +157,47 @@ Learn how to use the CRUD interface and the query builder in the [Gorm documenta
 
 If you want to manually close the database connection, you can do it using `Close()`. New connections can be re-opened using `GetConnection()` as usual. This function does nothing if the database connection is already closed or has never been created.
 
-| Parameters | Return |
-|------------|--------|
-|            | `void` |
+| Parameters | Return  |
+|------------|---------|
+|            | `error` |
 
 **Example:**
 ``` go
 database.Close()
 ```
+
+### Connection initializers
+
+You can modify the global instance of `*gorm.DB` when it's created (and re-created, after a `Close()` for example) using `Initializer` functions. This is useful if you want to set global settings such as `gorm:table_options` and make them effective for you whole application. It is recommended to register initializers **before** starting the application.
+
+Initializer functions are called in order, meaning that functions added last can override settings defined by previous ones.
+
+```go
+database.AddInitializer(func(db *gorm.DB) {
+    db.Config.SkipDefaultTransaction = true
+    db.Statement.Settings.Store("gorm:table_options", "ENGINE=InnoDB")
+})
+```
+
+#### database.AddInitializer
+
+| Parameters                         | Return |
+|------------------------------------|--------|
+| `initializer database.Initializer` | `void` |
+
+::: tip
+- `database.Initializer` is an alias for `func(*gorm.DB)`
+- Useful link related to initializers: [GORM config](https://gorm.io/docs/gorm_config.html)
+:::
+
+#### database.ClearInitializers
+
+Remove all database connection initializer functions.
+
+| Parameters | Return |
+|------------|--------|
+|            | `void` |
+
 
 ## Models
 
@@ -184,10 +279,10 @@ You can also filter hidden fields by passing a struct to [`helper.RemoveHiddenFi
 
 ### Automatic migrations
 
-If the `dbAutoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.
+If the `database.autoMigrate` config option is set to true, all registered models will be automatically migrated when the server starts.
 
 ::: warning
-Automatic migrations **only create** tables, missing columns and missing indexes. They **wont't change** existing column’s type or delete unused columns.
+Automatic migrations create tables, missing foreign keys, constraints, columns and indexes, and will change existing column’s type if it’s size, precision or nullable changed. They **wont't** delete unused columns.
 :::
 
 If you would like to know more about migrations using Gorm, read their [documentation](https://gorm.io/docs/migration.html).

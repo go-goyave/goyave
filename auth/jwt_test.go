@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/database"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/database"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -16,7 +16,7 @@ type JWTAuthenticatorTestSuite struct {
 }
 
 func (suite *JWTAuthenticatorTestSuite) SetupSuite() {
-	config.Set("dbConnection", "mysql")
+	config.Set("database.connection", "mysql")
 	database.ClearRegisteredModels()
 	database.RegisterModel(&TestUser{})
 
@@ -44,7 +44,7 @@ func (suite *JWTAuthenticatorTestSuite) createWrongToken(method jwt.SigningMetho
 		"exp":    exp.Unix(), // Expiry
 	})
 
-	return token.SignedString([]byte(config.GetString("jwtSecret")))
+	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
 }
 
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticate() {
@@ -96,7 +96,7 @@ func (suite *JWTAuthenticatorTestSuite) TearDownTest() {
 }
 
 func (suite *JWTAuthenticatorTestSuite) TearDownSuite() {
-	database.GetConnection().DropTable(&TestUser{})
+	database.Conn().Migrator().DropTable(&TestUser{})
 	database.ClearRegisteredModels()
 }
 

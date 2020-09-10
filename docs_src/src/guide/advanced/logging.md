@@ -19,7 +19,7 @@ Logging is an important part of all applications. The framework provides a stand
 ## Custom loggers
 
 The framework provides three [Go standard loggers](https://golang.org/pkg/log/):
-- `goyave.Logger`: the logger for regular and miscellaneous information. Outputs to `os.Stdout` with `log.LstdFlags` by default. This logger is not used by any of the framework's internal features.
+- `goyave.Logger`: the logger for regular and miscellaneous information. Outputs to `os.Stdout` with `log.LstdFlags` by default.
 - `goyave.AccessLogger`: the logger used by the logging middleware (see below). Outputs to `os.Stdout` with no flags by default.
 - `goyave.ErrLogger`: the logger for errors and stacktraces. Outputs to `os.Stderr` with `log.LstdFlags` by default.
 
@@ -45,8 +45,8 @@ To enable logging of accesses using the [Common Log Format](https://en.wikipedia
 
 ``` go
 import (
-    "github.com/System-Glitch/goyave/v2/log"
-    "github.com/System-Glitch/goyave/v2"
+    "github.com/System-Glitch/goyave/v3/log"
+    "github.com/System-Glitch/goyave/v3"
 )
 
 func registerRoutes(router *goyave.Router) {
@@ -81,23 +81,23 @@ CombinedLogMiddleware captures response data and outputs it to the default logge
 It is possible to implement custom formatters for access logs. A `Formatter` is a function with the following signature:
 
 ``` go
-func(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string
+func(now time.Time, response *goyave.Response, request *goyave.Request, length int) string
 ```
 
 - `now` is the time at which the server received the request
-- `body` contains what has been written to the client as a response. It doesn't take headers into account.
+- `length` the length of the response body
 
 **Example:**
 ``` go
-func CustomFormatter(now time.Time, response *goyave.Response, request *goyave.Request, body []byte) string {
-	return fmt.Sprintf("%s %s %s %s %d %d",
-		now.Format(TimestampFormat),
-		host,
-		req.Method,
-		strconv.QuoteToASCII(uri),
-        response.GetStatus(),
-        len(body),
-	)
+func CustomFormatter(now time.Time, response *goyave.Response, request *goyave.Request, length int) string {
+  return fmt.Sprintf("%s %s %s %s %d %d",
+    now.Format(TimestampFormat),
+    host,
+    req.Method,
+    strconv.QuoteToASCII(uri),
+    response.GetStatus(),
+    length,
+  )
 }
 ```
 

@@ -6,31 +6,36 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/System-Glitch/goyave/v2"
-	"github.com/System-Glitch/goyave/v2/helper"
+	"github.com/System-Glitch/goyave/v3"
+	"github.com/System-Glitch/goyave/v3/helper"
 )
 
 type gzipWriter struct {
 	*gzip.Writer
 	http.ResponseWriter
-	childWriter io.Closer
+	childWriter io.Writer
 }
 
-func (w *gzipWriter) Write(b []byte) (int, error) {
+func (w *gzipWriter) PreWrite(b []byte) {
+	if pr, ok := w.childWriter.(goyave.PreWriter); ok {
+		pr.PreWrite(b)
+	}
 	h := w.ResponseWriter.Header()
 	if h.Get("Content-Type") == "" {
 		h.Set("Content-Type", http.DetectContentType(b))
 	}
 	h.Del("Content-Length")
+}
 
+func (w *gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
 func (w *gzipWriter) Close() error {
 	err := w.Writer.Close()
 
-	if w.childWriter != nil {
-		return w.childWriter.Close()
+	if wr, ok := w.childWriter.(io.Closer); ok {
+		return wr.Close()
 	}
 
 	return err
@@ -53,7 +58,7 @@ func GzipLevel(level int) goyave.Middleware {
 	}
 	return func(next goyave.Handler) goyave.Handler {
 		return func(response *goyave.Response, request *goyave.Request) {
-			if !acceptsGzip(request) {
+			if !acceptsGzip(request) || request.Header().Get("Upgrade") != "" {
 				next(response, request)
 				return
 			}
@@ -65,16 +70,12 @@ func GzipLevel(level int) goyave.Middleware {
 			compressWriter := &gzipWriter{
 				Writer:         writer,
 				ResponseWriter: response,
-			}
-			if w, ok := respWriter.(io.Closer); ok {
-				compressWriter.childWriter = w
+				childWriter:    respWriter,
 			}
 			response.SetWriter(compressWriter)
 			response.Header().Set("Content-Encoding", "gzip")
 
 			next(response, request)
-
-			response.Header().Del("Content-Length")
 		}
 	}
 }

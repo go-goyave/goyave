@@ -57,6 +57,15 @@ func TestValidateBefore(t *testing.T) {
 	assert.True(t, validateBefore("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-03")}))
 	assert.False(t, validateBefore("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-02")}))
 	assert.False(t, validateBefore("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": "hello"}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "before"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateBeforeEqual(t *testing.T) {
@@ -77,6 +86,15 @@ func TestValidateBeforeEqual(t *testing.T) {
 	assert.True(t, validateBeforeEqual("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-03")}))
 	assert.True(t, validateBeforeEqual("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-02")}))
 	assert.False(t, validateBeforeEqual("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": "hello"}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "before_equal"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateAfter(t *testing.T) {
@@ -98,6 +116,15 @@ func TestValidateAfter(t *testing.T) {
 	assert.True(t, validateAfter("field", createDate("2019-11-04"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-03")}))
 	assert.False(t, validateAfter("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-02")}))
 	assert.False(t, validateAfter("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": "hello"}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "after"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateAfterEqual(t *testing.T) {
@@ -119,6 +146,15 @@ func TestValidateAfterEqual(t *testing.T) {
 	assert.False(t, validateAfterEqual("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-03")}))
 	assert.True(t, validateAfterEqual("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": createDate("2019-11-02")}))
 	assert.False(t, validateAfterEqual("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": "hello"}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "after_equal"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateDateEquals(t *testing.T) {
@@ -137,6 +173,15 @@ func TestValidateDateEquals(t *testing.T) {
 	assert.False(t, validateDateEquals("field", createDate("2019-11-03"), []string{"other"}, map[string]interface{}{"other": createDateTime("2019-11-02T13:14:16")}))
 	assert.False(t, validateDateEquals("field", createDateTime("2019-11-02T13:14:15"), []string{"other"}, map[string]interface{}{"other": createDateTime("2019-11-02T13:14:16")}))
 	assert.False(t, validateDateEquals("field", createDate("2019-11-02"), []string{"other"}, map[string]interface{}{"other": "hello"}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "date_equals"},
+			},
+		}
+		field.check()
+	})
 }
 
 func TestValidateDateBetween(t *testing.T) {
@@ -147,4 +192,22 @@ func TestValidateDateBetween(t *testing.T) {
 
 	assert.True(t, validateDateBetween("field", createDateTime("2019-11-02T13:14:15"), []string{"min", "max"}, map[string]interface{}{"min": createDateTime("2019-11-02T13:14:00"), "max": createDateTime("2019-11-02T14:14:00")}))
 	assert.True(t, validateDateBetween("field", createDateTime("2019-11-02T13:14:15"), []string{"min", "2019-11-03T00:00:00"}, map[string]interface{}{"min": createDateTime("2019-11-02T13:14:00")}))
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "date_between"},
+			},
+		}
+		field.check()
+	})
+
+	assert.Panics(t, func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "date_between", Params: []string{"2019-11-03T00:00:00"}},
+			},
+		}
+		field.check()
+	})
 }

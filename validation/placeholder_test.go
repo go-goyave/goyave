@@ -3,8 +3,8 @@ package validation
 import (
 	"testing"
 
-	"github.com/System-Glitch/goyave/v2/config"
-	"github.com/System-Glitch/goyave/v2/lang"
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -14,8 +14,10 @@ type PlaceholderTestSuite struct {
 
 func (suite *PlaceholderTestSuite) SetupSuite() {
 	lang.LoadDefault()
-	config.Load()
-	config.Set("defaultLanguage", "en-US")
+	if err := config.LoadFrom("../config.test.json"); err != nil {
+		suite.FailNow(err.Error())
+	}
+	config.Set("app.defaultLanguage", "en-US")
 }
 
 func (suite *PlaceholderTestSuite) TestPlaceholders() {

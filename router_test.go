@@ -59,12 +59,16 @@ func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 	suite.Equal(router, route.parent)
 
 	route = router.Route("GET", "/", func(resp *Response, r *Request) {})
-	suite.Equal("", route.uri)
+	suite.Equal("/", route.uri)
 	suite.Equal(router, route.parent)
 
 	route = router.Route("GET|POST", "/", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"GET", "POST"}, route.methods)
 	suite.Equal(router, route.parent)
+
+	subrouter := router.Subrouter("/sub")
+	route = subrouter.Route("GET", "/", func(resp *Response, r *Request) {})
+	suite.Equal("", route.uri)
 }
 
 func (suite *RouterTestSuite) TestRouterMiddleware() {
@@ -498,6 +502,7 @@ func (suite *RouterTestSuite) TestMatch() {
 	}
 
 	router := newRouter()
+	router.Route("GET", "/", handler).Name("root")
 	router.Route("GET|POST", "/hello", handler).Name("hello")
 	router.Route("PUT", "/hello", handler).Name("hello.put")
 	router.Route("GET", "/hello/sub", handler).Name("hello.sub")
@@ -513,7 +518,11 @@ func (suite *RouterTestSuite) TestMatch() {
 
 	router.Subrouter("/empty")
 
-	match := routeMatch{currentPath: "/hello"}
+	match := routeMatch{currentPath: "/"}
+	suite.True(router.match(httptest.NewRequest("GET", "/", nil), &match))
+	suite.Equal(router.GetRoute("root"), match.route)
+
+	match = routeMatch{currentPath: "/hello"}
 	suite.True(router.match(httptest.NewRequest("GET", "/hello", nil), &match))
 	suite.Equal(router.GetRoute("hello"), match.route)
 

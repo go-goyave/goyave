@@ -12,7 +12,13 @@ meta:
 
 [[toc]]
 
-## v3.0.0
+## v3.0.x
+
+### v3.0.1
+
+- Fixed a bug that prevented root-level routes with an empty path (`/`) to be matched.
+
+### v3.0.0
 
 - Changed conventions:
     - `validation.go` and `placeholders.go` moved to a new `http/validation` package.

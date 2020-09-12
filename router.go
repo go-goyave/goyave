@@ -241,7 +241,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler) *Rou
 		methods += "|OPTIONS"
 	}
 
-	if uri == "/" {
+	if uri == "/" && r.parent != nil {
 		uri = ""
 	}
 

@@ -31,11 +31,13 @@ func main() {
     // Replace de default logger
     goyave.Logger = log.New(os.Stdout, "myapp", log.Ldate | log.Ltime | log.Lshortfile)
 
-	goyave.Logger.Println("Starting...")
-	goyave.RegisterStartupHook(func() {
-		goyave.Logger.Println("Started.")
-	})
-	goyave.Start(routes.Register)
+    goyave.Logger.Println("Starting...")
+    goyave.RegisterStartupHook(func() {
+        goyave.Logger.Println("Started.")
+    })
+    if err := goyave.Start(registerRoutes); err != nil {
+        os.Exit(err.(*goyave.Error).ExitCode)
+    }
 }
 ```
 

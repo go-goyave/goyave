@@ -112,7 +112,7 @@ The typical and recommended directory structure for Goyave applications is as fo
 │   │   ├── placeholder.go (*optional*)
 │   │   └── validation.go (*optional*)
 │   └── route
-│       └── routes.go
+│       └── route.go
 │
 ├── resources
 │   ├── lang

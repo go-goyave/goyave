@@ -232,6 +232,7 @@ func init() {
 		"after_equal":        {validateAfterEqual, 1, false, false},
 		"date_equals":        {validateDateEquals, 1, false, false},
 		"date_between":       {validateDateBetween, 2, false, false},
+		"object":             {validateObject, 0, true, false},
 	}
 }
 
@@ -271,19 +272,21 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 	errors := Errors{}
 
 	for fieldName, field := range rules.Fields {
-		if !field.IsNullable() && data[fieldName] == nil {
-			delete(data, fieldName)
+		name, fieldVal, parent, _ := GetFieldFromName(fieldName, data)
+		if !field.IsNullable() && fieldVal == nil {
+			delete(parent, fieldName)
 		}
 
-		if !field.IsRequired() && !validateRequired(fieldName, data[fieldName], nil, data) {
+		if !field.IsRequired() && !validateRequired(fieldName, fieldVal, nil, data) {
 			continue
 		}
 
-		convertArray(isJSON, fieldName, field, data) // Convert single value arrays in url-encoded requests
+		convertArray(isJSON, name, field, parent) // Convert single value arrays in url-encoded requests
+		fieldVal = parent[name]
 
 		for _, rule := range field.Rules {
 			if rule.Name == "nullable" {
-				if data[fieldName] == nil {
+				if fieldVal == nil {
 					break
 				}
 				continue
@@ -296,10 +299,10 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, errorValue, language), language),
 					)
 				}
-			} else if !validationRules[rule.Name].Function(fieldName, data[fieldName], rule.Params, data) {
+			} else if !validationRules[rule.Name].Function(fieldName, fieldVal, rule.Params, data) {
 				errors[fieldName] = append(
 					errors[fieldName],
-					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, reflect.ValueOf(data[fieldName]), language), language),
+					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, reflect.ValueOf(fieldVal), language), language),
 				)
 			}
 		}
@@ -416,8 +419,35 @@ func getFieldType(value reflect.Value) string {
 		}
 		return "array"
 	default:
+		if value.IsValid() {
+			if _, ok := value.Interface().(map[string]interface{}); ok {
+				return "object"
+			}
+		}
 		return "unsupported"
 	}
+}
+
+// GetFieldFromName find potentially nested field by it's dot-separated path
+// in the given object.
+// Returns the name without its prefix, the value, its parent object and a bool indicating if it has been found or not.
+func GetFieldFromName(name string, data map[string]interface{}) (string, interface{}, map[string]interface{}, bool) {
+	key := name
+	if i := strings.Index(name, "."); i != -1 {
+		key = name[:i]
+	}
+	val, ok := data[key]
+	if !ok {
+		return "", nil, nil, false
+	}
+
+	if strings.Contains(name, ".") {
+		if obj, ok := val.(map[string]interface{}); ok {
+			return GetFieldFromName(name[len(key)+1:], obj)
+		}
+	}
+
+	return name, val, data, ok
 }
 
 func parseRule(rule string) *Rule {

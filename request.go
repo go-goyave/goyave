@@ -245,6 +245,16 @@ func (r *Request) Date(field string) time.Time {
 	return str
 }
 
+// Object get an object field from the request data.
+// Panics if the field is not an object.
+func (r *Request) Object(field string) map[string]interface{} {
+	str, ok := r.Data[field].(map[string]interface{})
+	if !ok {
+		ErrLogger.Panicf("Field \"%s\" is not an object", field)
+	}
+	return str
+}
+
 func (r *Request) validate() validation.Errors {
 	if r.Rules == nil {
 		return nil

@@ -460,6 +460,67 @@ If the name of another field is given as a date, then all the fields must be a d
 
 The field under validation must be an object (`map[string]interface{}`).
 
+## Validating objects
+
+<p><Badge text="Since v3.1.0"/></p>
+
+You can validate objects using a **dot-separated** notation. For example, if you want to validate the following request:
+
+```json
+{
+    "user": {
+        "name": "Josh",
+        "email": "josh@example.org"
+    }
+}
+```
+
+You would use the following rule set:
+
+```go
+var (
+    StoreRequest validation.RuleSet = validation.RuleSet{
+        "user":       {"required", "object"},
+        "user.name":  {"required", "string", "between:3,50"},
+        "user.email": {"required", "email"},
+    }
+)
+```
+
+## Validating arrays
+
+<p><Badge text="Since v2.1.0"/></p>
+
+Validating arrays is easy. All the validation rules, **except the file-related rules and the `confirmed` rule**, can be applied to array values using the prefix `>`. When array values are validated, **all of them** must pass the validation.
+
+**Example:**
+``` go
+var arrayValidation = validation.RuleSet{
+    "array": {"required", "array:string", "between:1,5", ">email", ">max:128"},
+}
+```
+In this example, we are validating an array of one to five email addresses, which can't be longer than 128 characters.
+
+### N-dimensional arrays
+
+You can validate n-dimensional arrays. 
+
+**Example:**
+``` go
+var arrayValidation = RuleSet{
+    "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+}
+```
+In this example, we are validating a three-dimensional array of numeric values. The first dimension must be made of arrays with a size of 3 or less (`>array` and `>max:3`). The second dimension must be made of arrays containing numbers (`>>array:numeric`). The third dimension must be numbers inferior or equal to 4 (`>>>max:4`). The following JSON input passes the validation:
+```json
+{
+    "array": [
+        [[0.5, 1.42], [0.6, 4, 3]],
+        [[0.6, 1.43], [], [2]]
+    ]
+}
+```
+
 ## Custom rules
 
 If none of the available validation rules satisfy your needs, you can implement custom validation rules. To do so, create a new file `http/validation/validation.go` in which you are going to define your custom rules.
@@ -575,67 +636,6 @@ validation.GetFieldType(2) // "numeric"
 validation.GetFieldType(2.4) // "numeric"
 validation.GetFieldType([]int{1,2}) // "array"
 validation.GetFieldType(map[string]int{"hello": 1, "world": "!"}) // "object"
-```
-
-## Validating objects
-
-<p><Badge text="Since v3.1.0"/></p>
-
-You can validate objects using a **dot-separated** notation. For example, if you want to validate the following request:
-
-```json
-{
-    "user": {
-        "name": "Josh",
-        "email": "josh@example.org"
-    }
-}
-```
-
-You would use the following rule set:
-
-```go
-var (
-    StoreRequest validation.RuleSet = validation.RuleSet{
-        "user":       {"required", "object"},
-        "user.name":  {"required", "string", "between:3,50"},
-        "user.email": {"required", "email"},
-    }
-)
-```
-
-## Validating arrays
-
-<p><Badge text="Since v2.1.0"/></p>
-
-Validating arrays is easy. All the validation rules, **except the file-related rules and the `confirmed` rule**, can be applied to array values using the prefix `>`. When array values are validated, **all of them** must pass the validation.
-
-**Example:**
-``` go
-var arrayValidation = validation.RuleSet{
-    "array": {"required", "array:string", "between:1,5", ">email", ">max:128"},
-}
-```
-In this example, we are validating an array of one to five email addresses, which can't be longer than 128 characters.
-
-### N-dimensional arrays
-
-You can validate n-dimensional arrays. 
-
-**Example:**
-``` go
-var arrayValidation = RuleSet{
-    "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
-}
-```
-In this example, we are validating a three-dimensional array of numeric values. The first dimension must be made of arrays with a size of 3 or less (`>array` and `>max:3`). The second dimension must be made of arrays containing numbers (`>>array:numeric`). The third dimension must be numbers inferior or equal to 4 (`>>>max:4`). The following JSON input passes the validation:
-```json
-{
-    "array": [
-        [[0.5, 1.42], [0.6, 4, 3]],
-        [[0.6, 1.43], [], [2]]
-    ]
-}
 ```
 
 ## Placeholders

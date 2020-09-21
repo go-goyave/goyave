@@ -119,6 +119,14 @@ func TestParseMultiValuesHeader(t *testing.T) {
 	}
 	result = ParseMultiValuesHeader("fr , fr-FR;q=0.8, en-US ;q=0.5, *;q=0.3, en-*;q=0.3, en;q=0.3")
 	assert.True(t, SliceEqual(expected, result))
+
+	expected = []HeaderValue{{Value: "fr", Priority: 1}}
+	result = ParseMultiValuesHeader("fr")
+	assert.True(t, SliceEqual(expected, result))
+
+	expected = []HeaderValue{{Value: "fr", Priority: 0.3}}
+	result = ParseMultiValuesHeader("fr;q=0.3")
+	assert.True(t, SliceEqual(expected, result))
 }
 
 func TestRemoveHiddenFields(t *testing.T) {

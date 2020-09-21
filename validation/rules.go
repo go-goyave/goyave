@@ -12,7 +12,7 @@ import (
 )
 
 func validateRequired(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	val, ok := form[field]
+	_, val, _, ok := GetFieldFromName(field, form)
 	if ok {
 		if str, okStr := val.(string); okStr && str == "" {
 			return false
@@ -273,7 +273,7 @@ func validateBool(field string, value interface{}, parameters []string, form map
 }
 
 func validateSame(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	other, exists := form[parameters[0]]
+	_, other, _, exists := GetFieldFromName(parameters[0], form)
 	if exists {
 		valueType := GetFieldType(value)
 		otherType := GetFieldType(other)
@@ -289,6 +289,8 @@ func validateSame(field string, value interface{}, parameters []string, form map
 				return s1 == s2
 			case "array":
 				return helper.SliceEqual(value, other)
+			case "object":
+				return reflect.DeepEqual(value, other)
 			}
 			// Don't check files
 		}
@@ -331,4 +333,9 @@ func validateSize(field string, value interface{}, parameters []string, form map
 	}
 
 	return true // Pass if field type cannot be checked (bool, dates, ...)
+}
+
+func validateObject(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	_, ok := value.(map[string]interface{})
+	return ok
 }

@@ -260,6 +260,7 @@ Accessors are helper functions to retrieve request data without having to write 
 [URL](#request-url)
 [UUID](#request-uuid)
 [Date](#request-date)
+[Object](#request-object)
 :::
 
 #### Request.Has
@@ -405,6 +406,19 @@ Get a date field from the request data. Panics if the field is not a date or doe
 **Example:**
 ``` go
 fmt.Println(request.Date("birthdate").String()) // "2019-11-21 00:00:00 +0000 UTC"
+```
+
+#### Request.Object
+
+Get an object field from the request data. Panics if the field is not an object or doesn't exist.
+
+| Parameters     | Return                   |
+|----------------|--------------------------|
+| `field string` | `map[string]interface{}` |
+
+**Example:**
+``` go
+fmt.Println(request.Object("object")) // map[hello:world]
 ```
 
 ## Attributes

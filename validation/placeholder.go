@@ -31,6 +31,9 @@ func SetPlaceholder(placeholderName string, replacer Placeholder) {
 }
 
 func processPlaceholders(field string, rule string, params []string, message string, language string) string {
+	if i := strings.LastIndex(field, "."); i != -1 {
+		field = field[i+1:]
+	}
 	for _, placeholder := range sortedKeys {
 		if strings.Contains(message, placeholder) {
 			replacer := placeholders[placeholder]

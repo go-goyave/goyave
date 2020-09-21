@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/suite"
 )
@@ -174,6 +175,20 @@ func (suite *ValidatorTestSuite) TestValidate() {
 	suite.True(exists)
 	suite.Equal("test", val)
 	suite.Equal(1, len(errors))
+
+	data = map[string]interface{}{}
+	errors = Validate(data, &Rules{
+		Fields: FieldMap{
+			"text": {
+				Rules: []*Rule{
+					{Name: "required"},
+					{Name: "string"},
+				},
+			},
+		},
+	}, true, "en-US")
+	suite.Equal(1, len(errors))
+	suite.Equal("The text is required.", errors["text"][0])
 }
 
 func (suite *ValidatorTestSuite) TestValidateWithArray() {
@@ -710,6 +725,67 @@ func (suite *ValidatorTestSuite) TestRulesCheck() {
 	suite.NotPanics(func() {
 		rules.check()
 	})
+}
+
+func (suite *ValidatorTestSuite) TestGetFieldType() {
+	suite.Equal("numeric", getFieldType(reflect.ValueOf(1)))
+	suite.Equal("numeric", getFieldType(reflect.ValueOf(1.1)))
+	suite.Equal("numeric", getFieldType(reflect.ValueOf(uint(1))))
+	suite.Equal("numeric", getFieldType(reflect.ValueOf(float32(1))))
+	suite.Equal("string", getFieldType(reflect.ValueOf("hello")))
+	suite.Equal("array", getFieldType(reflect.ValueOf([]string{"hello", "world"})))
+	suite.Equal("file", getFieldType(reflect.ValueOf([]filesystem.File{})))
+	suite.Equal("object", getFieldType(reflect.ValueOf(map[string]interface{}{"hello": 1, "world": "!"})))
+	suite.Equal("unsupported", getFieldType(reflect.ValueOf(nil)))
+	suite.Equal("unsupported", getFieldType(reflect.ValueOf(map[string]int{"hello": 1, "world": 2})))
+}
+
+func (suite *ValidatorTestSuite) TestGetFieldFromName() {
+	data := map[string]interface{}{
+		"notobject": "test",
+		"object": map[string]interface{}{
+			"key": 1,
+			"child": map[string]interface{}{
+				"name": "Michel",
+			},
+		},
+	}
+
+	name, val, parent, ok := GetFieldFromName("notobject", data)
+	suite.Equal("notobject", name)
+	suite.Equal("test", val)
+	suite.Equal(data, parent)
+	suite.True(ok)
+
+	name, val, parent, ok = GetFieldFromName("object", data)
+	suite.Equal("object", name)
+	suite.Equal(data["object"], val)
+	suite.Equal(data, parent)
+	suite.True(ok)
+
+	name, val, parent, ok = GetFieldFromName("object.key", data)
+	suite.Equal("key", name)
+	suite.Equal(1, val)
+	suite.Equal(data["object"], parent)
+	suite.True(ok)
+
+	name, val, parent, ok = GetFieldFromName("object.child", data)
+	suite.Equal("child", name)
+	suite.Equal(data["object"].(map[string]interface{})["child"], val)
+	suite.Equal(data["object"], parent)
+	suite.True(ok)
+
+	name, val, parent, ok = GetFieldFromName("object.child.name", data)
+	suite.Equal("name", name)
+	suite.Equal("Michel", val)
+	suite.Equal(data["object"].(map[string]interface{})["child"], parent)
+	suite.True(ok)
+
+	name, val, parent, ok = GetFieldFromName("object.child.notafield", data)
+	suite.Empty(name)
+	suite.Nil(val)
+	suite.Nil(parent)
+	suite.False(ok)
 }
 
 func TestValidatorTestSuite(t *testing.T) {

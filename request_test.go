@@ -169,6 +169,9 @@ func TestRequestAccessors(t *testing.T) {
 		"uuid":     uid,
 		"date":     date,
 		"url":      url,
+		"object": map[string]interface{}{
+			"hello": "world",
+		},
 	}
 
 	assert.Equal(t, "hello world", request.String("string"))
@@ -186,6 +189,7 @@ func TestRequestAccessors(t *testing.T) {
 	assert.Equal(t, "3bbcee75-cecc-5b56-8031-b6641c1ed1f1", request.UUID("uuid").String())
 	assert.Equal(t, "2019-11-21 00:00:00 +0000 UTC", request.Date("date").String())
 	assert.Equal(t, "https://google.com", request.URL("url").String())
+	assert.Equal(t, request.Data["object"], request.Object("object"))
 
 	assert.Panics(t, func() { request.String("integer") })
 	assert.Panics(t, func() { request.Integer("string") })
@@ -198,6 +202,7 @@ func TestRequestAccessors(t *testing.T) {
 	assert.Panics(t, func() { request.Date("string") })
 	assert.Panics(t, func() { request.URL("string") })
 	assert.Panics(t, func() { request.String("doesn't exist") })
+	assert.Panics(t, func() { request.Object("doesn't exist") })
 }
 
 func TestRequestHas(t *testing.T) {

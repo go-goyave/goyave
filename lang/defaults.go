@@ -148,6 +148,8 @@ var enUS language = language{
 			"date_equals.array":                "The :field values must be dates equal to :date.",
 			"date_between":                     "The :field must be a date between :date and :max_date.",
 			"date_between.array":               "The :field must be dates between :date and :max_date.",
+			"object":                           "The :field must be an object.",
+			"object.array":                     "The :field values must be objects.",
 		},
 		fields: map[string]attribute{
 			"email": {

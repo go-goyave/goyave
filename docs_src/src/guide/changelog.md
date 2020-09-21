@@ -12,6 +12,11 @@ meta:
 
 [[toc]]
 
+## v3.1.0
+
+- Added support for validating objects (`map[string]interface{}`).
+- Added `request.Object()` accessor.
+
 ## v3.0.x
 
 ### v3.0.1

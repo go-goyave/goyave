@@ -41,10 +41,10 @@ Rule sets are defined in the same package as the controller, typically in a sepa
 **Example:** (`http/controller/product/request.go`)
 ``` go
 var (
-	StoreRequest validation.RuleSet = validation.RuleSet{
-		"name":  {"required", "string", "between:3,50"},
-		"price": {"required", "numeric", "min:0.01"},
-		"image": {"nullable", "file", "image", "max:2048", "count:1"},
+    StoreRequest validation.RuleSet = validation.RuleSet{
+        "name":  {"required", "string", "between:3,50"},
+        "price": {"required", "numeric", "min:0.01"},
+        "image": {"nullable", "file", "image", "max:2048", "count:1"},
     }
     
     // ...
@@ -125,6 +125,7 @@ router.Post("/product", product.Store).Validate(product.StoreRequest)
 [After or equal](#after-equal-date)
 [Date equals](#date-equals-date)
 [Date between](#date-between-date1-date2)
+[Object](#object)
 :::
 
 #### required
@@ -212,6 +213,7 @@ For example, with the rule `array:url`, all values must be valid URLs and the fi
 - `uuid`
 - `bool`
 - `date`
+- `object`
 
 ::: tip
 For the `uuid` and `date` types, you can pass a second parameter: `array:date,02-01-2006`
@@ -454,6 +456,71 @@ The field under validation must be a value between or equal to the given dates. 
 
 If the name of another field is given as a date, then all the fields must be a date and the field under validation must be between or equal to given fields.
 
+#### object
+
+The field under validation must be an object (`map[string]interface{}`).
+
+## Validating objects
+
+<p><Badge text="Since v3.1.0"/></p>
+
+You can validate objects using a **dot-separated** notation. For example, if you want to validate the following request:
+
+```json
+{
+    "user": {
+        "name": "Josh",
+        "email": "josh@example.org"
+    }
+}
+```
+
+You would use the following rule set:
+
+```go
+var (
+    StoreRequest validation.RuleSet = validation.RuleSet{
+        "user":       {"required", "object"},
+        "user.name":  {"required", "string", "between:3,50"},
+        "user.email": {"required", "email"},
+    }
+)
+```
+
+## Validating arrays
+
+<p><Badge text="Since v2.1.0"/></p>
+
+Validating arrays is easy. All the validation rules, **except the file-related rules and the `confirmed` rule**, can be applied to array values using the prefix `>`. When array values are validated, **all of them** must pass the validation.
+
+**Example:**
+``` go
+var arrayValidation = validation.RuleSet{
+    "array": {"required", "array:string", "between:1,5", ">email", ">max:128"},
+}
+```
+In this example, we are validating an array of one to five email addresses, which can't be longer than 128 characters.
+
+### N-dimensional arrays
+
+You can validate n-dimensional arrays. 
+
+**Example:**
+``` go
+var arrayValidation = RuleSet{
+    "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+}
+```
+In this example, we are validating a three-dimensional array of numeric values. The first dimension must be made of arrays with a size of 3 or less (`>array` and `>max:3`). The second dimension must be made of arrays containing numbers (`>>array:numeric`). The third dimension must be numbers inferior or equal to 4 (`>>>max:4`). The following JSON input passes the validation:
+```json
+{
+    "array": [
+        [[0.5, 1.42], [0.6, 4, 3]],
+        [[0.6, 1.43], [], [2]]
+    ]
+}
+```
+
 ## Custom rules
 
 If none of the available validation rules satisfy your needs, you can implement custom validation rules. To do so, create a new file `http/validation/validation.go` in which you are going to define your custom rules.
@@ -498,7 +565,7 @@ func init() {
     validation.AddRule("custom_format", &validation.RuleDefinition{
         Function:           validateCustomFormat,
         RequiredParameters: 1, // Ensure the rule has at least one parameter
-	})
+    })
 }
 ```
 
@@ -507,23 +574,23 @@ The **RuleDefinition** struct is defined as follows:
 ```go
 type RuleDefinition struct {
 
-	// The Function field is the function that will be executed
-	Function RuleFunc
+    // The Function field is the function that will be executed
+    Function RuleFunc
 
-	// The minimum amount of parameters
-	RequiredParameters int
+    // The minimum amount of parameters
+    RequiredParameters int
 
-	// A type rule is a rule that checks if a field has a certain type
-	// and can convert the raw value to a value fitting. For example, the UUID
-	// rule is a type rule because it takes a string as input, checks if it's a
-	// valid UUID and converts it to a "uuid.UUID".
-	IsType bool
+    // A type rule is a rule that checks if a field has a certain type
+    // and can convert the raw value to a value fitting. For example, the UUID
+    // rule is a type rule because it takes a string as input, checks if it's a
+    // valid UUID and converts it to a "uuid.UUID".
+    IsType bool
 
-	// Type-dependent rules are rules that can be used with different field types
+    // Type-dependent rules are rules that can be used with different field types
     // (numeric, string, arrays and files) and have a different validation messages
     // depending on the type.
-	// The language entry used will be "validation.rules.rulename.type"
-	IsTypeDependent bool
+    // The language entry used will be "validation.rules.rulename.type"
+    IsTypeDependent bool
 }
 ```
 
@@ -555,6 +622,7 @@ for validation or not and is especially useful for type-dependent rules.
 - `string` if the value is a string
 - `array` if the value is a slice
 - `file` if the value is a slice of `filesystem.File`
+- `object` if the value is a `map[string]interface{}`
 - `unsupported` otherwise
 
 | Parameters          | Return   |
@@ -567,40 +635,7 @@ validation.GetFieldType("foo") // "string"
 validation.GetFieldType(2) // "numeric"
 validation.GetFieldType(2.4) // "numeric"
 validation.GetFieldType([]int{1,2}) // "array"
-```
-
-## Validating arrays
-
-<p><Badge text="Since v2.1.0"/></p>
-
-Validating arrays is easy. All the validation rules, **except the file-related rules and the `confirmed` rule**, can be applied to array values using the prefix `>`. When array values are validated, **all of them** must pass the validation.
-
-**Example:**
-``` go
-var arrayValidation = validation.RuleSet{
-    "array": {"required", "array:string", "between:1,5", ">email", ">max:128"},
-}
-```
-In this example, we are validating an array of one to five email addresses, which can't be longer than 128 characters.
-
-### N-dimensional arrays
-
-You can validate n-dimensional arrays. 
-
-**Example:**
-``` go
-var arrayValidation = RuleSet{
-    "array": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
-}
-```
-In this example, we are validating a three-dimensional array of numeric values. The first dimension must be made of arrays with a size of 3 or less (`>array` and `>max:3`). The second dimension must be made of arrays containing numbers (`>>array:numeric`). The third dimension must be numbers inferior or equal to 4 (`>>>max:4`). The following JSON input passes the validation:
-```json
-{
-    "array": [
-        [[0.5, 1.42], [0.6, 4, 3]],
-        [[0.6, 1.43], [], [2]]
-    ]
-}
+validation.GetFieldType(map[string]int{"hello": 1, "world": "!"}) // "object"
 ```
 
 ## Placeholders
@@ -622,7 +657,7 @@ Placeholders are **replacer functions**. In fact, `validation.Placeholder` is an
 **Example:**
 ``` go
 func simpleParameterPlaceholder(field string, rule string, parameters []string, language string) string {
-	return parameters[0]
+    return parameters[0]
 }
 ```
 
@@ -645,7 +680,7 @@ If a placeholder with this name already exists, the latter will be overridden.
 **Example:**
 ``` go
 validation.SetPlaceholder("min", func(field string, rule string, parameters []string, language string) string {
-  	return parameters[0] // Replace ":min" by the first parameter in the rule definition
+    return parameters[0] // Replace ":min" by the first parameter in the rule definition
 })
 ```
 
@@ -726,22 +761,22 @@ The last parameter (`language`) sets the language of the validation error messag
 ``` go
 func Store(response *goyave.Response, request *goyave.Request) {
     data := map[string]interface{}{
-		"string": "hello world",
-		"number": 42,
-	}
+        "string": "hello world",
+        "number": 42,
+    }
 
-	errors := validation.Validate(data, validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:10"},
-	}, true, request.Lang)
+    errors := validation.Validate(data, validation.RuleSet{
+        "string": {"required", "string"},
+        "number": {"required", "numeric", "min:10"},
+    }, true, request.Lang)
 
-	if len(errors) > 0 {
-		response.JSON(http.StatusUnprocessableEntity, map[string]validation.Errors{"validationError": errors})
-		return
-	}
+    if len(errors) > 0 {
+        response.JSON(http.StatusUnprocessableEntity, map[string]validation.Errors{"validationError": errors})
+        return
+    }
 
-	// data can be safely used from here
-	// ...
+    // data can be safely used from here
+    // ...
 }
 ```
 

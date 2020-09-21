@@ -56,6 +56,10 @@ We will explain in more details what this test does in the following sections, b
 
 This test is a **functional** test. Therefore, it requires route registration and should be located in the `test` package.
 
+### Running the tests
+
+Goyave tests can be run like regular tests, using the `go test` command. **It is recommended to run tests using `go test ./...` to run all tests, including subpackages**.
+
 ::: warning
 Because tests using `goyave.TestSuite` are using the global config, are changing environment variables and working directory and often bind a port, they are **not run in parallel** to avoid conflicts. You don't have to use `-p 1` in your test command, test suites execution is locked by a mutex.
 :::

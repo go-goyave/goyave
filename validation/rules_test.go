@@ -15,6 +15,14 @@ func TestValidateRequired(t *testing.T) {
 	assert.True(t, validateRequired("field", 0, []string{}, map[string]interface{}{"field": 0}))
 	assert.True(t, validateRequired("field", nil, []string{}, map[string]interface{}{"field": nil}))
 	assert.False(t, validateRequired("field", "", []string{}, map[string]interface{}{"field": ""}))
+
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"key": "value",
+		},
+	}
+	assert.True(t, validateRequired("object.key", "value", []string{}, data))
+	assert.False(t, validateRequired("object.notakey", nil, []string{}, data))
 }
 
 func TestValidateMin(t *testing.T) {
@@ -405,6 +413,24 @@ func TestValidateSame(t *testing.T) {
 		}
 		field.check()
 	})
+
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"key": "value",
+			"deep": map[string]interface{}{
+				"a": 1,
+			},
+		},
+		"other": map[string]interface{}{
+			"key": "value",
+			"deep": map[string]interface{}{
+				"a": 1,
+			},
+		},
+	}
+	assert.True(t, validateSame("object", data["object"], []string{"other"}, data))
+	assert.True(t, validateSame("object.deep", data["object"].(map[string]interface{})["deep"], []string{"other.deep"}, data))
+	assert.False(t, validateSame("object", data["object"], []string{"other.deep"}, data))
 }
 
 func TestValidateDifferent(t *testing.T) {
@@ -478,4 +504,9 @@ func TestValidateSize(t *testing.T) {
 		}
 		field.check()
 	})
+}
+
+func TestValidateObject(t *testing.T) {
+	assert.False(t, validateObject("field", "123", []string{}, map[string]interface{}{}))
+	assert.True(t, validateObject("field", map[string]interface{}{"hello": "world"}, []string{}, map[string]interface{}{}))
 }

@@ -297,14 +297,13 @@ func (a *MyAuthenticator) Authenticate(request *goyave.Request, user interface{}
 	// Find the user in the database using its token
 	result := database.Conn().Where(columns[0].Name+" = ?", token).First(user)
 
-	if errors := result.GetErrors(); len(errors) != 0 && !gorm.IsRecordNotFoundError(result.Error) {
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			// User not found, return "These credentials don't match our records."
+			return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
+		}
 		// Database error
-		panic(errors)
-	}
-
-	if result.RecordNotFound() {
-		// User not found, return "These credentials don't match our records."
-		return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
+		panic(result.Error)
 	}
 
 	// Authentication successful

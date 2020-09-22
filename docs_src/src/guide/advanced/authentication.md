@@ -277,7 +277,7 @@ The typical `Authenticator` is an empty struct implementing the `Authenticator` 
 type MyAuthenticator struct{}
 
 // Ensure you're correctly implementing Authenticator.
-var _ Authenticator = (*MyAuthenticator)(nil) // implements Authenticator
+var _ auth.Authenticator = (*MyAuthenticator)(nil) // implements Authenticator
 ```
 
 The next step is to implement the `Authenticate` method. Its purpose is explained at the start of this guide.

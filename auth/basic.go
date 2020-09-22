@@ -21,7 +21,7 @@ var _ Authenticator = (*BasicAuthenticator)(nil) // implements Authenticator
 
 // Authenticate fetch the user corresponding to the credentials
 // found in the given request and puts the result in the given user pointer.
-// If no user can be authenticated, returns false.
+// If no user can be authenticated, returns an error.
 //
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.

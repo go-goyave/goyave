@@ -286,3 +286,62 @@ Automatic migrations create tables, missing foreign keys, constraints, columns a
 :::
 
 If you would like to know more about migrations using Gorm, read their [documentation](https://gorm.io/docs/migration.html).
+
+## Setting up SSL/TLS
+
+### MySQL
+
+If you want to make your database connection use a TLS configuration, create `database/tls.go`. In this file, create an `init()` function which will load your certificates and keys.
+
+Don't forget to blank import the database package in your `kernel.go`: `import _ "myproject/database"`. Finally, for a configuration named "custom", add `&tls=custom` at the end of the `database.options` configuration entry.
+
+```go
+package database
+
+import (
+    "crypto/tls"
+    "crypto/x509"
+    "io/ioutil"
+
+    "github.com/System-Glitch/goyave/v3"
+    "github.com/go-sql-driver/mysql"
+)
+
+func init() {
+    rootCertPool := x509.NewCertPool()
+    pem, err := ioutil.ReadFile("/path/ca-cert.pem")
+    if err != nil {
+        goyave.ErrLogger.Fatal(err)
+    }
+    if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+        goyave.ErrLogger.Fatal("Failed to append PEM.")
+    }
+    clientCert := make([]tls.Certificate, 0, 1)
+    certs, err := tls.LoadX509KeyPair("/path/client-cert.pem", "/path/client-key.pem")
+    if err != nil {
+        goyave.ErrLogger.Fatal(err)
+    }
+    clientCert = append(clientCert, certs)
+    mysql.RegisterTLSConfig("custom", &tls.Config{
+        RootCAs:      rootCertPool,
+        Certificates: clientCert,
+    })
+}
+```
+[Reference](https://pkg.go.dev/github.com/go-sql-driver/mysql#RegisterTLSConfig)
+
+### PostgreSQL
+
+For PostgreSQL, you only need to add a few options to the `database.options` configuration entry.
+
+```
+sslmode=verify-full sslrootcert=root.crt sslkey=client.key sslcert=client.crt
+```
+
+Replace `root.crt`, `client.key` and `client.crt` with the paths to the corresponding files.
+
+[Reference](https://pkg.go.dev/github.com/lib/pq#hdr-Connection_String_Parameters)
+
+### MSSQL
+
+Refer to the [driver's documentation](https://github.com/denisenkom/go-mssqldb#less-common-parameters).

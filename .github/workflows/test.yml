@@ -46,6 +46,7 @@ jobs:
         uses: golangci/golangci-lint-action@v1
         with:
           version: v1.31
+          args: --timeout 5m
 
   spellcheck:
     name: Spellcheck docs

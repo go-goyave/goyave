@@ -433,7 +433,8 @@ func getFieldType(value reflect.Value) string {
 // Returns the name without its prefix, the value, its parent object and a bool indicating if it has been found or not.
 func GetFieldFromName(name string, data map[string]interface{}) (string, interface{}, map[string]interface{}, bool) {
 	key := name
-	if i := strings.Index(name, "."); i != -1 {
+	i := strings.Index(name, ".")
+	if i != -1 {
 		key = name[:i]
 	}
 	val, ok := data[key]
@@ -441,7 +442,7 @@ func GetFieldFromName(name string, data map[string]interface{}) (string, interfa
 		return "", nil, nil, false
 	}
 
-	if strings.Contains(name, ".") {
+	if i != -1 {
 		if obj, ok := val.(map[string]interface{}); ok {
 			return GetFieldFromName(name[len(key)+1:], obj)
 		}

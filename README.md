@@ -69,18 +69,18 @@ You can bootstrap your project using the [Goyave template project](https://githu
 #### Linux / MacOS
 
 ```
-$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s my-project
+$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s github.com/username/projectname
 ```
 
 #### Windows (Powershell)
 
 ```
-> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -projectName my-project
+> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -moduleName github.com/username/projectname
 ```
 
 ---
 
-Run `go run my-project` in your project's directory to start the server, then try to request the `hello` route.
+Run `go run .` in your project's directory to start the server, then try to request the `hello` route.
 ```
 $ curl http://localhost:8080/hello
 Hi!
@@ -477,7 +477,7 @@ The following example is a **functional** test and would be located in the `test
 
 ``` go
 import (
-    "my-project/http/route"
+    "github.com/username/projectname/http/route"
     "github.com/System-Glitch/goyave/v3"
 )
 

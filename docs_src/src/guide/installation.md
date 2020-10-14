@@ -24,18 +24,18 @@ You can bootstrap your project using the **[Goyave template project](https://git
 #### Linux / MacOS
 
 ```
-$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s my-project
+$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s github.com/username/projectname
 ```
 
 #### Windows (Powershell)
 
 ```
-> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -projectName my-project
+> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -moduleName github.com/username/projectname
 ```
 
 ---
 
-Run `go run my-project` in your project's directory to start the server, then try to request the `hello` route.
+Run `go run .` in your project's directory to start the server, then try to request the `hello` route.
 ```
 $ curl http://localhost:8080/hello
 Hi!
@@ -58,7 +58,7 @@ If you prefer to setup your project from scratch, for example if you don't plan 
 In a terminal, run:
 ```
 $ mkdir myproject && cd myproject
-$ go mod init my-project
+$ go mod init github.com/username/projectname
 $ go get -u github.com/System-Glitch/goyave/v3
 ```
 
@@ -67,7 +67,7 @@ Now that your project directory is set up and the dependencies are installed, le
 package main
 
 import (
-    "my-project/http/route"
+    "github.com/username/projectname/http/route"
     "github.com/System-Glitch/goyave/v3"
 )
 
@@ -113,7 +113,7 @@ Your routes definitions should be separated from the handler functions. Handlers
 
 Run your server and request your route:
 ```
-$ go run my-project
+$ go run .
 
 # In another terminal:
 $ curl http://localhost:8080/hello

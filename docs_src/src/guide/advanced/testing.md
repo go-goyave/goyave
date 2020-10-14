@@ -26,7 +26,7 @@ The following example is a **functional** test and would be located in the `test
 
 ``` go
 import (
-    "my-project/http/route"
+    "github.com/username/projectname/http/route"
     "github.com/System-Glitch/goyave/v3"
 )
 
@@ -633,7 +633,7 @@ Seeders are written in the `database/seeder` package. Each seeder should have it
 package seeder
 
 import (
-    "my-project/database/model"
+    "github.com/username/projectname/database/model"
     "github.com/System-Glitch/goyave/v3/database"
 )
 

@@ -2,14 +2,16 @@
 
 set -e
 
-usage() { echo "Usage: $0 <project_name>" 1>&2; exit 1; }
+usage() { echo "Usage: $0 <module_name>" 1>&2; exit 1; }
 
 if [ $# -ne 1 ]; then
     usage
 fi
 
-if [ -d $1 ]; then
-  echo -e "\033[31m\033[1mError: \033[0mdirectory \"\033[37m$1\033[0m\" already exists."
+project_name=`basename $1`
+
+if [ -d $project_name ]; then
+  echo -e "\033[31m\033[1mError: \033[0mdirectory \"\033[37m$project_name\033[0m\" already exists."
   exit 1
 fi
 
@@ -33,15 +35,16 @@ echo -e "If you like the framework, please consider supporting me on Patreon:\n\
 echo -e "\033[37m------------------------------------------------------------------------------\n"
 
 echo -e "\033[1mDownloading template project...\033[0m"
-curl -LOk https://github.com/System-Glitch/goyave-template/archive/master.zip
+curl -sLOk https://github.com/System-Glitch/goyave-template/archive/master.zip
 
 echo -e "\033[1mUnzipping...\033[0m"
 unzip -q master.zip
 rm master.zip
 echo -e "\033[1mSetup...\033[0m"
-mv goyave-template-master $1
-cd $1
-find ./ -type f \( -iname \*.go -o -iname \*.mod -o -iname \*.json \) -exec sed -i.bak "s/goyave_template/$1/g" {} \; -exec rm {}.bak \;
+mv goyave-template-master $project_name
+cd $project_name
+find ./ -type f \( -iname config.\*.json \) -exec sed -i.bak "s/goyave_template/$project_name/g" {} \; -exec rm {}.bak \;
+find ./ -type f \( -iname \*.go -o -iname \*.mod -o -iname \*.json \) -exec sed -i.bak "s/goyave_template/${1//\//\\/}/g" {} \; -exec rm {}.bak \;
 cp config.example.json config.json
 echo -e "\033[1mInitializing git...\033[0m"
 git init > /dev/null

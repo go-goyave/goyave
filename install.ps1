@@ -1,8 +1,10 @@
 param (
-    [Parameter(Mandatory=$true)][string]$projectName
+    [Parameter(Mandatory=$true)][string]$moduleName
 )
 
 $ErrorActionPreference = "Stop"
+
+$projectName = [io.path]::GetFileNameWithoutExtension($moduleName)
 
 if ( Test-Path -Path $projectName -PathType Container ) {
      Write-Error "$projectName already exists."
@@ -39,8 +41,11 @@ Rename-Item goyave-template-master $projectName
 
 Write-Host "Setup..."
 $include = ("*.go","*.mod","*.json")
+Get-ChildItem -Path $projectName -Include ("config.*.json") -Recurse | ForEach-Object  { 
+    (Get-Content $_).Replace("goyave_template", $projectName) | Set-Content $_
+}
 Get-ChildItem -Path $projectName -Include $include -Recurse | ForEach-Object  { 
-    (Get-Content $_).Replace("goyave_template", $projectName) | Set-Content $_ 
+    (Get-Content $_).Replace("goyave_template", $moduleName) | Set-Content $_ 
 }
 Set-Location -Path $projectName
 Copy-Item "config.example.json" -Destination "config.json"
@@ -49,6 +54,7 @@ Write-Host "Initializing git..."
 git init > $null
 git add . > $null
 git commit -m "Init" > $null
+Set-Location -Path ..
 
 Write-Host "------------------------------------------------------------------------------`n"
 

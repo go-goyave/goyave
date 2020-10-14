@@ -1,8 +1,10 @@
 param (
-    [Parameter(Mandatory=$true)][string]$projectName
+    [Parameter(Mandatory=$true)][string]$moduleName
 )
 
 $ErrorActionPreference = "Stop"
+
+$projectName = [io.path]::GetFileNameWithoutExtension
 
 if ( Test-Path -Path $projectName -PathType Container ) {
      Write-Error "$projectName already exists."
@@ -30,7 +32,9 @@ Write-Host "https://www.patreon.com/bePatron?u=25997573`n" -Foreground gray
 Write-Host "------------------------------------------------------------------------------`n"
 
 Write-Host "Downloading template project..."
+$ProgressPreference = 'SilentlyContinue'
 Invoke-WebRequest "https://github.com/System-Glitch/goyave-template/archive/master.zip" -OutFile "temp.zip"
+$ProgressPreference = 'Continue'
 
 Write-Host "Unzipping..."
 Expand-Archive -Path "temp.zip" -DestinationPath .
@@ -39,8 +43,11 @@ Rename-Item goyave-template-master $projectName
 
 Write-Host "Setup..."
 $include = ("*.go","*.mod","*.json")
+Get-ChildItem -Path $projectName -Include ("config.*.json") | ForEach-Object  { 
+    (Get-Content $_).Replace("goyave_template", $projectName) | Set-Content $_
+}
 Get-ChildItem -Path $projectName -Include $include -Recurse | ForEach-Object  { 
-    (Get-Content $_).Replace("goyave_template", $projectName) | Set-Content $_ 
+    (Get-Content $_).Replace("goyave_template", $moduleName) | Set-Content $_ 
 }
 Set-Location -Path $projectName
 Copy-Item "config.example.json" -Destination "config.json"

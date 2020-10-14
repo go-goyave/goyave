@@ -97,7 +97,7 @@ func ClearStartupHooks() {
 // The routeRegistrer parameter is a function aimed at registering all your routes and middleware.
 //  import (
 //      "github.com/System-Glitch/goyave/v3"
-//      "my-project/route"
+//      "github.com/username/projectname/route"
 //  )
 //
 //  func main() {

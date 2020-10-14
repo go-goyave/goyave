@@ -37,17 +37,30 @@ func GenerateToken(id interface{}) (string, error) {
 // Its model fields are used for username and password retrieval.
 type JWTController struct {
 	model interface{}
+
+	// UsernameField the name of the request's body field
+	// used as username in the authentication process
+	UsernameField string
+
+	// PasswordField the name of the request's body field
+	// used as password in the authentication process
+	PasswordField string
 }
 
 // NewJWTController create a new JWTController that will
 // be using the given model for login and token generation.
 func NewJWTController(model interface{}) *JWTController {
-	return &JWTController{model}
+	return &JWTController{
+		model:         model,
+		UsernameField: "username",
+		PasswordField: "password",
+	}
 }
 
 // Login POST handler for token-based authentication.
-// Creates a new token for the user authenticated with the "username" and
-// "password" body fields and returns it as a response.
+// Creates a new token for the user authenticated with the body fields
+// defined in the controller and returns it as a response.
+// (the "username" and "password" body field are used by default)
 //
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.
@@ -55,7 +68,7 @@ func NewJWTController(model interface{}) *JWTController {
 func (c *JWTController) Login(response *goyave.Response, request *goyave.Request) {
 	userType := reflect.Indirect(reflect.ValueOf(c.model)).Type()
 	user := reflect.New(userType).Interface()
-	username := request.String("username")
+	username := request.String(c.UsernameField)
 	columns := FindColumns(user, "username", "password")
 
 	result := database.GetConnection().Where(columns[0].Name+" = ?", username).First(user)
@@ -66,7 +79,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 	}
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
-	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String("password"))) == nil {
+	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String(c.PasswordField))) == nil {
 		token, err := GenerateToken(username)
 		if err != nil {
 			panic(err)

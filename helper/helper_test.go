@@ -187,3 +187,54 @@ func TestRemoveHiddenFieldsNotStruct(t *testing.T) {
 		RemoveHiddenFields([]string{})
 	})
 }
+
+func TestOnly(t *testing.T) {
+	data := map[string]interface{}{
+		"field": "value",
+		"num":   42,
+		"slice": []float64{2, 4, 8},
+	}
+	expected := map[string]interface{}{
+		"field": "value",
+		"slice": []float64{2, 4, 8},
+	}
+	res := Only(data, "field", "slice")
+	assert.Equal(t, expected, res)
+	assert.Equal(t, data["slice"], res["slice"])
+
+	model := struct {
+		Field string
+		Num   int
+		Slice []float64
+	}{
+		Field: "value",
+		Num:   42,
+		Slice: []float64{3, 6, 9},
+	}
+	expected = map[string]interface{}{
+		"Field": "value",
+		"Slice": []float64{3, 6, 9},
+	}
+	res = Only(model, "Field", "Slice")
+	assert.Equal(t, expected, res)
+	assert.Equal(t, model.Slice, res["Slice"])
+
+	res = Only(&model, "Field", "Slice")
+	assert.Equal(t, expected, res)
+	assert.Equal(t, model.Slice, res["Slice"])
+}
+
+func TestOnlyError(t *testing.T) {
+	dataInt := map[int]interface{}{
+		1: "value",
+		3: 42,
+		4: []float64{2, 4, 8},
+	}
+	assert.Panics(t, func() {
+		Only(dataInt, "3", "5")
+	})
+
+	assert.Panics(t, func() {
+		Only("not a struct")
+	})
+}

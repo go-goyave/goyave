@@ -15,6 +15,7 @@ meta:
 ## v3.2.0
 
 - Added a way to customize the request's body field used by `JWTController` for the authentication process. (By default, "username" and "password" are used)
+- Added a new validation rule: `unique`.
 
 ## v3.1.0
 

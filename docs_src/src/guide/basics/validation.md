@@ -126,6 +126,7 @@ router.Post("/product", product.Store).Validate(product.StoreRequest)
 [Date equals](#date-equals-date)
 [Date between](#date-between-date1-date2)
 [Object](#object)
+[Unique](#unique-table-column)
 :::
 
 #### required
@@ -459,6 +460,27 @@ If the name of another field is given as a date, then all the fields must be a d
 #### object
 
 The field under validation must be an object (`map[string]interface{}`).
+
+#### unique:table,[column]
+
+<p><Badge text="Since v3.2.0"/></p>
+
+The field under validation must have a unique value in the table.
+
+**Example:**
+```go
+"email": {"unique:users"}
+```
+
+This rule will ensure that the field under validation has a value that doesn't exists in the `email` column of the `users` table.
+
+If a second parameter is provided, it will be used as the column name:
+
+```go
+"email_address": {"unique:users,email"}
+```
+
+*Note: this rule is only available if the `database` package is imported.*
 
 ## Validating objects
 

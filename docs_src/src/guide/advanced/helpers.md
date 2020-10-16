@@ -270,6 +270,8 @@ Writes the given file on the disk.
 Appends a timestamp to the given file name to avoid duplicate file names.
 The file is not readable anymore once saved as its FileReader has already been closed.
 
+Creates directories if needed.
+
 Returns the actual file name.
 
 | Parameters    | Return   |

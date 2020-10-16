@@ -131,6 +131,20 @@ func TestSaveDelete(t *testing.T) {
 	assert.Panics(t, func() {
 		Delete(actualPath)
 	})
+
+	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
+	path := toAbsolutePath("./subdir")
+	actualName = file.Save(path, "saved")
+	actualPath = toAbsolutePath("./subdir/" + actualName)
+	assert.True(t, FileExists(actualPath))
+
+	os.RemoveAll(path)
+	assert.False(t, FileExists(actualPath))
+
+	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
+	assert.Panics(t, func() {
+		file.Save(toAbsolutePath("./go.mod"), "saved")
+	})
 }
 
 func TestOpenFileError(t *testing.T) {

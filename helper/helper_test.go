@@ -189,6 +189,16 @@ func TestRemoveHiddenFieldsNotStruct(t *testing.T) {
 }
 
 func TestOnly(t *testing.T) {
+	type Data struct {
+		Field string
+		Num   int
+		Slice []float64
+	}
+	type Promote struct {
+		Data
+		Other string
+	}
+
 	data := map[string]interface{}{
 		"field": "value",
 		"num":   42,
@@ -202,11 +212,7 @@ func TestOnly(t *testing.T) {
 	assert.Equal(t, expected, res)
 	assert.Equal(t, data["slice"], res["slice"])
 
-	model := struct {
-		Field string
-		Num   int
-		Slice []float64
-	}{
+	model := Data{
 		Field: "value",
 		Num:   42,
 		Slice: []float64{3, 6, 9},
@@ -222,6 +228,24 @@ func TestOnly(t *testing.T) {
 	res = Only(&model, "Field", "Slice")
 	assert.Equal(t, expected, res)
 	assert.Equal(t, model.Slice, res["Slice"])
+
+	// Promoted fields
+	promote := Promote{
+		Data: Data{
+			Field: "value",
+			Num:   42,
+			Slice: []float64{3, 6, 9},
+		},
+		Other: "test",
+	}
+	expected = map[string]interface{}{
+		"Field": "value",
+		"Slice": []float64{3, 6, 9},
+		"Other": "test",
+	}
+	res = Only(promote, "Field", "Slice", "Other")
+	assert.Equal(t, expected, res)
+	assert.Equal(t, promote.Slice, res["Slice"])
 }
 
 func TestOnlyError(t *testing.T) {
@@ -237,4 +261,26 @@ func TestOnlyError(t *testing.T) {
 	assert.Panics(t, func() {
 		Only("not a struct")
 	})
+}
+
+func TestOnlyConflictingPromotedFields(t *testing.T) {
+	type Data struct {
+		Field string
+	}
+	type Promote struct {
+		Field string
+		Data
+	}
+
+	data := Promote{
+		Data: Data{
+			Field: "in data",
+		},
+		Field: "in promote",
+	}
+	expected := map[string]interface{}{
+		"Field": "in promote",
+	}
+	res := Only(data, "Field")
+	assert.Equal(t, expected, res)
 }

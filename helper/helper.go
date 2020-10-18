@@ -184,6 +184,9 @@ func RemoveHiddenFields(model interface{}) {
 // 	  "Field": "value",
 // 	  "Slice": []float64{3, 6, 9},
 //  }
+//
+// In case of conflicting fields (if a promoted field has the same name as a parent's
+// struct field), the higher level field is kept.
 func Only(data interface{}, fields ...string) map[string]interface{} {
 	result := make(map[string]interface{}, len(fields))
 	t := reflect.TypeOf(data)
@@ -206,8 +209,18 @@ func Only(data interface{}, fields ...string) map[string]interface{} {
 		}
 	case reflect.Struct:
 		for i := 0; i < t.NumField(); i++ {
-			name := t.Field(i).Name
-			if ContainsStr(fields, name) {
+			field := value.Field(i)
+			fieldType := t.Field(i)
+			name := fieldType.Name
+			if field.Kind() == reflect.Struct && fieldType.Anonymous {
+				for k, v := range Only(field.Interface(), fields...) {
+					// Check if fields are conflicting
+					// Highest level fields have priority
+					if _, ok := result[k]; !ok {
+						result[k] = v
+					}
+				}
+			} else if ContainsStr(fields, name) {
 				result[name] = value.Field(i).Interface()
 			}
 		}

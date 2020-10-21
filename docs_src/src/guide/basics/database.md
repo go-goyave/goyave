@@ -70,27 +70,22 @@ For SQLite, only the `database.name` config entry is required.
 
 ---
 
-You can **register more dialects** for GORM [like you would usually do](http://gorm.io/docs/dialects.html). There is one more step required: you need to tell Goyave how to build the connection string for this dialect:
+You can **register more dialects** for GORM. Start by implementing or importing it, then tell Goyave how to build the connection string for this dialect:
 
 ```go
 import (
   "github.com/System-Glitch/goyave/v3/database"
-  "gorm.io/gorm"
-  _ "example.com/user/mydriver"
+  "example.com/user/mydriver"
 )
 
-type myDialect struct{
-  db gorm.SQLCommon
-  gorm.DefaultForeignKeyNamer
-}
-
-// Dialect implementation...
-
 func init() {
-  gorm.RegisterDialect("my-driver", &myDialect{})
   database.RegisterDialect("my-driver", "{username}:{password}@({host}:{port})/{name}?{options}", mydriver.Open)
 }
 ```
+
+::: tip
+See the [GORM "Write driver" documentation](https://gorm.io/docs/write_driver.html).
+:::
 
 Template format accepts the following placeholders, which will be replaced with the corresponding configuration entries automatically:
 - `{username}`

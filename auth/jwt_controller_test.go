@@ -90,6 +90,25 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 	}
 }
 
+func (suite *JWTControllerTestSuite) TestLoginWithFieldOverride() {
+	controller := NewJWTController(&TestUser{})
+	controller.UsernameField = "email"
+	controller.PasswordField = "pass"
+	suite.NotNil(controller)
+
+	request := suite.CreateTestRequest(nil)
+	request.Data = map[string]interface{}{
+		"email": "johndoe@example.org",
+		"pass":  testUserPassword,
+	}
+	writer := httptest.NewRecorder()
+	response := suite.CreateTestResponse(writer)
+
+	controller.Login(response, request)
+	result := writer.Result()
+	suite.Equal(http.StatusOK, result.StatusCode)
+}
+
 func (suite *JWTControllerTestSuite) TestValidation() {
 	suite.RunServer(func(router *goyave.Router) {
 		JWTRoutes(router, &TestUser{})

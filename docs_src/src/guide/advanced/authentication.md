@@ -242,6 +242,14 @@ jwtRouter.Route("POST", "/login", auth.NewJWTController(&model.User{}).Login).Va
 })
 ```
 
+::: tip
+By default, the controller will use the "username" and "password" fields from incoming requests for the authentication process. This can be changed by modifying the controller's  `UsernameField` and `PasswordField` structure fields:
+```go
+jwtController := auth.NewJWTController(&model.User{})
+jwtController.UsernameField = "email"
+```
+:::
+
 #### auth.GenerateToken
 
 You may need to generate a token yourself outside of the login route. This function generates a new JWT.

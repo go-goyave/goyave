@@ -33,6 +33,7 @@ import "github.com/System-Glitch/goyave/v3/helper"
 [ToString](#helper-tostring)
 [ParseMultiValuesHeader](#helper-parsemultivaluesheader)
 [RemoveHiddenFields](#helper-removehiddenfields)
+[Only](#helper-only)
 :::
 
 #### helper.IndexOf
@@ -201,6 +202,38 @@ helper.RemoveHiddenFields(model)
 fmt.Println(model) // &{ Jeff}
 ```
 
+#### helper.Only
+
+Extracts the requested field from the given `map[string]` or structure and returns a `map[string]interface{}` containing only those values.
+
+| Parameters         | Return                   |
+|--------------------|--------------------------|
+| `data interface{}` | `map[string]interface{}` |
+| `fields ...string` |                          |
+
+**Example:**
+``` go
+type Model struct {
+  Field string
+  Num   int
+  Slice []float64
+}
+model := Model{
+  Field: "value",
+  Num:   42,
+  Slice: []float64{3, 6, 9},
+}
+res := Only(model, "Field", "Slice")
+```
+
+Result:
+```go
+map[string]interface{}{
+  "Field": "value",
+  "Slice": []float64{3, 6, 9},
+}
+```
+
 ## Filesystem
 
 The filesystem helpers require the `helper/filesystem`  package to be imported.
@@ -236,6 +269,8 @@ The data in `file.Header` come from the client and **shouldn't be trusted**. The
 Writes the given file on the disk.
 Appends a timestamp to the given file name to avoid duplicate file names.
 The file is not readable anymore once saved as its FileReader has already been closed.
+
+Creates directories if needed.
 
 Returns the actual file name.
 

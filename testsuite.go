@@ -362,8 +362,11 @@ func RunTest(t *testing.T, suite ITestSuite) bool {
 	os.Setenv("GOYAVE_ENV", "test")
 	defer os.Setenv("GOYAVE_ENV", oldEnv)
 	setRootWorkingDirectory()
-	if err := config.Load(); err != nil {
-		return assert.Fail(t, "Failed to load config", err)
+
+	if !config.IsLoaded() {
+		if err := config.Load(); err != nil {
+			return assert.Fail(t, "Failed to load config", err)
+		}
 	}
 	defer config.Clear()
 	lang.LoadDefault()

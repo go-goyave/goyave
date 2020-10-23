@@ -26,6 +26,10 @@ type CustomTestSuite struct {
 	TestSuite
 }
 
+type MigratingTestSuite struct {
+	TestSuite
+}
+
 type FailingTestSuite struct {
 	TestSuite
 }
@@ -452,4 +456,17 @@ func TestTestSuiteFail(t *testing.T) {
 	mockT := new(testing.T)
 	RunTest(mockT, new(FailingTestSuite))
 	assert.True(t, mockT.Failed())
+}
+
+func (suite *MigratingTestSuite) TearDownSuite() {
+	suite.ClearDatabaseTables()
+}
+
+func TestMigrate(t *testing.T) {
+	if err := config.LoadFrom("resources/config.migration-test.json"); err != nil {
+		assert.Fail(t, "Failed to load config", err)
+		return
+	}
+	suite := new(MigratingTestSuite)
+	RunTest(t, suite)
 }

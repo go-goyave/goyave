@@ -259,7 +259,16 @@ Unregister all models.
 
 <p><Badge text="Since v2.9.0"/></p>
 
-Sometimes you may wish to exclude some fields from your model's JSON form, such as passwords. To do so, you can add the `model:"hide"` tag to the field you want to hide.
+Sometimes you may wish to exclude some fields from your model's JSON form, such as passwords. To do so, you can add the `json:"-"` tag to the field you want to hide.
+
+``` go
+type User struct {
+    Username string
+    Password string `json:"-"`
+}
+```
+
+The problem with `json:"-"` is that you won't be able to see those fields if you decide to serialize your records in json for another use, such as statistics. In that case, you can add the `model:"hide"` tag to the field you want to hide.
 
 ``` go
 type User struct {

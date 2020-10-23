@@ -369,6 +369,10 @@ func RunTest(t *testing.T, suite ITestSuite) bool {
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
 
+	if config.GetBool("database.autoMigrate") && config.GetString("database.connection") != "none" {
+		database.Migrate()
+	}
+
 	testify.Run(t, suite)
 
 	database.Close()

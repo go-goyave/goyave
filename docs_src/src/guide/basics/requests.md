@@ -487,6 +487,10 @@ fmt.Println(request.Lang) // "en-US"
 fmt.Println(lang.Get(request.Lang, "validation.rules.required")) // "The :field is required."
 ```
 
+#### Request.Extra
+
+`Extra` is a `map[string]interface{}` extra data to request that would allow middleware to process data that is not part of the request's body.
+
 #### Request.User
 
 <p><Badge text="Since v2.5.0"/></p>

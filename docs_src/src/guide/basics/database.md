@@ -268,7 +268,7 @@ type User struct {
 }
 ```
 
-The problem with `json:"-"` is that you won't be able to see those fields if you decide to serialize your records in json for another use, such as statistics. In that case, you can add the `model:"hide"` tag to the field you want to hide.
+The problem with `json:"-"` is that you won't be able to see those fields if you decide to serialize your records in json for another use, such as statistics. In that case, you can add the `model:"hide"` tag to the field you want to hide, and use [`helper.RemoveHiddenFields()`](../advanced/helpers.html#helper-removehiddenfields) to filter out those fields.
 
 ``` go
 type User struct {
@@ -276,10 +276,6 @@ type User struct {
     Password string `model:"hide" json:",omitempty"`
 }
 ```
-
-When a struct is sent as a response through `response.JSON()`, all its fields (including promoted fields) tagged with `model:"hide"` will be set to their zero value. Add the `json:",omitempty"` tag to entirely remove the field from the resulting JSON string.
-
-You can also filter hidden fields by passing a struct to [`helper.RemoveHiddenFields()`](../advanced/helpers.html#helper-removehiddenfields).
 
 ### Automatic migrations
 

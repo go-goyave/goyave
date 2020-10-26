@@ -131,9 +131,6 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 // RemoveHiddenFields if the given model is a struct pointer.
 // All fields marked with the tag `model:"hide"` will be
 // set to their zero value.
-//
-// For example, this allows to send user models to the client
-// without their password field.
 func RemoveHiddenFields(model interface{}) {
 	t := reflect.TypeOf(model)
 	if t.Kind() == reflect.Ptr {

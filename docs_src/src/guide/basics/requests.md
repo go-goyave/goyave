@@ -487,6 +487,20 @@ fmt.Println(request.Lang) // "en-US"
 fmt.Println(lang.Get(request.Lang, "validation.rules.required")) // "The :field is required."
 ```
 
+#### Request.Extra
+
+`Extra` is a `map[string]interface{}` extra data to request that would allow middleware to process data that is not part of the request's body.
+
+**Example:**
+``` go
+func MyCustomMiddleware(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
+        request.Extra["custom"] = "extra data" // extra data to request
+        next(response, request) // Pass to the next handler with the extra data
+    }
+}
+```
+
 #### Request.User
 
 <p><Badge text="Since v2.5.0"/></p>

@@ -658,7 +658,7 @@ You can support also me on Patreon:
     <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
 
-I'm very grateful to my patrons:
+I'm very grateful to my patrons and donators:
 
 - Ben Hyrman
 - Massimiliano Bertinetti
@@ -670,6 +670,7 @@ A big "Thank you" to the Goyave contributors:
 - [Kuinox](https://github.com/Kuinox) (Powershell install script)
 - [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)
 - [jRimbault](https://github.com/jRimbault) (CI and code analysis)
+- [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
 
 ## License
 

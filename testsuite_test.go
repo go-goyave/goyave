@@ -69,6 +69,24 @@ func (suite *CustomTestSuite) TestCreateTestResponse() {
 	suite.Equal(rawRequest, response.httpRequest)
 }
 
+func (suite *CustomTestSuite) TestCreateTestRequest() {
+	request := suite.CreateTestRequest(nil)
+	suite.Nil(request.route)
+	suite.Nil(request.Data)
+	suite.Nil(request.Rules)
+	suite.Equal("en-US", request.Lang)
+	suite.NotNil(request.Params)
+	suite.NotNil(request.Extra)
+	suite.NotNil(request.httpRequest)
+	suite.Equal("GET", request.httpRequest.Method)
+	suite.Equal("/", request.httpRequest.RequestURI)
+
+	rawRequest := httptest.NewRequest("POST", "/test-route", nil)
+	request = suite.CreateTestRequest(rawRequest)
+	suite.Equal("POST", request.httpRequest.Method)
+	suite.Equal("/test-route", request.httpRequest.RequestURI)
+}
+
 func (suite *CustomTestSuite) TestRunServer() {
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", func(response *Response, request *Request) {

@@ -490,6 +490,8 @@ fmt.Println(lang.Get(request.Lang, "validation.rules.required")) // "The :field 
 
 #### Request.Extra
 
+<p><Badge text="Since v3.3.0"/></p>
+
 `Extra` is a `map[string]interface{}` meant to contain extra data, which is not part of the request body (`request.Data`). This allows middleware to process some data and pass it to other handlers.
 
 **Example:**

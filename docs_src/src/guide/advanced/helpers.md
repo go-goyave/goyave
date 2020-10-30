@@ -180,8 +180,6 @@ fmt.Println(helper.ParseMultiValuesHeader("text/html;q=0.8,text/*;q=0.8,*/*;q=0.
 
 Remove hidden fields if the given model is a struct pointer. All fields marked with the tag `model:"hide"` will be set to their zero value.
 
-For example, this allows to send user models to the client without their password field.
-
 | Parameters          | Return |
 |---------------------|--------|
 | `model interface{}` | `void` |

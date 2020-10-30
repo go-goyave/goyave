@@ -24,6 +24,7 @@ type Request struct {
 	User        interface{}
 	Rules       *validation.Rules
 	Data        map[string]interface{}
+	Extra       map[string]interface{}
 	Params      map[string]string
 	Lang        string
 }

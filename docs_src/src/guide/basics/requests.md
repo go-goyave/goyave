@@ -428,6 +428,7 @@ fmt.Println(request.Object("object")) // map[hello:world]
 [Data](#request-data)
 [Params](#request-params)
 [Lang](#request-lang)
+[Extra](#request-extra)
 :::
 
 #### Request.Rules
@@ -485,6 +486,22 @@ Learn more in the [localization](../advanced/localization.html) section.
 ``` go
 fmt.Println(request.Lang) // "en-US"
 fmt.Println(lang.Get(request.Lang, "validation.rules.required")) // "The :field is required."
+```
+
+#### Request.Extra
+
+<p><Badge text="Since v3.3.0"/></p>
+
+`Extra` is a `map[string]interface{}` meant to contain extra data, which is not part of the request body (`request.Data`). This allows middleware to process some data and pass it to other handlers.
+
+**Example:**
+``` go
+func MyCustomMiddleware(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
+        request.Extra["custom"] = "extra data"
+        next(response, request) // Pass to the next handler with the extra data
+    }
+}
 ```
 
 #### Request.User

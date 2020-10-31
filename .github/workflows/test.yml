@@ -22,8 +22,8 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Run tests
         run: |
-          echo "::set-env name=GOPATH::$(go env GOPATH)"
-          echo "::add-path::$(go env GOPATH)/bin"
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
           sudo /etc/init.d/mysql start
           while ! mysqladmin ping --silent; do
             sleep 1
@@ -43,9 +43,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run lint
-        uses: golangci/golangci-lint-action@v1
+        uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.31
+          version: v1.32
           args: --timeout 5m
 
   spellcheck:
@@ -58,7 +58,7 @@ jobs:
           go-version: 1.15
       - name: Run spellcheck
         run: |
-          echo "::set-env name=GOPATH::$(go env GOPATH)"
-          echo "::add-path::$(go env GOPATH)/bin"
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
           go get github.com/client9/misspell/cmd/misspell
           misspell -error docs_src

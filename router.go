@@ -381,6 +381,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 		corsOptions: r.corsOptions,
 		Rules:       match.route.validationRules,
 		Params:      match.parameters,
+		Extra:       map[string]interface{}{},
 	}
 	response := newResponse(w, rawRequest)
 	handler := match.route.handler

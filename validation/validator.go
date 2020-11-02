@@ -282,9 +282,9 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 		}
 
 		convertArray(isJSON, name, field, parent) // Convert single value arrays in url-encoded requests
-		fieldVal = parent[name]
 
 		for _, rule := range field.Rules {
+			fieldVal = parent[name]
 			if rule.Name == "nullable" {
 				if fieldVal == nil {
 					break

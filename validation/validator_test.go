@@ -788,6 +788,26 @@ func (suite *ValidatorTestSuite) TestGetFieldFromName() {
 	suite.False(ok)
 }
 
+func (suite *ValidatorTestSuite) TestTypeDependentAfterConversion() {
+	// Before this bug was fixed, type-dependent rules received the original value
+	// instead of the converted one, leading to wrong validation.
+
+	data := map[string]interface{}{
+		"int": "0",
+	}
+	set := RuleSet{
+		"int": {"integer", "min:2"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	suite.Equal(1, len(errors))
+
+	data["int"] = "2"
+	errors = Validate(data, set, true, "en-US")
+	suite.Empty(errors)
+
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

@@ -12,7 +12,13 @@ meta:
 
 [[toc]]
 
-## v3.3.0
+## v3.3.x
+
+### v3.3.1
+
+- Fixed a bug in the validatior: the original value of type-converted fields was always used, leading to wrong validation of subsequent type-dependent rules.
+
+### v3.3.0
 
 - Added `request.Extra`. Thank you [Guillermo Galvan](https://github.com/gmgalvan) for your contribution!
 - `TestSuite` now runs auto migrations if they're enabled before running the tests.

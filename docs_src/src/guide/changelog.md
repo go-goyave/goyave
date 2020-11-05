@@ -12,6 +12,11 @@ meta:
 
 [[toc]]
 
+## v3.4.0
+
+- Type-dependent rules validating integers (via the "integer" type rule) now share their validation message with the "numeric" type.
+- Added [paginators](./basics/database.html#Pagination).
+
 ## v3.3.x
 
 ### v3.3.1

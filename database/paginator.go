@@ -6,8 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO document pagination
-
 // Paginator structure containing pagination information and result records.
 // Can be sent to the client directly.
 type Paginator struct {
@@ -29,7 +27,7 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 
 // NewPaginator create a new Paginator.
 //
-// Given transaction can contain clauses already, such as WHERE, if you want to
+// Given DB transaction can contain clauses already, such as WHERE, if you want to
 // filter results.
 //
 //  articles := []model.Article{}

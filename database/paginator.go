@@ -31,7 +31,7 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 // filter results.
 //
 //  articles := []model.Article{}
-//  tx := database.Conn().Where("title LIKE ?", "%"+search+"%")
+//  tx := database.Conn().Where("title LIKE ?", "%"+helper.EscapeLike(search)+"%")
 //  paginator := database.NewPaginator(tx, page, pageSize, &articles)
 //  result := paginator.Find()
 //  if response.HandleDatabaseError(result) {

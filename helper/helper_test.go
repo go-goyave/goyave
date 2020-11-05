@@ -284,3 +284,8 @@ func TestOnlyConflictingPromotedFields(t *testing.T) {
 	res := Only(data, "Field")
 	assert.Equal(t, expected, res)
 }
+
+func TestEscapeLike(t *testing.T) {
+	assert.Equal(t, "se\\%r\\_h", EscapeLike("se%r_h"))
+	assert.Equal(t, "se\\%r\\%\\_h\\_", EscapeLike("se%r%_h_"))
+}

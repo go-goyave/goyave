@@ -128,9 +128,7 @@ func Start(routeRegistrer func(*Router)) error {
 	}
 
 	// Performance improvements by loading critical config entries beforehand
-	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
-	defaultLanguage = config.GetString("app.defaultLanguage")
-	protocol = config.GetString("server.protocol")
+	cacheCriticalConfig()
 
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
@@ -143,6 +141,12 @@ func Start(routeRegistrer func(*Router)) error {
 	routeRegistrer(router)
 	regexCache = nil // Clear regex cache
 	return startServer(router)
+}
+
+func cacheCriticalConfig() {
+	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
+	defaultLanguage = config.GetString("app.defaultLanguage")
+	protocol = config.GetString("server.protocol")
 }
 
 // EnableMaintenance replace the main server handler with the "Service Unavailable" handler.

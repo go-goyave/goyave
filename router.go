@@ -117,7 +117,7 @@ func newRouter() *Router {
 	}
 	router.StatusHandler(ErrorStatusHandler, 421, 428, 429, 431, 444, 451)
 	router.StatusHandler(ErrorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
-	// router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware) // TODO re-enable this
+	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
 

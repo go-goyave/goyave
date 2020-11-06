@@ -1,0 +1,156 @@
+package database
+
+import (
+	"os"
+	"strconv"
+	"testing"
+
+	"github.com/System-Glitch/goyave/v3/config"
+	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+)
+
+type PaginatorTestSuite struct {
+	suite.Suite
+	previousEnv string
+}
+
+func (suite *PaginatorTestSuite) SetupSuite() {
+	if _, ok := dialects["mysql"]; !ok {
+		RegisterDialect("mysql", "{username}:{password}@({host}:{port})/{name}?{options}", mysql.Open)
+	}
+	suite.previousEnv = os.Getenv("GOYAVE_ENV")
+	os.Setenv("GOYAVE_ENV", "test")
+	if err := config.Load(); err != nil {
+		suite.FailNow(err.Error())
+	}
+
+	db := GetConnection()
+	if err := db.AutoMigrate(&User{}); err != nil {
+		panic(err)
+	}
+}
+
+func (suite *PaginatorTestSuite) TestPaginator() {
+	// Generate records
+	const userCount = 21
+	users := make([]User, 0, userCount)
+	for i := 0; i < userCount; i++ {
+		users = append(users, User{0, "John Doe", "johndoe@example.org"})
+	}
+
+	db := GetConnection()
+	if err := db.Create(users).Error; err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
+			panic(err)
+		}
+	}()
+
+	results := []User{}
+	paginator := NewPaginator(db, 1, 10, &results)
+	suite.Equal(1, paginator.CurrentPage)
+	suite.Equal(10, paginator.PageSize)
+	suite.Equal(db, paginator.db)
+	res := paginator.Find()
+	suite.Nil(res.Error)
+	if res.Error == nil {
+		suite.Len(results, 10)
+		suite.Equal(int64(userCount), paginator.Total)
+		suite.Equal(int64(3), paginator.MaxPage)
+	}
+
+	results = []User{}
+	paginator = NewPaginator(db, 3, 10, &results)
+	res = paginator.Find()
+	suite.Nil(res.Error)
+	if res.Error == nil {
+		suite.Len(results, 1)
+	}
+
+	results = []User{}
+	paginator = NewPaginator(db, 4, 10, &results)
+	res = paginator.Find()
+	suite.Nil(res.Error)
+	if res.Error == nil {
+		suite.Empty(results)
+	}
+
+	// MaxPage = 1 is there is no record
+	if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
+		panic(err)
+	}
+	results = []User{}
+	paginator = NewPaginator(db, 1, 10, &results)
+	res = paginator.Find()
+	suite.Nil(res.Error)
+	if res.Error == nil {
+		suite.Empty(results)
+		suite.Equal(int64(1), paginator.MaxPage)
+	}
+}
+
+func (suite *PaginatorTestSuite) TestPaginatorNoRecord() {
+	results := []User{}
+	db := GetConnection()
+	paginator := NewPaginator(db, 1, 10, &results)
+	res := paginator.Find()
+	suite.Nil(res.Error)
+	if res.Error == nil {
+		suite.Empty(results)
+		suite.Equal(int64(1), paginator.MaxPage)
+	}
+}
+
+func (suite *PaginatorTestSuite) TestPaginatorWithWhereClause() {
+	// Generate records
+	const userCount = 10
+	users := make([]User, 0, userCount)
+	for i := 0; i < userCount; i++ {
+		users = append(users, User{0, strconv.Itoa(i), "johndoe@example.org"})
+	}
+
+	db := GetConnection()
+	if err := db.Create(users).Error; err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
+			panic(err)
+		}
+	}()
+
+	results := []User{}
+	db = db.Where("name = ?", "1")
+	paginator := NewPaginator(db, 1, 10, &results)
+	res := paginator.Find()
+	suite.Nil(res.Error)
+	if res.Error == nil {
+		suite.Len(results, 1)
+		suite.Equal(int64(1), paginator.Total)
+		suite.Equal(int64(1), paginator.MaxPage)
+	}
+}
+
+func (suite *PaginatorTestSuite) TestCountError() {
+	db := GetConnection().Table("not a table")
+	paginator := NewPaginator(db, 1, 10, []interface{}{})
+	suite.Panics(func() {
+		paginator.updatePageInfo()
+	})
+}
+
+func (suite *PaginatorTestSuite) TearDownAllSuite() {
+	defer os.Setenv("GOYAVE_ENV", suite.previousEnv)
+	db := GetConnection()
+	if err := db.Migrator().DropTable(&User{}).Error; err != nil {
+		panic(err)
+	}
+}
+
+func TestPaginatorTestSuite(t *testing.T) {
+	suite.Run(t, new(PaginatorTestSuite))
+}

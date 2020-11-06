@@ -371,6 +371,9 @@ func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string)
 		if expectedType == "unsupported" {
 			langEntry += "." + getFieldType(value)
 		} else {
+			if expectedType == "integer" {
+				expectedType = "numeric"
+			}
 			langEntry += "." + expectedType
 		}
 	}

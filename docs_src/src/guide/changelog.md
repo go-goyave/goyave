@@ -12,6 +12,13 @@ meta:
 
 [[toc]]
 
+## v3.4.0
+
+- Type-dependent rules validating integers (via the "integer" type rule) now share their validation message with the "numeric" type.
+- Added [paginators](./basics/database.html#pagination).
+- Added [`helper.EscapeLike()`](./advanced/helpers.html#helper-escapelike).
+- Performance improvement by caching critical config entries (`protocol`, `maxUploadSize` and `defaultLanguage`). This change leads to about 18% more requests per second. However, these entries cannot be dynamically changed anymore: a server restart will be needed.
+
 ## v3.3.x
 
 ### v3.3.1

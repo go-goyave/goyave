@@ -34,6 +34,7 @@ import "github.com/System-Glitch/goyave/v3/helper"
 [ParseMultiValuesHeader](#helper-parsemultivaluesheader)
 [RemoveHiddenFields](#helper-removehiddenfields)
 [Only](#helper-only)
+[EscapeLike](#helper-escapelike)
 :::
 
 #### helper.IndexOf
@@ -230,6 +231,20 @@ map[string]interface{}{
   "Field": "value",
   "Slice": []float64{3, 6, 9},
 }
+```
+
+#### helper.EscapeLike
+
+Escape "%" and "_" characters in the given string for use in SQL "LIKE" clauses.
+
+| Parameters   | Return   |
+|--------------|----------|
+| `str string` | `string` |
+
+**Example:**
+``` go
+search := helper.EscapeLike("se%r_h")
+fmt.Println(search) // "se\%r\_h"
 ```
 
 ## Filesystem

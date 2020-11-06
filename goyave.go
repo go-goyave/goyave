@@ -26,6 +26,11 @@ var (
 	stopChannel        chan bool
 	hookChannel        chan bool
 
+	// Critical config entries (cached for better performance)
+	protocol        string
+	maxPayloadSize  int64
+	defaultLanguage string
+
 	startupHooks       []func()
 	ready              bool = false
 	maintenanceEnabled bool = false
@@ -122,6 +127,9 @@ func Start(routeRegistrer func(*Router)) error {
 		}
 	}
 
+	// Performance improvements by loading critical config entries beforehand
+	cacheCriticalConfig()
+
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
 
@@ -133,6 +141,12 @@ func Start(routeRegistrer func(*Router)) error {
 	routeRegistrer(router)
 	regexCache = nil // Clear regex cache
 	return startServer(router)
+}
+
+func cacheCriticalConfig() {
+	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
+	defaultLanguage = config.GetString("app.defaultLanguage")
+	protocol = config.GetString("server.protocol")
 }
 
 // EnableMaintenance replace the main server handler with the "Service Unavailable" handler.
@@ -300,7 +314,6 @@ func startTLSRedirectServer() {
 
 func startServer(router *Router) error {
 	timeout := time.Duration(config.GetInt("server.timeout")) * time.Second
-	protocol := config.GetString("server.protocol")
 	server = &http.Server{
 		Addr:         getHost(protocol),
 		WriteTimeout: timeout,

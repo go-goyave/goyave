@@ -62,7 +62,7 @@ func parseRequestMiddleware(next Handler) Handler {
 	return func(response *Response, request *Request) {
 
 		request.Data = nil
-		maxSize := int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
+		maxSize := maxPayloadSize
 		maxValueBytes := maxSize
 		var bodyBuf bytes.Buffer
 		n, err := io.CopyN(&bodyBuf, request.httpRequest.Body, maxValueBytes+1)
@@ -220,7 +220,7 @@ func languageMiddleware(next Handler) Handler {
 		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
 			request.Lang = lang.DetectLanguage(header)
 		} else {
-			request.Lang = config.GetString("app.defaultLanguage")
+			request.Lang = defaultLanguage
 		}
 		next(response, request)
 	}

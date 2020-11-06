@@ -60,6 +60,9 @@ func (suite *ValidatorTestSuite) TestGetMessage() {
 	// Test type fallback if no type rule is found
 	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
 	suite.Equal("The :field must be at least :min characters.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
+
+	// Integer share message with numeric
+	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{{"integer", nil, 0}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {

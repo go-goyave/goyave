@@ -26,6 +26,11 @@ var (
 	stopChannel        chan bool
 	hookChannel        chan bool
 
+	// Critical config entries (cached for better performance)
+	protocol        string
+	maxPayloadSize  int64
+	defaultLanguage string
+
 	startupHooks       []func()
 	ready              bool = false
 	maintenanceEnabled bool = false
@@ -121,6 +126,11 @@ func Start(routeRegistrer func(*Router)) error {
 			return &Error{ExitInvalidConfig, err}
 		}
 	}
+
+	// Performance improvements by loading critical config entries beforehand
+	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
+	defaultLanguage = config.GetString("app.defaultLanguage")
+	protocol = config.GetString("server.protocol")
 
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
@@ -300,7 +310,6 @@ func startTLSRedirectServer() {
 
 func startServer(router *Router) error {
 	timeout := time.Duration(config.GetInt("server.timeout")) * time.Second
-	protocol := config.GetString("server.protocol")
 	server = &http.Server{
 		Addr:         getHost(protocol),
 		WriteTimeout: timeout,

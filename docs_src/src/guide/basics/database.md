@@ -259,7 +259,16 @@ Unregister all models.
 
 <p><Badge text="Since v2.9.0"/></p>
 
-Sometimes you may wish to exclude some fields from your model's JSON form, such as passwords. To do so, you can add the `model:"hide"` tag to the field you want to hide.
+Sometimes you may wish to exclude some fields from your model's JSON form, such as passwords. To do so, you can add the `json:"-"` tag to the field you want to hide.
+
+``` go
+type User struct {
+    Username string
+    Password string `json:"-"`
+}
+```
+
+The problem with `json:"-"` is that you won't be able to see those fields if you decide to serialize your records in json for another use, such as statistics. In that case, you can add the `model:"hide"` tag to the field you want to hide, and use [`helper.RemoveHiddenFields()`](../advanced/helpers.html#helper-removehiddenfields) to filter out those fields.
 
 ``` go
 type User struct {
@@ -267,10 +276,6 @@ type User struct {
     Password string `model:"hide" json:",omitempty"`
 }
 ```
-
-When a struct is sent as a response through `response.JSON()`, all its fields (including promoted fields) tagged with `model:"hide"` will be set to their zero value. Add the `json:",omitempty"` tag to entirely remove the field from the resulting JSON string.
-
-You can also filter hidden fields by passing a struct to [`helper.RemoveHiddenFields()`](../advanced/helpers.html#helper-removehiddenfields).
 
 ### Automatic migrations
 
@@ -281,6 +286,89 @@ Automatic migrations create tables, missing foreign keys, constraints, columns a
 :::
 
 If you would like to know more about migrations using Gorm, read their [documentation](https://gorm.io/docs/migration.html).
+
+## Pagination
+
+<p><Badge text="Since v3.4.0"/></p>
+
+`database.Paginator` is a tool that helps you paginate records. This structure contains pagination information (current page, maximum page, total number of records), which is automatically fetched. You can send the paginator directly to the client as a response.
+
+**Example:**
+```go
+articles := []model.Article{}
+db := database.Conn()
+paginator := database.NewPaginator(db, page, pageSize, &articles)
+result := paginator.Find()
+if response.HandleDatabaseError(result) {
+    response.JSON(http.StatusOK, paginator)
+}
+```
+
+When calling `paginator.Find()`, the `paginator` struct will be automatically updated with the total and max pages. The destination slice passed to `NewPaginator()` is also updated automatically. (`articles` in the above example)
+
+---
+
+You can add clauses to your SQL query before creating the paginator. This is especially useful if you want to paginate search results. The condition will be applied to both the total records count query and the actual page query.
+
+**Full example:**
+```go
+func Index(response *goyave.Response, request *goyave.Request) {
+    articles := []model.Article{}
+    page := 1
+    if request.Has("page") {
+        page = request.Integer("page")
+    }
+    pageSize := DefaultPageSize
+    if request.Has("pageSize") {
+        pageSize = request.Integer("pageSize")
+    }
+
+    tx := database.Conn()
+
+    if request.Has("search") {
+        search := helper.EscapeLike(request.String("search"))
+        tx = tx.Where("title LIKE ?", "%"+search+"%")
+    }
+
+    paginator := database.NewPaginator(tx, page, pageSize, &articles)
+    result := paginator.Find()
+    if response.HandleDatabaseError(result) {
+        response.JSON(http.StatusOK, paginator)
+    }
+}
+```
+
+#### database.NewPaginator
+
+Create a new `Paginator`.
+
+Given DB transaction can contain clauses already, such as WHERE, if you want to filter results.
+
+| Parameters         | Return       |
+|--------------------|--------------|
+| `db *gorm.DB`      | `*Paginator` |
+| `page int`         |              |
+| `pageSize int`     |              |
+| `dest interface{}` |              |
+
+**`Paginator` definition:**
+```go
+type Paginator struct {
+	  MaxPage     int64
+	  Total       int64
+	  PageSize    int
+	  CurrentPage int
+	  Records     interface{}
+}
+```
+
+#### paginator.Find
+
+Find requests page information (total records and max page) and executes the transaction. The Paginate struct is updated automatically, as well as the destination slice given in `NewPaginate()`.
+
+| Parameters | Return     |
+|------------|------------|
+|            | `*gorm.DB` |
 
 ## Setting up SSL/TLS
 

@@ -12,6 +12,26 @@ meta:
 
 [[toc]]
 
+## v3.4.0
+
+- Type-dependent rules validating integers (via the "integer" type rule) now share their validation message with the "numeric" type.
+- Added [paginators](./basics/database.html#pagination).
+- Added [`helper.EscapeLike()`](./advanced/helpers.html#helper-escapelike).
+- Performance improvement by caching critical config entries (`protocol`, `maxUploadSize` and `defaultLanguage`). This change leads to about 18% more requests per second. However, these entries cannot be dynamically changed anymore: a server restart will be needed.
+
+## v3.3.x
+
+### v3.3.1
+
+- Fixed a bug in the validatior: the original value of type-converted fields was always used, leading to wrong validation of subsequent type-dependent rules.
+
+### v3.3.0
+
+- Added `request.Extra`. Thank you [Guillermo Galvan](https://github.com/gmgalvan) for your contribution!
+- `TestSuite` now runs auto migrations if they're enabled before running the tests.
+- `TestSuite` don't load config anymore if it's already loaded. This allows you to load a test configuration file using `LoadFrom()` before calling `goyave.RunTest()`.
+- `response.JSON()` doesn't remove hidden fields anymore. The use of `json:"-"` makes more sense and saves some execution time. Removing hidden fields manually is still possible. See the [hidden fields documentation](./basics/database.html#hidden-fields) for more details.
+
 ## v3.2.0
 
 - Added a way to customize the request's body field used by `JWTController` for the authentication process. (By default, "username" and "password" are used)

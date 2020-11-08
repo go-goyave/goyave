@@ -60,6 +60,9 @@ func (suite *ValidatorTestSuite) TestGetMessage() {
 	// Test type fallback if no type rule is found
 	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
 	suite.Equal("The :field must be at least :min characters.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
+
+	// Integer share message with numeric
+	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{{"integer", nil, 0}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {
@@ -786,6 +789,26 @@ func (suite *ValidatorTestSuite) TestGetFieldFromName() {
 	suite.Nil(val)
 	suite.Nil(parent)
 	suite.False(ok)
+}
+
+func (suite *ValidatorTestSuite) TestTypeDependentAfterConversion() {
+	// Before this bug was fixed, type-dependent rules received the original value
+	// instead of the converted one, leading to wrong validation.
+
+	data := map[string]interface{}{
+		"int": "0",
+	}
+	set := RuleSet{
+		"int": {"integer", "min:2"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	suite.Equal(1, len(errors))
+
+	data["int"] = "2"
+	errors = Validate(data, set, true, "en-US")
+	suite.Empty(errors)
+
 }
 
 func TestValidatorTestSuite(t *testing.T) {

@@ -105,6 +105,7 @@ func (s *TestSuite) CreateTestRequest(rawRequest *http.Request) *Request {
 		Rules:       nil,
 		Lang:        "en-US",
 		Params:      map[string]string{},
+		Extra:       map[string]interface{}{},
 	}
 }
 
@@ -177,6 +178,7 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 // Middleware executes the given middleware and returns the HTTP response.
 // Core middleware (recovery, parsing and language) is not executed.
 func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedure Handler) *http.Response {
+	cacheCriticalConfig()
 	recorder := httptest.NewRecorder()
 	response := s.CreateTestResponse(recorder)
 	router := newRouter()
@@ -362,12 +364,19 @@ func RunTest(t *testing.T, suite ITestSuite) bool {
 	os.Setenv("GOYAVE_ENV", "test")
 	defer os.Setenv("GOYAVE_ENV", oldEnv)
 	setRootWorkingDirectory()
-	if err := config.Load(); err != nil {
-		return assert.Fail(t, "Failed to load config", err)
+
+	if !config.IsLoaded() {
+		if err := config.Load(); err != nil {
+			return assert.Fail(t, "Failed to load config", err)
+		}
 	}
 	defer config.Clear()
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
+
+	if config.GetBool("database.autoMigrate") && config.GetString("database.connection") != "none" {
+		database.Migrate()
+	}
 
 	testify.Run(t, suite)
 

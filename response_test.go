@@ -216,30 +216,6 @@ func (suite *ResponseTestSuite) TestResponseJSON() {
 	suite.Equal("{\"code\":200,\"status\":\"ok\"}\n", string(body))
 }
 
-func (suite *ResponseTestSuite) TestResponseJSONHiddenFields() {
-	type Model struct {
-		Password string `model:"hide" json:",omitempty"`
-		Username string
-	}
-
-	model := &Model{
-		Password: "bcrypted password",
-		Username: "Jeff",
-	}
-
-	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
-	response := newResponse(httptest.NewRecorder(), rawRequest)
-
-	response.JSON(http.StatusOK, model)
-	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
-	body, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		panic(err)
-	}
-	suite.Equal("{\"Username\":\"Jeff\"}\n", string(body))
-}
-
 func (suite *ResponseTestSuite) TestResponseDownload() {
 	size := suite.getFileSize("config/config.test.json")
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))

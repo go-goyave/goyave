@@ -112,6 +112,7 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 
 func (suite *GoyaveTestSuite) TestTLSServer() {
 	suite.loadConfig()
+	protocol = "https"
 	config.Set("server.protocol", "https")
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", helloHandler)
@@ -167,6 +168,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 	})
 
 	config.Set("server.protocol", "http")
+	protocol = "http"
 }
 
 func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
@@ -191,8 +193,10 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 		}()
 		<-c2
 		config.Set("server.protocol", "https")
+		protocol = "https"
 		suite.RunServer(func(router *Router) {}, func() {})
 		config.Set("server.protocol", "http")
+		protocol = "http"
 		c2 <- true
 		<-c2
 		c <- true
@@ -251,7 +255,7 @@ func (suite *GoyaveTestSuite) TestServerError() {
 	suite.testServerError("https")
 }
 
-func (suite *GoyaveTestSuite) testServerError(protocol string) {
+func (suite *GoyaveTestSuite) testServerError(proto string) {
 	c := make(chan error)
 	c2 := make(chan bool)
 	ctx, cancel := context.WithTimeout(context.Background(), suite.Timeout())
@@ -263,9 +267,9 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		go func() {
 
 			// Run a server using the same port as Goyave, so Goyave fails to bind.
-			if protocol != "https" {
+			if proto != "https" {
 				var err error
-				ln, err = net.Listen("tcp", getHost(protocol))
+				ln, err = net.Listen("tcp", getHost(proto))
 				if err != nil {
 					suite.Fail(err.Error())
 				}
@@ -276,16 +280,18 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 			c2 <- true
 		}()
 		<-c2
-		config.Set("server.protocol", protocol)
-		if protocol == "https" {
+		config.Set("server.protocol", proto)
+		protocol = proto
+		if proto == "https" {
 			// Invalid certificates
 			config.Set("server.tls.key", "doesntexist")
 			config.Set("server.tls.cert", "doesntexist")
 		}
 
-		fmt.Println("test server error " + protocol)
+		fmt.Println("test server error " + proto)
 		err := Start(func(router *Router) {})
 		config.Set("server.protocol", "http")
+		protocol = "http"
 		c <- err
 	}()
 
@@ -296,14 +302,14 @@ func (suite *GoyaveTestSuite) testServerError(protocol string) {
 		suite.False(IsReady())
 		suite.Nil(server)
 		suite.NotNil(err)
-		if protocol == "https" {
+		if proto == "https" {
 			suite.Equal(ExitHTTPError, err.(*Error).ExitCode)
 		} else {
 			suite.Equal(ExitNetworkError, err.(*Error).ExitCode)
 		}
 	}
 
-	if protocol != "https" {
+	if proto != "https" {
 		ln.Close()
 	}
 	<-c2

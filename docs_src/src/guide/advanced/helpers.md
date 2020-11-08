@@ -34,6 +34,7 @@ import "github.com/System-Glitch/goyave/v3/helper"
 [ParseMultiValuesHeader](#helper-parsemultivaluesheader)
 [RemoveHiddenFields](#helper-removehiddenfields)
 [Only](#helper-only)
+[EscapeLike](#helper-escapelike)
 :::
 
 #### helper.IndexOf
@@ -180,8 +181,6 @@ fmt.Println(helper.ParseMultiValuesHeader("text/html;q=0.8,text/*;q=0.8,*/*;q=0.
 
 Remove hidden fields if the given model is a struct pointer. All fields marked with the tag `model:"hide"` will be set to their zero value.
 
-For example, this allows to send user models to the client without their password field.
-
 | Parameters          | Return |
 |---------------------|--------|
 | `model interface{}` | `void` |
@@ -232,6 +231,20 @@ map[string]interface{}{
   "Field": "value",
   "Slice": []float64{3, 6, 9},
 }
+```
+
+#### helper.EscapeLike
+
+Escape "%" and "_" characters in the given string for use in SQL "LIKE" clauses.
+
+| Parameters   | Return   |
+|--------------|----------|
+| `str string` | `string` |
+
+**Example:**
+``` go
+search := helper.EscapeLike("se%r_h")
+fmt.Println(search) // "se\%r\_h"
 ```
 
 ## Filesystem

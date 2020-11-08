@@ -131,9 +131,6 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 // RemoveHiddenFields if the given model is a struct pointer.
 // All fields marked with the tag `model:"hide"` will be
 // set to their zero value.
-//
-// For example, this allows to send user models to the client
-// without their password field.
 func RemoveHiddenFields(model interface{}) {
 	t := reflect.TypeOf(model)
 	if t.Kind() == reflect.Ptr {
@@ -229,4 +226,14 @@ func Only(data interface{}, fields ...string) map[string]interface{} {
 	}
 
 	return result
+}
+
+// EscapeLike escape "%" and "_" characters in the given string
+// for use in SQL "LIKE" clauses.
+func EscapeLike(str string) string {
+	escapeChars := []string{"%", "_"}
+	for _, v := range escapeChars {
+		str = strings.ReplaceAll(str, v, "\\"+v)
+	}
+	return str
 }

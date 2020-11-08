@@ -28,6 +28,7 @@ type MiddlewareTestSuite struct {
 
 func (suite *MiddlewareTestSuite) SetupSuite() {
 	lang.LoadDefault()
+	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
 }
 
 func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
@@ -143,6 +144,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNilPanic() {
 }
 
 func (suite *MiddlewareTestSuite) TestLanguageMiddleware() {
+	defaultLanguage = config.GetString("app.defaultLanguage")
 	executed := false
 	rawRequest := httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	rawRequest.Header.Set("Accept-Language", "en-US")
@@ -262,6 +264,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 	// Test payload too large
 	prev := config.Get("server.maxUploadSize")
 	config.Set("server.maxUploadSize", -10.0)
+	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
 	rawRequest = createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
 
 	request := createTestRequest(rawRequest)
@@ -272,6 +275,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 
 	prev = config.Get("server.maxUploadSize")
 	config.Set("server.maxUploadSize", 0.0006)
+	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
 	rawRequest = createTestFileRequest("/test-route?test=hello", "resources/img/logo/goyave_16.png")
 
 	request = createTestRequest(rawRequest)
@@ -279,6 +283,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 	parseRequestMiddleware(nil)(response, request)
 	suite.Equal(http.StatusRequestEntityTooLarge, response.GetStatus())
 	config.Set("server.maxUploadSize", prev)
+	maxPayloadSize = int64(config.GetFloat("server.maxUploadSize") * 1024 * 1024)
 }
 
 func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {

@@ -158,6 +158,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	route := &Route{}
 	var tmp *Route
 	route.handler = func(response *Response, request *Request) {
+		suite.NotNil(request.Extra)
 		tmp = request.Route()
 		response.String(200, "Hello world")
 	}
@@ -590,7 +591,9 @@ func (suite *RouterTestSuite) TestMatch() {
 
 func (suite *RouterTestSuite) TestScheme() {
 	// From HTTP to HTTPS
+	protocol = "https"
 	config.Set("server.protocol", "https")
+
 	router := newRouter()
 
 	recorder := httptest.NewRecorder()
@@ -604,6 +607,8 @@ func (suite *RouterTestSuite) TestScheme() {
 
 	// From HTTPS to HTTP
 	config.Set("server.protocol", "http")
+	protocol = "http"
+
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "https://localhost:80/test?param=1", nil))
 	result = recorder.Result()

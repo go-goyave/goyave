@@ -178,6 +178,7 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 // Middleware executes the given middleware and returns the HTTP response.
 // Core middleware (recovery, parsing and language) is not executed.
 func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedure Handler) *http.Response {
+	cacheCriticalConfig()
 	recorder := httptest.NewRecorder()
 	response := s.CreateTestResponse(recorder)
 	router := newRouter()

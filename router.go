@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/System-Glitch/goyave/v3/cors"
 	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 )
@@ -124,7 +123,6 @@ func newRouter() *Router {
 
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	protocol := config.GetString("server.protocol")
 	if req.URL.Scheme != "" && req.URL.Scheme != protocol {
 		address := getAddress(protocol) + req.URL.Path
 		query := req.URL.Query()

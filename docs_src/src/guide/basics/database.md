@@ -287,6 +287,89 @@ Automatic migrations create tables, missing foreign keys, constraints, columns a
 
 If you would like to know more about migrations using Gorm, read their [documentation](https://gorm.io/docs/migration.html).
 
+## Pagination
+
+<p><Badge text="Since v3.4.0"/></p>
+
+`database.Paginator` is a tool that helps you paginate records. This structure contains pagination information (current page, maximum page, total number of records), which is automatically fetched. You can send the paginator directly to the client as a response.
+
+**Example:**
+```go
+articles := []model.Article{}
+db := database.Conn()
+paginator := database.NewPaginator(db, page, pageSize, &articles)
+result := paginator.Find()
+if response.HandleDatabaseError(result) {
+    response.JSON(http.StatusOK, paginator)
+}
+```
+
+When calling `paginator.Find()`, the `paginator` struct will be automatically updated with the total and max pages. The destination slice passed to `NewPaginator()` is also updated automatically. (`articles` in the above example)
+
+---
+
+You can add clauses to your SQL query before creating the paginator. This is especially useful if you want to paginate search results. The condition will be applied to both the total records count query and the actual page query.
+
+**Full example:**
+```go
+func Index(response *goyave.Response, request *goyave.Request) {
+    articles := []model.Article{}
+    page := 1
+    if request.Has("page") {
+        page = request.Integer("page")
+    }
+    pageSize := DefaultPageSize
+    if request.Has("pageSize") {
+        pageSize = request.Integer("pageSize")
+    }
+
+    tx := database.Conn()
+
+    if request.Has("search") {
+        search := helper.EscapeLike(request.String("search"))
+        tx = tx.Where("title LIKE ?", "%"+search+"%")
+    }
+
+    paginator := database.NewPaginator(tx, page, pageSize, &articles)
+    result := paginator.Find()
+    if response.HandleDatabaseError(result) {
+        response.JSON(http.StatusOK, paginator)
+    }
+}
+```
+
+#### database.NewPaginator
+
+Create a new `Paginator`.
+
+Given DB transaction can contain clauses already, such as WHERE, if you want to filter results.
+
+| Parameters         | Return       |
+|--------------------|--------------|
+| `db *gorm.DB`      | `*Paginator` |
+| `page int`         |              |
+| `pageSize int`     |              |
+| `dest interface{}` |              |
+
+**`Paginator` definition:**
+```go
+type Paginator struct {
+	  MaxPage     int64
+	  Total       int64
+	  PageSize    int
+	  CurrentPage int
+	  Records     interface{}
+}
+```
+
+#### paginator.Find
+
+Find requests page information (total records and max page) and executes the transaction. The Paginate struct is updated automatically, as well as the destination slice given in `NewPaginate()`.
+
+| Parameters | Return     |
+|------------|------------|
+|            | `*gorm.DB` |
+
 ## Setting up SSL/TLS
 
 ### MySQL

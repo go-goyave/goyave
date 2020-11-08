@@ -23,8 +23,11 @@ type LimiterConfig struct {
 	ResponseHandler goyave.Handler
 }
 
+// LimiterConfigFunc acts as a factory for LimiterConfig structs
+type LimiterConfigFunc func(request *goyave.Request) LimiterConfig
+
 // New initializes new a rate limiter middleware
-func New(configFn func(request *goyave.Request) LimiterConfig) goyave.Middleware {
+func New(configFn LimiterConfigFunc) goyave.Middleware {
 
 	lstore := newLimiterStore()
 

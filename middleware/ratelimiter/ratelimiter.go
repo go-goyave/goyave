@@ -1,6 +1,7 @@
 package ratelimiter
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -59,22 +60,38 @@ func New(configFn LimiterConfigFunc) goyave.Middleware {
 				lstore.set(key, l)
 			}
 
-			if time.Since(l.updatedAt) < l.quotaDuration {
-				if l.counter >= l.requestQuota {
-					response.Status(http.StatusTooManyRequests)
-					config.ResponseHandler(response, request)
-					return
-				}
-
-			} else {
-				lstore.reset(key)
+			if l.hasExpired() {
+				l.reset()
+			} else if l.hasExceededRequestQuota() {
+				setResponseHeaders(response, l)
+				response.Status(http.StatusTooManyRequests)
+				config.ResponseHandler(response, request)
+				return
 			}
 
-			lstore.increment(key)
+			l.increment()
 
+			setResponseHeaders(response, l)
 			next(response, request)
 		}
 	}
+}
+
+func setResponseHeaders(response *goyave.Response, l *limiter) {
+	response.Header().Add(
+		"RateLimit-Limit",
+		fmt.Sprintf("%v, %v;w=%v", l.requestQuota, l.requestQuota, l.quotaDuration.Seconds()),
+	)
+
+	response.Header().Add(
+		"RateLimit-Remaining",
+		fmt.Sprintf("%v", l.getRemainingRequestQuota()),
+	)
+
+	response.Header().Add(
+		"RateLimit-Reset",
+		fmt.Sprintf("%v", l.getSecondsToQuotaReset()),
+	)
 }
 
 func defaultResponseHandler(response *goyave.Response, request *goyave.Request) {

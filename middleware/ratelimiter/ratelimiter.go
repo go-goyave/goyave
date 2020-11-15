@@ -20,9 +20,6 @@ type LimiterConfig struct {
 	// Unique identifier for requestors. Can be userID or IP
 	// Defaults to Remote Address if it is empty
 	ClientID interface{}
-
-	// Handles response when rate limit exceeds
-	ResponseHandler goyave.Handler
 }
 
 // LimiterConfigFunc acts as a factory for LimiterConfig structs
@@ -44,10 +41,6 @@ func New(configFn LimiterConfigFunc) goyave.Middleware {
 				return
 			}
 
-			if config.ResponseHandler == nil {
-				config.ResponseHandler = defaultResponseHandler
-			}
-
 			if config.ClientID == "" {
 				config.ClientID = defaultClientID(request)
 			}
@@ -66,7 +59,6 @@ func New(configFn LimiterConfigFunc) goyave.Middleware {
 			} else if l.hasExceededRequestQuota() {
 				setResponseHeaders(response, l)
 				response.Status(http.StatusTooManyRequests)
-				config.ResponseHandler(response, request)
 				return
 			}
 
@@ -93,15 +85,6 @@ func setResponseHeaders(response *goyave.Response, l *limiter) {
 		"RateLimit-Reset",
 		fmt.Sprintf("%v", l.getSecondsToQuotaReset()),
 	)
-}
-
-func defaultResponseHandler(response *goyave.Response, request *goyave.Request) {
-	response.JSON(http.StatusTooManyRequests, map[string]interface{}{
-		"errors": map[string]interface{}{
-			"status": 429,
-			"title":  "Too many requests",
-		},
-	})
 }
 
 func defaultClientID(request *goyave.Request) string {

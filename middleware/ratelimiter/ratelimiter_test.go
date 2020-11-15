@@ -109,37 +109,3 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 
 	suite.Equal(http.StatusNoContent, result.StatusCode)
 }
-
-func (suite *RateLimiterMiddlewareTestSuite) TestLimiterConfigDefaults() {
-	request := suite.CreateTestRequest(nil)
-
-	rateLimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
-		return LimiterConfig{
-			RequestQuota:  1,
-			QuotaDuration: 2 * time.Second,
-		}
-	})
-
-	// Check if responseHandler works
-
-	var result *http.Response
-
-	for i := 0; i < 2; i++ {
-		result = suite.Middleware(
-			rateLimiterMiddleware,
-			request,
-			func(response *goyave.Response, request *goyave.Request) {},
-		)
-	}
-
-	defer result.Body.Close()
-
-	bj := map[string]map[string]interface{}{}
-
-	err := suite.GetJSONBody(result, &bj)
-
-	suite.Nil(err)
-
-	suite.Equal(float64(http.StatusTooManyRequests), bj["errors"]["status"])
-	suite.Equal("Too many requests", bj["errors"]["title"])
-}

@@ -3,6 +3,7 @@ package ratelimiter
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/System-Glitch/goyave/v3"
@@ -104,5 +105,14 @@ func defaultResponseHandler(response *goyave.Response, request *goyave.Request) 
 }
 
 func defaultClientID(request *goyave.Request) string {
-	return request.RemoteAddress()
+	remoteAddr := request.RemoteAddress()
+
+	// strip off port number
+	addrSlice := strings.Split(remoteAddr, ":")
+
+	if len(addrSlice) == 0 {
+		return remoteAddr
+	}
+
+	return addrSlice[0]
 }

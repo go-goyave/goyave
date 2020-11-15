@@ -18,7 +18,7 @@ type LimiterConfig struct {
 
 	// Unique identifier for requestors. Can be userID or IP
 	// Defaults to Remote Address if it is empty
-	ClientID string
+	ClientID interface{}
 
 	// Handles response when rate limit exceeds
 	ResponseHandler goyave.Handler

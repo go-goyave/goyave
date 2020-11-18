@@ -41,7 +41,7 @@ func New(configFn LimiterConfigFunc) goyave.Middleware {
 				return
 			}
 
-			if config.ClientID == "" {
+			if config.ClientID == nil {
 				config.ClientID = defaultClientID(request)
 			}
 

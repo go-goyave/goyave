@@ -71,17 +71,17 @@ func New(configFn LimiterConfigFunc) goyave.Middleware {
 }
 
 func setResponseHeaders(response *goyave.Response, l *limiter) {
-	response.Header().Add(
+	response.Header().Set(
 		"RateLimit-Limit",
 		fmt.Sprintf("%v, %v;w=%v", l.requestQuota, l.requestQuota, l.quotaDuration.Seconds()),
 	)
 
-	response.Header().Add(
+	response.Header().Set(
 		"RateLimit-Remaining",
 		fmt.Sprintf("%v", l.getRemainingRequestQuota()),
 	)
 
-	response.Header().Add(
+	response.Header().Set(
 		"RateLimit-Reset",
 		fmt.Sprintf("%v", l.getSecondsToQuotaReset()),
 	)

@@ -11,7 +11,7 @@ type limiter struct {
 	counter       int
 	quotaDuration time.Duration
 	resetsAt      time.Time
-	mx            *sync.RWMutex
+	mx            sync.RWMutex
 }
 
 func newLimiter(requestQuota int, quotaDuration time.Duration) *limiter {
@@ -62,7 +62,7 @@ func (l *limiter) getSecondsToQuotaReset() float64 {
 }
 
 type limiterStore struct {
-	mx    *sync.RWMutex
+	mx    sync.RWMutex
 	store map[interface{}]*limiter
 }
 

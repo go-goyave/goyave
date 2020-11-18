@@ -16,7 +16,6 @@ type limiter struct {
 
 func newLimiter(requestQuota int, quotaDuration time.Duration) *limiter {
 	return &limiter{
-		mx:            new(sync.RWMutex),
 		requestQuota:  requestQuota,
 		quotaDuration: quotaDuration,
 		counter:       0,
@@ -68,7 +67,6 @@ type limiterStore struct {
 
 func newLimiterStore() limiterStore {
 	return limiterStore{
-		mx:    new(sync.RWMutex),
 		store: make(map[interface{}]*limiter),
 	}
 }

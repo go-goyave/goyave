@@ -14,7 +14,7 @@ type limiter struct {
 	counter       int
 	quotaDuration time.Duration
 	resetsAt      time.Time
-	mx            sync.RWMutex
+	mx            sync.Mutex
 }
 
 func newLimiter(requestQuota int, quotaDuration time.Duration) *limiter {
@@ -28,8 +28,8 @@ func newLimiter(requestQuota int, quotaDuration time.Duration) *limiter {
 
 func (l *limiter) validateAndUpdate(response *goyave.Response) bool {
 
-	l.mx.RLock()
-	defer l.mx.RUnlock()
+	l.mx.Lock()
+	defer l.mx.Unlock()
 
 	if l.hasExpired() {
 		l.reset()

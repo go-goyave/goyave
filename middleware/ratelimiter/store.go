@@ -1,9 +1,12 @@
 package ratelimiter
 
 import (
+	"fmt"
 	"math"
 	"sync"
 	"time"
+
+	"github.com/System-Glitch/goyave/v3"
 )
 
 type limiter struct {
@@ -23,40 +26,62 @@ func newLimiter(requestQuota int, quotaDuration time.Duration) *limiter {
 	}
 }
 
+func (l *limiter) validateAndUpdate(response *goyave.Response) bool {
+
+	l.mx.RLock()
+	defer l.mx.RUnlock()
+
+	if l.hasExpired() {
+		l.reset()
+	} else if l.hasExceededRequestQuota() {
+		l.updateResponseHeaders(response)
+		return false
+	}
+
+	l.increment()
+	l.updateResponseHeaders(response)
+	return true
+}
+
+func (l *limiter) updateResponseHeaders(response *goyave.Response) {
+	response.Header().Set(
+		"RateLimit-Limit",
+		fmt.Sprintf("%v, %v;w=%v", l.requestQuota, l.requestQuota, l.quotaDuration.Seconds()),
+	)
+
+	response.Header().Set(
+		"RateLimit-Remaining",
+		fmt.Sprintf("%v", l.getRemainingRequestQuota()),
+	)
+
+	response.Header().Set(
+		"RateLimit-Reset",
+		fmt.Sprintf("%v", l.getSecondsToQuotaReset()),
+	)
+}
+
 func (l *limiter) reset() {
-	l.mx.Lock()
-	defer l.mx.Unlock()
 	l.resetsAt = time.Now().Add(l.quotaDuration)
 	l.counter = 0
 }
 
 func (l *limiter) increment() {
-	l.mx.Lock()
-	defer l.mx.Unlock()
 	l.counter++
 }
 
 func (l *limiter) hasExpired() bool {
-	l.mx.RLock()
-	defer l.mx.RUnlock()
 	return time.Now().After(l.resetsAt)
 }
 
 func (l *limiter) hasExceededRequestQuota() bool {
-	l.mx.RLock()
-	defer l.mx.RUnlock()
 	return l.counter >= l.requestQuota
 }
 
 func (l *limiter) getRemainingRequestQuota() int {
-	l.mx.RLock()
-	defer l.mx.RUnlock()
 	return l.requestQuota - l.counter
 }
 
 func (l *limiter) getSecondsToQuotaReset() float64 {
-	l.mx.RLock()
-	defer l.mx.RUnlock()
 	return -1 * math.Round(time.Since(l.resetsAt).Seconds())
 }
 

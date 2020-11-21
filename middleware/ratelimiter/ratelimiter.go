@@ -67,11 +67,11 @@ func defaultClientID(request *goyave.Request) string {
 	remoteAddr := request.RemoteAddress()
 
 	// strip off port number
-	addrSlice := strings.Split(remoteAddr, ":")
+	e := strings.Index(remoteAddr, ":")
 
-	if len(addrSlice) == 0 {
+	if e == -1 {
 		return remoteAddr
 	}
 
-	return addrSlice[0]
+	return remoteAddr[0:e]
 }

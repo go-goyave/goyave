@@ -20,13 +20,14 @@ func TestRateLimiterMiddlewareTestSuite(t *testing.T) {
 func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 
 	requestQuota := 10
-	numberOfRequests := 7
 	quotaDuration := 5 * time.Second
+	var secondsToQuotaReset float64 = 5555
 
 	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
 		return LimiterConfig{
-			RequestQuota:  requestQuota,
-			QuotaDuration: quotaDuration,
+			RequestQuota:        requestQuota,
+			QuotaDuration:       quotaDuration,
+			secondsToQuotaReset: secondsToQuotaReset,
 		}
 	})
 
@@ -34,13 +35,11 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 
 	var result *http.Response
 
-	for i := 0; i < numberOfRequests; i++ {
-		result = suite.Middleware(
-			ratelimiterMiddleware,
-			request,
-			func(response *goyave.Response, request *goyave.Request) {},
-		)
-	}
+	result = suite.Middleware(
+		ratelimiterMiddleware,
+		request,
+		func(response *goyave.Response, request *goyave.Request) {},
+	)
 
 	suite.Equal(
 		fmt.Sprintf("%v, %v;w=%v", requestQuota, requestQuota, quotaDuration.Seconds()),
@@ -48,9 +47,15 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 	)
 
 	suite.Equal(
-		fmt.Sprintf("%v", requestQuota-numberOfRequests),
+		fmt.Sprintf("%v", requestQuota-1),
 		result.Header.Get("RateLimit-Remaining"),
 	)
+
+	suite.Equal(
+		fmt.Sprintf("%v", secondsToQuotaReset),
+		result.Header.Get("RateLimit-Reset"),
+	)
+
 }
 
 func (suite *RateLimiterMiddlewareTestSuite) TestWhenClientExceedsTheAllowedQuota() {

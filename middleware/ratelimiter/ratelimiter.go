@@ -19,6 +19,8 @@ type LimiterConfig struct {
 	// Unique identifier for requestors. Can be userID or IP
 	// Defaults to Remote Address if it is empty
 	ClientID interface{}
+
+	secondsToQuotaReset float64
 }
 
 // LimiterConfigFunc acts as a factory for LimiterConfig structs
@@ -49,7 +51,7 @@ func New(configFn LimiterConfigFunc) goyave.Middleware {
 			l := lstore.get(key)
 
 			if l == nil {
-				l = newLimiter(config.RequestQuota, config.QuotaDuration)
+				l = newLimiter(config)
 				lstore.set(key, l)
 			}
 

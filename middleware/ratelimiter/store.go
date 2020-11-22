@@ -10,19 +10,17 @@ import (
 )
 
 type limiter struct {
-	requestQuota  int
-	counter       int
-	quotaDuration time.Duration
-	resetsAt      time.Time
-	mx            sync.Mutex
+	config   LimiterConfig
+	counter  int
+	resetsAt time.Time
+	mx       sync.Mutex
 }
 
-func newLimiter(requestQuota int, quotaDuration time.Duration) *limiter {
+func newLimiter(config LimiterConfig) *limiter {
 	return &limiter{
-		requestQuota:  requestQuota,
-		quotaDuration: quotaDuration,
-		counter:       0,
-		resetsAt:      time.Now().Add(quotaDuration),
+		config:   config,
+		counter:  0,
+		resetsAt: time.Now().Add(config.QuotaDuration),
 	}
 }
 
@@ -46,7 +44,7 @@ func (l *limiter) validateAndUpdate(response *goyave.Response) bool {
 func (l *limiter) updateResponseHeaders(response *goyave.Response) {
 	response.Header().Set(
 		"RateLimit-Limit",
-		fmt.Sprintf("%v, %v;w=%v", l.requestQuota, l.requestQuota, l.quotaDuration.Seconds()),
+		fmt.Sprintf("%v, %v;w=%v", l.config.RequestQuota, l.config.RequestQuota, l.config.QuotaDuration.Seconds()),
 	)
 
 	response.Header().Set(
@@ -61,7 +59,7 @@ func (l *limiter) updateResponseHeaders(response *goyave.Response) {
 }
 
 func (l *limiter) reset() {
-	l.resetsAt = time.Now().Add(l.quotaDuration)
+	l.resetsAt = time.Now().Add(l.config.QuotaDuration)
 	l.counter = 0
 }
 
@@ -74,15 +72,19 @@ func (l *limiter) hasExpired() bool {
 }
 
 func (l *limiter) hasExceededRequestQuota() bool {
-	return l.counter >= l.requestQuota
+	return l.counter >= l.config.RequestQuota
 }
 
 func (l *limiter) getRemainingRequestQuota() int {
-	return l.requestQuota - l.counter
+	return l.config.RequestQuota - l.counter
 }
 
 func (l *limiter) getSecondsToQuotaReset() float64 {
-	return -1 * math.Round(time.Since(l.resetsAt).Seconds())
+
+	if l.config.secondsToQuotaReset == 0 {
+		return -1 * math.Round(time.Since(l.resetsAt).Seconds())
+	}
+	return l.config.secondsToQuotaReset
 }
 
 type limiterStore struct {

@@ -19,8 +19,6 @@ type LimiterConfig struct {
 	// Unique identifier for requestors. Can be userID or IP
 	// Defaults to Remote Address if it is empty
 	ClientID interface{}
-
-	secondsToQuotaReset float64
 }
 
 // LimiterConfigFunc acts as a factory for LimiterConfig structs
@@ -28,8 +26,11 @@ type LimiterConfigFunc func(request *goyave.Request) LimiterConfig
 
 // New initializes new a rate limiter middleware
 func New(configFn LimiterConfigFunc) goyave.Middleware {
-
 	lstore := newLimiterStore()
+	return newWithStore(configFn, &lstore)
+}
+
+func newWithStore(configFn LimiterConfigFunc, lstore *limiterStore) goyave.Middleware {
 
 	return func(next goyave.Handler) goyave.Handler {
 

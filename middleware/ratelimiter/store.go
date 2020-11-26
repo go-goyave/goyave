@@ -80,11 +80,7 @@ func (l *limiter) getRemainingRequestQuota() int {
 }
 
 func (l *limiter) getSecondsToQuotaReset() float64 {
-
-	if l.config.secondsToQuotaReset == 0 {
-		return -1 * math.Round(time.Since(l.resetsAt).Seconds())
-	}
-	return l.config.secondsToQuotaReset
+	return -1 * math.Round(time.Since(l.resetsAt).Seconds())
 }
 
 type limiterStore struct {

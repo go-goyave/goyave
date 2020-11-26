@@ -21,15 +21,31 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 
 	requestQuota := 10
 	quotaDuration := 5 * time.Second
-	var secondsToQuotaReset float64 = 5555
+	clientID := "client_1234"
 
-	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
-		return LimiterConfig{
-			RequestQuota:        requestQuota,
-			QuotaDuration:       quotaDuration,
-			secondsToQuotaReset: secondsToQuotaReset,
-		}
-	})
+	// To be used for testing RateLimit-Reset
+	var secondsToQuotaReset time.Duration = 5555
+
+	limiterConfig := LimiterConfig{
+		RequestQuota:  requestQuota,
+		QuotaDuration: quotaDuration,
+		ClientID:      clientID,
+	}
+
+	// stub a limiter with pre-defined resetAt.
+	limiter := &limiter{
+		config:   limiterConfig,
+		counter:  0,
+		resetsAt: time.Now().Add(secondsToQuotaReset * time.Second),
+	}
+
+	// stub a new store and set the pre-defined limiter
+	store := newLimiterStore()
+	store.set(clientID, limiter)
+
+	ratelimiterMiddleware := newWithStore(func(request *goyave.Request) LimiterConfig {
+		return limiterConfig
+	}, &store)
 
 	request := suite.CreateTestRequest(nil)
 
@@ -52,7 +68,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 	)
 
 	suite.Equal(
-		fmt.Sprintf("%v", secondsToQuotaReset),
+		fmt.Sprintf("%v", int64(secondsToQuotaReset)),
 		result.Header.Get("RateLimit-Reset"),
 	)
 

@@ -49,9 +49,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 
 	request := suite.CreateTestRequest(nil)
 
-	var result *http.Response
-
-	result = suite.Middleware(
+	result := suite.Middleware(
 		ratelimiterMiddleware,
 		request,
 		func(response *goyave.Response, request *goyave.Request) {},

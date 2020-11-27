@@ -128,3 +128,13 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 
 	suite.Equal(http.StatusNoContent, result.StatusCode)
 }
+
+func (suite *RateLimiterMiddlewareTestSuite) TestDefaultClientID() {
+	request := suite.CreateTestRequest(nil)
+	request.Request().RemoteAddr = "127.0.0.1"
+
+	suite.Equal("127.0.0.1", defaultClientID(request))
+
+	request.Request().RemoteAddr = "127.0.0.1:1111"
+	suite.Equal("127.0.0.1", defaultClientID(request))
+}

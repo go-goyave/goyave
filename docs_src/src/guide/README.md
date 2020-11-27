@@ -40,3 +40,4 @@ A big "Thank you" to the Goyave contributors:
 - [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)
 - [jRimbault](https://github.com/jRimbault) (CI and code analysis)
 - [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
+- [Albert Ambrose](https://github.com/agbaraka) (Rate limiting)

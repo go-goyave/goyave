@@ -73,22 +73,26 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 }
 
 func (suite *RateLimiterMiddlewareTestSuite) TestWhenClientExceedsTheAllowedQuota() {
-
+	const quota = 2
 	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
 		return LimiterConfig{
-			RequestQuota:  2,
+			RequestQuota:  quota,
 			QuotaDuration: 10 * time.Minute,
 		}
 	})
 
 	var result *http.Response
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < quota+1; i++ {
 		request := suite.CreateTestRequest(nil)
 		result = suite.Middleware(
 			ratelimiterMiddleware,
 			request,
-			func(response *goyave.Response, request *goyave.Request) {},
+			func(response *goyave.Response, request *goyave.Request) {
+				if i == quota {
+					suite.Fail("Handler executed, should be blocking when rate limit exceeded")
+				}
+			},
 		)
 	}
 
@@ -96,10 +100,10 @@ func (suite *RateLimiterMiddlewareTestSuite) TestWhenClientExceedsTheAllowedQuot
 }
 
 func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDurationExpires() {
-
+	const quota = 5
 	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
 		return LimiterConfig{
-			RequestQuota:  5,
+			RequestQuota:  quota,
 			QuotaDuration: 2 * time.Second,
 		}
 	})
@@ -108,11 +112,15 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 
 	var result *http.Response
 
-	for i := 0; i < 6; i++ {
+	for i := 0; i < quota+1; i++ {
 		result = suite.Middleware(
 			ratelimiterMiddleware,
 			request,
-			func(response *goyave.Response, request *goyave.Request) {},
+			func(response *goyave.Response, request *goyave.Request) {
+				if i == quota {
+					suite.Fail("Handler executed, should be blocking when rate limit exceeded")
+				}
+			},
 		)
 	}
 

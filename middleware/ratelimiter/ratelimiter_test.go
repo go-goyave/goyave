@@ -104,7 +104,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
 		return LimiterConfig{
 			RequestQuota:  quota,
-			QuotaDuration: 2 * time.Second,
+			QuotaDuration: time.Second,
 		}
 	})
 
@@ -126,7 +126,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 
 	suite.Equal(http.StatusTooManyRequests, result.StatusCode)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(time.Second)
 
 	result = suite.Middleware(
 		ratelimiterMiddleware,
@@ -135,6 +135,42 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 	)
 
 	suite.Equal(http.StatusNoContent, result.StatusCode)
+}
+
+func (suite *RateLimiterMiddlewareTestSuite) TestLimiterQuotaIsZero() {
+	// This middleware should be skipped if the quota or the duration is equal to zero
+	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
+		return LimiterConfig{
+			RequestQuota:  0,
+			QuotaDuration: 2 * time.Second,
+		}
+	})
+
+	request := suite.CreateTestRequest(nil)
+	for i := 0; i < 5; i++ {
+		result := suite.Middleware(
+			ratelimiterMiddleware,
+			request,
+			func(response *goyave.Response, request *goyave.Request) {},
+		)
+		suite.Equal(http.StatusNoContent, result.StatusCode)
+	}
+
+	const quota = 5
+	ratelimiterMiddleware = New(func(request *goyave.Request) LimiterConfig {
+		return LimiterConfig{
+			RequestQuota:  quota,
+			QuotaDuration: 0,
+		}
+	})
+	for i := 0; i < quota+1; i++ {
+		result := suite.Middleware(
+			ratelimiterMiddleware,
+			request,
+			func(response *goyave.Response, request *goyave.Request) {},
+		)
+		suite.Equal(http.StatusNoContent, result.StatusCode)
+	}
 }
 
 func (suite *RateLimiterMiddlewareTestSuite) TestDefaultClientID() {

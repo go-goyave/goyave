@@ -26,7 +26,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 	// To be used for testing RateLimit-Reset
 	var secondsToQuotaReset time.Duration = 5555
 
-	limiterConfig := LimiterConfig{
+	limiterConfig := Config{
 		RequestQuota:  requestQuota,
 		QuotaDuration: quotaDuration,
 		ClientID:      clientID,
@@ -43,7 +43,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 	store := newLimiterStore()
 	store.set(clientID, limiter)
 
-	ratelimiterMiddleware := newWithStore(func(request *goyave.Request) LimiterConfig {
+	ratelimiterMiddleware := newWithStore(func(request *goyave.Request) Config {
 		return limiterConfig
 	}, &store)
 
@@ -74,8 +74,8 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 
 func (suite *RateLimiterMiddlewareTestSuite) TestWhenClientExceedsTheAllowedQuota() {
 	const quota = 2
-	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
-		return LimiterConfig{
+	ratelimiterMiddleware := New(func(request *goyave.Request) Config {
+		return Config{
 			RequestQuota:  quota,
 			QuotaDuration: 10 * time.Minute,
 		}
@@ -101,8 +101,8 @@ func (suite *RateLimiterMiddlewareTestSuite) TestWhenClientExceedsTheAllowedQuot
 
 func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDurationExpires() {
 	const quota = 5
-	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
-		return LimiterConfig{
+	ratelimiterMiddleware := New(func(request *goyave.Request) Config {
+		return Config{
 			RequestQuota:  quota,
 			QuotaDuration: time.Second,
 		}
@@ -139,8 +139,8 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 
 func (suite *RateLimiterMiddlewareTestSuite) TestLimiterQuotaIsZero() {
 	// This middleware should be skipped if the quota or the duration is equal to zero
-	ratelimiterMiddleware := New(func(request *goyave.Request) LimiterConfig {
-		return LimiterConfig{
+	ratelimiterMiddleware := New(func(request *goyave.Request) Config {
+		return Config{
 			RequestQuota:  0,
 			QuotaDuration: 2 * time.Second,
 		}
@@ -157,8 +157,8 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterQuotaIsZero() {
 	}
 
 	const quota = 5
-	ratelimiterMiddleware = New(func(request *goyave.Request) LimiterConfig {
-		return LimiterConfig{
+	ratelimiterMiddleware = New(func(request *goyave.Request) Config {
+		return Config{
 			RequestQuota:  quota,
 			QuotaDuration: 0,
 		}

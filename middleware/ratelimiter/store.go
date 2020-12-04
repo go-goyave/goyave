@@ -10,13 +10,13 @@ import (
 )
 
 type limiter struct {
-	config   LimiterConfig
+	config   Config
 	counter  int
 	resetsAt time.Time
 	mx       sync.Mutex
 }
 
-func newLimiter(config LimiterConfig) *limiter {
+func newLimiter(config Config) *limiter {
 	return &limiter{
 		config:   config,
 		counter:  0,
@@ -93,6 +93,9 @@ func newLimiterStore() limiterStore {
 		store: make(map[interface{}]*limiter),
 	}
 }
+
+// TODO periodically check if some entries can be removed from the store to avoid OOM
+// Warning though, go maps aren't shrunk after key deletion, see https://github.com/golang/go/issues/20135
 
 func (ls *limiterStore) set(key interface{}, limiter *limiter) {
 	ls.mx.Lock()

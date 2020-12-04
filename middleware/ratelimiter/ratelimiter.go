@@ -8,8 +8,8 @@ import (
 	"github.com/System-Glitch/goyave/v3"
 )
 
-// LimiterConfig for setting configuration for the limiter middleware
-type LimiterConfig struct {
+// Config for setting configuration for the limiter middleware
+type Config struct {
 	// Maximum number of requests in a client can send
 	RequestQuota int
 
@@ -21,16 +21,16 @@ type LimiterConfig struct {
 	ClientID interface{}
 }
 
-// LimiterConfigFunc acts as a factory for LimiterConfig structs
-type LimiterConfigFunc func(request *goyave.Request) LimiterConfig
+// ConfigFunc acts as a factory for Config structs
+type ConfigFunc func(request *goyave.Request) Config
 
 // New initializes new a rate limiter middleware
-func New(configFn LimiterConfigFunc) goyave.Middleware {
+func New(configFn ConfigFunc) goyave.Middleware {
 	lstore := newLimiterStore()
 	return newWithStore(configFn, &lstore)
 }
 
-func newWithStore(configFn LimiterConfigFunc, lstore *limiterStore) goyave.Middleware {
+func newWithStore(configFn ConfigFunc, lstore *limiterStore) goyave.Middleware {
 
 	return func(next goyave.Handler) goyave.Handler {
 

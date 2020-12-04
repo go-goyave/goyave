@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewLimiter(t *testing.T) {
-	l := newLimiter(LimiterConfig{
+	l := newLimiter(Config{
 		RequestQuota:  5,
 		QuotaDuration: time.Second,
 	})
@@ -18,7 +18,7 @@ func TestNewLimiter(t *testing.T) {
 }
 
 func TestLimiterIncrement(t *testing.T) {
-	l := newLimiter(LimiterConfig{
+	l := newLimiter(Config{
 		RequestQuota:  5,
 		QuotaDuration: time.Second,
 	})
@@ -27,7 +27,7 @@ func TestLimiterIncrement(t *testing.T) {
 }
 
 func TestLimiterHasExpired(t *testing.T) {
-	l := newLimiter(LimiterConfig{
+	l := newLimiter(Config{
 		RequestQuota:  5,
 		QuotaDuration: time.Second,
 	})
@@ -39,7 +39,7 @@ func TestLimiterHasExpired(t *testing.T) {
 }
 
 func TestLimiterHasExceededRequestQuota(t *testing.T) {
-	l := newLimiter(LimiterConfig{
+	l := newLimiter(Config{
 		RequestQuota:  5,
 		QuotaDuration: time.Second,
 	})
@@ -54,7 +54,7 @@ func TestLimiterHasExceededRequestQuota(t *testing.T) {
 }
 
 func TestLimiterGetRemainingRequestQuota(t *testing.T) {
-	l := newLimiter(LimiterConfig{
+	l := newLimiter(Config{
 		RequestQuota:  5,
 		QuotaDuration: time.Second,
 	})
@@ -63,7 +63,7 @@ func TestLimiterGetRemainingRequestQuota(t *testing.T) {
 }
 
 func TestLimiterReset(t *testing.T) {
-	l := newLimiter(LimiterConfig{
+	l := newLimiter(Config{
 		RequestQuota:  5,
 		QuotaDuration: time.Second,
 	})
@@ -79,7 +79,7 @@ func TestLimiterStore(t *testing.T) {
 	store := newLimiterStore()
 	assert.NotNil(t, store.store)
 
-	l := newLimiter(LimiterConfig{})
+	l := newLimiter(Config{})
 	store.set("key", l)
 	limiter, ok := store.store["key"]
 	assert.True(t, ok)

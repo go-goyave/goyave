@@ -12,6 +12,10 @@ meta:
 
 [[toc]]
 
+## v3.5.0
+
+- Added [rate limiter middleware](./advanced/rate-limiting.html)
+
 ## v3.4.0
 
 - Type-dependent rules validating integers (via the "integer" type rule) now share their validation message with the "numeric" type.

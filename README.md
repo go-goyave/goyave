@@ -55,6 +55,8 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v3"><h3 align="center">pkg.go.dev</h3></a>
 
+<a href="https://github.com/System-Glitch/goyave-blog-example"><h3 align="center">Example project</h3></a>
+
 ## Getting started
 
 ### Requirements

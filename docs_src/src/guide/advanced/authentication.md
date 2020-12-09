@@ -162,7 +162,7 @@ The user is authenticated if the `auth.basic.username` and `auth.basic.password`
 
 JWT, or [JSON Web Token](https://en.wikipedia.org/wiki/JSON_Web_Token), is an open standard of authentication that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. This information can be verified and trusted because it is digitally signed. JWTs can be signed using a secret (with the HMAC algorithm) or a public/private key pair using RSA or ECDSA. Goyave uses HMAC-SHA256 in its implementation.
 
-JTW Authentication comes with two configuration entries:
+JWT Authentication comes with two configuration entries:
 
 - `auth.jwt.expiry`: the number of seconds a token is valid for. Defaults to `300` (5 minutes).
 - `auth.jwt.secret`: the secret used for the HMAC signature. This entry **doesn't have a default value**, you need to define it yourself. Use a key that is **at least 256 bits long**.
@@ -195,7 +195,7 @@ Authorization: Bearer <YOUR_TOKEN>
 
 ---
 
-This Authenticator comes with a built-in login controller for password grant, using the field tags explained earlier. You can register the `/auth/login` route using the helper function `auth.JTWRoutes(router)`.
+This Authenticator comes with a built-in login controller for password grant, using the field tags explained earlier. You can register the `/auth/login` route using the helper function `auth.JWTRoutes(router)`.
 
 #### auth.JWTRoutes
 

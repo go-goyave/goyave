@@ -72,7 +72,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 
 }
 
-func (suite *RateLimiterMiddlewareTestSuite) TestWhenClientExceedsTheAllowedQuota() {
+func (suite *RateLimiterMiddlewareTestSuite) TestClientExceedsTheAllowedQuota() {
 	const quota = 2
 	ratelimiterMiddleware := New(func(request *goyave.Request) Config {
 		return Config{
@@ -89,7 +89,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestWhenClientExceedsTheAllowedQuot
 			ratelimiterMiddleware,
 			request,
 			func(response *goyave.Response, request *goyave.Request) {
-				if i == quota {
+				if i+1 > quota {
 					suite.Fail("Handler executed, should be blocking when rate limit exceeded")
 				}
 			},
@@ -117,7 +117,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 			ratelimiterMiddleware,
 			request,
 			func(response *goyave.Response, request *goyave.Request) {
-				if i == quota {
+				if i+1 > quota {
 					suite.Fail("Handler executed, should be blocking when rate limit exceeded")
 				}
 			},

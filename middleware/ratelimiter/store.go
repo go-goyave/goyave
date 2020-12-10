@@ -29,9 +29,10 @@ func (l *limiter) validateAndUpdate(response *goyave.Response) bool {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
+	valid := !l.hasExceededRequestQuota()
 	l.counter++
 	l.updateResponseHeaders(response)
-	return !l.hasExceededRequestQuota()
+	return valid
 }
 
 func (l *limiter) updateResponseHeaders(response *goyave.Response) {
@@ -52,7 +53,7 @@ func (l *limiter) updateResponseHeaders(response *goyave.Response) {
 }
 
 func (l *limiter) hasExceededRequestQuota() bool {
-	return l.counter > l.config.RequestQuota
+	return l.counter >= l.config.RequestQuota
 }
 
 func (l *limiter) getRemainingRequestQuota() int {

@@ -28,7 +28,7 @@ func TestLimiterHasExceededRequestQuota(t *testing.T) {
 	assert.False(t, l.hasExceededRequestQuota())
 
 	l.counter = 5
-	assert.False(t, l.hasExceededRequestQuota())
+	assert.True(t, l.hasExceededRequestQuota())
 
 	l.counter = 6
 	assert.True(t, l.hasExceededRequestQuota())

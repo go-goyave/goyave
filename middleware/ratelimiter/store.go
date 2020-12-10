@@ -57,7 +57,11 @@ func (l *limiter) hasExceededRequestQuota() bool {
 }
 
 func (l *limiter) getRemainingRequestQuota() int {
-	return l.config.RequestQuota - l.counter
+	count := l.config.RequestQuota - l.counter
+	if count < 0 {
+		count = 0
+	}
+	return count
 }
 
 func (l *limiter) getSecondsToQuotaReset() float64 {

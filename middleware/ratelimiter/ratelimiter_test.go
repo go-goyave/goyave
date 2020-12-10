@@ -70,6 +70,17 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 		result.Header.Get("RateLimit-Reset"),
 	)
 
+	limiter.counter = 10
+	request = suite.CreateTestRequest(nil)
+	result = suite.Middleware(
+		ratelimiterMiddleware,
+		request,
+		func(response *goyave.Response, request *goyave.Request) {},
+	)
+	suite.Equal(
+		"0",
+		result.Header.Get("RateLimit-Remaining"),
+	)
 }
 
 func (suite *RateLimiterMiddlewareTestSuite) TestClientExceedsTheAllowedQuota() {

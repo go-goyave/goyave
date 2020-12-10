@@ -52,7 +52,7 @@ func (l *limiter) updateResponseHeaders(response *goyave.Response) {
 }
 
 func (l *limiter) hasExceededRequestQuota() bool {
-	return l.counter >= l.config.RequestQuota // FIXME should be >, not >=
+	return l.counter > l.config.RequestQuota
 }
 
 func (l *limiter) getRemainingRequestQuota() int {

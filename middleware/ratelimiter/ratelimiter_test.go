@@ -137,7 +137,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 
 	suite.Equal(http.StatusTooManyRequests, result.StatusCode)
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Second + 10*time.Millisecond)
 
 	result = suite.Middleware(
 		ratelimiterMiddleware,

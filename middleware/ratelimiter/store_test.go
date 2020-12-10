@@ -58,7 +58,7 @@ func TestLimiterStore(t *testing.T) {
 	assert.Same(t, l, store.get("key", config))
 
 	// Entry should be removed after quota duration expired
-	time.Sleep(l.config.QuotaDuration + time.Millisecond)
+	time.Sleep(l.config.QuotaDuration + 10*time.Millisecond)
 
 	newL := store.get("key", config)
 	assert.NotNil(t, newL)

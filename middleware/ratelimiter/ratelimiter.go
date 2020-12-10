@@ -49,12 +49,7 @@ func newWithStore(configFn ConfigFunc, lstore *limiterStore) goyave.Middleware {
 
 			key := config.ClientID
 
-			l := lstore.get(key)
-
-			if l == nil {
-				l = newLimiter(config)
-				lstore.set(key, l)
-			}
+			l := lstore.get(key, config)
 
 			if !l.validateAndUpdate(response) {
 				response.Status(http.StatusTooManyRequests)

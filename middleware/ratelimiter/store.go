@@ -69,7 +69,7 @@ func (l *limiter) getSecondsToQuotaReset() float64 {
 }
 
 type limiterStore struct {
-	mx    sync.RWMutex
+	mx    sync.Mutex
 	store map[interface{}]*limiter
 }
 
@@ -80,8 +80,6 @@ func newLimiterStore() limiterStore {
 }
 
 func (ls *limiterStore) set(key interface{}, limiter *limiter) {
-	ls.mx.Lock()
-	defer ls.mx.Unlock()
 	ls.store[key] = limiter
 
 	// Remove expired entries from the map to avoid store map growing too much
@@ -94,8 +92,18 @@ func (ls *limiterStore) set(key interface{}, limiter *limiter) {
 	})
 }
 
-func (ls *limiterStore) get(key interface{}) *limiter {
-	ls.mx.RLock()
-	defer ls.mx.RUnlock()
-	return ls.store[key]
+func (ls *limiterStore) get(key interface{}, config Config) *limiter {
+	ls.mx.Lock()
+	defer ls.mx.Unlock()
+
+	if l, ok := ls.store[key]; ok {
+		return l
+	}
+
+	// If doesn't exist, return a new one
+	// This prevents potential concurrent replacement when two requests from the
+	// same client occur at the same time
+	limiter := newLimiter(config)
+	ls.set(key, limiter)
+	return limiter
 }

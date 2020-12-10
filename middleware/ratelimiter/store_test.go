@@ -47,19 +47,22 @@ func TestLimiterStore(t *testing.T) {
 	store := newLimiterStore()
 	assert.NotNil(t, store.store)
 
-	l := newLimiter(Config{
+	config := Config{
 		QuotaDuration: 500 * time.Millisecond,
-	})
+	}
+	l := newLimiter(config)
 	store.set("key", l)
 	limiter, ok := store.store["key"]
 	assert.True(t, ok)
 	assert.Same(t, l, limiter)
-	assert.Same(t, l, store.get("key"))
+	assert.Same(t, l, store.get("key", config))
 
 	// Entry should be removed after quota duration expired
 	time.Sleep(l.config.QuotaDuration + time.Millisecond)
 
-	assert.Nil(t, store.get("key"))
+	newL := store.get("key", config)
+	assert.NotNil(t, newL)
+	assert.NotSame(t, l, newL)
 }
 
 func TestLimiterValidateAndUpdate(t *testing.T) {

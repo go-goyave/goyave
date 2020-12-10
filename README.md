@@ -110,6 +110,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 - [Status handlers](#status-handlers)
 - [CORS](#cors)
 - [Authentication](#authentication)
+- [Rate limiting](#rate-limiting)
 
 ### Hello world from scratch
 
@@ -647,6 +648,34 @@ func Hello(response *goyave.Response, request *goyave.Request) {
 ```
 
 **Learn more about authentication in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/authentication.html).**
+
+### Rate limiting
+
+Rate limiting is a crucial part of public API development. If you want to protect your data from being crawled, protect yourself from DDOS attacks, or provide different tiers of access to your API, you can do it using Goyave's built-in rate limiting middleware.
+
+This middleware uses either a client's IP or an authenticated client's ID (or any other way of identifying a client you may need) and maps a quota, a quota duration and a request count to it. If a client exceeds the request quota in the given quota duration, this middleware will block and return `HTTP 429 Too Many Requests`.
+
+The middleware will always add the following headers to the response:
+- `RateLimit-Limit`: containing the requests quota in the time window
+- `RateLimit-Remaining`: containing the remaining requests quota in the current window
+- `RateLimit-Reset`: containing the time remaining in the current window, specified in seconds
+
+```go
+import "github.com/System-Glitch/goyave/v3/middleware/ratelimiter"
+
+ratelimiterMiddleware := ratelimiter.New(func(request *goyave.Request) ratelimiter.Config {
+    return ratelimiter.Config {
+        RequestQuota:  100,
+        QuotaDuration: time.Minute,
+        // 100 requests per minute allowed
+        // Client IP will be used as identifier
+    }
+})
+
+router.Middleware(ratelimiterMiddleware)
+```
+
+**Learn more about rate limiting in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/rate-limiting.html).**
 
 ## Contributing
 

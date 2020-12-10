@@ -61,7 +61,7 @@ Authenticators use their model's struct fields tags to know which field to use f
 ``` go
 type User struct {
 	gorm.Model
-	Email    string `gorm:"type:char(100);unique_index" auth:"username"`
+	Email    string `gorm:"type:char(100);uniqueIndex" auth:"username"`
 	Name     string `gorm:"type:char(100)"`
 	Password string `gorm:"type:char(60)" auth:"password"`
 }
@@ -342,7 +342,7 @@ type TestUser struct {
 	gorm.Model
 	Name     string `gorm:"type:varchar(100)"`
 	Password string `gorm:"type:varchar(100)" auth:"password"`
-	Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
+	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
 }
 ```
 

@@ -54,7 +54,7 @@ func Middleware(model interface{}, authenticator Authenticator) goyave.Middlewar
 // 		gorm.Model
 // 		Name     string `gorm:"type:varchar(100)"`
 // 		Password string `gorm:"type:varchar(100)" auth:"password"`
-// 		Email    string `gorm:"type:varchar(100);unique_index" auth:"username"`
+// 		Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
 //  }
 //
 // The result will be the "Email" field, "nil" and the "Password" field.

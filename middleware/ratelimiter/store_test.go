@@ -1,9 +1,11 @@
 package ratelimiter
 
 import (
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/System-Glitch/goyave/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -85,4 +87,26 @@ func TestLimiterStore(t *testing.T) {
 	assert.True(t, ok)
 	assert.Same(t, l, limiter)
 	assert.Same(t, l, store.get("key"))
+}
+
+func TestLimiterValidateAndUpdate(t *testing.T) {
+	suite := new(goyave.TestSuite)
+	l := &limiter{
+		config: Config{
+			RequestQuota:  5,
+			QuotaDuration: time.Second,
+		},
+		counter:  0,
+		resetsAt: time.Now().Add(time.Second),
+	}
+	valid := l.validateAndUpdate(suite.CreateTestResponse(httptest.NewRecorder()))
+
+	assert.True(t, valid)
+	assert.Equal(t, 1, l.counter)
+
+	l.resetsAt = time.Now().Add(-time.Second)
+	valid = l.validateAndUpdate(suite.CreateTestResponse(httptest.NewRecorder()))
+
+	assert.True(t, valid)
+	assert.Equal(t, 1, l.counter)
 }

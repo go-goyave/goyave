@@ -29,16 +29,17 @@ func (l *limiter) validateAndUpdate(response *goyave.Response) bool {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
+	valid := true
+
 	if l.hasExpired() {
 		l.reset()
 	} else if l.hasExceededRequestQuota() {
-		l.updateResponseHeaders(response)
-		return false
+		valid = false
 	}
 
 	l.increment()
 	l.updateResponseHeaders(response)
-	return true
+	return valid
 }
 
 func (l *limiter) updateResponseHeaders(response *goyave.Response) {

@@ -56,7 +56,7 @@ func newWithStore(configFn ConfigFunc, lstore *limiterStore) goyave.Middleware {
 				lstore.set(key, l)
 			}
 
-			if ok := l.validateAndUpdate(response); !ok {
+			if !l.validateAndUpdate(response) {
 				response.Status(http.StatusTooManyRequests)
 				return
 			}

@@ -29,17 +29,9 @@ func (l *limiter) validateAndUpdate(response *goyave.Response) bool {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	valid := true
-
-	if l.hasExpired() {
-		l.reset()
-	} else if l.hasExceededRequestQuota() {
-		valid = false
-	}
-
-	l.increment()
+	l.counter++
 	l.updateResponseHeaders(response)
-	return valid
+	return !l.hasExceededRequestQuota()
 }
 
 func (l *limiter) updateResponseHeaders(response *goyave.Response) {
@@ -59,21 +51,8 @@ func (l *limiter) updateResponseHeaders(response *goyave.Response) {
 	)
 }
 
-func (l *limiter) reset() {
-	l.resetsAt = time.Now().Add(l.config.QuotaDuration)
-	l.counter = 0
-}
-
-func (l *limiter) increment() {
-	l.counter++
-}
-
-func (l *limiter) hasExpired() bool {
-	return time.Now().After(l.resetsAt)
-}
-
 func (l *limiter) hasExceededRequestQuota() bool {
-	return l.counter >= l.config.RequestQuota
+	return l.counter >= l.config.RequestQuota // FIXME should be >, not >=
 }
 
 func (l *limiter) getRemainingRequestQuota() int {
@@ -95,13 +74,19 @@ func newLimiterStore() limiterStore {
 	}
 }
 
-// TODO periodically check if some entries can be removed from the store to avoid OOM
-// Warning though, go maps aren't shrunk after key deletion, see https://github.com/golang/go/issues/20135
-
 func (ls *limiterStore) set(key interface{}, limiter *limiter) {
 	ls.mx.Lock()
 	defer ls.mx.Unlock()
 	ls.store[key] = limiter
+
+	// Remove expired entries from the map to avoid store map growing too much
+	// Warning though, go maps aren't shrunk after key deletion,
+	// see https://github.com/golang/go/issues/20135
+	time.AfterFunc(limiter.config.QuotaDuration, func() {
+		ls.mx.Lock()
+		defer ls.mx.Unlock()
+		delete(ls.store, key)
+	})
 }
 
 func (ls *limiterStore) get(key interface{}) *limiter {

@@ -396,7 +396,7 @@ type User struct {
     Email        string  `gorm:"type:varchar(100);uniqueIndex"`
     Role         string  `gorm:"size:255"` // set field size to 255
     MemberNumber *string `gorm:"unique;not null"` // set member number to unique and not null
-    Num          int     `gorm:"AUTO_INCREMENT"` // set num to auto incrementable
+    Num          int     `gorm:"autoIncrement"` // set num to auto incrementable
     Address      string  `gorm:"index:addr"` // create index with name `addr` for address
     IgnoreMe     int     `gorm:"-"` // ignore this field
 }

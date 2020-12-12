@@ -115,6 +115,7 @@ function getGuideSidebar () {
                 'advanced/cors',
                 'advanced/status-handlers',
                 'advanced/logging',
+                'advanced/rate-limiting',
             ]
         }
     ]

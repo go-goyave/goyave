@@ -40,7 +40,7 @@ type ConcurrentTestSuite struct {
 }
 
 type TestModel struct {
-	ID   uint   `gorm:"primary_key"`
+	ID   uint   `gorm:"primaryKey"`
 	Name string `gorm:"type:varchar(100)"`
 }
 

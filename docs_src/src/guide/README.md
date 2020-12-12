@@ -22,6 +22,10 @@ Most golang frameworks for web development don't have a strong directory structu
 Please feel free to sudgest changes, ask for more details, report grammar errors, or notice of uncovered scenarios by [creating an issue](https://github.com/System-Glitch/goyave/issues/new/choose) with the proposal template.
 :::
 
+## Example Project
+
+If you are looking for examples, check out the [Blog Example Project](https://github.com/System-Glitch/goyave-blog-example).
+
 ## Discord
 
 Come and learn about the framework, stay updated on the progress, be notified when there is a new release, get help, suggest new features or changes, contribute to the project, and more!
@@ -40,3 +44,4 @@ A big "Thank you" to the Goyave contributors:
 - [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)
 - [jRimbault](https://github.com/jRimbault) (CI and code analysis)
 - [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
+- [Albert Shirima](https://github.com/agbaraka) (Rate limiting)

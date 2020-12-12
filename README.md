@@ -55,6 +55,8 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v3"><h3 align="center">pkg.go.dev</h3></a>
 
+<a href="https://github.com/System-Glitch/goyave-blog-example"><h3 align="center">Example project</h3></a>
+
 ## Getting started
 
 ### Requirements
@@ -108,6 +110,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 - [Status handlers](#status-handlers)
 - [CORS](#cors)
 - [Authentication](#authentication)
+- [Rate limiting](#rate-limiting)
 
 ### Hello world from scratch
 
@@ -390,10 +393,10 @@ type User struct {
     Name         string
     Age          sql.NullInt64
     Birthday     *time.Time
-    Email        string  `gorm:"type:varchar(100);unique_index"`
+    Email        string  `gorm:"type:varchar(100);uniqueIndex"`
     Role         string  `gorm:"size:255"` // set field size to 255
     MemberNumber *string `gorm:"unique;not null"` // set member number to unique and not null
-    Num          int     `gorm:"AUTO_INCREMENT"` // set num to auto incrementable
+    Num          int     `gorm:"autoIncrement"` // set num to auto incrementable
     Address      string  `gorm:"index:addr"` // create index with name `addr` for address
     IgnoreMe     int     `gorm:"-"` // ignore this field
 }
@@ -629,7 +632,7 @@ Authenticators use their model's struct fields tags to know which field to use f
 ``` go
 type User struct {
     gorm.Model
-    Email    string `gorm:"type:char(100);unique_index" auth:"username"`
+    Email    string `gorm:"type:char(100);uniqueIndex" auth:"username"`
     Name     string `gorm:"type:char(100)"`
     Password string `gorm:"type:char(60)" auth:"password"`
 }
@@ -645,6 +648,34 @@ func Hello(response *goyave.Response, request *goyave.Request) {
 ```
 
 **Learn more about authentication in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/authentication.html).**
+
+### Rate limiting
+
+Rate limiting is a crucial part of public API development. If you want to protect your data from being crawled, protect yourself from DDOS attacks, or provide different tiers of access to your API, you can do it using Goyave's built-in rate limiting middleware.
+
+This middleware uses either a client's IP or an authenticated client's ID (or any other way of identifying a client you may need) and maps a quota, a quota duration and a request count to it. If a client exceeds the request quota in the given quota duration, this middleware will block and return `HTTP 429 Too Many Requests`.
+
+The middleware will always add the following headers to the response:
+- `RateLimit-Limit`: containing the requests quota in the time window
+- `RateLimit-Remaining`: containing the remaining requests quota in the current window
+- `RateLimit-Reset`: containing the time remaining in the current window, specified in seconds
+
+```go
+import "github.com/System-Glitch/goyave/v3/middleware/ratelimiter"
+
+ratelimiterMiddleware := ratelimiter.New(func(request *goyave.Request) ratelimiter.Config {
+    return ratelimiter.Config {
+        RequestQuota:  100,
+        QuotaDuration: time.Minute,
+        // 100 requests per minute allowed
+        // Client IP will be used as identifier
+    }
+})
+
+router.Middleware(ratelimiterMiddleware)
+```
+
+**Learn more about rate limiting in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/rate-limiting.html).**
 
 ## Contributing
 
@@ -671,6 +702,7 @@ A big "Thank you" to the Goyave contributors:
 - [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)
 - [jRimbault](https://github.com/jRimbault) (CI and code analysis)
 - [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
+- [Albert Shirima](https://github.com/agbaraka) (Rate limiting)
 
 ## License
 

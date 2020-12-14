@@ -265,7 +265,7 @@ func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	ErrorStatusHandler(response, request)
 	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(404, result.StatusCode)
-	suite.Equal("application/json", result.Header.Get("Content-Type"))
+	suite.Equal("application/json; charset=utf-8", result.Header.Get("Content-Type"))
 
 	body, err := ioutil.ReadAll(result.Body)
 	if err != nil {

@@ -205,7 +205,7 @@ func (suite *ResponseTestSuite) TestResponseJSON() {
 
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, resp.StatusCode)
-	suite.Equal("application/json", resp.Header.Get("Content-Type"))
+	suite.Equal("application/json; charset=utf-8", resp.Header.Get("Content-Type"))
 	suite.False(response.empty)
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -445,7 +445,7 @@ func (suite *ResponseTestSuite) TestHandleDatabaseError() {
 
 func (suite *ResponseTestSuite) TestHead() {
 	suite.RunServer(func(router *Router) {
-		router.Route("GET", "/test", func(response *Response, r *Request) {
+		router.Route("GET|HEAD", "/test", func(response *Response, r *Request) {
 			response.String(http.StatusOK, "hello world")
 		})
 	}, func() {
@@ -456,7 +456,7 @@ func (suite *ResponseTestSuite) TestHead() {
 		defer resp.Body.Close()
 
 		body := suite.GetBody(resp)
-		suite.Equal("application/json", resp.Header.Get("Content-Type"))
+		suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 		suite.Empty(body)
 	})
 }

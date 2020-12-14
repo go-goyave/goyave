@@ -12,7 +12,13 @@ meta:
 
 [[toc]]
 
-## v3.5.0
+## v3.5.x
+
+### v3.5.1
+
+- Set content type to `application/json; charset=utf-8` instead of `application/json` when using `response.JSON()`.
+
+### v3.5.0
 
 - Added [rate limiter middleware](./advanced/rate-limiting.html)
 

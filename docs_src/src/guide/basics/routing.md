@@ -45,6 +45,8 @@ router.Route("GET", "/hello", func(response *goyave.Response, r *goyave.Request)
 Register a new route.  
 Multiple methods can be passed using a pipe-separated string.
 
+If the route matches the `GET` method, the `HEAD` method is automatically added to the matcher if it's missing.
+
 If the router has CORS options set, the `OPTIONS` method is automatically added to the matcher if it's missing, so it allows pre-flight requests.
 
 Returns the generated route.
@@ -253,6 +255,10 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
     //...
 }
 ```
+
+## Handling HEAD
+
+The `HEAD` HTTP method requests the headers that would be returned if the request's URL was instead requested with the HTTP `GET` method.
 
 ## Named routes
 

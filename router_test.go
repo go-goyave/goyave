@@ -63,7 +63,7 @@ func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 	suite.Equal(router, route.parent)
 
 	route = router.Route("GET|POST", "/", func(resp *Response, r *Request) {})
-	suite.Equal([]string{"GET", "POST"}, route.methods)
+	suite.Equal([]string{"GET", "POST", "HEAD"}, route.methods)
 	suite.Equal(router, route.parent)
 
 	subrouter := router.Subrouter("/sub")
@@ -226,7 +226,7 @@ func (suite *RouterTestSuite) TestCORS() {
 	suite.True(router.hasCORSMiddleware)
 
 	route := router.registerRoute("GET", "/cors", helloHandler)
-	suite.Equal([]string{"GET", "OPTIONS"}, route.methods)
+	suite.Equal([]string{"GET", "OPTIONS", "HEAD"}, route.methods)
 
 	match := routeMatch{currentPath: "/cors"}
 	suite.True(route.match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))
@@ -772,7 +772,7 @@ func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 func (suite *RouterTestSuite) TestMethodRouteRegistration() {
 	router := newRouter()
 	route := router.Get("/uri", func(resp *Response, r *Request) {})
-	suite.Equal([]string{"GET"}, route.methods)
+	suite.Equal([]string{"GET", "HEAD"}, route.methods)
 
 	route = router.Post("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"POST"}, route.methods)

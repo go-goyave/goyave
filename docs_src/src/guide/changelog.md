@@ -17,7 +17,7 @@ meta:
 ### v3.5.1
 
 - Set content type to `application/json; charset=utf-8` instead of `application/json` when using `response.JSON()`.
-- Added default behavior for HEAD method: all routes can now match the HTTP HEAD method. If multiple routes use the same URL but different methods, the first match will be used. This fixes `405 Method Not Allowed` when requesting any URL with the HEAD method when no route explicitly matches the HEAD method. See the [HEAD routing advice](./basics/routing.html#handling-head) for more details. 
+- Added default behavior for HEAD method: all `GET` routes can now match the HTTP HEAD method. This fixes `405 Method Not Allowed` when requesting an URL with the HEAD method when no route explicitly matches the HEAD method. See the [HEAD routing advice](./basics/routing.html#handling-head) for more details. 
 
 ### v3.5.0
 

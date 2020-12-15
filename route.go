@@ -65,7 +65,7 @@ func (r *Route) checkMethod(method string) bool {
 			return true
 		}
 	}
-	return method == http.MethodHead
+	return false
 }
 
 func (r *Route) makeParameters(match []string) map[string]string {

@@ -456,6 +456,45 @@ func (suite *ResponseTestSuite) TestHead() {
 		defer resp.Body.Close()
 
 		body := suite.GetBody(resp)
+		suite.Equal(http.StatusOK, resp.StatusCode)
+		suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+		suite.Empty(body)
+	})
+
+	suite.RunServer(func(router *Router) {
+		router.Route("GET", "/test", func(response *Response, r *Request) {
+			response.String(http.StatusOK, "hello world")
+		})
+	}, func() {
+		resp, err := suite.Request("HEAD", "/test", nil, nil)
+		if err != nil {
+			suite.Fail(err.Error())
+		}
+		defer resp.Body.Close()
+
+		body := suite.GetBody(resp)
+		suite.Equal(http.StatusOK, resp.StatusCode)
+		suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+		suite.Empty(body)
+	})
+
+	suite.RunServer(func(router *Router) {
+		router.Route("HEAD", "/test", func(response *Response, r *Request) {
+			response.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			response.Status(http.StatusOK)
+		})
+		router.Route("GET", "/test", func(response *Response, r *Request) {
+			response.String(http.StatusOK, "hello world")
+		})
+	}, func() {
+		resp, err := suite.Request("HEAD", "/test", nil, nil)
+		if err != nil {
+			suite.Fail(err.Error())
+		}
+		defer resp.Body.Close()
+
+		body := suite.GetBody(resp)
+		suite.Equal(http.StatusOK, resp.StatusCode)
 		suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 		suite.Empty(body)
 	})

@@ -258,7 +258,19 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 
 ## Handling HEAD
 
-The `HEAD` HTTP method requests the headers that would be returned if the request's URL was instead requested with the HTTP `GET` method.
+The `HEAD` HTTP method requests the headers that would be returned if the request's URL was instead requested with the HTTP `GET` method. The `HEAD` method is automatically handled for routes matching the `GET` method. When a route is matched with the `HEAD` method, it is executed as usual but the response body is discarded. That means that database queries and other operations **are** executed.
+
+You may want to add a route definition exclusively for the `HEAD` method to prevent expensive operations to be executed. Register it **before** the corresponding `GET` route so it will be matched first. Keep in mind the returned headers **should** be the same as the ones returned by the `GET` handler!
+
+```go
+router.Route("HEAD", "/test", func(response *Response, r *Request) {
+    response.Header().Set("Content-Type", "application/json; charset=utf-8")
+    response.Status(http.StatusOK)
+})
+router.Get("/test", func(response *Response, r *Request) {
+    response.JSON(http.StatusOK, map[string]string{"message": "hello world"})
+})
+```
 
 ## Named routes
 

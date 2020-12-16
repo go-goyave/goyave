@@ -246,3 +246,25 @@ func TestGetBearerToken(t *testing.T) {
 	assert.Equal(t, "123456789", token)
 	assert.True(t, ok)
 }
+
+func TestToStruct(t *testing.T) {
+	type UserInsertRequest struct {
+		Username string
+		Email    string
+	}
+
+	request := createTestRequest(httptest.NewRequest("POST", "/test-route", nil))
+	request.Data = map[string]interface{}{
+		"username": "johndoe",
+		"email":    "johndoe@example.org",
+	}
+
+	userInsertRequest := UserInsertRequest{}
+
+	if err := request.ToStruct(&userInsertRequest); err != nil {
+		assert.FailNow(t, err.Error())
+	}
+
+	assert.Equal(t, "johndoe", userInsertRequest.Username)
+	assert.Equal(t, "johndoe@example.org", userInsertRequest.Email)
+}

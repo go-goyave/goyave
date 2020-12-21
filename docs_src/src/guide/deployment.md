@@ -50,6 +50,11 @@ COPY --from=builder /app/docker-goyave ./docker-goyave
 COPY resources /app/resources
 COPY config.production.json ./config.production.json
 
+RUN useradd -r -U go-exec -M -d /app -s /bin/false
+RUN chown -R go-exec /app
+
+USER go-exec
+
 EXPOSE 80
 ENV GOYAVE_ENV=production
 

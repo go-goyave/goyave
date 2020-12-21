@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/System-Glitch/goyave/v3/cors"
+	"github.com/imdario/mergo"
 
 	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"github.com/System-Glitch/goyave/v3/validation"
@@ -254,6 +255,20 @@ func (r *Request) Object(field string) map[string]interface{} {
 		ErrLogger.Panicf("Field \"%s\" is not an object", field)
 	}
 	return str
+}
+
+// ToStruct map the request data to a struct.
+//  type UserInsertRequest struct {
+// 	 Username string
+// 	 Email string
+//  }
+//  //...
+//  userInsertRequest := UserInsertRequest{}
+//  if err := request.ToStruct(&userInsertRequest); err != nil {
+//   panic(err)
+//  }
+func (r *Request) ToStruct(dst interface{}) error {
+	return mergo.Map(dst, r.Data)
 }
 
 func (r *Request) validate() validation.Errors {

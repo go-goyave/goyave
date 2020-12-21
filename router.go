@@ -226,6 +226,9 @@ func (r *Router) Middleware(middleware ...Middleware) {
 // The validation rules set is optional. If you don't want your route
 // to be validated, pass "nil".
 //
+// If the route matches the "GET" method, the "HEAD" method is automatically added
+// to the matcher if it's missing.
+//
 // If the router has CORS options set, the "OPTIONS" method is automatically added
 // to the matcher if it's missing, so it allows preflight requests.
 //
@@ -237,6 +240,10 @@ func (r *Router) Route(methods string, uri string, handler Handler) *Route {
 func (r *Router) registerRoute(methods string, uri string, handler Handler) *Route {
 	if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
 		methods += "|OPTIONS"
+	}
+
+	if strings.Contains(methods, "GET") && !strings.Contains(methods, "HEAD") {
+		methods += "|HEAD"
 	}
 
 	if uri == "/" && r.parent != nil {
@@ -255,27 +262,27 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler) *Rou
 	return route
 }
 
-// Get registers a new route wit the GET method.
+// Get registers a new route with the GET and HEAD methods.
 func (r *Router) Get(uri string, handler Handler) *Route {
 	return r.registerRoute(http.MethodGet, uri, handler)
 }
 
-// Post registers a new route wit the POST method.
+// Post registers a new route with the POST method.
 func (r *Router) Post(uri string, handler Handler) *Route {
 	return r.registerRoute(http.MethodPost, uri, handler)
 }
 
-// Put registers a new route wit the PUT method.
+// Put registers a new route with the PUT method.
 func (r *Router) Put(uri string, handler Handler) *Route {
 	return r.registerRoute(http.MethodPut, uri, handler)
 }
 
-// Patch registers a new route wit the PATCH method.
+// Patch registers a new route with the PATCH method.
 func (r *Router) Patch(uri string, handler Handler) *Route {
 	return r.registerRoute(http.MethodPatch, uri, handler)
 }
 
-// Delete registers a new route wit the DELETE method.
+// Delete registers a new route with the DELETE method.
 func (r *Router) Delete(uri string, handler Handler) *Route {
 	return r.registerRoute(http.MethodDelete, uri, handler)
 }

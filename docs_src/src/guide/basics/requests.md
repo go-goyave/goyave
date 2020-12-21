@@ -35,9 +35,10 @@ import "github.com/System-Glitch/goyave/v3"
 [Cookies](#request-cookies)
 [Referrer](#request-referrer)
 [UserAgent](#request-useragent)
+[CORSOptions](#request-corsoptions)
+[ToStruct](#request-tostruct)
 [BasicAuth](#request-basicauth)
 [BearerToken](#request-bearertoken)
-[CORSOptions](#request-corsoptions)
 :::
 
 #### Request.Request
@@ -202,6 +203,30 @@ The returned object is a copy of the options applied to the router. Therefore, a
 **Example:**
 ``` go
 fmt.Println(request.CORSOptions().AllowedMethods) // "[HEAD GET POST PUT PATCH DELETE]"
+```
+
+#### Request.ToStruct
+
+ToStruct map the request data to a struct. The given "dst" parameter should be a struct pointer.
+
+| Parameters        | Return  |
+|-------------------|---------|
+| `dst interface{}` | `error` |
+
+**Example:**
+``` go
+type UserInsertRequest struct {
+  Username string
+  Email    string
+}
+
+userInsertRequest := UserInsertRequest{}
+
+if err := request.ToStruct(&userInsertRequest); err != nil {
+  panic(err)
+}
+
+fmt.Println(userInsertRequest) // {johndoe johndoe@example.org}
 ```
 
 #### Request.BasicAuth

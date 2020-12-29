@@ -26,7 +26,8 @@ Y8,        88  8b       d8   ``8b   d8'   ,adPPPPP88   ``8b   d8'   8PP`"`"`"`"`
 Write-Host "------------------------------------------------------------------------------`n"
 
 Write-Host "Thank you for using Goyave!" -Foreground green
-Write-Host "If you like the framework, please consider supporting me on Patreon:"
+Write-Host "If you like the framework, please consider supporting me on Github Sponsors or Patreon:"
+Write-Host "https://github.com/sponsors/System-Glitch`n" -Foreground gray
 Write-Host "https://www.patreon.com/bePatron?u=25997573`n" -Foreground gray
 
 Write-Host "------------------------------------------------------------------------------`n"

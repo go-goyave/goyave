@@ -30,7 +30,7 @@ Y8,        88  8b       d8   \`8b   d8'   ,adPPPPP88   \`8b   d8'   8PP\"\"\"\"\
 echo -e "\033[37m------------------------------------------------------------------------------\n"
 
 echo -e "\033[92m\033[1mThank you for using Goyave!\033[0m"
-echo -e "If you like the framework, please consider supporting me on Patreon:\n\033[37mhttps://www.patreon.com/bePatron?u=25997573\033[0m\n"
+echo -e "If you like the framework, please consider supporting me on Github Sponsors or Patreon:\n- \033[37mhttps://github.com/sponsors/System-Glitch\033[0m\n- \033[37mhttps://www.patreon.com/bePatron?u=25997573\033[0m\n"
 
 echo -e "\033[37m------------------------------------------------------------------------------\n"
 

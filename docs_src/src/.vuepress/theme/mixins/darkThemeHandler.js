@@ -23,6 +23,7 @@ export default {
         return localStorage.setItem('dark-theme', true);
       }
 
+      root.classList.remove('theme-dark');
       document.body.classList.remove('theme-dark');
       localStorage.setItem('dark-theme', false);
     }

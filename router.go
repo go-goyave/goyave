@@ -412,6 +412,10 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 
 // finalize the request's life-cycle.
 func (r *Router) finalize(response *Response, request *Request) {
+	if response.Hijacked() { // TODO test hijacked
+		return
+	}
+
 	if response.empty {
 		if response.status == 0 {
 			// If the response is empty, return status 204 to
@@ -420,6 +424,7 @@ func (r *Router) finalize(response *Response, request *Request) {
 		} else if statusHandler, ok := r.statusHandlers[response.status]; ok {
 			// Status has been set but body is empty.
 			// Execute status handler if exists.
+			// TODO status handlers on hijacked connections?
 			statusHandler(response, request)
 		}
 	}

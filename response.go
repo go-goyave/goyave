@@ -1,12 +1,14 @@
 package goyave
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	htmltemplate "html/template"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -37,6 +39,7 @@ type Response struct {
 	// See RFC 7231, 6.3.5
 	empty       bool
 	wroteHeader bool
+	hijacked    bool
 
 	httpRequest *http.Request
 	writer      io.Writer
@@ -98,6 +101,23 @@ func (r *Response) WriteHeader(status int) {
 // Header returns the header map that will be sent.
 func (r *Response) Header() http.Header {
 	return r.responseWriter.Header()
+}
+
+// --------------------------------------
+// http.Hijacker implementation
+
+// Hijack implements the Hijacker.Hijack method.
+// For more details, check http.Hijacker.
+func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) { // TODO test hijacked
+	r.hijacked = true
+	// TODO check how that would work with chained writers
+	// Chained writers are bypassed entirely because we write to the conn directly.
+	return r.responseWriter.(http.Hijacker).Hijack()
+}
+
+// Hijacked returns true if the Hijack method has been called on that instance of Response.
+func (r *Response) Hijacked() bool {
+	return r.hijacked
 }
 
 // --------------------------------------
@@ -248,13 +268,15 @@ func (r *Response) error(err interface{}) error {
 			stacktrace = string(debug.Stack())
 		}
 		ErrLogger.Print(stacktrace)
-		var message interface{}
-		if e, ok := err.(error); ok {
-			message = e.Error()
-		} else {
-			message = err
+		if !r.Hijacked() { // TODO test hijacked
+			var message interface{}
+			if e, ok := err.(error); ok {
+				message = e.Error()
+			} else {
+				message = err
+			}
+			return r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
 		}
-		return r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
 	}
 
 	// Don't set r.empty to false to let error status handler process the error

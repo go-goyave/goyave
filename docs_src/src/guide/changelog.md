@@ -12,6 +12,10 @@ meta:
 
 [[toc]]
 
+## v3.7.0
+
+- `*goyave.Response` now implements `http.Hijacker`. Note that status handlers and middleware (requests finalization step in their lifecycle) will still work for hijacked connections.
+
 ## v3.6.0
 
 - Set content type to `application/json; charset=utf-8` instead of `application/json` when using `response.JSON()`.

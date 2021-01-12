@@ -1,9 +1,11 @@
 package goyave
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -515,6 +517,55 @@ func (suite *ResponseTestSuite) TestHead() {
 		suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 		suite.Empty(body)
 	})
+}
+
+type hijackableRecorder struct {
+	*httptest.ResponseRecorder
+}
+
+func (r *hijackableRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn := &net.TCPConn{}
+	return conn, bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn)), nil
+}
+
+func (suite *ResponseTestSuite) TestHijack() {
+	recorder := &hijackableRecorder{httptest.NewRecorder()}
+	req := httptest.NewRequest(http.MethodGet, "/hijack", nil)
+	resp := newResponse(recorder, req)
+
+	suite.False(resp.hijacked)
+	suite.False(resp.Hijacked())
+
+	c, b, err := resp.Hijack()
+	if err != nil {
+		suite.Fail(err.Error())
+	}
+	defer c.Close()
+
+	suite.Nil(err)
+	suite.NotNil(c)
+	suite.NotNil(b)
+	suite.True(resp.hijacked)
+	suite.True(resp.Hijacked())
+
+}
+
+func (suite *ResponseTestSuite) TestErrorOnHijacked() {
+	recorder := &hijackableRecorder{httptest.NewRecorder()}
+	req := httptest.NewRequest(http.MethodGet, "/hijack", nil)
+	resp := newResponse(recorder, req)
+
+	c, _, _ := resp.Hijack()
+	defer c.Close()
+
+	suite.Nil(resp.error("test error"))
+	res := recorder.Result()
+	defer res.Body.Close()
+	suite.Equal(http.StatusInternalServerError, resp.status)
+
+	body, err := ioutil.ReadAll(res.Body)
+	suite.Nil(err)
+	suite.Empty(body)
 }
 
 // ------------------------

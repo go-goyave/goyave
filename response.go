@@ -63,7 +63,7 @@ func newResponse(writer http.ResponseWriter, rawRequest *http.Request) *Response
 
 // PreWrite writes the response header after calling PreWrite on the
 // child writer if it implements PreWriter.
-func (r *Response) PreWrite(b []byte) {
+func (r *Response) PreWrite(b []byte) { // TODO check how pre write would work with hijacked connections
 	r.empty = false
 	if pr, ok := r.writer.(PreWriter); ok {
 		pr.PreWrite(b)
@@ -108,14 +108,25 @@ func (r *Response) Header() http.Header {
 
 // Hijack implements the Hijacker.Hijack method.
 // For more details, check http.Hijacker.
-func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) { // TODO test hijacked
-	r.hijacked = true
+//
+// Middleware executed after controller handlers, as well as status handlers,
+// keep working as usual after a connection has been hijacked.
+// Callers should properly set the response status to ensure middleware and
+// status handler execute correctly. Usually, callers of the Hijack method
+// set the HTTP status to http.StatusSwitchingProtocols.
+// If no status is set, the regular behavior will be kept and `204 No Content` will be returned.
+func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	c, b, e := r.responseWriter.(http.Hijacker).Hijack()
+	if e == nil {
+		r.hijacked = true
+	}
 	// TODO check how that would work with chained writers
 	// Chained writers are bypassed entirely because we write to the conn directly.
-	return r.responseWriter.(http.Hijacker).Hijack()
+	return c, b, e
 }
 
-// Hijacked returns true if the Hijack method has been called on that instance of Response.
+// Hijacked returns true if the underlying connection has been successfully hijacked
+// via the Hijack method.
 func (r *Response) Hijacked() bool {
 	return r.hijacked
 }
@@ -268,7 +279,7 @@ func (r *Response) error(err interface{}) error {
 			stacktrace = string(debug.Stack())
 		}
 		ErrLogger.Print(stacktrace)
-		if !r.Hijacked() { // TODO test hijacked
+		if !r.Hijacked() {
 			var message interface{}
 			if e, ok := err.(error); ok {
 				message = e.Error()

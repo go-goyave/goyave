@@ -49,6 +49,8 @@ import "github.com/System-Glitch/goyave/v3"
 [Render](#response-render)
 [RenderHTML](#response-renderhtml)
 [HandleDatabaseError](#response-handledatabaseerror)
+[Hijack](#response-hijack)
+[Hijacked](#response-hijacked)
 :::
 
 #### Response.GetStatus
@@ -370,6 +372,30 @@ if response.HandleDatabaseError(result) {
     response.JSON(http.StatusOK, product)
 }
 ```
+
+#### Response.Hijack
+
+<p><Badge text="Since v3.7.0"/></p>
+
+Hijack implements the `http.Hijacker.Hijack` method. For more details, check [`http.Hijacker`](https://golang.org/pkg/net/http/#Hijacker).
+
+Middleware executed after controller handlers, as well as status handlers, keep working as usual after a connection has been hijacked. Callers should properly set the response status to ensure middleware and status handler execute correctly. Usually, callers of the `Hijack` method set the HTTP status to `http. StatusSwitchingProtocols`. If no status is set, the regular behavior will be kept and `204 No Content` will be returned.
+
+| Parameters | Return              |
+|------------|---------------------|
+|            | `net.Conn`          |
+|            | `*bufio.ReadWriter` |
+|            | `error`             |
+
+#### Response.Hijacked
+
+<p><Badge text="Since v3.7.0"/></p>
+
+Hijacked returns true if the underlying connection has been successfully hijacked via the `Hijack` method.
+
+| Parameters | Return |
+|------------|--------|
+|            | `bool` |
 
 ## Chained writers
 

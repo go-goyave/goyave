@@ -15,6 +15,8 @@ meta:
 ## v3.7.0
 
 - `*goyave.Response` now implements `http.Hijacker`. Note that status handlers and middleware (requests finalization step in their lifecycle) will still work for hijacked connections.
+- Static file serving will no longer print "no such file or directory" to the error logger.
+- Static file serving optimization: check file existence once instead of twice.
 
 ## v3.6.0
 

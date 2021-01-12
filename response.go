@@ -232,6 +232,8 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := os.Open(file)
+	// No need to check for errors, filesystem.FileExists(file) and
+	// filesystem.GetMIMEType(file) already handled that.
 	defer f.Close()
 	return io.Copy(r, f)
 }

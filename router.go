@@ -3,6 +3,7 @@ package goyave
 import (
 	"errors"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -342,19 +343,15 @@ func staticHandler(directory string, download bool) Handler {
 		file := r.Params["resource"]
 		path := cleanStaticPath(directory, file)
 
-		if filesystem.FileExists(path) {
-			var err error
-			if download {
-				err = response.Download(path, file[strings.LastIndex(file, "/")+1:])
-			} else {
-				err = response.File(path)
-			}
-
-			if err != nil {
-				ErrLogger.Println(err)
-			}
+		var err error
+		if download {
+			err = response.Download(path, file[strings.LastIndex(file, "/")+1:])
 		} else {
-			response.Status(http.StatusNotFound)
+			err = response.File(path)
+		}
+
+		if _, ok := err.(*os.PathError); err != nil && !ok {
+			ErrLogger.Println(err)
 		}
 	}
 }

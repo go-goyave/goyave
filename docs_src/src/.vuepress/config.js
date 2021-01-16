@@ -2,6 +2,7 @@ const title = 'Goyave'
 const description = 'Goyave is a Golang web API framework aiming at cleanliness, fast development and power.'
 
 module.exports = {
+    theme: "goyave",
     title: title,
     description: description,
     dest: '../docs',
@@ -45,29 +46,6 @@ module.exports = {
             }
         }
     },
-    plugins: [
-        ['@vuepress/back-to-top', true],
-        ['vuepress-plugin-container', {
-            type: 'img-row',
-            before: (img) => `<div class="img-row left">${img}<div class="row-content">`,
-            after: '</div></div>',
-        }],
-        ['vuepress-plugin-container', {
-            type: 'img-row-right',
-            before: (img) => `<div class="img-row right">${img}<div class="row-content">`,
-            after: '</div></div>',
-        }],
-        ['vuepress-plugin-container', {
-            type: 'vue',
-            before: '<pre class="vue-container"><code>',
-            after: '</code></pre>',
-        }],
-        ['vuepress-plugin-container', {
-            type: 'table',
-            before: '<div class="table">',
-            after: '</div>',
-        }]
-    ],
     extraWatchFiles: [
         '.vuepress/nav/en.js',
     ]

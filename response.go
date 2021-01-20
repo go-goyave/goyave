@@ -63,14 +63,14 @@ func newResponse(writer http.ResponseWriter, rawRequest *http.Request) *Response
 
 // PreWrite writes the response header after calling PreWrite on the
 // child writer if it implements PreWriter.
-func (r *Response) PreWrite(b []byte) { // TODO check how pre write would work with hijacked connections
+func (r *Response) PreWrite(b []byte) {
 	r.empty = false
 	if pr, ok := r.writer.(PreWriter); ok {
 		pr.PreWrite(b)
 	}
 	if !r.wroteHeader {
 		if r.status == 0 {
-			r.status = 200
+			r.status = http.StatusOK
 		}
 		r.WriteHeader(r.status)
 	}
@@ -120,8 +120,6 @@ func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if e == nil {
 		r.hijacked = true
 	}
-	// TODO check how that would work with chained writers
-	// Chained writers are bypassed entirely because we write to the conn directly.
 	return c, b, e
 }
 

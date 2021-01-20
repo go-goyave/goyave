@@ -52,6 +52,9 @@ func defaultUpgradeErrorHandler(response *goyave.Response, request *goyave.Reque
 	response.JSON(status, message)
 }
 
+// ErrorHandler is a specific Handler type for handling errors returned by HandlerFunc.
+type ErrorHandler func(request *goyave.Request, err error)
+
 // Conn represents a WebSocket connection.
 type Conn struct {
 	*ws.Conn
@@ -60,14 +63,18 @@ type Conn struct {
 // Upgrader is responsible for the upgrade of HTTP connections to
 // websocket connections.
 type Upgrader struct {
-	// ErrorHandler specifies the function for generating HTTP error responses.
+	// UpgradeErrorHandler specifies the function for generating HTTP error responses.
 	//
 	// The default UpgradeErrorHandler returns a JSON response containing the status text
 	// corresponding to the status code returned. If debugging is enabled, the reason error
 	// message is returned instead.
 	//
 	//  {"error": "message"}
-	ErrorHandler UpgradeErrorHandler
+	UpgradeErrorHandler UpgradeErrorHandler
+
+	// ErrorHandler specifies the function handling errors returned by HandlerFunc.
+	// If nil, the error is written to "goyave.ErrLogger".
+	ErrorHandler ErrorHandler
 
 	// CheckOrigin returns true if the request Origin header is acceptable. If
 	// CheckOrigin is nil, then a safe default is used: return false if the
@@ -87,14 +94,14 @@ type Upgrader struct {
 }
 
 func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
-	errorHandler := u.ErrorHandler
-	if errorHandler == nil {
-		errorHandler = defaultUpgradeErrorHandler
+	upgradeErrorHandler := u.UpgradeErrorHandler
+	if upgradeErrorHandler == nil {
+		upgradeErrorHandler = defaultUpgradeErrorHandler
 	}
 	a := adapter{
-		errorHandler: errorHandler,
-		checkOrigin:  u.CheckOrigin,
-		request:      request,
+		upgradeErrorHandler: upgradeErrorHandler,
+		checkOrigin:         u.CheckOrigin,
+		request:             request,
 	}
 
 	upgrader := u.Settings
@@ -125,16 +132,19 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 		response.Status(http.StatusSwitchingProtocols)
 		defer c.Close()
 		if err := handler(&Conn{c}, request); err != nil {
-			// TODO maybe add an error handler there too?
-			goyave.ErrLogger.Println(err)
+			if u.ErrorHandler != nil {
+				u.ErrorHandler(request, err)
+			} else {
+				goyave.ErrLogger.Println(err)
+			}
 		}
 	}
 }
 
 type adapter struct {
-	errorHandler UpgradeErrorHandler
-	checkOrigin  func(r *goyave.Request) bool
-	request      *goyave.Request
+	upgradeErrorHandler UpgradeErrorHandler
+	checkOrigin         func(r *goyave.Request) bool
+	request             *goyave.Request
 }
 
 func (a *adapter) onError(w http.ResponseWriter, r *http.Request, status int, reason error) {
@@ -142,7 +152,7 @@ func (a *adapter) onError(w http.ResponseWriter, r *http.Request, status int, re
 		panic(reason)
 	}
 	w.Header().Set("Sec-Websocket-Version", "13")
-	a.errorHandler(w.(*goyave.Response), a.request, status, reason)
+	a.upgradeErrorHandler(w.(*goyave.Response), a.request, status, reason)
 }
 
 func (a *adapter) getCheckOriginFunc() func(r *http.Request) bool {

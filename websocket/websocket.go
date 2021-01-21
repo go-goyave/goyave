@@ -131,7 +131,9 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 		}
 		response.Status(http.StatusSwitchingProtocols)
 		defer c.Close()
+		// TODO recovery?
 		if err := handler(&Conn{c}, request); err != nil {
+			// TODO close handshake (if connection not broken)
 			if u.ErrorHandler != nil {
 				u.ErrorHandler(request, err)
 			} else {

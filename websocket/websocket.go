@@ -1,7 +1,11 @@
 package websocket
 
 import (
+	"context"
+	"errors"
+	"io"
 	"net/http"
+	"time"
 
 	"github.com/System-Glitch/goyave/v3"
 	"github.com/System-Glitch/goyave/v3/config"
@@ -11,11 +15,33 @@ import (
 
 // TODO test websocket.go
 
+var (
+
+	// ErrCloseFrameSent returned by writing operations if a close message
+	// has already been sent.
+	ErrCloseFrameSent = errors.New("close frame sent, cannot write anymore")
+
+	// ErrCloseFrameReceived returned by reading operations if a close message
+	// has already been received.
+	ErrCloseFrameReceived = errors.New("close frame received, cannot read anymore")
+
+	// ErrCloseTimeout returned during the close handshake if the client took
+	// too long to respond with
+	ErrCloseTimeout = errors.New("close handshake timed out")
+
+	// TODO document behavior when close frame sent or received
+)
+
 // HandlerFunc is a handler for websocket connections.
 // The request parameter contains the original upgraded HTTP request.
 //
 // To keep connection alive, these handlers should run an infinite for loop
-// and check for close errors.
+// and check for close errors. The connection is closed when the handler
+// returns. Therefore, if the latter is using goroutines, it should use a
+// sync.WaitGroup to wait for them to terminate before returning.
+//
+// Instead of closing the connection yourself, just make your handler return
+// and the close handshake will be performed automatically.
 //
 // The following HandlerFunc is an example of an "echo" feature using websockets:
 //
@@ -58,6 +84,95 @@ type ErrorHandler func(request *goyave.Request, err error)
 // Conn represents a WebSocket connection.
 type Conn struct {
 	*ws.Conn
+	waitClose     chan struct{}
+	receivedClose bool
+	sentClose     bool
+}
+
+func newConn(c *ws.Conn) *Conn {
+	conn := &Conn{
+		Conn:      c,
+		waitClose: make(chan struct{}, 1),
+	}
+	c.SetCloseHandler(conn.closeHandler)
+	return conn
+}
+
+// TODO handle pings and pongs
+
+func (c *Conn) closeHandler(code int, text string) error {
+	if c.receivedClose {
+		return ErrCloseFrameReceived
+	}
+	c.receivedClose = true
+	if c.sentClose { // TODO check concurrency
+		c.waitClose <- struct{}{}
+	}
+	return nil
+}
+
+// NextWriter returns a writer for the next message to send. The writer's Close
+// method flushes the complete message to the network.
+//
+// There can be at most one open writer on a connection. NextWriter closes the
+// previous writer if the application has not already done so.
+//
+// All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
+// PongMessage) are supported.
+func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) { // FIXME doesn't work, need to override all read and write functions
+	if c.sentClose {
+		return nil, ErrCloseFrameSent
+	}
+	if messageType == ws.CloseMessage {
+		c.sentClose = true
+	}
+	return c.Conn.NextWriter(messageType)
+}
+
+// shutdownNormal performs the closing handshake as specified by
+// RFC 6455 Section 1.4. Sends status code 1000 (normal closure) and
+// message "Server closed connection".
+func (c *Conn) shutdownNormal() error {
+	return c.shutdown(ws.CloseNormalClosure, "Server closed connection")
+}
+
+// shutdownOnError performs the closing handshake as specified by
+// RFC 6455 Section 1.4 because a server error occurred.
+// Sends status code 1011 (internal server error) and
+// message "Internal server error". If debug is enabled,
+// the message is set to the given error's message.
+func (c *Conn) shutdownOnError(err error) error {
+	message := "Internal server error"
+	if config.GetBool("app.debug") {
+		message = err.Error()
+	}
+	return c.shutdown(ws.CloseInternalServerErr, message)
+}
+
+func (c *Conn) shutdown(code int, message string) error {
+	if !c.sentClose {
+		m := ws.FormatCloseMessage(code, message)
+		err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second))
+		if err != nil {
+			goyave.ErrLogger.Println(err) // TODO better shutdown error handling
+		}
+	}
+
+	if !c.receivedClose {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // TODO timeout
+		defer cancel()
+		// FIXME would always timeout if the handler already returned because
+		// nothing is reading anymore
+		select {
+		case <-ctx.Done():
+			goyave.ErrLogger.Println(ErrCloseTimeout)
+		case <-c.waitClose:
+			close(c.waitClose)
+		}
+	}
+
+	// TODO properly shutdown before goyave.Start returns?
+	return c.Close()
 }
 
 // Upgrader is responsible for the upgrade of HTTP connections to
@@ -113,9 +228,17 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 // Handler create an HTTP handler upgrading the HTTP connection before passing it
 // to the given HandlerFunc.
 //
-// HTTP response's status is set to "101 Switching Protocols". The connection is closed
-// automatically after the HandlerFunc returns or panics. If an error is returned,
-// it will be printed to "goyave.ErrLogger".
+// HTTP response's status is set to "101 Switching Protocols".
+//
+// The connection is closed automatically after the HandlerFunc returns, using the
+// closing handshake defined by RFC 6455 Section 1.4 if possible. If the HandlerFunc
+// returns an error, the Upgrader's error handler will be executed and the close frame
+// sent to the client will have status code 1011 (internal server error) and
+// "Internal server error" as message. If debug is enabled, the message will be set to the
+// one of the error returned by the HandlerFunc.
+// Otherwise the close frame will have status code 1000 (normal closure) and
+// "Server closed connection" as a message.
+//
 // Bear in mind that the recovery middleware doesn't work on websocket connections,
 // as we are not in an HTTP context anymore.
 func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
@@ -130,15 +253,18 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 			return
 		}
 		response.Status(http.StatusSwitchingProtocols)
-		defer c.Close()
 		// TODO recovery?
-		if err := handler(&Conn{c}, request); err != nil {
-			// TODO close handshake (if connection not broken)
+		conn := newConn(c)
+		err = handler(conn, request)
+		if err != nil {
 			if u.ErrorHandler != nil {
 				u.ErrorHandler(request, err)
 			} else {
 				goyave.ErrLogger.Println(err)
 			}
+			conn.shutdownOnError(err)
+		} else {
+			conn.shutdownNormal()
 		}
 	}
 }

@@ -36,7 +36,7 @@ Register a startup hook to execute some code once the server is ready and runnin
 
 **Example:**
 ``` go
-goyave.RegsiterStartupHook(func() {
+goyave.RegisterStartupHook(func() {
     goyave.Logger.Println("Server ready.")
 })
 ```

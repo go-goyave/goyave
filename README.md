@@ -18,26 +18,13 @@
 
 <h2 align="center">An Elegant Golang Web Framework</h2>
 
-Goyave is a progressive and accessible web application framework focused on REST APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
+Goyave is a progressive and accessible web application framework focused on REST APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused. Goyave is an **opinionated** framework, helping your applications keeping a uniform architecture and limit redundancy. With Goyave, expect a full package with minimum setup.
 
-<table>
-    <tr>
-        <td valign="top">
-            <h3>Clean Code</h3>
-            <p>Goyave has an expressive, elegant syntax, a robust structure and conventions. Minimalist calls and reduced redundancy are among the Goyave's core principles.</p>
-        </td>
-        <td valign="top">
-            <h3>Fast Development</h3>
-            <p>Develop faster and concentrate on the business logic of your application thanks to the many helpers and built-in functions.</p>
-        </td>
-        <td valign="top">
-            <h3>Powerful functionalities</h3>
-            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, authentication, and more!</p>
-        </td>
-    </tr>
-</table>
+**Clean Code**: Goyave has an expressive, elegant syntax, a robust structure and conventions. Minimalist calls and reduced redundancy are among the Goyave's core principles.
 
-Most golang frameworks for web development don't have a strong directory structure nor conventions to make applications have a uniform architecture and limit redundancy. This makes it difficult to work with them on different projects. In companies, having a well-defined and documented architecture helps new developers integrate projects faster, and reduces the time needed for maintaining them. For open source projects, it helps newcomers understanding the project and makes it easier to contribute. With Goyave, expect a full package with minimum setup.
+**Fast Development**: Develop faster and concentrate on the business logic of your application thanks to the many helpers and built-in functions.
+
+**Powerful functionalities**: Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, authentication, and more!
 
 ## Table of contents
 

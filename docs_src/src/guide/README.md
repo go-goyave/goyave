@@ -22,7 +22,7 @@ Please feel free to sudgest changes, ask for more details, report grammar errors
 
 ## Example Project
 
-If you are looking for examples, check out the [Blog Example Project](https://github.com/System-Glitch/goyave-blog-example).
+If you are looking for examples, check out the [Blog Example Project](https://github.com/go-goyave/goyave-blog-example).
 
 ## Discord
 

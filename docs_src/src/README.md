@@ -6,11 +6,11 @@ actionLink: /guide/
 footer: MIT Licensed | Copyright © 2019 Jérémy LAMBERT (SystemGlitch)
 meta:
   - name: "og:title"
-    content: "Goyave - Elegant Golang Web Framework"
+    content: "Goyave - Elegant Golang REST Framework"
   - name: "twitter:title"
-    content: "Goyave - Elegant Golang Web Framework"
+    content: "Goyave - Elegant Golang REST Framework"
   - name: "title"
-    content: "Goyave - Elegant Golang Web Framework"
+    content: "Goyave - Elegant Golang REST Framework"
 ---
 
 <p class="center">

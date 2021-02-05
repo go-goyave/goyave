@@ -1,5 +1,7 @@
+const { path } = require('@vuepress/shared-utils')
+
 const title = 'Goyave'
-const description = 'Goyave is a Golang web API framework aiming at cleanliness, fast development and power.'
+const description = 'Goyave is a Golang REST API framework aiming at cleanliness, fast development and power.'
 
 module.exports = {
     theme: "goyave",
@@ -46,6 +48,10 @@ module.exports = {
             }
         }
     },
+    enhanceAppFiles: [
+        path.resolve(__dirname, 'enhanceAppFile.js')
+    ],
+    globalUIComponents: 'MigrationBanner',
     extraWatchFiles: [
         '.vuepress/nav/en.js',
     ]

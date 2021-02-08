@@ -111,6 +111,16 @@ func (c *Conn) closeHandler(code int, text string) error {
 	return nil
 }
 
+func (c *Conn) checkSentClose(messageType int) error {
+	if c.sentClose {
+		return ErrCloseFrameSent
+	}
+	if messageType == ws.CloseMessage {
+		c.sentClose = true
+	}
+	return nil
+}
+
 // NextWriter returns a writer for the next message to send. The writer's Close
 // method flushes the complete message to the network.
 //
@@ -119,14 +129,29 @@ func (c *Conn) closeHandler(code int, text string) error {
 //
 // All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
 // PongMessage) are supported.
-func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) { // FIXME doesn't work, need to override all read and write functions
-	if c.sentClose {
-		return nil, ErrCloseFrameSent
-	}
-	if messageType == ws.CloseMessage {
-		c.sentClose = true
+func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) {
+	if err := c.checkSentClose(messageType); err != nil {
+		return nil, err
 	}
 	return c.Conn.NextWriter(messageType)
+}
+
+// WriteMessage is a helper method for getting a writer using NextWriter,
+// writing the message and closing the writer.
+func (c *Conn) WriteMessage(messageType int, data []byte) error {
+	if err := c.checkSentClose(messageType); err != nil {
+		return err
+	}
+	return c.Conn.WriteMessage(messageType, data)
+}
+
+// WriteControl writes a control message with the given deadline. The allowed
+// message types are CloseMessage, PingMessage and PongMessage.
+func (c *Conn) WriteControl(messageType int, data []byte, deadline time.Time) error {
+	if err := c.checkSentClose(messageType); err != nil {
+		return err
+	}
+	return c.Conn.WriteControl(messageType, data, deadline)
 }
 
 // shutdownNormal performs the closing handshake as specified by
@@ -159,10 +184,21 @@ func (c *Conn) shutdown(code int, message string) error {
 	}
 
 	if !c.receivedClose {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // TODO timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // TODO configurable timeout
 		defer cancel()
-		// FIXME would always timeout if the handler already returned because
-		// nothing is reading anymore
+		// In this branch, we know the client has NOT initiated the close handshake.
+		// Read until error.
+		go func() {
+			for {
+				if mt, _, err := c.ReadMessage(); err != nil {
+					if mt != -1 && mt != ws.CloseMessage {
+						goyave.ErrLogger.Println(mt, err)
+					}
+					return
+				}
+			}
+		}()
+
 		select {
 		case <-ctx.Done():
 			goyave.ErrLogger.Println(ErrCloseTimeout)

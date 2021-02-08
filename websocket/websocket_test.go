@@ -10,7 +10,6 @@ import (
 
 	"github.com/System-Glitch/goyave/v3"
 	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/gorilla/websocket"
 	ws "github.com/gorilla/websocket"
 )
 
@@ -18,19 +17,23 @@ type WebsocketTestSuite struct {
 	goyave.TestSuite
 }
 
-func echoWSHandler(c *Conn, request *goyave.Request) error {
+func (suite *WebsocketTestSuite) echoWSHandler(c *Conn, request *goyave.Request) error {
 	for {
 		mt, message, err := c.ReadMessage()
 		if err != nil {
 			if IsCloseError(err) {
 				return nil
 			}
-			return fmt.Errorf("read: %v", err)
+			err := fmt.Errorf("read: %v", err)
+			suite.Error(err)
+			return err
 		}
 		goyave.Logger.Printf("recv: %s", message)
 		err = c.WriteMessage(mt, message)
 		if err != nil {
-			return fmt.Errorf("write: %v", err)
+			err := fmt.Errorf("write: %v", err)
+			suite.Error(err)
+			return err
 		}
 	}
 }
@@ -161,7 +164,7 @@ func (suite *WebsocketTestSuite) TestUpgrade() {
 	routeURL := ""
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
-		route := r.Get("/websocket", upgrader.Handler(echoWSHandler))
+		route := r.Get("/websocket", upgrader.Handler(suite.echoWSHandler))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
 		// TODO document testing websocket
@@ -173,19 +176,22 @@ func (suite *WebsocketTestSuite) TestUpgrade() {
 		defer conn.Close()
 
 		message := []byte("hello world")
-		suite.Nil(conn.WriteMessage(websocket.TextMessage, message))
+		suite.Nil(conn.WriteMessage(ws.TextMessage, message))
 
 		messageType, data, err := conn.ReadMessage()
 		suite.Nil(err)
-		suite.Equal(websocket.TextMessage, messageType)
+		suite.Equal(ws.TextMessage, messageType)
 		suite.Equal(message, data)
+
+		m := ws.FormatCloseMessage(ws.CloseNormalClosure, "Connection closed by client")
+		suite.Nil(conn.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second)))
 	})
 }
 
 func (suite *WebsocketTestSuite) TestUpgradeError() {
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
-		r.Get("/websocket", upgrader.Handler(echoWSHandler))
+		r.Get("/websocket", upgrader.Handler(suite.echoWSHandler))
 	}, func() {
 
 		resp, err := suite.Get("/websocket", nil)
@@ -232,27 +238,67 @@ func (suite *WebsocketTestSuite) TestErrorHandler() {
 	}
 }
 
-// func (suite *WebsocketTestSuite) TestGracefulClose() {
-// 	routeURL := ""
-// 	suite.RunServer(func(r *goyave.Router) {
-// 		upgrader := Upgrader{}
-// 		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
-// 			return fmt.Errorf("test error")
-// 		}))
-// 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
-// 	}, func() {
-// 		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
-// 		if err != nil {
-// 			suite.Error(err)
-// 			return
-// 		}
-// 		defer conn.Close()
+func (suite *WebsocketTestSuite) TestGracefulClose() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			return nil // Immediately close connection
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		if err != nil {
+			suite.Error(err)
+			return
+		}
+		defer conn.Close()
 
-// 		messageType, _, err := conn.ReadMessage()
-// 		suite.Nil(err)
-// 		suite.Equal(websocket.CloseMessage, messageType)
-// 	})
-// }
+		messageType, _, err := conn.ReadMessage()
+		suite.NotNil(err)
+
+		closeErr, ok := err.(*ws.CloseError)
+		suite.True(ok)
+		if ok {
+			suite.Equal(ws.CloseNormalClosure, closeErr.Code)
+			suite.Equal(NormalClosureMessage, closeErr.Text)
+		}
+
+		// advanceFrame returns noFrame (-1) when a close frame is received
+		suite.Equal(-1, messageType)
+	})
+}
+
+func (suite *WebsocketTestSuite) TestGracefulCloseOnError() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			return fmt.Errorf("test error") // Immediately close connection with an error
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		if err != nil {
+			suite.Error(err)
+			return
+		}
+		defer conn.Close()
+
+		messageType, _, err := conn.ReadMessage()
+		suite.NotNil(err)
+
+		closeErr, ok := err.(*ws.CloseError)
+		suite.True(ok)
+		if ok {
+			suite.Equal(ws.CloseInternalServerErr, closeErr.Code)
+			suite.Equal("Internal server error", closeErr.Text)
+		}
+
+		// advanceFrame returns noFrame (-1) when a close frame is received
+		suite.Equal(-1, messageType)
+	})
+}
 
 func TestWebsocketSuite(t *testing.T) {
 	goyave.RunTest(t, new(WebsocketTestSuite))

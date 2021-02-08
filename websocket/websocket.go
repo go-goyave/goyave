@@ -15,6 +15,12 @@ import (
 
 // TODO test websocket.go
 
+const (
+	// NormalClosureMessage the message sent with the close frame
+	// during the close handshake.
+	NormalClosureMessage = "Server closed connection"
+)
+
 var (
 
 	// ErrCloseFrameSent returned by writing operations if a close message
@@ -158,7 +164,7 @@ func (c *Conn) WriteControl(messageType int, data []byte, deadline time.Time) er
 // RFC 6455 Section 1.4. Sends status code 1000 (normal closure) and
 // message "Server closed connection".
 func (c *Conn) shutdownNormal() error {
-	return c.shutdown(ws.CloseNormalClosure, "Server closed connection")
+	return c.shutdown(ws.CloseNormalClosure, NormalClosureMessage)
 }
 
 // shutdownOnError performs the closing handshake as specified by
@@ -190,10 +196,7 @@ func (c *Conn) shutdown(code int, message string) error {
 		// Read until error.
 		go func() {
 			for {
-				if mt, _, err := c.ReadMessage(); err != nil {
-					if mt != -1 && mt != ws.CloseMessage {
-						goyave.ErrLogger.Println(mt, err)
-					}
+				if _, _, err := c.ReadMessage(); err != nil {
 					return
 				}
 			}
@@ -281,7 +284,7 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 	return func(response *goyave.Response, request *goyave.Request) {
 		var headers http.Header
 		if u.Headers != nil {
-			headers = u.Headers(request)
+			headers = u.Headers(request) // TODO test upgrade headers
 		}
 
 		c, err := u.makeUpgrader(request).Upgrade(response, request.Request(), headers)

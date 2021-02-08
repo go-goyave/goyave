@@ -19,15 +19,15 @@ var (
 
 	// ErrCloseFrameSent returned by writing operations if a close message
 	// has already been sent.
-	ErrCloseFrameSent = errors.New("close frame sent, cannot write anymore")
+	ErrCloseFrameSent = errors.New("websocket close frame sent, cannot write anymore")
 
 	// ErrCloseFrameReceived returned by reading operations if a close message
 	// has already been received.
-	ErrCloseFrameReceived = errors.New("close frame received, cannot read anymore")
+	ErrCloseFrameReceived = errors.New("websocket close frame received, cannot read anymore")
 
 	// ErrCloseTimeout returned during the close handshake if the client took
 	// too long to respond with
-	ErrCloseTimeout = errors.New("close handshake timed out")
+	ErrCloseTimeout = errors.New("websocket close handshake timed out")
 
 	// TODO document behavior when close frame sent or received
 )

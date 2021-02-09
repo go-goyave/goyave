@@ -34,20 +34,16 @@ var (
 	// ErrCloseTimeout returned during the close handshake if the client took
 	// too long to respond with
 	ErrCloseTimeout = errors.New("websocket close handshake timed out")
-
-	// TODO document behavior when close frame sent or received
 )
 
 // HandlerFunc is a handler for websocket connections.
 // The request parameter contains the original upgraded HTTP request.
 //
 // To keep connection alive, these handlers should run an infinite for loop
-// and check for close errors. The connection is closed when the handler
-// returns. Therefore, if the latter is using goroutines, it should use a
+// and check for close errors. When the handler returns, the closing handshake
+// is performed and the connection is closed.
+// Therefore, if the handler is using goroutines, it should use a
 // sync.WaitGroup to wait for them to terminate before returning.
-//
-// Instead of closing the connection yourself, just make your handler return
-// and the close handshake will be performed automatically.
 //
 // The following HandlerFunc is an example of an "echo" feature using websockets:
 //
@@ -135,6 +131,9 @@ func (c *Conn) checkSentClose(messageType int) error {
 //
 // All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
 // PongMessage) are supported.
+//
+// Writing to the connection is not possible after a close frame has been sent.
+// Attempting to do so will return an error.
 func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) {
 	if err := c.checkSentClose(messageType); err != nil {
 		return nil, err
@@ -144,6 +143,9 @@ func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) {
 
 // WriteMessage is a helper method for getting a writer using NextWriter,
 // writing the message and closing the writer.
+//
+// Writing to the connection is not possible after a close frame has been sent.
+// Attempting to do so will return an error.
 func (c *Conn) WriteMessage(messageType int, data []byte) error {
 	if err := c.checkSentClose(messageType); err != nil {
 		return err
@@ -153,6 +155,9 @@ func (c *Conn) WriteMessage(messageType int, data []byte) error {
 
 // WriteControl writes a control message with the given deadline. The allowed
 // message types are CloseMessage, PingMessage and PongMessage.
+//
+// Writing to the connection is not possible after a close frame has been sent.
+// Attempting to do so will return an error.
 func (c *Conn) WriteControl(messageType int, data []byte, deadline time.Time) error {
 	if err := c.checkSentClose(messageType); err != nil {
 		return err

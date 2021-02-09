@@ -22,6 +22,8 @@ var (
 	// ErrCloseTimeout returned during the close handshake if the client took
 	// too long to respond with
 	ErrCloseTimeout = errors.New("websocket close handshake timed out")
+
+	timeout time.Duration
 )
 
 // HandlerFunc is a handler for websocket connections.
@@ -131,7 +133,7 @@ func (c *Conn) shutdown(code int, message string) error {
 	}
 
 	if !c.receivedClose {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.GetInt("server.timeout"))*time.Second) // TODO cache timeout for performance
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		// In this branch, we know the client has NOT initiated the close handshake.
 		// Read until error.
@@ -222,6 +224,9 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 // Bear in mind that the recovery middleware doesn't work on websocket connections,
 // as we are not in an HTTP context anymore.
 func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
+	if timeout == 0 {
+		timeout = time.Duration(config.GetInt("server.timeout")) * time.Second
+	}
 	return func(response *goyave.Response, request *goyave.Request) {
 		var headers http.Header
 		if u.Headers != nil {

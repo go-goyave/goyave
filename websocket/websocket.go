@@ -22,14 +22,6 @@ const (
 
 var (
 
-	// ErrCloseFrameSent returned by writing operations if a close message
-	// has already been sent.
-	ErrCloseFrameSent = errors.New("websocket close frame sent, cannot write anymore")
-
-	// ErrCloseFrameReceived returned by reading operations if a close message
-	// has already been received.
-	ErrCloseFrameReceived = errors.New("websocket close frame received, cannot read anymore")
-
 	// ErrCloseTimeout returned during the close handshake if the client took
 	// too long to respond with
 	ErrCloseTimeout = errors.New("websocket close handshake timed out")
@@ -107,7 +99,7 @@ func (c *Conn) closeHandler(code int, text string) error {
 	// No need to lock receivedClose because there can be at most one
 	// open reader on a connection.
 	if c.receivedClose {
-		return ErrCloseFrameReceived
+		return nil
 	}
 	c.receivedClose = true
 	c.waitClose <- struct{}{}

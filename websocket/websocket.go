@@ -3,7 +3,6 @@ package websocket
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"time"
 
@@ -44,6 +43,9 @@ var (
 // is performed and the connection is closed.
 // Therefore, if the handler is using goroutines, it should use a
 // sync.WaitGroup to wait for them to terminate before returning.
+//
+// Don't send closing frames in handlers, that would be redundant with the automatic
+// close handshake performed when the handler returns?
 //
 // The following HandlerFunc is an example of an "echo" feature using websockets:
 //
@@ -88,7 +90,6 @@ type Conn struct {
 	*ws.Conn
 	waitClose     chan struct{}
 	receivedClose bool
-	sentClose     bool
 }
 
 func newConn(c *ws.Conn) *Conn {
@@ -103,66 +104,14 @@ func newConn(c *ws.Conn) *Conn {
 // TODO handle pings and pongs
 
 func (c *Conn) closeHandler(code int, text string) error {
+	// No need to lock receivedClose because there can be at most one
+	// open reader on a connection.
 	if c.receivedClose {
 		return ErrCloseFrameReceived
 	}
 	c.receivedClose = true
-	if c.sentClose { // TODO check concurrency
-		c.waitClose <- struct{}{}
-	}
+	c.waitClose <- struct{}{}
 	return nil
-}
-
-func (c *Conn) checkSentClose(messageType int) error {
-	if c.sentClose {
-		return ErrCloseFrameSent
-	}
-	if messageType == ws.CloseMessage {
-		c.sentClose = true
-	}
-	return nil
-}
-
-// NextWriter returns a writer for the next message to send. The writer's Close
-// method flushes the complete message to the network.
-//
-// There can be at most one open writer on a connection. NextWriter closes the
-// previous writer if the application has not already done so.
-//
-// All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
-// PongMessage) are supported.
-//
-// Writing to the connection is not possible after a close frame has been sent.
-// Attempting to do so will return an error.
-func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) {
-	if err := c.checkSentClose(messageType); err != nil {
-		return nil, err
-	}
-	return c.Conn.NextWriter(messageType)
-}
-
-// WriteMessage is a helper method for getting a writer using NextWriter,
-// writing the message and closing the writer.
-//
-// Writing to the connection is not possible after a close frame has been sent.
-// Attempting to do so will return an error.
-func (c *Conn) WriteMessage(messageType int, data []byte) error {
-	if err := c.checkSentClose(messageType); err != nil {
-		return err
-	}
-	return c.Conn.WriteMessage(messageType, data)
-}
-
-// WriteControl writes a control message with the given deadline. The allowed
-// message types are CloseMessage, PingMessage and PongMessage.
-//
-// Writing to the connection is not possible after a close frame has been sent.
-// Attempting to do so will return an error.
-func (c *Conn) WriteControl(messageType int, data []byte, deadline time.Time) error {
-	if err := c.checkSentClose(messageType); err != nil {
-		return err
-	}
-	return c.Conn.WriteControl(messageType, data, deadline)
 }
 
 // shutdownNormal performs the closing handshake as specified by
@@ -178,20 +127,18 @@ func (c *Conn) shutdownNormal() error {
 // message "Internal server error". If debug is enabled,
 // the message is set to the given error's message.
 func (c *Conn) shutdownOnError(err error) error {
-	message := "Internal server error"
+	message := "Internal server error" // TODO prepared message for closure
 	if config.GetBool("app.debug") {
-		message = err.Error()
+		message = err.Error() // TODO test debug mode
 	}
 	return c.shutdown(ws.CloseInternalServerErr, message)
 }
 
 func (c *Conn) shutdown(code int, message string) error {
-	if !c.sentClose {
-		m := ws.FormatCloseMessage(code, message)
-		err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second))
-		if err != nil {
-			goyave.ErrLogger.Println(err) // TODO better shutdown error handling
-		}
+	m := ws.FormatCloseMessage(code, message)
+	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second))
+	if err != nil {
+		goyave.ErrLogger.Println(err) // TODO better shutdown error handling
 	}
 
 	if !c.receivedClose {
@@ -209,7 +156,7 @@ func (c *Conn) shutdown(code int, message string) error {
 
 		select {
 		case <-ctx.Done():
-			goyave.ErrLogger.Println(ErrCloseTimeout)
+			goyave.ErrLogger.Println(ErrCloseTimeout) // TODO test close handshake timeout
 		case <-c.waitClose:
 			close(c.waitClose)
 		}

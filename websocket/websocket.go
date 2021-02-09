@@ -225,7 +225,7 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 	return func(response *goyave.Response, request *goyave.Request) {
 		var headers http.Header
 		if u.Headers != nil {
-			headers = u.Headers(request) // TODO test upgrade headers
+			headers = u.Headers(request)
 		}
 
 		c, err := u.makeUpgrader(request).Upgrade(response, request.Request(), headers)

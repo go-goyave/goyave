@@ -320,6 +320,38 @@ func (suite *WebsocketTestSuite) checkGracefulCloseResponse(routeURL, expectedMe
 	suite.Equal(-1, messageType)
 }
 
+func (suite *WebsocketTestSuite) TestUpgradeHeaders() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{
+			Headers: func(request *goyave.Request) http.Header {
+				headers := http.Header{}
+				headers.Set("X-Test-Header", "value")
+				return headers
+			},
+		}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			return nil
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+
+	}, func() {
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
+		if err != nil {
+			suite.Error(err)
+			return
+		}
+		defer conn.Close()
+
+		suite.Equal(http.StatusSwitchingProtocols, resp.StatusCode)
+		suite.Equal("value", resp.Header.Get("X-Test-Header"))
+
+		m := ws.FormatCloseMessage(ws.CloseNormalClosure, "")
+		suite.Nil(conn.WriteControl(ws.CloseMessage, m, time.Now().Add(suite.Timeout())))
+
+	})
+}
+
 func TestWebsocketSuite(t *testing.T) {
 	goyave.RunTest(t, new(WebsocketTestSuite))
 }

@@ -15,6 +15,16 @@ import (
 
 type WebsocketTestSuite struct {
 	goyave.TestSuite
+	previousTimeout int
+}
+
+func (suite *WebsocketTestSuite) SetupSuite() {
+	suite.previousTimeout = config.GetInt("server.timeout")
+	config.Set("server.timeout", 1)
+}
+
+func (suite *WebsocketTestSuite) TearDownSuite() {
+	config.Set("server.timeout", suite.previousTimeout)
 }
 
 func (suite *WebsocketTestSuite) echoWSHandler(c *Conn, request *goyave.Request) error {
@@ -211,7 +221,7 @@ func (suite *WebsocketTestSuite) TestUpgradeError() {
 
 func (suite *WebsocketTestSuite) TestErrorHandler() {
 	routeURL := ""
-	executed := make(chan struct{})
+	executed := make(chan struct{}, 1)
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{
 			ErrorHandler: func(request *goyave.Request, err error) {
@@ -223,12 +233,7 @@ func (suite *WebsocketTestSuite) TestErrorHandler() {
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if err != nil {
-			suite.Error(err)
-			return
-		}
-		defer conn.Close()
+		suite.checkGracefulCloseResponse(routeURL, "Internal server error")
 	})
 
 	select {
@@ -346,16 +351,14 @@ func (suite *WebsocketTestSuite) TestUpgradeHeaders() {
 		suite.Equal(http.StatusSwitchingProtocols, resp.StatusCode)
 		suite.Equal("value", resp.Header.Get("X-Test-Header"))
 
-		m := ws.FormatCloseMessage(ws.CloseNormalClosure, "")
-		suite.Nil(conn.WriteControl(ws.CloseMessage, m, time.Now().Add(suite.Timeout())))
-
+		_, _, err = conn.ReadMessage()
+		suite.NotNil(err)
+		_, ok := err.(*ws.CloseError)
+		suite.True(ok)
 	})
 }
 
 func (suite *WebsocketTestSuite) TestCloseHandshakeTimeout() {
-	previousTimeout := config.Get("server.timeout")
-	config.Set("server.timeout", 1)
-	defer config.Set("server.timeout", previousTimeout)
 	routeURL := ""
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}

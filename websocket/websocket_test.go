@@ -278,26 +278,46 @@ func (suite *WebsocketTestSuite) TestGracefulCloseOnError() {
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if err != nil {
-			suite.Error(err)
-			return
-		}
-		defer conn.Close()
-
-		messageType, _, err := conn.ReadMessage()
-		suite.NotNil(err)
-
-		closeErr, ok := err.(*ws.CloseError)
-		suite.True(ok)
-		if ok {
-			suite.Equal(ws.CloseInternalServerErr, closeErr.Code)
-			suite.Equal("Internal server error", closeErr.Text)
-		}
-
-		// advanceFrame returns noFrame (-1) when a close frame is received
-		suite.Equal(-1, messageType)
+		suite.checkGracefulCloseResponse(routeURL, "Internal server error")
 	})
+}
+
+func (suite *WebsocketTestSuite) TestGracefulCloseOnErrorDebug() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			return fmt.Errorf("test error") // Immediately close connection with an error
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		previousDebug := config.Get("app.debug")
+		config.Set("app.debug", true)
+		defer config.Set("app.debug", previousDebug)
+		suite.checkGracefulCloseResponse(routeURL, "test error")
+	})
+}
+
+func (suite *WebsocketTestSuite) checkGracefulCloseResponse(routeURL, expectedMessage string) {
+	conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+	defer conn.Close()
+
+	messageType, _, err := conn.ReadMessage()
+	suite.NotNil(err)
+
+	closeErr, ok := err.(*ws.CloseError)
+	suite.True(ok)
+	if ok {
+		suite.Equal(ws.CloseInternalServerErr, closeErr.Code)
+		suite.Equal(expectedMessage, closeErr.Text)
+	}
+
+	// advanceFrame returns noFrame (-1) when a close frame is received
+	suite.Equal(-1, messageType)
 }
 
 func TestWebsocketSuite(t *testing.T) {

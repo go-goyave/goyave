@@ -12,8 +12,6 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-// TODO test websocket.go
-
 const (
 	// NormalClosureMessage the message sent with the close frame
 	// during the close handshake.
@@ -21,7 +19,6 @@ const (
 )
 
 var (
-
 	// ErrCloseTimeout returned during the close handshake if the client took
 	// too long to respond with
 	ErrCloseTimeout = errors.New("websocket close handshake timed out")
@@ -121,7 +118,7 @@ func (c *Conn) shutdownNormal() error {
 func (c *Conn) shutdownOnError(err error) error {
 	message := "Internal server error" // TODO prepared message for closure
 	if config.GetBool("app.debug") {
-		message = err.Error() // TODO test debug mode
+		message = err.Error()
 	}
 	return c.shutdown(ws.CloseInternalServerErr, message)
 }

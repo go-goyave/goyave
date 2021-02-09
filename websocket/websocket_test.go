@@ -352,6 +352,33 @@ func (suite *WebsocketTestSuite) TestUpgradeHeaders() {
 	})
 }
 
+func (suite *WebsocketTestSuite) TestCloseHandshakeTimeout() {
+	previousTimeout := config.Get("server.timeout")
+	config.Set("server.timeout", 1)
+	defer config.Set("server.timeout", previousTimeout)
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			return nil
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		if err != nil {
+			suite.Error(err)
+			return
+		}
+		defer conn.Close()
+
+		time.Sleep(1500 * time.Millisecond)
+
+		mt, _, err := conn.ReadMessage()
+		suite.NotNil(err)
+		suite.Equal(-1, mt)
+	})
+}
+
 func TestWebsocketSuite(t *testing.T) {
 	goyave.RunTest(t, new(WebsocketTestSuite))
 }

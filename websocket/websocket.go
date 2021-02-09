@@ -131,7 +131,7 @@ func (c *Conn) shutdown(code int, message string) error {
 	}
 
 	if !c.receivedClose {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // TODO configurable timeout
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.GetInt("server.timeout"))*time.Second) // TODO cache timeout for performance
 		defer cancel()
 		// In this branch, we know the client has NOT initiated the close handshake.
 		// Read until error.
@@ -145,7 +145,7 @@ func (c *Conn) shutdown(code int, message string) error {
 
 		select {
 		case <-ctx.Done():
-			goyave.ErrLogger.Println(ErrCloseTimeout) // TODO test close handshake timeout
+			goyave.ErrLogger.Println(ErrCloseTimeout)
 		case <-c.waitClose:
 			close(c.waitClose)
 		}

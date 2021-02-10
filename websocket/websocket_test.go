@@ -382,6 +382,27 @@ func (suite *WebsocketTestSuite) TestCloseHandshakeTimeout() {
 	})
 }
 
+func (suite *WebsocketTestSuite) TestCloseHandler() {
+	c := newConn(&ws.Conn{})
+	c.receivedClose = true
+
+	suite.Nil(c.closeHandler(ws.CloseNormalClosure, ""))
+	select {
+	case <-c.waitClose:
+		suite.Fail("Expected waitClose to be empty, but read something")
+	default:
+	}
+
+	c = newConn(&ws.Conn{})
+
+	suite.Nil(c.closeHandler(ws.CloseNormalClosure, ""))
+	select {
+	case <-c.waitClose:
+	default:
+		suite.Fail("Expected waitClose to not be empty")
+	}
+}
+
 func TestWebsocketSuite(t *testing.T) {
 	goyave.RunTest(t, new(WebsocketTestSuite))
 }

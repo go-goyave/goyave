@@ -92,7 +92,7 @@ func newConn(c *ws.Conn) *Conn {
 	return conn
 }
 
-// TODO handle pings and pongs
+// TODO handle pings and pongs (should already be handled by the default ping and pong handlers)
 
 func (c *Conn) closeHandler(code int, text string) error {
 	// No need to lock receivedClose because there can be at most one
@@ -105,27 +105,27 @@ func (c *Conn) closeHandler(code int, text string) error {
 	return nil
 }
 
-// shutdownNormal performs the closing handshake as specified by
+// closeNormal performs the closing handshake as specified by
 // RFC 6455 Section 1.4. Sends status code 1000 (normal closure) and
 // message "Server closed connection".
-func (c *Conn) shutdownNormal() error {
-	return c.shutdown(ws.CloseNormalClosure, NormalClosureMessage)
+func (c *Conn) closeNormal() error {
+	return c.close(ws.CloseNormalClosure, NormalClosureMessage)
 }
 
-// shutdownOnError performs the closing handshake as specified by
+// closeWithError performs the closing handshake as specified by
 // RFC 6455 Section 1.4 because a server error occurred.
 // Sends status code 1011 (internal server error) and
 // message "Internal server error". If debug is enabled,
 // the message is set to the given error's message.
-func (c *Conn) shutdownOnError(err error) error {
+func (c *Conn) closeWithError(err error) error {
 	message := "Internal server error" // TODO prepared message for closure
 	if config.GetBool("app.debug") {
 		message = err.Error()
 	}
-	return c.shutdown(ws.CloseInternalServerErr, message)
+	return c.close(ws.CloseInternalServerErr, message)
 }
 
-func (c *Conn) shutdown(code int, message string) error {
+func (c *Conn) close(code int, message string) error {
 	m := ws.FormatCloseMessage(code, message)
 	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second))
 	if err != nil {
@@ -247,9 +247,9 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 			} else {
 				goyave.ErrLogger.Println(err)
 			}
-			conn.shutdownOnError(err)
+			conn.closeWithError(err)
 		} else {
-			conn.shutdownNormal()
+			conn.closeNormal()
 		}
 	}
 }

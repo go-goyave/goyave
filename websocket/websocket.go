@@ -3,8 +3,11 @@ package websocket
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
+	"unicode/utf8"
 
 	"github.com/System-Glitch/goyave/v3"
 	"github.com/System-Glitch/goyave/v3/config"
@@ -16,6 +19,8 @@ const (
 	// NormalClosureMessage the message sent with the close frame
 	// during the close handshake.
 	NormalClosureMessage = "Server closed connection"
+
+	maxCloseMessageLength = 123
 )
 
 var (
@@ -120,14 +125,14 @@ func (c *Conn) closeNormal() error {
 func (c *Conn) closeWithError(err error) error {
 	message := "Internal server error" // TODO prepared message for closure
 	if config.GetBool("app.debug") {
-		message = err.Error()
+		message = truncateMessage(err.Error(), maxCloseMessageLength)
 	}
 	return c.close(ws.CloseInternalServerErr, message)
 }
 
 func (c *Conn) close(code int, message string) error {
 	m := ws.FormatCloseMessage(code, message)
-	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second))
+	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(timeout))
 	if err != nil {
 		goyave.ErrLogger.Println(err) // TODO better shutdown error handling
 	}
@@ -170,7 +175,8 @@ type Upgrader struct {
 	UpgradeErrorHandler UpgradeErrorHandler
 
 	// ErrorHandler specifies the function handling errors returned by HandlerFunc.
-	// If nil, the error is written to "goyave.ErrLogger".
+	// If nil, the error is written to "goyave.ErrLogger". If the error is caused by
+	// a panic and debugging is enabled, the default ErrorHandler also writes the stacktrace.
 	ErrorHandler ErrorHandler
 
 	// CheckOrigin returns true if the request Origin header is acceptable. If
@@ -221,8 +227,8 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 // Otherwise the close frame will have status code 1000 (normal closure) and
 // "Server closed connection" as a message.
 //
-// Bear in mind that the recovery middleware doesn't work on websocket connections,
-// as we are not in an HTTP context anymore.
+// This handlers features a recovery mechanism. If the HandlerFunc panics, the connection
+// will be gracefully closed just like if the handler returned an error without panicking.
 func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 	if timeout == 0 {
 		timeout = time.Duration(config.GetInt("server.timeout")) * time.Second
@@ -238,19 +244,41 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 			return
 		}
 		response.Status(http.StatusSwitchingProtocols)
-		// TODO recovery?
+
 		conn := newConn(c)
-		err = handler(conn, request)
-		if err != nil {
-			if u.ErrorHandler != nil {
-				u.ErrorHandler(request, err)
-			} else {
-				goyave.ErrLogger.Println(err)
+		panicked := true
+		err = nil
+		defer func() { // Panic recovery
+			stack := ""
+			if panicReason := recover(); panicReason != nil || panicked {
+				if config.GetBool("app.debug") {
+					stack = string(debug.Stack()) // TODO error handler doesn't have access to stack
+				}
+
+				if e, ok := panicReason.(error); ok {
+					err = fmt.Errorf("%w", e)
+				} else {
+					err = fmt.Errorf("%v", panicReason)
+				}
 			}
-			conn.closeWithError(err)
-		} else {
-			conn.closeNormal()
-		}
+
+			if err != nil {
+				if u.ErrorHandler != nil {
+					u.ErrorHandler(request, err)
+				} else {
+					goyave.ErrLogger.Println(err)
+					if stack != "" {
+						goyave.ErrLogger.Println(stack)
+					}
+				}
+				conn.closeWithError(err)
+			} else {
+				conn.closeNormal()
+			}
+		}()
+
+		err = handler(conn, request)
+		panicked = false
 	}
 }
 
@@ -286,4 +314,24 @@ func IsCloseError(err error) bool {
 		ws.CloseGoingAway,
 		ws.CloseNoStatusReceived,
 	)
+}
+
+func truncateMessage(message string, maxLength int) string {
+	if len([]byte(message)) <= maxLength {
+		return message
+	}
+
+	res := make([]rune, 0, maxLength)
+	count := 0
+	for _, r := range message {
+		l := utf8.RuneLen(r)
+		if count+l > maxLength {
+			break
+		}
+
+		count += l
+		res = append(res, r)
+	}
+
+	return string(res)
 }

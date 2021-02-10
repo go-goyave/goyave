@@ -403,6 +403,75 @@ func (suite *WebsocketTestSuite) TestCloseHandler() {
 	}
 }
 
+func (suite *WebsocketTestSuite) TestRecovery() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			panic(fmt.Errorf("test error"))
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		previousDebug := config.Get("app.debug")
+		config.Set("app.debug", true)
+		defer config.Set("app.debug", previousDebug)
+		suite.checkGracefulCloseResponse(routeURL, "test error")
+	})
+}
+
+func (suite *WebsocketTestSuite) TestRecoveryNil() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			panic(nil)
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		previousDebug := config.Get("app.debug")
+		config.Set("app.debug", true)
+		defer config.Set("app.debug", previousDebug)
+		suite.checkGracefulCloseResponse(routeURL, "<nil>")
+	})
+}
+
+func (suite *WebsocketTestSuite) TestRecoveryString() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			panic("panic reason")
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		previousDebug := config.Get("app.debug")
+		config.Set("app.debug", true)
+		defer config.Set("app.debug", previousDebug)
+		suite.checkGracefulCloseResponse(routeURL, "panic reason")
+	})
+}
+
+func (suite *WebsocketTestSuite) TestCloseTruncateErrorMessage() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			return fmt.Errorf("This error has a rather very long error message that is longer than one hundrer and twenty five characters and is therefore an invalid control frame")
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+	}, func() {
+		previousDebug := config.Get("app.debug")
+		config.Set("app.debug", true)
+		defer config.Set("app.debug", previousDebug)
+		suite.checkGracefulCloseResponse(routeURL, "This error has a rather very long error message that is longer than one hundrer and twenty five characters and is therefore")
+	})
+}
+
+func (suite *WebsocketTestSuite) TestTruncateMessage() {
+	message := "This error has a rather very long error message that is longer than one hundrer and twenty five characters and is therefore an invalid control frame"
+	suite.Equal("This error has a rather very long error message that is longer than one hundrer and twenty five characters and is therefore", truncateMessage(message, maxCloseMessageLength))
+}
+
 func TestWebsocketSuite(t *testing.T) {
 	goyave.RunTest(t, new(WebsocketTestSuite))
 }

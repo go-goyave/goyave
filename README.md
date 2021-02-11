@@ -188,7 +188,7 @@ func Register(router *goyave.Router) {
     // Register your routes here
 
     // With closure, not recommended
-    router.Get("GET", "/hello", func(response *goyave.Response, r *goyave.Request) {
+    router.Get("/hello", func(response *goyave.Response, r *goyave.Request) {
         response.String(http.StatusOK, "Hi!")
     })
 

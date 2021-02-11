@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -30,6 +31,12 @@ var (
 
 	timeout time.Duration
 )
+
+func setTimeout() {
+	if timeout == 0 {
+		timeout = time.Duration(config.GetInt("server.timeout")) * time.Second
+	}
+}
 
 // PanicError error sent to the upgrader's ErrorHandler if a panic occurred.
 // If debugging is disabled, the "Stacktrace" field will be empty.
@@ -102,12 +109,14 @@ type Conn struct {
 	*ws.Conn
 	waitClose     chan struct{}
 	receivedClose bool
+	timeout       time.Duration
 }
 
 func newConn(c *ws.Conn) *Conn {
 	conn := &Conn{
 		Conn:      c,
 		waitClose: make(chan struct{}, 1),
+		timeout:   timeout,
 	}
 	c.SetCloseHandler(conn.closeHandler)
 	return conn
@@ -148,15 +157,21 @@ func (c *Conn) closeWithError(err error) error {
 
 func (c *Conn) close(code int, message string) error {
 	m := ws.FormatCloseMessage(code, message)
-	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(timeout))
+	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(c.timeout))
 	if err != nil {
-		goyave.ErrLogger.Println(err) // TODO better shutdown error handling
-		// If server closes connection, will result un close timeout because this frame
-		// has never been sent
+		if strings.Contains(err.Error(), "use of closed network connection") {
+			c.Close()
+			return fmt.Errorf("%w. Don't close the connection manually, this prevents close handshake", err)
+		}
+		if errors.Is(err, ws.ErrCloseSent) {
+			c.Close()
+			return fmt.Errorf("%w. A close frame has been sent before the HandlerFunc returned, preventing close handshake", err)
+		}
+		return c.Close()
 	}
 
 	if !c.receivedClose {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 		defer cancel()
 		// In this branch, we know the client has NOT initiated the close handshake.
 		// Read until error.
@@ -248,9 +263,7 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 // This handlers features a recovery mechanism. If the HandlerFunc panics, the connection
 // will be gracefully closed just like if the handler returned an error without panicking.
 func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
-	if timeout == 0 {
-		timeout = time.Duration(config.GetInt("server.timeout")) * time.Second
-	}
+	setTimeout()
 	return func(response *goyave.Response, request *goyave.Request) {
 		var headers http.Header
 		if u.Headers != nil {
@@ -294,9 +307,13 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 						goyave.ErrLogger.Println(e.Stacktrace)
 					}
 				}
-				conn.closeWithError(err)
+				if closeError := conn.closeWithError(err); closeError != nil {
+					goyave.ErrLogger.Println(closeError)
+				}
 			} else {
-				conn.closeNormal()
+				if closeError := conn.closeNormal(); closeError != nil {
+					goyave.ErrLogger.Println(closeError)
+				}
 			}
 		}()
 

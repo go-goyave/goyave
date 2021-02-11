@@ -122,6 +122,18 @@ func newConn(c *ws.Conn) *Conn {
 	return conn
 }
 
+// SetCloseHandshakeTimeout set the timeout used when writing and reading
+// close frames during the close handshake.
+func (c *Conn) SetCloseHandshakeTimeout(timeout time.Duration) {
+	c.timeout = timeout
+}
+
+// GetCloseHandshakeTimeout return the timeout used when writing and reading
+// close frames during the close handshake.
+func (c *Conn) GetCloseHandshakeTimeout() time.Duration {
+	return c.timeout
+}
+
 // TODO handle pings and pongs (should already be handled by the default ping and pong handlers)
 
 func (c *Conn) closeHandler(code int, text string) error {

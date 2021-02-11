@@ -622,6 +622,14 @@ func (suite *WebsocketTestSuite) TestPanicError() {
 	suite.Equal(reason.Error(), err.Error())
 }
 
+func (suite *WebsocketTestSuite) TestConnCloseHandshakeTimeout() {
+	c := newConn(&ws.Conn{})
+
+	c.SetCloseHandshakeTimeout(time.Second * 2)
+	suite.Equal(time.Second*2, c.timeout)
+	suite.Equal(time.Second*2, c.GetCloseHandshakeTimeout())
+}
+
 func TestWebsocketSuite(t *testing.T) {
 	goyave.RunTest(t, new(WebsocketTestSuite))
 }

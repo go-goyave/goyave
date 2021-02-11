@@ -31,6 +31,22 @@ var (
 	timeout time.Duration
 )
 
+// PanicError error sent to the upgrader's ErrorHandler if a panic occurred.
+// If debugging is disabled, the "Stacktrace" field will be empty.
+type PanicError struct {
+	Reason     error
+	Stacktrace string
+}
+
+func (e *PanicError) Error() string {
+	return e.Reason.Error()
+}
+
+// Unwrap return the panic reason.
+func (e *PanicError) Unwrap() error {
+	return e.Reason
+}
+
 // HandlerFunc is a handler for websocket connections.
 // The request parameter contains the original upgraded HTTP request.
 //
@@ -123,7 +139,7 @@ func (c *Conn) closeNormal() error {
 // message "Internal server error". If debug is enabled,
 // the message is set to the given error's message.
 func (c *Conn) closeWithError(err error) error {
-	message := "Internal server error" // TODO prepared message for closure
+	message := "Internal server error"
 	if config.GetBool("app.debug") {
 		message = truncateMessage(err.Error(), maxCloseMessageLength)
 	}
@@ -135,6 +151,8 @@ func (c *Conn) close(code int, message string) error {
 	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(timeout))
 	if err != nil {
 		goyave.ErrLogger.Println(err) // TODO better shutdown error handling
+		// If server closes connection, will result un close timeout because this frame
+		// has never been sent
 	}
 
 	if !c.receivedClose {
@@ -249,16 +267,21 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 		panicked := true
 		err = nil
 		defer func() { // Panic recovery
-			stack := ""
 			if panicReason := recover(); panicReason != nil || panicked {
+				stack := ""
 				if config.GetBool("app.debug") {
-					stack = string(debug.Stack()) // TODO error handler doesn't have access to stack
+					stack = string(debug.Stack())
 				}
 
 				if e, ok := panicReason.(error); ok {
 					err = fmt.Errorf("%w", e)
 				} else {
 					err = fmt.Errorf("%v", panicReason)
+				}
+
+				err = &PanicError{
+					Reason:     err,
+					Stacktrace: stack,
 				}
 			}
 
@@ -267,8 +290,8 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 					u.ErrorHandler(request, err)
 				} else {
 					goyave.ErrLogger.Println(err)
-					if stack != "" {
-						goyave.ErrLogger.Println(stack)
+					if e, ok := err.(*PanicError); ok {
+						goyave.ErrLogger.Println(e.Stacktrace)
 					}
 				}
 				conn.closeWithError(err)

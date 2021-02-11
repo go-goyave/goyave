@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -470,6 +471,16 @@ func (suite *WebsocketTestSuite) TestCloseTruncateErrorMessage() {
 func (suite *WebsocketTestSuite) TestTruncateMessage() {
 	message := "This error has a rather very long error message that is longer than one hundrer and twenty five characters and is therefore an invalid control frame"
 	suite.Equal("This error has a rather very long error message that is longer than one hundrer and twenty five characters and is therefore", truncateMessage(message, maxCloseMessageLength))
+}
+
+func (suite *WebsocketTestSuite) TestPanicError() {
+	reason := fmt.Errorf("panic")
+	err := &PanicError{
+		Reason: reason,
+	}
+
+	suite.True(errors.Is(err.Unwrap(), reason))
+	suite.Equal(reason.Error(), err.Error())
 }
 
 func TestWebsocketSuite(t *testing.T) {

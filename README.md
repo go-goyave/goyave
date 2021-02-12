@@ -175,6 +175,15 @@ config.Has("app.name") // true
 config.Set("app.name", "my awesome app")
 ```
 
+**Using environment variables:**
+```json
+{
+  "database": {
+    "host": "${DB_HOST}"
+  }
+}
+```
+
 **Learn more about configuration in the [documentation](https://goyave.dev/guide/configuration.html).**
 
 ### Routing

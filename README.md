@@ -20,11 +20,10 @@
 
 Goyave is a progressive and accessible web application framework focused on REST APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused. Goyave is an **opinionated** framework, helping your applications keeping a uniform architecture and limit redundancy. With Goyave, expect a full package with minimum setup.
 
-**Clean Code**: Goyave has an expressive, elegant syntax, a robust structure and conventions. Minimalist calls and reduced redundancy are among the Goyave's core principles.
-
-**Fast Development**: Develop faster and concentrate on the business logic of your application thanks to the many helpers and built-in functions.
-
-**Powerful functionalities**: Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, authentication, and more!
+- **Clean Code**: Goyave has an expressive, elegant syntax, a robust structure and conventions. Minimalist calls and reduced redundancy are among the Goyave's core principles.
+- **Fast Development**: Develop faster and concentrate on the business logic of your application thanks to the many helpers and built-in functions.
+- **Powerful functionalities**: Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, authentication, and more!
+- **Reliability**: Error reporting is made easy thanks to advanced error handling and panic recovery. The framework is deeply tested.
 
 ## Table of contents
 

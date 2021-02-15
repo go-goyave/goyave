@@ -6,5 +6,5 @@ import (
 )
 
 func init() {
-	database.RegisterDialect("sqlite3", "{name}", sqlite.Open)
+	database.RegisterDialect("sqlite3", "file:{name}?{options}", sqlite.Open)
 }

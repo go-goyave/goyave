@@ -64,7 +64,7 @@ func (e *PanicError) Unwrap() error {
 // sync.WaitGroup to wait for them to terminate before returning.
 //
 // Don't send closing frames in handlers, that would be redundant with the automatic
-// close handshake performed when the handler returns?
+// close handshake performed when the handler returns.
 //
 // The following HandlerFunc is an example of an "echo" feature using websockets:
 //

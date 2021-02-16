@@ -153,39 +153,49 @@ func (c *Conn) closeHandler(code int, text string) error {
 	return nil
 }
 
-// closeNormal performs the closing handshake as specified by
+// CloseNormal performs the closing handshake as specified by
 // RFC 6455 Section 1.4. Sends status code 1000 (normal closure) and
 // message "Server closed connection".
-func (c *Conn) closeNormal() error {
-	return c.close(ws.CloseNormalClosure, NormalClosureMessage)
+//
+// Don't use this inside HandlerFunc. Only the HTTP handler that upgraded the
+// connection should call this function.
+func (c *Conn) CloseNormal() error {
+	return c.Close(ws.CloseNormalClosure, NormalClosureMessage)
 }
 
-// closeWithError performs the closing handshake as specified by
+// CloseWithError performs the closing handshake as specified by
 // RFC 6455 Section 1.4 because a server error occurred.
 // Sends status code 1011 (internal server error) and
 // message "Internal server error". If debug is enabled,
 // the message is set to the given error's message.
-func (c *Conn) closeWithError(err error) error {
+//
+// Don't use this inside HandlerFunc. Only the HTTP handler that upgraded the
+// connection should call this function.
+func (c *Conn) CloseWithError(err error) error {
 	message := "Internal server error"
 	if config.GetBool("app.debug") {
 		message = truncateMessage(err.Error(), maxCloseMessageLength)
 	}
-	return c.close(ws.CloseInternalServerErr, message)
+	return c.Close(ws.CloseInternalServerErr, message)
 }
 
-func (c *Conn) close(code int, message string) error {
+// Close performs the closing handshake as specified by RFC 6455 Section 1.4.
+//
+// Don't use this inside HandlerFunc. Only the HTTP handler that upgraded the
+// connection should call this function.
+func (c *Conn) Close(code int, message string) error {
 	m := ws.FormatCloseMessage(code, message)
 	err := c.WriteControl(ws.CloseMessage, m, time.Now().Add(c.timeout))
 	if err != nil {
 		if strings.Contains(err.Error(), "use of closed network connection") {
-			c.Close()
+			c.Conn.Close()
 			return fmt.Errorf("%w. Don't close the connection manually, this prevents close handshake", err)
 		}
 		if errors.Is(err, ws.ErrCloseSent) {
-			c.Close()
+			c.Conn.Close()
 			return fmt.Errorf("%w. A close frame has been sent before the HandlerFunc returned, preventing close handshake", err)
 		}
-		return c.Close()
+		return c.Conn.Close()
 	}
 
 	if !c.receivedClose {
@@ -210,7 +220,7 @@ func (c *Conn) close(code int, message string) error {
 	}
 
 	// TODO properly shutdown before goyave.Start returns?
-	return c.Close()
+	return c.Conn.Close()
 }
 
 // Upgrader is responsible for the upgrade of HTTP connections to
@@ -325,11 +335,11 @@ func (u *Upgrader) Handler(handler HandlerFunc) goyave.Handler {
 						goyave.ErrLogger.Println(e.Stacktrace)
 					}
 				}
-				if closeError := conn.closeWithError(err); closeError != nil {
+				if closeError := conn.CloseWithError(err); closeError != nil {
 					goyave.ErrLogger.Println(closeError)
 				}
 			} else {
-				if closeError := conn.closeNormal(); closeError != nil {
+				if closeError := conn.CloseNormal(); closeError != nil {
 					goyave.ErrLogger.Println(closeError)
 				}
 			}

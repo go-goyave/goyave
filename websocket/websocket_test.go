@@ -466,8 +466,8 @@ func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
 
 			conn := newConn(c)
 
-			suite.Nil(conn.Close()) // Connection closed right away, server wont be able to write anymore
-			err = conn.closeNormal()
+			suite.Nil(conn.Conn.Close()) // Connection closed right away, server wont be able to write anymore
+			err = conn.CloseNormal()
 			suite.NotNil(err)
 			suite.Contains(err.Error(), "use of closed network connection")
 		})
@@ -504,7 +504,7 @@ func (suite *WebsocketTestSuite) TestCloseFrameAlreadySent() {
 			m := ws.FormatCloseMessage(ws.CloseNormalClosure, "Connection closed by server")
 			suite.Nil(conn.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second)))
 
-			err = conn.closeNormal()
+			err = conn.CloseNormal()
 			suite.NotNil(err)
 			suite.Contains(err.Error(), "A close frame has been sent before the HandlerFunc returned")
 		})
@@ -539,7 +539,7 @@ func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
 			conn := newConn(c)
 
 			conn.timeout = -1 * time.Second
-			err = conn.closeNormal()
+			err = conn.CloseNormal()
 			suite.Nil(err)
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
@@ -558,7 +558,7 @@ func (suite *WebsocketTestSuite) TestCloseErrorLog() {
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
 		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
-			c.Close()
+			c.Conn.Close()
 			return fmt.Errorf("test error")
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
@@ -577,7 +577,7 @@ func (suite *WebsocketTestSuite) TestCloseNormalErrorLog() {
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
 		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
-			c.Close()
+			c.Conn.Close()
 			return nil
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))

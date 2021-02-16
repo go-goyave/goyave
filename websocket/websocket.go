@@ -63,6 +63,12 @@ func (e *PanicError) Unwrap() error {
 // Therefore, if the handler is using goroutines, it should use a
 // sync.WaitGroup to wait for them to terminate before returning.
 //
+// If the handler returns nil, it means that everything went fine and the
+// connection can be closed normally. On the other hand, the handler can return
+// an error, such as a read error, to indicate that the connection should not
+// be closed normally. The behavior used when this happens depend on the implementation
+// of the HTTP handler that upgraded the connection.
+//
 // Don't send closing frames in handlers, that would be redundant with the automatic
 // close handshake performed when the handler returns.
 //

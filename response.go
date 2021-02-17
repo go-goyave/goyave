@@ -124,7 +124,8 @@ func (r *Response) Header() http.Header {
 // Callers should properly set the response status to ensure middleware and
 // status handler execute correctly. Usually, callers of the Hijack method
 // set the HTTP status to http.StatusSwitchingProtocols.
-// If no status is set, the regular behavior will be kept and `204 No Content` will be returned.
+// If no status is set, the regular behavior will be kept and `204 No Content`
+// will be set as the response status.
 func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	hijacker, ok := r.responseWriter.(http.Hijacker)
 	if !ok {

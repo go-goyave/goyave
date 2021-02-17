@@ -506,7 +506,7 @@ func (suite *WebsocketTestSuite) TestCloseFrameAlreadySent() {
 
 			err = conn.CloseNormal()
 			suite.NotNil(err)
-			suite.Contains(err.Error(), "A close frame has been sent before the HandlerFunc returned")
+			suite.Contains(err.Error(), "A close frame has been sent before the Handler returned")
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {

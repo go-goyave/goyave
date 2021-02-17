@@ -332,7 +332,7 @@ func (u *Upgrader) Handler(handler Handler) goyave.Handler {
 					u.ErrorHandler(request, err)
 				} else {
 					goyave.ErrLogger.Println(err)
-					if e, ok := err.(*PanicError); ok {
+					if e, ok := err.(*PanicError); ok && e.Stacktrace != "" {
 						goyave.ErrLogger.Println(e.Stacktrace)
 					}
 				}

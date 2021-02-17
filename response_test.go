@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -566,6 +567,19 @@ func (suite *ResponseTestSuite) TestErrorOnHijacked() {
 	body, err := ioutil.ReadAll(res.Body)
 	suite.Nil(err)
 	suite.Empty(body)
+}
+
+func (suite *ResponseTestSuite) TestHijackNotHijackable() {
+	recorder := httptest.NewRecorder()
+
+	req := httptest.NewRequest(http.MethodGet, "/hijack", nil)
+	resp := newResponse(recorder, req)
+
+	c, b, err := resp.Hijack()
+	suite.Nil(c)
+	suite.Nil(b)
+	suite.NotNil(err)
+	suite.True(errors.Is(err, ErrNotHijackable))
 }
 
 // ------------------------

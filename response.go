@@ -20,6 +20,13 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	// ErrNotHijackable returned by response.Hijack() if the underlying
+	// http.ResponseWriter doesn't implement http.Hijacker. This can
+	// happen with HTTP/2 connections.
+	ErrNotHijackable = errors.New("Underlying http.ResponseWriter doesn't implement http.Hijacker")
+)
+
 // PreWriter is a writter that needs to alter the response headers or status
 // before they are written.
 // If implemented, PreWrite will be called right before the Write operation.
@@ -109,6 +116,9 @@ func (r *Response) Header() http.Header {
 // Hijack implements the Hijacker.Hijack method.
 // For more details, check http.Hijacker.
 //
+// Returns ErrNotHijackable if the underlying http.ResponseWriter doesn't
+// implement http.Hijacker. This can happen with HTTP/2 connections.
+//
 // Middleware executed after controller handlers, as well as status handlers,
 // keep working as usual after a connection has been hijacked.
 // Callers should properly set the response status to ensure middleware and
@@ -116,7 +126,11 @@ func (r *Response) Header() http.Header {
 // set the HTTP status to http.StatusSwitchingProtocols.
 // If no status is set, the regular behavior will be kept and `204 No Content` will be returned.
 func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	c, b, e := r.responseWriter.(http.Hijacker).Hijack()
+	hijacker, ok := r.responseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, ErrNotHijackable
+	}
+	c, b, e := hijacker.Hijack()
 	if e == nil {
 		r.hijacked = true
 	}

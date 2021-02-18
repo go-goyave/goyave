@@ -457,9 +457,13 @@ func (suite *GoyaveTestSuite) TestShutdownHook() {
 	RegisterShutdownHook(func() {
 		executed = true
 	})
+	suite.Len(shutdownHooks, 1)
 
 	suite.RunServer(func(r *Router) {}, func() {})
 	suite.True(executed)
+
+	ClearShutdownHooks()
+	suite.Len(shutdownHooks, 0)
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

@@ -100,7 +100,7 @@ func ClearStartupHooks() {
 }
 
 // RegisterShutdownHook to execute some code after the server stopped.
-// Shutdown hooks are executed before goyave.Start returns.
+// Shutdown hooks are executed before goyave.Start() returns.
 func RegisterShutdownHook(hook func()) {
 	mutex.Lock()
 	shutdownHooks = append(shutdownHooks, hook)

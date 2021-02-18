@@ -18,6 +18,8 @@ linters:
     - golint
     - gocyclo
     - misspell
+    - bodyclose
+    - maligned
   disable:
     - errcheck
   disable-all: false

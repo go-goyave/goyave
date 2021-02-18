@@ -28,6 +28,7 @@ func (suite *NativeHandlerTestSuite) TestNativeHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("Hello world", string(body))
 	suite.False(response.empty)
@@ -107,6 +108,7 @@ func (suite *NativeHandlerTestSuite) TestNativeMiddleware() {
 		if err != nil {
 			panic(err)
 		}
+		result.Body.Close()
 		suite.Equal(200, result.StatusCode)
 		suite.Equal("Hello world", string(body))
 		suite.False(response.empty)

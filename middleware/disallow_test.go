@@ -65,6 +65,7 @@ func (suite *DisallowMiddlewareTestSuite) TestDisallowMiddleware() {
 		},
 	}
 	result = suite.Middleware(DisallowNonValidatedFields, request, func(response *goyave.Response, r *goyave.Request) {})
+	result.Body.Close()
 	suite.Equal(204, result.StatusCode)
 
 	suite.NotPanics(func() {
@@ -72,13 +73,14 @@ func (suite *DisallowMiddlewareTestSuite) TestDisallowMiddleware() {
 		request.Rules = &validation.Rules{
 			Fields: nil,
 		}
-		result = suite.Middleware(DisallowNonValidatedFields, request, func(response *goyave.Response, r *goyave.Request) {})
+		result := suite.Middleware(DisallowNonValidatedFields, request, func(response *goyave.Response, r *goyave.Request) {})
 		suite.Equal(422, result.StatusCode)
 
 		body, err = ioutil.ReadAll(result.Body)
 		if err != nil {
 			panic(err)
 		}
+		result.Body.Close()
 		suite.Equal("{\"validationError\":{\"non-validated\":[\"Non-validated fields are forbidden.\"]}}\n", string(body))
 	})
 }

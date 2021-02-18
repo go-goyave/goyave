@@ -384,6 +384,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(503, resp.StatusCode)
+			resp.Body.Close()
 		}
 
 		DisableMaintenance()

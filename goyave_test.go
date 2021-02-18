@@ -452,6 +452,16 @@ func (suite *GoyaveTestSuite) TestConfigError() {
 	}
 }
 
+func (suite *GoyaveTestSuite) TestShutdownHook() {
+	executed := false
+	RegisterShutdownHook(func() {
+		executed = true
+	})
+
+	suite.RunServer(func(r *Router) {}, func() {})
+	suite.True(executed)
+}
+
 func TestGoyaveTestSuite(t *testing.T) {
 	RunTest(t, new(GoyaveTestSuite))
 }

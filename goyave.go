@@ -32,6 +32,7 @@ var (
 	defaultLanguage string
 
 	startupHooks       []func()
+	shutdownHooks      []func()
 	ready              bool = false
 	maintenanceEnabled bool = false
 	mutex                   = &sync.RWMutex{}
@@ -95,6 +96,21 @@ func RegisterStartupHook(hook func()) {
 func ClearStartupHooks() {
 	mutex.Lock()
 	startupHooks = []func(){}
+	mutex.Unlock()
+}
+
+// RegisterShutdownHook to execute some code after the server stopped.
+// Shutdown hooks are executed before goyave.Start returns.
+func RegisterShutdownHook(hook func()) {
+	mutex.Lock()
+	shutdownHooks = append(shutdownHooks, hook)
+	mutex.Unlock()
+}
+
+// ClearShutdownHooks removes all shutdown hooks.
+func ClearShutdownHooks() {
+	mutex.Lock()
+	shutdownHooks = []func(){}
 	mutex.Unlock()
 }
 
@@ -226,6 +242,10 @@ func stop(ctx context.Context) error {
 			<-stopChannel
 			redirectServer = nil
 			stopChannel = nil
+		}
+
+		for _, hook := range shutdownHooks {
+			hook()
 		}
 	}
 	return err

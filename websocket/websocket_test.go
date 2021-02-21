@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,23 +30,26 @@ func (suite *WebsocketTestSuite) TearDownSuite() {
 	config.Set("server.timeout", suite.previousTimeout)
 }
 
-func (suite *WebsocketTestSuite) echoWSHandler(c *Conn, request *goyave.Request) error {
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			if IsCloseError(err) {
-				return nil
+func (suite *WebsocketTestSuite) echoWSHandler(wg *sync.WaitGroup) Handler {
+	return func(c *Conn, request *goyave.Request) error {
+		defer wg.Done()
+		for {
+			mt, message, err := c.ReadMessage()
+			if err != nil {
+				if IsCloseError(err) {
+					return nil
+				}
+				err := fmt.Errorf("read: %v", err)
+				suite.Error(err)
+				return err
 			}
-			err := fmt.Errorf("read: %v", err)
-			suite.Error(err)
-			return err
-		}
-		goyave.Logger.Printf("recv: %s", message)
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			err := fmt.Errorf("write: %v", err)
-			suite.Error(err)
-			return err
+			goyave.Logger.Printf("recv: %s", message)
+			err = c.WriteMessage(mt, message)
+			if err != nil {
+				err := fmt.Errorf("write: %v", err)
+				suite.Error(err)
+				return err
+			}
 		}
 	}
 }
@@ -173,10 +177,15 @@ func (suite *WebsocketTestSuite) TestMakeUpgrader() {
 }
 
 func (suite *WebsocketTestSuite) TestUpgrade() {
+	// Server shutdown doesn't wait for Hijacked connections to
+	// terminate before returning. Use a WaitGroup to avoid
+	// race conditions in TestSuite.SetT
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	routeURL := ""
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
-		route := r.Get("/websocket", upgrader.Handler(suite.echoWSHandler))
+		route := r.Get("/websocket", upgrader.Handler(suite.echoWSHandler(&wg)))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
 		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
@@ -198,12 +207,15 @@ func (suite *WebsocketTestSuite) TestUpgrade() {
 		m := ws.FormatCloseMessage(ws.CloseNormalClosure, "Connection closed by client")
 		suite.Nil(conn.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second)))
 	})
+	wg.Wait()
 }
 
 func (suite *WebsocketTestSuite) TestUpgradeError() {
+	wg := sync.WaitGroup{}
+	// Don't add to wait group since connection will not be upgraded
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
-		r.Get("/websocket", upgrader.Handler(suite.echoWSHandler))
+		r.Get("/websocket", upgrader.Handler(suite.echoWSHandler(&wg)))
 	}, func() {
 
 		resp, err := suite.Get("/websocket", nil)
@@ -219,6 +231,7 @@ func (suite *WebsocketTestSuite) TestUpgradeError() {
 			suite.Equal(http.StatusText(http.StatusBadRequest), json["error"])
 		}
 	})
+	wg.Wait()
 }
 
 func (suite *WebsocketTestSuite) TestErrorHandler() {
@@ -458,6 +471,8 @@ func (suite *WebsocketTestSuite) TestRecoveryString() {
 }
 
 func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	routeURL := ""
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
@@ -474,6 +489,7 @@ func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
 			err = conn.CloseNormal()
 			suite.NotNil(err)
 			suite.Contains(err.Error(), "use of closed network connection")
+			wg.Done()
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
@@ -488,12 +504,15 @@ func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
 		_, _, err = conn.ReadMessage()
 		suite.NotNil(err)
 	})
+	wg.Wait()
 }
 
 func (suite *WebsocketTestSuite) TestCloseFrameAlreadySent() {
 	if timeout == 0 {
 		timeout = time.Duration(config.GetInt("server.timeout")) * time.Second
 	}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	routeURL := ""
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
@@ -512,6 +531,7 @@ func (suite *WebsocketTestSuite) TestCloseFrameAlreadySent() {
 			err = conn.CloseNormal()
 			suite.NotNil(err)
 			suite.Contains(err.Error(), "A close frame has been sent before the Handler returned")
+			wg.Done()
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
@@ -529,9 +549,12 @@ func (suite *WebsocketTestSuite) TestCloseFrameAlreadySent() {
 		_, _, err = conn.ReadMessage()
 		suite.NotNil(err)
 	})
+	wg.Wait()
 }
 
 func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	routeURL := ""
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
@@ -547,6 +570,7 @@ func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
 			conn.timeout = -1 * time.Second
 			err = conn.CloseNormal()
 			suite.Nil(err)
+			wg.Done()
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
@@ -558,6 +582,7 @@ func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
 		resp.Body.Close()
 		conn.Close()
 	})
+	wg.Wait()
 }
 
 func (suite *WebsocketTestSuite) TestCloseErrorLog() {

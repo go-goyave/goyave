@@ -18,26 +18,12 @@
 
 <h2 align="center">An Elegant Golang Web Framework</h2>
 
-Goyave is a progressive and accessible web application framework focused on REST APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused.
+Goyave is a progressive and accessible web application framework focused on REST APIs, aimed at making backend development easy and enjoyable. It has a philosophy of cleanliness and conciseness to make programs more elegant, easier to maintain and more focused. Goyave is an **opinionated** framework, helping your applications keeping a uniform architecture and limit redundancy. With Goyave, expect a full package with minimum setup.
 
-<table>
-    <tr>
-        <td valign="top">
-            <h3>Clean Code</h3>
-            <p>Goyave has an expressive, elegant syntax, a robust structure and conventions. Minimalist calls and reduced redundancy are among the Goyave's core principles.</p>
-        </td>
-        <td valign="top">
-            <h3>Fast Development</h3>
-            <p>Develop faster and concentrate on the business logic of your application thanks to the many helpers and built-in functions.</p>
-        </td>
-        <td valign="top">
-            <h3>Powerful functionalities</h3>
-            <p>Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, authentication, and more!</p>
-        </td>
-    </tr>
-</table>
-
-Most golang frameworks for web development don't have a strong directory structure nor conventions to make applications have a uniform architecture and limit redundancy. This makes it difficult to work with them on different projects. In companies, having a well-defined and documented architecture helps new developers integrate projects faster, and reduces the time needed for maintaining them. For open source projects, it helps newcomers understanding the project and makes it easier to contribute. With Goyave, expect a full package with minimum setup.
+- **Clean Code**: Goyave has an expressive, elegant syntax, a robust structure and conventions. Minimalist calls and reduced redundancy are among the Goyave's core principles.
+- **Fast Development**: Develop faster and concentrate on the business logic of your application thanks to the many helpers and built-in functions.
+- **Powerful functionalities**: Goyave is accessible, yet powerful. The framework includes routing, request parsing, validation, localization, testing, authentication, and more!
+- **Reliability**: Error reporting is made easy thanks to advanced error handling and panic recovery. The framework is deeply tested.
 
 ## Table of contents
 
@@ -51,11 +37,11 @@ Most golang frameworks for web development don't have a strong directory structu
 
 The Goyave framework has an extensive documentation covering in-depth subjects and teaching you how to run a project using Goyave from setup to deployment.
 
-<a href="https://system-glitch.github.io/goyave/guide/installation"><h3 align="center">Read the documentation</h3></a>
+<a href="https://goyave.dev/guide/installation"><h3 align="center">Read the documentation</h3></a>
 
 <a href="https://pkg.go.dev/github.com/System-Glitch/goyave/v3"><h3 align="center">pkg.go.dev</h3></a>
 
-<a href="https://github.com/System-Glitch/goyave-blog-example"><h3 align="center">Example project</h3></a>
+<a href="https://github.com/go-goyave/goyave-blog-example"><h3 align="center">Example project</h3></a>
 
 ## Getting started
 
@@ -96,7 +82,7 @@ abc 123
 
 ## Features tour
 
-This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v3) and the [official documentation](https://system-glitch.github.io/goyave/guide/).
+This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/github.com/System-Glitch/goyave/v3) and the [official documentation](https://goyave.dev/guide/).
 
 - [Hello world from scratch](#hello-world-from-scratch)
 - [Configuration](#configuration)
@@ -188,7 +174,16 @@ config.Has("app.name") // true
 config.Set("app.name", "my awesome app")
 ```
 
-**Learn more about configuration in the [documentation](https://system-glitch.github.io/goyave/guide/configuration.html).**
+**Using environment variables:**
+```json
+{
+  "database": {
+    "host": "${DB_HOST}"
+  }
+}
+```
+
+**Learn more about configuration in the [documentation](https://goyave.dev/guide/configuration.html).**
 
 ### Routing
 
@@ -201,7 +196,7 @@ func Register(router *goyave.Router) {
     // Register your routes here
 
     // With closure, not recommended
-    router.Get("GET", "/hello", func(response *goyave.Response, r *goyave.Request) {
+    router.Get("/hello", func(response *goyave.Response, r *goyave.Request) {
         response.String(http.StatusOK, "Hi!")
     })
 
@@ -230,7 +225,7 @@ func myHandlerFunction(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
-**Learn more about routing in the [documentation](https://system-glitch.github.io/goyave/guide/basics/routing.html).**
+**Learn more about routing in the [documentation](https://goyave.dev/guide/basics/routing.html).**
 
 ### Controller
 
@@ -239,8 +234,8 @@ Controllers are files containing a collection of Handlers related to a specific 
 A `Handler` is a `func(*goyave.Response, *goyave.Request)`. The first parameter lets you write a response, and the second contains all the information extracted from the raw incoming request.
 
 Handlers receive a `goyave.Response` and a `goyave.Request` as parameters.  
-`goyave.Request` can give you a lot of information about the incoming request, such as its headers, cookies, or body. Learn more [here](https://system-glitch.github.io/goyave/guide/basics/requests.html).  
-`goyave.Response` implements `http.ResponseWriter` and is used to write a response. If you didn't write anything before the request lifecycle ends, `204 No Content` is automatically written. Learn everything about reponses [here](https://system-glitch.github.io/goyave/guide/basics/responses.html).
+`goyave.Request` can give you a lot of information about the incoming request, such as its headers, cookies, or body. Learn more [here](https://goyave.dev/guide/basics/requests.html).  
+`goyave.Response` implements `http.ResponseWriter` and is used to write a response. If you didn't write anything before the request lifecycle ends, `204 No Content` is automatically written. Learn everything about reponses [here](https://goyave.dev/guide/basics/responses.html).
 
 Let's take a very simple CRUD as an example for a controller definition:
 **http/controller/product/product.go**:
@@ -296,7 +291,7 @@ func Destroy(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
-**Learn more about controllers in the [documentation](https://system-glitch.github.io/goyave/guide/basics/controllers.html).**
+**Learn more about controllers in the [documentation](https://goyave.dev/guide/basics/controllers.html).**
 
 ### Middleware
 
@@ -317,7 +312,7 @@ To assign a middleware to a router, use the `router.Middleware()` function. Many
 router.Middleware(middleware.MyCustomMiddleware)
 ```
 
-**Learn more about middleware in the [documentation](https://system-glitch.github.io/goyave/guide/basics/middleware.html).**
+**Learn more about middleware in the [documentation](https://goyave.dev/guide/basics/middleware.html).**
 
 
 ### Validation
@@ -352,7 +347,7 @@ router.Post("/product", product.Store).Validate(product.StoreRequest)
 ```
 
 
-**Learn more about validation in the [documentation](https://system-glitch.github.io/goyave/guide/basics/validation.html).**
+**Learn more about validation in the [documentation](https://goyave.dev/guide/basics/validation.html).**
 
 ### Database
 
@@ -360,7 +355,7 @@ Most web applications use a database. In this section, we are going to see how G
 
 Database connections are managed by the framework and are long-lived. When the server shuts down, the database connections are closed automatically. So you don't have to worry about creating, closing or refreshing database connections in your application.
 
-Very few code is required to get started with databases. There are some [configuration](https://system-glitch.github.io/goyave/guide/configuration.html#configuration-reference) options that you need to change though:
+Very few code is required to get started with databases. There are some [configuration](https://goyave.dev/guide/configuration.html#configuration-reference) options that you need to change though:
 
 - `database.connection`
 - `database.host`
@@ -402,7 +397,7 @@ type User struct {
 }
 ```
 
-**Learn more about using databases in the [documentation](https://system-glitch.github.io/goyave/guide/basics/database.html).**
+**Learn more about using databases in the [documentation](https://goyave.dev/guide/basics/database.html).**
 
 ### Localization
 
@@ -444,7 +439,7 @@ The `locale.json` file contains all language lines that are not related to valid
 }
 ```
 
-The `rules.json` file contains the validation rules messages. These messages can have **[placeholders](https://system-glitch.github.io/goyave/guide/basics/validation.html#placeholders)**, which will be automatically replaced by the validator with dynamic values. If you write custom validation rules, their messages shall be written in this file.
+The `rules.json` file contains the validation rules messages. These messages can have **[placeholders](https://goyave.dev/guide/basics/validation.html#placeholders)**, which will be automatically replaced by the validator with dynamic values. If you write custom validation rules, their messages shall be written in this file.
 
 **Example:**
 
@@ -464,7 +459,7 @@ func ControllerHandler(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
-**Learn more about localization in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/localization.html).**
+**Learn more about localization in the [documentation](https://goyave.dev/guide/advanced/localization.html).**
 
 ### Testing
 
@@ -563,7 +558,7 @@ suite.RunServer(route.Register, func() {
 
 The testing API has many more features such as record generators, factories, database helpers, a middleware tester, support for multipart and file uploads...
 
-**Learn more about testing in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/testing.html).**
+**Learn more about testing in the [documentation](https://goyave.dev/guide/advanced/testing.html).**
 
 ### Status handlers
 
@@ -589,7 +584,7 @@ Status handlers are registered in the **router**.
 router.StatusHandler(status.NotFound, 404)
 ```
 
-**Learn more about status handlers in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/status-handlers.html).**
+**Learn more about status handlers in the [documentation](https://goyave.dev/guide/advanced/status-handlers.html).**
 
 
 ### CORS
@@ -610,7 +605,7 @@ options.AllowedOrigins = []string{"https://google.com", "https://images.google.c
 router.CORS(options)
 ```
 
-**Learn more about CORS in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/cors.html).**
+**Learn more about CORS in the [documentation](https://goyave.dev/guide/advanced/cors.html).**
 
 ### Authentication
 
@@ -647,7 +642,7 @@ func Hello(response *goyave.Response, request *goyave.Request) {
 }
 ```
 
-**Learn more about authentication in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/authentication.html).**
+**Learn more about authentication in the [documentation](https://goyave.dev/guide/advanced/authentication.html).**
 
 ### Rate limiting
 
@@ -675,11 +670,11 @@ ratelimiterMiddleware := ratelimiter.New(func(request *goyave.Request) ratelimit
 router.Middleware(ratelimiterMiddleware)
 ```
 
-**Learn more about rate limiting in the [documentation](https://system-glitch.github.io/goyave/guide/advanced/rate-limiting.html).**
+**Learn more about rate limiting in the [documentation](https://goyave.dev/guide/advanced/rate-limiting.html).**
 
 ## Contributing
 
-Thank you for considering contributing to the Goyave framework! You can find the contribution guide in the [documentation](https://system-glitch.github.io/goyave/guide/contribution-guide.html).
+Thank you for considering contributing to the Goyave framework! You can find the contribution guide in the [documentation](https://goyave.dev/guide/contribution-guide.html).
 
 I have many ideas for the future of Goyave. I would be infinitely grateful to whoever want to support me and let me continue working on Goyave and making it better and better.
 

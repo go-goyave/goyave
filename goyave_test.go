@@ -225,6 +225,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(404, resp.StatusCode)
+			resp.Body.Close()
 		}
 
 		err = ioutil.WriteFile("resources/template/test-static-serve.txt", []byte("test-content"), 0644)
@@ -344,6 +345,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(503, resp.StatusCode)
+			resp.Body.Close()
 		}
 
 		DisableMaintenance()
@@ -382,6 +384,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(503, resp.StatusCode)
+			resp.Body.Close()
 		}
 
 		DisableMaintenance()

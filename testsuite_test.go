@@ -153,6 +153,7 @@ func (suite *CustomTestSuite) TestMiddleware() {
 		suite.Equal("application/json", request.Header().Get("Content-Type"))
 	})
 
+	result.Body.Close()
 	suite.Equal(418, result.StatusCode)
 }
 
@@ -218,7 +219,9 @@ func (suite *CustomTestSuite) TestRequests() {
 		resp, err = suite.Get("invalid", nil)
 		suite.NotNil(err)
 		suite.Nil(resp)
-
+		if resp != nil {
+			resp.Body.Close()
+		}
 	})
 }
 

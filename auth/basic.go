@@ -15,7 +15,13 @@ import (
 
 // BasicAuthenticator implementation of Authenticator with the Basic
 // authentication method.
-type BasicAuthenticator struct{}
+type BasicAuthenticator struct {
+
+	// Optional defines if the authenticator allows requests that
+	// don't provide credentials. Handlers should therefore check
+	// if request.User is not nil before accessing it.
+	Optional bool
+}
 
 var _ Authenticator = (*BasicAuthenticator)(nil) // implements Authenticator
 
@@ -30,6 +36,10 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user interfac
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
+
+		if a.Optional {
+			return nil
+		}
 		return fmt.Errorf(lang.Get(request.Lang, "auth.no-credentials-provided"))
 	}
 
@@ -73,7 +83,9 @@ type BasicUser struct {
 	Name string
 }
 
-type basicUserAuthenticator struct{}
+type basicUserAuthenticator struct {
+	Optional bool
+}
 
 var _ Authenticator = (*basicUserAuthenticator)(nil) // implements Authenticator
 

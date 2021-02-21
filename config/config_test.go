@@ -1086,6 +1086,37 @@ func (suite *ConfigTestSuite) TestMakeEntryFromValue() {
 	suite.Equal([]interface{}{}, entry.AuthorizedValues)
 }
 
+func (suite *ConfigTestSuite) TestLoadJSON() {
+	json := `
+	{
+		"app": {
+			"name": "loaded from json"
+		}
+	}`
+
+	suite.Nil(LoadJSON(json))
+	suite.Equal("loaded from json", Get("app.name"))
+
+	Clear()
+
+	json = `
+	{
+		"app": {
+			"name": 4
+		}
+	}`
+
+	err := LoadJSON(json)
+	suite.NotNil(err)
+	suite.Contains(err.Error(), "Invalid config")
+
+	json = `{`
+
+	err = LoadJSON(json)
+	suite.NotNil(err)
+	suite.Contains(err.Error(), "EOF")
+}
+
 func (suite *ConfigTestSuite) TearDownAllSuite() {
 	config = map[string]interface{}{}
 	os.Setenv("GOYAVE_ENV", suite.previousEnv)

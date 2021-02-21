@@ -117,6 +117,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 
 	suite.True(len(body) > 0)
 
@@ -131,6 +132,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 
 	suite.Equal(0, len(body))
 
@@ -146,6 +148,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 
 	suite.True(len(body) > 0)
 }
@@ -171,6 +174,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(200, result.StatusCode)
 	suite.Equal("Hello world", string(body))
 
@@ -191,6 +195,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(204, result.StatusCode)
 	suite.Equal(0, len(body))
 	suite.True(suite.middlewareExecuted)
@@ -212,6 +217,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(404, result.StatusCode)
 	suite.Equal("{\"error\":\""+http.StatusText(404)+"\"}\n", string(body))
 }
@@ -257,6 +263,7 @@ func (suite *RouterTestSuite) TestPanicStatusHandler() {
 	PanicStatusHandler(response, request)
 	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(500, result.StatusCode)
+	result.Body.Close()
 }
 
 func (suite *RouterTestSuite) TestErrorStatusHandler() {
@@ -271,6 +278,7 @@ func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal("{\"error\":\""+http.StatusText(404)+"\"}\n", string(body))
 }
 
@@ -297,6 +305,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(500, result.StatusCode)
 	suite.Equal("An unexpected panic occurred.", string(body))
 
@@ -311,6 +320,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(500, result.StatusCode)
 	suite.Equal("An unexpected panic occurred.", string(body))
 
@@ -334,6 +344,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(400, result.StatusCode)
 	suite.Equal(http.StatusText(400), string(body))
 
@@ -353,6 +364,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(404, result.StatusCode)
 	suite.Equal(http.StatusText(404), string(body))
 }
@@ -366,12 +378,14 @@ func (suite *RouterTestSuite) TestRouteNoMatch() {
 	router.requestHandler(match, writer, rawRequest)
 	result := writer.Result()
 	suite.Equal(http.StatusNotFound, result.StatusCode)
+	result.Body.Close()
 
 	writer = httptest.NewRecorder()
 	match = &routeMatch{route: methodNotAllowedRoute}
 	router.requestHandler(match, writer, rawRequest)
 	result = writer.Result()
 	suite.Equal(http.StatusMethodNotAllowed, result.StatusCode)
+	result.Body.Close()
 }
 
 func (suite *RouterTestSuite) TestNamedRoutes() {
@@ -445,6 +459,7 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal(500, result.StatusCode)
 	suite.Equal("{\"error\":\"Internal Server Error\"}\n", string(body))
 
@@ -601,6 +616,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	result := recorder.Result()
 	body, err := ioutil.ReadAll(result.Body)
 	suite.Nil(err)
+	result.Body.Close()
 
 	suite.Equal(http.StatusPermanentRedirect, result.StatusCode)
 	suite.Equal("<a href=\"https://127.0.0.1:1236/test?param=1\">Permanent Redirect</a>.\n\n", string(body))
@@ -614,6 +630,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	result = recorder.Result()
 	body, err = ioutil.ReadAll(result.Body)
 	suite.Nil(err)
+	result.Body.Close()
 
 	suite.Equal(http.StatusPermanentRedirect, result.StatusCode)
 	suite.Equal("<a href=\"http://127.0.0.1:1235/test?param=1\">Permanent Redirect</a>.\n\n", string(body))
@@ -624,6 +641,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	result = recorder.Result()
 	body, err = ioutil.ReadAll(result.Body)
 	suite.Nil(err)
+	result.Body.Close()
 
 	suite.Equal(http.StatusNotFound, result.StatusCode)
 	suite.Equal("{\"error\":\"Not Found\"}\n", string(body))

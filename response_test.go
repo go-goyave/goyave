@@ -44,6 +44,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	suite.Equal(200, resp.StatusCode) // Not written yet
 	suite.True(response.empty)
 	suite.Equal(403, response.GetStatus())
+	resp.Body.Close()
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
@@ -53,6 +54,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	suite.Equal(403, resp.StatusCode)
 	suite.False(response.empty)
 	suite.Equal(403, response.GetStatus())
+	resp.Body.Close()
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
@@ -63,6 +65,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	suite.Equal(200, resp.StatusCode) // Not written yet
 	suite.True(response.empty)
 	suite.Equal(403, response.GetStatus())
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseHeader() {
@@ -76,6 +79,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.True(response.empty)
 	suite.Equal(200, response.status)
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
@@ -175,6 +179,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
+	resp.Body.Close()
 
 	// Test no Content-Type override
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
@@ -183,6 +188,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	response.File("config/config.test.json")
 	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal("text/plain", resp.Header.Get("Content-Type"))
+	resp.Body.Close()
 
 	// File doesn't exist
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
@@ -195,6 +201,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.False(response.wroteHeader)
 	suite.Empty(resp.Header.Get("Content-Type"))
 	suite.Empty(resp.Header.Get("Content-Disposition"))
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseJSON() {
@@ -233,6 +240,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
+	resp.Body.Close()
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
@@ -245,6 +253,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.False(response.wroteHeader)
 	suite.Empty(resp.Header.Get("Content-Type"))
 	suite.Empty(resp.Header.Get("Content-Disposition"))
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseRedirect() {
@@ -292,6 +301,7 @@ func (suite *ResponseTestSuite) TestResponseCookie() {
 	suite.Equal(1, len(cookies))
 	suite.Equal("cookie-name", cookies[0].Name)
 	suite.Equal("test", cookies[0].Value)
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseWrite() {

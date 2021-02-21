@@ -91,6 +91,11 @@ func (suite *JWTAuthenticatorTestSuite) TestAuthenticate() {
 	suite.Equal("Your authentication token is expired.", tokenAuthenticator.Authenticate(suite.createRequest(token), user).Error())
 }
 
+func (suite *JWTAuthenticatorTestSuite) TestOptional() {
+	tokenAuthenticator := &JWTAuthenticator{Optional: true}
+	suite.Nil(tokenAuthenticator.Authenticate(suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil)), nil))
+}
+
 func (suite *JWTAuthenticatorTestSuite) TearDownTest() {
 	suite.ClearDatabase()
 }

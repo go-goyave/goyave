@@ -70,6 +70,7 @@ func (suite *LogMiddlewareTestSuite) TestCommonWrite() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal("message", string(body))
 
 	suite.Equal("192.0.2.1 - - ["+now.Format(TimestampFormat)+"] \"GET \"/log\" HTTP/1.1\" 200 7\n", buffer.String())
@@ -100,6 +101,7 @@ func (suite *LogMiddlewareTestSuite) TestCombinedWrite() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal("message", string(body))
 
 	suite.Equal("192.0.2.1 - - ["+now.Format(TimestampFormat)+"] \"GET \"/log\" HTTP/1.1\" 200 7 \""+referrer+"\" \""+userAgent+"\"\n", buffer.String())

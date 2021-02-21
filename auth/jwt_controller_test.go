@@ -67,6 +67,7 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 		suite.True(ok)
 		suite.NotEmpty(token)
 	}
+	result.Body.Close()
 
 	request.Data = map[string]interface{}{
 		"username": "johndoe@example.org",
@@ -88,6 +89,7 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 		suite.True(ok)
 		suite.Equal("These credentials don't match our records.", errMessage)
 	}
+	result.Body.Close()
 }
 
 func (suite *JWTControllerTestSuite) TestLoginWithFieldOverride() {
@@ -107,6 +109,7 @@ func (suite *JWTControllerTestSuite) TestLoginWithFieldOverride() {
 	controller.Login(response, request)
 	result := writer.Result()
 	suite.Equal(http.StatusOK, result.StatusCode)
+	result.Body.Close()
 }
 
 func (suite *JWTControllerTestSuite) TestValidation() {
@@ -161,6 +164,7 @@ func (suite *JWTControllerTestSuite) TestRoutes() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
+			resp.Body.Close()
 		}
 	})
 }

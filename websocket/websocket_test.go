@@ -179,11 +179,12 @@ func (suite *WebsocketTestSuite) TestUpgrade() {
 		route := r.Get("/websocket", upgrader.Handler(suite.echoWSHandler))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 
 		message := []byte("hello world")
@@ -253,11 +254,12 @@ func (suite *WebsocketTestSuite) TestGracefulClose() {
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 
 		messageType, _, err := conn.ReadMessage()
@@ -305,11 +307,12 @@ func (suite *WebsocketTestSuite) TestGracefulCloseOnErrorDebug() {
 }
 
 func (suite *WebsocketTestSuite) checkGracefulCloseResponse(routeURL, expectedMessage string) {
-	conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+	conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 	if err != nil {
 		suite.Error(err)
 		return
 	}
+	resp.Body.Close()
 	defer conn.Close()
 
 	messageType, _, err := conn.ReadMessage()
@@ -347,6 +350,7 @@ func (suite *WebsocketTestSuite) TestUpgradeHeaders() {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 
 		suite.Equal(http.StatusSwitchingProtocols, resp.StatusCode)
@@ -368,11 +372,12 @@ func (suite *WebsocketTestSuite) TestCloseHandshakeTimeout() {
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 
 		time.Sleep(1500 * time.Millisecond)
@@ -472,11 +477,12 @@ func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 
 		_, _, err = conn.ReadMessage()
@@ -509,11 +515,12 @@ func (suite *WebsocketTestSuite) TestCloseFrameAlreadySent() {
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 
 		_, _, err = conn.ReadMessage()
@@ -543,11 +550,12 @@ func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		conn.Close()
 	})
 }
@@ -562,11 +570,12 @@ func (suite *WebsocketTestSuite) TestCloseErrorLog() {
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 	})
 }
@@ -581,11 +590,12 @@ func (suite *WebsocketTestSuite) TestCloseNormalErrorLog() {
 		}))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)
 			return
 		}
+		resp.Body.Close()
 		defer conn.Close()
 	})
 }

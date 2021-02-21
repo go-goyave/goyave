@@ -140,8 +140,6 @@ func (c *Conn) GetCloseHandshakeTimeout() time.Duration {
 	return c.timeout
 }
 
-// TODO handle pings and pongs (should already be handled by the default ping and pong handlers)
-
 func (c *Conn) closeHandler(code int, text string) error {
 	// No need to lock receivedClose because there can be at most one
 	// open reader on a connection.

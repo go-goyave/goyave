@@ -179,7 +179,6 @@ func (suite *WebsocketTestSuite) TestUpgrade() {
 		route := r.Get("/websocket", upgrader.Handler(suite.echoWSHandler))
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
-		// TODO document testing websocket
 		conn, _, err := ws.DefaultDialer.Dial(routeURL, nil)
 		if err != nil {
 			suite.Error(err)

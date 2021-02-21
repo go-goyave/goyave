@@ -253,7 +253,7 @@ type Upgrader struct {
 	Headers func(request *goyave.Request) http.Header
 
 	// Settings the parameters for upgrading the connection. "Error" and "CheckOrigin" are
-	// ignored: this the Goyave upgrader's "ErrorHandler" and "CheckOrigin".
+	// ignored: use the Goyave upgrader's "UpgradeErrorHandler" and "CheckOrigin".
 	Settings ws.Upgrader
 }
 

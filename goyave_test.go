@@ -58,6 +58,8 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	config.Set("server.httpsPort", 443.0)
 	suite.Equal("http://test.system-glitch.me", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me", getAddress("https"))
+
+	suite.Equal(getAddress("http"), BaseURL())
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {

@@ -285,6 +285,11 @@ func getAddress(protocol string) string {
 	return protocol + "://" + host
 }
 
+// BaseURL returns the base URL of your application.
+func BaseURL() string {
+	return getAddress(config.GetString("server.protocol"))
+}
+
 func startTLSRedirectServer() {
 	httpsAddress := getAddress("https")
 	timeout := time.Duration(config.GetInt("server.timeout")) * time.Second

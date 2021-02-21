@@ -103,7 +103,6 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 		case <-c:
 			suite.False(IsReady())
 			suite.Nil(server)
-			suite.Nil(hookChannel)
 			ClearStartupHooks()
 		}
 		<-c2
@@ -210,7 +209,6 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	case <-c:
 		suite.False(IsReady())
 		suite.Nil(redirectServer)
-		suite.Nil(stopChannel)
 	}
 }
 

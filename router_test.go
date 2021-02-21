@@ -808,6 +808,24 @@ func (suite *RouterTestSuite) TestMethodRouteRegistration() {
 	suite.Equal([]string{"OPTIONS"}, route.methods)
 }
 
+func (suite *RouterTestSuite) TestFinalizeHijacked() {
+	recorder := &hijackableRecorder{httptest.NewRecorder()}
+	req := httptest.NewRequest(http.MethodGet, "/hijack", nil)
+	request := suite.CreateTestRequest(req)
+	resp := newResponse(recorder, req)
+
+	c, _, err := resp.Hijack()
+	if err != nil {
+		suite.Fail(err.Error())
+	}
+	defer c.Close()
+
+	router := newRouter()
+	router.finalize(resp, request)
+
+	suite.False(resp.wroteHeader)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	RunTest(t, new(RouterTestSuite))
 }

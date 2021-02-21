@@ -58,6 +58,8 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	config.Set("server.httpsPort", 443.0)
 	suite.Equal("http://test.system-glitch.me", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me", getAddress("https"))
+
+	suite.Equal(getAddress("http"), BaseURL())
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
@@ -101,7 +103,6 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 		case <-c:
 			suite.False(IsReady())
 			suite.Nil(server)
-			suite.Nil(hookChannel)
 			ClearStartupHooks()
 		}
 		<-c2
@@ -208,7 +209,6 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	case <-c:
 		suite.False(IsReady())
 		suite.Nil(redirectServer)
-		suite.Nil(stopChannel)
 	}
 }
 
@@ -453,6 +453,20 @@ func (suite *GoyaveTestSuite) TestConfigError() {
 			suite.Equal("Invalid config:\n\t- \"app.environment\" type must be string", e.Error())
 		}
 	}
+}
+
+func (suite *GoyaveTestSuite) TestShutdownHook() {
+	executed := false
+	RegisterShutdownHook(func() {
+		executed = true
+	})
+	suite.Len(shutdownHooks, 1)
+
+	suite.RunServer(func(r *Router) {}, func() {})
+	suite.True(executed)
+
+	ClearShutdownHooks()
+	suite.Len(shutdownHooks, 0)
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

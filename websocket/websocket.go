@@ -190,50 +190,54 @@ func (u *Upgrader) Handler(handler Handler) goyave.Handler {
 		}
 		response.Status(http.StatusSwitchingProtocols)
 
-		conn := newConn(c)
-		panicked := true
-		err = nil
-		defer func() { // Panic recovery
-			if panicReason := recover(); panicReason != nil || panicked {
-				stack := ""
-				if config.GetBool("app.debug") {
-					stack = string(debug.Stack())
-				}
-
-				if e, ok := panicReason.(error); ok {
-					err = fmt.Errorf("%w", e)
-				} else {
-					err = fmt.Errorf("%v", panicReason)
-				}
-
-				err = &PanicError{
-					Reason:     err,
-					Stacktrace: stack,
-				}
-			}
-
-			if err != nil {
-				if u.ErrorHandler != nil {
-					u.ErrorHandler(request, err)
-				} else {
-					goyave.ErrLogger.Println(err)
-					if e, ok := err.(*PanicError); ok && e.Stacktrace != "" {
-						goyave.ErrLogger.Println(e.Stacktrace)
-					}
-				}
-				if closeError := conn.CloseWithError(err); closeError != nil {
-					goyave.ErrLogger.Println(closeError)
-				}
-			} else {
-				if closeError := conn.CloseNormal(); closeError != nil {
-					goyave.ErrLogger.Println(closeError)
-				}
-			}
-		}()
-
-		err = handler(conn, request)
-		panicked = false
+		go u.serve(c, request, handler)
 	}
+}
+
+func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler Handler) {
+	conn := newConn(c)
+	panicked := true
+	var err error
+	defer func() { // Panic recovery
+		if panicReason := recover(); panicReason != nil || panicked {
+			stack := ""
+			if config.GetBool("app.debug") {
+				stack = string(debug.Stack())
+			}
+
+			if e, ok := panicReason.(error); ok {
+				err = fmt.Errorf("%w", e)
+			} else {
+				err = fmt.Errorf("%v", panicReason)
+			}
+
+			err = &PanicError{
+				Reason:     err,
+				Stacktrace: stack,
+			}
+		}
+
+		if err != nil {
+			if u.ErrorHandler != nil {
+				u.ErrorHandler(request, err)
+			} else {
+				goyave.ErrLogger.Println(err)
+				if e, ok := err.(*PanicError); ok && e.Stacktrace != "" {
+					goyave.ErrLogger.Println(e.Stacktrace)
+				}
+			}
+			if closeError := conn.CloseWithError(err); closeError != nil {
+				goyave.ErrLogger.Println(closeError)
+			}
+		} else {
+			if closeError := conn.CloseNormal(); closeError != nil {
+				goyave.ErrLogger.Println(closeError)
+			}
+		}
+	}()
+
+	err = handler(conn, request)
+	panicked = false
 }
 
 type adapter struct {

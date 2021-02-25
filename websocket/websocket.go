@@ -55,20 +55,21 @@ func (e *PanicError) Unwrap() error {
 // Handler is a handler for websocket connections.
 // The request parameter contains the original upgraded HTTP request.
 //
-// To keep connection alive, these handlers should run an infinite for loop
-// and check for close errors. When the websocket handler returns, the closing
-// handshake is performed and the connection is closed.
-// Therefore, if the websocket handler is using goroutines, it should use a
-// sync.WaitGroup to wait for them to terminate before returning.
+// To keep the connection alive, these handlers should run an infinite for loop that
+// can return on error or exit in a predictable manner.
+//
+// They also can start goroutines for reads and writes, but shouldn't return before
+// both of them do. The Handler is responsible of synchronizing the goroutines it started,
+// and ensure no reader nor writer are still active when it returns.
+//
+// When the websocket handler returns, the closing handshake is performed (if not already done
+// using "conn.Close") and the connection is closed.
 //
 // If the websocket handler returns nil, it means that everything went fine and the
 // connection can be closed normally. On the other hand, the websocket handler
-// can return an error, such as a read error, to indicate that the connection should not
+// can return an error, such as a write error, to indicate that the connection should not
 // be closed normally. The behavior used when this happens depend on the implementation
 // of the HTTP handler that upgraded the connection.
-//
-// Don't send closing frames in websocket handlers, that would be redundant with the automatic
-// close handshake performed when the websocket handler returns.
 //
 // The following websocket Handler is an example of an "echo" feature using websockets:
 //
@@ -76,10 +77,7 @@ func (e *PanicError) Unwrap() error {
 //  	for {
 //  		mt, message, err := c.ReadMessage()
 //  		if err != nil {
-//  			if websocket.IsCloseError(err) {
-//  				return nil
-//  			}
-//  			return fmt.Errorf("read: %v", err)
+//  			return err
 //  		}
 //  		goyave.Logger.Printf("recv: %s", message)
 //  		err = c.WriteMessage(mt, message)
@@ -165,17 +163,23 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 // HTTP response's status is set to "101 Switching Protocols".
 //
 // The connection is closed automatically after the websocket Handler returns, using the
-// closing handshake defined by RFC 6455 Section 1.4 if possible. If the websocket Handler
-// returns an error, the Upgrader's error handler will be executed and the close frame
-// sent to the client will have status code 1011 (internal server error) and
-// "Internal server error" as message. If debug is enabled, the message will be set to the
-// one of the error returned by the websocket Handler.
-// Otherwise the close frame will have status code 1000 (normal closure) and
-// "Server closed connection" as a message.
+// closing handshake defined by RFC 6455 Section 1.4 if possible and if not already
+// performed using "conn.Close".
+//
+// If the websocket Handler returns an error that is not a CloseError, the Upgrader's error
+// handler will be executed and the close frame sent to the client will have status code
+// 1011 (internal server error) and "Internal server error" as message.
+// If debug is enabled, the message will be set to the one of the error returned by the
+// websocket Handler. Otherwise the close frame will have status code 1000 (normal closure)
+// and "Server closed connection" as a message.
 //
 // This HTTP handler features a recovery mechanism. If the websocket Handler panics,
 // the connection will be gracefully closed just like if the websocket Handler returned
 // an error without panicking.
+//
+// This HTTP Handler returns once the connection has been successfully upgraded. That means
+// that, for example, logging middleware will log the request right away instead of waiting
+// for the websocket connection to be closed.
 func (u *Upgrader) Handler(handler Handler) goyave.Handler {
 	setTimeout()
 	return func(response *goyave.Response, request *goyave.Request) {
@@ -217,6 +221,12 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler Handler) {
 			}
 		}
 
+		if IsCloseError(err) {
+			if closeError := conn.CloseNormal(); closeError != nil {
+				goyave.ErrLogger.Println(closeError) // TODO not covered by tests
+			}
+			return
+		}
 		if err != nil {
 			if u.ErrorHandler != nil {
 				u.ErrorHandler(request, err)
@@ -230,7 +240,7 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler Handler) {
 				goyave.ErrLogger.Println(closeError)
 			}
 		} else {
-			if closeError := conn.CloseNormal(); closeError != nil {
+			if closeError := conn.internalClose(ws.CloseNormalClosure, NormalClosureMessage); closeError != nil {
 				goyave.ErrLogger.Println(closeError)
 			}
 		}

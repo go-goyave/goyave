@@ -15,6 +15,8 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
+// TODO update websocket tests
+
 type WebsocketTestSuite struct {
 	goyave.TestSuite
 	previousTimeout int
@@ -37,16 +39,16 @@ func (suite *WebsocketTestSuite) echoWSHandler(wg *sync.WaitGroup) Handler {
 			mt, message, err := c.ReadMessage()
 			if err != nil {
 				if IsCloseError(err) {
-					return nil
+					return err
 				}
-				err := fmt.Errorf("read: %v", err)
+				err := fmt.Errorf("read: %w", err)
 				suite.Error(err)
 				return err
 			}
 			goyave.Logger.Printf("recv: %s", message)
 			err = c.WriteMessage(mt, message)
 			if err != nil {
-				err := fmt.Errorf("write: %v", err)
+				err := fmt.Errorf("write: %w", err)
 				suite.Error(err)
 				return err
 			}
@@ -403,16 +405,6 @@ func (suite *WebsocketTestSuite) TestCloseHandshakeTimeout() {
 
 func (suite *WebsocketTestSuite) TestCloseHandler() {
 	c := newConn(&ws.Conn{})
-	c.receivedClose = true
-
-	suite.Nil(c.closeHandler(ws.CloseNormalClosure, ""))
-	select {
-	case <-c.waitClose:
-		suite.Fail("Expected waitClose to be empty, but read something")
-	default:
-	}
-
-	c = newConn(&ws.Conn{})
 
 	suite.Nil(c.closeHandler(ws.CloseNormalClosure, ""))
 	select {
@@ -477,8 +469,10 @@ func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
 		route := r.Get("/websocket", func(response *goyave.Response, request *goyave.Request) {
+			defer wg.Done()
 			c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
 			if err != nil {
+				suite.Error(err)
 				return
 			}
 			response.Status(http.StatusSwitchingProtocols)
@@ -489,7 +483,6 @@ func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
 			err = conn.CloseNormal()
 			suite.NotNil(err)
 			suite.Contains(err.Error(), "use of closed network connection")
-			wg.Done()
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {
@@ -500,51 +493,6 @@ func (suite *WebsocketTestSuite) TestCloseConnectionClosed() {
 		}
 		resp.Body.Close()
 		defer conn.Close()
-
-		_, _, err = conn.ReadMessage()
-		suite.NotNil(err)
-	})
-	wg.Wait()
-}
-
-func (suite *WebsocketTestSuite) TestCloseFrameAlreadySent() {
-	if timeout == 0 {
-		timeout = time.Duration(config.GetInt("server.timeout")) * time.Second
-	}
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	routeURL := ""
-	suite.RunServer(func(r *goyave.Router) {
-		upgrader := Upgrader{}
-		route := r.Get("/websocket", func(response *goyave.Response, request *goyave.Request) {
-			c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
-			if err != nil {
-				return
-			}
-			response.Status(http.StatusSwitchingProtocols)
-
-			conn := newConn(c)
-
-			m := ws.FormatCloseMessage(ws.CloseNormalClosure, "Connection closed by server")
-			suite.Nil(conn.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second)))
-
-			err = conn.CloseNormal()
-			suite.NotNil(err)
-			suite.Contains(err.Error(), "A close frame has been sent before the Handler returned")
-			wg.Done()
-		})
-		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
-	}, func() {
-		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if err != nil {
-			suite.Error(err)
-			return
-		}
-		resp.Body.Close()
-		defer conn.Close()
-
-		_, _, err = conn.ReadMessage()
-		suite.NotNil(err)
 
 		_, _, err = conn.ReadMessage()
 		suite.NotNil(err)
@@ -559,8 +507,10 @@ func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
 		route := r.Get("/websocket", func(response *goyave.Response, request *goyave.Request) {
+			defer wg.Done()
 			c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
 			if err != nil {
+				suite.Error(err)
 				return
 			}
 			response.Status(http.StatusSwitchingProtocols)
@@ -570,7 +520,6 @@ func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
 			conn.timeout = -1 * time.Second
 			err = conn.CloseNormal()
 			suite.Nil(err)
-			wg.Done()
 		})
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
 	}, func() {

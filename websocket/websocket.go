@@ -63,7 +63,7 @@ func (e *PanicError) Unwrap() error {
 // and ensure no reader nor writer are still active when it returns.
 //
 // When the websocket handler returns, the closing handshake is performed (if not already done
-// using "conn.Close") and the connection is closed.
+// using "conn.Close()") and the connection is closed.
 //
 // If the websocket handler returns nil, it means that everything went fine and the
 // connection can be closed normally. On the other hand, the websocket handler
@@ -73,7 +73,7 @@ func (e *PanicError) Unwrap() error {
 //
 // The following websocket Handler is an example of an "echo" feature using websockets:
 //
-//  func(c *websocket.Conn, request *goyave.Request) error {
+//  func Echo(c *websocket.Conn, request *goyave.Request) error {
 //  	for {
 //  		mt, message, err := c.ReadMessage()
 //  		if err != nil {
@@ -82,7 +82,7 @@ func (e *PanicError) Unwrap() error {
 //  		goyave.Logger.Printf("recv: %s", message)
 //  		err = c.WriteMessage(mt, message)
 //  		if err != nil {
-//  			return fmt.Errorf("write: %v", err)
+//  			return fmt.Errorf("write: %w", err)
 //  		}
 //  	}
 //  }
@@ -164,7 +164,7 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 //
 // The connection is closed automatically after the websocket Handler returns, using the
 // closing handshake defined by RFC 6455 Section 1.4 if possible and if not already
-// performed using "conn.Close".
+// performed using "conn.Close()".
 //
 // If the websocket Handler returns an error that is not a CloseError, the Upgrader's error
 // handler will be executed and the close frame sent to the client will have status code

@@ -15,8 +15,6 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-// TODO update websocket tests
-
 type WebsocketTestSuite struct {
 	goyave.TestSuite
 	previousTimeout int

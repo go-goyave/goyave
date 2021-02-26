@@ -92,14 +92,11 @@ func (c *Conn) Close(code int, message string) error {
 	c.closeOnce.Do(func() {
 		m := ws.FormatCloseMessage(code, message)
 		writeErr := c.WriteControl(ws.CloseMessage, m, time.Now().Add(c.timeout))
-		if writeErr != nil {
-			if !errors.Is(writeErr, ws.ErrCloseSent) {
-				if strings.Contains(writeErr.Error(), "use of closed network connection") {
-					err = writeErr
-				}
-				return
+		if writeErr != nil && !errors.Is(writeErr, ws.ErrCloseSent) {
+			if strings.Contains(writeErr.Error(), "use of closed network connection") {
+				err = writeErr
 			}
-			err = writeErr // TODO not covered by tests
+			return
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), c.timeout)

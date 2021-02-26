@@ -1,7 +1,6 @@
 package websocket
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -22,13 +21,7 @@ const (
 	maxCloseMessageLength = 123
 )
 
-var (
-	// ErrCloseTimeout returned during the close handshake if the client took
-	// too long to respond with
-	ErrCloseTimeout = errors.New("websocket close handshake timed out")
-
-	timeout time.Duration
-)
+var timeout time.Duration
 
 func setTimeout() {
 	if timeout == 0 {
@@ -222,9 +215,7 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler Handler) {
 		}
 
 		if IsCloseError(err) {
-			if closeError := conn.CloseNormal(); closeError != nil {
-				goyave.ErrLogger.Println(closeError) // TODO not covered by tests
-			}
+			conn.CloseNormal()
 			return
 		}
 		if err != nil {
@@ -236,13 +227,9 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler Handler) {
 					goyave.ErrLogger.Println(e.Stacktrace)
 				}
 			}
-			if closeError := conn.CloseWithError(err); closeError != nil {
-				goyave.ErrLogger.Println(closeError)
-			}
+			conn.CloseWithError(err)
 		} else {
-			if closeError := conn.internalClose(ws.CloseNormalClosure, NormalClosureMessage); closeError != nil {
-				goyave.ErrLogger.Println(closeError)
-			}
+			conn.internalClose(ws.CloseNormalClosure, NormalClosureMessage)
 		}
 	}()
 

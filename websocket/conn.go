@@ -67,12 +67,10 @@ func (c *Conn) CloseNormal() error {
 // message "Internal server error". If debug is enabled,
 // the message is set to the given error's message.
 //
-// This function expects another goroutine to be reading the connection,
+// This function starts another goroutine to read the connection,
 // expecting the close frame in response. This waiting can time out. If so,
-// Close will just close the connection.
-//
-// Calling this function multiple times is safe and only the first call will
-// write the close frame to the connection.
+// Close will just close the connection. Therefore, it is not safe to call
+// this function if there is already an active reader.
 func (c *Conn) CloseWithError(err error) error {
 	message := "Internal server error"
 	if config.GetBool("app.debug") {

@@ -41,14 +41,13 @@ func (suite *WebsocketTestSuite) echoWSHandler(wg *sync.WaitGroup) Handler {
 				if IsCloseError(err) {
 					return err
 				}
-				err := fmt.Errorf("read: %w", err)
+				err = fmt.Errorf("read: %w", err)
 				suite.Error(err)
 				return err
 			}
-			goyave.Logger.Printf("recv: %s", message)
 			err = c.WriteMessage(mt, message)
 			if err != nil {
-				err := fmt.Errorf("write: %w", err)
+				err = fmt.Errorf("write: %w", err)
 				suite.Error(err)
 				return err
 			}
@@ -213,11 +212,9 @@ func (suite *WebsocketTestSuite) TestUpgrade() {
 }
 
 func (suite *WebsocketTestSuite) TestUpgradeError() {
-	wg := sync.WaitGroup{}
-	// Don't add to wait group since connection will not be upgraded
 	suite.RunServer(func(r *goyave.Router) {
 		upgrader := Upgrader{}
-		r.Get("/websocket", upgrader.Handler(suite.echoWSHandler(&wg)))
+		r.Get("/websocket", upgrader.Handler(suite.echoWSHandler(nil)))
 	}, func() {
 
 		resp, err := suite.Get("/websocket", nil)
@@ -233,7 +230,40 @@ func (suite *WebsocketTestSuite) TestUpgradeError() {
 			suite.Equal(http.StatusText(http.StatusBadRequest), json["error"])
 		}
 	})
-	wg.Wait()
+}
+
+func (suite *WebsocketTestSuite) TestUpgradeHeaders() {
+	routeURL := ""
+	suite.RunServer(func(r *goyave.Router) {
+		upgrader := Upgrader{
+			Headers: func(request *goyave.Request) http.Header {
+				headers := http.Header{}
+				headers.Set("X-Test-Header", "value")
+				return headers
+			},
+		}
+		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
+			return nil
+		}))
+		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
+
+	}, func() {
+		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
+		if err != nil {
+			suite.Error(err)
+			return
+		}
+		resp.Body.Close()
+		defer conn.Close()
+
+		suite.Equal(http.StatusSwitchingProtocols, resp.StatusCode)
+		suite.Equal("value", resp.Header.Get("X-Test-Header"))
+
+		_, _, err = conn.ReadMessage()
+		suite.NotNil(err)
+		_, ok := err.(*ws.CloseError)
+		suite.True(ok)
+	})
 }
 
 func (suite *WebsocketTestSuite) TestErrorHandler() {
@@ -342,40 +372,6 @@ func (suite *WebsocketTestSuite) checkGracefulCloseResponse(routeURL, expectedMe
 
 	// advanceFrame returns noFrame (-1) when a close frame is received
 	suite.Equal(-1, messageType)
-}
-
-func (suite *WebsocketTestSuite) TestUpgradeHeaders() {
-	routeURL := ""
-	suite.RunServer(func(r *goyave.Router) {
-		upgrader := Upgrader{
-			Headers: func(request *goyave.Request) http.Header {
-				headers := http.Header{}
-				headers.Set("X-Test-Header", "value")
-				return headers
-			},
-		}
-		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
-			return nil
-		}))
-		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
-
-	}, func() {
-		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if err != nil {
-			suite.Error(err)
-			return
-		}
-		resp.Body.Close()
-		defer conn.Close()
-
-		suite.Equal(http.StatusSwitchingProtocols, resp.StatusCode)
-		suite.Equal("value", resp.Header.Get("X-Test-Header"))
-
-		_, _, err = conn.ReadMessage()
-		suite.NotNil(err)
-		_, ok := err.(*ws.CloseError)
-		suite.True(ok)
-	})
 }
 
 func (suite *WebsocketTestSuite) TestCloseHandshakeTimeout() {
@@ -532,46 +528,6 @@ func (suite *WebsocketTestSuite) TestCloseWriteTimeout() {
 		conn.Close()
 	})
 	wg.Wait()
-}
-
-func (suite *WebsocketTestSuite) TestCloseErrorLog() {
-	routeURL := ""
-	suite.RunServer(func(r *goyave.Router) {
-		upgrader := Upgrader{}
-		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
-			c.Conn.Close()
-			return fmt.Errorf("test error")
-		}))
-		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
-	}, func() {
-		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if err != nil {
-			suite.Error(err)
-			return
-		}
-		resp.Body.Close()
-		defer conn.Close()
-	})
-}
-
-func (suite *WebsocketTestSuite) TestCloseNormalErrorLog() {
-	routeURL := ""
-	suite.RunServer(func(r *goyave.Router) {
-		upgrader := Upgrader{}
-		route := r.Get("/websocket", upgrader.Handler(func(c *Conn, request *goyave.Request) error {
-			c.Conn.Close()
-			return nil
-		}))
-		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), config.GetString("server.protocol"))
-	}, func() {
-		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if err != nil {
-			suite.Error(err)
-			return
-		}
-		resp.Body.Close()
-		defer conn.Close()
-	})
 }
 
 func (suite *WebsocketTestSuite) TestCloseTruncateErrorMessage() {

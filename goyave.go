@@ -399,7 +399,7 @@ func runStartupHooks() {
 }
 
 func registerShutdownHook(hook func(context.Context) error) {
-	sigChannel = make(chan os.Signal, 1)
+	sigChannel = make(chan os.Signal, 64)
 	signal.Notify(sigChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {

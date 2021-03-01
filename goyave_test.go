@@ -66,8 +66,8 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 	config.Clear()
 	proc, err := os.FindProcess(os.Getpid())
 	if err == nil {
-		c := make(chan bool, 1)
-		c2 := make(chan bool, 1)
+		c := make(chan struct{}, 1)
+		c2 := make(chan struct{}, 1)
 		ctx, cancel := context.WithTimeout(context.Background(), suite.Timeout())
 		defer cancel()
 
@@ -88,13 +88,14 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 					}
 				}
 			}
-			c <- true
+			c <- struct{}{}
 		})
+		defer ClearStartupHooks()
 		go func() {
 			if err := Start(func(router *Router) {}); err != nil {
 				suite.Fail(err.Error())
 			}
-			c2 <- true
+			c2 <- struct{}{}
 		}()
 
 		select {
@@ -103,7 +104,6 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 		case <-c:
 			suite.False(IsReady())
 			suite.Nil(server)
-			ClearStartupHooks()
 		}
 		<-c2
 	} else {

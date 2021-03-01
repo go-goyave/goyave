@@ -73,7 +73,7 @@ func TestGetMIMEType(t *testing.T) {
 	assert.Equal(t, "image/png", mime)
 	assert.Equal(t, int64(716), size)
 
-	mime, _ = GetMIMEType(toAbsolutePath("install.sh"))
+	mime, _ = GetMIMEType(toAbsolutePath("resources/test_script.sh"))
 	assert.Equal(t, "text/plain; charset=utf-8", mime)
 
 	mime, _ = GetMIMEType(toAbsolutePath(".gitignore"))

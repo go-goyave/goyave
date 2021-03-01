@@ -3,15 +3,15 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/System-Glitch/goyave/releases"><img src="https://img.shields.io/github/v/release/System-Glitch/goyave?include_prereleases" alt="Version"/></a>
-    <a href="https://github.com/System-Glitch/goyave/actions"><img src="https://github.com/System-Glitch/goyave/workflows/Test/badge.svg?branch=develop" alt="Build Status"/></a>
-    <a href="https://coveralls.io/github/System-Glitch/goyave?branch=master"><img src="https://coveralls.io/repos/github/System-Glitch/goyave/badge.svg" alt="Coverage Status"/></a>
-    <a href="https://goreportcard.com/report/github.com/System-Glitch/goyave"><img src="https://goreportcard.com/badge/github.com/System-Glitch/goyave" alt="Go Report"/></a>
+    <a href="https://github.com/go-goyave/goyave/releases"><img src="https://img.shields.io/github/v/release/go-goyave/goyave?include_prereleases" alt="Version"/></a>
+    <a href="https://github.com/go-goyave/goyave/actions"><img src="https://github.com/go-goyave/goyave/workflows/Test/badge.svg?branch=develop" alt="Build Status"/></a>
+    <a href="https://coveralls.io/github/go-goyave/goyave?branch=master"><img src="https://coveralls.io/repos/github/go-goyave/goyave/badge.svg" alt="Coverage Status"/></a>
+    <a href="https://goreportcard.com/report/goyave.dev/goyave"><img src="https://goreportcard.com/badge/goyave.dev/goyave" alt="Go Report"/></a>
     
 </p>
 
 <p align="center">
-    <a href="https://github.com/System-Glitch/goyave/blob/master/LICENSE"><img src="https://img.shields.io/dub/l/vibe-d.svg" alt="License"/></a>
+    <a href="https://github.com/go-goyave/goyave/blob/master/LICENSE"><img src="https://img.shields.io/dub/l/vibe-d.svg" alt="License"/></a>
     <a href="https://github.com/avelino/awesome-go"><img src="https://awesome.re/mentioned-badge.svg" alt="Awesome"/></a>
     <a href="https://discord.gg/mfemDMc"><img src="https://img.shields.io/discord/744264895209537617?logo=discord" alt="Discord"/></a>
 </p>
@@ -52,18 +52,18 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 ### Install using the template project
 
-You can bootstrap your project using the [Goyave template project](https://github.com/System-Glitch/goyave-template). This project has a complete directory structure already set up for you.
+You can bootstrap your project using the [Goyave template project](https://github.com/go-goyave/goyave-template). This project has a complete directory structure already set up for you.
 
 #### Linux / MacOS
 
 ```
-$ curl https://raw.githubusercontent.com/System-Glitch/goyave/master/install.sh | bash -s github.com/username/projectname
+$ curl https://goyave.dev/install.sh | bash -s github.com/username/projectname
 ```
 
 #### Windows (Powershell)
 
 ```
-> & ([scriptblock]::Create((curl "https://raw.githubusercontent.com/System-Glitch/goyave/master/install.ps1").Content)) -moduleName github.com/username/projectname
+> & ([scriptblock]::Create((curl "https://goyave.dev/install.ps1").Content)) -moduleName github.com/username/projectname
 ```
 
 ---

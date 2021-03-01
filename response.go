@@ -1,21 +1,30 @@
 package goyave
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	htmltemplate "html/template"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
 	"strconv"
 	"text/template"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/helper/filesystem"
+)
+
+var (
+	// ErrNotHijackable returned by response.Hijack() if the underlying
+	// http.ResponseWriter doesn't implement http.Hijacker. This can
+	// happen with HTTP/2 connections.
+	ErrNotHijackable = errors.New("Underlying http.ResponseWriter doesn't implement http.Hijacker")
 )
 
 // PreWriter is a writter that needs to alter the response headers or status
@@ -37,6 +46,7 @@ type Response struct {
 	// See RFC 7231, 6.3.5
 	empty       bool
 	wroteHeader bool
+	hijacked    bool
 
 	httpRequest *http.Request
 	writer      io.Writer
@@ -67,7 +77,7 @@ func (r *Response) PreWrite(b []byte) {
 	}
 	if !r.wroteHeader {
 		if r.status == 0 {
-			r.status = 200
+			r.status = http.StatusOK
 		}
 		r.WriteHeader(r.status)
 	}
@@ -98,6 +108,40 @@ func (r *Response) WriteHeader(status int) {
 // Header returns the header map that will be sent.
 func (r *Response) Header() http.Header {
 	return r.responseWriter.Header()
+}
+
+// --------------------------------------
+// http.Hijacker implementation
+
+// Hijack implements the Hijacker.Hijack method.
+// For more details, check http.Hijacker.
+//
+// Returns ErrNotHijackable if the underlying http.ResponseWriter doesn't
+// implement http.Hijacker. This can happen with HTTP/2 connections.
+//
+// Middleware executed after controller handlers, as well as status handlers,
+// keep working as usual after a connection has been hijacked.
+// Callers should properly set the response status to ensure middleware and
+// status handler execute correctly. Usually, callers of the Hijack method
+// set the HTTP status to http.StatusSwitchingProtocols.
+// If no status is set, the regular behavior will be kept and `204 No Content`
+// will be set as the response status.
+func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := r.responseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, ErrNotHijackable
+	}
+	c, b, e := hijacker.Hijack()
+	if e == nil {
+		r.hijacked = true
+	}
+	return c, b, e
+}
+
+// Hijacked returns true if the underlying connection has been successfully hijacked
+// via the Hijack method.
+func (r *Response) Hijacked() bool {
+	return r.hijacked
 }
 
 // --------------------------------------
@@ -201,6 +245,8 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := os.Open(file)
+	// No need to check for errors, filesystem.FileExists(file) and
+	// filesystem.GetMIMEType(file) already handled that.
 	defer f.Close()
 	return io.Copy(r, f)
 }
@@ -248,13 +294,15 @@ func (r *Response) error(err interface{}) error {
 			stacktrace = string(debug.Stack())
 		}
 		ErrLogger.Print(stacktrace)
-		var message interface{}
-		if e, ok := err.(error); ok {
-			message = e.Error()
-		} else {
-			message = err
+		if !r.Hijacked() {
+			var message interface{}
+			if e, ok := err.(error); ok {
+				message = e.Error()
+			} else {
+				message = err
+			}
+			return r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
 		}
-		return r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
 	}
 
 	// Don't set r.empty to false to let error status handler process the error

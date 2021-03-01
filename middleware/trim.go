@@ -3,7 +3,7 @@ package middleware
 import (
 	"strings"
 
-	"github.com/System-Glitch/goyave/v3"
+	"goyave.dev/goyave/v3"
 )
 
 // Trim removes all leading and trailing white space from string fields.

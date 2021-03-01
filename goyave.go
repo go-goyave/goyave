@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/lang"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/lang"
 )
 
 var (
@@ -23,8 +23,9 @@ var (
 	router             *Router
 	maintenanceHandler http.Handler
 	sigChannel         chan os.Signal
-	stopChannel        chan bool
-	hookChannel        chan bool
+	tlsStopChannel     chan struct{} = make(chan struct{}, 1)
+	stopChannel        chan struct{} = make(chan struct{}, 1)
+	hookChannel        chan struct{} = make(chan struct{}, 1)
 
 	// Critical config entries (cached for better performance)
 	protocol        string
@@ -32,6 +33,7 @@ var (
 	defaultLanguage string
 
 	startupHooks       []func()
+	shutdownHooks      []func()
 	ready              bool = false
 	maintenanceEnabled bool = false
 	mutex                   = &sync.RWMutex{}
@@ -98,10 +100,25 @@ func ClearStartupHooks() {
 	mutex.Unlock()
 }
 
+// RegisterShutdownHook to execute some code after the server stopped.
+// Shutdown hooks are executed before goyave.Start() returns.
+func RegisterShutdownHook(hook func()) {
+	mutex.Lock()
+	shutdownHooks = append(shutdownHooks, hook)
+	mutex.Unlock()
+}
+
+// ClearShutdownHooks removes all shutdown hooks.
+func ClearShutdownHooks() {
+	mutex.Lock()
+	shutdownHooks = []func(){}
+	mutex.Unlock()
+}
+
 // Start starts the web server.
 // The routeRegistrer parameter is a function aimed at registering all your routes and middleware.
 //  import (
-//      "github.com/System-Glitch/goyave/v3"
+//      "goyave.dev/goyave/v3"
 //      "github.com/username/projectname/route"
 //  )
 //
@@ -204,9 +221,8 @@ func Stop() {
 	defer cancel()
 	stop(ctx)
 	if sigChannel != nil {
-		hookChannel <- true // Clear shutdown hook
+		hookChannel <- struct{}{} // Clear shutdown hook
 		<-hookChannel
-		hookChannel = nil
 		sigChannel = nil
 	}
 	mutex.Unlock()
@@ -223,10 +239,14 @@ func stop(ctx context.Context) error {
 		maintenanceEnabled = false
 		if redirectServer != nil {
 			redirectServer.Shutdown(ctx)
-			<-stopChannel
+			<-tlsStopChannel
 			redirectServer = nil
-			stopChannel = nil
 		}
+
+		for _, hook := range shutdownHooks {
+			hook()
+		}
+		stopChannel <- struct{}{}
 	}
 	return err
 }
@@ -265,6 +285,11 @@ func getAddress(protocol string) string {
 	return protocol + "://" + host
 }
 
+// BaseURL returns the base URL of your application.
+func BaseURL() string {
+	return getAddress(config.GetString("server.protocol"))
+}
+
 func startTLSRedirectServer() {
 	httpsAddress := getAddress("https")
 	timeout := time.Duration(config.GetInt("server.timeout")) * time.Second
@@ -290,8 +315,6 @@ func startTLSRedirectServer() {
 		return
 	}
 
-	stopChannel = make(chan bool, 1)
-
 	ok := ready
 	r := redirectServer
 
@@ -301,18 +324,20 @@ func startTLSRedirectServer() {
 				ErrLogger.Printf("The TLS redirect server encountered an error: %s\n", err.Error())
 				mutex.Lock()
 				redirectServer = nil
-				stopChannel = nil
 				ln.Close()
 				mutex.Unlock()
 				return
 			}
 		}
 		ln.Close()
-		stopChannel <- true
+		tlsStopChannel <- struct{}{}
 	}()
 }
 
 func startServer(router *Router) error {
+	defer func() {
+		<-stopChannel // Wait for stop() to finish before returning
+	}()
 	timeout := time.Duration(config.GetInt("server.timeout")) * time.Second
 	server = &http.Server{
 		Addr:         getHost(protocol),
@@ -374,25 +399,24 @@ func runStartupHooks() {
 }
 
 func registerShutdownHook(hook func(context.Context) error) {
-	hookChannel = make(chan bool)
-	sigChannel = make(chan os.Signal, 1)
+	sigChannel = make(chan os.Signal, 64)
 	signal.Notify(sigChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		hookChannel <- true
+		hookChannel <- struct{}{}
 		select {
 		case <-hookChannel:
-			hookChannel <- true
+			hookChannel <- struct{}{}
 		case <-sigChannel: // Block until SIGINT or SIGTERM received
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
 			mutex.Lock()
-			close(hookChannel)
-			hookChannel = nil
 			sigChannel = nil
 			hook(ctx)
 			mutex.Unlock()
 		}
 	}()
 }
+
+// TODO refactor server sartup (use context)

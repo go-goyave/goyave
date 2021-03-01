@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/cors"
 	"github.com/imdario/mergo"
+	"goyave.dev/goyave/v3/cors"
 
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
-	"github.com/System-Glitch/goyave/v3/validation"
 	"github.com/google/uuid"
+	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/validation"
 )
 
 // Request struct represents an http request.

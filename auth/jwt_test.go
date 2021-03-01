@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3"
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
 	"github.com/dgrijalva/jwt-go"
+	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
 )
 
 type JWTAuthenticatorTestSuite struct {
@@ -89,6 +89,11 @@ func (suite *JWTAuthenticatorTestSuite) TestAuthenticate() {
 	token, err = suite.createWrongToken(jwt.SigningMethodHS256, "johndoe@example.org", nbf, exp)
 	suite.Nil(err)
 	suite.Equal("Your authentication token is expired.", tokenAuthenticator.Authenticate(suite.createRequest(token), user).Error())
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestOptional() {
+	tokenAuthenticator := &JWTAuthenticator{Optional: true}
+	suite.Nil(tokenAuthenticator.Authenticate(suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil)), nil))
 }
 
 func (suite *JWTAuthenticatorTestSuite) TearDownTest() {

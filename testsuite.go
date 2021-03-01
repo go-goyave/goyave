@@ -18,14 +18,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/helper/filesystem"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/assert"
 	testify "github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/lang"
 )
 
 // ITestSuite is an extension of testify's Suite for
@@ -222,8 +222,7 @@ func (s *TestSuite) Delete(route string, headers map[string]string, body io.Read
 // Request execute a request on the given route.
 // Headers and body are optional.
 func (s *TestSuite) Request(method, route string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	protocol := config.GetString("server.protocol")
-	req, err := http.NewRequest(method, getAddress(protocol)+route, body)
+	req, err := http.NewRequest(method, BaseURL()+route, body)
 	if err != nil {
 		return nil, err
 	}

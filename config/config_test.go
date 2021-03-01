@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/helper/filesystem"
 )
 
 type ConfigTestSuite struct {
@@ -1084,6 +1084,37 @@ func (suite *ConfigTestSuite) TestMakeEntryFromValue() {
 	suite.Equal(entry.Type, reflect.String)
 	suite.True(entry.IsSlice)
 	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+}
+
+func (suite *ConfigTestSuite) TestLoadJSON() {
+	json := `
+	{
+		"app": {
+			"name": "loaded from json"
+		}
+	}`
+
+	suite.Nil(LoadJSON(json))
+	suite.Equal("loaded from json", Get("app.name"))
+
+	Clear()
+
+	json = `
+	{
+		"app": {
+			"name": 4
+		}
+	}`
+
+	err := LoadJSON(json)
+	suite.NotNil(err)
+	suite.Contains(err.Error(), "Invalid config")
+
+	json = `{`
+
+	err = LoadJSON(json)
+	suite.NotNil(err)
+	suite.Contains(err.Error(), "EOF")
 }
 
 func (suite *ConfigTestSuite) TearDownAllSuite() {

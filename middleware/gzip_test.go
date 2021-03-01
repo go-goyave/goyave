@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3"
+	"goyave.dev/goyave/v3"
 )
 
 type GzipMiddlewareTestSuite struct {
@@ -47,6 +47,7 @@ func (suite *GzipMiddlewareTestSuite) TestGzipMiddleware() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal("hello world", string(body)) // Not compressed
 
 	rawRequest = httptest.NewRequest("GET", "/", nil)
@@ -63,6 +64,7 @@ func (suite *GzipMiddlewareTestSuite) TestGzipMiddleware() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 	suite.Equal("hello world", string(body))
 }
 
@@ -92,6 +94,7 @@ func (suite *GzipMiddlewareTestSuite) TestCloseNonCloseable() {
 	if err != nil {
 		panic(err)
 	}
+	result.Body.Close()
 
 	suite.Equal("hello world", string(body))
 }

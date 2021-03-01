@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
-	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/lang"
 )
 
 type CustomTestSuite struct {
@@ -153,6 +153,7 @@ func (suite *CustomTestSuite) TestMiddleware() {
 		suite.Equal("application/json", request.Header().Get("Content-Type"))
 	})
 
+	result.Body.Close()
 	suite.Equal(418, result.StatusCode)
 }
 
@@ -218,7 +219,9 @@ func (suite *CustomTestSuite) TestRequests() {
 		resp, err = suite.Get("invalid", nil)
 		suite.NotNil(err)
 		suite.Nil(resp)
-
+		if resp != nil {
+			resp.Body.Close()
+		}
 	})
 }
 

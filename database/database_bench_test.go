@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/config"
 	"gorm.io/driver/mysql"
+	"goyave.dev/goyave/v3/config"
 )
 
 func setupDatabaseBench(b *testing.B) {

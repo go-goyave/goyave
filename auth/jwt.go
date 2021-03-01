@@ -5,16 +5,22 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/System-Glitch/goyave/v3"
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/dgrijalva/jwt-go"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/lang"
 )
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
-type JWTAuthenticator struct{}
+type JWTAuthenticator struct {
+
+	// Optional defines if the authenticator allows requests that
+	// don't provide credentials. Handlers should therefore check
+	// if request.User is not nil before accessing it.
+	Optional bool
+}
 
 var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
 
@@ -45,6 +51,9 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 
 	tokenString, ok := request.BearerToken()
 	if tokenString == "" || !ok {
+		if a.Optional {
+			return nil
+		}
 		return fmt.Errorf(lang.Get(request.Lang, "auth.no-credentials-provided"))
 	}
 

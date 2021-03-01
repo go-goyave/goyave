@@ -1,9 +1,12 @@
 package goyave
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,9 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
 )
 
 type ResponseTestSuite struct {
@@ -41,6 +44,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	suite.Equal(200, resp.StatusCode) // Not written yet
 	suite.True(response.empty)
 	suite.Equal(403, response.GetStatus())
+	resp.Body.Close()
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
@@ -50,6 +54,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	suite.Equal(403, resp.StatusCode)
 	suite.False(response.empty)
 	suite.Equal(403, response.GetStatus())
+	resp.Body.Close()
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
@@ -60,6 +65,7 @@ func (suite *ResponseTestSuite) TestResponseStatus() {
 	suite.Equal(200, resp.StatusCode) // Not written yet
 	suite.True(response.empty)
 	suite.Equal(403, response.GetStatus())
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseHeader() {
@@ -73,6 +79,7 @@ func (suite *ResponseTestSuite) TestResponseHeader() {
 	suite.Equal("application/json", resp.Header.Get("Content-Type"))
 	suite.True(response.empty)
 	suite.Equal(200, response.status)
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseError() {
@@ -172,6 +179,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
+	resp.Body.Close()
 
 	// Test no Content-Type override
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
@@ -180,6 +188,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	response.File("config/config.test.json")
 	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal("text/plain", resp.Header.Get("Content-Type"))
+	resp.Body.Close()
 
 	// File doesn't exist
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
@@ -192,6 +201,7 @@ func (suite *ResponseTestSuite) TestResponseFile() {
 	suite.False(response.wroteHeader)
 	suite.Empty(resp.Header.Get("Content-Type"))
 	suite.Empty(resp.Header.Get("Content-Disposition"))
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseJSON() {
@@ -230,6 +240,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.Equal(size, resp.Header.Get("Content-Length"))
 	suite.False(response.empty)
 	suite.Equal(200, response.status)
+	resp.Body.Close()
 
 	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
 	response = newResponse(httptest.NewRecorder(), rawRequest)
@@ -242,6 +253,7 @@ func (suite *ResponseTestSuite) TestResponseDownload() {
 	suite.False(response.wroteHeader)
 	suite.Empty(resp.Header.Get("Content-Type"))
 	suite.Empty(resp.Header.Get("Content-Disposition"))
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseRedirect() {
@@ -289,6 +301,7 @@ func (suite *ResponseTestSuite) TestResponseCookie() {
 	suite.Equal(1, len(cookies))
 	suite.Equal("cookie-name", cookies[0].Name)
 	suite.Equal("test", cookies[0].Value)
+	resp.Body.Close()
 }
 
 func (suite *ResponseTestSuite) TestResponseWrite() {
@@ -515,6 +528,68 @@ func (suite *ResponseTestSuite) TestHead() {
 		suite.Equal("text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
 		suite.Empty(body)
 	})
+}
+
+type hijackableRecorder struct {
+	*httptest.ResponseRecorder
+}
+
+func (r *hijackableRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn := &net.TCPConn{}
+	return conn, bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn)), nil
+}
+
+func (suite *ResponseTestSuite) TestHijack() {
+	recorder := &hijackableRecorder{httptest.NewRecorder()}
+	req := httptest.NewRequest(http.MethodGet, "/hijack", nil)
+	resp := newResponse(recorder, req)
+
+	suite.False(resp.hijacked)
+	suite.False(resp.Hijacked())
+
+	c, b, err := resp.Hijack()
+	if err != nil {
+		suite.Fail(err.Error())
+	}
+	defer c.Close()
+
+	suite.Nil(err)
+	suite.NotNil(c)
+	suite.NotNil(b)
+	suite.True(resp.hijacked)
+	suite.True(resp.Hijacked())
+
+}
+
+func (suite *ResponseTestSuite) TestErrorOnHijacked() {
+	recorder := &hijackableRecorder{httptest.NewRecorder()}
+	req := httptest.NewRequest(http.MethodGet, "/hijack", nil)
+	resp := newResponse(recorder, req)
+
+	c, _, _ := resp.Hijack()
+	defer c.Close()
+
+	suite.Nil(resp.error("test error"))
+	res := recorder.Result()
+	defer res.Body.Close()
+	suite.Equal(http.StatusInternalServerError, resp.status)
+
+	body, err := ioutil.ReadAll(res.Body)
+	suite.Nil(err)
+	suite.Empty(body)
+}
+
+func (suite *ResponseTestSuite) TestHijackNotHijackable() {
+	recorder := httptest.NewRecorder()
+
+	req := httptest.NewRequest(http.MethodGet, "/hijack", nil)
+	resp := newResponse(recorder, req)
+
+	c, b, err := resp.Hijack()
+	suite.Nil(c)
+	suite.Nil(b)
+	suite.NotNil(err)
+	suite.True(errors.Is(err, ErrNotHijackable))
 }
 
 // ------------------------

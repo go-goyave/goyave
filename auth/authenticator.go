@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v3"
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/helper"
+	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/helper"
 )
 
 // Column matches a column name with a struct field.

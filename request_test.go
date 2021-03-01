@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/cors"
+	"goyave.dev/goyave/v3/cors"
 
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
-	"github.com/System-Glitch/goyave/v3/validation"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/validation"
 )
 
 func createTestRequest(rawRequest *http.Request) *Request {

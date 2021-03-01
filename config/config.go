@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/System-Glitch/goyave/v3/helper"
+	"goyave.dev/goyave/v3/helper"
 )
 
 type object map[string]interface{}
@@ -24,6 +24,8 @@ type Entry struct {
 	IsSlice          bool
 	AuthorizedValues []interface{} // Leave empty for "any"
 }
+
+type readFunc func(string) (object, error)
 
 var config object
 
@@ -107,12 +109,38 @@ func Load() error {
 
 // LoadFrom loads a config file from the given path.
 func LoadFrom(path string) error {
+	return load(readConfigFile, path)
+}
+
+// LoadJSON load a configuration file from raw JSON. Can be used in combination with
+// Go's 1.16 embed directive.
+//
+//  var (
+//  	//go:embed config.json
+//  	cfg string
+//  )
+//
+//  func main() {
+//  	if err := config.LoadJSON(cfg); err != nil {
+//  		goyave.ErrLogger.Println(err)
+//  		os.Exit(goyave.ExitInvalidConfig)
+//  	}
+//
+//  	if err := goyave.Start(route.Register); err != nil {
+//  		os.Exit(err.(*goyave.Error).ExitCode)
+// 	 }
+//  }
+func LoadJSON(cfg string) error {
+	return load(readString, cfg)
+}
+
+func load(readFunc readFunc, source string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 	config = make(object, len(configDefaults))
 	loadDefaults(configDefaults, config)
 
-	conf, err := readConfigFile(path)
+	conf, err := readFunc(source)
 	if err != nil {
 		config = nil
 		return err
@@ -472,6 +500,14 @@ func readConfigFile(file string) (object, error) {
 		err = jsonParser.Decode(&conf)
 	}
 	return conf, err
+}
+
+func readString(str string) (object, error) {
+	conf := make(object, len(configDefaults))
+	if err := json.NewDecoder(strings.NewReader(str)).Decode(&conf); err != nil {
+		return nil, err
+	}
+	return conf, nil
 }
 
 func getConfigFilePath() string {

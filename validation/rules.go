@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/Code-Hex/uniseg"
-	"github.com/System-Glitch/goyave/v3/helper"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v3/helper/filesystem"
 )
 
 func validateRequired(field string, value interface{}, parameters []string, form map[string]interface{}) bool {

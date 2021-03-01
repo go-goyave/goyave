@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/helper/filesystem"
 
-	_ "github.com/System-Glitch/goyave/v3/database/dialect/mysql"
+	_ "goyave.dev/goyave/v3/database/dialect/mysql"
 )
 
 type GoyaveTestSuite struct {
@@ -58,14 +58,16 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	config.Set("server.httpsPort", 443.0)
 	suite.Equal("http://test.system-glitch.me", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me", getAddress("https"))
+
+	suite.Equal(getAddress("http"), BaseURL())
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
 	config.Clear()
 	proc, err := os.FindProcess(os.Getpid())
 	if err == nil {
-		c := make(chan bool, 1)
-		c2 := make(chan bool, 1)
+		c := make(chan struct{}, 1)
+		c2 := make(chan struct{}, 1)
 		ctx, cancel := context.WithTimeout(context.Background(), suite.Timeout())
 		defer cancel()
 
@@ -86,13 +88,14 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 					}
 				}
 			}
-			c <- true
+			c <- struct{}{}
 		})
+		defer ClearStartupHooks()
 		go func() {
 			if err := Start(func(router *Router) {}); err != nil {
 				suite.Fail(err.Error())
 			}
-			c2 <- true
+			c2 <- struct{}{}
 		}()
 
 		select {
@@ -101,8 +104,6 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 		case <-c:
 			suite.False(IsReady())
 			suite.Nil(server)
-			suite.Nil(hookChannel)
-			ClearStartupHooks()
 		}
 		<-c2
 	} else {
@@ -208,7 +209,6 @@ func (suite *GoyaveTestSuite) TestTLSRedirectServerError() {
 	case <-c:
 		suite.False(IsReady())
 		suite.Nil(redirectServer)
-		suite.Nil(stopChannel)
 	}
 }
 
@@ -225,6 +225,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(404, resp.StatusCode)
+			resp.Body.Close()
 		}
 
 		err = ioutil.WriteFile("resources/template/test-static-serve.txt", []byte("test-content"), 0644)
@@ -344,6 +345,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(503, resp.StatusCode)
+			resp.Body.Close()
 		}
 
 		DisableMaintenance()
@@ -382,6 +384,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		suite.NotNil(resp)
 		if resp != nil {
 			suite.Equal(503, resp.StatusCode)
+			resp.Body.Close()
 		}
 
 		DisableMaintenance()
@@ -450,6 +453,20 @@ func (suite *GoyaveTestSuite) TestConfigError() {
 			suite.Equal("Invalid config:\n\t- \"app.environment\" type must be string", e.Error())
 		}
 	}
+}
+
+func (suite *GoyaveTestSuite) TestShutdownHook() {
+	executed := false
+	RegisterShutdownHook(func() {
+		executed = true
+	})
+	suite.Len(shutdownHooks, 1)
+
+	suite.RunServer(func(r *Router) {}, func() {})
+	suite.True(executed)
+
+	ClearShutdownHooks()
+	suite.Len(shutdownHooks, 0)
 }
 
 func TestGoyaveTestSuite(t *testing.T) {

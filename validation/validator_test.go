@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
-	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/lang"
 )
 
 type ValidatorTestSuite struct {

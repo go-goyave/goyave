@@ -1,8 +1,8 @@
 package mysql
 
 import (
-	"github.com/System-Glitch/goyave/v3/database"
 	"gorm.io/driver/mysql"
+	"goyave.dev/goyave/v3/database"
 )
 
 func init() {

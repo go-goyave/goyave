@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3/config"
 )
 
 type PaginatorTestSuite struct {

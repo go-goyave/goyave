@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/config"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"goyave.dev/goyave/v3/config"
 )
 
 // Initializer is a function meant to modify a connection settings

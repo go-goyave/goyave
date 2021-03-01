@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/System-Glitch/goyave/v3/validation"
+	"goyave.dev/goyave/v3/validation"
 )
 
 // This file contains the database-related validation rules

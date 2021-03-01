@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3"
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v3"
 )
 
 func TestNewLimiter(t *testing.T) {

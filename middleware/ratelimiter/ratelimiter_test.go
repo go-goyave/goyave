@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3"
+	"goyave.dev/goyave/v3"
 )
 
 type RateLimiterMiddlewareTestSuite struct {
@@ -54,6 +54,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 		request,
 		func(response *goyave.Response, request *goyave.Request) {},
 	)
+	result.Body.Close()
 
 	suite.Equal(
 		fmt.Sprintf("%v, %v;w=%v", requestQuota, requestQuota, quotaDuration.Seconds()),
@@ -81,6 +82,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterResponseHeaders() {
 		"0",
 		result.Header.Get("RateLimit-Remaining"),
 	)
+	result.Body.Close()
 }
 
 func (suite *RateLimiterMiddlewareTestSuite) TestClientExceedsTheAllowedQuota() {
@@ -105,6 +107,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestClientExceedsTheAllowedQuota() 
 				}
 			},
 		)
+		result.Body.Close()
 	}
 
 	suite.Equal(http.StatusTooManyRequests, result.StatusCode)
@@ -133,6 +136,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 				}
 			},
 		)
+		result.Body.Close()
 	}
 
 	suite.Equal(http.StatusTooManyRequests, result.StatusCode)
@@ -144,6 +148,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestRequestQuotaResetsAfterQuotaDur
 		request,
 		func(response *goyave.Response, request *goyave.Request) {},
 	)
+	result.Body.Close()
 
 	suite.Equal(http.StatusNoContent, result.StatusCode)
 }
@@ -164,6 +169,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterQuotaIsZero() {
 			request,
 			func(response *goyave.Response, request *goyave.Request) {},
 		)
+		result.Body.Close()
 		suite.Equal(http.StatusNoContent, result.StatusCode)
 	}
 
@@ -180,6 +186,7 @@ func (suite *RateLimiterMiddlewareTestSuite) TestLimiterQuotaIsZero() {
 			request,
 			func(response *goyave.Response, request *goyave.Request) {},
 		)
+		result.Body.Close()
 		suite.Equal(http.StatusNoContent, result.StatusCode)
 	}
 }

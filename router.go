@@ -3,11 +3,12 @@ package goyave
 import (
 	"errors"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v3/cors"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/cors"
+	"goyave.dev/goyave/v3/helper/filesystem"
 )
 
 type routeMatcher interface {
@@ -342,19 +343,15 @@ func staticHandler(directory string, download bool) Handler {
 		file := r.Params["resource"]
 		path := cleanStaticPath(directory, file)
 
-		if filesystem.FileExists(path) {
-			var err error
-			if download {
-				err = response.Download(path, file[strings.LastIndex(file, "/")+1:])
-			} else {
-				err = response.File(path)
-			}
-
-			if err != nil {
-				ErrLogger.Println(err)
-			}
+		var err error
+		if download {
+			err = response.Download(path, file[strings.LastIndex(file, "/")+1:])
 		} else {
-			response.Status(http.StatusNotFound)
+			err = response.File(path)
+		}
+
+		if _, ok := err.(*os.PathError); err != nil && !ok {
+			ErrLogger.Println(err)
 		}
 	}
 }
@@ -424,7 +421,7 @@ func (r *Router) finalize(response *Response, request *Request) {
 		}
 	}
 
-	if !response.wroteHeader {
+	if !response.wroteHeader && !response.hijacked {
 		response.WriteHeader(response.status)
 	}
 

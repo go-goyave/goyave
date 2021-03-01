@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/validation"
+	"goyave.dev/goyave/v3/validation"
 )
 
 // Route stores information for matching and serving.
@@ -117,7 +116,7 @@ func (r *Route) BuildURL(parameters ...string) string {
 		panic(fmt.Errorf("BuildURL: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
-	address := getAddress(config.GetString("server.protocol"))
+	address := BaseURL()
 
 	var builder strings.Builder
 	builder.Grow(len(fullURI) + len(address))

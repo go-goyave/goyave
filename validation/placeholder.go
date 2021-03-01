@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/lang"
+	"goyave.dev/goyave/v3/lang"
 )
 
 // Placeholder function defining a placeholder in a validation message.

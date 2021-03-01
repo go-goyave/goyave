@@ -47,18 +47,3 @@ jobs:
         with:
           version: v1.36
           args: --timeout 5m
-
-  spellcheck:
-    name: Spellcheck docs
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-      - name: Run spellcheck
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-          go get github.com/client9/misspell/cmd/misspell
-          misspell -error docs_src

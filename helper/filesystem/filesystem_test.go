@@ -82,7 +82,7 @@ func TestGetMIMEType(t *testing.T) {
 	mime, _ = GetMIMEType(toAbsolutePath("config/config.test.json"))
 	assert.Equal(t, "application/json", mime)
 
-	mime, _ = GetMIMEType(toAbsolutePath("docs_src/src/.vuepress/config.js"))
+	mime, _ = GetMIMEType(toAbsolutePath("resources/test_script.js"))
 	assert.Equal(t, "text/javascript; charset=utf-8", mime)
 
 	cssPath := toAbsolutePath("helper/filesystem/test.css")

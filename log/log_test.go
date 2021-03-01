@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3"
+	"goyave.dev/goyave/v3"
 )
 
 type LogMiddlewareTestSuite struct {

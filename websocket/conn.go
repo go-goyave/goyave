@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/config"
+	"goyave.dev/goyave/v3/config"
 
 	ws "github.com/gorilla/websocket"
 )

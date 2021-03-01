@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/System-Glitch/goyave/v3/validation"
+	"goyave.dev/goyave/v3/validation"
 )
 
 // Route stores information for matching and serving.

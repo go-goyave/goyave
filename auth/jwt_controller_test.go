@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3"
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/validation"
 	"golang.org/x/crypto/bcrypt"
+	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/validation"
 )
 
 const testUserPassword = "secret"

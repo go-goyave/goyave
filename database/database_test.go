@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/config"
 	"github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/config"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

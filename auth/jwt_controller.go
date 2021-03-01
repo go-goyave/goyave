@@ -6,14 +6,14 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3"
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/lang"
-	"github.com/System-Glitch/goyave/v3/validation"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v3/validation"
 )
 
 // GenerateToken generate a new JWT.

@@ -14,9 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
 )
 
 type ResponseTestSuite struct {

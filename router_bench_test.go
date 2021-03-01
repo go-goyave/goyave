@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/validation"
+	"goyave.dev/goyave/v3/validation"
 )
 
 type routerDefinition struct {

@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
-	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/lang"
 )
 
 type CustomTestSuite struct {

@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3"
+	"goyave.dev/goyave/v3"
 )
 
 type GzipMiddlewareTestSuite struct {

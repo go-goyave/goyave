@@ -18,14 +18,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/database"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v3/helper/filesystem"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/lang"
 	"github.com/stretchr/testify/assert"
 	testify "github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/lang"
 )
 
 // ITestSuite is an extension of testify's Suite for

@@ -11,8 +11,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v3/helper/filesystem"
 )
 
 const (

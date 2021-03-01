@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/helper/filesystem"
 )
 
 type ConfigTestSuite struct {

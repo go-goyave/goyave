@@ -1,4 +1,4 @@
-module github.com/System-Glitch/goyave/v3
+module goyave.dev/goyave/v3
 
 go 1.13
 

@@ -15,9 +15,9 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/helper/filesystem"
 )
 
 var (

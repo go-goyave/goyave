@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3/helper"
 	"github.com/google/uuid"
+	"goyave.dev/goyave/v3/helper"
 )
 
 // createArray create a slice of the same type as the given type.

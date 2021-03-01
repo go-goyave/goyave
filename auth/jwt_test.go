@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/System-Glitch/goyave/v3"
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/database"
 	"github.com/dgrijalva/jwt-go"
+	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/database"
 )
 
 type JWTAuthenticatorTestSuite struct {

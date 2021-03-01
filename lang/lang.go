@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/System-Glitch/goyave/v3/config"
-	"github.com/System-Glitch/goyave/v3/helper"
+	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/helper"
 
-	"github.com/System-Glitch/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/helper/filesystem"
 )
 
 type validationLines struct {

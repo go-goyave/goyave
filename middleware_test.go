@@ -238,6 +238,16 @@ func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 	suite.True(executed)
 	res.Body.Close()
 
+	executed = false
+	rawRequest = httptest.NewRequest("POST", "/test-route?%9", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}")) // Invalid query param
+	rawRequest.Header.Set("Content-Type", "application/json")
+	res = testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+		suite.Nil(r.Data)
+		executed = true
+	})
+	suite.True(executed)
+	res.Body.Close()
+
 	// Test with charset (#101)
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}"))
 	rawRequest.Header.Set("Content-Type", "application/json; charset=utf-8")

@@ -176,6 +176,17 @@ func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
 	})
 	suite.True(executed)
 	res.Body.Close()
+
+	// Invalid form
+	executed = false
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("%9"))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	res = testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+		suite.Nil(r.Data)
+		executed = true
+	})
+	suite.True(executed)
+	res.Body.Close()
 }
 
 func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {
@@ -233,6 +244,16 @@ func (suite *MiddlewareTestSuite) TestParseJsonRequestMiddleware() {
 	res = testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.NotNil(r.Data)
 		suite.Equal("param", r.Data["query"])
+		executed = true
+	})
+	suite.True(executed)
+	res.Body.Close()
+
+	executed = false
+	rawRequest = httptest.NewRequest("POST", "/test-route?%9", strings.NewReader("{\"string\":\"hello world\", \"number\":42, \"array\":[\"val1\",\"val2\"]}")) // Invalid query param
+	rawRequest.Header.Set("Content-Type", "application/json")
+	res = testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+		suite.Nil(r.Data)
 		executed = true
 	})
 	suite.True(executed)

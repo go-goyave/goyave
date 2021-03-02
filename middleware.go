@@ -62,31 +62,43 @@ func parseRequestMiddleware(next Handler) Handler {
 	return func(response *Response, request *Request) {
 
 		request.Data = nil
-		maxSize := maxPayloadSize
-		maxValueBytes := maxSize
-		var bodyBuf bytes.Buffer
-		n, err := io.CopyN(&bodyBuf, request.httpRequest.Body, maxValueBytes+1)
-		request.httpRequest.Body.Close()
-		if err == nil || err == io.EOF {
-			maxValueBytes -= n
-			if maxValueBytes < 0 {
-				response.Status(http.StatusRequestEntityTooLarge)
-				return
+		contentType := request.httpRequest.Header.Get("Content-Type")
+		if contentType == "" {
+			// If the Content-Type is not set, don't parse body
+			request.httpRequest.Body.Close()
+			request.Data = make(map[string]interface{})
+			if err := parseQuery(request); err != nil {
+				request.Data = nil
 			}
-
-			bodyBytes := bodyBuf.Bytes()
-			contentType := request.httpRequest.Header.Get("Content-Type")
-			if strings.HasPrefix(contentType, "application/json") {
-				request.Data = make(map[string]interface{}, 10)
-				parseQuery(request)
-				if err := json.Unmarshal(bodyBytes, &request.Data); err != nil {
-					request.Data = nil
+		} else {
+			maxSize := maxPayloadSize
+			maxValueBytes := maxSize
+			var bodyBuf bytes.Buffer
+			n, err := io.CopyN(&bodyBuf, request.httpRequest.Body, maxValueBytes+1)
+			request.httpRequest.Body.Close()
+			if err == nil || err == io.EOF {
+				maxValueBytes -= n
+				if maxValueBytes < 0 {
+					response.Status(http.StatusRequestEntityTooLarge)
+					return
 				}
-				resetRequestBody(request, bodyBytes)
-			} else {
-				resetRequestBody(request, bodyBytes)
-				request.Data = generateFlatMap(request.httpRequest, maxSize)
-				resetRequestBody(request, bodyBytes)
+
+				bodyBytes := bodyBuf.Bytes()
+				if strings.HasPrefix(contentType, "application/json") {
+					request.Data = make(map[string]interface{}, 10)
+					if err := parseQuery(request); err != nil {
+						request.Data = nil
+					} else {
+						if err := json.Unmarshal(bodyBytes, &request.Data); err != nil {
+							request.Data = nil
+						}
+					}
+					resetRequestBody(request, bodyBytes)
+				} else {
+					resetRequestBody(request, bodyBytes)
+					request.Data = generateFlatMap(request.httpRequest, maxSize)
+					resetRequestBody(request, bodyBytes)
+				}
 			}
 		}
 
@@ -95,7 +107,7 @@ func parseRequestMiddleware(next Handler) Handler {
 }
 
 func generateFlatMap(request *http.Request, maxSize int64) map[string]interface{} {
-	var flatMap map[string]interface{} = make(map[string]interface{})
+	flatMap := make(map[string]interface{})
 	err := request.ParseMultipartForm(maxSize)
 
 	if err != nil {
@@ -137,13 +149,12 @@ func flatten(dst map[string]interface{}, values url.Values) {
 	}
 }
 
-func parseQuery(request *Request) {
-	if uri := request.URI(); uri != nil {
-		queryParams, err := url.ParseQuery(uri.RawQuery)
-		if err == nil {
-			flatten(request.Data, queryParams)
-		}
+func parseQuery(request *Request) error {
+	queryParams, err := url.ParseQuery(request.URI().RawQuery)
+	if err == nil {
+		flatten(request.Data, queryParams)
 	}
+	return err
 }
 
 func resetRequestBody(request *Request, bodyBytes []byte) {

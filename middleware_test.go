@@ -176,6 +176,17 @@ func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
 	})
 	suite.True(executed)
 	res.Body.Close()
+
+	// Invalid form
+	executed = false
+	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("%9"))
+	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	res = testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
+		suite.Nil(r.Data)
+		executed = true
+	})
+	suite.True(executed)
+	res.Body.Close()
 }
 
 func (suite *MiddlewareTestSuite) TestParseGetRequestMiddleware() {

@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="resources/img/logo/goyave_text.png" alt="Goyave Logo" width="550"/>
+    <img src="https://raw.githubusercontent.com/go-goyave/goyave/master/resources/img/logo/goyave_text.png" alt="Goyave Logo" width="550"/>
 </p>
 
 <p align="center">

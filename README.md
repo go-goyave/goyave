@@ -97,6 +97,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 - [CORS](#cors)
 - [Authentication](#authentication)
 - [Rate limiting](#rate-limiting)
+- [Websocket](#websocket)
 
 ### Hello world from scratch
 
@@ -671,6 +672,30 @@ router.Middleware(ratelimiterMiddleware)
 ```
 
 **Learn more about rate limiting in the [documentation](https://goyave.dev/guide/advanced/rate-limiting.html).**
+
+### Websocket
+
+Goyave is using [`gorilla/websocket`](https://github.com/gorilla/websocket) and adds a layer of abstraction to it to make it easier to use. You don't have to write the connection upgrading logic nor the close handshake. Just like regular HTTP handlers, websocket handlers benefit from reliable error handling and panic recovery.
+
+Here is an example of an "echo" feature:
+```go
+upgrader := websocket.Upgrader{}
+router.Get("/websocket", upgrader.Handler(func(c *websocket.Conn, request *goyave.Request) error {
+    for {
+        mt, message, err := c.ReadMessage()
+        if err != nil {
+            return err
+        }
+        goyave.Logger.Printf("recv: %s", message)
+        err = c.WriteMessage(mt, message)
+        if err != nil {
+            return fmt.Errorf("write: %w", err)
+        }
+    }
+}))
+```
+
+**Learn more about websockets in the [documentation](https://goyave.dev/guide/advanced/websocket.html).**
 
 ## Contributing
 

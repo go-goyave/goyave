@@ -811,6 +811,38 @@ func (suite *ValidatorTestSuite) TestTypeDependentAfterConversion() {
 
 }
 
+func (suite *ValidatorTestSuite) TestRuleIsType() {
+	rule := &Rule{Name: "numeric"}
+	suite.True(rule.IsType())
+
+	rule = &Rule{Name: "greater_than"}
+	suite.False(rule.IsType())
+
+	rule = &Rule{Name: "nullable"}
+	suite.False(rule.IsType())
+
+	suite.Panics(func() {
+		rule := &Rule{Name: "not a rule"}
+		rule.IsType()
+	})
+}
+
+func (suite *ValidatorTestSuite) TestRuleIsTypeDependent() {
+	rule := &Rule{Name: "numeric"}
+	suite.False(rule.IsTypeDependent())
+
+	rule = &Rule{Name: "greater_than"}
+	suite.True(rule.IsTypeDependent())
+
+	rule = &Rule{Name: "nullable"}
+	suite.False(rule.IsTypeDependent())
+
+	suite.Panics(func() {
+		rule := &Rule{Name: "not a rule"}
+		rule.IsTypeDependent()
+	})
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

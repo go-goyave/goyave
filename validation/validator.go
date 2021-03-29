@@ -62,7 +62,7 @@ func (r RuleSet) AsRules() *Rules {
 // a Rules map.
 func (r RuleSet) parse() *Rules {
 	rules := &Rules{
-		Fields: make(map[string]*Field, len(r)),
+		Fields: make(FieldMap, len(r)),
 	}
 	for k, r := range r {
 		field := &Field{
@@ -86,6 +86,32 @@ type Rule struct {
 	Name           string
 	Params         []string
 	ArrayDimension uint8
+}
+
+// IsType returns true if the rule definition is a type rule.
+// See RuleDefinition.IsType
+func (r *Rule) IsType() bool {
+	if r.Name == "nullable" {
+		return false
+	}
+	def, exists := validationRules[r.Name]
+	if !exists {
+		panic(fmt.Sprintf("Rule \"%s\" doesn't exist", r.Name))
+	}
+	return def.IsType
+}
+
+// IsTypeDependent returns true if the rule definition is a type-dependent rule.
+// See RuleDefinition.IsTypeDependent
+func (r *Rule) IsTypeDependent() bool {
+	if r.Name == "nullable" {
+		return false
+	}
+	def, exists := validationRules[r.Name]
+	if !exists {
+		panic(fmt.Sprintf("Rule \"%s\" doesn't exist", r.Name))
+	}
+	return def.IsTypeDependent
 }
 
 // Field is a component of route validation. A Field is a value in
@@ -148,7 +174,7 @@ type FieldMap map[string]*Field
 // Rules is a component of route validation and maps a
 // field name (key) with a Field struct (value).
 type Rules struct {
-	Fields  map[string]*Field
+	Fields  FieldMap
 	checked bool
 }
 

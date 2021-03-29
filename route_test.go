@@ -144,6 +144,36 @@ func (suite *RouteTestSuite) TestGetFullURI() {
 	suite.Equal("/product/{id:[0-9+]}/{name}/accessories", route.GetFullURI())
 }
 
+func (suite *RouteTestSuite) TestBuildURI() {
+	route := &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}",
+		methods: []string{"GET", "POST"},
+	}
+	route.compileParameters(route.uri, true)
+	suite.Equal("/product/42", route.BuildURI("42"))
+
+	suite.Panics(func() {
+		route.BuildURI()
+	})
+	suite.Panics(func() {
+		route.BuildURI("42", "more")
+	})
+
+	route = &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}/{name}/accessories",
+		methods: []string{"GET", "POST"},
+	}
+	route.compileParameters(route.uri, true)
+	suite.Equal("/product/42/screwdriver/accessories", route.BuildURI("42", "screwdriver"))
+
+	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
+	route = router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
+
+	suite.Equal("/product/42/screwdriver/accessories", route.BuildURI("42", "screwdriver"))
+}
+
 func (suite *RouteTestSuite) TestBuildURL() {
 	route := &Route{
 		name:    "route-name",

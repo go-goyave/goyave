@@ -110,18 +110,22 @@ func (r *Route) Middleware(middleware ...Middleware) *Route {
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
 func (r *Route) BuildURL(parameters ...string) string {
+	return BaseURL() + r.BuildURI(parameters...)
+}
+
+// BuildURI build a full URI pointing to this route. The returned
+// string doesn't include the protocol and domain. (e.g. "/user/login")
+// Panics if the amount of parameters doesn't match the amount of
+// actual parameters for this route.
+func (r *Route) BuildURI(parameters ...string) string {
 	fullURI, fullParameters := r.getFullParameters()
 
 	if len(parameters) != len(fullParameters) {
-		panic(fmt.Errorf("BuildURL: route has %d parameters, %d given", len(fullParameters), len(parameters)))
+		panic(fmt.Errorf("BuildURI: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
-	address := BaseURL()
-
 	var builder strings.Builder
-	builder.Grow(len(fullURI) + len(address))
-
-	builder.WriteString(address)
+	builder.Grow(len(fullURI))
 
 	idxs, _ := r.braceIndices(fullURI)
 	length := len(idxs)

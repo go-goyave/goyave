@@ -61,7 +61,10 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 
 	suite.Equal(getAddress("http"), BaseURL())
 
+	config.Set("server.domain", "")
 	config.Set("server.host", "0.0.0.0")
+	config.Set("server.port", 1235.0)
+	config.Set("server.httpsPort", 1236.0)
 	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
 	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
 }

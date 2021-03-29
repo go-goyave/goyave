@@ -276,6 +276,9 @@ func getAddress(protocol string) string {
 	host := config.GetString("server.domain")
 	if len(host) == 0 {
 		host = config.GetString("server.host")
+		if host == "0.0.0.0" {
+			host = "127.0.0.1"
+		}
 	}
 
 	if shouldShowPort {

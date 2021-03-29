@@ -211,6 +211,11 @@ func (r *Router) Subrouter(prefix string) *Router {
 	return router
 }
 
+// Group create a new sub-router with an empty prefix.
+func (r *Router) Group() *Router {
+	return r.Subrouter("")
+}
+
 // Middleware apply one or more middleware to the route group.
 func (r *Router) Middleware(middleware ...Middleware) {
 	if r.middleware == nil {

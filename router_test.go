@@ -826,6 +826,12 @@ func (suite *RouterTestSuite) TestFinalizeHijacked() {
 	suite.False(resp.wroteHeader)
 }
 
+func (suite *RouterTestSuite) TestGroup() {
+	router := newRouter()
+	group := router.Group()
+	suite.Empty(group.prefix)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	RunTest(t, new(RouterTestSuite))
 }

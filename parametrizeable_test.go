@@ -133,6 +133,15 @@ func (suite *ParametrizeableTestSuite) TestRegexCache() {
 	suite.Equal(p1.regex, p2.regex)
 }
 
+func (suite *ParametrizeableTestSuite) TestGetParameters() {
+	p := &parametrizeable{
+		parameters: []string{"a", "b"},
+	}
+	params := p.GetParameters()
+	suite.Equal(p.parameters, params)
+	suite.NotSame(p.parameters, params)
+}
+
 func TestParametrizeableTestSuite(t *testing.T) {
 	suite.Run(t, new(ParametrizeableTestSuite))
 }

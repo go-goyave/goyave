@@ -125,3 +125,10 @@ func (p *parametrizeable) makeParameters(match []string, names []string) map[str
 	}
 	return params
 }
+
+// GetParameters returns the URI parameters' names (in order of appearance).
+func (p *parametrizeable) GetParameters() []string {
+	cpy := make([]string, len(p.parameters))
+	copy(cpy, p.parameters)
+	return cpy
+}

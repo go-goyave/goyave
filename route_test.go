@@ -240,6 +240,45 @@ func (suite *RouteTestSuite) TestMiddleware() {
 	suite.Len(route.middleware, 2)
 }
 
+func (suite *RouteTestSuite) TestGetHandler() {
+	executed := false
+	route := &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}",
+		methods: []string{"GET", "POST"},
+		handler: func(resp *Response, r *Request) {
+			executed = true
+		},
+	}
+	handler := route.GetHandler()
+	suite.NotNil(handler)
+	handler(nil, nil)
+	suite.True(executed)
+}
+
+func (suite *RouteTestSuite) TestGetValidationRules() {
+	route := &Route{
+		name:    "route-name",
+		uri:     "/product/{id:[0-9+]}",
+		methods: []string{"GET", "POST"},
+	}
+	rules := &validation.Rules{
+		Fields: validation.FieldMap{
+			"email": {
+				Rules: []*validation.Rule{
+					{Name: "required"},
+					{Name: "string"},
+					{Name: "between", Params: []string{"3", "125"}},
+					{Name: "email"},
+				},
+			},
+		},
+	}
+	route.Validate(rules)
+
+	suite.Same(rules, route.GetValidationRules())
+}
+
 func TestRouteTestSuite(t *testing.T) {
 	RunTest(t, new(RouteTestSuite))
 }

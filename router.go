@@ -122,6 +122,20 @@ func newRouter() *Router {
 	return router
 }
 
+// GetRoutes returns the list of routes belonging to this router.
+func (r *Router) GetRoutes() []*Route {
+	cpy := make([]*Route, len(r.routes))
+	copy(cpy, r.routes)
+	return cpy
+}
+
+// GetSubrouters returns the list of subrouters belonging to this router.
+func (r *Router) GetSubrouters() []*Router {
+	cpy := make([]*Router, len(r.subrouters))
+	copy(cpy, r.subrouters)
+	return cpy
+}
+
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Scheme != "" && req.URL.Scheme != protocol {

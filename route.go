@@ -189,6 +189,16 @@ func (r *Route) GetMethods() []string {
 	return cpy
 }
 
+// GetHandler returns the Handler associated with this route.
+func (r *Route) GetHandler() Handler {
+	return r.handler
+}
+
+// GetValidationRules returns the validation rules associated with this route.
+func (r *Route) GetValidationRules() *validation.Rules {
+	return r.validationRules
+}
+
 // getFullParameters get the full uri and parameters for this route and all its parent routers.
 func (r *Route) getFullParameters() (string, []string) {
 	router := r.parent

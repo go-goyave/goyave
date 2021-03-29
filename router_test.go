@@ -832,6 +832,26 @@ func (suite *RouterTestSuite) TestGroup() {
 	suite.Empty(group.prefix)
 }
 
+func (suite *RouterTestSuite) TestGetRoutes() {
+	router := newRouter()
+	router.Get("/test", func(r1 *Response, r2 *Request) {})
+	router.Post("/test", func(r1 *Response, r2 *Request) {})
+
+	routes := router.GetRoutes()
+	suite.Len(routes, 2)
+	suite.NotSame(router.routes, routes)
+}
+
+func (suite *RouterTestSuite) TestGetSubrouters() {
+	router := newRouter()
+	router.Subrouter("/test")
+	router.Subrouter("/other")
+
+	subrouters := router.GetSubrouters()
+	suite.Len(subrouters, 2)
+	suite.NotSame(router.subrouters, subrouters)
+}
+
 func TestRouterTestSuite(t *testing.T) {
 	RunTest(t, new(RouterTestSuite))
 }

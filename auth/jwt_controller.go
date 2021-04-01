@@ -21,17 +21,38 @@ import (
 // the "auth.jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
 // the "auth.jwt.expiry" config entry.
-func GenerateToken(id interface{}) (string, error) {
+func GenerateToken(username interface{}) (string, error) {
 	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userid": id,
+		"userid": username,
 		"nbf":    now.Unix(),             // Not Before
 		"exp":    now.Add(expiry).Unix(), // Expiry
 	})
 
 	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
 }
+
+// GenerateTokenWithClaims generates a new JWT with custom claims.
+// The token is created using the HMAC SHA256 method and signed using
+// the "auth.jwt.secret" config entry.
+// The token is set to expire in the amount of seconds defined by
+// the "auth.jwt.expiry" config entry.
+func GenerateTokenWithClaims(username interface{}, claims jwt.MapClaims) (string, error) {
+	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
+	now := time.Now()
+	customClaims := claims
+	customClaims["userid"] = username
+	customClaims["nbf"] = now.Unix()             // Not Before
+	customClaims["exp"] = now.Add(expiry).Unix() // Expiry
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
+
+	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
+}
+
+// TokenFunc is the function used by JWTController to generate tokens
+// during login process.
+type TokenFunc func(username interface{}, user interface{}) (string, error)
 
 // JWTController a controller for JWT-based authentication, using HMAC SHA256.
 // Its model fields are used for username and password retrieval.
@@ -45,6 +66,8 @@ type JWTController struct {
 	// PasswordField the name of the request's body field
 	// used as password in the authentication process
 	PasswordField string
+
+	TokenFunc TokenFunc
 }
 
 // NewJWTController create a new JWTController that will
@@ -54,6 +77,9 @@ func NewJWTController(model interface{}) *JWTController {
 		model:         model,
 		UsernameField: "username",
 		PasswordField: "password",
+		TokenFunc: func(username interface{}, user interface{}) (string, error) {
+			return GenerateToken(username)
+		},
 	}
 }
 
@@ -80,7 +106,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
 	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String(c.PasswordField))) == nil {
-		token, err := GenerateToken(username)
+		token, err := c.TokenFunc(username, user)
 		if err != nil {
 			panic(err)
 		}

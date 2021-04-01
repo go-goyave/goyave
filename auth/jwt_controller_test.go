@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"goyave.dev/goyave/v3"
 	"goyave.dev/goyave/v3/config"
@@ -45,6 +46,61 @@ func (suite *JWTControllerTestSuite) SetupTest() {
 func (suite *JWTControllerTestSuite) TestLogin() {
 	controller := NewJWTController(&TestUser{})
 	suite.NotNil(controller)
+
+	request := suite.CreateTestRequest(nil)
+	request.Data = map[string]interface{}{
+		"username": "johndoe@example.org",
+		"password": testUserPassword,
+	}
+	writer := httptest.NewRecorder()
+	response := suite.CreateTestResponse(writer)
+
+	controller.Login(response, request)
+	result := writer.Result()
+	suite.Equal(http.StatusOK, result.StatusCode)
+
+	json := map[string]string{}
+	err := suite.GetJSONBody(result, &json)
+	suite.Nil(err)
+
+	if err == nil {
+		token, ok := json["token"]
+		suite.True(ok)
+		suite.NotEmpty(token)
+	}
+	result.Body.Close()
+
+	request.Data = map[string]interface{}{
+		"username": "johndoe@example.org",
+		"password": "wrongpassword",
+	}
+	writer = httptest.NewRecorder()
+	response = suite.CreateTestResponse(writer)
+
+	controller.Login(response, request)
+	result = writer.Result()
+	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
+
+	json = map[string]string{}
+	err = suite.GetJSONBody(result, &json)
+	suite.Nil(err)
+
+	if err == nil {
+		errMessage, ok := json["validationError"]
+		suite.True(ok)
+		suite.Equal("These credentials don't match our records.", errMessage)
+	}
+	result.Body.Close()
+}
+
+func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
+	controller := NewJWTController(&TestUser{})
+	suite.NotNil(controller)
+	controller.TokenFunc = func(username interface{}, user interface{}) (string, error) {
+		return GenerateTokenWithClaims(username, jwt.MapClaims{
+			"sub": (user.(*TestUser)).ID,
+		})
+	}
 
 	request := suite.CreateTestRequest(nil)
 	request.Data = map[string]interface{}{

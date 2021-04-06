@@ -118,7 +118,7 @@ func (r *Route) BuildURL(parameters ...string) string {
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
 func (r *Route) BuildURI(parameters ...string) string {
-	fullURI, fullParameters := r.getFullParameters()
+	fullURI, fullParameters := r.GetFullURIAndParameters()
 
 	if len(parameters) != len(fullParameters) {
 		panic(fmt.Errorf("BuildURI: route has %d parameters, %d given", len(fullParameters), len(parameters)))
@@ -199,8 +199,8 @@ func (r *Route) GetValidationRules() *validation.Rules {
 	return r.validationRules
 }
 
-// getFullParameters get the full uri and parameters for this route and all its parent routers.
-func (r *Route) getFullParameters() (string, []string) {
+// GetFullURIAndParameters get the full uri and parameters for this route and all its parent routers.
+func (r *Route) GetFullURIAndParameters() (string, []string) {
 	router := r.parent
 	segments := make([]string, 0, 3)
 	segments = append(segments, r.uri)

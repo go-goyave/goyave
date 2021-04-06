@@ -137,6 +137,15 @@ func (suite *RouteTestSuite) TestAccessors() {
 	suite.Equal([]string{"GET", "POST"}, route.GetMethods())
 }
 
+func (suite *RouteTestSuite) TestGetFullURIAndParameters() {
+	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
+	route := router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
+
+	uri, params := route.GetFullURIAndParameters()
+	suite.Equal("/product/{id:[0-9+]}/{name}/accessories", uri)
+	suite.Equal([]string{"id", "name"}, params)
+}
+
 func (suite *RouteTestSuite) TestGetFullURI() {
 	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
 	route := router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")

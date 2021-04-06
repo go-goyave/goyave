@@ -3,6 +3,7 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,6 +20,7 @@ import (
 const testUserPassword = "secret"
 
 type JWTControllerTestSuite struct {
+	user *TestUser
 	goyave.TestSuite
 }
 
@@ -35,12 +37,12 @@ func (suite *JWTControllerTestSuite) SetupTest() {
 	if err != nil {
 		panic(err)
 	}
-	user := &TestUser{
+	suite.user = &TestUser{
 		Name:     "Admin",
 		Email:    "johndoe@example.org",
 		Password: string(password),
 	}
-	database.GetConnection().Create(user)
+	database.GetConnection().Create(suite.user)
 }
 
 func (suite *JWTControllerTestSuite) TestLogin() {
@@ -96,9 +98,10 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 	controller := NewJWTController(&TestUser{})
 	suite.NotNil(controller)
-	controller.TokenFunc = func(username interface{}, user interface{}) (string, error) {
-		return GenerateTokenWithClaims(username, jwt.MapClaims{
-			"sub": (user.(*TestUser)).ID,
+	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
+		return GenerateTokenWithClaims(jwt.MapClaims{
+			"userid": (user.(*TestUser)).Email,
+			"sub":    (user.(*TestUser)).ID,
 		})
 	}
 
@@ -122,6 +125,21 @@ func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 		token, ok := json["token"]
 		suite.True(ok)
 		suite.NotEmpty(token)
+		claims := jwt.MapClaims{}
+		_, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(config.GetString("auth.jwt.secret")), nil
+		})
+		suite.Nil(err)
+
+		userID, okID := claims["userid"]
+		suite.True(okID)
+		suite.Equal("johndoe@example.org", userID)
+		sub, okSub := claims["sub"]
+		suite.True(okSub)
+		suite.Equal(suite.user.ID, uint(sub.(float64)))
 	}
 	result.Body.Close()
 

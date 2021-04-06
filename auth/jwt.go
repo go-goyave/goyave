@@ -15,7 +15,6 @@ import (
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
 type JWTAuthenticator struct {
-
 	// Optional defines if the authenticator allows requests that
 	// don't provide credentials. Handlers should therefore check
 	// if request.User is not nil before accessing it.

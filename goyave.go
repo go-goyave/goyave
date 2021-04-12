@@ -154,9 +154,9 @@ func Start(routeRegistrer func(*Router)) error {
 		database.Migrate()
 	}
 
-	router = newRouter()
+	router = NewRouter()
 	routeRegistrer(router)
-	regexCache = nil // Clear regex cache
+	router.ClearRegexCache()
 	return startServer(router)
 }
 

@@ -13,14 +13,6 @@ type RouteTestSuite struct {
 	TestSuite
 }
 
-func (suite *RouteTestSuite) SetupTest() {
-	regexCache = make(map[string]*regexp.Regexp, 5)
-}
-
-func (suite *RouteTestSuite) TearDownTest() {
-	regexCache = nil
-}
-
 func (suite *RouteTestSuite) TestNewRoute() {
 	route := newRoute(func(resp *Response, r *Request) {})
 	suite.NotNil(route)
@@ -28,8 +20,9 @@ func (suite *RouteTestSuite) TestNewRoute() {
 }
 
 func (suite *RouteTestSuite) TestMakeParameters() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	route := newRoute(func(resp *Response, r *Request) {})
-	route.compileParameters("/product/{id:[0-9]+}", true)
+	route.compileParameters("/product/{id:[0-9]+}", true, regexCache)
 	suite.Equal([]string{"id"}, route.parameters)
 	suite.NotNil(route.regex)
 	suite.True(route.regex.MatchString("/product/666"))
@@ -38,6 +31,7 @@ func (suite *RouteTestSuite) TestMakeParameters() {
 }
 
 func (suite *RouteTestSuite) TestMatch() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	handler := func(resp *Response, r *Request) {
 		resp.String(http.StatusOK, "Success")
 	}
@@ -49,7 +43,7 @@ func (suite *RouteTestSuite) TestMatch() {
 		handler:         handler,
 		validationRules: nil,
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, regexCache)
 
 	rawRequest := httptest.NewRequest("GET", "/product/33", nil)
 	match := routeMatch{currentPath: rawRequest.URL.Path}
@@ -83,7 +77,7 @@ func (suite *RouteTestSuite) TestMatch() {
 		handler:         handler,
 		validationRules: nil,
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, regexCache)
 	rawRequest = httptest.NewRequest("GET", "/product/666/test", nil)
 	match = routeMatch{currentPath: rawRequest.URL.Path}
 	suite.True(route.match(rawRequest, &match))
@@ -98,7 +92,7 @@ func (suite *RouteTestSuite) TestMatch() {
 		handler:         handler,
 		validationRules: nil,
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, regexCache)
 	rawRequest = httptest.NewRequest("GET", "/categories/lawn-mower/asc", nil)
 	match = routeMatch{currentPath: rawRequest.URL.Path}
 	suite.True(route.match(rawRequest, &match))
@@ -114,7 +108,7 @@ func (suite *RouteTestSuite) TestAccessors() {
 	route := &Route{
 		name:    "route-name",
 		uri:     "/product/{id:[0-9+]}",
-		parent:  newRouter(),
+		parent:  NewRouter(),
 		methods: []string{"GET", "POST"},
 	}
 
@@ -127,7 +121,7 @@ func (suite *RouteTestSuite) TestAccessors() {
 	route = &Route{
 		name:    "",
 		uri:     "/product/{id:[0-9+]}",
-		parent:  newRouter(),
+		parent:  NewRouter(),
 		methods: []string{"GET", "POST"},
 	}
 	route.Name("new-name")
@@ -138,7 +132,7 @@ func (suite *RouteTestSuite) TestAccessors() {
 }
 
 func (suite *RouteTestSuite) TestGetFullURIAndParameters() {
-	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
+	router := NewRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
 	route := router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
 
 	uri, params := route.GetFullURIAndParameters()
@@ -147,19 +141,20 @@ func (suite *RouteTestSuite) TestGetFullURIAndParameters() {
 }
 
 func (suite *RouteTestSuite) TestGetFullURI() {
-	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
+	router := NewRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
 	route := router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
 
 	suite.Equal("/product/{id:[0-9+]}/{name}/accessories", route.GetFullURI())
 }
 
 func (suite *RouteTestSuite) TestBuildURI() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	route := &Route{
 		name:    "route-name",
 		uri:     "/product/{id:[0-9+]}",
 		methods: []string{"GET", "POST"},
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, regexCache)
 	suite.Equal("/product/42", route.BuildURI("42"))
 
 	suite.Panics(func() {
@@ -174,22 +169,23 @@ func (suite *RouteTestSuite) TestBuildURI() {
 		uri:     "/product/{id:[0-9+]}/{name}/accessories",
 		methods: []string{"GET", "POST"},
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, regexCache)
 	suite.Equal("/product/42/screwdriver/accessories", route.BuildURI("42", "screwdriver"))
 
-	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
+	router := NewRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
 	route = router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
 
 	suite.Equal("/product/42/screwdriver/accessories", route.BuildURI("42", "screwdriver"))
 }
 
 func (suite *RouteTestSuite) TestBuildURL() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	route := &Route{
 		name:    "route-name",
 		uri:     "/product/{id:[0-9+]}",
 		methods: []string{"GET", "POST"},
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, regexCache)
 	suite.Equal("http://127.0.0.1:1235/product/42", route.BuildURL("42"))
 
 	suite.Panics(func() {
@@ -204,10 +200,10 @@ func (suite *RouteTestSuite) TestBuildURL() {
 		uri:     "/product/{id:[0-9+]}/{name}/accessories",
 		methods: []string{"GET", "POST"},
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, regexCache)
 	suite.Equal("http://127.0.0.1:1235/product/42/screwdriver/accessories", route.BuildURL("42", "screwdriver"))
 
-	router := newRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
+	router := NewRouter().Subrouter("/product").Subrouter("/{id:[0-9+]}")
 	route = router.Route("GET|POST", "/{name}/accessories", func(resp *Response, r *Request) {}).Name("route-name")
 
 	suite.Equal("http://127.0.0.1:1235/product/42/screwdriver/accessories", route.BuildURL("42", "screwdriver"))

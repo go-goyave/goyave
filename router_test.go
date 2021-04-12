@@ -42,18 +42,27 @@ func (suite *RouterTestSuite) createOrderedTestMiddleware(result *string, str st
 	}
 }
 
-func (suite *RouterTestSuite) TearDownTest() {
-	regexCache = nil
+func (suite *RouterTestSuite) TestNewRouter() {
+	router := NewRouter()
+	suite.NotNil(router)
+	suite.NotNil(router.regexCache)
+	suite.Nil(router.parent)
+	suite.Empty(router.prefix)
+	suite.False(router.hasCORSMiddleware)
+	suite.Equal(3, len(router.middleware))
+	suite.NotEmpty(router.statusHandlers)
 }
 
-func (suite *RouterTestSuite) TestNewRouter() {
-	router := newRouter()
-	suite.NotNil(router)
-	suite.Equal(3, len(router.middleware))
+func (suite *RouterTestSuite) TestClearRegexCache() {
+	router := NewRouter()
+	subrouter := router.Subrouter("/sub")
+	router.ClearRegexCache()
+	suite.Nil(router.regexCache)
+	suite.Nil(subrouter.regexCache)
 }
 
 func (suite *RouterTestSuite) TestRouterRegisterRoute() {
-	router := newRouter()
+	router := NewRouter()
 	route := router.Route("GET", "/uri", func(resp *Response, r *Request) {})
 	suite.Contains(router.routes, route)
 	suite.Equal(router, route.parent)
@@ -72,13 +81,13 @@ func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 }
 
 func (suite *RouterTestSuite) TestRouterMiddleware() {
-	router := newRouter()
+	router := NewRouter()
 	router.Middleware(suite.routerTestMiddleware)
 	suite.Equal(4, len(router.middleware))
 }
 
 func (suite *RouterTestSuite) TestSubRouter() {
-	router := newRouter()
+	router := NewRouter()
 	router.Middleware(suite.routerTestMiddleware)
 	suite.Equal(4, len(router.middleware))
 
@@ -87,7 +96,7 @@ func (suite *RouterTestSuite) TestSubRouter() {
 	suite.Equal(0, len(subrouter.middleware)) // Middleware inherited, not copied
 	suite.Equal(len(router.statusHandlers), len(subrouter.statusHandlers))
 
-	router = newRouter()
+	router = NewRouter()
 	subrouter = router.Subrouter("/")
 	suite.Equal("", subrouter.prefix)
 }
@@ -156,7 +165,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 func (suite *RouterTestSuite) TestRequestHandler() {
 	rawRequest := httptest.NewRequest("GET", "/uri", nil)
 	writer := httptest.NewRecorder()
-	router := newRouter()
+	router := NewRouter()
 
 	route := &Route{}
 	var tmp *Route
@@ -179,7 +188,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	suite.Equal("Hello world", string(body))
 
 	writer = httptest.NewRecorder()
-	router = newRouter()
+	router = NewRouter()
 	router.Middleware(suite.routerTestMiddleware)
 
 	match = &routeMatch{
@@ -202,7 +211,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	suite.middlewareExecuted = false
 
 	writer = httptest.NewRecorder()
-	router = newRouter()
+	router = NewRouter()
 	match = &routeMatch{
 		route: &Route{
 			handler: func(response *Response, request *Request) {
@@ -223,7 +232,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 }
 
 func (suite *RouterTestSuite) TestCORS() {
-	router := newRouter()
+	router := NewRouter()
 	suite.Nil(router.corsOptions)
 
 	router.CORS(cors.Default())
@@ -285,7 +294,7 @@ func (suite *RouterTestSuite) TestErrorStatusHandler() {
 func (suite *RouterTestSuite) TestStatusHandlers() {
 	rawRequest := httptest.NewRequest("GET", "/uri", nil)
 	writer := httptest.NewRecorder()
-	router := newRouter()
+	router := NewRouter()
 	router.StatusHandler(func(response *Response, request *Request) {
 		response.String(http.StatusInternalServerError, "An unexpected panic occurred.")
 	}, http.StatusInternalServerError)
@@ -372,7 +381,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 func (suite *RouterTestSuite) TestRouteNoMatch() {
 	rawRequest := httptest.NewRequest("GET", "/uri", nil)
 	writer := httptest.NewRecorder()
-	router := newRouter()
+	router := NewRouter()
 
 	match := &routeMatch{route: notFoundRoute}
 	router.requestHandler(match, writer, rawRequest)
@@ -389,7 +398,7 @@ func (suite *RouterTestSuite) TestRouteNoMatch() {
 }
 
 func (suite *RouterTestSuite) TestNamedRoutes() {
-	r := newRouter()
+	r := NewRouter()
 	route := r.Route("GET", "/uri", func(resp *Response, r *Request) {})
 	route.Name("get-uri")
 	suite.Equal(route, r.namedRoutes["get-uri"])
@@ -417,7 +426,7 @@ func (suite *RouterTestSuite) TestMiddleware() {
 	for i := 0; i < 4; i++ {
 		middleware = append(middleware, suite.createOrderedTestMiddleware(&result, strconv.Itoa(i+1)))
 	}
-	router := newRouter()
+	router := NewRouter()
 	router.Middleware(middleware[0])
 
 	subrouter := router.Subrouter("/")
@@ -440,7 +449,7 @@ func (suite *RouterTestSuite) TestMiddleware() {
 
 func (suite *RouterTestSuite) TestCoreMiddleware() {
 	// Ensure core middleware is executed on Not Found and Method Not Allowed
-	router := newRouter()
+	router := NewRouter()
 
 	match := &routeMatch{
 		route: newRoute(func(response *Response, request *Request) {
@@ -517,7 +526,7 @@ func (suite *RouterTestSuite) TestMatch() {
 		response.String(http.StatusOK, "Hello")
 	}
 
-	router := newRouter()
+	router := NewRouter()
 	router.Route("GET", "/", handler).Name("root")
 	router.Route("GET|POST", "/hello", handler).Name("hello")
 	router.Route("PUT", "/hello", handler).Name("hello.put")
@@ -609,7 +618,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	protocol = "https"
 	config.Set("server.protocol", "https")
 
-	router := newRouter()
+	router := NewRouter()
 
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "http://localhost:443/test?param=1", nil))
@@ -652,7 +661,7 @@ func (suite *RouterTestSuite) TestConflictingRoutes() {
 	handler := func(response *Response, request *Request) {
 		response.Status(200)
 	}
-	router := newRouter()
+	router := NewRouter()
 
 	subrouter := router.Subrouter("/product")
 	routeSub := subrouter.Route("GET", "/{id:[0-9]+}", handler)
@@ -679,7 +688,7 @@ func (suite *RouterTestSuite) TestConflictingRoutes() {
 func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
 	result := ""
 	handler := func(resp *Response, r *Request) {}
-	router := newRouter()
+	router := NewRouter()
 
 	productRouter := router.Subrouter("/product")
 	productRouter.Route("GET", "/", handler).Name("product.index")
@@ -788,7 +797,7 @@ func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 }
 
 func (suite *RouterTestSuite) TestMethodRouteRegistration() {
-	router := newRouter()
+	router := NewRouter()
 	route := router.Get("/uri", func(resp *Response, r *Request) {})
 	suite.Equal([]string{"GET", "HEAD"}, route.methods)
 
@@ -820,20 +829,20 @@ func (suite *RouterTestSuite) TestFinalizeHijacked() {
 	}
 	defer c.Close()
 
-	router := newRouter()
+	router := NewRouter()
 	router.finalize(resp, request)
 
 	suite.False(resp.wroteHeader)
 }
 
 func (suite *RouterTestSuite) TestGroup() {
-	router := newRouter()
+	router := NewRouter()
 	group := router.Group()
 	suite.Empty(group.prefix)
 }
 
 func (suite *RouterTestSuite) TestGetRoutes() {
-	router := newRouter()
+	router := NewRouter()
 	router.Get("/test", func(r1 *Response, r2 *Request) {})
 	router.Post("/test", func(r1 *Response, r2 *Request) {})
 
@@ -843,7 +852,7 @@ func (suite *RouterTestSuite) TestGetRoutes() {
 }
 
 func (suite *RouterTestSuite) TestGetSubrouters() {
-	router := newRouter()
+	router := NewRouter()
 	router.Subrouter("/test")
 	router.Subrouter("/other")
 

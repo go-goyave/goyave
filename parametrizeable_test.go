@@ -11,18 +11,10 @@ type ParameterizableTestSuite struct {
 	suite.Suite
 }
 
-func (suite *ParameterizableTestSuite) SetupTest() {
-	regexCache = make(map[string]*regexp.Regexp, 5)
-}
-
-func (suite *ParameterizableTestSuite) TearDownTest() {
-	regexCache = nil
-}
-
 func (suite *ParameterizableTestSuite) TestCompileParameters() {
-
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	p := &parameterizable{}
-	p.compileParameters("/product/{id:[0-9]+}", true)
+	p.compileParameters("/product/{id:[0-9]+}", true, regexCache)
 	suite.Equal([]string{"id"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.True(p.regex.MatchString("/product/666"))
@@ -30,7 +22,7 @@ func (suite *ParameterizableTestSuite) TestCompileParameters() {
 	suite.False(p.regex.MatchString("/product/qwerty"))
 
 	p = &parameterizable{}
-	p.compileParameters("/product/{id:[0-9]+}/{name}", true)
+	p.compileParameters("/product/{id:[0-9]+}/{name}", true, regexCache)
 	suite.Equal([]string{"id", "name"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.False(p.regex.MatchString("/product/666"))
@@ -40,25 +32,26 @@ func (suite *ParameterizableTestSuite) TestCompileParameters() {
 	suite.True(p.regex.MatchString("/product/666/test"))
 
 	suite.Panics(func() { // Empty param, expect error
-		p.compileParameters("/product/{}", true)
+		p.compileParameters("/product/{}", true, regexCache)
 	})
 	suite.Panics(func() { // Empty name, expect error
-		p.compileParameters("/product/{:[0-9]+}", true)
+		p.compileParameters("/product/{:[0-9]+}", true, regexCache)
 	})
 	suite.Panics(func() { // Empty pattern, expect error
-		p.compileParameters("/product/{id:}", true)
+		p.compileParameters("/product/{id:}", true, regexCache)
 	})
 	suite.Panics(func() { // Capturing groups
-		p.compileParameters("/product/{name:(.*)}", true)
+		p.compileParameters("/product/{name:(.*)}", true, regexCache)
 	})
 	suite.NotPanics(func() { // Non-capturing groups
-		p.compileParameters("/product/{name:(?:.*)}", true)
+		p.compileParameters("/product/{name:(?:.*)}", true, regexCache)
 	})
 }
 
 func (suite *ParameterizableTestSuite) TestCompileParametersRouter() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	p := &parameterizable{}
-	p.compileParameters("/product/{id:[0-9]+}", false)
+	p.compileParameters("/product/{id:[0-9]+}", false, regexCache)
 	suite.Equal([]string{"id"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.True(p.regex.MatchString("/product/666"))
@@ -122,15 +115,17 @@ func (suite *ParameterizableTestSuite) TestMakeParameters() {
 }
 
 func (suite *ParameterizableTestSuite) TestRegexCache() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	path := "/product/{id:[0-9]+}"
 	regex := "^/product/([0-9]+)$"
 	p1 := &parameterizable{}
-	p1.compileParameters(path, true)
+	p1.compileParameters(path, true, regexCache)
 	suite.NotNil(regexCache[regex])
 
 	p2 := &parameterizable{}
-	p2.compileParameters(path, true)
+	p2.compileParameters(path, true, regexCache)
 	suite.Equal(p1.regex, p2.regex)
+	suite.Same(p1.regex, p2.regex)
 }
 
 func (suite *ParameterizableTestSuite) TestGetParameters() {

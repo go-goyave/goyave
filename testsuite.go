@@ -181,7 +181,7 @@ func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedur
 	cacheCriticalConfig()
 	recorder := httptest.NewRecorder()
 	response := s.CreateTestResponse(recorder)
-	router := newRouter()
+	router := NewRouter()
 	router.Middleware(middleware)
 	middleware(procedure)(response, request)
 	router.finalize(response, request)

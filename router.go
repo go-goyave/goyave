@@ -28,6 +28,8 @@ type Router struct {
 	namedRoutes    map[string]*Route
 	middlewareHolder
 	parameterizable
+
+	regexCache map[string]*regexp.Regexp
 }
 
 var _ http.Handler = (*Router)(nil) // implements http.Handler
@@ -94,11 +96,15 @@ func ValidationStatusHandler(response *Response, request *Request) {
 	response.JSON(response.GetStatus(), message)
 }
 
-func newRouter() *Router {
-	// Create a fresh regex cache
-	// This cache is set to nil when the server starts
-	regexCache = make(map[string]*regexp.Regexp, 5)
-
+// NewRouter create a new root-level Router that is pre-configured with core
+// middleware (recovery, parse and language), as well as status handlers
+// for all standard HTTP status codes.
+//
+// You don't need to manually build your router using this function
+// if you are using `goyave.Start()`. This method can however be useful for external
+// tooling that build routers without starting the HTTP server. Don't forget to call
+// router.ClearRegexCache() when you are done registering routes.
+func NewRouter() *Router {
 	router := &Router{
 		parent:            nil,
 		prefix:            "",
@@ -108,6 +114,7 @@ func newRouter() *Router {
 		middlewareHolder: middlewareHolder{
 			middleware: make([]Middleware, 0, 3),
 		},
+		regexCache: make(map[string]*regexp.Regexp, 5),
 	}
 	router.StatusHandler(PanicStatusHandler, http.StatusInternalServerError)
 	router.StatusHandler(ValidationStatusHandler, http.StatusBadRequest, http.StatusUnprocessableEntity)
@@ -121,6 +128,18 @@ func newRouter() *Router {
 	router.StatusHandler(ErrorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
 	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
+}
+
+// ClearRegexCache set internal router's regex cache used for route parameters optimisation to nil
+// so it can be garbage collected.
+// You don't need to call this function if you are using `goyave.Start()`.
+// However, this method SHOULD be called by external tooling that build routers without starting the HTTP
+// server when they are done registering routes and subrouters.
+func (r *Router) ClearRegexCache() {
+	r.regexCache = nil
+	for _, subrouter := range r.subrouters {
+		subrouter.ClearRegexCache()
+	}
 }
 
 // GetRoutes returns the list of routes belonging to this router.
@@ -220,8 +239,9 @@ func (r *Router) Subrouter(prefix string) *Router {
 		middlewareHolder: middlewareHolder{
 			middleware: nil,
 		},
+		regexCache: r.regexCache,
 	}
-	router.compileParameters(router.prefix, false)
+	router.compileParameters(router.prefix, false, r.regexCache)
 	r.subrouters = append(r.subrouters, router)
 	return router
 }
@@ -278,7 +298,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler) *Rou
 		parent:  r,
 		handler: handler,
 	}
-	route.compileParameters(route.uri, true)
+	route.compileParameters(route.uri, true, r.regexCache)
 	r.routes = append(r.routes, route)
 	return route
 }

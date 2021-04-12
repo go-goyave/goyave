@@ -30,8 +30,6 @@ type Router struct {
 	parameterizable
 }
 
-// TODO openapi.go: make Router and Route implement methods for OpenAPI format conversion (native support)
-
 var _ http.Handler = (*Router)(nil) // implements http.Handler
 var _ routeMatcher = (*Router)(nil) // implements routeMatcher
 

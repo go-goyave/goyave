@@ -17,7 +17,7 @@ type Route struct {
 	handler         Handler
 	validationRules *validation.Rules
 	middlewareHolder
-	parametrizeable
+	parameterizable
 }
 
 var _ routeMatcher = (*Route)(nil) // implements routeMatcher
@@ -36,7 +36,7 @@ func newRoute(handler Handler) *Route {
 }
 
 func (r *Route) match(req *http.Request, match *routeMatch) bool {
-	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
+	if params := r.parameterizable.regex.FindStringSubmatch(match.currentPath); params != nil {
 		if r.checkMethod(req.Method) {
 			if len(params) > 1 {
 				match.mergeParams(r.makeParameters(params))
@@ -68,7 +68,7 @@ func (r *Route) checkMethod(method string) bool {
 }
 
 func (r *Route) makeParameters(match []string) map[string]string {
-	return r.parametrizeable.makeParameters(match, r.parameters)
+	return r.parameterizable.makeParameters(match, r.parameters)
 }
 
 // Name set the name of the route.

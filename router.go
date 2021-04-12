@@ -27,7 +27,7 @@ type Router struct {
 	statusHandlers map[int]Handler
 	namedRoutes    map[string]*Route
 	middlewareHolder
-	parametrizeable
+	parameterizable
 }
 
 // TODO openapi.go: make Router and Route implement methods for OpenAPI format conversion (native support)
@@ -61,6 +61,10 @@ var (
 	})
 )
 
+func init() {
+	methodNotAllowedRoute.name = "method-not-allowed"
+}
+
 // PanicStatusHandler for the HTTP 500 error.
 // If debugging is enabled, writes the error details to the response and
 // print stacktrace in the console.
@@ -93,7 +97,6 @@ func ValidationStatusHandler(response *Response, request *Request) {
 }
 
 func newRouter() *Router {
-	methodNotAllowedRoute.name = "method-not-allowed"
 	// Create a fresh regex cache
 	// This cache is set to nil when the server starts
 	regexCache = make(map[string]*regexp.Regexp, 5)
@@ -156,8 +159,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *Router) match(req *http.Request, match *routeMatch) bool {
 	// Check if router itself matches
 	var params []string
-	if r.parametrizeable.regex != nil {
-		params = r.parametrizeable.regex.FindStringSubmatch(match.currentPath)
+	if r.parameterizable.regex != nil {
+		params = r.parameterizable.regex.FindStringSubmatch(match.currentPath)
 	} else {
 		params = []string{""}
 	}
@@ -197,7 +200,7 @@ func (r *Router) match(req *http.Request, match *routeMatch) bool {
 }
 
 func (r *Router) makeParameters(match []string) map[string]string {
-	return r.parametrizeable.makeParameters(match, r.parameters)
+	return r.parameterizable.makeParameters(match, r.parameters)
 }
 
 // Subrouter create a new sub-router from this router.

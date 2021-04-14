@@ -347,8 +347,8 @@ func (suite *ResponseTestSuite) TestRender() {
 	response = suite.CreateTestResponse(recorder)
 
 	structData := struct {
-		Status  int
 		Message string
+		Status  int
 	}{
 		Status:  http.StatusNotFound,
 		Message: "Not Found.",
@@ -397,8 +397,8 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 	response = suite.CreateTestResponse(recorder)
 
 	structData := struct {
-		Status  int
 		Message string
+		Status  int
 	}{
 		Status:  http.StatusNotFound,
 		Message: "Not Found.",
@@ -595,9 +595,9 @@ func (suite *ResponseTestSuite) TestHijackNotHijackable() {
 // ------------------------
 
 type testWriter struct {
+	io.Writer
 	result *string
 	id     string
-	io.Writer
 	closed bool
 }
 
@@ -615,7 +615,7 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	writer := httptest.NewRecorder()
 	response := newResponse(writer, nil)
 	result := ""
-	testWr := &testWriter{&result, "0", response.Writer(), false}
+	testWr := &testWriter{response.Writer(), &result, "0", false}
 	response.SetWriter(testWr)
 
 	response.String(http.StatusOK, "hello world")
@@ -637,8 +637,8 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	writer = httptest.NewRecorder()
 	response = newResponse(writer, nil)
 	result = ""
-	testWr = &testWriter{&result, "0", response.Writer(), false}
-	testWr2 := &testWriter{&result, "1", testWr, false}
+	testWr = &testWriter{response.Writer(), &result, "0", false}
+	testWr2 := &testWriter{testWr, &result, "1", false}
 	response.SetWriter(testWr2)
 
 	response.String(http.StatusOK, "hello world")

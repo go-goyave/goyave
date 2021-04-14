@@ -10,15 +10,15 @@ import (
 
 // Config for setting configuration for the limiter middleware
 type Config struct {
-	// Maximum number of requests in a client can send
-	RequestQuota int
+	// Unique identifier for requestors. Can be userID or IP
+	// Defaults to Remote Address if it is empty
+	ClientID interface{}
 
 	// Duration or time taken until the quota expires and renews
 	QuotaDuration time.Duration
 
-	// Unique identifier for requestors. Can be userID or IP
-	// Defaults to Remote Address if it is empty
-	ClientID interface{}
+	// Maximum number of requests in a client can send
+	RequestQuota int
 }
 
 // ConfigFunc acts as a factory for Config structs

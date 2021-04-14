@@ -20,9 +20,9 @@ type object map[string]interface{}
 // is empty, it means any value can be used, provided it is of the correct type.
 type Entry struct {
 	Value            interface{}
+	AuthorizedValues []interface{} // Leave empty for "any"
 	Type             reflect.Kind
 	IsSlice          bool
-	AuthorizedValues []interface{} // Leave empty for "any"
 }
 
 type readFunc func(string) (object, error)
@@ -31,37 +31,37 @@ var config object
 
 var configDefaults object = object{
 	"app": object{
-		"name":            &Entry{"goyave", reflect.String, false, []interface{}{}},
-		"environment":     &Entry{"localhost", reflect.String, false, []interface{}{}},
-		"debug":           &Entry{true, reflect.Bool, false, []interface{}{}},
-		"defaultLanguage": &Entry{"en-US", reflect.String, false, []interface{}{}},
+		"name":            &Entry{"goyave", []interface{}{}, reflect.String, false},
+		"environment":     &Entry{"localhost", []interface{}{}, reflect.String, false},
+		"debug":           &Entry{true, []interface{}{}, reflect.Bool, false},
+		"defaultLanguage": &Entry{"en-US", []interface{}{}, reflect.String, false},
 	},
 	"server": object{
-		"host":          &Entry{"127.0.0.1", reflect.String, false, []interface{}{}},
-		"domain":        &Entry{"", reflect.String, false, []interface{}{}},
-		"protocol":      &Entry{"http", reflect.String, false, []interface{}{"http", "https"}},
-		"port":          &Entry{8080, reflect.Int, false, []interface{}{}},
-		"httpsPort":     &Entry{8081, reflect.Int, false, []interface{}{}},
-		"timeout":       &Entry{10, reflect.Int, false, []interface{}{}},
-		"maxUploadSize": &Entry{10.0, reflect.Float64, false, []interface{}{}},
-		"maintenance":   &Entry{false, reflect.Bool, false, []interface{}{}},
+		"host":          &Entry{"127.0.0.1", []interface{}{}, reflect.String, false},
+		"domain":        &Entry{"", []interface{}{}, reflect.String, false},
+		"protocol":      &Entry{"http", []interface{}{"http", "https"}, reflect.String, false},
+		"port":          &Entry{8080, []interface{}{}, reflect.Int, false},
+		"httpsPort":     &Entry{8081, []interface{}{}, reflect.Int, false},
+		"timeout":       &Entry{10, []interface{}{}, reflect.Int, false},
+		"maxUploadSize": &Entry{10.0, []interface{}{}, reflect.Float64, false},
+		"maintenance":   &Entry{false, []interface{}{}, reflect.Bool, false},
 		"tls": object{
-			"cert": &Entry{nil, reflect.String, false, []interface{}{}},
-			"key":  &Entry{nil, reflect.String, false, []interface{}{}},
+			"cert": &Entry{nil, []interface{}{}, reflect.String, false},
+			"key":  &Entry{nil, []interface{}{}, reflect.String, false},
 		},
 	},
 	"database": object{
-		"connection":         &Entry{"none", reflect.String, false, []interface{}{}},
-		"host":               &Entry{"127.0.0.1", reflect.String, false, []interface{}{}},
-		"port":               &Entry{3306, reflect.Int, false, []interface{}{}},
-		"name":               &Entry{"goyave", reflect.String, false, []interface{}{}},
-		"username":           &Entry{"root", reflect.String, false, []interface{}{}},
-		"password":           &Entry{"root", reflect.String, false, []interface{}{}},
-		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", reflect.String, false, []interface{}{}},
-		"maxOpenConnections": &Entry{20, reflect.Int, false, []interface{}{}},
-		"maxIdleConnections": &Entry{20, reflect.Int, false, []interface{}{}},
-		"maxLifetime":        &Entry{300, reflect.Int, false, []interface{}{}},
-		"autoMigrate":        &Entry{false, reflect.Bool, false, []interface{}{}},
+		"connection":         &Entry{"none", []interface{}{}, reflect.String, false},
+		"host":               &Entry{"127.0.0.1", []interface{}{}, reflect.String, false},
+		"port":               &Entry{3306, []interface{}{}, reflect.Int, false},
+		"name":               &Entry{"goyave", []interface{}{}, reflect.String, false},
+		"username":           &Entry{"root", []interface{}{}, reflect.String, false},
+		"password":           &Entry{"root", []interface{}{}, reflect.String, false},
+		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", []interface{}{}, reflect.String, false},
+		"maxOpenConnections": &Entry{20, []interface{}{}, reflect.Int, false},
+		"maxIdleConnections": &Entry{20, []interface{}{}, reflect.Int, false},
+		"maxLifetime":        &Entry{300, []interface{}{}, reflect.Int, false},
+		"autoMigrate":        &Entry{false, []interface{}{}, reflect.Bool, false},
 	},
 }
 
@@ -445,7 +445,7 @@ func loadDefaults(src object, dst object) {
 				}
 				value = slice.Interface()
 			}
-			dst[k] = &Entry{value, entry.Type, entry.IsSlice, entry.AuthorizedValues}
+			dst[k] = &Entry{value, entry.AuthorizedValues, entry.Type, entry.IsSlice}
 		}
 	}
 }
@@ -487,7 +487,7 @@ func makeEntryFromValue(value interface{}) *Entry {
 		kind = t.Elem().Kind()
 		isSlice = true
 	}
-	return &Entry{value, kind, isSlice, []interface{}{}}
+	return &Entry{value, []interface{}{}, kind, isSlice}
 }
 
 func readConfigFile(file string) (object, error) {

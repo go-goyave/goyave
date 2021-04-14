@@ -768,7 +768,7 @@ func (suite *RouterTestSuite) TestSubrouterEmptyPrefix() {
 
 func (suite *RouterTestSuite) TestChainedWriterCloseOnPanic() {
 	result := ""
-	testWr := &testWriter{&result, "0", nil, false}
+	testWr := &testWriter{nil, &result, "0", false}
 
 	suite.RunServer(func(router *Router) {
 		router.Middleware(func(next Handler) Handler {

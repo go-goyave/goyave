@@ -10,9 +10,9 @@ import (
 )
 
 type limiter struct {
+	resetsAt time.Time
 	config   Config
 	counter  int
-	resetsAt time.Time
 	mx       sync.Mutex
 }
 
@@ -69,8 +69,8 @@ func (l *limiter) getSecondsToQuotaReset() float64 {
 }
 
 type limiterStore struct {
-	mx    sync.Mutex
 	store map[interface{}]*limiter
+	mx    sync.Mutex
 }
 
 func newLimiterStore() limiterStore {

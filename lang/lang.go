@@ -23,11 +23,11 @@ type validationLines struct {
 }
 
 type attribute struct {
-	// The value with which the :field placeholder will be replaced
-	Name string `json:"name"`
-
 	// A custom message for when a rule doesn't pass with this attribute
 	Rules map[string]string `json:"rules"`
+
+	// The value with which the :field placeholder will be replaced
+	Name string `json:"name"`
 }
 
 // language represents a full language

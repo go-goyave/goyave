@@ -17,7 +17,7 @@ func setupConfigBench(b *testing.B) {
 }
 
 func BenchmarkValidateInt(b *testing.B) {
-	entry := &Entry{1.0, reflect.Int, false, []interface{}{}}
+	entry := &Entry{1.0, []interface{}{}, reflect.Int, false}
 	config := object{"number": entry}
 	b.ReportAllocs()
 	b.ResetTimer()

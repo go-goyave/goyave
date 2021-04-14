@@ -35,13 +35,13 @@ type FailingTestSuite struct {
 }
 
 type ConcurrentTestSuite struct {
-	TestSuite
 	res *int
+	TestSuite
 }
 
 type TestModel struct {
-	ID   uint   `gorm:"primaryKey"`
 	Name string `gorm:"type:varchar(100)"`
+	ID   uint   `gorm:"primaryKey"`
 }
 
 func genericHandler(message string) func(response *Response, request *Request) {

@@ -36,8 +36,10 @@ type PreWriter interface {
 
 // Response represents a controller response.
 type Response struct {
+	writer         io.Writer
 	responseWriter http.ResponseWriter
 	err            interface{}
+	httpRequest    *http.Request
 	stacktrace     string
 	status         int
 
@@ -47,9 +49,6 @@ type Response struct {
 	empty       bool
 	wroteHeader bool
 	hijacked    bool
-
-	httpRequest *http.Request
-	writer      io.Writer
 }
 
 // newResponse create a new Response using the given http.ResponseWriter and raw request.

@@ -60,8 +60,8 @@ type ITestSuite interface {
 // Goyave-specific testing.
 type TestSuite struct {
 	testify.Suite
-	timeout    time.Duration // Timeout for functional tests
 	httpClient *http.Client
+	timeout    time.Duration // Timeout for functional tests
 	mu         sync.Mutex
 }
 

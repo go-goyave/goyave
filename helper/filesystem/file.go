@@ -8,9 +8,9 @@ import (
 
 // File represents a file received from client.
 type File struct {
+	Data     multipart.File
 	Header   *multipart.FileHeader
 	MIMEType string
-	Data     multipart.File
 }
 
 // Save writes the given file on the disk.

@@ -427,7 +427,7 @@ func (suite *GoyaveTestSuite) TestAutoMigrate() {
 }
 
 func (suite *GoyaveTestSuite) TestError() {
-	err := &Error{ExitHTTPError, fmt.Errorf("test error")}
+	err := &Error{fmt.Errorf("test error"), ExitHTTPError}
 	suite.Equal("test error", err.Error())
 }
 

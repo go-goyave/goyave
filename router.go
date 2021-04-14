@@ -17,19 +17,19 @@ type routeMatcher interface {
 
 // Router registers routes to be matched and executes a handler.
 type Router struct {
-	parent            *Router
-	prefix            string
-	corsOptions       *cors.Options
-	hasCORSMiddleware bool
-
-	routes         []*Route
-	subrouters     []*Router
+	parent         *Router
+	corsOptions    *cors.Options
 	statusHandlers map[int]Handler
 	namedRoutes    map[string]*Route
-	middlewareHolder
-	parameterizable
+	regexCache     map[string]*regexp.Regexp
 
-	regexCache map[string]*regexp.Regexp
+	parameterizable
+	middlewareHolder
+
+	prefix            string
+	routes            []*Route
+	subrouters        []*Router
+	hasCORSMiddleware bool
 }
 
 var _ http.Handler = (*Router)(nil) // implements http.Handler
@@ -44,9 +44,9 @@ type middlewareHolder struct {
 
 type routeMatch struct {
 	route       *Route
+	parameters  map[string]string
 	err         error
 	currentPath string
-	parameters  map[string]string
 }
 
 var (

@@ -25,6 +25,7 @@ linters:
     - misspell
     - bodyclose
     - govet
+    - deadcode
   disable:
     - errcheck
   disable-all: false

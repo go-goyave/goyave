@@ -11,6 +11,11 @@ linters-settings:
     simplify: true
   misspell:
     locale: US
+  govet:
+    disable:
+      - shadow
+      - nilness
+    enable-all: true
 
 linters:
   enable:
@@ -19,7 +24,7 @@ linters:
     - gocyclo
     - misspell
     - bodyclose
-    - fieldalignment
+    - govet
   disable:
     - errcheck
   disable-all: false

@@ -19,7 +19,7 @@ linters:
     - gocyclo
     - misspell
     - bodyclose
-    - maligned
+    - fieldalignment
   disable:
     - errcheck
   disable-all: false

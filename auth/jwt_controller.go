@@ -21,27 +21,42 @@ import (
 // the "auth.jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
 // the "auth.jwt.expiry" config entry.
-func GenerateToken(id interface{}) (string, error) {
+func GenerateToken(username interface{}) (string, error) {
+	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username})
+}
+
+// GenerateTokenWithClaims generates a new JWT with custom claims.
+// The token is created using the HMAC SHA256 method and signed using
+// the "auth.jwt.secret" config entry.
+// The token is set to expire in the amount of seconds defined by
+// the "auth.jwt.expiry" config entry.
+func GenerateTokenWithClaims(claims jwt.MapClaims) (string, error) {
 	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userid": id,
-		"nbf":    now.Unix(),             // Not Before
-		"exp":    now.Add(expiry).Unix(), // Expiry
-	})
+	customClaims := jwt.MapClaims{
+		"nbf": now.Unix(),             // Not Before
+		"exp": now.Add(expiry).Unix(), // Expiry
+	}
+	for k, c := range claims {
+		customClaims[k] = c
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
 
 	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
 }
 
+// TokenFunc is the function used by JWTController to generate tokens
+// during login process.
+type TokenFunc func(request *goyave.Request, user interface{}) (string, error)
+
 // JWTController a controller for JWT-based authentication, using HMAC SHA256.
 // Its model fields are used for username and password retrieval.
 type JWTController struct {
-	model interface{}
-
+	model     interface{}
+	TokenFunc TokenFunc
 	// UsernameField the name of the request's body field
 	// used as username in the authentication process
 	UsernameField string
-
 	// PasswordField the name of the request's body field
 	// used as password in the authentication process
 	PasswordField string
@@ -50,11 +65,15 @@ type JWTController struct {
 // NewJWTController create a new JWTController that will
 // be using the given model for login and token generation.
 func NewJWTController(model interface{}) *JWTController {
-	return &JWTController{
+	controller := &JWTController{
 		model:         model,
 		UsernameField: "username",
 		PasswordField: "password",
 	}
+	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
+		return GenerateToken(r.String(controller.UsernameField))
+	}
+	return controller
 }
 
 // Login POST handler for token-based authentication.
@@ -80,7 +99,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
 	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String(c.PasswordField))) == nil {
-		token, err := GenerateToken(username)
+		token, err := c.TokenFunc(request, user)
 		if err != nil {
 			panic(err)
 		}

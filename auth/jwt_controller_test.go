@@ -81,7 +81,7 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 
 	controller.Login(response, request)
 	result = writer.Result()
-	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
+	suite.Equal(http.StatusUnauthorized, result.StatusCode)
 
 	json = map[string]string{}
 	err = suite.GetJSONBody(result, &json)
@@ -152,7 +152,7 @@ func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 
 	controller.Login(response, request)
 	result = writer.Result()
-	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
+	suite.Equal(http.StatusUnauthorized, result.StatusCode)
 
 	json = map[string]string{}
 	err = suite.GetJSONBody(result, &json)

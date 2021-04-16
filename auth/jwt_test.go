@@ -104,13 +104,20 @@ func (suite *JWTAuthenticatorTestSuite) TestTokenWithClaimsHasClaims() {
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticateWithClaims() {
 	tokenAuthenticator := &JWTAuthenticator{}
 	authenticatedUser := &TestUser{}
-	token, err := GenerateTokenWithClaims(jwt.MapClaims{
+	originalClaims := jwt.MapClaims{
 		"sub":    suite.user.ID,
 		"userid": suite.user.Email,
-	})
+	}
+	token, err := GenerateTokenWithClaims(originalClaims)
 	suite.Nil(err)
-	suite.Nil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
+
+	request := suite.createRequest(token)
+	suite.Nil(tokenAuthenticator.Authenticate(request, authenticatedUser))
 	suite.Equal("Admin", authenticatedUser.Name)
+	claims := request.Extra["jwt_claims"].(jwt.MapClaims)
+	suite.NotNil(claims)
+	suite.Equal(float64(suite.user.ID), claims["sub"])
+	suite.Equal(suite.user.Email, claims["userid"])
 }
 
 func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenInvalidCredentials() {

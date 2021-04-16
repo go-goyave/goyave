@@ -50,6 +50,8 @@ func init() {
 // The database request is executed based on the model name and the
 // struct tag `auth:"username"`.
 //
+// If the token is valid and has claims, those claims will be added to `request.Extra` with the key "jwt_claims".
+//
 // This implementation is a JWT-based authentication using HMAC SHA256, supporting only one active token.
 func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{}) error {
 
@@ -71,6 +73,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 
 	if err == nil && token.Valid {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			request.Extra["jwt_claims"] = claims
 			column := FindColumns(user, "username")[0]
 			claimName := a.ClaimName
 			if claimName == "" {

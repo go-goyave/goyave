@@ -711,7 +711,7 @@ You can support me on Github Sponsor or Patreon.
     <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
 
-I'm very grateful to my patrons and donators:
+I'm very grateful to my patrons, sponsors and donators:
 
 - Ben Hyrman
 - Massimiliano Bertinetti

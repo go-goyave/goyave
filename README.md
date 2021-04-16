@@ -715,6 +715,7 @@ I'm very grateful to my patrons and donators:
 
 - Ben Hyrman
 - Massimiliano Bertinetti
+- ethicnology
 
 ### Contributors
 
@@ -725,6 +726,7 @@ A big "Thank you" to the Goyave contributors:
 - [jRimbault](https://github.com/jRimbault) (CI and code analysis)
 - [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
 - [Albert Shirima](https://github.com/agbaraka) (Rate limiting)
+- [Łukasz Sowa](https://github.com/Morishiri) (Custom claims in JWT)
 
 ## License
 

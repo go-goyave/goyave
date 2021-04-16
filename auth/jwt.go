@@ -15,6 +15,11 @@ import (
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
 type JWTAuthenticator struct {
+
+	// ClaimName the name of the claim used to retrieve the user.
+	// Defaults to "userid".
+	ClaimName string
+
 	// Optional defines if the authenticator allows requests that
 	// don't provide credentials. Handlers should therefore check
 	// if request.User is not nil before accessing it.
@@ -67,7 +72,11 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 	if err == nil && token.Valid {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			column := FindColumns(user, "username")[0]
-			result := database.GetConnection().Where(column.Name+" = ?", claims["userid"]).First(user)
+			claimName := a.ClaimName
+			if claimName == "" {
+				claimName = "userid"
+			}
+			result := database.GetConnection().Where(column.Name+" = ?", claims[claimName]).First(user)
 
 			if result.Error != nil {
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) {

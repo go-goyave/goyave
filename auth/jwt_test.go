@@ -175,6 +175,18 @@ func (suite *JWTAuthenticatorTestSuite) TestOptional() {
 	suite.Nil(tokenAuthenticator.Authenticate(suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil)), nil))
 }
 
+func (suite *JWTAuthenticatorTestSuite) TestClaimName() {
+	tokenAuthenticator := &JWTAuthenticator{ClaimName: "sub"}
+
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{
+		"sub": suite.user.Email,
+	})
+	suite.Nil(err)
+	suite.Nil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
+	suite.Equal("Admin", authenticatedUser.Name)
+}
+
 func (suite *JWTAuthenticatorTestSuite) TearDownTest() {
 	suite.ClearDatabase()
 }

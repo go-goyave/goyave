@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"time"
@@ -16,13 +17,15 @@ import (
 	"goyave.dev/goyave/v3/validation"
 )
 
+// TODO move token generation function to jwt.go
+
 // GenerateToken generate a new JWT.
 // The token is created using the HMAC SHA256 method and signed using
 // the "auth.jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
 // the "auth.jwt.expiry" config entry.
 func GenerateToken(username interface{}) (string, error) {
-	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username})
+	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username}, jwt.SigningMethodHS256)
 }
 
 // GenerateTokenWithClaims generates a new JWT with custom claims.
@@ -30,7 +33,7 @@ func GenerateToken(username interface{}) (string, error) {
 // the "auth.jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
 // the "auth.jwt.expiry" config entry.
-func GenerateTokenWithClaims(claims jwt.MapClaims) (string, error) {
+func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {
 	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()
 	customClaims := jwt.MapClaims{
@@ -40,9 +43,31 @@ func GenerateTokenWithClaims(claims jwt.MapClaims) (string, error) {
 	for k, c := range claims {
 		customClaims[k] = c
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
+	token := jwt.NewWithClaims(signingMethod, customClaims)
 
-	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
+	key, err := getKey(signingMethod)
+	if err != nil {
+		return "", err
+	}
+	return token.SignedString(key)
+}
+
+func getKey(signingMethod jwt.SigningMethod) (interface{}, error) {
+	switch signingMethod.(type) {
+	case *jwt.SigningMethodRSA:
+		// TODO avoid redundancy
+		// TODO cache keys to avoid re-parsing all the time
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.private")) // TODO handle errors
+		goyave.Logger.Println(string(data))
+		return jwt.ParseRSAPrivateKeyFromPEM(data)
+	case *jwt.SigningMethodECDSA:
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.private"))
+		return jwt.ParseECPrivateKeyFromPEM(data)
+	case *jwt.SigningMethodHMAC:
+		return []byte(config.GetString("auth.jwt.secret")), nil
+	default:
+		return nil, errors.New("Unsupported JWT Signing method: " + signingMethod.Alg())
+	}
 }
 
 // TokenFunc is the function used by JWTController to generate tokens
@@ -52,7 +77,10 @@ type TokenFunc func(request *goyave.Request, user interface{}) (string, error)
 // JWTController a controller for JWT-based authentication, using HMAC SHA256.
 // Its model fields are used for username and password retrieval.
 type JWTController struct {
-	model     interface{}
+	model interface{}
+
+	SigningMethod jwt.SigningMethod
+
 	TokenFunc TokenFunc
 	// UsernameField the name of the request's body field
 	// used as username in the authentication process
@@ -71,7 +99,11 @@ func NewJWTController(model interface{}) *JWTController {
 		PasswordField: "password",
 	}
 	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
-		return GenerateToken(r.String(controller.UsernameField))
+		signingMethod := controller.SigningMethod
+		if signingMethod == nil {
+			signingMethod = jwt.SigningMethodHS256
+		}
+		return GenerateTokenWithClaims(jwt.MapClaims{"userid": r.String(controller.UsernameField)}, signingMethod)
 	}
 	return controller
 }

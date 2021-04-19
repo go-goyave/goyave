@@ -81,7 +81,31 @@ func (suite *JWTAuthenticatorTestSuite) TestTokenWithClaimsHasClaims() {
 	token, err := GenerateTokenWithClaims(jwt.MapClaims{
 		"sub":    suite.user.ID,
 		"userid": suite.user.Email,
+	}, jwt.SigningMethodHS256)
+	suite.Nil(err)
+	claims := jwt.MapClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(config.GetString("auth.jwt.secret")), nil
 	})
+	suite.Nil(err)
+
+	userID, okID := claims["userid"]
+	suite.True(okID)
+	suite.Equal(suite.user.Email, userID)
+	sub, okSub := claims["sub"]
+	suite.True(okSub)
+	suite.Equal(suite.user.ID, uint(sub.(float64)))
+	suite.Equal(jwt.SigningMethodHS256, parsedToken.Method)
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestTokenAsymmetricSigningMethod() {
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{
+		"sub":    suite.user.ID,
+		"userid": suite.user.Email,
+	}, jwt.SigningMethodRS256)
 	suite.Nil(err)
 	claims := jwt.MapClaims{}
 	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
@@ -108,7 +132,7 @@ func (suite *JWTAuthenticatorTestSuite) TestAuthenticateWithClaims() {
 		"sub":    suite.user.ID,
 		"userid": suite.user.Email,
 	}
-	token, err := GenerateTokenWithClaims(originalClaims)
+	token, err := GenerateTokenWithClaims(originalClaims, jwt.SigningMethodHS256)
 	suite.Nil(err)
 
 	request := suite.createRequest(token)
@@ -133,7 +157,7 @@ func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenWithClaimsInvalidCreden
 	token, err := GenerateTokenWithClaims(jwt.MapClaims{
 		"sub":    suite.user.ID,
 		"userid": "wrongemail@example.org",
-	})
+	}, jwt.SigningMethodHS256)
 	suite.Nil(err)
 	suite.Equal("These credentials don't match our records.", tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser).Error())
 }
@@ -188,7 +212,7 @@ func (suite *JWTAuthenticatorTestSuite) TestClaimName() {
 	authenticatedUser := &TestUser{}
 	token, err := GenerateTokenWithClaims(jwt.MapClaims{
 		"sub": suite.user.Email,
-	})
+	}, jwt.SigningMethodHS256)
 	suite.Nil(err)
 	suite.Nil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
 	suite.Equal("Admin", authenticatedUser.Name)

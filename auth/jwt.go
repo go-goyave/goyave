@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 
 	"github.com/dgrijalva/jwt-go"
@@ -15,6 +16,7 @@ import (
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
 type JWTAuthenticator struct {
+	SigningMethod jwt.SigningMethod
 
 	// ClaimName the name of the claim used to retrieve the user.
 	// Defaults to "userid".
@@ -63,13 +65,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 		return fmt.Errorf(lang.Get(request.Lang, "auth.no-credentials-provided"))
 	}
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(config.GetString("auth.jwt.secret")), nil
-	})
+	token, err := jwt.Parse(tokenString, a.keyFunc)
 
 	if err == nil && token.Valid {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
@@ -93,6 +89,32 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 	}
 
 	return a.makeError(request.Lang, err.(*jwt.ValidationError).Errors)
+}
+
+func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (interface{}, error) {
+	switch a.SigningMethod.(type) {
+	case *jwt.SigningMethodRSA:
+		// TODO avoid redundancy
+		// TODO cache keys to avoid re-parsing all the time
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.public"))
+		return jwt.ParseRSAPublicKeyFromPEM(data)
+	case *jwt.SigningMethodECDSA:
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.public"))
+		return jwt.ParseECPublicKeyFromPEM(data)
+	case *jwt.SigningMethodHMAC:
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(config.GetString("auth.jwt.secret")), nil
+	default:
+		return nil, errors.New("Unsupported JWT Signing method: " + a.SigningMethod.Alg())
+	}
 }
 
 func (a *JWTAuthenticator) makeError(language string, bitfield uint32) error {

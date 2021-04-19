@@ -102,7 +102,7 @@ func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 		return GenerateTokenWithClaims(jwt.MapClaims{
 			"userid": (user.(*TestUser)).Email,
 			"sub":    (user.(*TestUser)).ID,
-		})
+		}, jwt.SigningMethodHS256)
 	}
 
 	request := suite.CreateTestRequest(nil)

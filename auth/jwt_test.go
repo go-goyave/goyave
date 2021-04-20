@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -101,7 +102,7 @@ func (suite *JWTAuthenticatorTestSuite) TestTokenWithClaimsHasClaims() {
 	suite.Equal(jwt.SigningMethodHS256, parsedToken.Method)
 }
 
-func (suite *JWTAuthenticatorTestSuite) TestTokenAsymmetricSigningMethod() {
+func (suite *JWTAuthenticatorTestSuite) TestRSASignedToken() {
 	token, err := GenerateTokenWithClaims(jwt.MapClaims{
 		"sub":    suite.user.ID,
 		"userid": suite.user.Email,
@@ -109,10 +110,11 @@ func (suite *JWTAuthenticatorTestSuite) TestTokenAsymmetricSigningMethod() {
 	suite.Nil(err)
 	claims := jwt.MapClaims{}
 	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(config.GetString("auth.jwt.secret")), nil
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.public"))
+		return jwt.ParseRSAPublicKeyFromPEM(data)
 	})
 	suite.Nil(err)
 
@@ -122,7 +124,32 @@ func (suite *JWTAuthenticatorTestSuite) TestTokenAsymmetricSigningMethod() {
 	sub, okSub := claims["sub"]
 	suite.True(okSub)
 	suite.Equal(suite.user.ID, uint(sub.(float64)))
-	suite.Equal(jwt.SigningMethodHS256, parsedToken.Method)
+	suite.Equal(jwt.SigningMethodRS256, parsedToken.Method)
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestECDSASignedToken() {
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{
+		"sub":    suite.user.ID,
+		"userid": suite.user.Email,
+	}, jwt.SigningMethodES256)
+	suite.Nil(err)
+	claims := jwt.MapClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.public"))
+		return jwt.ParseECPublicKeyFromPEM(data)
+	})
+	suite.Nil(err)
+
+	userID, okID := claims["userid"]
+	suite.True(okID)
+	suite.Equal(suite.user.Email, userID)
+	sub, okSub := claims["sub"]
+	suite.True(okSub)
+	suite.Equal(suite.user.ID, uint(sub.(float64)))
+	suite.Equal(jwt.SigningMethodES256, parsedToken.Method)
 }
 
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticateWithClaims() {

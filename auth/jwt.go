@@ -76,10 +76,16 @@ func getKey(signingMethod jwt.SigningMethod) (interface{}, error) {
 	case *jwt.SigningMethodRSA:
 		// TODO avoid redundancy
 		// TODO cache keys to avoid re-parsing all the time
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.private")) // TODO handle errors
+		data, err := ioutil.ReadFile(config.GetString("auth.jwt.rsa.private")) // TODO handle errors
+		if err != nil {
+			panic(err)
+		}
 		return jwt.ParseRSAPrivateKeyFromPEM(data)
 	case *jwt.SigningMethodECDSA:
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.private"))
+		data, err := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.private"))
+		if err != nil {
+			panic(err)
+		}
 		return jwt.ParseECPrivateKeyFromPEM(data)
 	case *jwt.SigningMethodHMAC:
 		return []byte(config.GetString("auth.jwt.secret")), nil
@@ -158,15 +164,21 @@ func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.public"))
+		data, err := ioutil.ReadFile(config.GetString("auth.jwt.rsa.public"))
+		if err != nil {
+			panic(err)
+		}
 		return jwt.ParseRSAPublicKeyFromPEM(data)
 	case *jwt.SigningMethodECDSA:
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.public"))
+		data, err := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.public")) // TODO error handling
+		if err != nil {
+			panic(err)
+		}
 		return jwt.ParseECPublicKeyFromPEM(data)
-	case *jwt.SigningMethodHMAC:
+	case *jwt.SigningMethodHMAC, nil:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}

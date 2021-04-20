@@ -30,7 +30,15 @@
     "auth": {
         "jwt": {
             "expiry": 300.0,
-            "secret": "jwt-secret"
+            "secret": "jwt-secret",
+            "rsa": {
+                "private": "resources/rsa/private.pem",
+                "public": "resources/rsa/public.pem"
+            },
+            "ecdsa": {
+                "private": "resources/ecdsa/private.pem",
+                "public": "resources/ecdsa/public.pem"
+            }
         },
         "basic": {
             "username": "admin",

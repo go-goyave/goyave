@@ -2,73 +2,17 @@ package auth
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
 	"goyave.dev/goyave/v3/database"
 	"goyave.dev/goyave/v3/lang"
 	"goyave.dev/goyave/v3/validation"
 )
-
-// TODO move token generation function to jwt.go
-
-// GenerateToken generate a new JWT.
-// The token is created using the HMAC SHA256 method and signed using
-// the "auth.jwt.secret" config entry.
-// The token is set to expire in the amount of seconds defined by
-// the "auth.jwt.expiry" config entry.
-func GenerateToken(username interface{}) (string, error) {
-	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username}, jwt.SigningMethodHS256)
-}
-
-// GenerateTokenWithClaims generates a new JWT with custom claims.
-// The token is created using the HMAC SHA256 method and signed using
-// the "auth.jwt.secret" config entry.
-// The token is set to expire in the amount of seconds defined by
-// the "auth.jwt.expiry" config entry.
-func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {
-	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
-	now := time.Now()
-	customClaims := jwt.MapClaims{
-		"nbf": now.Unix(),             // Not Before
-		"exp": now.Add(expiry).Unix(), // Expiry
-	}
-	for k, c := range claims {
-		customClaims[k] = c
-	}
-	token := jwt.NewWithClaims(signingMethod, customClaims)
-
-	key, err := getKey(signingMethod)
-	if err != nil {
-		return "", err
-	}
-	return token.SignedString(key)
-}
-
-func getKey(signingMethod jwt.SigningMethod) (interface{}, error) {
-	switch signingMethod.(type) {
-	case *jwt.SigningMethodRSA:
-		// TODO avoid redundancy
-		// TODO cache keys to avoid re-parsing all the time
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.private")) // TODO handle errors
-		goyave.Logger.Println(string(data))
-		return jwt.ParseRSAPrivateKeyFromPEM(data)
-	case *jwt.SigningMethodECDSA:
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.private"))
-		return jwt.ParseECPrivateKeyFromPEM(data)
-	case *jwt.SigningMethodHMAC:
-		return []byte(config.GetString("auth.jwt.secret")), nil
-	default:
-		return nil, errors.New("Unsupported JWT Signing method: " + signingMethod.Alg())
-	}
-}
 
 // TokenFunc is the function used by JWTController to generate tokens
 // during login process.

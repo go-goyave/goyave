@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"gorm.io/gorm"
@@ -13,6 +14,79 @@ import (
 	"goyave.dev/goyave/v3/database"
 	"goyave.dev/goyave/v3/lang"
 )
+
+func init() {
+	config.Register("auth.jwt.expiry", config.Entry{
+		Value:            300,
+		Type:             reflect.Int,
+		IsSlice:          false,
+		AuthorizedValues: []interface{}{},
+	})
+	registerKeyConfigEntry("auth.jwt.secret")
+	registerKeyConfigEntry("auth.jwt.rsa.public")
+	registerKeyConfigEntry("auth.jwt.rsa.private")
+	registerKeyConfigEntry("auth.jwt.ecdsa.public")
+	registerKeyConfigEntry("auth.jwt.ecdsa.private")
+}
+
+func registerKeyConfigEntry(name string) {
+	config.Register(name, config.Entry{
+		Value:            nil,
+		Type:             reflect.String,
+		IsSlice:          false,
+		AuthorizedValues: []interface{}{},
+	})
+}
+
+// GenerateToken generate a new JWT.
+// The token is created using the HMAC SHA256 method and signed using
+// the "auth.jwt.secret" config entry.
+// The token is set to expire in the amount of seconds defined by
+// the "auth.jwt.expiry" config entry.
+func GenerateToken(username interface{}) (string, error) {
+	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username}, jwt.SigningMethodHS256)
+}
+
+// GenerateTokenWithClaims generates a new JWT with custom claims.
+// The token is created using the HMAC SHA256 method and signed using
+// the "auth.jwt.secret" config entry.
+// The token is set to expire in the amount of seconds defined by
+// the "auth.jwt.expiry" config entry.
+func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {
+	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
+	now := time.Now()
+	customClaims := jwt.MapClaims{
+		"nbf": now.Unix(),             // Not Before
+		"exp": now.Add(expiry).Unix(), // Expiry
+	}
+	for k, c := range claims {
+		customClaims[k] = c
+	}
+	token := jwt.NewWithClaims(signingMethod, customClaims)
+
+	key, err := getKey(signingMethod)
+	if err != nil {
+		return "", err
+	}
+	return token.SignedString(key)
+}
+
+func getKey(signingMethod jwt.SigningMethod) (interface{}, error) {
+	switch signingMethod.(type) {
+	case *jwt.SigningMethodRSA:
+		// TODO avoid redundancy
+		// TODO cache keys to avoid re-parsing all the time
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.private")) // TODO handle errors
+		return jwt.ParseRSAPrivateKeyFromPEM(data)
+	case *jwt.SigningMethodECDSA:
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.private"))
+		return jwt.ParseECPrivateKeyFromPEM(data)
+	case *jwt.SigningMethodHMAC:
+		return []byte(config.GetString("auth.jwt.secret")), nil
+	default:
+		return nil, errors.New("Unsupported JWT Signing method: " + signingMethod.Alg())
+	}
+}
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
 type JWTAuthenticator struct {
@@ -29,21 +103,6 @@ type JWTAuthenticator struct {
 }
 
 var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
-
-func init() {
-	config.Register("auth.jwt.secret", config.Entry{
-		Value:            nil,
-		Type:             reflect.String,
-		IsSlice:          false,
-		AuthorizedValues: []interface{}{},
-	})
-	config.Register("auth.jwt.expiry", config.Entry{
-		Value:            300,
-		Type:             reflect.Int,
-		IsSlice:          false,
-		AuthorizedValues: []interface{}{},
-	})
-}
 
 // Authenticate fetch the user corresponding to the token
 // found in the given request and puts the result in the given user pointer.

@@ -86,6 +86,9 @@ func getKey(signingMethod jwt.SigningMethod) (interface{}, error) {
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
 type JWTAuthenticator struct {
+
+	// SigningMethod expected by this authenticator when parsing JWT.
+	// Defaults to HMAC.
 	SigningMethod jwt.SigningMethod
 
 	// ClaimName the name of the claim used to retrieve the user.

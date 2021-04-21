@@ -166,6 +166,24 @@ func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 	result.Body.Close()
 }
 
+func (suite *JWTControllerTestSuite) TestLoginTokenFuncError() {
+	controller := NewJWTController(&TestUser{})
+	suite.NotNil(controller)
+	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
+		return "", fmt.Errorf("test error")
+	}
+	request := suite.CreateTestRequest(nil)
+	request.Data = map[string]interface{}{
+		"username": "johndoe@example.org",
+		"password": testUserPassword,
+	}
+	writer := httptest.NewRecorder()
+	response := suite.CreateTestResponse(writer)
+	suite.Panics(func() {
+		controller.Login(response, request)
+	})
+}
+
 func (suite *JWTControllerTestSuite) TestLoginWithFieldOverride() {
 	controller := NewJWTController(&TestUser{})
 	controller.UsernameField = "email"

@@ -23,9 +23,12 @@ type TokenFunc func(request *goyave.Request, user interface{}) (string, error)
 type JWTController struct {
 	model interface{}
 
+	// SigningMethod used to generate the token using the default
+	// TokenFunc. By default, uses `jwt.SigningMethodHS256`.
 	SigningMethod jwt.SigningMethod
 
 	TokenFunc TokenFunc
+
 	// UsernameField the name of the request's body field
 	// used as username in the authentication process
 	UsernameField string

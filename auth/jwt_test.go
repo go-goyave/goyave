@@ -247,6 +247,7 @@ func (suite *JWTAuthenticatorTestSuite) TestClaimName() {
 
 func (suite *JWTAuthenticatorTestSuite) TearDownTest() {
 	suite.ClearDatabase()
+	keyCache = map[string]interface{}{}
 }
 
 func (suite *JWTAuthenticatorTestSuite) TearDownSuite() {

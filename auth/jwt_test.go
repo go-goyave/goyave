@@ -152,6 +152,16 @@ func (suite *JWTAuthenticatorTestSuite) TestECDSASignedToken() {
 	suite.Equal(jwt.SigningMethodES256, parsedToken.Method)
 }
 
+func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenInvalidSigningMethod() {
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{
+		"sub":    suite.user.ID,
+		"userid": suite.user.Email,
+	}, jwt.SigningMethodPS256)
+	suite.Empty(token)
+	suite.NotNil(err)
+	suite.Equal("Unsupported JWT signing method: PS256", err.Error())
+}
+
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticateWithClaims() {
 	tokenAuthenticator := &JWTAuthenticator{}
 	authenticatedUser := &TestUser{}

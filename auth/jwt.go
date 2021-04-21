@@ -80,7 +80,7 @@ func getKey(signingMethod jwt.SigningMethod) (interface{}, error) {
 	case *jwt.SigningMethodHMAC:
 		return []byte(config.GetString("auth.jwt.secret")), nil
 	default:
-		return nil, errors.New("Unsupported JWT Signing method: " + signingMethod.Alg())
+		return nil, errors.New("Unsupported JWT signing method: " + signingMethod.Alg())
 	}
 }
 

@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 	"time"
 
@@ -25,6 +24,7 @@ func init() {
 	registerKeyConfigEntry("auth.jwt.secret")
 	registerKeyConfigEntry("auth.jwt.rsa.public")
 	registerKeyConfigEntry("auth.jwt.rsa.private")
+	registerKeyConfigEntry("auth.jwt.rsa.password")
 	registerKeyConfigEntry("auth.jwt.ecdsa.public")
 	registerKeyConfigEntry("auth.jwt.ecdsa.private")
 }
@@ -74,19 +74,9 @@ func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMeth
 func getKey(signingMethod jwt.SigningMethod) (interface{}, error) {
 	switch signingMethod.(type) {
 	case *jwt.SigningMethodRSA:
-		// TODO avoid redundancy
-		// TODO cache keys to avoid re-parsing all the time
-		data, err := ioutil.ReadFile(config.GetString("auth.jwt.rsa.private")) // TODO handle errors
-		if err != nil {
-			panic(err)
-		}
-		return jwt.ParseRSAPrivateKeyFromPEM(data)
+		return loadKey("auth.jwt.rsa.private")
 	case *jwt.SigningMethodECDSA:
-		data, err := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.private"))
-		if err != nil {
-			panic(err)
-		}
-		return jwt.ParseECPrivateKeyFromPEM(data)
+		return loadKey("auth.jwt.ecdsa.private")
 	case *jwt.SigningMethodHMAC:
 		return []byte(config.GetString("auth.jwt.secret")), nil
 	default:
@@ -159,25 +149,15 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (interface{}, error) {
 	switch a.SigningMethod.(type) {
 	case *jwt.SigningMethodRSA:
-		// TODO avoid redundancy
-		// TODO cache keys to avoid re-parsing all the time
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		data, err := ioutil.ReadFile(config.GetString("auth.jwt.rsa.public"))
-		if err != nil {
-			panic(err)
-		}
-		return jwt.ParseRSAPublicKeyFromPEM(data)
+		return loadKey("auth.jwt.rsa.public")
 	case *jwt.SigningMethodECDSA:
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		data, err := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.public")) // TODO error handling
-		if err != nil {
-			panic(err)
-		}
-		return jwt.ParseECPublicKeyFromPEM(data)
+		return loadKey("auth.jwt.ecdsa.public")
 	case *jwt.SigningMethodHMAC, nil:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])

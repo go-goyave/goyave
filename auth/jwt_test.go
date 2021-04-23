@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -50,13 +51,93 @@ func (suite *JWTAuthenticatorTestSuite) createWrongToken(method jwt.SigningMetho
 	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
 }
 
-func (suite *JWTAuthenticatorTestSuite) TestAuthenticate() {
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateHMAC() {
 	tokenAuthenticator := &JWTAuthenticator{}
 	authenticatedUser := &TestUser{}
 	token, err := GenerateToken(suite.user.Email)
 	suite.Nil(err)
 	suite.Nil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
 	suite.Equal("Admin", authenticatedUser.Name)
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateHMACUnexpectedTokenSig() {
+	tokenAuthenticator := &JWTAuthenticator{}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{"userid": suite.user.Email}, jwt.SigningMethodES256)
+	suite.Nil(err)
+	suite.NotNil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateRSA() {
+	tokenAuthenticator := &JWTAuthenticator{SigningMethod: jwt.SigningMethodRS256}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{"userid": suite.user.Email}, jwt.SigningMethodRS256)
+	suite.Nil(err)
+	suite.Nil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
+	suite.Equal("Admin", authenticatedUser.Name)
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateRSAKeyError() {
+	prev := config.GetString("auth.jwt.rsa.public")
+	defer config.Set("auth.jwt.rsa.public", prev)
+	config.Set("auth.jwt.rsa.public", "resource/notafile")
+
+	tokenAuthenticator := &JWTAuthenticator{SigningMethod: jwt.SigningMethodRS256}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{"userid": suite.user.Email}, jwt.SigningMethodRS256)
+	suite.Nil(err)
+	suite.Panics(func() {
+		tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser)
+	})
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateRSAUnexpectedTokenSig() {
+	tokenAuthenticator := &JWTAuthenticator{SigningMethod: jwt.SigningMethodRS256}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{"userid": suite.user.Email}, jwt.SigningMethodES256)
+	suite.Nil(err)
+	suite.NotNil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateECDSA() {
+	tokenAuthenticator := &JWTAuthenticator{SigningMethod: jwt.SigningMethodES256}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{"userid": suite.user.Email}, jwt.SigningMethodES256)
+	suite.Nil(err)
+	suite.Nil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
+	suite.Equal("Admin", authenticatedUser.Name)
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateECDSAKeyError() {
+	prev := config.GetString("auth.jwt.ecdsa.public")
+	defer config.Set("auth.jwt.ecdsa.public", prev)
+	config.Set("auth.jwt.ecdsa.public", "resource/notafile")
+
+	tokenAuthenticator := &JWTAuthenticator{SigningMethod: jwt.SigningMethodES256}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{"userid": suite.user.Email}, jwt.SigningMethodES256)
+	suite.Nil(err)
+	suite.Panics(func() {
+		tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser)
+	})
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateECDSAUnexpectedTokenSig() {
+	tokenAuthenticator := &JWTAuthenticator{SigningMethod: jwt.SigningMethodES256}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{"userid": suite.user.Email}, jwt.SigningMethodRS256)
+	suite.Nil(err)
+	suite.NotNil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestAuthenticateUnsupported() {
+	tokenAuthenticator := &JWTAuthenticator{SigningMethod: jwt.SigningMethodPS256}
+	authenticatedUser := &TestUser{}
+	token, err := GenerateToken(suite.user.Email)
+	suite.Nil(err)
+	suite.Panics(func() {
+		tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser)
+	})
 }
 
 func (suite *JWTAuthenticatorTestSuite) TestTokenHasClaims() {
@@ -81,7 +162,7 @@ func (suite *JWTAuthenticatorTestSuite) TestTokenWithClaimsHasClaims() {
 	token, err := GenerateTokenWithClaims(jwt.MapClaims{
 		"sub":    suite.user.ID,
 		"userid": suite.user.Email,
-	})
+	}, jwt.SigningMethodHS256)
 	suite.Nil(err)
 	claims := jwt.MapClaims{}
 	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
@@ -101,6 +182,65 @@ func (suite *JWTAuthenticatorTestSuite) TestTokenWithClaimsHasClaims() {
 	suite.Equal(jwt.SigningMethodHS256, parsedToken.Method)
 }
 
+func (suite *JWTAuthenticatorTestSuite) TestRSASignedToken() {
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{
+		"sub":    suite.user.ID,
+		"userid": suite.user.Email,
+	}, jwt.SigningMethodRS256)
+	suite.Nil(err)
+	claims := jwt.MapClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.public"))
+		return jwt.ParseRSAPublicKeyFromPEM(data)
+	})
+	suite.Nil(err)
+
+	userID, okID := claims["userid"]
+	suite.True(okID)
+	suite.Equal(suite.user.Email, userID)
+	sub, okSub := claims["sub"]
+	suite.True(okSub)
+	suite.Equal(suite.user.ID, uint(sub.(float64)))
+	suite.Equal(jwt.SigningMethodRS256, parsedToken.Method)
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestECDSASignedToken() {
+	token, err := GenerateTokenWithClaims(jwt.MapClaims{
+		"sub":    suite.user.ID,
+		"userid": suite.user.Email,
+	}, jwt.SigningMethodES256)
+	suite.Nil(err)
+	claims := jwt.MapClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.public"))
+		return jwt.ParseECPublicKeyFromPEM(data)
+	})
+	suite.Nil(err)
+
+	userID, okID := claims["userid"]
+	suite.True(okID)
+	suite.Equal(suite.user.Email, userID)
+	sub, okSub := claims["sub"]
+	suite.True(okSub)
+	suite.Equal(suite.user.ID, uint(sub.(float64)))
+	suite.Equal(jwt.SigningMethodES256, parsedToken.Method)
+}
+
+func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenInvalidSigningMethod() {
+	suite.Panics(func() {
+		GenerateTokenWithClaims(jwt.MapClaims{
+			"sub":    suite.user.ID,
+			"userid": suite.user.Email,
+		}, jwt.SigningMethodPS256)
+	})
+}
+
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticateWithClaims() {
 	tokenAuthenticator := &JWTAuthenticator{}
 	authenticatedUser := &TestUser{}
@@ -108,7 +248,7 @@ func (suite *JWTAuthenticatorTestSuite) TestAuthenticateWithClaims() {
 		"sub":    suite.user.ID,
 		"userid": suite.user.Email,
 	}
-	token, err := GenerateTokenWithClaims(originalClaims)
+	token, err := GenerateTokenWithClaims(originalClaims, jwt.SigningMethodHS256)
 	suite.Nil(err)
 
 	request := suite.createRequest(token)
@@ -133,7 +273,7 @@ func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenWithClaimsInvalidCreden
 	token, err := GenerateTokenWithClaims(jwt.MapClaims{
 		"sub":    suite.user.ID,
 		"userid": "wrongemail@example.org",
-	})
+	}, jwt.SigningMethodHS256)
 	suite.Nil(err)
 	suite.Equal("These credentials don't match our records.", tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser).Error())
 }
@@ -188,7 +328,7 @@ func (suite *JWTAuthenticatorTestSuite) TestClaimName() {
 	authenticatedUser := &TestUser{}
 	token, err := GenerateTokenWithClaims(jwt.MapClaims{
 		"sub": suite.user.Email,
-	})
+	}, jwt.SigningMethodHS256)
 	suite.Nil(err)
 	suite.Nil(tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser))
 	suite.Equal("Admin", authenticatedUser.Name)
@@ -196,6 +336,7 @@ func (suite *JWTAuthenticatorTestSuite) TestClaimName() {
 
 func (suite *JWTAuthenticatorTestSuite) TearDownTest() {
 	suite.ClearDatabase()
+	keyCache = map[string]interface{}{}
 }
 
 func (suite *JWTAuthenticatorTestSuite) TearDownSuite() {

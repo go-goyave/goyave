@@ -4,46 +4,15 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
 	"goyave.dev/goyave/v3/database"
 	"goyave.dev/goyave/v3/lang"
 	"goyave.dev/goyave/v3/validation"
 )
-
-// GenerateToken generate a new JWT.
-// The token is created using the HMAC SHA256 method and signed using
-// the "auth.jwt.secret" config entry.
-// The token is set to expire in the amount of seconds defined by
-// the "auth.jwt.expiry" config entry.
-func GenerateToken(username interface{}) (string, error) {
-	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username})
-}
-
-// GenerateTokenWithClaims generates a new JWT with custom claims.
-// The token is created using the HMAC SHA256 method and signed using
-// the "auth.jwt.secret" config entry.
-// The token is set to expire in the amount of seconds defined by
-// the "auth.jwt.expiry" config entry.
-func GenerateTokenWithClaims(claims jwt.MapClaims) (string, error) {
-	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
-	now := time.Now()
-	customClaims := jwt.MapClaims{
-		"nbf": now.Unix(),             // Not Before
-		"exp": now.Add(expiry).Unix(), // Expiry
-	}
-	for k, c := range claims {
-		customClaims[k] = c
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
-
-	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
-}
 
 // TokenFunc is the function used by JWTController to generate tokens
 // during login process.
@@ -52,8 +21,14 @@ type TokenFunc func(request *goyave.Request, user interface{}) (string, error)
 // JWTController a controller for JWT-based authentication, using HMAC SHA256.
 // Its model fields are used for username and password retrieval.
 type JWTController struct {
-	model     interface{}
+	model interface{}
+
+	// SigningMethod used to generate the token using the default
+	// TokenFunc. By default, uses `jwt.SigningMethodHS256`.
+	SigningMethod jwt.SigningMethod
+
 	TokenFunc TokenFunc
+
 	// UsernameField the name of the request's body field
 	// used as username in the authentication process
 	UsernameField string
@@ -71,7 +46,11 @@ func NewJWTController(model interface{}) *JWTController {
 		PasswordField: "password",
 	}
 	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
-		return GenerateToken(r.String(controller.UsernameField))
+		signingMethod := controller.SigningMethod
+		if signingMethod == nil {
+			signingMethod = jwt.SigningMethodHS256
+		}
+		return GenerateTokenWithClaims(jwt.MapClaims{"userid": r.String(controller.UsernameField)}, signingMethod)
 	}
 	return controller
 }

@@ -102,7 +102,7 @@ func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 		return GenerateTokenWithClaims(jwt.MapClaims{
 			"userid": (user.(*TestUser)).Email,
 			"sub":    (user.(*TestUser)).ID,
-		})
+		}, jwt.SigningMethodHS256)
 	}
 
 	request := suite.CreateTestRequest(nil)
@@ -164,6 +164,24 @@ func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 		suite.Equal("These credentials don't match our records.", errMessage)
 	}
 	result.Body.Close()
+}
+
+func (suite *JWTControllerTestSuite) TestLoginTokenFuncError() {
+	controller := NewJWTController(&TestUser{})
+	suite.NotNil(controller)
+	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
+		return "", fmt.Errorf("test error")
+	}
+	request := suite.CreateTestRequest(nil)
+	request.Data = map[string]interface{}{
+		"username": "johndoe@example.org",
+		"password": testUserPassword,
+	}
+	writer := httptest.NewRecorder()
+	response := suite.CreateTestResponse(writer)
+	suite.Panics(func() {
+		controller.Login(response, request)
+	})
 }
 
 func (suite *JWTControllerTestSuite) TestLoginWithFieldOverride() {

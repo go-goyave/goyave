@@ -66,7 +66,7 @@ func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMeth
 
 	key, err := getKey(signingMethod)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 	return token.SignedString(key)
 }
@@ -155,19 +155,27 @@ func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return loadKey("auth.jwt.rsa.public")
+		key, err := loadKey("auth.jwt.rsa.public")
+		if err != nil {
+			panic(err)
+		}
+		return key, nil
 	case *jwt.SigningMethodECDSA:
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return loadKey("auth.jwt.ecdsa.public")
+		key, err := loadKey("auth.jwt.ecdsa.public")
+		if err != nil {
+			panic(err)
+		}
+		return key, nil
 	case *jwt.SigningMethodHMAC, nil:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(config.GetString("auth.jwt.secret")), nil
 	default:
-		return nil, errors.New("Unsupported JWT Signing method: " + a.SigningMethod.Alg())
+		panic(errors.New("Unsupported JWT Signing method: " + a.SigningMethod.Alg()))
 	}
 }
 

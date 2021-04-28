@@ -40,18 +40,34 @@ func registerKeyConfigEntry(name string) {
 
 // GenerateToken generate a new JWT.
 // The token is created using the HMAC SHA256 method and signed using
-// the "auth.jwt.secret" config entry.
+// the `auth.jwt.secret` config entry.
 // The token is set to expire in the amount of seconds defined by
-// the "auth.jwt.expiry" config entry.
+// the `auth.jwt.expiry` config entry.
+//
+// The generated token will contain the following claims:
+// - `userid`: has the value of the `id` parameter
+// - `nbf`: "Not before", the current timestamp is used
+// - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
 func GenerateToken(username interface{}) (string, error) {
 	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username}, jwt.SigningMethodHS256)
 }
 
 // GenerateTokenWithClaims generates a new JWT with custom claims.
-// The token is created using the HMAC SHA256 method and signed using
-// the "auth.jwt.secret" config entry.
 // The token is set to expire in the amount of seconds defined by
-// the "auth.jwt.expiry" config entry.
+// the `auth.jwt.expiry` config entry.
+// Depending on the given signing method, the following configuration entries
+// will be used:
+// - RSA:
+//   - `auth.jwt.rsa.private`: path to the private PEM-encoded RSA key.
+//   - `auth.jwt.rsa.password`: optional password for the private RSA key.
+// - ECDSA: `auth.jwt.ecdsa.private`: path to the private PEM-encoded ECDSA key.
+// - HMAC: `auth.jwt.secret`: HMAC secret
+//
+// The generated token will also contain the following claims:
+// - `nbf`: "Not before", the current timestamp is used
+// - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
+//
+// `nbf` and `exp` can be overridden if they are set in the `claims` parameter.
 func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {
 	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()

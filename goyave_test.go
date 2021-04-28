@@ -54,8 +54,8 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	suite.Equal("http://test.system-glitch.me:1235", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me:1236", getAddress("https"))
 
-	config.Set("server.port", 80.0)
-	config.Set("server.httpsPort", 443.0)
+	config.Set("server.port", 80)
+	config.Set("server.httpsPort", 443)
 	suite.Equal("http://test.system-glitch.me", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me", getAddress("https"))
 
@@ -63,8 +63,8 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 
 	config.Set("server.domain", "")
 	config.Set("server.host", "0.0.0.0")
-	config.Set("server.port", 1235.0)
-	config.Set("server.httpsPort", 1236.0)
+	config.Set("server.port", 1235)
+	config.Set("server.httpsPort", 1236)
 	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
 	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
 }

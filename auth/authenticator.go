@@ -12,8 +12,8 @@ import (
 
 // Column matches a column name with a struct field.
 type Column struct {
-	Name  string
 	Field *reflect.StructField
+	Name  string
 }
 
 // Authenticator is an object in charge of authenticating a model.

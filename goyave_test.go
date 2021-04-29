@@ -54,12 +54,19 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	suite.Equal("http://test.system-glitch.me:1235", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me:1236", getAddress("https"))
 
-	config.Set("server.port", 80.0)
-	config.Set("server.httpsPort", 443.0)
+	config.Set("server.port", 80)
+	config.Set("server.httpsPort", 443)
 	suite.Equal("http://test.system-glitch.me", getAddress("http"))
 	suite.Equal("https://test.system-glitch.me", getAddress("https"))
 
 	suite.Equal(getAddress("http"), BaseURL())
+
+	config.Set("server.domain", "")
+	config.Set("server.host", "0.0.0.0")
+	config.Set("server.port", 1235)
+	config.Set("server.httpsPort", 1236)
+	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
+	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
@@ -420,7 +427,7 @@ func (suite *GoyaveTestSuite) TestAutoMigrate() {
 }
 
 func (suite *GoyaveTestSuite) TestError() {
-	err := &Error{ExitHTTPError, fmt.Errorf("test error")}
+	err := &Error{fmt.Errorf("test error"), ExitHTTPError}
 	suite.Equal("test error", err.Error())
 }
 

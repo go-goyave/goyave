@@ -191,12 +191,12 @@ func TestRemoveHiddenFieldsNotStruct(t *testing.T) {
 func TestOnly(t *testing.T) {
 	type Data struct {
 		Field string
-		Num   int
 		Slice []float64
+		Num   int
 	}
 	type Promote struct {
-		Data
 		Other string
+		Data
 	}
 
 	data := map[string]interface{}{

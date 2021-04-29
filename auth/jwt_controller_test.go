@@ -3,11 +3,13 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"goyave.dev/goyave/v3"
 	"goyave.dev/goyave/v3/config"
@@ -18,6 +20,7 @@ import (
 const testUserPassword = "secret"
 
 type JWTControllerTestSuite struct {
+	user *TestUser
 	goyave.TestSuite
 }
 
@@ -34,12 +37,12 @@ func (suite *JWTControllerTestSuite) SetupTest() {
 	if err != nil {
 		panic(err)
 	}
-	user := &TestUser{
+	suite.user = &TestUser{
 		Name:     "Admin",
 		Email:    "johndoe@example.org",
 		Password: string(password),
 	}
-	database.GetConnection().Create(user)
+	database.GetConnection().Create(suite.user)
 }
 
 func (suite *JWTControllerTestSuite) TestLogin() {
@@ -78,7 +81,7 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 
 	controller.Login(response, request)
 	result = writer.Result()
-	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
+	suite.Equal(http.StatusUnauthorized, result.StatusCode)
 
 	json = map[string]string{}
 	err = suite.GetJSONBody(result, &json)
@@ -90,6 +93,95 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 		suite.Equal("These credentials don't match our records.", errMessage)
 	}
 	result.Body.Close()
+}
+
+func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
+	controller := NewJWTController(&TestUser{})
+	suite.NotNil(controller)
+	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
+		return GenerateTokenWithClaims(jwt.MapClaims{
+			"userid": (user.(*TestUser)).Email,
+			"sub":    (user.(*TestUser)).ID,
+		}, jwt.SigningMethodHS256)
+	}
+
+	request := suite.CreateTestRequest(nil)
+	request.Data = map[string]interface{}{
+		"username": "johndoe@example.org",
+		"password": testUserPassword,
+	}
+	writer := httptest.NewRecorder()
+	response := suite.CreateTestResponse(writer)
+
+	controller.Login(response, request)
+	result := writer.Result()
+	suite.Equal(http.StatusOK, result.StatusCode)
+
+	json := map[string]string{}
+	err := suite.GetJSONBody(result, &json)
+	suite.Nil(err)
+
+	if err == nil {
+		token, ok := json["token"]
+		suite.True(ok)
+		suite.NotEmpty(token)
+		claims := jwt.MapClaims{}
+		_, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(config.GetString("auth.jwt.secret")), nil
+		})
+		suite.Nil(err)
+
+		userID, okID := claims["userid"]
+		suite.True(okID)
+		suite.Equal("johndoe@example.org", userID)
+		sub, okSub := claims["sub"]
+		suite.True(okSub)
+		suite.Equal(suite.user.ID, uint(sub.(float64)))
+	}
+	result.Body.Close()
+
+	request.Data = map[string]interface{}{
+		"username": "johndoe@example.org",
+		"password": "wrongpassword",
+	}
+	writer = httptest.NewRecorder()
+	response = suite.CreateTestResponse(writer)
+
+	controller.Login(response, request)
+	result = writer.Result()
+	suite.Equal(http.StatusUnauthorized, result.StatusCode)
+
+	json = map[string]string{}
+	err = suite.GetJSONBody(result, &json)
+	suite.Nil(err)
+
+	if err == nil {
+		errMessage, ok := json["validationError"]
+		suite.True(ok)
+		suite.Equal("These credentials don't match our records.", errMessage)
+	}
+	result.Body.Close()
+}
+
+func (suite *JWTControllerTestSuite) TestLoginTokenFuncError() {
+	controller := NewJWTController(&TestUser{})
+	suite.NotNil(controller)
+	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
+		return "", fmt.Errorf("test error")
+	}
+	request := suite.CreateTestRequest(nil)
+	request.Data = map[string]interface{}{
+		"username": "johndoe@example.org",
+		"password": testUserPassword,
+	}
+	writer := httptest.NewRecorder()
+	response := suite.CreateTestResponse(writer)
+	suite.Panics(func() {
+		controller.Login(response, request)
+	})
 }
 
 func (suite *JWTControllerTestSuite) TestLoginWithFieldOverride() {

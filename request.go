@@ -20,14 +20,14 @@ import (
 type Request struct {
 	httpRequest *http.Request
 	corsOptions *cors.Options
-	cookies     []*http.Cookie
 	route       *Route
-	User        interface{}
 	Rules       *validation.Rules
+	Params      map[string]string
 	Data        map[string]interface{}
 	Extra       map[string]interface{}
-	Params      map[string]string
+	User        interface{}
 	Lang        string
+	cookies     []*http.Cookie
 }
 
 // Request return the raw http request.

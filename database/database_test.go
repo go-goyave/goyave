@@ -13,9 +13,9 @@ import (
 )
 
 type User struct {
-	ID    uint   `gorm:"primaryKey"`
 	Name  string `gorm:"type:varchar(100)"`
 	Email string `gorm:"type:varchar(100)"`
+	ID    uint   `gorm:"primaryKey"`
 }
 
 type DatabaseTestSuite struct {
@@ -35,7 +35,7 @@ func (suite *DatabaseTestSuite) SetupSuite() {
 }
 
 func (suite *DatabaseTestSuite) TestBuildDSN() {
-	d := dialect{"{username}:{password}@({host}:{port})/{name}?{options}", nil}
+	d := dialect{nil, "{username}:{password}@({host}:{port})/{name}?{options}"}
 	suite.Equal("goyave:secret@(127.0.0.1:3306)/goyave?charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", d.buildDSN())
 }
 

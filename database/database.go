@@ -24,8 +24,8 @@ type Initializer func(*gorm.DB)
 type DialectorInitializer func(dsn string) gorm.Dialector
 
 type dialect struct {
-	template    string
 	initializer DialectorInitializer
+	template    string
 }
 
 var (
@@ -144,7 +144,7 @@ func RegisterDialect(name, template string, initializer DialectorInitializer) {
 	if _, ok := dialects[name]; ok {
 		panic(fmt.Sprintf("Dialect %q already exists", name))
 	}
-	dialects[name] = dialect{template, initializer}
+	dialects[name] = dialect{initializer, template}
 }
 
 func newConnection() *gorm.DB {

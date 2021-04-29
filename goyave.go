@@ -70,8 +70,8 @@ const (
 // Error wrapper for errors directely related to the server itself.
 // Contains an exit code and the original error.
 type Error struct {
-	ExitCode int
 	Err      error
+	ExitCode int
 }
 
 func (e *Error) Error() string {
@@ -140,7 +140,7 @@ func Start(routeRegistrer func(*Router)) error {
 		if err := config.Load(); err != nil {
 			ErrLogger.Println(err)
 			mutex.Unlock()
-			return &Error{ExitInvalidConfig, err}
+			return &Error{err, ExitInvalidConfig}
 		}
 	}
 
@@ -154,9 +154,9 @@ func Start(routeRegistrer func(*Router)) error {
 		database.Migrate()
 	}
 
-	router = newRouter()
+	router = NewRouter()
 	routeRegistrer(router)
-	regexCache = nil // Clear regex cache
+	router.ClearRegexCache()
 	return startServer(router)
 }
 
@@ -276,6 +276,9 @@ func getAddress(protocol string) string {
 	host := config.GetString("server.domain")
 	if len(host) == 0 {
 		host = config.GetString("server.host")
+		if host == "0.0.0.0" {
+			host = "127.0.0.1"
+		}
 	}
 
 	if shouldShowPort {
@@ -359,7 +362,7 @@ func startServer(router *Router) error {
 		defer cancel()
 		stop(ctx)
 		mutex.Unlock()
-		return &Error{ExitNetworkError, err}
+		return &Error{err, ExitNetworkError}
 	}
 	defer ln.Close()
 	registerShutdownHook(stop)
@@ -375,7 +378,7 @@ func startServer(router *Router) error {
 		if err := s.ServeTLS(ln, config.GetString("server.tls.cert"), config.GetString("server.tls.key")); err != nil && err != http.ErrServerClosed {
 			ErrLogger.Println(err)
 			Stop()
-			return &Error{ExitHTTPError, err}
+			return &Error{err, ExitHTTPError}
 		}
 	} else {
 
@@ -385,7 +388,7 @@ func startServer(router *Router) error {
 		if err := s.Serve(ln); err != nil && err != http.ErrServerClosed {
 			ErrLogger.Println(err)
 			Stop()
-			return &Error{ExitHTTPError, err}
+			return &Error{err, ExitHTTPError}
 		}
 	}
 

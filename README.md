@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="resources/img/logo/goyave_text.png" alt="Goyave Logo" width="550"/>
+    <img src="https://raw.githubusercontent.com/go-goyave/goyave/master/resources/img/logo/goyave_text.png" alt="Goyave Logo" width="550"/>
 </p>
 
 <p align="center">
@@ -97,6 +97,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 - [CORS](#cors)
 - [Authentication](#authentication)
 - [Rate limiting](#rate-limiting)
+- [Websocket](#websocket)
 
 ### Hello world from scratch
 
@@ -672,6 +673,30 @@ router.Middleware(ratelimiterMiddleware)
 
 **Learn more about rate limiting in the [documentation](https://goyave.dev/guide/advanced/rate-limiting.html).**
 
+### Websocket
+
+Goyave is using [`gorilla/websocket`](https://github.com/gorilla/websocket) and adds a layer of abstraction to it to make it easier to use. You don't have to write the connection upgrading logic nor the close handshake. Just like regular HTTP handlers, websocket handlers benefit from reliable error handling and panic recovery.
+
+Here is an example of an "echo" feature:
+```go
+upgrader := websocket.Upgrader{}
+router.Get("/websocket", upgrader.Handler(func(c *websocket.Conn, request *goyave.Request) error {
+    for {
+        mt, message, err := c.ReadMessage()
+        if err != nil {
+            return err
+        }
+        goyave.Logger.Printf("recv: %s", message)
+        err = c.WriteMessage(mt, message)
+        if err != nil {
+            return fmt.Errorf("write: %w", err)
+        }
+    }
+}))
+```
+
+**Learn more about websockets in the [documentation](https://goyave.dev/guide/advanced/websocket.html).**
+
 ## Contributing
 
 Thank you for considering contributing to the Goyave framework! You can find the contribution guide in the [documentation](https://goyave.dev/guide/contribution-guide.html).
@@ -686,10 +711,11 @@ You can support me on Github Sponsor or Patreon.
     <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
 
-I'm very grateful to my patrons and donators:
+I'm very grateful to my patrons, sponsors and donators:
 
 - Ben Hyrman
 - Massimiliano Bertinetti
+- ethicnology
 
 ### Contributors
 
@@ -700,6 +726,7 @@ A big "Thank you" to the Goyave contributors:
 - [jRimbault](https://github.com/jRimbault) (CI and code analysis)
 - [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
 - [Albert Shirima](https://github.com/agbaraka) (Rate limiting)
+- [Łukasz Sowa](https://github.com/Morishiri) (Custom claims in JWT)
 
 ## License
 

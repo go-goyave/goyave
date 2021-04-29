@@ -18,7 +18,7 @@ func setupDatabaseBench(b *testing.B) {
 }
 
 func BenchmarkBuildConnectionOptions(b *testing.B) {
-	d := dialect{"{username}:{password}@({host}:{port})/{name}?{options}", mysql.Open}
+	d := dialect{mysql.Open, "{username}:{password}@({host}:{port})/{name}?{options}"}
 	setupDatabaseBench(b)
 	for n := 0; n < b.N; n++ {
 		d.buildDSN()

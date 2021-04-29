@@ -17,11 +17,11 @@ type routerDefinition struct {
 }
 
 type routeDefinition struct {
+	handler Handler
+	rules   validation.RuleSet
 	uri     string
 	methods string
 	name    string
-	handler Handler
-	rules   validation.RuleSet
 }
 
 var handler Handler = func(response *Response, request *Request) {
@@ -114,7 +114,7 @@ var sampleRequests []*http.Request = []*http.Request{
 }
 
 func registerAll(def *routerDefinition) *Router {
-	main := newRouter()
+	main := NewRouter()
 	registerRouter(main, def)
 	return main
 }
@@ -133,7 +133,6 @@ func BenchmarkRouteRegistration(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		registerAll(sampleRouteDefinition)
-		regexCache = nil
 	}
 }
 
@@ -229,7 +228,6 @@ func BenchmarkMatchAll(b *testing.B) {
 
 func setupRouteBench(b *testing.B) *Router {
 	router := registerAll(sampleRouteDefinition)
-	regexCache = nil
 	b.ReportAllocs()
 	runtime.GC()
 	defer b.ResetTimer()

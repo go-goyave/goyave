@@ -7,30 +7,22 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ParametrizeableTestSuite struct {
+type ParameterizableTestSuite struct {
 	suite.Suite
 }
 
-func (suite *ParametrizeableTestSuite) SetupTest() {
-	regexCache = make(map[string]*regexp.Regexp, 5)
-}
-
-func (suite *ParametrizeableTestSuite) TearDownTest() {
-	regexCache = nil
-}
-
-func (suite *ParametrizeableTestSuite) TestCompileParameters() {
-
-	p := &parametrizeable{}
-	p.compileParameters("/product/{id:[0-9]+}", true)
+func (suite *ParameterizableTestSuite) TestCompileParameters() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
+	p := &parameterizable{}
+	p.compileParameters("/product/{id:[0-9]+}", true, regexCache)
 	suite.Equal([]string{"id"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.True(p.regex.MatchString("/product/666"))
 	suite.False(p.regex.MatchString("/product/"))
 	suite.False(p.regex.MatchString("/product/qwerty"))
 
-	p = &parametrizeable{}
-	p.compileParameters("/product/{id:[0-9]+}/{name}", true)
+	p = &parameterizable{}
+	p.compileParameters("/product/{id:[0-9]+}/{name}", true, regexCache)
 	suite.Equal([]string{"id", "name"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.False(p.regex.MatchString("/product/666"))
@@ -40,25 +32,26 @@ func (suite *ParametrizeableTestSuite) TestCompileParameters() {
 	suite.True(p.regex.MatchString("/product/666/test"))
 
 	suite.Panics(func() { // Empty param, expect error
-		p.compileParameters("/product/{}", true)
+		p.compileParameters("/product/{}", true, regexCache)
 	})
 	suite.Panics(func() { // Empty name, expect error
-		p.compileParameters("/product/{:[0-9]+}", true)
+		p.compileParameters("/product/{:[0-9]+}", true, regexCache)
 	})
 	suite.Panics(func() { // Empty pattern, expect error
-		p.compileParameters("/product/{id:}", true)
+		p.compileParameters("/product/{id:}", true, regexCache)
 	})
 	suite.Panics(func() { // Capturing groups
-		p.compileParameters("/product/{name:(.*)}", true)
+		p.compileParameters("/product/{name:(.*)}", true, regexCache)
 	})
 	suite.NotPanics(func() { // Non-capturing groups
-		p.compileParameters("/product/{name:(?:.*)}", true)
+		p.compileParameters("/product/{name:(?:.*)}", true, regexCache)
 	})
 }
 
-func (suite *ParametrizeableTestSuite) TestCompileParametersRouter() {
-	p := &parametrizeable{}
-	p.compileParameters("/product/{id:[0-9]+}", false)
+func (suite *ParameterizableTestSuite) TestCompileParametersRouter() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
+	p := &parameterizable{}
+	p.compileParameters("/product/{id:[0-9]+}", false, regexCache)
 	suite.Equal([]string{"id"}, p.parameters)
 	suite.NotNil(p.regex)
 	suite.True(p.regex.MatchString("/product/666"))
@@ -68,8 +61,8 @@ func (suite *ParametrizeableTestSuite) TestCompileParametersRouter() {
 	suite.False(p.regex.MatchString("/product/qwerty/extra"))
 }
 
-func (suite *ParametrizeableTestSuite) TestBraceIndices() {
-	p := &parametrizeable{}
+func (suite *ParameterizableTestSuite) TestBraceIndices() {
+	p := &parameterizable{}
 	str := "/product/{id:[0-9]+}"
 	idxs, err := p.braceIndices(str)
 	suite.Nil(err)
@@ -109,11 +102,11 @@ func (suite *ParametrizeableTestSuite) TestBraceIndices() {
 	suite.Nil(idxs)
 }
 
-func (suite *ParametrizeableTestSuite) TestMakeParameters() {
+func (suite *ParameterizableTestSuite) TestMakeParameters() {
 	matches := []string{"/product/33/param", "33", "param"}
 	names := []string{"id", "name"}
 
-	p := &parametrizeable{}
+	p := &parameterizable{}
 	params := p.makeParameters(matches, names)
 
 	for k := 1; k < len(matches); k++ {
@@ -121,18 +114,29 @@ func (suite *ParametrizeableTestSuite) TestMakeParameters() {
 	}
 }
 
-func (suite *ParametrizeableTestSuite) TestRegexCache() {
+func (suite *ParameterizableTestSuite) TestRegexCache() {
+	regexCache := make(map[string]*regexp.Regexp, 5)
 	path := "/product/{id:[0-9]+}"
 	regex := "^/product/([0-9]+)$"
-	p1 := &parametrizeable{}
-	p1.compileParameters(path, true)
+	p1 := &parameterizable{}
+	p1.compileParameters(path, true, regexCache)
 	suite.NotNil(regexCache[regex])
 
-	p2 := &parametrizeable{}
-	p2.compileParameters(path, true)
+	p2 := &parameterizable{}
+	p2.compileParameters(path, true, regexCache)
 	suite.Equal(p1.regex, p2.regex)
+	suite.Same(p1.regex, p2.regex)
 }
 
-func TestParametrizeableTestSuite(t *testing.T) {
-	suite.Run(t, new(ParametrizeableTestSuite))
+func (suite *ParameterizableTestSuite) TestGetParameters() {
+	p := &parameterizable{
+		parameters: []string{"a", "b"},
+	}
+	params := p.GetParameters()
+	suite.Equal(p.parameters, params)
+	suite.NotSame(p.parameters, params)
+}
+
+func TestParameterizableTestSuite(t *testing.T) {
+	suite.Run(t, new(ParameterizableTestSuite))
 }

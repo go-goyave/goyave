@@ -17,7 +17,7 @@ type Route struct {
 	handler         Handler
 	validationRules *validation.Rules
 	middlewareHolder
-	parametrizeable
+	parameterizable
 }
 
 var _ routeMatcher = (*Route)(nil) // implements routeMatcher
@@ -36,7 +36,7 @@ func newRoute(handler Handler) *Route {
 }
 
 func (r *Route) match(req *http.Request, match *routeMatch) bool {
-	if params := r.parametrizeable.regex.FindStringSubmatch(match.currentPath); params != nil {
+	if params := r.parameterizable.regex.FindStringSubmatch(match.currentPath); params != nil {
 		if r.checkMethod(req.Method) {
 			if len(params) > 1 {
 				match.mergeParams(r.makeParameters(params))
@@ -68,7 +68,7 @@ func (r *Route) checkMethod(method string) bool {
 }
 
 func (r *Route) makeParameters(match []string) map[string]string {
-	return r.parametrizeable.makeParameters(match, r.parameters)
+	return r.parameterizable.makeParameters(match, r.parameters)
 }
 
 // Name set the name of the route.
@@ -110,18 +110,22 @@ func (r *Route) Middleware(middleware ...Middleware) *Route {
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
 func (r *Route) BuildURL(parameters ...string) string {
-	fullURI, fullParameters := r.getFullParameters()
+	return BaseURL() + r.BuildURI(parameters...)
+}
+
+// BuildURI build a full URI pointing to this route. The returned
+// string doesn't include the protocol and domain. (e.g. "/user/login")
+// Panics if the amount of parameters doesn't match the amount of
+// actual parameters for this route.
+func (r *Route) BuildURI(parameters ...string) string {
+	fullURI, fullParameters := r.GetFullURIAndParameters()
 
 	if len(parameters) != len(fullParameters) {
-		panic(fmt.Errorf("BuildURL: route has %d parameters, %d given", len(fullParameters), len(parameters)))
+		panic(fmt.Errorf("BuildURI: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
-	address := BaseURL()
-
 	var builder strings.Builder
-	builder.Grow(len(fullURI) + len(address))
-
-	builder.WriteString(address)
+	builder.Grow(len(fullURI))
 
 	idxs, _ := r.braceIndices(fullURI)
 	length := len(idxs)
@@ -185,8 +189,18 @@ func (r *Route) GetMethods() []string {
 	return cpy
 }
 
-// getFullParameters get the full uri and parameters for this route and all its parent routers.
-func (r *Route) getFullParameters() (string, []string) {
+// GetHandler returns the Handler associated with this route.
+func (r *Route) GetHandler() Handler {
+	return r.handler
+}
+
+// GetValidationRules returns the validation rules associated with this route.
+func (r *Route) GetValidationRules() *validation.Rules {
+	return r.validationRules
+}
+
+// GetFullURIAndParameters get the full uri and parameters for this route and all its parent routers.
+func (r *Route) GetFullURIAndParameters() (string, []string) {
 	router := r.parent
 	segments := make([]string, 0, 3)
 	segments = append(segments, r.uri)

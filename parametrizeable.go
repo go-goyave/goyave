@@ -6,11 +6,9 @@ import (
 	"strings"
 )
 
-var regexCache map[string]*regexp.Regexp
-
-// parametrizeable represents a route or router accepting
+// parameterizable represents a route or router accepting
 // parameters in its URI.
-type parametrizeable struct {
+type parameterizable struct {
 	regex      *regexp.Regexp
 	parameters []string
 }
@@ -18,7 +16,7 @@ type parametrizeable struct {
 // compileParameters parse the route parameters and compiles their regexes if needed.
 // If "ends" is set to true, the generated regex ends with "$", thus set "ends" to true
 // if you're compiling route parameters, set to false if you're compiling router parameters.
-func (p *parametrizeable) compileParameters(uri string, ends bool) {
+func (p *parameterizable) compileParameters(uri string, ends bool, regexCache map[string]*regexp.Regexp) {
 	idxs, err := p.braceIndices(uri)
 	if err != nil {
 		panic(err)
@@ -84,7 +82,7 @@ func (p *parametrizeable) compileParameters(uri string, ends bool) {
 
 // braceIndices returns the first level curly brace indices from a string.
 // Returns an error in case of unbalanced braces.
-func (p *parametrizeable) braceIndices(s string) ([]int, error) {
+func (p *parameterizable) braceIndices(s string) ([]int, error) {
 	var level, idx int
 	indices := make([]int, 0, 2)
 	length := len(s)
@@ -117,11 +115,18 @@ func (p *parametrizeable) braceIndices(s string) ([]int, error) {
 //
 // Given ["/product/33/param", "33", "param"] ["id", "name"]
 // The returned map will be ["id": "33", "name": "param"]
-func (p *parametrizeable) makeParameters(match []string, names []string) map[string]string {
+func (p *parameterizable) makeParameters(match []string, names []string) map[string]string {
 	length := len(match)
 	params := make(map[string]string, length-1)
 	for i := 1; i < length; i++ {
 		params[names[i-1]] = match[i]
 	}
 	return params
+}
+
+// GetParameters returns the URI parameters' names (in order of appearance).
+func (p *parameterizable) GetParameters() []string {
+	cpy := make([]string, len(p.parameters))
+	copy(cpy, p.parameters)
+	return cpy
 }

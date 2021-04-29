@@ -60,8 +60,8 @@ type ITestSuite interface {
 // Goyave-specific testing.
 type TestSuite struct {
 	testify.Suite
-	timeout    time.Duration // Timeout for functional tests
 	httpClient *http.Client
+	timeout    time.Duration // Timeout for functional tests
 	mu         sync.Mutex
 }
 
@@ -181,7 +181,7 @@ func (s *TestSuite) Middleware(middleware Middleware, request *Request, procedur
 	cacheCriticalConfig()
 	recorder := httptest.NewRecorder()
 	response := s.CreateTestResponse(recorder)
-	router := newRouter()
+	router := NewRouter()
 	router.Middleware(middleware)
 	middleware(procedure)(response, request)
 	router.finalize(response, request)

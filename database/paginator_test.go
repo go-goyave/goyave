@@ -37,7 +37,7 @@ func (suite *PaginatorTestSuite) TestPaginator() {
 	const userCount = 21
 	users := make([]User, 0, userCount)
 	for i := 0; i < userCount; i++ {
-		users = append(users, User{0, "John Doe", "johndoe@example.org"})
+		users = append(users, User{"John Doe", "johndoe@example.org", 0})
 	}
 
 	db := GetConnection()
@@ -110,7 +110,7 @@ func (suite *PaginatorTestSuite) TestPaginatorWithWhereClause() {
 	const userCount = 10
 	users := make([]User, 0, userCount)
 	for i := 0; i < userCount; i++ {
-		users = append(users, User{0, strconv.Itoa(i), "johndoe@example.org"})
+		users = append(users, User{strconv.Itoa(i), "johndoe@example.org", 0})
 	}
 
 	db := GetConnection()

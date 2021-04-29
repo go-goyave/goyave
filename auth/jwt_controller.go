@@ -4,44 +4,34 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
 	"goyave.dev/goyave/v3/database"
 	"goyave.dev/goyave/v3/lang"
 	"goyave.dev/goyave/v3/validation"
 )
 
-// GenerateToken generate a new JWT.
-// The token is created using the HMAC SHA256 method and signed using
-// the "auth.jwt.secret" config entry.
-// The token is set to expire in the amount of seconds defined by
-// the "auth.jwt.expiry" config entry.
-func GenerateToken(id interface{}) (string, error) {
-	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
-	now := time.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userid": id,
-		"nbf":    now.Unix(),             // Not Before
-		"exp":    now.Add(expiry).Unix(), // Expiry
-	})
-
-	return token.SignedString([]byte(config.GetString("auth.jwt.secret")))
-}
+// TokenFunc is the function used by JWTController to generate tokens
+// during login process.
+type TokenFunc func(request *goyave.Request, user interface{}) (string, error)
 
 // JWTController a controller for JWT-based authentication, using HMAC SHA256.
 // Its model fields are used for username and password retrieval.
 type JWTController struct {
 	model interface{}
 
+	// SigningMethod used to generate the token using the default
+	// TokenFunc. By default, uses `jwt.SigningMethodHS256`.
+	SigningMethod jwt.SigningMethod
+
+	TokenFunc TokenFunc
+
 	// UsernameField the name of the request's body field
 	// used as username in the authentication process
 	UsernameField string
-
 	// PasswordField the name of the request's body field
 	// used as password in the authentication process
 	PasswordField string
@@ -50,11 +40,19 @@ type JWTController struct {
 // NewJWTController create a new JWTController that will
 // be using the given model for login and token generation.
 func NewJWTController(model interface{}) *JWTController {
-	return &JWTController{
+	controller := &JWTController{
 		model:         model,
 		UsernameField: "username",
 		PasswordField: "password",
 	}
+	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
+		signingMethod := controller.SigningMethod
+		if signingMethod == nil {
+			signingMethod = jwt.SigningMethodHS256
+		}
+		return GenerateTokenWithClaims(jwt.MapClaims{"userid": r.String(controller.UsernameField)}, signingMethod)
+	}
+	return controller
 }
 
 // Login POST handler for token-based authentication.
@@ -80,7 +78,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
 	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String(c.PasswordField))) == nil {
-		token, err := GenerateToken(username)
+		token, err := c.TokenFunc(request, user)
 		if err != nil {
 			panic(err)
 		}
@@ -88,7 +86,7 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 		return
 	}
 
-	response.JSON(http.StatusUnprocessableEntity, map[string]string{"validationError": lang.Get(request.Lang, "auth.invalid-credentials")})
+	response.JSON(http.StatusUnauthorized, map[string]string{"validationError": lang.Get(request.Lang, "auth.invalid-credentials")})
 }
 
 // Refresh refresh the current token.

@@ -12,6 +12,7 @@ func TestRegexCache(t *testing.T) {
 
 	assert.True(t, exists)
 	assert.Equal(t, regex, cached)
+	assert.Same(t, regex, cached)
 
 	ClearRegexCache()
 	assert.Empty(t, regexCache)

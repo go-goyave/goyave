@@ -661,7 +661,9 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	suite.Len(rules.Fields["number"].Rules, 1)
 	suite.Equal(&Rule{Name: "numeric", Params: []string{}, ArrayDimension: 0}, rules.Fields["number"].Rules[0])
 
-	suite.Equal(rules, set.AsRules())
+	parsed := set.AsRules()
+	suite.Equal(rules.Fields, parsed.Fields)
+	suite.Equal(rules.checked, parsed.checked)
 
 	suite.True(rules.checked)
 	// Resulting Rules should be checked after parsing

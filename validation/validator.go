@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"goyave.dev/goyave/v3/lang"
@@ -74,6 +75,7 @@ func (r RuleSet) parse() *Rules {
 		rules.Fields[k] = field
 	}
 	rules.check()
+	rules.sortKeys()
 	return rules
 }
 
@@ -124,24 +126,24 @@ type Field struct {
 }
 
 // IsRequired check if a field has the "required" rule
-func (v *Field) IsRequired() bool {
-	return v.isRequired
+func (f *Field) IsRequired() bool {
+	return f.isRequired
 }
 
 // IsNullable check if a field has the "nullable" rule
-func (v *Field) IsNullable() bool {
-	return v.isNullable
+func (f *Field) IsNullable() bool {
+	return f.isNullable
 }
 
 // IsArray check if a field has the "array" rule
-func (v *Field) IsArray() bool {
-	return v.isArray
+func (f *Field) IsArray() bool {
+	return f.isArray
 }
 
 // check if rules meet the minimum parameters requirement and update
 // the isRequired, isNullable and isArray fields.
-func (v *Field) check() {
-	for _, rule := range v.Rules {
+func (f *Field) check() {
+	for _, rule := range f.Rules {
 		switch rule.Name {
 		case "confirmed", "file", "mime", "image", "extension", "count",
 			"count_min", "count_max", "count_between":
@@ -149,12 +151,12 @@ func (v *Field) check() {
 				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name))
 			}
 		case "required":
-			v.isRequired = true
+			f.isRequired = true
 		case "nullable":
-			v.isNullable = true
+			f.isNullable = true
 			continue
 		case "array":
-			v.isArray = true
+			f.isArray = true
 		}
 
 		def, exists := validationRules[rule.Name]
@@ -174,8 +176,9 @@ type FieldMap map[string]*Field
 // Rules is a component of route validation and maps a
 // field name (key) with a Field struct (value).
 type Rules struct {
-	Fields  FieldMap
-	checked bool
+	Fields     FieldMap
+	sortedKeys []string
+	checked    bool
 }
 
 var _ Ruler = (*Rules)(nil) // implements Ruler
@@ -183,6 +186,9 @@ var _ Ruler = (*Rules)(nil) // implements Ruler
 // AsRules performs the checking and returns the same Rules instance.
 func (r *Rules) AsRules() *Rules {
 	r.check()
+	if r.sortedKeys == nil {
+		r.sortKeys()
+	}
 	return r
 }
 
@@ -197,6 +203,32 @@ func (r *Rules) check() {
 		}
 		r.checked = true
 	}
+}
+
+func (r *Rules) sortKeys() {
+	r.sortedKeys = make([]string, 0, len(r.Fields))
+
+	for k := range r.Fields {
+		r.sortedKeys = append(r.sortedKeys, k)
+	}
+
+	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
+		fieldName1 := r.sortedKeys[i]
+		field2 := r.Fields[r.sortedKeys[j]]
+		for _, r := range field2.Rules {
+			switch r.Name {
+			case "after", "before",
+				"greater_than", "greater_than_equal",
+				"lower_than", "lower_than_equal",
+				"in_array", "not_in_array":
+				// TODO doesn't support custom validation rules
+				if r.Params[0] == fieldName1 {
+					return true
+				}
+			}
+		}
+		return false
+	})
 }
 
 // Errors is a map of validation errors with the field name as a key.
@@ -297,7 +329,8 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {
 	errors := Errors{}
 
-	for fieldName, field := range rules.Fields {
+	for _, fieldName := range rules.sortedKeys {
+		field := rules.Fields[fieldName]
 		name, fieldVal, parent, _ := GetFieldFromName(fieldName, data)
 		if !field.IsNullable() && fieldVal == nil {
 			delete(parent, fieldName)

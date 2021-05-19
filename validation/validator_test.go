@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/helper"
 	"goyave.dev/goyave/v3/helper/filesystem"
 	"goyave.dev/goyave/v3/lang"
 )
@@ -841,6 +842,57 @@ func (suite *ValidatorTestSuite) TestRuleIsTypeDependent() {
 		rule := &Rule{Name: "not a rule"}
 		rule.IsTypeDependent()
 	})
+}
+
+func (suite *ValidatorTestSuite) TestRuleComparisonNonGuaranteedOrder() { // https://github.com/go-goyave/goyave/issues/144
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"start": {Rules: []*Rule{
+				{Name: "date", Params: []string{"02-01-2006"}}, // Use another date format to prevent auto-conversion
+			}},
+			"end": {Rules: []*Rule{
+				{Name: "date", Params: []string{"02-01-2006"}},
+				{Name: "after", Params: []string{"start"}},
+			}},
+		},
+	}
+
+	// Test several times to check if even if map iteration order is not guaranteed,
+	// validation still behaves as expected.
+	for i := 0; i < 100; i++ {
+		data := map[string]interface{}{
+			"start": "05-06-2008",
+			"end":   "05-06-2009",
+		}
+		err := Validate(data, rules, true, "en-US")
+		suite.Empty(err)
+	}
+}
+
+func (suite *ValidatorTestSuite) TestSortKeys() {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"text": {Rules: []*Rule{
+				{Name: "string"},
+			}},
+			"end": {Rules: []*Rule{
+				{Name: "date", Params: []string{"02-01-2006"}},
+				{Name: "after", Params: []string{"start"}},
+			}},
+			"start": {Rules: []*Rule{
+				{Name: "date", Params: []string{"02-01-2006"}}, // Use another date format to prevent auto-conversion
+			}},
+		},
+	}
+	rules.sortKeys()
+	suite.Greater(helper.IndexOfStr(rules.sortedKeys, "end"), helper.IndexOfStr(rules.sortedKeys, "start"))
+	suite.Contains(rules.sortedKeys, "start")
+	suite.Contains(rules.sortedKeys, "end")
+	suite.Contains(rules.sortedKeys, "text")
+
+	// TODO test objects
+	// TODO test conversion rules
+	// TODO test other comparison rules
 }
 
 func TestValidatorTestSuite(t *testing.T) {

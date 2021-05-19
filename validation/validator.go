@@ -47,6 +47,14 @@ type RuleDefinition struct {
 	// depending on the type.
 	// The language entry used will be "validation.rules.rulename.type"
 	IsTypeDependent bool
+
+	// ComparesFields is true when the rule compares the value of the field under
+	// validation with another field. A field containing at least one rule with
+	// ComparesFields = true will be executed later in the validation process to
+	// ensure conversions are properly executed prior.
+	ComparesFields bool
+
+	// TODO handle objects notation for field comparison
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
@@ -216,12 +224,7 @@ func (r *Rules) sortKeys() {
 		fieldName1 := r.sortedKeys[i]
 		field2 := r.Fields[r.sortedKeys[j]]
 		for _, r := range field2.Rules {
-			switch r.Name {
-			case "after", "before",
-				"greater_than", "greater_than_equal",
-				"lower_than", "lower_than_equal",
-				"in_array", "not_in_array":
-				// TODO doesn't support custom validation rules
+			if validationRules[r.Name].ComparesFields {
 				if r.Params[0] == fieldName1 {
 					return true
 				}
@@ -238,59 +241,59 @@ var validationRules map[string]*RuleDefinition
 
 func init() {
 	validationRules = map[string]*RuleDefinition{
-		"required":           {validateRequired, 0, false, false},
-		"numeric":            {validateNumeric, 0, true, false},
-		"integer":            {validateInteger, 0, true, false},
-		"min":                {validateMin, 1, false, true},
-		"max":                {validateMax, 1, false, true},
-		"between":            {validateBetween, 2, false, true},
-		"greater_than":       {validateGreaterThan, 1, false, true},
-		"greater_than_equal": {validateGreaterThanEqual, 1, false, true},
-		"lower_than":         {validateLowerThan, 1, false, true},
-		"lower_than_equal":   {validateLowerThanEqual, 1, false, true},
-		"string":             {validateString, 0, true, false},
-		"array":              {validateArray, 0, false, false},
-		"distinct":           {validateDistinct, 0, false, false},
-		"digits":             {validateDigits, 0, false, false},
-		"regex":              {validateRegex, 1, false, false},
-		"email":              {validateEmail, 0, false, false},
-		"size":               {validateSize, 1, false, true},
-		"alpha":              {validateAlpha, 0, false, false},
-		"alpha_dash":         {validateAlphaDash, 0, false, false},
-		"alpha_num":          {validateAlphaNumeric, 0, false, false},
-		"starts_with":        {validateStartsWith, 1, false, false},
-		"ends_with":          {validateEndsWith, 1, false, false},
-		"in":                 {validateIn, 1, false, false},
-		"not_in":             {validateNotIn, 1, false, false},
-		"in_array":           {validateInArray, 1, false, false},
-		"not_in_array":       {validateNotInArray, 1, false, false},
-		"timezone":           {validateTimezone, 0, true, false},
-		"ip":                 {validateIP, 0, true, false},
-		"ipv4":               {validateIPv4, 0, true, false},
-		"ipv6":               {validateIPv6, 0, true, false},
-		"json":               {validateJSON, 0, true, false},
-		"url":                {validateURL, 0, true, false},
-		"uuid":               {validateUUID, 0, true, false},
-		"bool":               {validateBool, 0, true, false},
-		"same":               {validateSame, 1, false, false},
-		"different":          {validateDifferent, 1, false, false},
-		"confirmed":          {validateConfirmed, 0, false, false},
-		"file":               {validateFile, 0, false, false},
-		"mime":               {validateMIME, 1, false, false},
-		"image":              {validateImage, 0, false, false},
-		"extension":          {validateExtension, 1, false, false},
-		"count":              {validateCount, 1, false, false},
-		"count_min":          {validateCountMin, 1, false, false},
-		"count_max":          {validateCountMax, 1, false, false},
-		"count_between":      {validateCountBetween, 2, false, false},
-		"date":               {validateDate, 0, true, false},
-		"before":             {validateBefore, 1, false, false},
-		"before_equal":       {validateBeforeEqual, 1, false, false},
-		"after":              {validateAfter, 1, false, false},
-		"after_equal":        {validateAfterEqual, 1, false, false},
-		"date_equals":        {validateDateEquals, 1, false, false},
-		"date_between":       {validateDateBetween, 2, false, false},
-		"object":             {validateObject, 0, true, false},
+		"required":           {validateRequired, 0, false, false, false},
+		"numeric":            {validateNumeric, 0, true, false, false},
+		"integer":            {validateInteger, 0, true, false, false},
+		"min":                {validateMin, 1, false, true, false},
+		"max":                {validateMax, 1, false, true, false},
+		"between":            {validateBetween, 2, false, true, false},
+		"greater_than":       {validateGreaterThan, 1, false, true, true},
+		"greater_than_equal": {validateGreaterThanEqual, 1, false, true, true},
+		"lower_than":         {validateLowerThan, 1, false, true, true},
+		"lower_than_equal":   {validateLowerThanEqual, 1, false, true, true},
+		"string":             {validateString, 0, true, false, false},
+		"array":              {validateArray, 0, false, false, false},
+		"distinct":           {validateDistinct, 0, false, false, false},
+		"digits":             {validateDigits, 0, false, false, false},
+		"regex":              {validateRegex, 1, false, false, false},
+		"email":              {validateEmail, 0, false, false, false},
+		"size":               {validateSize, 1, false, true, false},
+		"alpha":              {validateAlpha, 0, false, false, false},
+		"alpha_dash":         {validateAlphaDash, 0, false, false, false},
+		"alpha_num":          {validateAlphaNumeric, 0, false, false, false},
+		"starts_with":        {validateStartsWith, 1, false, false, false},
+		"ends_with":          {validateEndsWith, 1, false, false, false},
+		"in":                 {validateIn, 1, false, false, false},
+		"not_in":             {validateNotIn, 1, false, false, false},
+		"in_array":           {validateInArray, 1, false, false, true},
+		"not_in_array":       {validateNotInArray, 1, false, false, true},
+		"timezone":           {validateTimezone, 0, true, false, false},
+		"ip":                 {validateIP, 0, true, false, false},
+		"ipv4":               {validateIPv4, 0, true, false, false},
+		"ipv6":               {validateIPv6, 0, true, false, false},
+		"json":               {validateJSON, 0, true, false, false},
+		"url":                {validateURL, 0, true, false, false},
+		"uuid":               {validateUUID, 0, true, false, false},
+		"bool":               {validateBool, 0, true, false, false},
+		"same":               {validateSame, 1, false, false, true},
+		"different":          {validateDifferent, 1, false, false, true},
+		"confirmed":          {validateConfirmed, 0, false, false, true},
+		"file":               {validateFile, 0, false, false, false},
+		"mime":               {validateMIME, 1, false, false, false},
+		"image":              {validateImage, 0, false, false, false},
+		"extension":          {validateExtension, 1, false, false, false},
+		"count":              {validateCount, 1, false, false, false},
+		"count_min":          {validateCountMin, 1, false, false, false},
+		"count_max":          {validateCountMax, 1, false, false, false},
+		"count_between":      {validateCountBetween, 2, false, false, false},
+		"date":               {validateDate, 0, true, false, false},
+		"before":             {validateBefore, 1, false, false, true},
+		"before_equal":       {validateBeforeEqual, 1, false, false, true},
+		"after":              {validateAfter, 1, false, false, true},
+		"after_equal":        {validateAfterEqual, 1, false, false, true},
+		"date_equals":        {validateDateEquals, 1, false, false, true},
+		"date_between":       {validateDateBetween, 2, false, false, true},
+		"object":             {validateObject, 0, true, false, false},
 	}
 }
 

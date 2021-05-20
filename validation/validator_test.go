@@ -932,6 +932,39 @@ func (suite *ValidatorTestSuite) TestSortKeysIncoherent() {
 	suite.Contains(rules.sortedKeys, "end")
 }
 
+func (suite *ValidatorTestSuite) TestSortKeysMultipleComparedFields() {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"text": {Rules: []*Rule{
+				{Name: "string"},
+			}},
+			"mid": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"start"}},
+				{Name: "before", Params: []string{"end"}},
+			}},
+			"end": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "date_between", Params: []string{"start", "end"}},
+			}},
+			"start": {Rules: []*Rule{
+				{Name: "date"},
+			}},
+		},
+	}
+	rules.sortKeys()
+	indexStart := helper.IndexOfStr(rules.sortedKeys, "start")
+	indexEnd := helper.IndexOfStr(rules.sortedKeys, "end")
+	indexMid := helper.IndexOfStr(rules.sortedKeys, "mid")
+	suite.Greater(indexEnd, indexStart)
+	suite.Greater(indexMid, indexStart)
+	suite.Greater(indexMid, indexEnd)
+	suite.Contains(rules.sortedKeys, "start")
+	suite.Contains(rules.sortedKeys, "mid")
+	suite.Contains(rules.sortedKeys, "end")
+	suite.Contains(rules.sortedKeys, "text")
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

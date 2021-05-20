@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"goyave.dev/goyave/v3/helper"
 	"goyave.dev/goyave/v3/lang"
 )
 
@@ -224,11 +225,8 @@ func (r *Rules) sortKeys() {
 		fieldName1 := r.sortedKeys[i]
 		field2 := r.Fields[r.sortedKeys[j]]
 		for _, r := range field2.Rules {
-			if validationRules[r.Name].ComparesFields {
-				if r.Params[0] == fieldName1 {
-					// FIXME what if rule has multiple fields in parameters
-					return true
-				}
+			if validationRules[r.Name].ComparesFields && helper.ContainsStr(r.Params, fieldName1) {
+				return true
 			}
 		}
 		return false

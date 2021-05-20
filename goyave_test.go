@@ -84,11 +84,9 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
 				Stop()
 			} else {
-				for IsReady() {
-					time.Sleep(10 * time.Millisecond)
-					if err := proc.Signal(syscall.SIGTERM); err != nil {
-						suite.Fail(err.Error())
-					}
+				time.Sleep(10 * time.Millisecond)
+				if err := proc.Signal(syscall.SIGTERM); err != nil {
+					suite.Fail(err.Error())
 				}
 			}
 			c <- struct{}{}

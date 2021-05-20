@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"goyave.dev/goyave/v3/helper"
 	"goyave.dev/goyave/v3/helper/filesystem"
 	"goyave.dev/goyave/v3/lang"
 )
@@ -660,7 +661,9 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	suite.Len(rules.Fields["number"].Rules, 1)
 	suite.Equal(&Rule{Name: "numeric", Params: []string{}, ArrayDimension: 0}, rules.Fields["number"].Rules[0])
 
-	suite.Equal(rules, set.AsRules())
+	parsed := set.AsRules()
+	suite.Equal(rules.Fields, parsed.Fields)
+	suite.Equal(rules.checked, parsed.checked)
 
 	suite.True(rules.checked)
 	// Resulting Rules should be checked after parsing
@@ -841,6 +844,156 @@ func (suite *ValidatorTestSuite) TestRuleIsTypeDependent() {
 		rule := &Rule{Name: "not a rule"}
 		rule.IsTypeDependent()
 	})
+}
+
+func (suite *ValidatorTestSuite) TestRuleComparisonNonGuaranteedOrder() { // https://github.com/go-goyave/goyave/issues/144
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"start": {Rules: []*Rule{
+				{Name: "date", Params: []string{"02-01-2006"}}, // Use another date format to prevent auto-conversion
+			}},
+			"end": {Rules: []*Rule{
+				{Name: "date", Params: []string{"02-01-2006"}},
+				{Name: "after", Params: []string{"start"}},
+			}},
+		},
+	}
+
+	// Test several times to check if even if map iteration order is not guaranteed,
+	// validation still behaves as expected.
+	for i := 0; i < 100; i++ {
+		data := map[string]interface{}{
+			"start": "05-06-2008",
+			"end":   "05-06-2009",
+		}
+		err := Validate(data, rules, true, "en-US")
+		suite.Empty(err)
+	}
+}
+
+func (suite *ValidatorTestSuite) TestSortKeys() {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"text": {Rules: []*Rule{
+				{Name: "string"},
+			}},
+			"mid": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"start"}},
+				{Name: "before", Params: []string{"end"}},
+			}},
+			"end": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"start"}},
+			}},
+			"start": {Rules: []*Rule{
+				{Name: "date"},
+			}},
+		},
+	}
+	rules.sortKeys()
+
+	// Expect [text start end mid]
+	// Use relative indexes because order is not guaranteed (text may be anywhere)
+	indexStart := helper.IndexOfStr(rules.sortedKeys, "start")
+	indexEnd := helper.IndexOfStr(rules.sortedKeys, "end")
+	indexMid := helper.IndexOfStr(rules.sortedKeys, "mid")
+	suite.Greater(indexEnd, indexStart)
+	suite.Greater(indexMid, indexStart)
+	suite.Greater(indexMid, indexEnd)
+	suite.Contains(rules.sortedKeys, "start")
+	suite.Contains(rules.sortedKeys, "mid")
+	suite.Contains(rules.sortedKeys, "end")
+	suite.Contains(rules.sortedKeys, "text")
+}
+
+func (suite *ValidatorTestSuite) TestSortKeysIncoherent() {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"end": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"start"}},
+			}},
+			"start": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"end"}},
+			}},
+		},
+	}
+	rules.sortKeys()
+
+	// In that case, whatever order can be used but consistency not ensured
+	// In any case, this shouldn't crash
+	suite.Contains(rules.sortedKeys, "start")
+	suite.Contains(rules.sortedKeys, "end")
+}
+
+func (suite *ValidatorTestSuite) TestSortKeysMultipleComparedFields() {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"text": {Rules: []*Rule{
+				{Name: "string"},
+			}},
+			"mid": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"start"}},
+				{Name: "before", Params: []string{"end"}},
+			}},
+			"end": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "date_between", Params: []string{"start", "end"}},
+			}},
+			"start": {Rules: []*Rule{
+				{Name: "date"},
+			}},
+		},
+	}
+	rules.sortKeys()
+	indexStart := helper.IndexOfStr(rules.sortedKeys, "start")
+	indexEnd := helper.IndexOfStr(rules.sortedKeys, "end")
+	indexMid := helper.IndexOfStr(rules.sortedKeys, "mid")
+	suite.Greater(indexEnd, indexStart)
+	suite.Greater(indexMid, indexStart)
+	suite.Greater(indexMid, indexEnd)
+	suite.Contains(rules.sortedKeys, "start")
+	suite.Contains(rules.sortedKeys, "mid")
+	suite.Contains(rules.sortedKeys, "end")
+	suite.Contains(rules.sortedKeys, "text")
+}
+
+func (suite *ValidatorTestSuite) TestSortKeysBuiltinRules() {
+	// Tests that all rules that are supposed to be comparing fields
+	// are sorted correctly.
+	suite.testSortKeysWithRule("greater_than")
+	suite.testSortKeysWithRule("greater_than_equal")
+	suite.testSortKeysWithRule("lower_than")
+	suite.testSortKeysWithRule("lower_than_equal")
+	suite.testSortKeysWithRule("in_array")
+	suite.testSortKeysWithRule("not_in_array")
+	suite.testSortKeysWithRule("same")
+	suite.testSortKeysWithRule("different")
+	suite.testSortKeysWithRule("before")
+	suite.testSortKeysWithRule("before_equal")
+	suite.testSortKeysWithRule("after")
+	suite.testSortKeysWithRule("after_equal")
+	suite.testSortKeysWithRule("date_equals")
+	suite.testSortKeysWithRule("date_between")
+}
+
+func (suite *ValidatorTestSuite) testSortKeysWithRule(rule string) {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"one": {Rules: []*Rule{
+				{Name: "string"},
+				{Name: rule, Params: []string{"two"}},
+			}},
+			"two": {Rules: []*Rule{
+				{Name: "string"},
+			}},
+		},
+	}
+	rules.sortKeys()
+	suite.Equal([]string{"two", "one"}, rules.sortedKeys)
 }
 
 func TestValidatorTestSuite(t *testing.T) {

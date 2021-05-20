@@ -3,8 +3,10 @@ package validation
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
+	"goyave.dev/goyave/v3/helper"
 	"goyave.dev/goyave/v3/lang"
 )
 
@@ -46,6 +48,14 @@ type RuleDefinition struct {
 	// depending on the type.
 	// The language entry used will be "validation.rules.rulename.type"
 	IsTypeDependent bool
+
+	// ComparesFields is true when the rule compares the value of the field under
+	// validation with another field. A field containing at least one rule with
+	// ComparesFields = true will be executed later in the validation process to
+	// ensure conversions are properly executed prior.
+	ComparesFields bool
+
+	// TODO handle objects notation for field comparison
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
@@ -74,6 +84,7 @@ func (r RuleSet) parse() *Rules {
 		rules.Fields[k] = field
 	}
 	rules.check()
+	rules.sortKeys()
 	return rules
 }
 
@@ -124,24 +135,24 @@ type Field struct {
 }
 
 // IsRequired check if a field has the "required" rule
-func (v *Field) IsRequired() bool {
-	return v.isRequired
+func (f *Field) IsRequired() bool {
+	return f.isRequired
 }
 
 // IsNullable check if a field has the "nullable" rule
-func (v *Field) IsNullable() bool {
-	return v.isNullable
+func (f *Field) IsNullable() bool {
+	return f.isNullable
 }
 
 // IsArray check if a field has the "array" rule
-func (v *Field) IsArray() bool {
-	return v.isArray
+func (f *Field) IsArray() bool {
+	return f.isArray
 }
 
 // check if rules meet the minimum parameters requirement and update
 // the isRequired, isNullable and isArray fields.
-func (v *Field) check() {
-	for _, rule := range v.Rules {
+func (f *Field) check() {
+	for _, rule := range f.Rules {
 		switch rule.Name {
 		case "confirmed", "file", "mime", "image", "extension", "count",
 			"count_min", "count_max", "count_between":
@@ -149,12 +160,12 @@ func (v *Field) check() {
 				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name))
 			}
 		case "required":
-			v.isRequired = true
+			f.isRequired = true
 		case "nullable":
-			v.isNullable = true
+			f.isNullable = true
 			continue
 		case "array":
-			v.isArray = true
+			f.isArray = true
 		}
 
 		def, exists := validationRules[rule.Name]
@@ -174,8 +185,9 @@ type FieldMap map[string]*Field
 // Rules is a component of route validation and maps a
 // field name (key) with a Field struct (value).
 type Rules struct {
-	Fields  FieldMap
-	checked bool
+	Fields     FieldMap
+	sortedKeys []string
+	checked    bool
 }
 
 var _ Ruler = (*Rules)(nil) // implements Ruler
@@ -183,6 +195,9 @@ var _ Ruler = (*Rules)(nil) // implements Ruler
 // AsRules performs the checking and returns the same Rules instance.
 func (r *Rules) AsRules() *Rules {
 	r.check()
+	if r.sortedKeys == nil {
+		r.sortKeys()
+	}
 	return r
 }
 
@@ -199,6 +214,25 @@ func (r *Rules) check() {
 	}
 }
 
+func (r *Rules) sortKeys() {
+	r.sortedKeys = make([]string, 0, len(r.Fields))
+
+	for k := range r.Fields {
+		r.sortedKeys = append(r.sortedKeys, k)
+	}
+
+	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
+		fieldName1 := r.sortedKeys[i]
+		field2 := r.Fields[r.sortedKeys[j]]
+		for _, r := range field2.Rules {
+			if validationRules[r.Name].ComparesFields && helper.ContainsStr(r.Params, fieldName1) {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 // Errors is a map of validation errors with the field name as a key.
 type Errors map[string][]string
 
@@ -206,59 +240,59 @@ var validationRules map[string]*RuleDefinition
 
 func init() {
 	validationRules = map[string]*RuleDefinition{
-		"required":           {validateRequired, 0, false, false},
-		"numeric":            {validateNumeric, 0, true, false},
-		"integer":            {validateInteger, 0, true, false},
-		"min":                {validateMin, 1, false, true},
-		"max":                {validateMax, 1, false, true},
-		"between":            {validateBetween, 2, false, true},
-		"greater_than":       {validateGreaterThan, 1, false, true},
-		"greater_than_equal": {validateGreaterThanEqual, 1, false, true},
-		"lower_than":         {validateLowerThan, 1, false, true},
-		"lower_than_equal":   {validateLowerThanEqual, 1, false, true},
-		"string":             {validateString, 0, true, false},
-		"array":              {validateArray, 0, false, false},
-		"distinct":           {validateDistinct, 0, false, false},
-		"digits":             {validateDigits, 0, false, false},
-		"regex":              {validateRegex, 1, false, false},
-		"email":              {validateEmail, 0, false, false},
-		"size":               {validateSize, 1, false, true},
-		"alpha":              {validateAlpha, 0, false, false},
-		"alpha_dash":         {validateAlphaDash, 0, false, false},
-		"alpha_num":          {validateAlphaNumeric, 0, false, false},
-		"starts_with":        {validateStartsWith, 1, false, false},
-		"ends_with":          {validateEndsWith, 1, false, false},
-		"in":                 {validateIn, 1, false, false},
-		"not_in":             {validateNotIn, 1, false, false},
-		"in_array":           {validateInArray, 1, false, false},
-		"not_in_array":       {validateNotInArray, 1, false, false},
-		"timezone":           {validateTimezone, 0, true, false},
-		"ip":                 {validateIP, 0, true, false},
-		"ipv4":               {validateIPv4, 0, true, false},
-		"ipv6":               {validateIPv6, 0, true, false},
-		"json":               {validateJSON, 0, true, false},
-		"url":                {validateURL, 0, true, false},
-		"uuid":               {validateUUID, 0, true, false},
-		"bool":               {validateBool, 0, true, false},
-		"same":               {validateSame, 1, false, false},
-		"different":          {validateDifferent, 1, false, false},
-		"confirmed":          {validateConfirmed, 0, false, false},
-		"file":               {validateFile, 0, false, false},
-		"mime":               {validateMIME, 1, false, false},
-		"image":              {validateImage, 0, false, false},
-		"extension":          {validateExtension, 1, false, false},
-		"count":              {validateCount, 1, false, false},
-		"count_min":          {validateCountMin, 1, false, false},
-		"count_max":          {validateCountMax, 1, false, false},
-		"count_between":      {validateCountBetween, 2, false, false},
-		"date":               {validateDate, 0, true, false},
-		"before":             {validateBefore, 1, false, false},
-		"before_equal":       {validateBeforeEqual, 1, false, false},
-		"after":              {validateAfter, 1, false, false},
-		"after_equal":        {validateAfterEqual, 1, false, false},
-		"date_equals":        {validateDateEquals, 1, false, false},
-		"date_between":       {validateDateBetween, 2, false, false},
-		"object":             {validateObject, 0, true, false},
+		"required":           {validateRequired, 0, false, false, false},
+		"numeric":            {validateNumeric, 0, true, false, false},
+		"integer":            {validateInteger, 0, true, false, false},
+		"min":                {validateMin, 1, false, true, false},
+		"max":                {validateMax, 1, false, true, false},
+		"between":            {validateBetween, 2, false, true, false},
+		"greater_than":       {validateGreaterThan, 1, false, true, true},
+		"greater_than_equal": {validateGreaterThanEqual, 1, false, true, true},
+		"lower_than":         {validateLowerThan, 1, false, true, true},
+		"lower_than_equal":   {validateLowerThanEqual, 1, false, true, true},
+		"string":             {validateString, 0, true, false, false},
+		"array":              {validateArray, 0, false, false, false},
+		"distinct":           {validateDistinct, 0, false, false, false},
+		"digits":             {validateDigits, 0, false, false, false},
+		"regex":              {validateRegex, 1, false, false, false},
+		"email":              {validateEmail, 0, false, false, false},
+		"size":               {validateSize, 1, false, true, false},
+		"alpha":              {validateAlpha, 0, false, false, false},
+		"alpha_dash":         {validateAlphaDash, 0, false, false, false},
+		"alpha_num":          {validateAlphaNumeric, 0, false, false, false},
+		"starts_with":        {validateStartsWith, 1, false, false, false},
+		"ends_with":          {validateEndsWith, 1, false, false, false},
+		"in":                 {validateIn, 1, false, false, false},
+		"not_in":             {validateNotIn, 1, false, false, false},
+		"in_array":           {validateInArray, 1, false, false, true},
+		"not_in_array":       {validateNotInArray, 1, false, false, true},
+		"timezone":           {validateTimezone, 0, true, false, false},
+		"ip":                 {validateIP, 0, true, false, false},
+		"ipv4":               {validateIPv4, 0, true, false, false},
+		"ipv6":               {validateIPv6, 0, true, false, false},
+		"json":               {validateJSON, 0, true, false, false},
+		"url":                {validateURL, 0, true, false, false},
+		"uuid":               {validateUUID, 0, true, false, false},
+		"bool":               {validateBool, 0, true, false, false},
+		"same":               {validateSame, 1, false, false, true},
+		"different":          {validateDifferent, 1, false, false, true},
+		"confirmed":          {validateConfirmed, 0, false, false, false},
+		"file":               {validateFile, 0, false, false, false},
+		"mime":               {validateMIME, 1, false, false, false},
+		"image":              {validateImage, 0, false, false, false},
+		"extension":          {validateExtension, 1, false, false, false},
+		"count":              {validateCount, 1, false, false, false},
+		"count_min":          {validateCountMin, 1, false, false, false},
+		"count_max":          {validateCountMax, 1, false, false, false},
+		"count_between":      {validateCountBetween, 2, false, false, false},
+		"date":               {validateDate, 0, true, false, false},
+		"before":             {validateBefore, 1, false, false, true},
+		"before_equal":       {validateBeforeEqual, 1, false, false, true},
+		"after":              {validateAfter, 1, false, false, true},
+		"after_equal":        {validateAfterEqual, 1, false, false, true},
+		"date_equals":        {validateDateEquals, 1, false, false, true},
+		"date_between":       {validateDateBetween, 2, false, false, true},
+		"object":             {validateObject, 0, true, false, false},
 	}
 }
 
@@ -297,7 +331,8 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {
 	errors := Errors{}
 
-	for fieldName, field := range rules.Fields {
+	for _, fieldName := range rules.sortedKeys {
+		field := rules.Fields[fieldName]
 		name, fieldVal, parent, _ := GetFieldFromName(fieldName, data)
 		if !field.IsNullable() && fieldVal == nil {
 			delete(parent, fieldName)

@@ -226,6 +226,7 @@ func (r *Rules) sortKeys() {
 		for _, r := range field2.Rules {
 			if validationRules[r.Name].ComparesFields {
 				if r.Params[0] == fieldName1 {
+					// FIXME what if rule has multiple fields in parameters
 					return true
 				}
 			}

@@ -877,24 +877,59 @@ func (suite *ValidatorTestSuite) TestSortKeys() {
 			"text": {Rules: []*Rule{
 				{Name: "string"},
 			}},
+			"mid": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"start"}},
+				{Name: "before", Params: []string{"end"}},
+			}},
 			"end": {Rules: []*Rule{
-				{Name: "date", Params: []string{"02-01-2006"}},
+				{Name: "date"},
 				{Name: "after", Params: []string{"start"}},
 			}},
 			"start": {Rules: []*Rule{
-				{Name: "date", Params: []string{"02-01-2006"}}, // Use another date format to prevent auto-conversion
+				{Name: "date"},
 			}},
 		},
 	}
 	rules.sortKeys()
-	suite.Greater(helper.IndexOfStr(rules.sortedKeys, "end"), helper.IndexOfStr(rules.sortedKeys, "start"))
+
+	// Expect [text start end mid]
+	// Use relative indexes because order is not guaranteed (text may be anywhere)
+	indexStart := helper.IndexOfStr(rules.sortedKeys, "start")
+	indexEnd := helper.IndexOfStr(rules.sortedKeys, "end")
+	indexMid := helper.IndexOfStr(rules.sortedKeys, "mid")
+	suite.Greater(indexEnd, indexStart)
+	suite.Greater(indexMid, indexStart)
+	suite.Greater(indexMid, indexEnd)
 	suite.Contains(rules.sortedKeys, "start")
+	suite.Contains(rules.sortedKeys, "mid")
 	suite.Contains(rules.sortedKeys, "end")
 	suite.Contains(rules.sortedKeys, "text")
 
 	// TODO test objects
 	// TODO test conversion rules
 	// TODO test other comparison rules
+}
+
+func (suite *ValidatorTestSuite) TestSortKeysIncoherent() {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"end": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"start"}},
+			}},
+			"start": {Rules: []*Rule{
+				{Name: "date"},
+				{Name: "after", Params: []string{"end"}},
+			}},
+		},
+	}
+	rules.sortKeys()
+
+	// In that case, whatever order can be used but consistency not ensured
+	// In any case, this shouldn't crash
+	suite.Contains(rules.sortedKeys, "start")
+	suite.Contains(rules.sortedKeys, "end")
 }
 
 func TestValidatorTestSuite(t *testing.T) {

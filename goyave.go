@@ -365,8 +365,11 @@ func startServer(router *Router) error {
 		return &Error{err, ExitNetworkError}
 	}
 	defer ln.Close()
-	registerShutdownHook(stop)
-	<-hookChannel
+
+	readyChan := make(chan struct{})
+	registerShutdownHook(readyChan, stop)
+	<-readyChan
+	close(readyChan)
 
 	ready = true
 	if protocol == "https" {
@@ -401,12 +404,12 @@ func runStartupHooks() {
 	}
 }
 
-func registerShutdownHook(hook func(context.Context) error) {
+func registerShutdownHook(readyChan chan struct{}, hook func(context.Context) error) {
 	sigChannel = make(chan os.Signal, 64)
 	signal.Notify(sigChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		hookChannel <- struct{}{}
+		readyChan <- struct{}{}
 		select {
 		case <-hookChannel:
 			hookChannel <- struct{}{}

@@ -84,10 +84,6 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
 				Stop()
 			} else {
-				if err := proc.Signal(syscall.SIGTERM); err != nil {
-					suite.Fail(err.Error())
-				}
-				time.Sleep(10 * time.Millisecond)
 				for IsReady() {
 					time.Sleep(10 * time.Millisecond)
 					if err := proc.Signal(syscall.SIGTERM); err != nil {
@@ -107,14 +103,14 @@ func (suite *GoyaveTestSuite) TestStartStopServer() {
 
 		select {
 		case <-ctx.Done():
-			suite.Fail("Timeout exceeded in server start/stop test")
-		case <-c:
+			suite.Fail(fmt.Sprintf("Timeout (%dms) exceeded in server start/stop test", suite.Timeout().Milliseconds()))
+		case <-c2:
 			suite.False(IsReady())
 			suite.Nil(server)
+			<-c
 		}
-		<-c2
 	} else {
-		fmt.Println("WARNING: Couldn't get process PID, skipping SIGINT test")
+		suite.Fail("Couldn't get process PID, skipping SIGINT test")
 	}
 }
 
@@ -296,7 +292,6 @@ func (suite *GoyaveTestSuite) testServerError(proto string) {
 			config.Set("server.tls.cert", "doesntexist")
 		}
 
-		fmt.Println("test server error " + proto)
 		err := Start(func(router *Router) {})
 		config.Set("server.protocol", "http")
 		protocol = "http"

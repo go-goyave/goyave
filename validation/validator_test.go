@@ -905,10 +905,6 @@ func (suite *ValidatorTestSuite) TestSortKeys() {
 	suite.Contains(rules.sortedKeys, "mid")
 	suite.Contains(rules.sortedKeys, "end")
 	suite.Contains(rules.sortedKeys, "text")
-
-	// TODO test objects
-	// TODO test conversion rules
-	// TODO test other comparison rules
 }
 
 func (suite *ValidatorTestSuite) TestSortKeysIncoherent() {
@@ -963,6 +959,41 @@ func (suite *ValidatorTestSuite) TestSortKeysMultipleComparedFields() {
 	suite.Contains(rules.sortedKeys, "mid")
 	suite.Contains(rules.sortedKeys, "end")
 	suite.Contains(rules.sortedKeys, "text")
+}
+
+func (suite *ValidatorTestSuite) TestSortKeysBuiltinRules() {
+	// Tests that all rules that are supposed to be comparing fields
+	// are sorted correctly.
+	suite.testSortKeysWithRule("greater_than")
+	suite.testSortKeysWithRule("greater_than_equal")
+	suite.testSortKeysWithRule("lower_than")
+	suite.testSortKeysWithRule("lower_than_equal")
+	suite.testSortKeysWithRule("in_array")
+	suite.testSortKeysWithRule("not_in_array")
+	suite.testSortKeysWithRule("same")
+	suite.testSortKeysWithRule("different")
+	suite.testSortKeysWithRule("before")
+	suite.testSortKeysWithRule("before_equal")
+	suite.testSortKeysWithRule("after")
+	suite.testSortKeysWithRule("after_equal")
+	suite.testSortKeysWithRule("date_equals")
+	suite.testSortKeysWithRule("date_between")
+}
+
+func (suite *ValidatorTestSuite) testSortKeysWithRule(rule string) {
+	rules := &Rules{
+		Fields: map[string]*Field{
+			"one": {Rules: []*Rule{
+				{Name: "string"},
+				{Name: rule, Params: []string{"two"}},
+			}},
+			"two": {Rules: []*Rule{
+				{Name: "string"},
+			}},
+		},
+	}
+	rules.sortKeys()
+	suite.Equal([]string{"two", "one"}, rules.sortedKeys)
 }
 
 func TestValidatorTestSuite(t *testing.T) {

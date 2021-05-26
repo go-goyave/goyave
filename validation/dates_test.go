@@ -69,6 +69,15 @@ func TestValidateBefore(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-03"),
+		},
+	}
+	assert.True(t, validateBefore("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateBeforeEqual(t *testing.T) {
@@ -98,6 +107,23 @@ func TestValidateBeforeEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-03"),
+		},
+	}
+	assert.True(t, validateBeforeEqual("field", data["field"], []string{"object.other"}, data))
+
+	data = map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateBeforeEqual("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateAfter(t *testing.T) {
@@ -128,6 +154,15 @@ func TestValidateAfter(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-03"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateAfter("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateAfterEqual(t *testing.T) {
@@ -158,6 +193,23 @@ func TestValidateAfterEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-03"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateAfterEqual("field", data["field"], []string{"object.other"}, data))
+
+	data = map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateAfterEqual("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateDateEquals(t *testing.T) {
@@ -185,6 +237,15 @@ func TestValidateDateEquals(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateDateEquals("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateDateBetween(t *testing.T) {
@@ -213,6 +274,16 @@ func TestValidateDateBetween(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-03"),
+		"object": map[string]interface{}{
+			"min": createDate("2019-11-02"),
+			"max": createDate("2019-11-04"),
+		},
+	}
+	assert.True(t, validateDateBetween("field", data["field"], []string{"object.min", "object.max"}, data))
 }
 
 func TestValidateDateConvert(t *testing.T) {

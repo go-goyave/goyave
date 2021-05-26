@@ -139,7 +139,7 @@ func validateNotIn(field string, value interface{}, parameters []string, form ma
 }
 
 func validateInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	other, exists := form[parameters[0]]
+	_, other, _, exists := GetFieldFromName(parameters[0], form)
 	if exists && GetFieldType(other) == "array" {
 		return helper.Contains(other, value)
 	}
@@ -147,7 +147,7 @@ func validateInArray(field string, value interface{}, parameters []string, form 
 }
 
 func validateNotInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	other, exists := form[parameters[0]]
+	_, other, _, exists := GetFieldFromName(parameters[0], form)
 	if exists && GetFieldType(other) == "array" {
 		return !helper.Contains(other, value)
 	}

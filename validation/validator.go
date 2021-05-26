@@ -54,8 +54,6 @@ type RuleDefinition struct {
 	// ComparesFields = true will be executed later in the validation process to
 	// ensure conversions are properly executed prior.
 	ComparesFields bool
-
-	// TODO handle objects notation for field comparison
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.

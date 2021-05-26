@@ -226,6 +226,16 @@ func TestValidateInArray(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"field": "dolors",
+			"other": []string{"lorem", "ipsum", "sit", "dolor", "amet"},
+		},
+	}
+	assert.True(t, validateInArray("object.field", "dolor", []string{"object.other"}, data))
+	assert.False(t, validateInArray("object.field", "dolors", []string{"object.other"}, data))
 }
 
 func TestValidateNotInArray(t *testing.T) {
@@ -250,4 +260,14 @@ func TestValidateNotInArray(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"field": "dolors",
+			"other": []string{"lorem", "ipsum", "sit", "dolor", "amet"},
+		},
+	}
+	assert.False(t, validateNotInArray("object.field", "dolor", []string{"object.other"}, data))
+	assert.True(t, validateNotInArray("object.field", "dolors", []string{"object.other"}, data))
 }

@@ -114,7 +114,7 @@ func validateBetween(field string, value interface{}, parameters []string, form 
 func validateGreaterThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	valueType := GetFieldType(value)
 
-	compared, exists := form[parameters[0]]
+	_, compared, _, exists := GetFieldFromName(parameters[0], form)
 	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
@@ -147,7 +147,7 @@ func validateGreaterThan(field string, value interface{}, parameters []string, f
 func validateGreaterThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	valueType := GetFieldType(value)
 
-	compared, exists := form[parameters[0]]
+	_, compared, _, exists := GetFieldFromName(parameters[0], form)
 	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
@@ -180,7 +180,7 @@ func validateGreaterThanEqual(field string, value interface{}, parameters []stri
 func validateLowerThan(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	valueType := GetFieldType(value)
 
-	compared, exists := form[parameters[0]]
+	_, compared, _, exists := GetFieldFromName(parameters[0], form)
 	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}
@@ -213,7 +213,7 @@ func validateLowerThan(field string, value interface{}, parameters []string, for
 func validateLowerThanEqual(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	valueType := GetFieldType(value)
 
-	compared, exists := form[parameters[0]]
+	_, compared, _, exists := GetFieldFromName(parameters[0], form)
 	if !exists || valueType != GetFieldType(compared) {
 		return false // Can't compare two different types or missing field
 	}

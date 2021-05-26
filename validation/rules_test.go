@@ -204,6 +204,18 @@ func TestValidateGreaterThan(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 5,
+		},
+		"constraints": map[string]interface{}{
+			"min_products": 1,
+		},
+	}
+	assert.True(t, validateGreaterThan("cart.count", 5, []string{"constraints.min_products"}, data))
+	assert.False(t, validateGreaterThan("cart.count", 0, []string{"constraints.min_products"}, data))
 }
 
 func TestValidateGreaterThanEqual(t *testing.T) {
@@ -255,6 +267,19 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 5,
+		},
+		"constraints": map[string]interface{}{
+			"min_products": 1,
+		},
+	}
+	assert.True(t, validateGreaterThanEqual("cart.count", 5, []string{"constraints.min_products"}, data))
+	assert.True(t, validateGreaterThanEqual("cart.count", 1, []string{"constraints.min_products"}, data))
+	assert.False(t, validateGreaterThanEqual("cart.count", 0, []string{"constraints.min_products"}, data))
 }
 
 func TestValidateLowerThan(t *testing.T) {
@@ -296,6 +321,18 @@ func TestValidateLowerThan(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 1,
+		},
+		"constraints": map[string]interface{}{
+			"max_products": 5,
+		},
+	}
+	assert.True(t, validateLowerThan("cart.count", 1, []string{"constraints.max_products"}, data))
+	assert.False(t, validateLowerThan("cart.count", 5, []string{"constraints.max_products"}, data))
 }
 
 func TestValidateLowerThanEqual(t *testing.T) {
@@ -347,6 +384,19 @@ func TestValidateLowerThanEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 1,
+		},
+		"constraints": map[string]interface{}{
+			"max_products": 5,
+		},
+	}
+	assert.True(t, validateLowerThanEqual("cart.count", 1, []string{"constraints.max_products"}, data))
+	assert.True(t, validateLowerThanEqual("cart.count", 5, []string{"constraints.max_products"}, data))
+	assert.False(t, validateLowerThanEqual("cart.count", 6, []string{"constraints.max_products"}, data))
 }
 
 func TestValidateBool(t *testing.T) {

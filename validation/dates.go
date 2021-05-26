@@ -23,7 +23,7 @@ func getDates(value interface{}, parameters []string, form map[string]interface{
 	if ok {
 		dates = append(dates, date)
 		for _, param := range parameters {
-			other, exists := form[param]
+			_, other, _, exists := GetFieldFromName(param, form)
 			if exists {
 				otherDate, ok := other.(time.Time)
 				if !ok {
@@ -37,6 +37,7 @@ func getDates(value interface{}, parameters []string, form map[string]interface{
 				continue
 			}
 
+			// TODO v4: avoid reparsing the date every single time
 			t, err := parseDate(param, "2006-01-02T15:04:05")
 			if err != nil {
 				panic(err)

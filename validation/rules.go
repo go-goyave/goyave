@@ -246,26 +246,27 @@ func validateLowerThanEqual(field string, value interface{}, parameters []string
 func validateBool(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
+	fieldName, _, parent, _ := GetFieldFromName(field, form)
 	switch {
 	case kind == "bool":
 		return true
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
 		v, _ := helper.ToFloat64(value)
 		if v == 1 {
-			form[field] = true
+			parent[fieldName] = true
 			return true
 		} else if v == 0 {
-			form[field] = false
+			parent[fieldName] = false
 			return true
 		}
 	case kind == "string":
 		v, _ := value.(string)
 		switch v {
 		case "1", "on", "true", "yes":
-			form[field] = true
+			parent[fieldName] = true
 			return true
 		case "0", "off", "false", "no":
-			form[field] = false
+			parent[fieldName] = false
 			return true
 		}
 	}

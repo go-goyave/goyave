@@ -37,6 +37,24 @@ func TestValidateNumericConvertString(t *testing.T) {
 	assert.Equal(t, float64(2), form3["field"])
 }
 
+func TestValidateNumericConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"numeric": "1",
+		},
+	}
+
+	set := RuleSet{
+		"object":         {"required", "object"},
+		"object.numeric": {"required", "numeric"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["numeric"].(float64)
+	assert.True(t, ok)
+}
+
 func TestValidateInteger(t *testing.T) {
 	assert.True(t, validateInteger("field", 1, []string{}, map[string]interface{}{"field": 1}))
 	assert.True(t, validateInteger("field", float64(2), []string{}, map[string]interface{}{"field": float64(2)}))
@@ -68,4 +86,22 @@ func TestValidateIntegerConvert(t *testing.T) {
 	form3 := map[string]interface{}{"field": float64(3)}
 	validateInteger("field", form3["field"], []string{}, form3)
 	assert.Equal(t, 3, form3["field"])
+}
+
+func TestValidateIntegerConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"integer": "1",
+		},
+	}
+
+	set := RuleSet{
+		"object":         {"required", "object"},
+		"object.integer": {"required", "integer"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["integer"].(int)
+	assert.True(t, ok)
 }

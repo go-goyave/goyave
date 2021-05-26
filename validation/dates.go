@@ -56,7 +56,10 @@ func validateDate(field string, value interface{}, parameters []string, form map
 
 	t, err := parseDate(value, parameters[0])
 	if err == nil {
-		form[field] = t
+		// FIXME v4: not ideal because this is done twice. Set parent object in validation context.
+		// See: https://github.com/go-goyave/goyave/issues/136
+		fieldName, _, parent, _ := GetFieldFromName(field, form)
+		parent[fieldName] = t
 		return true
 	}
 	return false

@@ -73,7 +73,8 @@ func validateIP(field string, value interface{}, parameters []string, form map[s
 	if ok {
 		ip := net.ParseIP(str)
 		if ip != nil {
-			form[field] = ip
+			fieldName, _, parent, _ := GetFieldFromName(field, form)
+			parent[fieldName] = ip
 			return true
 		}
 	}
@@ -83,14 +84,16 @@ func validateIP(field string, value interface{}, parameters []string, form map[s
 
 func validateIPv4(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	if validateIP(field, value, parameters, form) {
-		return form[field].(net.IP).To4() != nil
+		_, value, _, _ := GetFieldFromName(field, form)
+		return value.(net.IP).To4() != nil
 	}
 	return false
 }
 
 func validateIPv6(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	if validateIP(field, value, parameters, form) {
-		return form[field].(net.IP).To4() == nil
+		_, value, _, _ := GetFieldFromName(field, form)
+		return value.(net.IP).To4() == nil
 	}
 	return false
 }
@@ -101,7 +104,8 @@ func validateJSON(field string, value interface{}, parameters []string, form map
 		var data interface{}
 		err := json.Unmarshal([]byte(str), &data)
 		if err == nil {
-			form[field] = data
+			fieldName, _, parent, _ := GetFieldFromName(field, form)
+			parent[fieldName] = data
 			return true
 		}
 	}
@@ -121,7 +125,8 @@ func validateTimezone(field string, value interface{}, parameters []string, form
 	if ok && tz != "Local" {
 		loc, err := time.LoadLocation(tz)
 		if err == nil {
-			form[field] = loc
+			fieldName, _, parent, _ := GetFieldFromName(field, form)
+			parent[fieldName] = loc
 			return true
 		}
 	}
@@ -133,7 +138,8 @@ func validateURL(field string, value interface{}, parameters []string, form map[
 	if ok {
 		url, err := url.ParseRequestURI(str)
 		if err == nil {
-			form[field] = url
+			fieldName, _, parent, _ := GetFieldFromName(field, form)
+			parent[fieldName] = url
 			return true
 		}
 	}
@@ -151,7 +157,8 @@ func validateUUID(field string, value interface{}, parameters []string, form map
 					return false
 				}
 			}
-			form[field] = id
+			fieldName, _, parent, _ := GetFieldFromName(field, form)
+			parent[fieldName] = id
 			return true
 		}
 	}

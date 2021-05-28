@@ -980,6 +980,14 @@ func (suite *ValidatorTestSuite) TestSortKeysBuiltinRules() {
 	suite.testSortKeysWithRule("date_between")
 }
 
+func (suite *ValidatorTestSuite) TestSortKeysWithNullable() {
+	rules := RuleSet{
+		"field1": []string{"nullable", "string"},
+		"field2": []string{"required", "string"},
+	}
+	rules.AsRules().sortKeys()
+}
+
 func (suite *ValidatorTestSuite) testSortKeysWithRule(rule string) {
 	rules := &Rules{
 		Fields: map[string]*Field{

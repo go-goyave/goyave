@@ -223,7 +223,8 @@ func (r *Rules) sortKeys() {
 		fieldName1 := r.sortedKeys[i]
 		field2 := r.Fields[r.sortedKeys[j]]
 		for _, r := range field2.Rules {
-			if validationRules[r.Name].ComparesFields && helper.ContainsStr(r.Params, fieldName1) {
+			def, ok := validationRules[r.Name]
+			if ok && def.ComparesFields && helper.ContainsStr(r.Params, fieldName1) {
 				return true
 			}
 		}

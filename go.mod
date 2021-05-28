@@ -11,10 +11,9 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/imdario/mergo v0.3.12
 	github.com/jackc/pgproto3/v2 v2.0.7 // indirect
-	github.com/jackc/pgx/v4 v4.11.0 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7 // indirect
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gorm.io/driver/mysql v1.0.5

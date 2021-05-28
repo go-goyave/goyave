@@ -204,6 +204,18 @@ func TestValidateGreaterThan(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 5,
+		},
+		"constraints": map[string]interface{}{
+			"min_products": 1,
+		},
+	}
+	assert.True(t, validateGreaterThan("cart.count", 5, []string{"constraints.min_products"}, data))
+	assert.False(t, validateGreaterThan("cart.count", 0, []string{"constraints.min_products"}, data))
 }
 
 func TestValidateGreaterThanEqual(t *testing.T) {
@@ -255,6 +267,19 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 5,
+		},
+		"constraints": map[string]interface{}{
+			"min_products": 1,
+		},
+	}
+	assert.True(t, validateGreaterThanEqual("cart.count", 5, []string{"constraints.min_products"}, data))
+	assert.True(t, validateGreaterThanEqual("cart.count", 1, []string{"constraints.min_products"}, data))
+	assert.False(t, validateGreaterThanEqual("cart.count", 0, []string{"constraints.min_products"}, data))
 }
 
 func TestValidateLowerThan(t *testing.T) {
@@ -296,6 +321,18 @@ func TestValidateLowerThan(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 1,
+		},
+		"constraints": map[string]interface{}{
+			"max_products": 5,
+		},
+	}
+	assert.True(t, validateLowerThan("cart.count", 1, []string{"constraints.max_products"}, data))
+	assert.False(t, validateLowerThan("cart.count", 5, []string{"constraints.max_products"}, data))
 }
 
 func TestValidateLowerThanEqual(t *testing.T) {
@@ -347,24 +384,40 @@ func TestValidateLowerThanEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"cart": map[string]interface{}{
+			"count": 1,
+		},
+		"constraints": map[string]interface{}{
+			"max_products": 5,
+		},
+	}
+	assert.True(t, validateLowerThanEqual("cart.count", 1, []string{"constraints.max_products"}, data))
+	assert.True(t, validateLowerThanEqual("cart.count", 5, []string{"constraints.max_products"}, data))
+	assert.False(t, validateLowerThanEqual("cart.count", 6, []string{"constraints.max_products"}, data))
 }
 
 func TestValidateBool(t *testing.T) {
-	assert.True(t, validateBool("field", 1, []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", 0, []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", "on", []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", "off", []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", "true", []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", "false", []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", "yes", []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", "no", []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", true, []string{}, map[string]interface{}{}))
-	assert.True(t, validateBool("field", false, []string{}, map[string]interface{}{}))
+	data := map[string]interface{}{
+		"field": 1,
+	}
+	assert.True(t, validateBool("field", 1, []string{}, data))
+	assert.True(t, validateBool("field", 0, []string{}, data))
+	assert.True(t, validateBool("field", "on", []string{}, data))
+	assert.True(t, validateBool("field", "off", []string{}, data))
+	assert.True(t, validateBool("field", "true", []string{}, data))
+	assert.True(t, validateBool("field", "false", []string{}, data))
+	assert.True(t, validateBool("field", "yes", []string{}, data))
+	assert.True(t, validateBool("field", "no", []string{}, data))
+	assert.True(t, validateBool("field", true, []string{}, data))
+	assert.True(t, validateBool("field", false, []string{}, data))
 
-	assert.False(t, validateBool("field", 0.0, []string{}, map[string]interface{}{}))
-	assert.False(t, validateBool("field", 1.0, []string{}, map[string]interface{}{}))
-	assert.False(t, validateBool("field", []string{"true"}, []string{}, map[string]interface{}{}))
-	assert.False(t, validateBool("field", -1, []string{}, map[string]interface{}{}))
+	assert.False(t, validateBool("field", 0.0, []string{}, data))
+	assert.False(t, validateBool("field", 1.0, []string{}, data))
+	assert.False(t, validateBool("field", []string{"true"}, []string{}, data))
+	assert.False(t, validateBool("field", -1, []string{}, data))
 }
 
 func TestValidateBoolConvert(t *testing.T) {
@@ -391,6 +444,24 @@ func TestValidateBoolConvert(t *testing.T) {
 	b, ok = form["field"].(bool)
 	assert.True(t, ok)
 	assert.False(t, b)
+}
+
+func TestValidateBoolConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"bool": 1,
+		},
+	}
+
+	set := RuleSet{
+		"object":      {"required", "object"},
+		"object.bool": {"required", "bool"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["bool"].(bool)
+	assert.True(t, ok)
 }
 
 func TestValidateSame(t *testing.T) {

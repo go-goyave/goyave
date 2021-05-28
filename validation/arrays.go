@@ -64,6 +64,7 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", parameters[0]))
 		}
 
+		fieldName, _, parent, _ := GetFieldFromName(field, form)
 		list := reflect.ValueOf(value)
 		length := list.Len()
 		arr := createArray(parameters[0], length)
@@ -72,14 +73,14 @@ func validateArray(field string, value interface{}, parameters []string, form ma
 
 		for i := 0; i < length; i++ {
 			val := list.Index(i).Interface()
-			tmpData := map[string]interface{}{field: val}
-			if !validationRules[parameters[0]].Function(field, val, params, tmpData) {
+			tmpData := map[string]interface{}{fieldName: val}
+			if !validationRules[parameters[0]].Function(fieldName, val, params, tmpData) {
 				return false
 			}
-			arr.Set(reflect.Append(arr, reflect.ValueOf(tmpData[field])))
+			arr.Set(reflect.Append(arr, reflect.ValueOf(tmpData[fieldName])))
 		}
 
-		form[field] = arr.Interface()
+		parent[fieldName] = arr.Interface()
 		return true
 	}
 
@@ -138,7 +139,7 @@ func validateNotIn(field string, value interface{}, parameters []string, form ma
 }
 
 func validateInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	other, exists := form[parameters[0]]
+	_, other, _, exists := GetFieldFromName(parameters[0], form)
 	if exists && GetFieldType(other) == "array" {
 		return helper.Contains(other, value)
 	}
@@ -146,7 +147,7 @@ func validateInArray(field string, value interface{}, parameters []string, form 
 }
 
 func validateNotInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	other, exists := form[parameters[0]]
+	_, other, _, exists := GetFieldFromName(parameters[0], form)
 	if exists && GetFieldType(other) == "array" {
 		return !helper.Contains(other, value)
 	}

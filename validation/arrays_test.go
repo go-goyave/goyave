@@ -33,7 +33,9 @@ func TestValidateArray(t *testing.T) {
 	})
 	assert.False(t, validateArray("field", []string{"0.5", "not numeric"}, []string{"numeric"}, map[string]interface{}{}))
 
-	data := map[string]interface{}{}
+	data := map[string]interface{}{
+		"field": "",
+	}
 	assert.True(t, validateArray("field", []string{"0.5", "1.42"}, []string{"numeric"}, data))
 	arr, ok := data["field"].([]float64)
 	assert.True(t, ok)
@@ -42,7 +44,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, 1.42, arr[1])
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []float64{0.5, 1.42}, []string{"numeric"}, data))
 	arr, ok = data["field"].([]float64)
 	assert.True(t, ok)
@@ -51,7 +53,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, 1.42, arr[1])
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"12", "42"}, []string{"integer"}, data))
 	arrInt, ok := data["field"].([]int)
 	assert.True(t, ok)
@@ -60,7 +62,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, 42, arrInt[1])
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"UTC", "America/New_York"}, []string{"timezone"}, data))
 	arrLoc, ok := data["field"].([]*time.Location)
 	assert.True(t, ok)
@@ -68,7 +70,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, time.UTC, arrLoc[0])
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"127.0.0.1", "::1"}, []string{"ip"}, data))
 	arrIP, ok := data["field"].([]net.IP)
 	assert.True(t, ok)
@@ -76,7 +78,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, "127.0.0.1", arrIP[0].String())
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"5", "{\"test\":\"string\"}"}, []string{"json"}, data))
 	arrJSON, ok := data["field"].([]interface{})
 	assert.True(t, ok)
@@ -87,7 +89,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, "string", mp["test"])
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"http://google.com", "https://systemglitch.me"}, []string{"url"}, data))
 	arrURL, ok := data["field"].([]*url.URL)
 	assert.True(t, ok)
@@ -96,7 +98,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, "https://systemglitch.me", arrURL[1].String())
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"fdda765f-fc57-5604-a269-52a7df8164ec"}, []string{"uuid", "5"}, data))
 	arrUUID, ok := data["field"].([]uuid.UUID)
 	assert.True(t, ok)
@@ -104,7 +106,7 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, "fdda765f-fc57-5604-a269-52a7df8164ec", arrUUID[0].String())
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []interface{}{"yes", true, false}, []string{"bool"}, data))
 	arrBool, ok := data["field"].([]bool)
 	assert.True(t, ok)
@@ -114,7 +116,7 @@ func TestValidateArray(t *testing.T) {
 		assert.False(t, arrBool[2])
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"2019-12-05"}, []string{"date"}, data))
 	arrDate, ok := data["field"].([]time.Time)
 	assert.True(t, ok)
@@ -122,12 +124,27 @@ func TestValidateArray(t *testing.T) {
 		assert.Equal(t, "2019-12-05 00:00:00 +0000 UTC", arrDate[0].String())
 	}
 
-	data = map[string]interface{}{}
+	data = map[string]interface{}{"field": ""}
 	assert.True(t, validateArray("field", []string{"test"}, []string{"string"}, data))
 	arrStr, ok := data["field"].([]string)
 	assert.True(t, ok)
 	if ok {
 		assert.Equal(t, "test", arrStr[0])
+	}
+}
+
+func TestValidateArrayInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"array": []string{"0.5", "1.42"},
+		},
+	}
+	assert.True(t, validateArray("object.array", []string{"0.5", "1.42"}, []string{"numeric"}, data))
+	arr, ok := data["object"].(map[string]interface{})["array"].([]float64)
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, 0.5, arr[0])
+		assert.Equal(t, 1.42, arr[1])
 	}
 }
 
@@ -209,6 +226,16 @@ func TestValidateInArray(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"field": "dolors",
+			"other": []string{"lorem", "ipsum", "sit", "dolor", "amet"},
+		},
+	}
+	assert.True(t, validateInArray("object.field", "dolor", []string{"object.other"}, data))
+	assert.False(t, validateInArray("object.field", "dolors", []string{"object.other"}, data))
 }
 
 func TestValidateNotInArray(t *testing.T) {
@@ -233,4 +260,14 @@ func TestValidateNotInArray(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"field": "dolors",
+			"other": []string{"lorem", "ipsum", "sit", "dolor", "amet"},
+		},
+	}
+	assert.False(t, validateNotInArray("object.field", "dolor", []string{"object.other"}, data))
+	assert.True(t, validateNotInArray("object.field", "dolors", []string{"object.other"}, data))
 }

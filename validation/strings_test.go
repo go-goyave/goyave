@@ -130,17 +130,20 @@ func TestValidateEndsWith(t *testing.T) {
 }
 
 func TestValidateTimezone(t *testing.T) {
-	assert.True(t, validateTimezone("field", "UTC", []string{}, map[string]interface{}{}))
-	assert.True(t, validateTimezone("field", "Europe/Paris", []string{}, map[string]interface{}{}))
-	assert.True(t, validateTimezone("field", "America/St_Thomas", []string{}, map[string]interface{}{}))
-	assert.True(t, validateTimezone("field", "GMT", []string{}, map[string]interface{}{}))
-	assert.False(t, validateTimezone("field", "GMT+2", []string{}, map[string]interface{}{}))
-	assert.False(t, validateTimezone("field", "UTC+2", []string{}, map[string]interface{}{}))
-	assert.False(t, validateTimezone("field", "here", []string{}, map[string]interface{}{}))
-	assert.False(t, validateTimezone("field", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateTimezone("field", 1.5, []string{}, map[string]interface{}{}))
-	assert.False(t, validateTimezone("field", true, []string{}, map[string]interface{}{}))
-	assert.False(t, validateTimezone("field", []string{"UTC"}, []string{}, map[string]interface{}{}))
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.True(t, validateTimezone("field", "UTC", []string{}, data))
+	assert.True(t, validateTimezone("field", "Europe/Paris", []string{}, data))
+	assert.True(t, validateTimezone("field", "America/St_Thomas", []string{}, data))
+	assert.True(t, validateTimezone("field", "GMT", []string{}, data))
+	assert.False(t, validateTimezone("field", "GMT+2", []string{}, data))
+	assert.False(t, validateTimezone("field", "UTC+2", []string{}, data))
+	assert.False(t, validateTimezone("field", "here", []string{}, data))
+	assert.False(t, validateTimezone("field", 1, []string{}, data))
+	assert.False(t, validateTimezone("field", 1.5, []string{}, data))
+	assert.False(t, validateTimezone("field", true, []string{}, data))
+	assert.False(t, validateTimezone("field", []string{"UTC"}, []string{}, data))
 }
 
 func TestValidateTimezoneConvert(t *testing.T) {
@@ -151,21 +154,42 @@ func TestValidateTimezoneConvert(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func TestValidateIP(t *testing.T) {
-	assert.True(t, validateIP("field", "127.0.0.1", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIP("field", "192.168.0.1", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIP("field", "88.88.88.88", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIP("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIP("field", "2001:db8:85a3::8a2e:370:7334", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIP("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIP("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIP("field", "::1", []string{}, map[string]interface{}{}))
+func TestValidateTimezoneConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"timezone": "UTC",
+		},
+	}
 
-	assert.False(t, validateIP("field", "1", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIP("field", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIP("field", 1.2, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIP("field", true, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIP("field", []byte{}, []string{}, map[string]interface{}{}))
+	set := RuleSet{
+		"object":          {"required", "object"},
+		"object.timezone": {"required", "timezone"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["timezone"].(*time.Location)
+	assert.True(t, ok)
+}
+
+func TestValidateIP(t *testing.T) {
+	data := map[string]interface{}{
+		"field": "127.0.0.1",
+	}
+	assert.True(t, validateIP("field", "127.0.0.1", []string{}, data))
+	assert.True(t, validateIP("field", "192.168.0.1", []string{}, data))
+	assert.True(t, validateIP("field", "88.88.88.88", []string{}, data))
+	assert.True(t, validateIP("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, data))
+	assert.True(t, validateIP("field", "2001:db8:85a3::8a2e:370:7334", []string{}, data))
+	assert.True(t, validateIP("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, data))
+	assert.True(t, validateIP("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, data))
+	assert.True(t, validateIP("field", "::1", []string{}, data))
+
+	assert.False(t, validateIP("field", "1", []string{}, data))
+	assert.False(t, validateIP("field", 1, []string{}, data))
+	assert.False(t, validateIP("field", 1.2, []string{}, data))
+	assert.False(t, validateIP("field", true, []string{}, data))
+	assert.False(t, validateIP("field", []byte{}, []string{}, data))
 }
 
 func TestValidateIPConvert(t *testing.T) {
@@ -176,50 +200,113 @@ func TestValidateIPConvert(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestValidateIPConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"ip": "127.0.0.1",
+		},
+	}
+
+	set := RuleSet{
+		"object":    {"required", "object"},
+		"object.ip": {"required", "ip"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["ip"].(net.IP)
+	assert.True(t, ok)
+}
+
 func TestValidateIPv4(t *testing.T) {
-	assert.True(t, validateIPv4("field", "127.0.0.1", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIPv4("field", "192.168.0.1", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIPv4("field", "88.88.88.88", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", "2001:db8:85a3::8a2e:370:7334", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", "::1", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", 1.2, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", true, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv4("field", []byte{}, []string{}, map[string]interface{}{}))
+	data := map[string]interface{}{
+		"field": "127.0.0.1",
+	}
+	assert.True(t, validateIPv4("field", "127.0.0.1", []string{}, data))
+	assert.True(t, validateIPv4("field", "192.168.0.1", []string{}, data))
+	assert.True(t, validateIPv4("field", "88.88.88.88", []string{}, data))
+	assert.False(t, validateIPv4("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, data))
+	assert.False(t, validateIPv4("field", "2001:db8:85a3::8a2e:370:7334", []string{}, data))
+	assert.False(t, validateIPv4("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, data))
+	assert.False(t, validateIPv4("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, data))
+	assert.False(t, validateIPv4("field", "::1", []string{}, data))
+	assert.False(t, validateIPv4("field", 1, []string{}, data))
+	assert.False(t, validateIPv4("field", 1.2, []string{}, data))
+	assert.False(t, validateIPv4("field", true, []string{}, data))
+	assert.False(t, validateIPv4("field", []byte{}, []string{}, data))
+}
+
+func TestValidateIPv4ConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"ip": "127.0.0.1",
+		},
+	}
+
+	set := RuleSet{
+		"object":    {"required", "object"},
+		"object.ip": {"required", "ipv4"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["ip"].(net.IP)
+	assert.True(t, ok)
 }
 
 func TestValidateIPv6(t *testing.T) {
-	assert.False(t, validateIPv6("field", "127.0.0.1", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv6("field", "192.168.0.1", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv6("field", "88.88.88.88", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIPv6("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIPv6("field", "2001:db8:85a3::8a2e:370:7334", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIPv6("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIPv6("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, map[string]interface{}{}))
-	assert.True(t, validateIPv6("field", "::1", []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv6("field", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv6("field", 1.2, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv6("field", true, []string{}, map[string]interface{}{}))
-	assert.False(t, validateIPv6("field", []byte{}, []string{}, map[string]interface{}{}))
+	data := map[string]interface{}{
+		"field": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+	}
+	assert.False(t, validateIPv6("field", "127.0.0.1", []string{}, data))
+	assert.False(t, validateIPv6("field", "192.168.0.1", []string{}, data))
+	assert.False(t, validateIPv6("field", "88.88.88.88", []string{}, data))
+	assert.True(t, validateIPv6("field", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", []string{}, data))
+	assert.True(t, validateIPv6("field", "2001:db8:85a3::8a2e:370:7334", []string{}, data))
+	assert.True(t, validateIPv6("field", "2001:db8:85a3:0:0:8a2e:370:7334", []string{}, data))
+	assert.True(t, validateIPv6("field", "2001:db8:85a3:8d3:1319:8a2e:370:7348", []string{}, data))
+	assert.True(t, validateIPv6("field", "::1", []string{}, data))
+	assert.False(t, validateIPv6("field", 1, []string{}, data))
+	assert.False(t, validateIPv6("field", 1.2, []string{}, data))
+	assert.False(t, validateIPv6("field", true, []string{}, data))
+	assert.False(t, validateIPv6("field", []byte{}, []string{}, data))
+}
+
+func TestValidateIPv6ConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"ip": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+		},
+	}
+
+	set := RuleSet{
+		"object":    {"required", "object"},
+		"object.ip": {"required", "ipv6"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["ip"].(net.IP)
+	assert.True(t, ok)
 }
 
 func TestValidateJSON(t *testing.T) {
-	assert.True(t, validateJSON("field", "2", []string{}, map[string]interface{}{}))
-	assert.True(t, validateJSON("field", "2.5", []string{}, map[string]interface{}{}))
-	assert.True(t, validateJSON("field", "\"str\"", []string{}, map[string]interface{}{}))
-	assert.True(t, validateJSON("field", "[\"str\",\"array\"]", []string{}, map[string]interface{}{}))
-	assert.True(t, validateJSON("field", "{\"str\":\"object\"}", []string{}, map[string]interface{}{}))
-	assert.True(t, validateJSON("field", "{\"str\":[\"object\",\"array\"]}", []string{}, map[string]interface{}{}))
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.True(t, validateJSON("field", "2", []string{}, data))
+	assert.True(t, validateJSON("field", "2.5", []string{}, data))
+	assert.True(t, validateJSON("field", "\"str\"", []string{}, data))
+	assert.True(t, validateJSON("field", "[\"str\",\"array\"]", []string{}, data))
+	assert.True(t, validateJSON("field", "{\"str\":\"object\"}", []string{}, data))
+	assert.True(t, validateJSON("field", "{\"str\":[\"object\",\"array\"]}", []string{}, data))
 
-	assert.False(t, validateJSON("field", "{str:[\"object\",\"array\"]}", []string{}, map[string]interface{}{}))
-	assert.False(t, validateJSON("field", "", []string{}, map[string]interface{}{}))
-	assert.False(t, validateJSON("field", "\"d", []string{}, map[string]interface{}{}))
-	assert.False(t, validateJSON("field", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateJSON("field", 1.2, []string{}, map[string]interface{}{}))
-	assert.False(t, validateJSON("field", map[string]string{}, []string{}, map[string]interface{}{}))
+	assert.False(t, validateJSON("field", "{str:[\"object\",\"array\"]}", []string{}, data))
+	assert.False(t, validateJSON("field", "", []string{}, data))
+	assert.False(t, validateJSON("field", "\"d", []string{}, data))
+	assert.False(t, validateJSON("field", 1, []string{}, data))
+	assert.False(t, validateJSON("field", 1.2, []string{}, data))
+	assert.False(t, validateJSON("field", map[string]string{}, []string{}, data))
 }
 
 func TestValidateJSONConvert(t *testing.T) {
@@ -244,19 +331,40 @@ func TestValidateJSONConvert(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func TestValidateURL(t *testing.T) {
-	assert.True(t, validateURL("field", "http://www.google.com", []string{}, map[string]interface{}{}))
-	assert.True(t, validateURL("field", "https://www.google.com", []string{}, map[string]interface{}{}))
-	assert.True(t, validateURL("field", "https://www.google.com?q=a%20surprise%20to%20be%20sure", []string{}, map[string]interface{}{}))
-	assert.True(t, validateURL("field", "https://www.google.com/#anchor", []string{}, map[string]interface{}{}))
-	assert.True(t, validateURL("field", "https://www.google.com?q=hmm#anchor", []string{}, map[string]interface{}{}))
+func TestValidateJSONConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"json": "{\"str\":\"object\"}",
+		},
+	}
 
-	assert.False(t, validateURL("field", "https://www.google.com#anchor", []string{}, map[string]interface{}{}))
-	assert.False(t, validateURL("field", "www.google.com", []string{}, map[string]interface{}{}))
-	assert.False(t, validateURL("field", "w-w.google.com", []string{}, map[string]interface{}{}))
-	assert.False(t, validateURL("field", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateURL("field", 1.2, []string{}, map[string]interface{}{}))
-	assert.False(t, validateURL("field", []string{}, []string{}, map[string]interface{}{}))
+	set := RuleSet{
+		"object":      {"required", "object"},
+		"object.json": {"required", "json"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["json"].(map[string]interface{})
+	assert.True(t, ok)
+}
+
+func TestValidateURL(t *testing.T) {
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.True(t, validateURL("field", "http://www.google.com", []string{}, data))
+	assert.True(t, validateURL("field", "https://www.google.com", []string{}, data))
+	assert.True(t, validateURL("field", "https://www.google.com?q=a%20surprise%20to%20be%20sure", []string{}, data))
+	assert.True(t, validateURL("field", "https://www.google.com/#anchor", []string{}, data))
+	assert.True(t, validateURL("field", "https://www.google.com?q=hmm#anchor", []string{}, data))
+
+	assert.False(t, validateURL("field", "https://www.google.com#anchor", []string{}, data))
+	assert.False(t, validateURL("field", "www.google.com", []string{}, data))
+	assert.False(t, validateURL("field", "w-w.google.com", []string{}, data))
+	assert.False(t, validateURL("field", 1, []string{}, data))
+	assert.False(t, validateURL("field", 1.2, []string{}, data))
+	assert.False(t, validateURL("field", []string{}, []string{}, data))
 }
 
 func TestValidateURLConvert(t *testing.T) {
@@ -266,21 +374,42 @@ func TestValidateURLConvert(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func TestValidateUUID(t *testing.T) {
-	assert.True(t, validateUUID("field", "123e4567-e89b-12d3-a456-426655440000", []string{}, map[string]interface{}{})) // V1
-	assert.True(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{}, map[string]interface{}{})) // V3
-	assert.True(t, validateUUID("field", "9125a8dc52ee365ba5aa81b0b3681cf6", []string{}, map[string]interface{}{}))     // V3 no hyphen
-	assert.True(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{}, map[string]interface{}{})) // V4
-	assert.True(t, validateUUID("field", "11bf5b37e0b842e08dcfdc8c4aefc000", []string{}, map[string]interface{}{}))     // V4 no hyphen
-	assert.True(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{}, map[string]interface{}{})) // V5
-	assert.True(t, validateUUID("field", "3bbcee75-cecc-5b56-8031-b6641c1ed1f1", []string{}, map[string]interface{}{})) // V5
-	assert.True(t, validateUUID("field", "3bbcee75cecc5b568031b6641c1ed1f1", []string{}, map[string]interface{}{}))     // V5 no hypen
+func TestValidateURLConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"url": "http://www.google.com",
+		},
+	}
 
-	assert.False(t, validateUUID("field", "hello", []string{}, map[string]interface{}{}))
-	assert.False(t, validateUUID("field", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateUUID("field", 1.2, []string{}, map[string]interface{}{}))
-	assert.False(t, validateUUID("field", true, []string{}, map[string]interface{}{}))
-	assert.False(t, validateUUID("field", []byte{}, []string{}, map[string]interface{}{}))
+	set := RuleSet{
+		"object":     {"required", "object"},
+		"object.url": {"required", "url"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["url"].(*url.URL)
+	assert.True(t, ok)
+}
+
+func TestValidateUUID(t *testing.T) {
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.True(t, validateUUID("field", "123e4567-e89b-12d3-a456-426655440000", []string{}, data)) // V1
+	assert.True(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{}, data)) // V3
+	assert.True(t, validateUUID("field", "9125a8dc52ee365ba5aa81b0b3681cf6", []string{}, data))     // V3 no hyphen
+	assert.True(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{}, data)) // V4
+	assert.True(t, validateUUID("field", "11bf5b37e0b842e08dcfdc8c4aefc000", []string{}, data))     // V4 no hyphen
+	assert.True(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{}, data)) // V5
+	assert.True(t, validateUUID("field", "3bbcee75-cecc-5b56-8031-b6641c1ed1f1", []string{}, data)) // V5
+	assert.True(t, validateUUID("field", "3bbcee75cecc5b568031b6641c1ed1f1", []string{}, data))     // V5 no hypen
+
+	assert.False(t, validateUUID("field", "hello", []string{}, data))
+	assert.False(t, validateUUID("field", 1, []string{}, data))
+	assert.False(t, validateUUID("field", 1.2, []string{}, data))
+	assert.False(t, validateUUID("field", true, []string{}, data))
+	assert.False(t, validateUUID("field", []byte{}, []string{}, data))
 }
 
 func TestValidateUUIDConvert(t *testing.T) {
@@ -290,20 +419,47 @@ func TestValidateUUIDConvert(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestValidateUUIDConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"uuid": "123e4567-e89b-12d3-a456-426655440000",
+		},
+	}
+
+	set := RuleSet{
+		"object":      {"required", "object"},
+		"object.uuid": {"required", "uuid"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["uuid"].(uuid.UUID)
+	assert.True(t, ok)
+}
+
 func TestValidateUUIDv3(t *testing.T) {
-	assert.True(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"3"}, map[string]interface{}{}))  // V3
-	assert.False(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"3"}, map[string]interface{}{})) // V4
-	assert.False(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"3"}, map[string]interface{}{})) // V5
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.True(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"3"}, data))  // V3
+	assert.False(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"3"}, data)) // V4
+	assert.False(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"3"}, data)) // V5
 }
 
 func TestValidateUUIDv4(t *testing.T) {
-	assert.False(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"4"}, map[string]interface{}{})) // V3
-	assert.True(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"4"}, map[string]interface{}{}))  // V4
-	assert.False(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"4"}, map[string]interface{}{})) // V5
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.False(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"4"}, data)) // V3
+	assert.True(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"4"}, data))  // V4
+	assert.False(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"4"}, data)) // V5
 }
 
 func TestValidateUUIDv5(t *testing.T) {
-	assert.False(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"5"}, map[string]interface{}{})) // V3
-	assert.False(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"5"}, map[string]interface{}{})) // V4
-	assert.True(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"5"}, map[string]interface{}{}))  // V5
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.False(t, validateUUID("field", "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", []string{"5"}, data)) // V3
+	assert.False(t, validateUUID("field", "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000", []string{"5"}, data)) // V4
+	assert.True(t, validateUUID("field", "fdda765f-fc57-5604-a269-52a7df8164ec", []string{"5"}, data))  // V5
 }

@@ -24,19 +24,22 @@ func createDateTime(date string) time.Time {
 }
 
 func TestValidateDate(t *testing.T) {
-	assert.True(t, validateDate("field", "2019-11-02", []string{}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", "2019-13-02", []string{}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", "2019-12-32", []string{}, map[string]interface{}{}))
+	data := map[string]interface{}{
+		"field": "",
+	}
+	assert.True(t, validateDate("field", "2019-11-02", []string{}, data))
+	assert.False(t, validateDate("field", "2019-13-02", []string{}, data))
+	assert.False(t, validateDate("field", "2019-12-32", []string{}, data))
 
-	assert.True(t, validateDate("field", "2019-11-02 11:07:42", []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", "2019-11-02 24:07:42", []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", "2019-11-02 11:61:42", []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", "2019-11-02 11:61:61", []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", "hello", []string{}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", 1, []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", 1.0, []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", true, []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
-	assert.False(t, validateDate("field", []string{}, []string{"2006-01-02 03:04:05"}, map[string]interface{}{}))
+	assert.True(t, validateDate("field", "2019-11-02 11:07:42", []string{"2006-01-02 03:04:05"}, data))
+	assert.False(t, validateDate("field", "2019-11-02 24:07:42", []string{"2006-01-02 03:04:05"}, data))
+	assert.False(t, validateDate("field", "2019-11-02 11:61:42", []string{"2006-01-02 03:04:05"}, data))
+	assert.False(t, validateDate("field", "2019-11-02 11:61:61", []string{"2006-01-02 03:04:05"}, data))
+	assert.False(t, validateDate("field", "hello", []string{}, data))
+	assert.False(t, validateDate("field", 1, []string{"2006-01-02 03:04:05"}, data))
+	assert.False(t, validateDate("field", 1.0, []string{"2006-01-02 03:04:05"}, data))
+	assert.False(t, validateDate("field", true, []string{"2006-01-02 03:04:05"}, data))
+	assert.False(t, validateDate("field", []string{}, []string{"2006-01-02 03:04:05"}, data))
 }
 
 func TestValidateBefore(t *testing.T) {
@@ -66,6 +69,15 @@ func TestValidateBefore(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-03"),
+		},
+	}
+	assert.True(t, validateBefore("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateBeforeEqual(t *testing.T) {
@@ -95,6 +107,23 @@ func TestValidateBeforeEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-03"),
+		},
+	}
+	assert.True(t, validateBeforeEqual("field", data["field"], []string{"object.other"}, data))
+
+	data = map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateBeforeEqual("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateAfter(t *testing.T) {
@@ -125,6 +154,15 @@ func TestValidateAfter(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-03"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateAfter("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateAfterEqual(t *testing.T) {
@@ -155,6 +193,23 @@ func TestValidateAfterEqual(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-03"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateAfterEqual("field", data["field"], []string{"object.other"}, data))
+
+	data = map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateAfterEqual("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateDateEquals(t *testing.T) {
@@ -182,6 +237,15 @@ func TestValidateDateEquals(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-02"),
+		"object": map[string]interface{}{
+			"other": createDate("2019-11-02"),
+		},
+	}
+	assert.True(t, validateDateEquals("field", data["field"], []string{"object.other"}, data))
 }
 
 func TestValidateDateBetween(t *testing.T) {
@@ -210,4 +274,40 @@ func TestValidateDateBetween(t *testing.T) {
 		}
 		field.check()
 	})
+
+	// Objects
+	data := map[string]interface{}{
+		"field": createDate("2019-11-03"),
+		"object": map[string]interface{}{
+			"min": createDate("2019-11-02"),
+			"max": createDate("2019-11-04"),
+		},
+	}
+	assert.True(t, validateDateBetween("field", data["field"], []string{"object.min", "object.max"}, data))
+}
+
+func TestValidateDateConvert(t *testing.T) {
+	form := map[string]interface{}{"field": "2019-11-02"}
+	assert.True(t, validateDate("field", form["field"], []string{}, form))
+
+	_, ok := form["field"].(time.Time)
+	assert.True(t, ok)
+}
+
+func TestValidateDateConvertInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"time": "2019-11-02",
+		},
+	}
+
+	set := RuleSet{
+		"object":      {"required", "object"},
+		"object.time": {"required", "date"},
+	}
+
+	errors := Validate(data, set, true, "en-US")
+	assert.Empty(t, errors)
+	_, ok := data["object"].(map[string]interface{})["time"].(time.Time)
+	assert.True(t, ok)
 }

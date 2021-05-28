@@ -23,7 +23,7 @@ func getDates(value interface{}, parameters []string, form map[string]interface{
 	if ok {
 		dates = append(dates, date)
 		for _, param := range parameters {
-			other, exists := form[param]
+			_, other, _, exists := GetFieldFromName(param, form)
 			if exists {
 				otherDate, ok := other.(time.Time)
 				if !ok {
@@ -37,6 +37,7 @@ func getDates(value interface{}, parameters []string, form map[string]interface{
 				continue
 			}
 
+			// TODO v4: avoid reparsing the date every single time
 			t, err := parseDate(param, "2006-01-02T15:04:05")
 			if err != nil {
 				panic(err)
@@ -56,7 +57,10 @@ func validateDate(field string, value interface{}, parameters []string, form map
 
 	t, err := parseDate(value, parameters[0])
 	if err == nil {
-		form[field] = t
+		// FIXME v4: not ideal because this is done twice. Set parent object in validation context.
+		// See: https://github.com/go-goyave/goyave/issues/136
+		fieldName, _, parent, _ := GetFieldFromName(field, form)
+		parent[fieldName] = t
 		return true
 	}
 	return false

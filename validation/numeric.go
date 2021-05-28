@@ -11,6 +11,7 @@ import (
 func validateNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
+	fieldName, _, parent, _ := GetFieldFromName(field, form)
 	switch {
 	case strings.HasPrefix(kind, "float"):
 		return true
@@ -18,14 +19,14 @@ func validateNumeric(field string, value interface{}, parameters []string, form 
 		floatVal, err := helper.ToFloat64(value)
 		ok := err == nil
 		if ok {
-			form[field] = floatVal
+			parent[fieldName] = floatVal
 		}
 		return ok
 	case kind == "string":
 		floatVal, err := strconv.ParseFloat(value.(string), 64)
 		ok := err == nil
 		if ok {
-			form[field] = floatVal
+			parent[fieldName] = floatVal
 		}
 		return ok
 	default:
@@ -36,6 +37,7 @@ func validateNumeric(field string, value interface{}, parameters []string, form 
 func validateInteger(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
+	fieldName, _, parent, _ := GetFieldFromName(field, form)
 	switch {
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
 		return true
@@ -45,7 +47,7 @@ func validateInteger(field string, value interface{}, parameters []string, form 
 			if val-float64(int(val)) > 0 {
 				return false
 			}
-			form[field] = int(val)
+			parent[fieldName] = int(val)
 			return true
 		}
 
@@ -53,12 +55,12 @@ func validateInteger(field string, value interface{}, parameters []string, form 
 		if val-float32(int(val)) > 0 {
 			return false
 		}
-		form[field] = int(val)
+		parent[fieldName] = int(val)
 		return true
 	case kind == "string":
 		intVal, err := strconv.Atoi(value.(string))
 		if err == nil {
-			form[field] = intVal
+			parent[fieldName] = intVal
 		}
 		return err == nil
 	default:

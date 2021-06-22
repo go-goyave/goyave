@@ -64,7 +64,6 @@ var configDefaults object = object{
 		"autoMigrate":        &Entry{false, []interface{}{}, reflect.Bool, false},
 		"config": object{
 			"skipDefaultTransaction":                   &Entry{false, []interface{}{}, reflect.Bool, false},
-			"namingStrategy":                           &Entry{false, []interface{}{}, reflect.Bool, false},
 			"dryRun":                                   &Entry{false, []interface{}{}, reflect.Bool, false},
 			"prepareStmt":                              &Entry{true, []interface{}{}, reflect.Bool, false},
 			"disableNestedTransaction":                 &Entry{false, []interface{}{}, reflect.Bool, false},

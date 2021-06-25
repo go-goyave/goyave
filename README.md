@@ -727,6 +727,7 @@ A big "Thank you" to the Goyave contributors:
 - [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
 - [Albert Shirima](https://github.com/agbaraka) (Rate limiting)
 - [Łukasz Sowa](https://github.com/Morishiri) (Custom claims in JWT)
+- [Zao SOULA](https://github.com/zaosoula) (Custom GORM.Config{} in config file)
 
 ## License
 

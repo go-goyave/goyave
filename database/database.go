@@ -166,8 +166,14 @@ func newConnection() *gorm.DB {
 
 	dsn := dialect.buildDSN()
 	db, err := gorm.Open(dialect.initializer(dsn), &gorm.Config{
-		PrepareStmt: true,
-		Logger:      logger.Default.LogMode(logLevel),
+		Logger:                                   logger.Default.LogMode(logLevel),
+		SkipDefaultTransaction:                   config.GetBool("database.config.skipDefaultTransaction"),
+		DryRun:                                   config.GetBool("database.config.dryRun"),
+		PrepareStmt:                              config.GetBool("database.config.prepareStmt"),
+		DisableNestedTransaction:                 config.GetBool("database.config.disableNestedTransaction"),
+		AllowGlobalUpdate:                        config.GetBool("database.config.allowGlobalUpdate"),
+		DisableAutomaticPing:                     config.GetBool("database.config.disableAutomaticPing"),
+		DisableForeignKeyConstraintWhenMigrating: config.GetBool("database.config.disableForeignKeyConstraintWhenMigrating"),
 	})
 	if err != nil {
 		panic(err)

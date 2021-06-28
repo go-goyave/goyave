@@ -25,7 +25,16 @@
         "maxOpenConnections": 20,
         "maxIdleConnections": 20,
         "maxLifetime": 300,
-        "autoMigrate": true
+        "autoMigrate": true,
+        "config": {
+            "skipDefaultTransaction": false,
+            "dryRun": false,
+            "prepareStmt": true,
+            "disableNestedTransaction": false,
+            "allowGlobalUpdate": false,
+            "disableAutomaticPing": false,
+            "disableForeignKeyConstraintWhenMigrating": false
+        }
     },
     "auth": {
         "jwt": {

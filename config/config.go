@@ -62,6 +62,15 @@ var configDefaults object = object{
 		"maxIdleConnections": &Entry{20, []interface{}{}, reflect.Int, false},
 		"maxLifetime":        &Entry{300, []interface{}{}, reflect.Int, false},
 		"autoMigrate":        &Entry{false, []interface{}{}, reflect.Bool, false},
+		"config": object{
+			"skipDefaultTransaction":                   &Entry{false, []interface{}{}, reflect.Bool, false},
+			"dryRun":                                   &Entry{false, []interface{}{}, reflect.Bool, false},
+			"prepareStmt":                              &Entry{true, []interface{}{}, reflect.Bool, false},
+			"disableNestedTransaction":                 &Entry{false, []interface{}{}, reflect.Bool, false},
+			"allowGlobalUpdate":                        &Entry{false, []interface{}{}, reflect.Bool, false},
+			"disableAutomaticPing":                     &Entry{false, []interface{}{}, reflect.Bool, false},
+			"disableForeignKeyConstraintWhenMigrating": &Entry{false, []interface{}{}, reflect.Bool, false},
+		},
 	},
 }
 

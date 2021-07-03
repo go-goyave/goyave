@@ -266,6 +266,65 @@ func (suite *RouterTestSuite) TestCORS() {
 	router.requestHandler(&match, writer, rawRequest)
 }
 
+func (suite *RouterTestSuite) TestCORSSubrouter() {
+	router := NewRouter()
+	suite.Nil(router.corsOptions)
+
+	options := cors.Default()
+	group := router.Group()
+	group.CORS(options)
+	group.registerRoute("GET", "/cors", helloHandler)
+	match := routeMatch{currentPath: "/cors"}
+	suite.True(router.match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))
+
+	writer := httptest.NewRecorder()
+	executed := false
+	group.Middleware(func(handler Handler) Handler {
+		return func(response *Response, request *Request) {
+			executed = true
+			suite.NotNil(request.corsOptions)
+			suite.NotNil(request.CORSOptions())
+			suite.Same(options, request.corsOptions)
+			handler(response, request)
+		}
+	})
+
+	rawRequest := httptest.NewRequest("GET", "/cors", nil)
+	router.requestHandler(&match, writer, rawRequest)
+	suite.True(executed)
+
+	// Method not allowed
+	executed = false
+	rawRequest = httptest.NewRequest("POST", "/cors", nil)
+	router.requestHandler(&match, writer, rawRequest)
+	suite.True(executed)
+}
+
+func (suite *RouterTestSuite) TestCORSNotFound() {
+	// Should use main router settings
+	router := NewRouter()
+	rootOptions := cors.Default()
+	router.CORS(rootOptions)
+
+	options := cors.Default()
+	group := router.Group()
+	group.CORS(options)
+	group.registerRoute("GET", "/cors", helloHandler)
+	match := routeMatch{currentPath: "/notaroute"}
+	router.match(httptest.NewRequest("GET", "/notaroute", nil), &match)
+
+	writer := httptest.NewRecorder()
+	executed := false
+	match.route = newRoute(func(response *Response, request *Request) {
+		executed = true
+		suite.Same(rootOptions, request.corsOptions)
+	})
+
+	rawRequest := httptest.NewRequest("GET", "/notaroute", nil)
+	router.requestHandler(&match, writer, rawRequest)
+	suite.True(executed)
+}
+
 func (suite *RouterTestSuite) TestPanicStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
 	response.err = "random error"

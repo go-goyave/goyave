@@ -78,6 +78,14 @@ func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 	subrouter := router.Subrouter("/sub")
 	route = subrouter.Route("GET", "/", func(resp *Response, r *Request) {})
 	suite.Equal("", route.uri)
+
+	group := router.Group()
+	route = group.Route("GET", "/", func(resp *Response, r *Request) {})
+	suite.Equal("/", route.uri)
+
+	group2 := router.Subrouter("/")
+	route = group2.Route("GET", "/", func(resp *Response, r *Request) {})
+	suite.Equal("/", route.uri)
 }
 
 func (suite *RouterTestSuite) TestRouterMiddleware() {
@@ -98,7 +106,7 @@ func (suite *RouterTestSuite) TestSubRouter() {
 
 	router = NewRouter()
 	subrouter = router.Subrouter("/")
-	suite.Equal("", subrouter.prefix)
+	suite.Empty(subrouter.prefix)
 }
 
 func (suite *RouterTestSuite) TestCleanStaticPath() {
@@ -264,6 +272,65 @@ func (suite *RouterTestSuite) TestCORS() {
 		},
 	}
 	router.requestHandler(&match, writer, rawRequest)
+}
+
+func (suite *RouterTestSuite) TestCORSSubrouter() {
+	router := NewRouter()
+	suite.Nil(router.corsOptions)
+
+	options := cors.Default()
+	group := router.Group()
+	group.CORS(options)
+	group.registerRoute("GET", "/cors", helloHandler)
+	match := routeMatch{currentPath: "/cors"}
+	suite.True(router.match(httptest.NewRequest("OPTIONS", "/cors", nil), &match))
+
+	writer := httptest.NewRecorder()
+	executed := false
+	group.Middleware(func(handler Handler) Handler {
+		return func(response *Response, request *Request) {
+			executed = true
+			suite.NotNil(request.corsOptions)
+			suite.NotNil(request.CORSOptions())
+			suite.Same(options, request.corsOptions)
+			handler(response, request)
+		}
+	})
+
+	rawRequest := httptest.NewRequest("GET", "/cors", nil)
+	router.requestHandler(&match, writer, rawRequest)
+	suite.True(executed)
+
+	// Method not allowed
+	executed = false
+	rawRequest = httptest.NewRequest("POST", "/cors", nil)
+	router.requestHandler(&match, writer, rawRequest)
+	suite.True(executed)
+}
+
+func (suite *RouterTestSuite) TestCORSNotFound() {
+	// Should use main router settings
+	router := NewRouter()
+	rootOptions := cors.Default()
+	router.CORS(rootOptions)
+
+	options := cors.Default()
+	group := router.Group()
+	group.CORS(options)
+	group.registerRoute("GET", "/cors", helloHandler)
+	match := routeMatch{currentPath: "/notaroute"}
+	router.match(httptest.NewRequest("GET", "/notaroute", nil), &match)
+
+	writer := httptest.NewRecorder()
+	executed := false
+	match.route = newRoute(func(response *Response, request *Request) {
+		executed = true
+		suite.Same(rootOptions, request.corsOptions)
+	})
+
+	rawRequest := httptest.NewRequest("GET", "/notaroute", nil)
+	router.requestHandler(&match, writer, rawRequest)
+	suite.True(executed)
 }
 
 func (suite *RouterTestSuite) TestPanicStatusHandler() {

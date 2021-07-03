@@ -44,6 +44,7 @@ type middlewareHolder struct {
 
 type routeMatch struct {
 	route       *Route
+	corsOptions *cors.Options
 	parameters  map[string]string
 	err         error
 	currentPath string
@@ -202,11 +203,13 @@ func (r *Router) match(req *http.Request, match *routeMatch) bool {
 		// Check if any route matches
 		for _, route := range r.routes {
 			if route.match(req, match) {
+				match.corsOptions = r.corsOptions
 				return true
 			}
 		}
 	}
 
+	match.corsOptions = r.corsOptions
 	if match.err == errMatchMethodNotAllowed {
 		match.route = methodNotAllowedRoute
 		return true
@@ -287,7 +290,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler) *Rou
 		methods += "|HEAD"
 	}
 
-	if uri == "/" && r.parent != nil {
+	if uri == "/" && r.parent != nil && !(r.prefix == "" && r.parent.parent == nil) {
 		uri = ""
 	}
 
@@ -420,7 +423,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	request := &Request{
 		httpRequest: rawRequest,
 		route:       match.route,
-		corsOptions: r.corsOptions,
+		corsOptions: match.corsOptions,
 		Rules:       match.route.validationRules,
 		Params:      match.parameters,
 		Extra:       map[string]interface{}{},

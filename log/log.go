@@ -48,7 +48,7 @@ func (w *Writer) PreWrite(b []byte) {
 	}
 }
 
-// Write writes the data as a response and keeps it in memory
+// Write writes the data as a response and keeps its length in memory
 // for later logging.
 func (w *Writer) Write(b []byte) (int, error) {
 	w.length += len(b)

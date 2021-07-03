@@ -84,9 +84,7 @@ type BasicUser struct {
 	Name string
 }
 
-type basicUserAuthenticator struct {
-	Optional bool
-}
+type basicUserAuthenticator struct{}
 
 var _ Authenticator = (*basicUserAuthenticator)(nil) // implements Authenticator
 

@@ -34,6 +34,8 @@ func NativeMiddleware(middleware NativeMiddlewareFunc) Middleware {
 				if request.httpRequest != r {
 					request.httpRequest = r
 				}
+				// FIXME if a native middleware replaces the http.ResponseWriter, it
+				// may not work as expected.
 				next(response, request)
 			})).ServeHTTP(response, request.httpRequest)
 		}

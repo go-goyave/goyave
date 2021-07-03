@@ -78,6 +78,14 @@ func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 	subrouter := router.Subrouter("/sub")
 	route = subrouter.Route("GET", "/", func(resp *Response, r *Request) {})
 	suite.Equal("", route.uri)
+
+	group := router.Group()
+	route = group.Route("GET", "/", func(resp *Response, r *Request) {})
+	suite.Equal("/", route.uri)
+
+	group2 := router.Subrouter("/")
+	route = group2.Route("GET", "/", func(resp *Response, r *Request) {})
+	suite.Equal("/", route.uri)
 }
 
 func (suite *RouterTestSuite) TestRouterMiddleware() {
@@ -98,7 +106,7 @@ func (suite *RouterTestSuite) TestSubRouter() {
 
 	router = NewRouter()
 	subrouter = router.Subrouter("/")
-	suite.Equal("", subrouter.prefix)
+	suite.Empty(subrouter.prefix)
 }
 
 func (suite *RouterTestSuite) TestCleanStaticPath() {

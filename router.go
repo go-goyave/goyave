@@ -290,7 +290,7 @@ func (r *Router) registerRoute(methods string, uri string, handler Handler) *Rou
 		methods += "|HEAD"
 	}
 
-	if uri == "/" && r.parent != nil {
+	if uri == "/" && r.parent != nil && !(r.prefix == "" && r.parent.parent == nil) {
 		uri = ""
 	}
 

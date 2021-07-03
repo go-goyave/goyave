@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -129,6 +130,31 @@ func (suite *NativeHandlerTestSuite) TestNativeMiddleware() {
 	}
 	middleware(handler)(response, request)
 	suite.False(handlerExecuted)
+}
+
+func (suite *NativeHandlerTestSuite) TestNativeMiddlewareReplacesRequest() {
+	request := &Request{
+		httpRequest: httptest.NewRequest("GET", "/native", nil),
+	}
+	recorder := httptest.NewRecorder()
+	response := newResponse(recorder, nil)
+	var requestWithContext *http.Request
+	middleware := NativeMiddleware(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			type key int
+			ctx := context.WithValue(r.Context(), key(0), "value")
+			requestWithContext = r.WithContext(ctx)
+			next.ServeHTTP(w, requestWithContext)
+		})
+	})
+
+	handlerExecuted := false
+	handler := func(response *Response, r *Request) {
+		suite.Same(requestWithContext, r.Request())
+		handlerExecuted = true
+	}
+	middleware(handler)(response, request)
+	suite.True(handlerExecuted)
 }
 
 func TestNativeHandlerTestSuite(t *testing.T) {

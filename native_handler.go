@@ -31,6 +31,9 @@ func NativeMiddleware(middleware NativeMiddlewareFunc) Middleware {
 	return func(next Handler) Handler {
 		return func(response *Response, request *Request) {
 			middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if request.httpRequest != r {
+					request.httpRequest = r
+				}
 				next(response, request)
 			})).ServeHTTP(response, request.httpRequest)
 		}

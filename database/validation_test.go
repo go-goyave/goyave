@@ -51,6 +51,32 @@ func (suite *ValidationTestSuite) TestValidateUnique() {
 	})
 }
 
+func (suite *ValidationTestSuite) TestValidateExists() {
+	ClearRegisteredModels()
+	RegisterModel(&User{})
+	Migrate()
+	defer ClearRegisteredModels()
+
+	user := &User{
+		Name:  "Hugh",
+		Email: "hugh@example.org",
+	}
+	db := Conn()
+	db.Create(user)
+	defer db.Migrator().DropTable(user)
+
+	suite.True(validateExists("email", "hugh@example.org", []string{"users"}, map[string]interface{}{}))
+	suite.True(validateExists("email", "hugh@example.org", []string{"users", "email"}, map[string]interface{}{}))
+	suite.False(validateExists("email", "hugh2@example.org", []string{"users"}, map[string]interface{}{}))
+	suite.False(validateExists("email", "hugh2@example.org", []string{"users", "email"}, map[string]interface{}{}))
+	suite.False(validateExists("email", "hugh@example.org", []string{"users", "name"}, map[string]interface{}{}))
+
+	// model not found
+	suite.Panics(func() {
+		validateExists("email", "hugh@example.org", []string{"not a model", "email"}, map[string]interface{}{})
+	})
+}
+
 func (suite *ValidationTestSuite) TearDownAllSuite() {
 	os.Setenv("GOYAVE_ENV", suite.previousEnv)
 }

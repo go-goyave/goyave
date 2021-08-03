@@ -152,6 +152,8 @@ var enUS language = language{
 			"object.array":                     "The :field values must be objects.",
 			"unique":                           "The :field has already been taken.",
 			"unique.array":                     "At least one of the :field values has already been taken.",
+			"exists":                           "The :field does not exist.",
+			"exists.array":                     "At least one of the :field values does not exist.",
 		},
 		fields: map[string]attribute{
 			"email": {

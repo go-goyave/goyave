@@ -180,7 +180,7 @@ func TestValidateIn(t *testing.T) {
 				{Name: "in"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -200,7 +200,7 @@ func TestValidateNotIn(t *testing.T) {
 				{Name: "not_in"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -224,7 +224,7 @@ func TestValidateInArray(t *testing.T) {
 				{Name: "in_array"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -258,7 +258,7 @@ func TestValidateNotInArray(t *testing.T) {
 				{Name: "not_in_array"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects

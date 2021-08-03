@@ -59,7 +59,7 @@ func TestValidateMin(t *testing.T) {
 				{Name: "min"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -98,7 +98,7 @@ func TestValidateMax(t *testing.T) {
 				{Name: "max"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -152,7 +152,7 @@ func TestValidateBetween(t *testing.T) {
 				{Name: "between"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	assert.Panics(t, func() {
@@ -161,7 +161,7 @@ func TestValidateBetween(t *testing.T) {
 				{Name: "between", Params: []string{"2"}},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -202,7 +202,7 @@ func TestValidateGreaterThan(t *testing.T) {
 				{Name: "greater_than"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -265,7 +265,7 @@ func TestValidateGreaterThanEqual(t *testing.T) {
 				{Name: "greater_than_equal"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -319,7 +319,7 @@ func TestValidateLowerThan(t *testing.T) {
 				{Name: "lower_than"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -382,7 +382,7 @@ func TestValidateLowerThanEqual(t *testing.T) {
 				{Name: "lower_than_equal"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -482,7 +482,7 @@ func TestValidateSame(t *testing.T) {
 				{Name: "same"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	data := map[string]interface{}{
@@ -522,7 +522,7 @@ func TestValidateDifferent(t *testing.T) {
 				{Name: "different"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -573,7 +573,7 @@ func TestValidateSize(t *testing.T) {
 				{Name: "size"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 

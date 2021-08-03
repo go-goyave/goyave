@@ -595,7 +595,7 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 			},
 		}
 
-		field.check()
+		field.Check()
 
 		suite.True(field.isRequired)
 		suite.False(field.isArray)
@@ -610,7 +610,7 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 			},
 		}
 
-		field.check()
+		field.Check()
 
 		suite.False(field.isRequired)
 		suite.True(field.isArray)
@@ -625,7 +625,7 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 			},
 		}
 
-		field.check()
+		field.Check()
 	})
 }
 
@@ -641,7 +641,7 @@ func (suite *ValidatorTestSuite) TestFieldCheckArrayProhibitedRules() {
 					{Name: v, ArrayDimension: 1},
 				},
 			}
-			field.check()
+			field.Check()
 		})
 	}
 }
@@ -723,13 +723,13 @@ func (suite *ValidatorTestSuite) TestRulesCheck() {
 		},
 	}
 	suite.False(rules.checked)
-	rules.check()
+	rules.Check()
 	suite.True(rules.checked)
 
 	// Check should not be executed multiple times
 	rules.Fields["values"].Rules[0].Name = "not a rule"
 	suite.NotPanics(func() {
-		rules.check()
+		rules.Check()
 	})
 }
 

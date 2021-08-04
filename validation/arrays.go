@@ -45,6 +45,9 @@ func createArray(dataType string, length int) reflect.Value {
 	case "date":
 		newArray := make([]time.Time, 0, length)
 		arr = reflect.ValueOf(&newArray).Elem()
+	case "object":
+		newArray := make([]map[string]interface{}, 0, length)
+		arr = reflect.ValueOf(&newArray).Elem()
 	}
 	return arr
 }

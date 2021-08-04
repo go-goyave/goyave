@@ -131,6 +131,14 @@ func TestValidateArray(t *testing.T) {
 	if ok {
 		assert.Equal(t, "test", arrStr[0])
 	}
+
+	data = map[string]interface{}{"field": ""}
+	assert.True(t, validateArray("field", []map[string]interface{}{{"test": "success"}}, []string{"object"}, data))
+	arrObject, ok := data["field"].([]map[string]interface{})
+	assert.True(t, ok)
+	if ok {
+		assert.Equal(t, map[string]interface{}{"test": "success"}, arrObject[0])
+	}
 }
 
 func TestValidateArrayInObject(t *testing.T) {

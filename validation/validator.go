@@ -57,6 +57,7 @@ type RuleDefinition struct {
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
+// TODO map of some interface to be able to use composition
 type RuleSet map[string][]string
 
 var _ Ruler = (RuleSet)(nil) // implements Ruler
@@ -233,6 +234,7 @@ func (r *Rules) sortKeys() {
 }
 
 // Errors is a map of validation errors with the field name as a key.
+// TODO Errors should be map[string]interface{} so it's easier to read errors related to object fields
 type Errors map[string][]string
 
 var validationRules map[string]*RuleDefinition

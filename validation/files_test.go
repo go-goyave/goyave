@@ -87,23 +87,23 @@ func createTestFileWithNoExtension() []filesystem.File {
 }
 
 func TestValidateFile(t *testing.T) {
-	assert.True(t, validateFile("file", createTestFiles(logoPath), []string{}, map[string]interface{}{}))
-	assert.True(t, validateFile("file", createTestFiles(logoPath, configPath), []string{}, map[string]interface{}{}))
-	assert.False(t, validateFile("file", "test", []string{}, map[string]interface{}{}))
-	assert.False(t, validateFile("file", 1, []string{}, map[string]interface{}{}))
-	assert.False(t, validateFile("file", 1.2, []string{}, map[string]interface{}{}))
-	assert.False(t, validateFile("file", true, []string{}, map[string]interface{}{}))
-	assert.False(t, validateFile("file", []string{}, []string{}, map[string]interface{}{}))
+	assert.True(t, validateFile(newTestContext("file", createTestFiles(logoPath), []string{}, map[string]interface{}{})))
+	assert.True(t, validateFile(newTestContext("file", createTestFiles(logoPath, configPath), []string{}, map[string]interface{}{})))
+	assert.False(t, validateFile(newTestContext("file", "test", []string{}, map[string]interface{}{})))
+	assert.False(t, validateFile(newTestContext("file", 1, []string{}, map[string]interface{}{})))
+	assert.False(t, validateFile(newTestContext("file", 1.2, []string{}, map[string]interface{}{})))
+	assert.False(t, validateFile(newTestContext("file", true, []string{}, map[string]interface{}{})))
+	assert.False(t, validateFile(newTestContext("file", []string{}, []string{}, map[string]interface{}{})))
 }
 
 func TestValidateMIME(t *testing.T) {
-	assert.True(t, validateMIME("file", createTestFiles(logoPath), []string{"image/png"}, map[string]interface{}{}))
-	assert.True(t, validateMIME("file", createTestFiles(logoPath), []string{"text/plain", "image/png"}, map[string]interface{}{}))
-	assert.True(t, validateMIME("file", createTestFiles(utf8BOMPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
-	assert.True(t, validateMIME("file", createTestFiles(utf8BOMPath, logoPath), []string{"text/plain", "image/png"}, map[string]interface{}{}))
-	assert.False(t, validateMIME("file", createTestFiles(utf8BOMPath, logoPath), []string{"text/plain"}, map[string]interface{}{}))
-	assert.False(t, validateMIME("file", createTestFiles(logoPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
-	assert.False(t, validateMIME("file", "test", []string{"text/plain", "image/jpeg"}, map[string]interface{}{}))
+	assert.True(t, validateMIME(newTestContext("file", createTestFiles(logoPath), []string{"image/png"}, map[string]interface{}{})))
+	assert.True(t, validateMIME(newTestContext("file", createTestFiles(logoPath), []string{"text/plain", "image/png"}, map[string]interface{}{})))
+	assert.True(t, validateMIME(newTestContext("file", createTestFiles(utf8BOMPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{})))
+	assert.True(t, validateMIME(newTestContext("file", createTestFiles(utf8BOMPath, logoPath), []string{"text/plain", "image/png"}, map[string]interface{}{})))
+	assert.False(t, validateMIME(newTestContext("file", createTestFiles(utf8BOMPath, logoPath), []string{"text/plain"}, map[string]interface{}{})))
+	assert.False(t, validateMIME(newTestContext("file", createTestFiles(logoPath), []string{"text/plain", "image/jpeg"}, map[string]interface{}{})))
+	assert.False(t, validateMIME(newTestContext("file", "test", []string{"text/plain", "image/jpeg"}, map[string]interface{}{})))
 
 	assert.Panics(t, func() {
 		field := &Field{
@@ -116,18 +116,18 @@ func TestValidateMIME(t *testing.T) {
 }
 
 func TestValidateImage(t *testing.T) {
-	assert.True(t, validateImage("file", createTestFiles(logoPath), []string{}, map[string]interface{}{}))
-	assert.False(t, validateImage("file", createTestFiles(configPath), []string{}, map[string]interface{}{}))
-	assert.False(t, validateImage("file", createTestFiles(logoPath, configPath), []string{}, map[string]interface{}{}))
+	assert.True(t, validateImage(newTestContext("file", createTestFiles(logoPath), []string{}, map[string]interface{}{})))
+	assert.False(t, validateImage(newTestContext("file", createTestFiles(configPath), []string{}, map[string]interface{}{})))
+	assert.False(t, validateImage(newTestContext("file", createTestFiles(logoPath, configPath), []string{}, map[string]interface{}{})))
 }
 
 func TestValidateExtension(t *testing.T) {
-	assert.True(t, validateExtension("file", createTestFiles(logoPath), []string{"png", "jpeg"}, map[string]interface{}{}))
-	assert.True(t, validateExtension("file", createTestFiles(logoPath, configPath), []string{"png", "json"}, map[string]interface{}{}))
-	assert.False(t, validateExtension("file", createTestFiles(logoPath), []string{"jpeg"}, map[string]interface{}{}))
-	assert.False(t, validateExtension("file", createTestFiles(logoPath, configPath), []string{"png"}, map[string]interface{}{}))
-	assert.False(t, validateExtension("file", createTestFileWithNoExtension(), []string{"png"}, map[string]interface{}{}))
-	assert.False(t, validateExtension("file", "test", []string{"png"}, map[string]interface{}{}))
+	assert.True(t, validateExtension(newTestContext("file", createTestFiles(logoPath), []string{"png", "jpeg"}, map[string]interface{}{})))
+	assert.True(t, validateExtension(newTestContext("file", createTestFiles(logoPath, configPath), []string{"png", "json"}, map[string]interface{}{})))
+	assert.False(t, validateExtension(newTestContext("file", createTestFiles(logoPath), []string{"jpeg"}, map[string]interface{}{})))
+	assert.False(t, validateExtension(newTestContext("file", createTestFiles(logoPath, configPath), []string{"png"}, map[string]interface{}{})))
+	assert.False(t, validateExtension(newTestContext("file", createTestFileWithNoExtension(), []string{"png"}, map[string]interface{}{})))
+	assert.False(t, validateExtension(newTestContext("file", "test", []string{"png"}, map[string]interface{}{})))
 
 	assert.Panics(t, func() {
 		field := &Field{
@@ -140,11 +140,11 @@ func TestValidateExtension(t *testing.T) {
 }
 
 func TestValidateCount(t *testing.T) {
-	assert.True(t, validateCount("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{}))
-	assert.False(t, validateCount("file", createTestFiles(logoPath, configPath), []string{"3"}, map[string]interface{}{}))
+	assert.True(t, validateCount(newTestContext("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{})))
+	assert.False(t, validateCount(newTestContext("file", createTestFiles(logoPath, configPath), []string{"3"}, map[string]interface{}{})))
 
-	assert.False(t, validateCount("file", "test", []string{"3"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateCount("file", true, []string{"test"}, map[string]interface{}{}) })
+	assert.False(t, validateCount(newTestContext("file", "test", []string{"3"}, map[string]interface{}{})))
+	assert.Panics(t, func() { validateCount(newTestContext("file", true, []string{"test"}, map[string]interface{}{})) })
 
 	assert.Panics(t, func() {
 		field := &Field{
@@ -157,11 +157,11 @@ func TestValidateCount(t *testing.T) {
 }
 
 func TestValidateCountMin(t *testing.T) {
-	assert.True(t, validateCountMin("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{}))
-	assert.False(t, validateCountMin("file", createTestFiles(logoPath, configPath), []string{"3"}, map[string]interface{}{}))
+	assert.True(t, validateCountMin(newTestContext("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{})))
+	assert.False(t, validateCountMin(newTestContext("file", createTestFiles(logoPath, configPath), []string{"3"}, map[string]interface{}{})))
 
-	assert.False(t, validateCountMin("file", "test", []string{"3"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateCountMin("file", true, []string{"test"}, map[string]interface{}{}) })
+	assert.False(t, validateCountMin(newTestContext("file", "test", []string{"3"}, map[string]interface{}{})))
+	assert.Panics(t, func() { validateCountMin(newTestContext("file", true, []string{"test"}, map[string]interface{}{})) })
 
 	assert.Panics(t, func() {
 		field := &Field{
@@ -174,11 +174,11 @@ func TestValidateCountMin(t *testing.T) {
 }
 
 func TestValidateCountMax(t *testing.T) {
-	assert.True(t, validateCountMax("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{}))
-	assert.False(t, validateCountMax("file", createTestFiles(logoPath, configPath), []string{"1"}, map[string]interface{}{}))
+	assert.True(t, validateCountMax(newTestContext("file", createTestFiles(logoPath, configPath), []string{"2"}, map[string]interface{}{})))
+	assert.False(t, validateCountMax(newTestContext("file", createTestFiles(logoPath, configPath), []string{"1"}, map[string]interface{}{})))
 
-	assert.False(t, validateCountMax("file", "test", []string{"3"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateCountMax("file", true, []string{"test"}, map[string]interface{}{}) })
+	assert.False(t, validateCountMax(newTestContext("file", "test", []string{"3"}, map[string]interface{}{})))
+	assert.Panics(t, func() { validateCountMax(newTestContext("file", true, []string{"test"}, map[string]interface{}{})) })
 
 	assert.Panics(t, func() {
 		field := &Field{
@@ -191,14 +191,20 @@ func TestValidateCountMax(t *testing.T) {
 }
 
 func TestValidateCountBetween(t *testing.T) {
-	assert.True(t, validateCountBetween("file", createTestFiles(logoPath, configPath), []string{"1", "5"}, map[string]interface{}{}))
-	assert.False(t, validateCountBetween("file", createTestFiles(logoPath, largeLogoPath, configPath), []string{"1", "2"}, map[string]interface{}{}))
-	assert.False(t, validateCountBetween("file", createTestFiles(logoPath, configPath), []string{"3", "5"}, map[string]interface{}{}))
+	assert.True(t, validateCountBetween(newTestContext("file", createTestFiles(logoPath, configPath), []string{"1", "5"}, map[string]interface{}{})))
+	assert.False(t, validateCountBetween(newTestContext("file", createTestFiles(logoPath, largeLogoPath, configPath), []string{"1", "2"}, map[string]interface{}{})))
+	assert.False(t, validateCountBetween(newTestContext("file", createTestFiles(logoPath, configPath), []string{"3", "5"}, map[string]interface{}{})))
 
-	assert.False(t, validateCountBetween("file", "test", []string{"3", "4"}, map[string]interface{}{}))
-	assert.Panics(t, func() { validateCountBetween("file", true, []string{"test", "2"}, map[string]interface{}{}) })
-	assert.Panics(t, func() { validateCountBetween("file", true, []string{"2", "test"}, map[string]interface{}{}) })
-	assert.Panics(t, func() { validateCountBetween("file", true, []string{"test", "test"}, map[string]interface{}{}) })
+	assert.False(t, validateCountBetween(newTestContext("file", "test", []string{"3", "4"}, map[string]interface{}{})))
+	assert.Panics(t, func() {
+		validateCountBetween(newTestContext("file", true, []string{"test", "2"}, map[string]interface{}{}))
+	})
+	assert.Panics(t, func() {
+		validateCountBetween(newTestContext("file", true, []string{"2", "test"}, map[string]interface{}{}))
+	})
+	assert.Panics(t, func() {
+		validateCountBetween(newTestContext("file", true, []string{"test", "test"}, map[string]interface{}{}))
+	})
 
 	assert.Panics(t, func() {
 		field := &Field{

@@ -69,14 +69,14 @@ func (suite *ValidatorTestSuite) TestGetMessage() {
 func (suite *ValidatorTestSuite) TestAddRule() {
 	suite.Panics(func() {
 		AddRule("required", &RuleDefinition{
-			Function: func(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+			Function: func(ctx *Context) bool {
 				return false
 			},
 		})
 	})
 
 	AddRule("new_rule", &RuleDefinition{
-		Function: func(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+		Function: func(ctx *Context) bool {
 			return true
 		},
 	})
@@ -284,10 +284,6 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 		},
 	}, true, "en-US")
 	suite.Len(errors, 0)
-
-	// Cannot validate array values on non-array field string of type string
-	rule := &Rule{Name: "required", ArrayDimension: 1}
-	suite.False(validateRuleInArray(rule, "string", rule.ArrayDimension, map[string]interface{}{"string": "hi"}))
 
 	// Empty array
 	data = map[string]interface{}{

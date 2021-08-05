@@ -17,12 +17,22 @@ type Ruler interface {
 	AsRules() *Rules
 }
 
+// Context validation context for RuleFunc.
+// Contains all the information needed for validation rules.
+type Context struct {
+	Data  map[string]interface{}
+	Value interface{}
+	Field *Field
+	Rule  *Rule
+	Name  string
+}
+
 // RuleFunc function defining a validation rule.
 // Passing rules should return true, false otherwise.
 //
 // Rules can modifiy the validated value if needed.
 // For example, the "numeric" rule converts the data to float64 if it's a string.
-type RuleFunc func(string, interface{}, []string, map[string]interface{}) bool
+type RuleFunc func(*Context) bool
 
 // RuleDefinition is the definition of a rule, containing the information
 // related to the behavior executed on validation-time.
@@ -127,6 +137,7 @@ func (r *Rule) IsTypeDependent() bool {
 // Field is a component of route validation. A Field is a value in
 // a Rules map, the key being the name of the field.
 type Field struct {
+	Path       *PathItem
 	Rules      []*Rule
 	isArray    bool
 	isRequired bool
@@ -206,8 +217,13 @@ func (r *Rules) AsRules() *Rules {
 // while ArrayDimension is not equal to 0.
 func (r *Rules) Check() {
 	if !r.checked {
-		for _, field := range r.Fields {
+		for path, field := range r.Fields {
 			field.Check()
+			p, err := ComputePath(path)
+			if err != nil {
+				panic(err)
+			}
+			field.Path = p
 		}
 		r.checked = true
 	}
@@ -334,95 +350,74 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName]
-		name, fieldVal, parent, _ := GetFieldFromName(fieldName, data)
-		if !field.IsNullable() && fieldVal == nil {
-			delete(parent, fieldName)
-		}
-
-		if !field.IsRequired() && !validateRequired(fieldName, fieldVal, nil, data) {
-			continue
-		}
-
-		convertArray(isJSON, name, field, parent) // Convert single value arrays in url-encoded requests
-
-		for _, rule := range field.Rules {
-			fieldVal = parent[name]
-			if rule.Name == "nullable" {
-				if fieldVal == nil {
-					break
+		field.Path.Walk(data, func(c WalkContext) {
+			parentObject, parentIsObject := c.Parent.(map[string]interface{})
+			if parentIsObject {
+				if !field.IsNullable() && c.Value == nil {
+					delete(parentObject, fieldName)
 				}
-				continue
 			}
 
-			if rule.ArrayDimension > 0 {
-				if ok, errorValue := validateRuleInArray(rule, fieldName, rule.ArrayDimension, data); !ok {
+			if !isJSON {
+				convertArray(c.Name, field, data) // Convert single value arrays in url-encoded requests
+			}
+
+			requiredCtx := &Context{
+				Data:  data,
+				Value: c.Value,
+				Field: field,
+				Rule:  &Rule{Name: "required"},
+				Name:  fieldName,
+			}
+			if !field.IsRequired() && !validateRequired(requiredCtx) {
+				return
+			}
+
+			for _, rule := range field.Rules {
+				if rule.Name == "nullable" {
+					if c.Value == nil {
+						break
+					}
+					continue
+				}
+
+				ctx := &Context{
+					Data:  data,
+					Value: c.Value,
+					Field: field,
+					Rule:  rule,
+					Name:  fieldName,
+				}
+				if !validationRules[rule.Name].Function(ctx) {
 					errors[fieldName] = append(
 						errors[fieldName],
-						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, errorValue, language), language),
+						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, reflect.ValueOf(c.Value), language), language),
 					)
+					continue
 				}
-			} else if !validationRules[rule.Name].Function(fieldName, fieldVal, rule.Params, data) {
-				errors[fieldName] = append(
-					errors[fieldName],
-					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, reflect.ValueOf(fieldVal), language), language),
-				)
+
+				// Value modified (converting rule), replace it in the parent element
+				if parentIsObject {
+					parentObject[ctx.Name] = ctx.Value
+				} else {
+					// Parent is slice
+					reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(ctx.Value))
+				}
 			}
-		}
+		})
 	}
 	return errors
 }
 
-func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, data map[string]interface{}) (bool, reflect.Value) {
-	if t := GetFieldType(data[fieldName]); t != "array" {
-		return false, reflect.ValueOf(data[fieldName])
-	}
-
-	converted := false
-	var convertedArr reflect.Value
-	list := reflect.ValueOf(data[fieldName])
-	length := list.Len()
-	for i := 0; i < length; i++ {
-		v := list.Index(i)
-		value := v.Interface()
-		tmpData := map[string]interface{}{fieldName: value}
-		if arrayDimension > 1 {
-			ok, errorValue := validateRuleInArray(rule, fieldName, arrayDimension-1, tmpData)
-			if !ok {
-				return false, errorValue
-			}
-		} else if !validationRules[rule.Name].Function(fieldName, value, rule.Params, tmpData) {
-			return false, v
-		}
-
-		// Update original array if value has been modified.
-		if rule.Name == "array" {
-			if !converted { // Ensure field is a two dimensional array of the correct type
-				convertedArr = reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(tmpData[fieldName])), 0, length)
-				converted = true
-			}
-			convertedArr = reflect.Append(convertedArr, reflect.ValueOf(tmpData[fieldName]))
-		} else {
-			v.Set(reflect.ValueOf(tmpData[fieldName]))
-		}
-	}
-
-	if converted {
-		data[fieldName] = convertedArr.Interface()
-	}
-	return true, reflect.Value{}
-}
-
-func convertArray(isJSON bool, fieldName string, field *Field, data map[string]interface{}) {
-	if !isJSON {
-		val := data[fieldName]
-		rv := reflect.ValueOf(val)
-		kind := rv.Kind().String()
-		if field.IsArray() && kind != "slice" {
-			rt := reflect.TypeOf(val)
-			slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
-			slice = reflect.Append(slice, rv)
-			data[fieldName] = slice.Interface()
-		}
+func convertArray(fieldName string, field *Field, data map[string]interface{}) {
+	val := data[fieldName]
+	rv := reflect.ValueOf(val)
+	kind := rv.Kind().String()
+	if field.IsArray() && kind != "slice" {
+		rt := reflect.TypeOf(val)
+		slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
+		slice = reflect.Append(slice, rv)
+		data[fieldName] = slice.Interface()
 	}
 }
 

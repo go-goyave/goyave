@@ -11,43 +11,43 @@ import (
 	"github.com/google/uuid"
 )
 
-func validateString(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	_, ok := value.(string)
+func validateString(ctx *Context) bool {
+	_, ok := ctx.Value.(string)
 	return ok
 }
 
-func validateDigits(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateDigits(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
 		return getRegex(patternDigits).FindAllString(str, 1) == nil
 	}
 	return false
 }
 
-func validateAlpha(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	params := []string{patternAlpha}
-	return validateRegex(field, value, params, form)
+func validateAlpha(ctx *Context) bool {
+	ctx.Rule.Params = []string{patternAlpha}
+	return validateRegex(ctx)
 }
 
-func validateAlphaDash(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	params := []string{patternAlphaDash}
-	return validateRegex(field, value, params, form)
+func validateAlphaDash(ctx *Context) bool {
+	ctx.Rule.Params = []string{patternAlphaDash}
+	return validateRegex(ctx)
 }
 
-func validateAlphaNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	params := []string{patternAlphaNumeric}
-	return validateRegex(field, value, params, form)
+func validateAlphaNumeric(ctx *Context) bool {
+	ctx.Rule.Params = []string{patternAlphaNumeric}
+	return validateRegex(ctx)
 }
 
-func validateEmail(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	params := []string{patternEmail}
-	return validateRegex(field, value, params, form)
+func validateEmail(ctx *Context) bool {
+	ctx.Rule.Params = []string{patternEmail}
+	return validateRegex(ctx)
 }
 
-func validateStartsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateStartsWith(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
-		for _, prefix := range parameters {
+		for _, prefix := range ctx.Rule.Params {
 			if strings.HasPrefix(str, prefix) {
 				return true
 			}
@@ -56,10 +56,10 @@ func validateStartsWith(field string, value interface{}, parameters []string, fo
 	return false
 }
 
-func validateEndsWith(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateEndsWith(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
-		for _, prefix := range parameters {
+		for _, prefix := range ctx.Rule.Params {
 			if strings.HasSuffix(str, prefix) {
 				return true
 			}
@@ -68,13 +68,12 @@ func validateEndsWith(field string, value interface{}, parameters []string, form
 	return false
 }
 
-func validateIP(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateIP(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
 		ip := net.ParseIP(str)
 		if ip != nil {
-			fieldName, _, parent, _ := GetFieldFromName(field, form)
-			parent[fieldName] = ip
+			ctx.Value = ip
 			return true
 		}
 	}
@@ -82,83 +81,77 @@ func validateIP(field string, value interface{}, parameters []string, form map[s
 	return false
 }
 
-func validateIPv4(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	if validateIP(field, value, parameters, form) {
-		_, value, _, _ := GetFieldFromName(field, form)
-		return value.(net.IP).To4() != nil
+func validateIPv4(ctx *Context) bool {
+	if validateIP(ctx) {
+		return ctx.Value.(net.IP).To4() != nil
 	}
 	return false
 }
 
-func validateIPv6(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	if validateIP(field, value, parameters, form) {
-		_, value, _, _ := GetFieldFromName(field, form)
-		return value.(net.IP).To4() == nil
+func validateIPv6(ctx *Context) bool {
+	if validateIP(ctx) {
+		return ctx.Value.(net.IP).To4() == nil
 	}
 	return false
 }
 
-func validateJSON(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateJSON(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
 		var data interface{}
 		err := json.Unmarshal([]byte(str), &data)
 		if err == nil {
-			fieldName, _, parent, _ := GetFieldFromName(field, form)
-			parent[fieldName] = data
+			ctx.Value = data
 			return true
 		}
 	}
 	return false
 }
 
-func validateRegex(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateRegex(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
-		return getRegex(parameters[0]).MatchString(str)
+		return getRegex(ctx.Rule.Params[0]).MatchString(str)
 	}
 	return false
 }
 
-func validateTimezone(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	tz, ok := value.(string)
+func validateTimezone(ctx *Context) bool {
+	tz, ok := ctx.Value.(string)
 	if ok && tz != "Local" {
 		loc, err := time.LoadLocation(tz)
 		if err == nil {
-			fieldName, _, parent, _ := GetFieldFromName(field, form)
-			parent[fieldName] = loc
+			ctx.Value = loc
 			return true
 		}
 	}
 	return false
 }
 
-func validateURL(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateURL(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
 		url, err := url.ParseRequestURI(str)
 		if err == nil {
-			fieldName, _, parent, _ := GetFieldFromName(field, form)
-			parent[fieldName] = url
+			ctx.Value = url
 			return true
 		}
 	}
 	return false
 }
 
-func validateUUID(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	str, ok := value.(string)
+func validateUUID(ctx *Context) bool {
+	str, ok := ctx.Value.(string)
 	if ok {
 		id, err := uuid.Parse(str)
 		if err == nil {
-			if len(parameters) == 1 {
-				version, err := strconv.Atoi(parameters[0])
+			if len(ctx.Rule.Params) == 1 {
+				version, err := strconv.Atoi(ctx.Rule.Params[0])
 				if err == nil && id.Version() != uuid.Version(version) {
 					return false
 				}
 			}
-			fieldName, _, parent, _ := GetFieldFromName(field, form)
-			parent[fieldName] = id
+			ctx.Value = id
 			return true
 		}
 	}

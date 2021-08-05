@@ -32,11 +32,13 @@ type PathItem struct {
 	Type PathType
 }
 
+// WalkContext information sent to walk function.
 type WalkContext struct {
-	Value  interface{}
-	Parent interface{} // Either map[string]interface{} or a slice
-	Name   string      // Name of the current element
-	Index  int         // If parent is a slice, the index of the current element in the slice, else -1
+	Value    interface{}
+	Parent   interface{} // Either map[string]interface{} or a slice
+	Name     string      // Name of the current element
+	Index    int         // If parent is a slice, the index of the current element in the slice, else -1
+	NotFound bool        // True if the path could not be completely explored
 }
 
 // Walk this path and execute the given behavior for each matching element.
@@ -51,7 +53,13 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 		var ok bool
 		element, ok = currentElement.(map[string]interface{})[p.Name]
 		if !ok {
-			// TODO check this doesn't result in skip behavior for certain rules
+			f(WalkContext{
+				Value:    nil,
+				Parent:   currentElement,
+				Name:     p.Name,
+				Index:    -1,
+				NotFound: true,
+			})
 			return
 		}
 		parent = currentElement

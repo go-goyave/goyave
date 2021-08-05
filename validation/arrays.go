@@ -49,54 +49,59 @@ func createArray(dataType string, length int) reflect.Value {
 		newArray := make([]map[string]interface{}, 0, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	}
+	// TODO only works with built-in type rules
 	return arr
 }
 
-func validateArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	if GetFieldType(value) == "array" {
+func validateArray(ctx *Context) bool {
+	if GetFieldType(ctx.Value) == "array" {
 
-		if len(parameters) == 0 {
+		if len(ctx.Rule.Params) == 0 {
 			return true
 		}
 
-		if parameters[0] == "array" {
+		if ctx.Rule.Params[0] == "array" {
 			panic("Cannot use array type for array validation. Use \">array\" instead")
 		}
 
-		if !validationRules[parameters[0]].IsType {
-			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", parameters[0]))
+		if !validationRules[ctx.Rule.Params[0]].IsType {
+			panic(fmt.Sprintf("Rule %s is not converting, cannot use it for array validation", ctx.Rule.Params[0]))
 		}
 
-		fieldName, _, parent, _ := GetFieldFromName(field, form)
-		list := reflect.ValueOf(value)
+		list := reflect.ValueOf(ctx.Value)
 		length := list.Len()
-		arr := createArray(parameters[0], length)
-
-		params := parameters[1:]
+		arr := createArray(ctx.Rule.Params[0], length)
 
 		for i := 0; i < length; i++ {
 			val := list.Index(i).Interface()
-			tmpData := map[string]interface{}{fieldName: val}
-			if !validationRules[parameters[0]].Function(fieldName, val, params, tmpData) {
+			tmpCtx := &Context{
+				Value: val,
+				Rule: &Rule{
+					Name:   ctx.Rule.Params[0],
+					Params: ctx.Rule.Params[1:],
+				},
+				Data: ctx.Data,
+			}
+			if !validationRules[ctx.Rule.Params[0]].Function(tmpCtx) {
 				return false
 			}
-			arr.Set(reflect.Append(arr, reflect.ValueOf(tmpData[fieldName])))
+			arr.Set(reflect.Append(arr, reflect.ValueOf(tmpCtx.Value)))
 		}
 
-		parent[fieldName] = arr.Interface()
+		ctx.Value = arr.Interface()
 		return true
 	}
 
 	return false
 }
 
-func validateDistinct(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	if GetFieldType(value) != "array" {
+func validateDistinct(ctx *Context) bool {
+	if GetFieldType(ctx.Value) != "array" {
 		return false // Can't validate if not an array
 	}
 
 	found := []interface{}{}
-	list := reflect.ValueOf(value)
+	list := reflect.ValueOf(ctx.Value)
 	for i := 0; i < list.Len(); i++ {
 		v := list.Index(i).Interface()
 		if helper.Contains(found, v) {
@@ -119,40 +124,40 @@ func checkInNumeric(parameters []string, value interface{}) bool {
 	return false
 }
 
-func validateIn(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	switch GetFieldType(value) {
+func validateIn(ctx *Context) bool {
+	switch GetFieldType(ctx.Value) {
 	case "numeric":
-		return checkInNumeric(parameters, value)
+		return checkInNumeric(ctx.Rule.Params, ctx.Value)
 	case "string":
-		return helper.Contains(parameters, value)
+		return helper.Contains(ctx.Rule.Params, ctx.Value)
 	}
 	// Don't check arrays and files
 	return false
 }
 
-func validateNotIn(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	switch GetFieldType(value) {
+func validateNotIn(ctx *Context) bool {
+	switch GetFieldType(ctx.Value) {
 	case "numeric":
-		return !checkInNumeric(parameters, value)
+		return !checkInNumeric(ctx.Rule.Params, ctx.Value)
 	case "string":
-		return !helper.ContainsStr(parameters, value.(string))
+		return !helper.ContainsStr(ctx.Rule.Params, ctx.Value.(string))
 	}
 	// Don't check arrays and files
 	return false
 }
 
-func validateInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	_, other, _, exists := GetFieldFromName(parameters[0], form)
+func validateInArray(ctx *Context) bool {
+	_, other, _, exists := GetFieldFromName(ctx.Rule.Params[0], ctx.Data)
 	if exists && GetFieldType(other) == "array" {
-		return helper.Contains(other, value)
+		return helper.Contains(other, ctx.Value)
 	}
 	return false
 }
 
-func validateNotInArray(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	_, other, _, exists := GetFieldFromName(parameters[0], form)
+func validateNotInArray(ctx *Context) bool {
+	_, other, _, exists := GetFieldFromName(ctx.Rule.Params[0], ctx.Data)
 	if exists && GetFieldType(other) == "array" {
-		return !helper.Contains(other, value)
+		return !helper.Contains(other, ctx.Value)
 	}
 	return false
 }

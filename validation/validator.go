@@ -357,8 +357,9 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 				}
 			}
 
-			if !isJSON {
-				convertArray(c.Name, field, data) // Convert single value arrays in url-encoded requests
+			if !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]") {
+				c.Value = convertArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
+				parentObject[c.Name] = c.Value
 			}
 
 			requiredCtx := &Context{
@@ -410,16 +411,16 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 	return errors
 }
 
-func convertArray(fieldName string, field *Field, data map[string]interface{}) {
-	val := data[fieldName]
-	rv := reflect.ValueOf(val)
+func convertArray(field *Field, value interface{}, data map[string]interface{}) interface{} {
+	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	if field.IsArray() && kind != "slice" {
-		rt := reflect.TypeOf(val)
+		rt := reflect.TypeOf(value)
 		slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
 		slice = reflect.Append(slice, rv)
-		data[fieldName] = slice.Interface()
+		return slice.Interface()
 	}
+	return value
 }
 
 func getMessage(field *Field, rule *Rule, value reflect.Value, language string) string {

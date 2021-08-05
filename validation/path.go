@@ -32,31 +32,49 @@ type PathItem struct {
 	Type PathType
 }
 
-// Walk this path and execute the given behavior for each matching element.
-func (p *PathItem) Walk(currentElement interface{}) { // TODO execute a function for each element
+type WalkContext struct {
+	Value  interface{}
+	Parent interface{} // Either map[string]interface{} or a slice
+	Name   string      // Name of the current element
+	Index  int         // If parent is a slice, the index of the current element in the slice, else -1
+}
 
+// Walk this path and execute the given behavior for each matching element.
+// TODO document behavior function.
+func (p *PathItem) Walk(currentElement interface{}, f func(WalkContext)) {
+	p.walk(currentElement, nil, -1, f)
+}
+
+func (p *PathItem) walk(currentElement interface{}, parent interface{}, index int, f func(WalkContext)) {
 	element := currentElement
 	if p.Name != "" {
 		var ok bool
 		element, ok = currentElement.(map[string]interface{})[p.Name]
 		if !ok {
+			// TODO check this doesn't result in skip behavior for certain rules
 			return
 		}
+		parent = currentElement
 	}
 
 	switch p.Type {
 	case PathTypeElement:
-		fmt.Println("Element", element)
+		f(WalkContext{
+			Value:  element,
+			Parent: parent,
+			Name:   p.Name,
+			Index:  index,
+		})
 	case PathTypeArray:
 		list := reflect.ValueOf(element)
 		length := list.Len()
 		for i := 0; i < length; i++ {
 			v := list.Index(i)
 			value := v.Interface()
-			p.Next.Walk(value)
+			p.Next.walk(value, element, i, f)
 		}
 	case PathTypeObject:
-		p.Next.Walk(element)
+		p.Next.walk(element, parent, -1, f)
 		// TODO better safety checks
 	}
 }

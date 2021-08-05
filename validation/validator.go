@@ -373,9 +373,10 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 				return
 			}
 
+			value := c.Value
 			for _, rule := range field.Rules {
 				if rule.Name == "nullable" {
-					if c.Value == nil {
+					if value == nil {
 						break
 					}
 					continue
@@ -383,7 +384,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 
 				ctx := &Context{
 					Data:  data,
-					Value: c.Value,
+					Value: value,
 					Field: field,
 					Rule:  rule,
 					Name:  c.Name,
@@ -396,6 +397,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 					continue
 				}
 
+				value = ctx.Value
 				// Value modified (converting rule), replace it in the parent element
 				if parentIsObject {
 					parentObject[ctx.Name] = ctx.Value

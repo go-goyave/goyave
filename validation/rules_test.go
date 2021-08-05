@@ -30,7 +30,8 @@ func TestValidateRequired(t *testing.T) {
 	assert.True(t, validateRequired(newTestContextWithField("field", []string{}, []string{}, map[string]interface{}{"field": []string{}}, &Field{})))
 	assert.True(t, validateRequired(newTestContextWithField("field", []float64{}, []string{}, map[string]interface{}{"field": []float64{}}, &Field{})))
 	assert.True(t, validateRequired(newTestContextWithField("field", 0, []string{}, map[string]interface{}{"field": 0}, &Field{})))
-	assert.True(t, validateRequired(newTestContextWithField("field", nil, []string{}, map[string]interface{}{"field": nil}, &Field{})))
+	assert.True(t, validateRequired(newTestContextWithField("field", nil, []string{}, map[string]interface{}{"field": nil}, &Field{isNullable: true})))
+	assert.False(t, validateRequired(newTestContextWithField("field", nil, []string{}, map[string]interface{}{"field": nil}, &Field{})))
 	assert.False(t, validateRequired(newTestContextWithField("field", "", []string{}, map[string]interface{}{"field": ""}, &Field{})))
 
 	data := map[string]interface{}{
@@ -40,10 +41,6 @@ func TestValidateRequired(t *testing.T) {
 	}
 	assert.True(t, validateRequired(newTestContextWithField("object.key", "value", []string{}, data, &Field{})))
 	assert.False(t, validateRequired(newTestContextWithField("object.notakey", nil, []string{}, data, &Field{})))
-
-	// Nullable fields
-	assert.True(t, validateRequired(newTestContextWithField("field", nil, []string{}, map[string]interface{}{"field": nil}, &Field{isNullable: true})))
-	assert.False(t, validateRequired(newTestContextWithField("field", nil, []string{}, map[string]interface{}{"field": nil}, &Field{isNullable: false})))
 }
 
 func TestValidateMin(t *testing.T) {

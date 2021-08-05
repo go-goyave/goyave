@@ -155,10 +155,10 @@ func createPathScanner(path string) *bufio.Scanner {
 			r, width = utf8.DecodeRune(data[i:])
 			if r == '.' {
 				if lastSeparator == '.' {
-					return 0, nil, fmt.Errorf("Consecutive dot")
+					return i + width, data[:i+width], nil
 				}
 				lastSeparator = r
-				return i + width, data[:i+width], nil
+				return i, data[:i], nil
 			} else if r == ']' && lastSeparator == '[' {
 				lastSeparator = r
 				return i + width, data[:i+width], nil

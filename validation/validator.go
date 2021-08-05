@@ -367,7 +367,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 				Value: c.Value,
 				Field: field,
 				Rule:  &Rule{Name: "required"},
-				Name:  fieldName,
+				Name:  c.Name,
 			}
 			if !field.IsRequired() && !validateRequired(requiredCtx) {
 				return
@@ -386,7 +386,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 					Value: c.Value,
 					Field: field,
 					Rule:  rule,
-					Name:  fieldName,
+					Name:  c.Name,
 				}
 				if !validationRules[rule.Name].Function(ctx) {
 					errors[fieldName] = append(

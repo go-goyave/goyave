@@ -398,13 +398,13 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 				}
 
 				value = ctx.Value
-				// Value modified (converting rule), replace it in the parent element
-				if parentIsObject {
-					parentObject[ctx.Name] = ctx.Value
-				} else {
-					// Parent is slice
-					reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(ctx.Value))
-				}
+			}
+			// Value may be modified (converting rule), replace it in the parent element
+			if parentIsObject {
+				parentObject[c.Name] = value
+			} else {
+				// Parent is slice
+				reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
 			}
 		})
 	}

@@ -110,6 +110,7 @@ func TestValidateMIME(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "mime"},
 			},
+			Path: &PathItem{},
 		}
 		field.Check()
 	})
@@ -134,6 +135,7 @@ func TestValidateExtension(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "extension"},
 			},
+			Path: &PathItem{},
 		}
 		field.Check()
 	})
@@ -151,6 +153,7 @@ func TestValidateCount(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count"},
 			},
+			Path: &PathItem{},
 		}
 		field.Check()
 	})
@@ -168,6 +171,7 @@ func TestValidateCountMin(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_min"},
 			},
+			Path: &PathItem{},
 		}
 		field.Check()
 	})
@@ -185,6 +189,7 @@ func TestValidateCountMax(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_max"},
 			},
+			Path: &PathItem{},
 		}
 		field.Check()
 	})
@@ -211,6 +216,7 @@ func TestValidateCountBetween(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_between"},
 			},
+			Path: &PathItem{},
 		}
 		field.Check()
 	})
@@ -220,6 +226,7 @@ func TestValidateCountBetween(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_between", Params: []string{"2"}},
 			},
+			Path: &PathItem{},
 		}
 		field.Check()
 	})

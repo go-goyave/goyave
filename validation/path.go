@@ -87,6 +87,31 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 	}
 }
 
+// HasArray returns true if a least one step in the path involves an array.
+func (p *PathItem) HasArray() bool {
+	step := p
+	for step != nil {
+		if step.Type == PathTypeArray {
+			return true
+		}
+		step = step.Next
+	}
+	return false
+}
+
+// LastParent returns the last step in the path that is not a PathTypeElement, excluding
+// the first step in the path, or nil.
+func (p *PathItem) LastParent() *PathItem {
+	step := p
+	for step != nil {
+		if step.Next != nil && step.Next.Type == PathTypeElement {
+			return step
+		}
+		step = step.Next
+	}
+	return nil
+}
+
 // ComputePath transform given path string representation into usable PathItem.
 //
 // Example paths:

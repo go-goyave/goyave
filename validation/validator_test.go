@@ -22,48 +22,48 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 	rule := parseRule("required")
 	suite.Equal("required", rule.Name)
 	suite.Equal(0, len(rule.Params))
-	suite.Equal(uint8(0), rule.ArrayDimension)
 
 	rule = parseRule("min:5")
 	suite.Equal("min", rule.Name)
 	suite.Equal(1, len(rule.Params))
 	suite.Equal("5", rule.Params[0])
-	suite.Equal(uint8(0), rule.ArrayDimension)
 
 	suite.Panics(func() {
 		parseRule("invalid,rule")
 	})
-
-	rule = parseRule(">min:3")
-	suite.Equal("min", rule.Name)
-	suite.Equal(1, len(rule.Params))
-	suite.Equal("3", rule.Params[0])
-	suite.Equal(uint8(1), rule.ArrayDimension)
-
-	rule = parseRule(">>max:5")
-	suite.Equal("max", rule.Name)
-	suite.Equal(1, len(rule.Params))
-	suite.Equal("5", rule.Params[0])
-	suite.Equal(uint8(2), rule.ArrayDimension)
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {
-	suite.Equal("The :field is required.", getMessage([]*Rule{}, &Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
-	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{{Name: "numeric"}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
-	suite.Equal("The :field values must be at least :min.", getMessage([]*Rule{{Name: "numeric", ArrayDimension: 1}}, &Rule{Name: "min", ArrayDimension: 1}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field is required.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{Name: "numeric"}}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
 
-	rules := []*Rule{
-		{Name: "array", Params: []string{"numeric"}},
-		{Name: "min", ArrayDimension: 1},
+	field := &Field{
+		Rules: []*Rule{{Name: "numeric"}},
+		Path: &PathItem{
+			Type: PathTypeArray,
+			Next: &PathItem{Type: PathTypeElement},
+		},
 	}
-	suite.Equal("The :field values must be at least :min.", getMessage(rules, rules[1], reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field values must be at least :min.", getMessage(field, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+
+	field = &Field{
+		Rules: []*Rule{
+			{Name: "numeric"},
+			{Name: "min", Params: []string{"5"}},
+		},
+		Path: &PathItem{
+			Type: PathTypeArray,
+			Next: &PathItem{Type: PathTypeElement},
+		},
+	}
+	suite.Equal("The :field values must be at least :min.", getMessage(field, field.Rules[1], reflect.ValueOf(42), "en-US"))
 
 	// Test type fallback if no type rule is found
-	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
-	suite.Equal("The :field must be at least :min characters.", getMessage([]*Rule{}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field must be at least :min characters.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
 
 	// Integer share message with numeric
-	suite.Equal("The :field must be at least :min.", getMessage([]*Rule{{"integer", nil, 0}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{"integer", nil}}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {
@@ -226,7 +226,8 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 		"string": []string{"hello", "world"},
 	}
 	errors := Validate(data, RuleSet{
-		"string": {"required", "array", ">min:3"},
+		"string":   {"required", "array"},
+		"string[]": {"min:3"},
 	}, false, "en-US")
 	suite.Len(errors, 0)
 
@@ -236,7 +237,11 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "min", Params: []string{"3"}, ArrayDimension: 1},
+				},
+			},
+			"string[]": {
+				Rules: []*Rule{
+					{Name: "min", Params: []string{"3"}},
 				},
 			},
 		},
@@ -247,7 +252,8 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 		"string": []string{"hi", ",", "there"},
 	}
 	errors = Validate(data, RuleSet{
-		"string": {"required", "array", ">min:3"},
+		"string":   {"required", "array"},
+		"string[]": {"min:3"},
 	}, false, "en-US")
 	suite.Len(errors, 1)
 
@@ -257,7 +263,11 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "min", Params: []string{"3"}, ArrayDimension: 1},
+				},
+			},
+			"string[]": {
+				Rules: []*Rule{
+					{Name: "min", Params: []string{"3"}},
 				},
 			},
 		},
@@ -268,7 +278,8 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 		"string": []string{"johndoe@example.org", "foobar@example.org"},
 	}
 	errors = Validate(data, RuleSet{
-		"string": {"required", "array:string", ">email"},
+		"string":   {"required", "array:string"},
+		"string[]": {"email"},
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
@@ -278,7 +289,11 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array", Params: []string{"string"}},
-					{Name: "email", ArrayDimension: 1},
+				},
+			},
+			"string[]": {
+				Rules: []*Rule{
+					{Name: "email"},
 				},
 			},
 		},
@@ -290,7 +305,8 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 		"string": []string{},
 	}
 	errors = Validate(data, RuleSet{
-		"string": {"array", ">uuid:5"},
+		"string":   {"array"},
+		"string[]": {"uuid:5"},
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
@@ -299,7 +315,11 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 			"string": {
 				Rules: []*Rule{
 					{Name: "array"},
-					{Name: "uuid", Params: []string{"5"}, ArrayDimension: 1},
+				},
+			},
+			"string[]": {
+				Rules: []*Rule{
+					{Name: "uuid", Params: []string{"5"}},
 				},
 			},
 		},
@@ -312,7 +332,8 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 		"values": [][]interface{}{{"0.5", 1.42}, {0.6, 7}},
 	}
 	errors := Validate(data, RuleSet{
-		"values": {"required", "array", ">array:numeric"},
+		"values":   {"required", "array"},
+		"values[]": {"array:numeric"},
 	}, false, "en-US")
 	suite.Len(errors, 0)
 
@@ -335,7 +356,11 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 1},
+				},
+			},
+			"value[]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
 		},
@@ -356,7 +381,8 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 		"values": [][]float64{{5, 8}, {0.6, 7}},
 	}
 	errors = Validate(data, RuleSet{
-		"values": {"required", "array", ">array:numeric", ">min:3"},
+		"values":   {"required", "array"},
+		"values[]": {"array:numeric", "min:3"},
 	}, true, "en-US")
 	suite.Len(errors, 1)
 
@@ -372,8 +398,12 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 1},
-					{Name: "min", Params: []string{"3"}, ArrayDimension: 1},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+					{Name: "min", Params: []string{"3"}},
 				},
 			},
 		},
@@ -387,7 +417,8 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 		"values": [][]float64{{5, 8, 6}, {0.6, 7, 9}},
 	}
 	errors = Validate(data, RuleSet{
-		"values": {"required", "array", ">array:numeric", ">min:3"},
+		"values":   {"required", "array"},
+		"values[]": {"array:numeric", "min:3"},
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
@@ -400,8 +431,12 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 1},
-					{Name: "min", Params: []string{"3"}, ArrayDimension: 1},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+					{Name: "min", Params: []string{"3"}},
 				},
 			},
 		},
@@ -412,7 +447,9 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 		"values": [][]float64{{5, 8}, {3, 7}},
 	}
 	errors = Validate(data, RuleSet{
-		"values": {"required", "array", ">array:numeric", ">>min:3"},
+		"values":     {"required", "array"},
+		"values[]":   {"array:numeric", "min:3"},
+		"values[][]": {"min:3"},
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
@@ -425,8 +462,16 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 1},
-					{Name: "min", Params: []string{"3"}, ArrayDimension: 2},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+				},
+			},
+			"values[][]": {
+				Rules: []*Rule{
+					{Name: "min", Params: []string{"3"}},
 				},
 			},
 		},
@@ -437,7 +482,9 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 		"values": [][]float64{{5, 8}, {0.6, 7}},
 	}
 	errors = Validate(data, RuleSet{
-		"values": {"required", "array", ">array:numeric", ">>min:3"},
+		"values":     {"required", "array"},
+		"values[]":   {"array:numeric", "min:3"},
+		"values[][]": {"min:3"},
 	}, true, "en-US")
 	suite.Len(errors, 1)
 
@@ -450,8 +497,16 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 1},
-					{Name: "min", Params: []string{"3"}, ArrayDimension: 2},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+				},
+			},
+			"values[][]": {
+				Rules: []*Rule{
+					{Name: "min", Params: []string{"3"}},
 				},
 			},
 		},
@@ -467,7 +522,10 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 		},
 	}
 	errors := Validate(data, RuleSet{
-		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+		"values":       {"required", "array"},
+		"values[]":     {"array", "max:3"},
+		"values[][]":   {"array:numeric"},
+		"values[][][]": {"max:4"},
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
@@ -494,10 +552,22 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", ArrayDimension: 1},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 2},
-					{Name: "max", Params: []string{"3"}, ArrayDimension: 1},
-					{Name: "max", Params: []string{"4"}, ArrayDimension: 3},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array"},
+					{Name: "max", Params: []string{"3"}},
+				},
+			},
+			"values[][]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+				},
+			},
+			"values[][][]": {
+				Rules: []*Rule{
+					{Name: "max", Params: []string{"4"}},
 				},
 			},
 		},
@@ -522,7 +592,10 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 		},
 	}
 	errors = Validate(data, RuleSet{
-		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+		"values":       {"required", "array"},
+		"values[]":     {"array", "max:3"},
+		"values[][]":   {"array:numeric"},
+		"values[][][]": {"max:4"},
 	}, true, "en-US")
 	suite.Len(errors, 1)
 
@@ -538,10 +611,22 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", ArrayDimension: 1},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 2},
-					{Name: "max", Params: []string{"3"}, ArrayDimension: 1},
-					{Name: "max", Params: []string{"4"}, ArrayDimension: 3},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array"},
+					{Name: "max", Params: []string{"3"}},
+				},
+			},
+			"values[][]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+				},
+			},
+			"values[][][]": {
+				Rules: []*Rule{
+					{Name: "max", Params: []string{"4"}},
 				},
 			},
 		},
@@ -555,7 +640,10 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 		},
 	}
 	errors = Validate(data, RuleSet{
-		"values": {"required", "array", ">array", ">>array:numeric", ">max:3", ">>>max:4"},
+		"values":       {"required", "array"},
+		"values[]":     {"array", "max:3"},
+		"values[][]":   {"array:numeric"},
+		"values[][][]": {"max:4"},
 	}, true, "en-US")
 	suite.Len(errors, 1)
 
@@ -571,10 +659,22 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", ArrayDimension: 1},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 2},
-					{Name: "max", Params: []string{"3"}, ArrayDimension: 1},
-					{Name: "max", Params: []string{"4"}, ArrayDimension: 3},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array"},
+					{Name: "max", Params: []string{"3"}},
+				},
+			},
+			"values[][]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+				},
+			},
+			"values[][][]": {
+				Rules: []*Rule{
+					{Name: "max", Params: []string{"4"}},
 				},
 			},
 		},
@@ -634,8 +734,9 @@ func (suite *ValidatorTestSuite) TestFieldCheckArrayProhibitedRules() {
 		suite.Panics(func() {
 			field := &Field{
 				Rules: []*Rule{
-					{Name: v, ArrayDimension: 1},
+					{Name: v},
 				},
+				Path: &PathItem{Type: PathTypeArray},
 			}
 			field.Check()
 		})
@@ -644,18 +745,19 @@ func (suite *ValidatorTestSuite) TestFieldCheckArrayProhibitedRules() {
 
 func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	set := RuleSet{
-		"string": {"required", "array:string", ">min:3"},
-		"number": {"numeric"},
+		"string":   {"required", "array:string"},
+		"string[]": {"min:3"},
+		"number":   {"numeric"},
 	}
 
 	rules := set.parse()
-	suite.Len(rules.Fields, 2)
-	suite.Len(rules.Fields["string"].Rules, 3)
-	suite.Equal(&Rule{Name: "required", Params: []string{}, ArrayDimension: 0}, rules.Fields["string"].Rules[0])
-	suite.Equal(&Rule{Name: "array", Params: []string{"string"}, ArrayDimension: 0}, rules.Fields["string"].Rules[1])
-	suite.Equal(&Rule{Name: "min", Params: []string{"3"}, ArrayDimension: 1}, rules.Fields["string"].Rules[2])
+	suite.Len(rules.Fields, 3)
+	suite.Len(rules.Fields["string"].Rules, 2)
+	suite.Equal(&Rule{Name: "required", Params: []string{}}, rules.Fields["string"].Rules[0])
+	suite.Equal(&Rule{Name: "array", Params: []string{"string"}}, rules.Fields["string"].Rules[1])
+	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["string[]"].Rules[0])
 	suite.Len(rules.Fields["number"].Rules, 1)
-	suite.Equal(&Rule{Name: "numeric", Params: []string{}, ArrayDimension: 0}, rules.Fields["number"].Rules[0])
+	suite.Equal(&Rule{Name: "numeric", Params: []string{}}, rules.Fields["number"].Rules[0])
 
 	parsed := set.AsRules()
 	suite.Equal(rules.Fields, parsed.Fields)
@@ -665,7 +767,8 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	// Resulting Rules should be checked after parsing
 	suite.Panics(func() {
 		set := RuleSet{
-			"string": {"required", "not a rule", ">min:3"},
+			"string":   {"required", "not a rule"},
+			"string[]": {"min:3"},
 		}
 		set.parse()
 	})
@@ -678,10 +781,22 @@ func (suite *ValidatorTestSuite) TestAsRules() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", ArrayDimension: 1},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 2},
-					{Name: "max", Params: []string{"3"}, ArrayDimension: 1},
-					{Name: "max", Params: []string{"4"}, ArrayDimension: 3},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array"},
+					{Name: "max", Params: []string{"3"}},
+				},
+			},
+			"values[][]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+				},
+			},
+			"values[][][]": {
+				Rules: []*Rule{
+					{Name: "max", Params: []string{"4"}},
 				},
 			},
 		},
@@ -710,10 +825,22 @@ func (suite *ValidatorTestSuite) TestRulesCheck() {
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
-					{Name: "array", ArrayDimension: 1},
-					{Name: "array", Params: []string{"numeric"}, ArrayDimension: 2},
-					{Name: "max", Params: []string{"3"}, ArrayDimension: 1},
-					{Name: "max", Params: []string{"4"}, ArrayDimension: 3},
+				},
+			},
+			"values[]": {
+				Rules: []*Rule{
+					{Name: "array"},
+					{Name: "max", Params: []string{"3"}},
+				},
+			},
+			"values[][]": {
+				Rules: []*Rule{
+					{Name: "array", Params: []string{"numeric"}},
+				},
+			},
+			"values[][][]": {
+				Rules: []*Rule{
+					{Name: "max", Params: []string{"4"}},
 				},
 			},
 		},

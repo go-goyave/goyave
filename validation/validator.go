@@ -103,9 +103,8 @@ func (r RuleSet) parse() *Rules {
 // This inludes the rule name (referring to a RuleDefinition), the parameters
 // and the array dimension for array validation.
 type Rule struct {
-	Name           string
-	Params         []string
-	ArrayDimension uint8
+	Name   string
+	Params []string
 }
 
 // IsType returns true if the rule definition is a type rule.
@@ -166,7 +165,7 @@ func (f *Field) Check() {
 		switch rule.Name {
 		case "confirmed", "file", "mime", "image", "extension", "count",
 			"count_min", "count_max", "count_between":
-			if rule.ArrayDimension != 0 {
+			if f.Path.HasArray() {
 				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name))
 			}
 		case "required":
@@ -218,12 +217,12 @@ func (r *Rules) AsRules() *Rules {
 func (r *Rules) Check() {
 	if !r.checked {
 		for path, field := range r.Fields {
-			field.Check()
 			p, err := ComputePath(path)
 			if err != nil {
 				panic(err)
 			}
 			field.Path = p
+			field.Check()
 		}
 		r.checked = true
 	}
@@ -392,7 +391,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 				if !validationRules[rule.Name].Function(ctx) {
 					errors[fieldName] = append(
 						errors[fieldName],
-						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, reflect.ValueOf(c.Value), language), language),
+						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(c.Value), language), language),
 					)
 					continue
 				}
@@ -423,10 +422,10 @@ func convertArray(fieldName string, field *Field, data map[string]interface{}) {
 	}
 }
 
-func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string) string {
+func getMessage(field *Field, rule *Rule, value reflect.Value, language string) string {
 	langEntry := "validation.rules." + rule.Name
 	if validationRules[rule.Name].IsTypeDependent {
-		expectedType := findTypeRule(rules, rule.ArrayDimension)
+		expectedType := findTypeRule(field.Rules)
 		if expectedType == "unsupported" {
 			langEntry += "." + getFieldType(value)
 		} else {
@@ -437,7 +436,8 @@ func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string)
 		}
 	}
 
-	if rule.ArrayDimension > 0 {
+	lastParent := field.Path.LastParent()
+	if lastParent != nil && lastParent.Type == PathTypeArray {
 		langEntry += ".array"
 	}
 
@@ -445,11 +445,9 @@ func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string)
 }
 
 // findTypeRule find the expected type of a field for a given array dimension.
-func findTypeRule(rules []*Rule, arrayDimension uint8) string {
+func findTypeRule(rules []*Rule) string {
 	for _, rule := range rules {
-		if rule.ArrayDimension == arrayDimension-1 && rule.Name == "array" && len(rule.Params) > 0 {
-			return rule.Params[0]
-		} else if rule.ArrayDimension == arrayDimension && validationRules[rule.Name].IsType {
+		if validationRules[rule.Name].IsType {
 			return rule.Name
 		}
 	}
@@ -516,7 +514,6 @@ func GetFieldFromName(name string, data map[string]interface{}) (string, interfa
 func parseRule(rule string) *Rule {
 	indexName := strings.Index(rule, ":")
 	params := []string{}
-	arrayDimensions := uint8(0)
 	var ruleName string
 	if indexName == -1 {
 		if strings.Count(rule, ",") > 0 {
@@ -528,12 +525,5 @@ func parseRule(rule string) *Rule {
 		params = strings.Split(rule[indexName+1:], ",")
 	}
 
-	if ruleName[0] == '>' {
-		for ruleName[0] == '>' {
-			ruleName = ruleName[1:]
-			arrayDimensions++
-		}
-	}
-
-	return &Rule{ruleName, params, arrayDimensions}
+	return &Rule{ruleName, params}
 }

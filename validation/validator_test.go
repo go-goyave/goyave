@@ -481,7 +481,7 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	}
 	errors = Validate(data, RuleSet{
 		"values":     {"required", "array"},
-		"values[]":   {"array:numeric", "min:3"},
+		"values[]":   {"array:numeric"},
 		"values[][]": {"min:3"},
 	}, true, "en-US")
 	suite.Len(errors, 1)

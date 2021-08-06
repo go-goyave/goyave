@@ -440,7 +440,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				Name:  c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {
-				// FIXME duplicate error messages
+				// TODO test possible duplicate error messages
 				errors[fieldName] = append(
 					errors[fieldName],
 					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(c.Value), language), language),

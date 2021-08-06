@@ -338,8 +338,7 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	suite.Len(errors, 0)
 
 	arr, ok := data["values"].([][]float64)
-	suite.True(ok)
-	if ok {
+	if suite.True(ok) {
 		suite.Equal(2, len(arr))
 		suite.Equal(0.5, arr[0][0])
 		suite.Equal(1.42, arr[0][1])
@@ -358,7 +357,7 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 					{Name: "array"},
 				},
 			},
-			"value[]": {
+			"values[]": {
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
@@ -368,8 +367,7 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	suite.Len(errors, 0)
 
 	arr, ok = data["values"].([][]float64)
-	suite.True(ok)
-	if ok {
+	if suite.True(ok) {
 		suite.Equal(2, len(arr))
 		suite.Equal(0.5, arr[0][0])
 		suite.Equal(1.42, arr[0][1])
@@ -448,8 +446,8 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	}
 	errors = Validate(data, RuleSet{
 		"values":     {"required", "array"},
-		"values[]":   {"array:numeric", "min:3"},
-		"values[][]": {"min:3"},
+		"values[]":   {"array:numeric"},
+		"values[][]": {"numeric", "min:3"},
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
@@ -1134,6 +1132,8 @@ func (suite *ValidatorTestSuite) testSortKeysWithRule(rule string) {
 	rules.sortKeys()
 	suite.Equal([]string{"two", "one"}, rules.sortedKeys)
 }
+
+// TODO tests for objects in arrays + weird arrays mixed with objects configurations
 
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))

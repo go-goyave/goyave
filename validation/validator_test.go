@@ -751,11 +751,19 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	}
 
 	rules := set.parse()
-	suite.Len(rules.Fields, 3)
+	suite.Len(rules.Fields, 2)
 	suite.Len(rules.Fields["string"].Rules, 2)
 	suite.Equal(&Rule{Name: "required", Params: []string{}}, rules.Fields["string"].Rules[0])
 	suite.Equal(&Rule{Name: "array", Params: []string{"string"}}, rules.Fields["string"].Rules[1])
-	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["string[]"].Rules[0])
+	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["string"].Elements.Rules[0])
+
+	expectedPath := &PathItem{
+		Type: PathTypeArray,
+		Next: &PathItem{
+			Type: PathTypeElement,
+		},
+	}
+	suite.Equal(expectedPath, rules.Fields["string"].Elements.Path)
 	suite.Len(rules.Fields["number"].Rules, 1)
 	suite.Equal(&Rule{Name: "numeric", Params: []string{}}, rules.Fields["number"].Rules[0])
 

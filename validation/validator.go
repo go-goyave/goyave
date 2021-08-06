@@ -93,7 +93,6 @@ func (r RuleSet) parse() *Rules {
 		rules.Fields[k] = field
 	}
 	rules.Check()
-	rules.sortKeys()
 	return rules
 }
 
@@ -136,7 +135,9 @@ func (r *Rule) IsTypeDependent() bool {
 // Field is a component of route validation. A Field is a value in
 // a Rules map, the key being the name of the field.
 type Field struct {
-	Path       *PathItem
+	Path     *PathItem
+	Elements *Field // If the field is an array, the field representing its elements, or nil
+	// Maybe use the same concept for objects too?
 	Rules      []*Rule
 	isArray    bool
 	isRequired bool
@@ -204,9 +205,6 @@ var _ Ruler = (*Rules)(nil) // implements Ruler
 // AsRules performs the checking and returns the same Rules instance.
 func (r *Rules) AsRules() *Rules {
 	r.Check()
-	if r.sortedKeys == nil {
-		r.sortKeys()
-	}
 	return r
 }
 
@@ -216,15 +214,31 @@ func (r *Rules) AsRules() *Rules {
 // while ArrayDimension is not equal to 0.
 func (r *Rules) Check() {
 	if !r.checked {
-		for path, field := range r.Fields {
+		r.sortKeys()
+		for _, path := range r.sortedKeys {
+			field := r.Fields[path]
 			p, err := ComputePath(path)
 			if err != nil {
 				panic(err)
 			}
 			field.Path = p
 			field.Check()
+			if strings.HasSuffix(path, "[]") { // This field is an element of an array, find it and assign it to f.Elements
+				parent, ok := r.Fields[path[:len(path)-2]]
+				if ok {
+					parent.Elements = field
+					field.Path = &PathItem{
+						Type: PathTypeArray,
+						Next: &PathItem{
+							Type: PathTypeElement,
+						},
+					}
+					delete(r.Fields, path)
+				}
+			}
 		}
 		r.checked = true
+		r.sortKeys()
 	}
 }
 
@@ -245,6 +259,14 @@ func (r *Rules) sortKeys() {
 			}
 		}
 		return false
+	})
+	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
+		count1 := strings.Count(r.sortedKeys[i], "[]")
+		count2 := strings.Count(r.sortedKeys[j], "[]")
+		if count1 == count2 {
+			return false
+		}
+		return count1 > count2
 	})
 }
 
@@ -349,69 +371,95 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName]
-		field.Path.Walk(data, func(c WalkContext) {
-			parentObject, parentIsObject := c.Parent.(map[string]interface{})
-			if parentIsObject {
-				if !field.IsNullable() && c.Value == nil {
-					delete(parentObject, fieldName)
-				}
-			}
-
-			if !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]") {
-				c.Value = convertArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
-				parentObject[c.Name] = c.Value
-			}
-
-			requiredCtx := &Context{
-				Data:  data,
-				Value: c.Value,
-				Field: field,
-				Rule:  &Rule{Name: "required"},
-				Name:  c.Name,
-			}
-			if !field.IsRequired() && !validateRequired(requiredCtx) {
-				return
-			}
-
-			value := c.Value
-			for _, rule := range field.Rules {
-				if rule.Name == "nullable" {
-					if value == nil {
-						break
-					}
-					continue
-				}
-
-				ctx := &Context{
-					Data:  data,
-					Value: value,
-					Field: field,
-					Rule:  rule,
-					Name:  c.Name,
-				}
-				if !validationRules[rule.Name].Function(ctx) {
-					errors[fieldName] = append(
-						errors[fieldName],
-						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(c.Value), language), language),
-					)
-					continue
-				}
-
-				value = ctx.Value
-			}
-			// Value may be modified (converting rule), replace it in the parent element
-			if parentIsObject {
-				parentObject[c.Name] = value
-			} else {
-				// Parent is slice
-				reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
-			}
-		})
+		validateField(fieldName, field, isJSON, data, data, language, errors)
 	}
 	return errors
 }
 
-func convertArray(field *Field, value interface{}, data map[string]interface{}) interface{} {
+func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, language string, errors Errors) {
+	field.Path.Walk(walkData, func(c WalkContext) {
+		parentObject, parentIsObject := c.Parent.(map[string]interface{})
+		if parentIsObject {
+			if !field.IsNullable() && c.Value == nil {
+				delete(parentObject, fieldName)
+			}
+		}
+
+		if !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]") {
+			c.Value = convertSingleValueArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
+			parentObject[c.Name] = c.Value
+		}
+
+		requiredCtx := &Context{
+			Data:  data,
+			Value: c.Value,
+			Field: field,
+			Rule:  &Rule{Name: "required"},
+			Name:  c.Name,
+		}
+		if !field.IsRequired() && !validateRequired(requiredCtx) {
+			return
+		}
+
+		if field.Elements != nil {
+			// This is an array, recursively validate it so it can be converted to correct type
+			if _, ok := c.Value.([]interface{}); !ok {
+
+				list := reflect.ValueOf(c.Value)
+				length := list.Len()
+				newSlice := make([]interface{}, 0, length)
+				for i := 0; i < length; i++ {
+					newSlice = append(newSlice, list.Index(i).Interface())
+				}
+				c.Value = newSlice
+				if parentIsObject {
+					parentObject[c.Name] = c.Value
+				} else {
+					// Parent is slice
+					reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(c.Value))
+				}
+			}
+
+			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, language, errors)
+		}
+
+		value := c.Value
+		for _, rule := range field.Rules {
+			if rule.Name == "nullable" {
+				if value == nil {
+					break
+				}
+				continue
+			}
+
+			ctx := &Context{
+				Data:  data,
+				Value: value,
+				Field: field,
+				Rule:  rule,
+				Name:  c.Name,
+			}
+			if !validationRules[rule.Name].Function(ctx) {
+				errors[fieldName] = append(
+					errors[fieldName],
+					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(c.Value), language), language),
+				)
+				continue
+			}
+
+			value = ctx.Value
+		}
+		// Value may be modified (converting rule), replace it in the parent element
+		if parentIsObject {
+			parentObject[c.Name] = value
+		} else {
+			// Parent is slice
+			reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
+		}
+	})
+}
+
+func convertSingleValueArray(field *Field, value interface{}, data map[string]interface{}) interface{} {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	if field.IsArray() && kind != "slice" {

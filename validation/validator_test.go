@@ -525,7 +525,7 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 		"values":       {"required", "array"},
 		"values[]":     {"array", "max:3"},
 		"values[][]":   {"array:numeric"},
-		"values[][][]": {"max:4"},
+		"values[][][]": {"numeric", "max:4"},
 	}, true, "en-US")
 	suite.Len(errors, 0)
 
@@ -535,11 +535,11 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 		suite.Equal(2, len(arr))
 		suite.Equal(2, len(arr[0]))
 		suite.Equal(3, len(arr[1]))
+		suite.Equal(0, len(arr[1][1]))
 		suite.Equal(0.5, arr[0][0][0])
 		suite.Equal(1.42, arr[0][0][1])
 		suite.Equal(2.0, arr[1][2][0])
 	}
-
 	data = map[string]interface{}{
 		"values": [][][]interface{}{
 			{{"0.5", 1.42}, {0.6, 4, 3}},

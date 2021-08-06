@@ -121,6 +121,9 @@ func (p *PathItem) LastParent() *PathItem {
 //   object.array[]
 //   object.arrayOfObjects[].field
 func ComputePath(p string) (*PathItem, error) {
+	if strings.HasSuffix(p, ".") {
+		return nil, fmt.Errorf("Field path cannot end with a dot: %q", p)
+	}
 	rootPath := &PathItem{}
 	path := rootPath
 

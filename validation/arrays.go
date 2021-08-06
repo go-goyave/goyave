@@ -53,15 +53,66 @@ func createArray(dataType string, length int) reflect.Value {
 	return arr
 }
 
+// Get final array type
+// "values":       {"required", "array"},
+// "values[]":     {"array", "max:3"},
+// "values[][]":   {"array:numeric"}, <---- THIS ONE (2 dimensions already, so this is a 3 dim numeric array)
+// "values[][][]": {"max:4"},
+//
+// "values[]"
+// "values[][]"
+// "values[][].array[]"
+// "values[][].array[][]"
+//
+// "values": required array:object <---- THIS ONE (0 dim so this is a 1 dim object array)
+// "values[].test[].field":
+//
+// "values": required array
+// "values[]": required array:object <---- THIS ONE (1 dim so this is a 2 dim object array)
+
+// "object.values" require array
+// "object.values[]" require array:string <---- THIS ONE
+
+// sort with deepest dimension first (number of "[]" should be enough)
+// because deepest dimension is already converted, can use that value to convert the dimension directly above
+// repeat until no [] anymore
+func convertArray(array interface{}) interface{} {
+	list := reflect.ValueOf(array)
+	length := list.Len()
+	if length <= 0 {
+		return array
+	}
+
+	elemVal := list.Index(0)
+	if elemVal.Kind() != reflect.Interface {
+		return array
+	}
+	elemType := elemVal.Elem().Type()
+	for i := 1; i < length; i++ {
+		if list.Index(i).Elem().Type() != elemType {
+			// Not all elements have the same type, keep it []interface{}
+			return array
+		}
+	}
+
+	convertedArray := reflect.MakeSlice(reflect.SliceOf(elemType), 0, length)
+	for i := 0; i < length; i++ {
+		convertedArray = reflect.Append(convertedArray, list.Index(i).Elem())
+	}
+
+	return convertedArray.Interface()
+}
+
 func validateArray(ctx *Context) bool {
 	if GetFieldType(ctx.Value) == "array" {
 
 		if len(ctx.Rule.Params) == 0 {
+			ctx.Value = convertArray(ctx.Value)
 			return true
 		}
 
 		if ctx.Rule.Params[0] == "array" {
-			panic("Cannot use array type for array validation. Use \">array\" instead")
+			panic("Cannot use array type for array validation. Use \"array[]\" instead")
 		}
 
 		if !validationRules[ctx.Rule.Params[0]].IsType {

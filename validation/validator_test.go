@@ -1180,7 +1180,115 @@ func (suite *ValidatorTestSuite) testSortKeysWithRule(rule string) {
 	suite.Equal([]string{"two", "one"}, rules.sortedKeys)
 }
 
-// TODO tests for objects in arrays + weird arrays mixed with objects configurations
+func (suite *ValidatorTestSuite) TestValidateObjectInArray() {
+	// array[].field
+	data := map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"field": "1"},
+		},
+	}
+	errors := Validate(data, RuleSet{
+		"array":         {"required", "array:object"},
+		"array[].field": {"numeric", "max:3"},
+	}, true, "en-US")
+	suite.Len(errors, 0)
+
+	arr, ok := data["array"].([]map[string]interface{})
+	if suite.True(ok) {
+		suite.Len(arr, 1)
+		suite.Equal(1.0, arr[0]["field"])
+	}
+
+	// array[][].field
+	data = map[string]interface{}{
+		"array": [][]interface{}{
+			{
+				map[string]interface{}{"field": "1"},
+			},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"array":           {"required", "array"},
+		"array[]":         {"required", "array:object"},
+		"array[][].field": {"numeric", "max:3"},
+	}, true, "en-US")
+	suite.Len(errors, 0)
+
+	arr2, ok := data["array"].([][]map[string]interface{})
+	if suite.True(ok) {
+		suite.Len(arr2, 1)
+		suite.Equal(1.0, arr2[0][0]["field"])
+	}
+
+	// array[].subarray[]
+	data = map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"subarray": []interface{}{"5"}},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"array":            {"required", "array"},
+		"array[].subarray": {"array:numeric"},
+	}, true, "en-US")
+	suite.Len(errors, 0)
+
+	arr3, ok := data["array"].([]map[string]interface{})
+	if suite.True(ok) {
+		suite.Len(arr3, 1)
+		suite.IsType([]float64{}, arr3[0]["subarray"])
+		suite.Equal(5.0, arr3[0]["subarray"].([]float64)[0])
+	}
+
+	// array[].subarray[].field
+	data = map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"subarray": []map[string]interface{}{
+				{"field": "5"},
+			}},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"array":                    {"required", "array"},
+		"array[].subarray":         {"array:object"},
+		"array[].subarray[].field": {"numeric"},
+	}, true, "en-US")
+	suite.Len(errors, 0)
+
+	arr4, ok := data["array"].([]map[string]interface{})
+	if suite.True(ok) {
+		suite.Len(arr4, 1)
+		suite.Equal(5.0, arr4[0]["subarray"].([]map[string]interface{})[0]["field"])
+	}
+
+	// array[].subarray[].field[]
+	data = map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"subarray": []map[string]interface{}{
+				{"field": []interface{}{"5"}},
+			}},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"array":                    {"required", "array"},
+		"array[].subarray":         {"array:object"},
+		"array[].subarray[].field": {"array:numeric"},
+	}, true, "en-US")
+	suite.Len(errors, 0)
+
+	arr5, ok := data["array"].([]map[string]interface{})
+	if suite.True(ok) {
+		suite.Len(arr5, 1)
+		field := arr5[0]["subarray"].([]map[string]interface{})[0]["field"]
+		suite.IsType([]float64{}, field)
+		suite.Equal(5.0, field.([]float64)[0])
+	}
+}
+
+func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {
+	// TODO TestValidateObjectInArrayErrors
+}
+
+// TODO test send a body that is totally different from what's expected
 
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))

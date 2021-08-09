@@ -182,7 +182,7 @@ func createPathScanner(path string) *bufio.Scanner {
 			var r rune
 			r, width = utf8.DecodeRune(data[i:])
 			if r == '.' {
-				if lastSeparator == '.' {
+				if lastSeparator == '.' || lastSeparator == ']' {
 					return i + width, data[:i+width], nil
 				}
 				lastSeparator = r

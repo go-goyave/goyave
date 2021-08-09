@@ -8,9 +8,10 @@ import (
 
 func newTestContext(field string, value interface{}, parameters []string, form map[string]interface{}) *Context {
 	return &Context{
-		Data:  form,
-		Value: value,
-		Name:  field,
+		Data:   form,
+		Value:  value,
+		Parent: form,
+		Name:   field,
 		Rule: &Rule{
 			Params: parameters,
 		},

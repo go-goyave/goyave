@@ -12,8 +12,7 @@ import (
 )
 
 // createArray create a slice of the same type as the given type.
-func createArray(dataType string, length int, parentType reflect.Type) reflect.Value {
-	// if parent isn't able to receive converted array, don't convert
+func createArray(dataType string, length int) reflect.Value {
 	var arr reflect.Value
 	switch dataType {
 	case "string":
@@ -51,10 +50,6 @@ func createArray(dataType string, length int, parentType reflect.Type) reflect.V
 		arr = reflect.ValueOf(&newArray).Elem()
 	default:
 		panic(fmt.Sprintf("Unsupported array type %q", dataType))
-	}
-
-	if !arr.Type().AssignableTo(parentType.Elem()) {
-		return reflect.Value{}
 	}
 	// TODO only works with built-in type rules
 	return arr
@@ -114,8 +109,8 @@ func validateArray(ctx *Context) bool {
 
 		list := reflect.ValueOf(ctx.Value)
 		length := list.Len()
-		arr := createArray(ctx.Rule.Params[0], length, parentType)
-		if !arr.IsValid() {
+		arr := createArray(ctx.Rule.Params[0], length)
+		if !arr.Type().AssignableTo(parentType.Elem()) {
 			arr = list
 		}
 

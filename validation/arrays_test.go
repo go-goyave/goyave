@@ -31,6 +31,11 @@ func TestValidateArray(t *testing.T) {
 	assert.Panics(t, func() {
 		validateArray(newTestContext("field", []float64{5.5}, []string{"not a type"}, map[string]interface{}{}))
 	})
+	assert.Panics(t, func() {
+		validationRules["unsupported_type"] = &RuleDefinition{IsType: true}
+		defer delete(validationRules, "unsupported_type")
+		validateArray(newTestContext("field", []float64{5.5}, []string{"unsupported_type"}, map[string]interface{}{}))
+	})
 	assert.False(t, validateArray(newTestContext("field", []string{"0.5", "not numeric"}, []string{"numeric"}, map[string]interface{}{})))
 
 	data := map[string]interface{}{

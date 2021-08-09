@@ -1350,7 +1350,45 @@ func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {
 	}
 }
 
-// TODO test required in object in array
+func (suite *ValidatorTestSuite) TestValidateRequiredInObjectInArray() {
+	data := map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"field": "1"},
+			map[string]interface{}{},
+			map[string]interface{}{"field": "5"},
+		},
+	}
+	errors := Validate(data, RuleSet{
+		"array":         {"required", "array:object"},
+		"array[].field": {"required", "numeric", "min:3"},
+	}, true, "en-US")
+	suite.Len(errors, 1)
+
+	e, ok := errors["array[].field"]
+	if suite.True(ok) {
+		suite.Len(e, 3)
+	}
+
+	data = map[string]interface{}{
+		"array": [][]interface{}{
+			{
+				map[string]interface{}{},
+				map[string]interface{}{"field": 3.0},
+			},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"array":           {"required", "array"},
+		"array[]":         {"required", "array:object"},
+		"array[][].field": {"required", "numeric", "max:3"},
+	}, true, "en-US")
+	suite.Len(errors, 1)
+
+	e, ok = errors["array[][].field"]
+	if suite.True(ok) {
+		suite.Len(e, 2)
+	}
+}
 
 // TODO test send a body that is totally different from what's expected
 

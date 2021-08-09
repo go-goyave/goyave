@@ -1306,8 +1306,51 @@ func (suite *ValidatorTestSuite) TestValidateObjectInArray() {
 }
 
 func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {
-	// TODO TestValidateObjectInArrayErrors
+	// array[].field
+	data := map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"field": "1"},
+			map[string]interface{}{"field": "2"},
+			map[string]interface{}{"field": "5"},
+		},
+	}
+	errors := Validate(data, RuleSet{
+		"array":         {"required", "array:object"},
+		"array[].field": {"numeric", "min:3"},
+	}, true, "en-US")
+	suite.Len(errors, 1)
+
+	e, ok := errors["array[].field"]
+	if suite.True(ok) {
+		suite.Len(e, 1)
+	}
+
+	// array[].subarray[].field
+	data = map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"subarray": []map[string]interface{}{
+				{"field": "1"},
+				{"field": "6"},
+			}},
+			map[string]interface{}{"subarray": []map[string]interface{}{
+				{"field": "2"},
+			}},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"array":                    {"required", "array"},
+		"array[].subarray":         {"array:object"},
+		"array[].subarray[].field": {"numeric", "min:3"},
+	}, true, "en-US")
+	suite.Len(errors, 1)
+
+	e, ok = errors["array[].subarray[].field"]
+	if suite.True(ok) {
+		suite.Len(e, 1)
+	}
 }
+
+// TODO test required in object in array
 
 // TODO test send a body that is totally different from what's expected
 

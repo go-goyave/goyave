@@ -432,11 +432,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				Name:   c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {
-				// TODO test possible duplicate error messages
-				errors[fieldName] = append(
-					errors[fieldName],
-					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(c.Value), language), language),
-				)
+				setError(errors, fieldName, field, rule, c.Value, language)
 				continue
 			}
 
@@ -453,6 +449,16 @@ func replaceValue(value interface{}, c WalkContext) {
 	} else {
 		// Parent is slice
 		reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
+	}
+}
+
+func setError(errors Errors, fieldName string, field *Field, rule *Rule, value interface{}, language string) {
+	message := processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(value), language), language)
+	if !helper.ContainsStr(errors[fieldName], message) {
+		errors[fieldName] = append(
+			errors[fieldName],
+			message,
+		)
 	}
 }
 

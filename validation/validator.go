@@ -220,7 +220,6 @@ func (r *Rules) Check() {
 			field := r.Fields[path]
 			p, err := ComputePath(path)
 			if err != nil {
-				// TODO test this
 				panic(err)
 			}
 			field.Path = p

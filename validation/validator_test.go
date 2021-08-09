@@ -1467,6 +1467,14 @@ func (suite *ValidatorTestSuite) TestValidateArrayNoConversionIfAllElementsNotSa
 	}
 }
 
+func (suite *ValidatorTestSuite) TestInvalidPath() {
+	suite.Panics(func() {
+		RuleSet{
+			"invalid path.": {"required", "string"},
+		}.AsRules()
+	})
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

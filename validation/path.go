@@ -52,8 +52,10 @@ func (p *PathItem) Walk(currentElement interface{}, f func(WalkContext)) {
 func (p *PathItem) walk(currentElement interface{}, parent interface{}, index int, f func(WalkContext)) {
 	element := currentElement
 	if p.Name != "" {
-		var ok bool
-		element, ok = currentElement.(map[string]interface{})[p.Name]
+		ce, ok := currentElement.(map[string]interface{})
+		if ok {
+			element, ok = ce[p.Name]
+		}
 		if !ok {
 			f(WalkContext{
 				Value:    nil,
@@ -77,6 +79,16 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 		})
 	case PathTypeArray:
 		list := reflect.ValueOf(element)
+		if list.Kind() != reflect.Slice {
+			f(WalkContext{
+				Value:    nil,
+				Parent:   element,
+				Name:     p.Name,
+				Index:    -1,
+				NotFound: true,
+			})
+			return
+		}
 		length := list.Len()
 		for i := 0; i < length; i++ {
 			v := list.Index(i)

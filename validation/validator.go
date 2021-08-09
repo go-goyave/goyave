@@ -387,7 +387,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			}
 		}
 
-		if !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]") {
+		if shouldConvertSingleValueArray(fieldName, isJSON) {
 			c.Value = convertSingleValueArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
 			parentObject[c.Name] = c.Value
 		}
@@ -407,8 +407,10 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 		if field.Elements != nil {
 			// This is an array, recursively validate it so it can be converted to correct type
 			if _, ok := c.Value.([]interface{}); !ok {
-				c.Value = makeGenericSlice(c.Value)
-				replaceValue(c.Value, c)
+				if newValue, ok := makeGenericSlice(c.Value); ok {
+					replaceValue(c.Value, c)
+					c.Value = newValue
+				}
 			}
 
 			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, language, errors)
@@ -443,7 +445,15 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 	})
 }
 
+func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
+	return !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
+}
+
 func replaceValue(value interface{}, c WalkContext) {
+	if c.NotFound {
+		return
+	}
+
 	if parentObject, ok := c.Parent.(map[string]interface{}); ok {
 		parentObject[c.Name] = value
 	} else {
@@ -462,14 +472,17 @@ func setError(errors Errors, fieldName string, field *Field, rule *Rule, value i
 	}
 }
 
-func makeGenericSlice(original interface{}) []interface{} {
+func makeGenericSlice(original interface{}) ([]interface{}, bool) {
 	list := reflect.ValueOf(original)
+	if list.Kind() != reflect.Slice {
+		return nil, false
+	}
 	length := list.Len()
 	newSlice := make([]interface{}, 0, length)
 	for i := 0; i < length; i++ {
 		newSlice = append(newSlice, list.Index(i).Interface())
 	}
-	return newSlice
+	return newSlice, true
 }
 
 func convertSingleValueArray(field *Field, value interface{}, data map[string]interface{}) interface{} {
@@ -501,6 +514,7 @@ func getMessage(field *Field, rule *Rule, value reflect.Value, language string) 
 	lastParent := field.Path.LastParent()
 	if lastParent != nil && lastParent.Type == PathTypeArray {
 		langEntry += ".array"
+		// FIXME fieldName remove trailing "[]" in fieldName
 	}
 
 	return lang.Get(language, langEntry)

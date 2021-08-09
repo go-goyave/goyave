@@ -34,9 +34,7 @@ func processPlaceholders(field string, rule string, params []string, message str
 	if i := strings.LastIndex(field, "."); i != -1 {
 		field = field[i+1:]
 	}
-	if strings.HasSuffix(field, "[]") {
-		field = field[:len(field)-2]
-	}
+	field = strings.TrimSuffix(field, "[]")
 	for _, placeholder := range sortedKeys {
 		if strings.Contains(message, placeholder) {
 			replacer := placeholders[placeholder]

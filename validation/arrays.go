@@ -73,13 +73,11 @@ func convertArray(array interface{}, parentType reflect.Type) interface{} {
 	for i := 1; i < length; i++ {
 		if list.Index(i).Elem().Type() != elemType {
 			// Not all elements have the same type, keep it []interface{}
-			// TODO test this
 			return array
 		}
 	}
 
 	if !elemType.AssignableTo(parentType.Elem()) {
-		// TODO test this
 		return array
 	}
 

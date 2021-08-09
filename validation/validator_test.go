@@ -1447,6 +1447,26 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 	suite.Equal([]string{"The field is required.", "The field must be an object."}, errors["object2.array[].field"])
 }
 
+func (suite *ValidatorTestSuite) TestValidateArrayNoConversionIfAllElementsNotSameType() {
+	data := map[string]interface{}{
+		"array": [][]interface{}{
+			{5, 6.0},
+		},
+	}
+
+	errors := Validate(data, RuleSet{
+		"array":   {"required", "array"},
+		"array[]": {"required", "array"},
+	}, true, "en-US")
+	suite.Empty(errors)
+
+	a, ok := data["array"].([][]interface{})
+	if suite.True(ok) {
+		suite.Equal(5, a[0][0])
+		suite.Equal(6.0, a[0][1])
+	}
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

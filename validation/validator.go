@@ -433,6 +433,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				Name:   c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {
+				// TODO add index to message?
 				setError(errors, fieldName, field, rule, c.Value, language)
 				continue
 			}

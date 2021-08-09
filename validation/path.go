@@ -134,9 +134,6 @@ func (p *PathItem) LastParent() *PathItem {
 //   object.array[]
 //   object.arrayOfObjects[].field
 func ComputePath(p string) (*PathItem, error) {
-	if strings.HasSuffix(p, ".") {
-		return nil, fmt.Errorf("Field path cannot end with a dot: %q", p)
-	}
 	rootPath := &PathItem{}
 	path := rootPath
 
@@ -174,14 +171,14 @@ func ComputePath(p string) (*PathItem, error) {
 		}
 	}
 
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
 	if path.Type != PathTypeElement {
 		path.Next = &PathItem{
 			Type: PathTypeElement,
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
 	}
 
 	return rootPath, nil
@@ -189,36 +186,42 @@ func ComputePath(p string) (*PathItem, error) {
 
 func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
-	lastSeparator := rune(0)
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
+		if path[0] == '.' {
+			return len(data), data[:], fmt.Errorf("Illegal syntax: %q", path)
+		}
 		for width, i := 0, 0; i < len(data); i += width {
 			var r rune
 			r, width = utf8.DecodeRune(data[i:])
-			if r == '.' {
-				if lastSeparator == '.' || lastSeparator == ']' {
+
+			if i+width < len(data) {
+				next, _ := utf8.DecodeRune(data[i+width:])
+				if isValidSyntax(r, next) {
+					return len(data), data[:], fmt.Errorf("Illegal syntax: %q", path)
+				}
+
+				if r == '.' && i == 0 {
+					return i + width, data[:i+width], nil
+				} else if next == '.' || next == '[' {
 					return i + width, data[:i+width], nil
 				}
-				lastSeparator = r
-				return i, data[:i], nil
-			} else if r == ']' && lastSeparator == '[' {
-				lastSeparator = r
-				return i + width, data[:i+width], nil
-			} else if r == '[' && lastSeparator != '[' {
-				lastSeparator = r
-				if i != 0 {
-					return i, data[:i], nil
-				}
+			} else if r == '.' || r == '[' {
+				return len(data), data[:], fmt.Errorf("Illegal syntax: %q", path)
 			}
 		}
 		if atEOF && len(data) > 0 {
-			var err error
-			if lastSeparator == '[' {
-				err = fmt.Errorf("Unclosed bracket")
-			}
-			return len(data), data[:], err
+			return len(data), data[:], nil
 		}
 		return 0, nil, nil
 	}
 	scanner.Split(split)
 	return scanner
+}
+
+func isValidSyntax(r rune, next rune) bool {
+	return (r == '.' && next == '.') ||
+		(r == '[' && next != ']') ||
+		(r == '.' && (next == ']' || next == '[')) ||
+		(r != '.' && r != '[' && next == ']') ||
+		(r == ']' && next != '[' && next != '.')
 }

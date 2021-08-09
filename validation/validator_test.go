@@ -1282,6 +1282,27 @@ func (suite *ValidatorTestSuite) TestValidateObjectInArray() {
 		suite.IsType([]float64{}, field)
 		suite.Equal(5.0, field.([]float64)[0])
 	}
+
+	// Same but without other fields validation
+	data = map[string]interface{}{
+		"array": []interface{}{
+			map[string]interface{}{"subarray": []map[string]interface{}{
+				{"field": []interface{}{"5"}},
+			}},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"array[].subarray[].field": {"array:numeric"},
+	}, true, "en-US")
+	suite.Len(errors, 0)
+
+	arr6, ok := data["array"].([]interface{})
+	if suite.True(ok) {
+		suite.Len(arr6, 1)
+		field := arr6[0].(map[string]interface{})["subarray"].([]map[string]interface{})[0]["field"]
+		suite.IsType([]float64{}, field)
+		suite.Equal(5.0, field.([]float64)[0])
+	}
 }
 
 func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {

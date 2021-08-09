@@ -42,7 +42,9 @@ type WalkContext struct {
 }
 
 // Walk this path and execute the given behavior for each matching element.
-// TODO document behavior function.
+// The given "f" function is executed for each final element matched. If the path
+// cannot be completed because the step's name doesn't exist in the currently explored map,
+// the function will be executed as well, with a the `WalkContext`'s `NotFound` field set to `true`.
 func (p *PathItem) Walk(currentElement interface{}, f func(WalkContext)) {
 	p.walk(currentElement, nil, -1, f)
 }

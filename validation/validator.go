@@ -406,14 +406,8 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 		if field.Elements != nil {
 			// This is an array, recursively validate it so it can be converted to correct type
 			if _, ok := c.Value.([]interface{}); !ok {
-
 				c.Value = makeGenericSlice(c.Value)
-				if parentIsObject {
-					parentObject[c.Name] = c.Value
-				} else {
-					// Parent is slice
-					reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(c.Value))
-				}
+				replaceValue(c.Value, c)
 			}
 
 			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, language, errors)
@@ -448,15 +442,17 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			value = ctx.Value
 		}
 		// Value may be modified (converting rule), replace it in the parent element
-		if parentIsObject {
-			parentObject[c.Name] = value
-		} else {
-			// Parent is slice
-
-			// If the parent array is not validated, this panics reflect.Set: value of type []float64 is not assignable to type []interface {}
-			reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
-		}
+		replaceValue(value, c)
 	})
+}
+
+func replaceValue(value interface{}, c WalkContext) {
+	if parentObject, ok := c.Parent.(map[string]interface{}); ok {
+		parentObject[c.Name] = value
+	} else {
+		// Parent is slice
+		reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
+	}
 }
 
 func makeGenericSlice(original interface{}) []interface{} {

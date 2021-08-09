@@ -20,11 +20,12 @@ type Ruler interface {
 // Context validation context for RuleFunc.
 // Contains all the information needed for validation rules.
 type Context struct {
-	Data  map[string]interface{}
-	Value interface{}
-	Field *Field
-	Rule  *Rule
-	Name  string
+	Data   map[string]interface{}
+	Value  interface{}
+	Parent interface{}
+	Field  *Field
+	Rule   *Rule
+	Name   string
 }
 
 // RuleFunc function defining a validation rule.
@@ -391,11 +392,12 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 		}
 
 		requiredCtx := &Context{
-			Data:  data,
-			Value: c.Value,
-			Field: field,
-			Rule:  &Rule{Name: "required"},
-			Name:  c.Name,
+			Data:   data,
+			Value:  c.Value,
+			Parent: c.Parent,
+			Field:  field,
+			Rule:   &Rule{Name: "required"},
+			Name:   c.Name,
 		}
 		if !field.IsRequired() && !validateRequired(requiredCtx) {
 			return
@@ -405,13 +407,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			// This is an array, recursively validate it so it can be converted to correct type
 			if _, ok := c.Value.([]interface{}); !ok {
 
-				list := reflect.ValueOf(c.Value)
-				length := list.Len()
-				newSlice := make([]interface{}, 0, length)
-				for i := 0; i < length; i++ {
-					newSlice = append(newSlice, list.Index(i).Interface())
-				}
-				c.Value = newSlice
+				c.Value = makeGenericSlice(c.Value)
 				if parentIsObject {
 					parentObject[c.Name] = c.Value
 				} else {
@@ -433,11 +429,12 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			}
 
 			ctx := &Context{
-				Data:  data,
-				Value: value,
-				Field: field,
-				Rule:  rule,
-				Name:  c.Name,
+				Data:   data,
+				Value:  value,
+				Parent: c.Parent,
+				Field:  field,
+				Rule:   rule,
+				Name:   c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {
 				// TODO test possible duplicate error messages
@@ -455,9 +452,21 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			parentObject[c.Name] = value
 		} else {
 			// Parent is slice
+
+			// If the parent array is not validated, this panics reflect.Set: value of type []float64 is not assignable to type []interface {}
 			reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
 		}
 	})
+}
+
+func makeGenericSlice(original interface{}) []interface{} {
+	list := reflect.ValueOf(original)
+	length := list.Len()
+	newSlice := make([]interface{}, 0, length)
+	for i := 0; i < length; i++ {
+		newSlice = append(newSlice, list.Index(i).Interface())
+	}
+	return newSlice
 }
 
 func convertSingleValueArray(field *Field, value interface{}, data map[string]interface{}) interface{} {

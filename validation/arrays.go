@@ -12,71 +12,58 @@ import (
 )
 
 // createArray create a slice of the same type as the given type.
-func createArray(dataType string, length int) reflect.Value {
+func createArray(dataType string, length int, parentType reflect.Type) reflect.Value {
+	// if parent isn't able to receive converted array, don't convert
 	var arr reflect.Value
 	switch dataType {
 	case "string":
-		newArray := make([]string, 0, length)
+		newArray := make([]string, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "numeric":
-		newArray := make([]float64, 0, length)
+		newArray := make([]float64, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "integer":
-		newArray := make([]int, 0, length)
+		newArray := make([]int, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "timezone":
-		newArray := make([]*time.Location, 0, length)
+		newArray := make([]*time.Location, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "ip", "ipv4", "ipv6":
-		newArray := make([]net.IP, 0, length)
+		newArray := make([]net.IP, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "json":
-		newArray := make([]interface{}, 0, length)
+		newArray := make([]interface{}, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "url":
-		newArray := make([]*url.URL, 0, length)
+		newArray := make([]*url.URL, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "uuid":
-		newArray := make([]uuid.UUID, 0, length)
+		newArray := make([]uuid.UUID, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "bool":
-		newArray := make([]bool, 0, length)
+		newArray := make([]bool, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "date":
-		newArray := make([]time.Time, 0, length)
+		newArray := make([]time.Time, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "object":
-		newArray := make([]map[string]interface{}, 0, length)
+		newArray := make([]map[string]interface{}, length, length)
 		arr = reflect.ValueOf(&newArray).Elem()
+	default:
+		panic(fmt.Sprintf("Unsupported array type %q", dataType))
+	}
+
+	if !arr.Type().AssignableTo(parentType.Elem()) {
+		return reflect.Value{}
 	}
 	// TODO only works with built-in type rules
 	return arr
 }
 
-// Get final array type
-// "values":       {"required", "array"},
-// "values[]":     {"array", "max:3"},
-// "values[][]":   {"array:numeric"}, <---- THIS ONE (2 dimensions already, so this is a 3 dim numeric array)
-// "values[][][]": {"max:4"},
-//
-// "values[]"
-// "values[][]"
-// "values[][].array[]"
-// "values[][].array[][]"
-//
-// "values": required array:object <---- THIS ONE (0 dim so this is a 1 dim object array)
-// "values[].test[].field":
-//
-// "values": required array
-// "values[]": required array:object <---- THIS ONE (1 dim so this is a 2 dim object array)
-
-// "object.values" require array
-// "object.values[]" require array:string <---- THIS ONE
-
-// sort with deepest dimension first (number of "[]" should be enough)
-// because deepest dimension is already converted, can use that value to convert the dimension directly above
-// repeat until no [] anymore
-func convertArray(array interface{}) interface{} {
+// convertArray to its correct type based on its elements' type.
+// If all elements have the same type, the array is converted to
+// a slice of this type.
+func convertArray(array interface{}, parentType reflect.Type) interface{} {
 	list := reflect.ValueOf(array)
 	length := list.Len()
 	if length <= 0 {
@@ -95,6 +82,10 @@ func convertArray(array interface{}) interface{} {
 		}
 	}
 
+	if !elemType.AssignableTo(parentType.Elem()) {
+		return array
+	}
+
 	convertedArray := reflect.MakeSlice(reflect.SliceOf(elemType), 0, length)
 	for i := 0; i < length; i++ {
 		convertedArray = reflect.Append(convertedArray, list.Index(i).Elem())
@@ -106,13 +97,15 @@ func convertArray(array interface{}) interface{} {
 func validateArray(ctx *Context) bool {
 	if GetFieldType(ctx.Value) == "array" {
 
+		parentType := reflect.TypeOf(ctx.Parent)
+
 		if len(ctx.Rule.Params) == 0 {
-			ctx.Value = convertArray(ctx.Value)
+			ctx.Value = convertArray(ctx.Value, parentType)
 			return true
 		}
 
 		if ctx.Rule.Params[0] == "array" {
-			panic("Cannot use array type for array validation. Use \"array[]\" instead")
+			panic("Cannot use array type for array validation. Use \"fieldName[]\" instead")
 		}
 
 		if !validationRules[ctx.Rule.Params[0]].IsType {
@@ -121,7 +114,10 @@ func validateArray(ctx *Context) bool {
 
 		list := reflect.ValueOf(ctx.Value)
 		length := list.Len()
-		arr := createArray(ctx.Rule.Params[0], length)
+		arr := createArray(ctx.Rule.Params[0], length, parentType)
+		if !arr.IsValid() {
+			arr = list
+		}
 
 		for i := 0; i < length; i++ {
 			val := list.Index(i).Interface()
@@ -136,7 +132,7 @@ func validateArray(ctx *Context) bool {
 			if !validationRules[ctx.Rule.Params[0]].Function(tmpCtx) {
 				return false
 			}
-			arr.Set(reflect.Append(arr, reflect.ValueOf(tmpCtx.Value)))
+			arr.Index(i).Set(reflect.ValueOf(tmpCtx.Value))
 		}
 
 		ctx.Value = arr.Interface()

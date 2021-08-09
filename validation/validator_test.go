@@ -680,6 +680,53 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 	suite.Len(errors, 1)
 }
 
+func (suite *ValidatorTestSuite) TestValidateNDimensionalArrayParentSkipped() {
+	// array[][] but without array[]
+	data := map[string]interface{}{
+		"values": [][]interface{}{{"0.5", 1.42}, {0.6, 7}},
+	}
+	errors := Validate(data, RuleSet{
+		"values[][]": {"numeric"},
+	}, false, "en-US")
+	suite.Len(errors, 0)
+
+	// Should still be generic slice
+	arr, ok := data["values"].([][]interface{})
+	if suite.True(ok) {
+		suite.Equal(2, len(arr))
+		suite.Equal(2, len(arr[0]))
+		suite.Equal(2, len(arr[1]))
+		suite.Equal(0.5, arr[0][0])
+		suite.Equal(1.42, arr[0][1])
+		suite.Equal(0.6, arr[1][0])
+		suite.Equal(7.0, arr[1][1])
+		suite.IsType([]interface{}{}, arr[0])
+		suite.IsType([]interface{}{}, arr[1])
+	}
+
+	data = map[string]interface{}{
+		"values": [][]interface{}{{"0.5", 1.42}, {0.6, 7}},
+	}
+	errors = Validate(data, RuleSet{
+		"values[]": {"array:numeric"},
+	}, false, "en-US")
+	suite.Len(errors, 0)
+
+	arr2, ok := data["values"].([][]interface{})
+	if suite.True(ok) {
+		suite.Equal(2, len(arr2))
+		suite.Equal(2, len(arr2[0]))
+		suite.Equal(2, len(arr2[1]))
+		suite.Equal(0.5, arr2[0][0])
+		suite.Equal(1.42, arr2[0][1])
+		suite.Equal(0.6, arr2[1][0])
+		suite.Equal(7.0, arr2[1][1])
+		suite.IsType([]interface{}{}, arr2[0])
+		suite.IsType([]interface{}{}, arr2[1])
+	}
+
+}
+
 func (suite *ValidatorTestSuite) TestFieldCheck() {
 	suite.NotPanics(func() {
 		field := &Field{

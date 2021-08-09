@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var contentTypeByExtension map[string]string = map[string]string{
+var contentTypeByExtension = map[string]string{
 	".jsonld": "application/ld+json",
 	".json":   "application/json",
 	".js":     "text/javascript",

@@ -23,9 +23,9 @@ var (
 	router             *Router
 	maintenanceHandler http.Handler
 	sigChannel         chan os.Signal
-	tlsStopChannel     chan struct{} = make(chan struct{}, 1)
-	stopChannel        chan struct{} = make(chan struct{}, 1)
-	hookChannel        chan struct{} = make(chan struct{}, 1)
+	tlsStopChannel     = make(chan struct{}, 1)
+	stopChannel        = make(chan struct{}, 1)
+	hookChannel        = make(chan struct{}, 1)
 
 	// Critical config entries (cached for better performance)
 	protocol        string
@@ -34,23 +34,23 @@ var (
 
 	startupHooks       []func()
 	shutdownHooks      []func()
-	ready              bool = false
-	maintenanceEnabled bool = false
-	mutex                   = &sync.RWMutex{}
+	ready              = false
+	maintenanceEnabled = false
+	mutex              = &sync.RWMutex{}
 	once               sync.Once
 
 	// Logger the logger for default output
 	// Writes to stdout by default.
-	Logger *log.Logger = log.New(os.Stdout, "", log.LstdFlags)
+	Logger = log.New(os.Stdout, "", log.LstdFlags)
 
 	// AccessLogger the logger for access. This logger
 	// is used by the logging middleware.
 	// Writes to stdout by default.
-	AccessLogger *log.Logger = log.New(os.Stdout, "", 0)
+	AccessLogger = log.New(os.Stdout, "", 0)
 
 	// ErrLogger the logger in which errors and stacktraces are written.
 	// Writes to stderr by default.
-	ErrLogger *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
+	ErrLogger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
 const (

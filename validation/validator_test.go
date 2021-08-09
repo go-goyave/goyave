@@ -1439,10 +1439,10 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 
 	suite.Len(errors, 7)
 	suite.Equal([]string{"The field is required.", "The field must be numeric.", "The field may not be greater than 3."}, errors["array[].field"])
-	suite.Equal([]string{"The narray[][] values must be objects."}, errors["narray[][]"])
+	suite.Equal([]string{"The narray[] values must be objects."}, errors["narray[][]"])
 	suite.Equal([]string{"The field is required.", "The field must be numeric."}, errors["narray[][].field"])
-	suite.Equal([]string{"The array[] values must be arrays."}, errors["object.array[]"])
-	suite.Equal([]string{"The array[][] values are required.", "The array[][] values must be strings.", "The array[][] values must be at least 2 characters."}, errors["object.array[][]"])
+	suite.Equal([]string{"The array values must be arrays."}, errors["object.array[]"])
+	suite.Equal([]string{"The array[] values are required.", "The array[] values must be strings.", "The array[] values must be at least 2 characters."}, errors["object.array[][]"])
 	suite.Equal([]string{"The array must be an array."}, errors["object2.array"])
 	suite.Equal([]string{"The field is required.", "The field must be an object."}, errors["object2.array[].field"])
 }

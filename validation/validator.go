@@ -514,7 +514,6 @@ func getMessage(field *Field, rule *Rule, value reflect.Value, language string) 
 	lastParent := field.Path.LastParent()
 	if lastParent != nil && lastParent.Type == PathTypeArray {
 		langEntry += ".array"
-		// FIXME fieldName remove trailing "[]" in fieldName
 	}
 
 	return lang.Get(language, langEntry)

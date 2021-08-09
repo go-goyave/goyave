@@ -97,7 +97,6 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 		}
 	case PathTypeObject:
 		p.Next.walk(element, parent, -1, f)
-		// TODO better safety checks
 	}
 }
 

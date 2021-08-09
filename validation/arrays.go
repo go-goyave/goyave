@@ -16,37 +16,37 @@ func createArray(dataType string, length int) reflect.Value {
 	var arr reflect.Value
 	switch dataType {
 	case "string":
-		newArray := make([]string, length, length)
+		newArray := make([]string, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "numeric":
-		newArray := make([]float64, length, length)
+		newArray := make([]float64, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "integer":
-		newArray := make([]int, length, length)
+		newArray := make([]int, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "timezone":
-		newArray := make([]*time.Location, length, length)
+		newArray := make([]*time.Location, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "ip", "ipv4", "ipv6":
-		newArray := make([]net.IP, length, length)
+		newArray := make([]net.IP, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "json":
-		newArray := make([]interface{}, length, length)
+		newArray := make([]interface{}, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "url":
-		newArray := make([]*url.URL, length, length)
+		newArray := make([]*url.URL, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "uuid":
-		newArray := make([]uuid.UUID, length, length)
+		newArray := make([]uuid.UUID, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "bool":
-		newArray := make([]bool, length, length)
+		newArray := make([]bool, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "date":
-		newArray := make([]time.Time, length, length)
+		newArray := make([]time.Time, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	case "object":
-		newArray := make([]map[string]interface{}, length, length)
+		newArray := make([]map[string]interface{}, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	default:
 		panic(fmt.Sprintf("Unsupported array type %q", dataType))

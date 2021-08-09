@@ -285,3 +285,28 @@ func TestValidateNotInArray(t *testing.T) {
 	assert.False(t, validateNotInArray(newTestContext("object.field", "dolor", []string{"object.other"}, data)))
 	assert.True(t, validateNotInArray(newTestContext("object.field", "dolors", []string{"object.other"}, data)))
 }
+
+func TestValidateArrayNotAssignable(t *testing.T) {
+	data := map[string]interface{}{
+		"array": [][]interface{}{
+			{5, 6},
+		},
+	}
+	ctx := &Context{
+		Data:   data,
+		Value:  data["array"].([][]interface{})[0],
+		Parent: data["array"],
+		Field:  &Field{},
+		Rule: &Rule{
+			Name: "array",
+		},
+	}
+
+	assert.True(t, validateArray(ctx))
+
+	a, ok := data["array"].([][]interface{})
+	if assert.True(t, ok) {
+		assert.Equal(t, 5, a[0][0])
+		assert.Equal(t, 6, a[0][1])
+	}
+}

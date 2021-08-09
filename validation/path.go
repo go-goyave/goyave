@@ -187,7 +187,7 @@ func ComputePath(p string) (*PathItem, error) {
 func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
-		if path[0] == '.' {
+		if len(path) == 0 || path[0] == '.' {
 			return len(data), data[:], fmt.Errorf("Illegal syntax: %q", path)
 		}
 		for width, i := 0, 0; i < len(data); i += width {

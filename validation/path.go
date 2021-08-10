@@ -55,13 +55,14 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 		ce, ok := currentElement.(map[string]interface{})
 		if ok {
 			element, ok = ce[p.Name]
+			index = -1
 		}
 		if !ok {
 			f(WalkContext{
 				Value:    nil,
 				Parent:   currentElement,
 				Name:     p.Name,
-				Index:    -1,
+				Index:    index,
 				NotFound: true,
 			})
 			return
@@ -82,9 +83,9 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 		if list.Kind() != reflect.Slice {
 			f(WalkContext{
 				Value:    nil,
-				Parent:   element,
+				Parent:   parent,
 				Name:     p.Name,
-				Index:    -1,
+				Index:    index,
 				NotFound: true,
 			})
 			return
@@ -96,7 +97,7 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 			p.Next.walk(value, element, i, f)
 		}
 	case PathTypeObject:
-		p.Next.walk(element, parent, -1, f)
+		p.Next.walk(element, parent, index, f)
 	}
 }
 

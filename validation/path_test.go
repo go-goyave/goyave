@@ -174,6 +174,222 @@ func TestComputePath(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func testWalk(t *testing.T, data map[string]interface{}, p string) []WalkContext {
+	matches := make([]WalkContext, 0, 5)
+	path, err := ComputePath(p)
+
+	if !assert.Nil(t, err) {
+		assert.FailNow(t, err.Error())
+	}
+
+	path.Walk(data, func(c WalkContext) {
+		matches = append(matches, c)
+	})
+
+	return matches
+}
+
 func TestPathWalk(t *testing.T) {
-	// TODO test path walk
+	// object.field
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"field": 5,
+		},
+	}
+	expected := []WalkContext{
+		{
+			Value:    5,
+			Parent:   data["object"],
+			Name:     "field",
+			Index:    -1,
+			NotFound: false,
+		},
+	}
+	matches := testWalk(t, data, "object.field")
+	assert.Equal(t, expected, matches)
+
+	// array[]
+	data = map[string]interface{}{
+		"array": []string{"a", "b", "c"},
+	}
+	expected = []WalkContext{
+		{
+			Value:    "a",
+			Parent:   data["array"],
+			Name:     "",
+			Index:    0,
+			NotFound: false,
+		},
+		{
+			Value:    "b",
+			Parent:   data["array"],
+			Name:     "",
+			Index:    1,
+			NotFound: false,
+		},
+		{
+			Value:    "c",
+			Parent:   data["array"],
+			Name:     "",
+			Index:    2,
+			NotFound: false,
+		},
+	}
+	matches = testWalk(t, data, "array[]")
+	assert.Equal(t, expected, matches)
+
+	// array[][]
+	data = map[string]interface{}{
+		"array": [][]string{
+			{},
+			{"a", "b"},
+			{"c"},
+		},
+	}
+	expected = []WalkContext{
+		{
+			Value:    "a",
+			Parent:   data["array"].([][]string)[1],
+			Name:     "",
+			Index:    0,
+			NotFound: false,
+		},
+		{
+			Value:    "b",
+			Parent:   data["array"].([][]string)[1],
+			Name:     "",
+			Index:    1,
+			NotFound: false,
+		},
+		{
+			Value:    "c",
+			Parent:   data["array"].([][]string)[2],
+			Name:     "",
+			Index:    0,
+			NotFound: false,
+		},
+	}
+	matches = testWalk(t, data, "array[][]")
+	assert.Equal(t, expected, matches)
+
+	// array[].field[]
+	data = map[string]interface{}{
+		"array": []map[string]interface{}{
+			{"field": []string{}},
+			{"field": []string{"a", "b"}},
+			{},
+			{"field": []string{"c"}},
+		},
+	}
+	expected = []WalkContext{
+		{
+			Value:    "a",
+			Parent:   data["array"].([]map[string]interface{})[1]["field"],
+			Name:     "",
+			Index:    0,
+			NotFound: false,
+		},
+		{
+			Value:    "b",
+			Parent:   data["array"].([]map[string]interface{})[1]["field"],
+			Name:     "",
+			Index:    1,
+			NotFound: false,
+		},
+		{
+			Value:    nil,
+			Parent:   data["array"].([]map[string]interface{})[2],
+			Name:     "field",
+			Index:    -1,
+			NotFound: true,
+		},
+		{
+			Value:    "c",
+			Parent:   data["array"].([]map[string]interface{})[3]["field"],
+			Name:     "",
+			Index:    0,
+			NotFound: false,
+		},
+	}
+	matches = testWalk(t, data, "array[].field[]")
+	assert.Equal(t, expected, matches)
+
+	// array[].field index check
+	expected = []WalkContext{
+		{
+			Value:    []string{},
+			Parent:   data["array"].([]map[string]interface{})[0],
+			Name:     "field",
+			Index:    -1,
+			NotFound: false,
+		},
+		{
+			Value:    []string{"a", "b"},
+			Parent:   data["array"].([]map[string]interface{})[1],
+			Name:     "field",
+			Index:    -1,
+			NotFound: false,
+		},
+		{
+			Value:    nil,
+			Parent:   data["array"].([]map[string]interface{})[2],
+			Name:     "field",
+			Index:    -1,
+			NotFound: true,
+		},
+		{
+			Value:    []string{"c"},
+			Parent:   data["array"].([]map[string]interface{})[3],
+			Name:     "field",
+			Index:    -1,
+			NotFound: false,
+		},
+	}
+	matches = testWalk(t, data, "array[].field")
+	assert.Equal(t, expected, matches)
+}
+
+func TestPathWalkNotFoundInObject(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"field": 5,
+		},
+	}
+	expected := []WalkContext{
+		{
+			Value:    nil,
+			Parent:   data["object"],
+			Name:     "notafield",
+			Index:    -1,
+			NotFound: true,
+		},
+	}
+	matches := testWalk(t, data, "object.notafield")
+	assert.Equal(t, expected, matches)
+}
+
+func TestPathWalkSliceExpected(t *testing.T) {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"field": []string{"a", "b"},
+		},
+	}
+	expected := []WalkContext{
+		{
+			Value:    nil,
+			Parent:   data["object"].(map[string]interface{})["field"],
+			Name:     "",
+			Index:    0,
+			NotFound: true,
+		},
+		{
+			Value:    nil,
+			Parent:   data["object"].(map[string]interface{})["field"],
+			Name:     "",
+			Index:    1,
+			NotFound: true,
+		},
+	}
+	matches := testWalk(t, data, "object.field[][]")
+	assert.Equal(t, expected, matches)
 }

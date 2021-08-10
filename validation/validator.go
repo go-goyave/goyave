@@ -380,10 +380,8 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, language string, errors Errors) {
 	field.Path.Walk(walkData, func(c WalkContext) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
-		if parentIsObject {
-			if !field.IsNullable() && c.Value == nil {
-				delete(parentObject, fieldName)
-			}
+		if parentIsObject && !field.IsNullable() && c.Value == nil {
+			delete(parentObject, fieldName)
 		}
 
 		if shouldConvertSingleValueArray(fieldName, isJSON) {

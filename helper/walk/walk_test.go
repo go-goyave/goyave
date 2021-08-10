@@ -368,6 +368,23 @@ func TestPathWalkNotFoundInObject(t *testing.T) {
 	assert.Equal(t, expected, matches)
 }
 
+func TestPathWalkNotFoundInArray(t *testing.T) {
+	data := map[string]interface{}{
+		"array": []map[string]interface{}{},
+	}
+	expected := []Context{
+		{
+			Value:    nil,
+			Parent:   data["array"],
+			Name:     "",
+			Index:    -1,
+			NotFound: true,
+		},
+	}
+	matches := testWalk(t, data, "array[].field")
+	assert.Equal(t, expected, matches)
+}
+
 func TestPathWalkSliceExpected(t *testing.T) {
 	data := map[string]interface{}{
 		"object": map[string]interface{}{
@@ -392,4 +409,15 @@ func TestPathWalkSliceExpected(t *testing.T) {
 	}
 	matches := testWalk(t, data, "object.field[][]")
 	assert.Equal(t, expected, matches)
+}
+
+func TestPathCreateIfMissing(t *testing.T) {
+	data := map[string]interface{}{}
+	path, _ := Parse("a")
+	path.CreateIfMissing = []string{"b", "c"}
+	path.Walk(data, func(c Context) {
+		assert.Equal(t, []string{"b", "c"}, c.Value)
+		assert.Equal(t, data, c.Parent)
+	})
+	assert.Equal(t, []string{"b", "c"}, data["a"])
 }

@@ -1475,6 +1475,32 @@ func (suite *ValidatorTestSuite) TestInvalidPath() {
 	})
 }
 
+func (suite *ValidatorTestSuite) TestValidateContext() {
+	data := map[string]interface{}{
+		"a": "b",
+	}
+
+	validationRules["test_rule"] = &RuleDefinition{}
+	defer func() {
+		delete(validationRules, "test_rule")
+	}()
+	rules := RuleSet{
+		"a": {"required", "test_rule"},
+	}.AsRules()
+	validationRules["test_rule"].Function = func(c *Context) bool {
+		suite.Equal(data, c.Data)
+		suite.Equal("b", c.Value)
+		suite.Equal(data, c.Parent)
+		suite.Equal("a", c.Name)
+		suite.Equal(rules.Fields["a"], c.Field)
+		suite.Equal(&Rule{Name: "test_rule", Params: []string{}}, c.Rule)
+		suite.NotNil(c.Now)
+		return true
+	}
+
+	Validate(data, rules, true, "en-US")
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

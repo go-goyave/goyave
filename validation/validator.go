@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	"goyave.dev/goyave/v3/helper"
 	"goyave.dev/goyave/v3/lang"
@@ -25,6 +26,7 @@ type Context struct {
 	Parent interface{}
 	Field  *Field
 	Rule   *Rule
+	Now    time.Time
 	Name   string
 }
 
@@ -369,15 +371,16 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 
 func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {
 	errors := Errors{}
+	now := time.Now()
 
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName]
-		validateField(fieldName, field, isJSON, data, data, language, errors)
+		validateField(fieldName, field, isJSON, data, data, now, language, errors)
 	}
 	return errors
 }
 
-func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, language string, errors Errors) {
+func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, now time.Time, language string, errors Errors) {
 	field.Path.Walk(walkData, func(c WalkContext) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
 		if parentIsObject && !field.IsNullable() && c.Value == nil {
@@ -410,7 +413,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				}
 			}
 
-			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, language, errors)
+			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, now, language, errors)
 		}
 
 		value := c.Value
@@ -428,6 +431,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				Parent: c.Parent,
 				Field:  field,
 				Rule:   rule,
+				Now:    now,
 				Name:   c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {

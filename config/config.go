@@ -29,7 +29,7 @@ type readFunc func(string) (object, error)
 
 var config object
 
-var configDefaults object = object{
+var configDefaults = object{
 	"app": object{
 		"name":            &Entry{"goyave", []interface{}{}, reflect.String, false},
 		"environment":     &Entry{"localhost", []interface{}{}, reflect.String, false},

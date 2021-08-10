@@ -7,11 +7,23 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/mysql"
 	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v3/validation"
 )
 
 type ValidationTestSuite struct {
 	suite.Suite
 	previousEnv string
+}
+
+func newTestContext(field string, value interface{}, parameters []string, form map[string]interface{}) *validation.Context {
+	return &validation.Context{
+		Data:  form,
+		Value: value,
+		Name:  field,
+		Rule: &validation.Rule{
+			Params: parameters,
+		},
+	}
 }
 
 func (suite *ValidationTestSuite) SetupSuite() {
@@ -39,15 +51,15 @@ func (suite *ValidationTestSuite) TestValidateUnique() {
 	db.Create(user)
 	defer db.Migrator().DropTable(user)
 
-	suite.False(validateUnique("email", "hugh@example.org", []string{"users"}, map[string]interface{}{}))
-	suite.False(validateUnique("email", "hugh@example.org", []string{"users", "email"}, map[string]interface{}{}))
-	suite.True(validateUnique("email", "hugh2@example.org", []string{"users"}, map[string]interface{}{}))
-	suite.True(validateUnique("email", "hugh2@example.org", []string{"users", "email"}, map[string]interface{}{}))
-	suite.True(validateUnique("email", "hugh@example.org", []string{"users", "name"}, map[string]interface{}{}))
+	suite.False(validateUnique(newTestContext("email", "hugh@example.org", []string{"users"}, map[string]interface{}{})))
+	suite.False(validateUnique(newTestContext("email", "hugh@example.org", []string{"users", "email"}, map[string]interface{}{})))
+	suite.True(validateUnique(newTestContext("email", "hugh2@example.org", []string{"users"}, map[string]interface{}{})))
+	suite.True(validateUnique(newTestContext("email", "hugh2@example.org", []string{"users", "email"}, map[string]interface{}{})))
+	suite.True(validateUnique(newTestContext("email", "hugh@example.org", []string{"users", "name"}, map[string]interface{}{})))
 
 	// model not found
 	suite.Panics(func() {
-		validateUnique("email", "hugh@example.org", []string{"not a model", "email"}, map[string]interface{}{})
+		validateUnique(newTestContext("email", "hugh@example.org", []string{"not a model", "email"}, map[string]interface{}{}))
 	})
 }
 
@@ -65,15 +77,15 @@ func (suite *ValidationTestSuite) TestValidateExists() {
 	db.Create(user)
 	defer db.Migrator().DropTable(user)
 
-	suite.True(validateExists("email", "hugh@example.org", []string{"users"}, map[string]interface{}{}))
-	suite.True(validateExists("email", "hugh@example.org", []string{"users", "email"}, map[string]interface{}{}))
-	suite.False(validateExists("email", "hugh2@example.org", []string{"users"}, map[string]interface{}{}))
-	suite.False(validateExists("email", "hugh2@example.org", []string{"users", "email"}, map[string]interface{}{}))
-	suite.False(validateExists("email", "hugh@example.org", []string{"users", "name"}, map[string]interface{}{}))
+	suite.True(validateExists(newTestContext("email", "hugh@example.org", []string{"users"}, map[string]interface{}{})))
+	suite.True(validateExists(newTestContext("email", "hugh@example.org", []string{"users", "email"}, map[string]interface{}{})))
+	suite.False(validateExists(newTestContext("email", "hugh2@example.org", []string{"users"}, map[string]interface{}{})))
+	suite.False(validateExists(newTestContext("email", "hugh2@example.org", []string{"users", "email"}, map[string]interface{}{})))
+	suite.False(validateExists(newTestContext("email", "hugh@example.org", []string{"users", "name"}, map[string]interface{}{})))
 
 	// model not found
 	suite.Panics(func() {
-		validateExists("email", "hugh@example.org", []string{"not a model", "email"}, map[string]interface{}{})
+		validateExists(newTestContext("email", "hugh@example.org", []string{"not a model", "email"}, map[string]interface{}{}))
 	})
 }
 

@@ -17,19 +17,19 @@ func init() {
 	})
 }
 
-func validateUnique(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	column := field
-	if len(parameters) >= 2 {
-		column = parameters[1]
+func validateUnique(ctx *validation.Context) bool {
+	column := ctx.Name
+	if len(ctx.Rule.Params) >= 2 {
+		column = ctx.Rule.Params[1]
 	}
 
 	count := int64(0)
-	if err := Conn().Table(parameters[0]).Where(column+"= ?", value).Count(&count).Error; err != nil {
+	if err := Conn().Table(ctx.Rule.Params[0]).Where(column+"= ?", ctx.Value).Count(&count).Error; err != nil {
 		panic(err)
 	}
 	return count == 0
 }
 
-func validateExists(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	return !validateUnique(field, value, parameters, form)
+func validateExists(ctx *validation.Context) bool {
+	return !validateUnique(ctx)
 }

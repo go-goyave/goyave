@@ -28,7 +28,7 @@ var handler Handler = func(response *Response, request *Request) {
 	response.Status(200)
 }
 
-var sampleRouteDefinition *routerDefinition = &routerDefinition{
+var sampleRouteDefinition = &routerDefinition{
 	prefix:     "",
 	middleware: []Middleware{},
 	routes: []*routeDefinition{
@@ -100,7 +100,7 @@ var sampleRouteDefinition *routerDefinition = &routerDefinition{
 	},
 }
 
-var sampleRequests []*http.Request = []*http.Request{
+var sampleRequests = []*http.Request{
 	httptest.NewRequest("GET", "/", nil), // 404
 	httptest.NewRequest("GET", "/hello", nil),
 	httptest.NewRequest("POST", "/world", nil),

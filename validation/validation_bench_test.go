@@ -52,7 +52,11 @@ func BenchmarkValidatePreParsed(b *testing.B) {
 				Rules: []*Rule{
 					{Name: "nullable"},
 					{Name: "array", Params: []string{"string"}},
-					{Name: "min", Params: []string{"2"}, ArrayDimension: 1},
+				},
+			},
+			"info[]": {
+				Rules: []*Rule{
+					{Name: "min", Params: []string{"2"}},
 				},
 			},
 		},
@@ -106,7 +110,11 @@ func BenchmarkCheck(b *testing.B) {
 				Rules: []*Rule{
 					{Name: "nullable"},
 					{Name: "array", Params: []string{"string"}},
-					{Name: "min", Params: []string{"2"}, ArrayDimension: 1},
+				},
+			},
+			"info[]": {
+				Rules: []*Rule{
+					{Name: "min", Params: []string{"2"}},
 				},
 			},
 		},

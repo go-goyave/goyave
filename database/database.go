@@ -34,9 +34,9 @@ var (
 	models       []interface{}
 	initializers []Initializer
 
-	dialects map[string]dialect = map[string]dialect{}
+	dialects = map[string]dialect{}
 
-	optionPlaceholders map[string]string = map[string]string{
+	optionPlaceholders = map[string]string{
 		"{username}": "database.username",
 		"{password}": "database.password",
 		"{host}":     "database.host",
@@ -66,7 +66,7 @@ func Conn() *gorm.DB {
 
 // Close the database connections if they exist.
 func Close() error {
-	var err error = nil
+	var err error
 	mu.Lock()
 	defer mu.Unlock()
 	if dbConnection != nil {

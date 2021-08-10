@@ -12,8 +12,8 @@ import (
 // This function should return the value to replace the placeholder with.
 type Placeholder func(string, string, []string, string) string
 
-var placeholders map[string]Placeholder = map[string]Placeholder{}
-var sortedKeys []string = []string{}
+var placeholders = map[string]Placeholder{}
+var sortedKeys = []string{}
 
 // SetPlaceholder sets the replacer function for the given placeholder.
 // If a placeholder with this name already exists, the latter will be overridden.
@@ -34,6 +34,7 @@ func processPlaceholders(field string, rule string, params []string, message str
 	if i := strings.LastIndex(field, "."); i != -1 {
 		field = field[i+1:]
 	}
+	field = strings.TrimSuffix(field, "[]")
 	for _, placeholder := range sortedKeys {
 		if strings.Contains(message, placeholder) {
 			replacer := placeholders[placeholder]

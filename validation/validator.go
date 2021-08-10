@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v3/helper/walk"
 	"goyave.dev/goyave/v3/lang"
 )
 
@@ -138,7 +139,7 @@ func (r *Rule) IsTypeDependent() bool {
 // Field is a component of route validation. A Field is a value in
 // a Rules map, the key being the name of the field.
 type Field struct {
-	Path     *PathItem
+	Path     *walk.Path
 	Elements *Field // If the field is an array, the field representing its elements, or nil
 	// Maybe use the same concept for objects too?
 	Rules      []*Rule
@@ -220,7 +221,7 @@ func (r *Rules) Check() {
 		r.sortKeys()
 		for _, path := range r.sortedKeys {
 			field := r.Fields[path]
-			p, err := ComputePath(path)
+			p, err := walk.Parse(path)
 			if err != nil {
 				panic(err)
 			}
@@ -230,10 +231,10 @@ func (r *Rules) Check() {
 				parent, ok := r.Fields[path[:len(path)-2]]
 				if ok {
 					parent.Elements = field
-					field.Path = &PathItem{
-						Type: PathTypeArray,
-						Next: &PathItem{
-							Type: PathTypeElement,
+					field.Path = &walk.Path{
+						Type: walk.PathTypeArray,
+						Next: &walk.Path{
+							Type: walk.PathTypeElement,
 						},
 					}
 					delete(r.Fields, path)
@@ -383,7 +384,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 }
 
 func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, now time.Time, language string, errors Errors) {
-	field.Path.Walk(walkData, func(c WalkContext) {
+	field.Path.Walk(walkData, func(c walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
 		if parentIsObject && !field.IsNullable() && c.Value == nil {
 			delete(parentObject, fieldName)
@@ -453,7 +454,7 @@ func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
 	return !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
-func replaceValue(value interface{}, c WalkContext) {
+func replaceValue(value interface{}, c walk.Context) {
 	if c.NotFound {
 		return
 	}
@@ -516,7 +517,7 @@ func getMessage(field *Field, rule *Rule, value reflect.Value, language string) 
 	}
 
 	lastParent := field.Path.LastParent()
-	if lastParent != nil && lastParent.Type == PathTypeArray {
+	if lastParent != nil && lastParent.Type == walk.PathTypeArray {
 		langEntry += ".array"
 	}
 

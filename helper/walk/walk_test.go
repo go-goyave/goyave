@@ -1,4 +1,4 @@
-package validation
+package walk
 
 import (
 	"fmt"
@@ -8,13 +8,13 @@ import (
 )
 
 func TestPathHasArray(t *testing.T) {
-	path := &PathItem{
+	path := &Path{
 		Name: "object",
 		Type: PathTypeObject,
-		Next: &PathItem{
+		Next: &Path{
 			Name: "array",
 			Type: PathTypeArray,
-			Next: &PathItem{
+			Next: &Path{
 				Type: PathTypeElement,
 			},
 		},
@@ -25,13 +25,13 @@ func TestPathHasArray(t *testing.T) {
 }
 
 func TestPathLastParent(t *testing.T) {
-	path := &PathItem{
+	path := &Path{
 		Name: "object",
 		Type: PathTypeObject,
-		Next: &PathItem{
+		Next: &Path{
 			Name: "array",
 			Type: PathTypeArray,
-			Next: &PathItem{
+			Next: &Path{
 				Type: PathTypeElement,
 			},
 		},
@@ -89,18 +89,18 @@ func TestPathScanner(t *testing.T) {
 	testPathScannerError(t, "")
 }
 
-func TestComputePath(t *testing.T) {
-	path, err := ComputePath("object.array[].field")
+func TestParse(t *testing.T) {
+	path, err := Parse("object.array[].field")
 	assert.Nil(t, err)
-	assert.Equal(t, path, &PathItem{
+	assert.Equal(t, path, &Path{
 		Name: "object",
 		Type: PathTypeObject,
-		Next: &PathItem{
+		Next: &Path{
 			Name: "array",
 			Type: PathTypeArray,
-			Next: &PathItem{
+			Next: &Path{
 				Type: PathTypeObject,
-				Next: &PathItem{
+				Next: &Path{
 					Name: "field",
 					Type: PathTypeElement,
 				},
@@ -108,40 +108,40 @@ func TestComputePath(t *testing.T) {
 		},
 	})
 
-	path, err = ComputePath("array[][]")
+	path, err = Parse("array[][]")
 	assert.Nil(t, err)
-	assert.Equal(t, path, &PathItem{
+	assert.Equal(t, path, &Path{
 		Name: "array",
 		Type: PathTypeArray,
-		Next: &PathItem{
+		Next: &Path{
 			Type: PathTypeArray,
-			Next: &PathItem{
+			Next: &Path{
 				Type: PathTypeElement,
 			},
 		},
 	})
 
-	path, err = ComputePath("object.field")
+	path, err = Parse("object.field")
 	assert.Nil(t, err)
-	assert.Equal(t, path, &PathItem{
+	assert.Equal(t, path, &Path{
 		Name: "object",
 		Type: PathTypeObject,
-		Next: &PathItem{
+		Next: &Path{
 			Name: "field",
 			Type: PathTypeElement,
 		},
 	})
 
-	path, err = ComputePath("array[][].field")
+	path, err = Parse("array[][].field")
 	assert.Nil(t, err)
-	assert.Equal(t, path, &PathItem{
+	assert.Equal(t, path, &Path{
 		Name: "array",
 		Type: PathTypeArray,
-		Next: &PathItem{
+		Next: &Path{
 			Type: PathTypeArray,
-			Next: &PathItem{
+			Next: &Path{
 				Type: PathTypeObject,
-				Next: &PathItem{
+				Next: &Path{
 					Name: "field",
 					Type: PathTypeElement,
 				},
@@ -149,19 +149,19 @@ func TestComputePath(t *testing.T) {
 		},
 	})
 
-	path, err = ComputePath("array[][].field[]")
+	path, err = Parse("array[][].field[]")
 	assert.Nil(t, err)
-	assert.Equal(t, path, &PathItem{
+	assert.Equal(t, path, &Path{
 		Name: "array",
 		Type: PathTypeArray,
-		Next: &PathItem{
+		Next: &Path{
 			Type: PathTypeArray,
-			Next: &PathItem{
+			Next: &Path{
 				Type: PathTypeObject,
-				Next: &PathItem{
+				Next: &Path{
 					Name: "field",
 					Type: PathTypeArray,
-					Next: &PathItem{
+					Next: &Path{
 						Type: PathTypeElement,
 					},
 				},
@@ -169,20 +169,20 @@ func TestComputePath(t *testing.T) {
 		},
 	})
 
-	path, err = ComputePath(".invalid[]path")
+	path, err = Parse(".invalid[]path")
 	assert.Nil(t, path)
 	assert.NotNil(t, err)
 }
 
-func testWalk(t *testing.T, data map[string]interface{}, p string) []WalkContext {
-	matches := make([]WalkContext, 0, 5)
-	path, err := ComputePath(p)
+func testWalk(t *testing.T, data map[string]interface{}, p string) []Context {
+	matches := make([]Context, 0, 5)
+	path, err := Parse(p)
 
 	if !assert.Nil(t, err) {
 		assert.FailNow(t, err.Error())
 	}
 
-	path.Walk(data, func(c WalkContext) {
+	path.Walk(data, func(c Context) {
 		matches = append(matches, c)
 	})
 
@@ -196,7 +196,7 @@ func TestPathWalk(t *testing.T) {
 			"field": 5,
 		},
 	}
-	expected := []WalkContext{
+	expected := []Context{
 		{
 			Value:    5,
 			Parent:   data["object"],
@@ -212,7 +212,7 @@ func TestPathWalk(t *testing.T) {
 	data = map[string]interface{}{
 		"array": []string{"a", "b", "c"},
 	}
-	expected = []WalkContext{
+	expected = []Context{
 		{
 			Value:    "a",
 			Parent:   data["array"],
@@ -246,7 +246,7 @@ func TestPathWalk(t *testing.T) {
 			{"c"},
 		},
 	}
-	expected = []WalkContext{
+	expected = []Context{
 		{
 			Value:    "a",
 			Parent:   data["array"].([][]string)[1],
@@ -281,7 +281,7 @@ func TestPathWalk(t *testing.T) {
 			{"field": []string{"c"}},
 		},
 	}
-	expected = []WalkContext{
+	expected = []Context{
 		{
 			Value:    "a",
 			Parent:   data["array"].([]map[string]interface{})[1]["field"],
@@ -315,7 +315,7 @@ func TestPathWalk(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	// array[].field index check
-	expected = []WalkContext{
+	expected = []Context{
 		{
 			Value:    []string{},
 			Parent:   data["array"].([]map[string]interface{})[0],
@@ -355,7 +355,7 @@ func TestPathWalkNotFoundInObject(t *testing.T) {
 			"field": 5,
 		},
 	}
-	expected := []WalkContext{
+	expected := []Context{
 		{
 			Value:    nil,
 			Parent:   data["object"],
@@ -374,7 +374,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			"field": []string{"a", "b"},
 		},
 	}
-	expected := []WalkContext{
+	expected := []Context{
 		{
 			Value:    nil,
 			Parent:   data["object"].(map[string]interface{})["field"],

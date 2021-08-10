@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"goyave.dev/goyave/v3/helper"
 	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/helper/walk"
 	"goyave.dev/goyave/v3/lang"
 )
 
@@ -34,14 +35,14 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {
-	suite.Equal("The :field is required.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
-	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{Name: "numeric"}}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field is required.", getMessage(&Field{Rules: []*Rule{}, Path: &walk.Path{}}, &Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{Name: "numeric"}}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
 
 	field := &Field{
 		Rules: []*Rule{{Name: "numeric"}},
-		Path: &PathItem{
-			Type: PathTypeArray,
-			Next: &PathItem{Type: PathTypeElement},
+		Path: &walk.Path{
+			Type: walk.PathTypeArray,
+			Next: &walk.Path{Type: walk.PathTypeElement},
 		},
 	}
 	suite.Equal("The :field values must be at least :min.", getMessage(field, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
@@ -51,19 +52,19 @@ func (suite *ValidatorTestSuite) TestGetMessage() {
 			{Name: "numeric"},
 			{Name: "min", Params: []string{"5"}},
 		},
-		Path: &PathItem{
-			Type: PathTypeArray,
-			Next: &PathItem{Type: PathTypeElement},
+		Path: &walk.Path{
+			Type: walk.PathTypeArray,
+			Next: &walk.Path{Type: walk.PathTypeElement},
 		},
 	}
 	suite.Equal("The :field values must be at least :min.", getMessage(field, field.Rules[1], reflect.ValueOf(42), "en-US"))
 
 	// Test type fallback if no type rule is found
-	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
-	suite.Equal("The :field must be at least :min characters.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field must be at least :min characters.", getMessage(&Field{Rules: []*Rule{}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
 
 	// Integer share message with numeric
-	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{"integer", nil}}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{"integer", nil}}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {
@@ -781,7 +782,7 @@ func (suite *ValidatorTestSuite) TestFieldCheckArrayProhibitedRules() {
 				Rules: []*Rule{
 					{Name: v},
 				},
-				Path: &PathItem{Type: PathTypeArray},
+				Path: &walk.Path{Type: walk.PathTypeArray},
 			}
 			field.Check()
 		})
@@ -802,10 +803,10 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	suite.Equal(&Rule{Name: "array", Params: []string{"string"}}, rules.Fields["string"].Rules[1])
 	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["string"].Elements.Rules[0])
 
-	expectedPath := &PathItem{
-		Type: PathTypeArray,
-		Next: &PathItem{
-			Type: PathTypeElement,
+	expectedPath := &walk.Path{
+		Type: walk.PathTypeArray,
+		Next: &walk.Path{
+			Type: walk.PathTypeElement,
 		},
 	}
 	suite.Equal(expectedPath, rules.Fields["string"].Elements.Path)

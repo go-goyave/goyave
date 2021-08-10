@@ -333,6 +333,8 @@ func init() {
 		"after_equal":        {validateAfterEqual, 1, false, false, true},
 		"date_equals":        {validateDateEquals, 1, false, false, true},
 		"date_between":       {validateDateBetween, 2, false, false, true},
+		"before_now":         {validateDateBeforeNow, 0, false, false, false},
+		"after_now":          {validateDateAfterNow, 0, false, false, false},
 		"object":             {validateObject, 0, true, false, false},
 	}
 }

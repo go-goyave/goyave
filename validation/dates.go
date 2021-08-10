@@ -92,3 +92,17 @@ func validateDateBetween(ctx *Context) bool {
 	dates, err := getDates(ctx)
 	return err == nil && (dates[0].After(dates[1]) || dates[0].Equal(dates[1])) && (dates[0].Before(dates[2]) || dates[0].Equal(dates[2]))
 }
+
+func validateDateBeforeNow(ctx *Context) bool {
+	if date, ok := ctx.Value.(time.Time); ok {
+		return date.Before(ctx.Now)
+	}
+	return false
+}
+
+func validateDateAfterNow(ctx *Context) bool {
+	if date, ok := ctx.Value.(time.Time); ok {
+		return date.After(ctx.Now)
+	}
+	return false
+}

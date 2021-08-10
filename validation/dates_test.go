@@ -312,3 +312,35 @@ func TestValidateDateConvertInObject(t *testing.T) {
 	_, ok := data["object"].(map[string]interface{})["time"].(time.Time)
 	assert.True(t, ok)
 }
+
+func TestValidateBeforeNow(t *testing.T) {
+	now := time.Now()
+	dateInThePast := now.Add(-time.Hour)
+	dateInTheFuture := now.Add(time.Hour)
+	ctx := newTestContext("date", dateInThePast, []string{}, map[string]interface{}{"date": dateInThePast})
+	ctx.Now = now
+	assert.True(t, validateDateBeforeNow(ctx))
+
+	ctx = newTestContext("date", dateInTheFuture, []string{}, map[string]interface{}{"date": dateInTheFuture})
+	ctx.Now = now
+	assert.False(t, validateDateBeforeNow(ctx))
+
+	ctx.Value = "2019-11-02"
+	assert.False(t, validateDateBeforeNow(ctx))
+}
+
+func TestValidateAfterNow(t *testing.T) {
+	now := time.Now()
+	dateInThePast := now.Add(-time.Hour)
+	dateInTheFuture := now.Add(time.Hour)
+	ctx := newTestContext("date", dateInThePast, []string{}, map[string]interface{}{"date": dateInThePast})
+	ctx.Now = now
+	assert.False(t, validateDateAfterNow(ctx))
+
+	ctx = newTestContext("date", dateInTheFuture, []string{}, map[string]interface{}{"date": dateInTheFuture})
+	ctx.Now = now
+	assert.True(t, validateDateAfterNow(ctx))
+
+	ctx.Value = "2019-11-02"
+	assert.False(t, validateDateAfterNow(ctx))
+}

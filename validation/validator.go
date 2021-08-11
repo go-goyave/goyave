@@ -405,15 +405,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			parentObject[c.Name] = c.Value
 		}
 
-		requiredCtx := &Context{
-			Data:   data,
-			Value:  c.Value,
-			Parent: c.Parent,
-			Field:  field,
-			Rule:   &Rule{Name: "required"},
-			Name:   c.Name,
-		}
-		if !field.IsRequired() && !validateRequired(requiredCtx) {
+		if isAbsent(field, c, data) {
 			return
 		}
 
@@ -476,6 +468,18 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 		// Value may be modified (converting rule), replace it in the parent element
 		replaceValue(value, c)
 	})
+}
+
+func isAbsent(field *Field, c walk.Context, data map[string]interface{}) bool {
+	requiredCtx := &Context{
+		Data:   data,
+		Value:  c.Value,
+		Parent: c.Parent,
+		Field:  field,
+		Rule:   &Rule{Name: "required"},
+		Name:   c.Name,
+	}
+	return !field.IsRequired() && !validateRequired(requiredCtx)
 }
 
 func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {

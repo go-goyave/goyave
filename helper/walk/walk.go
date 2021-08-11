@@ -27,14 +27,11 @@ const (
 // Path allows for complex untyped data structure exploration.
 // An instance of this structure represents a step in exploration.
 // Items NOT having `PathTypeElement` as a `Type` are expected to have a non-nil `Next`.
-// If `CreateIfMissing` is non-nil and the element is not found, the element will be set to
-// the value of `CreateIsMissing` and the behavior will continue as if the value was already there.
 type Path struct {
-	Next            *Path
-	Index           *int
-	CreateIfMissing interface{}
-	Name            string
-	Type            PathType
+	Next  *Path
+	Index *int
+	Name  string
+	Type  PathType
 }
 
 // Context information sent to walk function.
@@ -67,11 +64,6 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 		ce, ok := currentElement.(map[string]interface{})
 		if ok {
 			element, ok = ce[p.Name]
-			if !ok && p.CreateIfMissing != nil {
-				ce[p.Name] = p.CreateIfMissing
-				element = p.CreateIfMissing
-				ok = true
-			}
 			index = -1
 		}
 		if !ok {
@@ -179,10 +171,9 @@ func (p *Path) Tail() *Path {
 // Clone returns a deep clone of this Path.
 func (p *Path) Clone() *Path {
 	clone := &Path{
-		CreateIfMissing: p.CreateIfMissing,
-		Name:            p.Name,
-		Type:            p.Type,
-		Index:           p.Index,
+		Name:  p.Name,
+		Type:  p.Type,
+		Index: p.Index,
 	}
 	if p.Next != nil {
 		clone.Next = p.Next.Clone()

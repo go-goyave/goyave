@@ -41,6 +41,40 @@ func TestPathLastParent(t *testing.T) {
 	assert.Nil(t, path.Next.Next.LastParent())
 }
 
+func TestPathTail(t *testing.T) {
+	path := &Path{
+		Name: "object",
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: "array",
+			Type: PathTypeArray,
+			Next: &Path{
+				Type: PathTypeElement,
+			},
+		},
+	}
+	assert.Equal(t, path.Next.Next, path.Tail())
+	assert.Equal(t, path.Next.Next, path.Next.Next.Tail())
+}
+
+func TestPathClone(t *testing.T) {
+	i := 1
+	path := &Path{
+		Name: "object",
+		Type: PathTypeObject,
+		Next: &Path{
+			Name:  "array",
+			Type:  PathTypeArray,
+			Index: &i,
+			Next: &Path{
+				Type: PathTypeElement,
+			},
+		},
+	}
+	clone := path.Clone()
+	assert.Equal(t, path, clone)
+}
+
 func testPathScanner(t *testing.T, path string, expected []string) {
 	scanner := createPathScanner(path)
 	result := []string{}
@@ -409,15 +443,4 @@ func TestPathWalkSliceExpected(t *testing.T) {
 	}
 	matches := testWalk(t, data, "object.field[][]")
 	assert.Equal(t, expected, matches)
-}
-
-func TestPathCreateIfMissing(t *testing.T) {
-	data := map[string]interface{}{}
-	path, _ := Parse("a")
-	path.CreateIfMissing = []string{"b", "c"}
-	path.Walk(data, func(c Context) {
-		assert.Equal(t, []string{"b", "c"}, c.Value)
-		assert.Equal(t, data, c.Parent)
-	})
-	assert.Equal(t, []string{"b", "c"}, data["a"])
 }

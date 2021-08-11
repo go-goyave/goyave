@@ -88,19 +88,19 @@ func (suite *ValidatorTestSuite) TestAddRule() {
 func (suite *ValidatorTestSuite) TestValidate() {
 	errors := Validate(nil, &Rules{}, false, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed request", errors["error"][0])
+	suite.Equal("Malformed request", errors["[data]"].Errors[0])
 
 	errors = Validate(nil, RuleSet{}, false, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed request", errors["error"][0])
+	suite.Equal("Malformed request", errors["[data]"].Errors[0])
 
 	errors = Validate(nil, &Rules{}, true, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed JSON", errors["error"][0])
+	suite.Equal("Malformed JSON", errors["[data]"].Errors[0])
 
 	errors = Validate(nil, RuleSet{}, true, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed JSON", errors["error"][0])
+	suite.Equal("Malformed JSON", errors["[data]"].Errors[0])
 
 	errors = Validate(map[string]interface{}{
 		"string": "hello world",
@@ -193,7 +193,7 @@ func (suite *ValidatorTestSuite) TestValidate() {
 		},
 	}, true, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("The text is required.", errors["text"][0])
+	suite.Equal("The text is required.", errors["text"].Errors[0])
 }
 
 func (suite *ValidatorTestSuite) TestValidateWithArray() {

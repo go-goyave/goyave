@@ -277,10 +277,5 @@ func (r *Request) validate() validation.Errors {
 	}
 
 	contentType := r.httpRequest.Header.Get("Content-Type")
-	errors := validation.Validate(r.Data, r.Rules, strings.HasPrefix(contentType, "application/json"), r.Lang)
-	if len(errors) > 0 {
-		return errors
-	}
-
-	return nil
+	return validation.Validate(r.Data, r.Rules, strings.HasPrefix(contentType, "application/json"), r.Lang)
 }

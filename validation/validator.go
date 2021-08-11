@@ -359,7 +359,7 @@ func AddRule(name string, rule *RuleDefinition) {
 }
 
 // Validate the given data with the given rule set.
-// If all validation rules pass, returns an empty "validation.Errors".
+// If all validation rules pass, returns nil.
 // Third parameter tells the function if the data comes from a JSON request.
 // Last parameter sets the language of the validation error messages.
 func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language string) Errors {
@@ -370,10 +370,14 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 		} else {
 			malformedMessage = lang.Get(language, "malformed-request")
 		}
-		return Errors{"data": &FieldErrors{Errors: []string{malformedMessage}}}
+		return Errors{"[data]": &FieldErrors{Errors: []string{malformedMessage}}}
 	}
 
-	return validate(data, isJSON, rules.AsRules(), language)
+	errsBag := validate(data, isJSON, rules.AsRules(), language)
+	if len(errsBag) == 0 {
+		return nil
+	}
+	return errsBag
 }
 
 func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {

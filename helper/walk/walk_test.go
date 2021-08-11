@@ -580,10 +580,16 @@ func TestPathWalkSliceExpected(t *testing.T) {
 	data := map[string]interface{}{
 		"object": map[string]interface{}{
 			"field": []string{"a", "b"},
+			"array": []interface{}{
+				5,
+				[]string{"a", "b"},
+				map[string]interface{}{"field": "1"},
+			},
 		},
 	}
 	i := 0
 	j := 1
+	k := 2
 	expected := []Context{
 		{
 			Value:  nil,
@@ -621,6 +627,87 @@ func TestPathWalkSliceExpected(t *testing.T) {
 		},
 	}
 	matches := testWalk(t, data, "object.field[][]")
+	assert.Equal(t, expected, matches)
+
+	expected = []Context{
+		{
+			Value:  nil,
+			Parent: data["object"].(map[string]interface{})["array"],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{
+					Name:  "array",
+					Type:  PathTypeArray,
+					Index: &i,
+					Next:  &Path{},
+				},
+			},
+			Name:     "",
+			Index:    0,
+			NotFound: true,
+		},
+		{
+			Value:  "a",
+			Parent: data["object"].(map[string]interface{})["array"].([]interface{})[1],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{
+					Name:  "array",
+					Type:  PathTypeArray,
+					Index: &j,
+					Next: &Path{
+						Type:  PathTypeArray,
+						Index: &i,
+						Next:  &Path{},
+					},
+				},
+			},
+			Name:     "",
+			Index:    0,
+			NotFound: false,
+		},
+		{
+			Value:  "b",
+			Parent: data["object"].(map[string]interface{})["array"].([]interface{})[1],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{
+					Name:  "array",
+					Type:  PathTypeArray,
+					Index: &j,
+					Next: &Path{
+						Type:  PathTypeArray,
+						Index: &j,
+						Next:  &Path{},
+					},
+				},
+			},
+			Name:     "",
+			Index:    1,
+			NotFound: false,
+		},
+		{
+			Value:  nil,
+			Parent: data["object"].(map[string]interface{})["array"],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{
+					Name:  "array",
+					Type:  PathTypeArray,
+					Index: &k,
+					Next:  &Path{},
+				},
+			},
+			Name:     "",
+			Index:    2,
+			NotFound: true,
+		},
+	}
+	matches = testWalk(t, data, "object.array[][]")
 	assert.Equal(t, expected, matches)
 }
 

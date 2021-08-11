@@ -166,6 +166,7 @@ func (f *Field) IsArray() bool {
 
 // IsObject check if a field has the "object" rule
 func (f *Field) IsObject() bool {
+	// TODO test this
 	return f.isObject
 }
 
@@ -235,7 +236,8 @@ func (r *Rules) Check() {
 			}
 			field.Path = p
 			field.Check()
-			if strings.HasSuffix(path, "[]") { // This field is an element of an array, find it and assign it to f.Elements
+			if strings.HasSuffix(path, "[]") {
+				// This field is an element of an array, find it and assign it to f.Elements
 				parent, ok := r.Fields[path[:len(path)-2]]
 				if ok {
 					parent.Elements = field

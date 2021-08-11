@@ -1438,14 +1438,79 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 		"object2.array[].field": {"required", "object"},
 	}, true, "en-US")
 
-	suite.Len(errors, 7)
-	suite.Equal([]string{"The field is required.", "The field must be numeric.", "The field may not be greater than 3."}, errors["array[].field"])
-	suite.Equal([]string{"The narray[] values must be objects."}, errors["narray[][]"])
-	suite.Equal([]string{"The field is required.", "The field must be numeric."}, errors["narray[][].field"])
-	suite.Equal([]string{"The array values must be arrays."}, errors["object.array[]"])
-	suite.Equal([]string{"The array[] values are required.", "The array[] values must be strings.", "The array[] values must be at least 2 characters."}, errors["object.array[][]"])
-	suite.Equal([]string{"The array must be an array."}, errors["object2.array"])
-	suite.Equal([]string{"The field is required.", "The field must be an object."}, errors["object2.array[].field"])
+	expected := Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				1: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+					},
+				},
+				2: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field may not be greater than 3."}},
+					},
+				},
+			},
+		},
+		"narray": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Elements: ArrayErrors{
+						1: &FieldErrors{
+							Errors: []string{"The narray[] values must be objects."},
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+							},
+						},
+						2: &FieldErrors{
+							Errors: []string{"The narray[] values must be objects."},
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"object": &FieldErrors{
+			Fields: Errors{
+				"array": &FieldErrors{
+					Elements: ArrayErrors{
+						0: &FieldErrors{Errors: []string{"The array values must be arrays."}},
+						1: &FieldErrors{
+							Elements: ArrayErrors{
+								0: &FieldErrors{Errors: []string{"The array[] values must be at least 2 characters."}},
+								1: &FieldErrors{Errors: []string{"The array[] values must be at least 2 characters."}},
+							},
+						},
+						2: &FieldErrors{Errors: []string{"The array values must be arrays."}},
+					},
+				},
+			},
+		},
+		"object2": &FieldErrors{
+			Fields: Errors{
+				"array": &FieldErrors{
+					Errors: []string{"The array must be an array."},
+					Elements: ArrayErrors{
+						0: &FieldErrors{
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be an object."}},
+							},
+						},
+						1: &FieldErrors{
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field must be an object."}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	suite.Equal(expected, errors)
 }
 
 func (suite *ValidatorTestSuite) TestValidateArrayNoConversionIfAllElementsNotSameType() {

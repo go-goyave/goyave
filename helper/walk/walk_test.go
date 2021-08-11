@@ -232,8 +232,13 @@ func TestPathWalk(t *testing.T) {
 	}
 	expected := []Context{
 		{
-			Value:    5,
-			Parent:   data["object"],
+			Value:  5,
+			Parent: data["object"],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{Name: "field"},
+			},
 			Name:     "field",
 			Index:    -1,
 			NotFound: false,
@@ -246,24 +251,46 @@ func TestPathWalk(t *testing.T) {
 	data = map[string]interface{}{
 		"array": []string{"a", "b", "c"},
 	}
+	i := 0
+	j := 1
+	k := 2
+	l := 3
 	expected = []Context{
 		{
-			Value:    "a",
-			Parent:   data["array"],
+			Value:  "a",
+			Parent: data["array"],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &i,
+				Next:  &Path{},
+			},
 			Name:     "",
 			Index:    0,
 			NotFound: false,
 		},
 		{
-			Value:    "b",
-			Parent:   data["array"],
+			Value:  "b",
+			Parent: data["array"],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &j,
+				Next:  &Path{},
+			},
 			Name:     "",
 			Index:    1,
 			NotFound: false,
 		},
 		{
-			Value:    "c",
-			Parent:   data["array"],
+			Value:  "c",
+			Parent: data["array"],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &k,
+				Next:  &Path{},
+			},
 			Name:     "",
 			Index:    2,
 			NotFound: false,
@@ -282,22 +309,52 @@ func TestPathWalk(t *testing.T) {
 	}
 	expected = []Context{
 		{
-			Value:    "a",
-			Parent:   data["array"].([][]string)[1],
+			Value:  "a",
+			Parent: data["array"].([][]string)[1],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &j,
+				Next: &Path{
+					Type:  PathTypeArray,
+					Index: &i,
+					Next:  &Path{},
+				},
+			},
 			Name:     "",
 			Index:    0,
 			NotFound: false,
 		},
 		{
-			Value:    "b",
-			Parent:   data["array"].([][]string)[1],
+			Value:  "b",
+			Parent: data["array"].([][]string)[1],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &j,
+				Next: &Path{
+					Type:  PathTypeArray,
+					Index: &j,
+					Next:  &Path{},
+				},
+			},
 			Name:     "",
 			Index:    1,
 			NotFound: false,
 		},
 		{
-			Value:    "c",
-			Parent:   data["array"].([][]string)[2],
+			Value:  "c",
+			Parent: data["array"].([][]string)[2],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &k,
+				Next: &Path{
+					Type:  PathTypeArray,
+					Index: &i,
+					Next:  &Path{},
+				},
+			},
 			Name:     "",
 			Index:    0,
 			NotFound: false,
@@ -317,29 +374,83 @@ func TestPathWalk(t *testing.T) {
 	}
 	expected = []Context{
 		{
-			Value:    "a",
-			Parent:   data["array"].([]map[string]interface{})[1]["field"],
+			Value:  "a",
+			Parent: data["array"].([]map[string]interface{})[1]["field"],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &j,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{
+						Name:  "field",
+						Type:  PathTypeArray,
+						Index: &i,
+						Next:  &Path{},
+					},
+				},
+			},
 			Name:     "",
 			Index:    0,
 			NotFound: false,
 		},
 		{
-			Value:    "b",
-			Parent:   data["array"].([]map[string]interface{})[1]["field"],
+			Value:  "b",
+			Parent: data["array"].([]map[string]interface{})[1]["field"],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &j,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{
+						Name:  "field",
+						Type:  PathTypeArray,
+						Index: &j,
+						Next:  &Path{},
+					},
+				},
+			},
 			Name:     "",
 			Index:    1,
 			NotFound: false,
 		},
 		{
-			Value:    nil,
-			Parent:   data["array"].([]map[string]interface{})[2],
+			Value:  nil,
+			Parent: data["array"].([]map[string]interface{})[2],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &k,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{
+						Name: "field",
+						Type: PathTypeElement,
+					},
+				},
+			},
 			Name:     "field",
 			Index:    -1,
 			NotFound: true,
 		},
 		{
-			Value:    "c",
-			Parent:   data["array"].([]map[string]interface{})[3]["field"],
+			Value:  "c",
+			Parent: data["array"].([]map[string]interface{})[3]["field"],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &l,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{
+						Name:  "field",
+						Type:  PathTypeArray,
+						Index: &i,
+						Next:  &Path{},
+					},
+				},
+			},
 			Name:     "",
 			Index:    0,
 			NotFound: false,
@@ -351,29 +462,65 @@ func TestPathWalk(t *testing.T) {
 	// array[].field index check
 	expected = []Context{
 		{
-			Value:    []string{},
-			Parent:   data["array"].([]map[string]interface{})[0],
+			Value:  []string{},
+			Parent: data["array"].([]map[string]interface{})[0],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &i,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{Name: "field"},
+				},
+			},
 			Name:     "field",
 			Index:    -1,
 			NotFound: false,
 		},
 		{
-			Value:    []string{"a", "b"},
-			Parent:   data["array"].([]map[string]interface{})[1],
+			Value:  []string{"a", "b"},
+			Parent: data["array"].([]map[string]interface{})[1],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &j,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{Name: "field"},
+				},
+			},
 			Name:     "field",
 			Index:    -1,
 			NotFound: false,
 		},
 		{
-			Value:    nil,
-			Parent:   data["array"].([]map[string]interface{})[2],
+			Value:  nil,
+			Parent: data["array"].([]map[string]interface{})[2],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &k,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{Name: "field"},
+				},
+			},
 			Name:     "field",
 			Index:    -1,
 			NotFound: true,
 		},
 		{
-			Value:    []string{"c"},
-			Parent:   data["array"].([]map[string]interface{})[3],
+			Value:  []string{"c"},
+			Parent: data["array"].([]map[string]interface{})[3],
+			Path: &Path{
+				Name:  "array",
+				Type:  PathTypeArray,
+				Index: &l,
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{Name: "field"},
+				},
+			},
 			Name:     "field",
 			Index:    -1,
 			NotFound: false,
@@ -391,8 +538,13 @@ func TestPathWalkNotFoundInObject(t *testing.T) {
 	}
 	expected := []Context{
 		{
-			Value:    nil,
-			Parent:   data["object"],
+			Value:  nil,
+			Parent: data["object"],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{Name: "notafield"},
+			},
 			Name:     "notafield",
 			Index:    -1,
 			NotFound: true,
@@ -408,8 +560,13 @@ func TestPathWalkNotFoundInArray(t *testing.T) {
 	}
 	expected := []Context{
 		{
-			Value:    nil,
-			Parent:   data["array"],
+			Value:  nil,
+			Parent: data["array"],
+			Path: &Path{
+				Name: "array",
+				Type: PathTypeArray,
+				Next: &Path{},
+			},
 			Name:     "",
 			Index:    -1,
 			NotFound: true,
@@ -425,22 +582,137 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			"field": []string{"a", "b"},
 		},
 	}
+	i := 0
+	j := 1
 	expected := []Context{
 		{
-			Value:    nil,
-			Parent:   data["object"].(map[string]interface{})["field"],
+			Value:  nil,
+			Parent: data["object"].(map[string]interface{})["field"],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{
+					Name:  "field",
+					Type:  PathTypeArray,
+					Index: &i,
+					Next:  &Path{},
+				},
+			},
 			Name:     "",
 			Index:    0,
 			NotFound: true,
 		},
 		{
-			Value:    nil,
-			Parent:   data["object"].(map[string]interface{})["field"],
+			Value:  nil,
+			Parent: data["object"].(map[string]interface{})["field"],
+			Path: &Path{
+				Name: "object",
+				Type: PathTypeObject,
+				Next: &Path{
+					Name:  "field",
+					Type:  PathTypeArray,
+					Index: &j,
+					Next:  &Path{},
+				},
+			},
 			Name:     "",
 			Index:    1,
 			NotFound: true,
 		},
 	}
 	matches := testWalk(t, data, "object.field[][]")
+	assert.Equal(t, expected, matches)
+}
+
+func TestPathWalkWithIndex(t *testing.T) {
+	data := map[string]interface{}{
+		"array": []map[string]interface{}{
+			{"field": []string{}},
+			{"field": []string{"a", "b"}},
+			{},
+			{"field": []string{"c"}},
+			{"field": []string{"d", "e"}},
+		},
+	}
+
+	i := 1
+	path := &Path{
+		Name:  "array",
+		Type:  PathTypeArray,
+		Index: &i,
+		Next: &Path{
+			Type: PathTypeObject,
+			Next: &Path{
+				Name:  "field",
+				Type:  PathTypeArray,
+				Index: &i,
+				Next:  &Path{},
+			},
+		},
+	}
+
+	matches := make([]Context, 0, 1)
+
+	path.Walk(data, func(c Context) {
+		matches = append(matches, c)
+	})
+
+	expected := []Context{
+		{
+			Value:    "b",
+			Parent:   data["array"].([]map[string]interface{})[i]["field"],
+			Path:     path,
+			Name:     "",
+			Index:    i,
+			NotFound: false,
+		},
+	}
+	assert.Equal(t, expected, matches)
+}
+
+func TestPathWalkWithIndexOutOfBounds(t *testing.T) {
+	data := map[string]interface{}{
+		"array": []map[string]interface{}{
+			{"field": []string{}},
+			{"field": []string{"a", "b"}},
+			{},
+			{"field": []string{"c"}},
+			{"field": []string{"d", "e"}},
+		},
+	}
+
+	i := 1
+	j := 5
+	path := &Path{
+		Name:  "array",
+		Type:  PathTypeArray,
+		Index: &i,
+		Next: &Path{
+			Type: PathTypeObject,
+			Next: &Path{
+				Name:  "field",
+				Type:  PathTypeArray,
+				Index: &j,
+				Next:  &Path{},
+			},
+		},
+	}
+
+	matches := make([]Context, 0, 1)
+
+	path.Walk(data, func(c Context) {
+		matches = append(matches, c)
+	})
+
+	expected := []Context{
+		{
+			Value:    nil,
+			Parent:   data["array"].([]map[string]interface{})[i]["field"],
+			Path:     path,
+			Name:     "",
+			Index:    j,
+			NotFound: true,
+		},
+	}
 	assert.Equal(t, expected, matches)
 }

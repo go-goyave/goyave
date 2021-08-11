@@ -67,7 +67,7 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 			index = -1
 		}
 		if !ok {
-			// TODO path
+			lastPathElement.Type = PathTypeElement
 			f(newNotFoundContext(currentElement, path, p.Name, index))
 			return
 		}
@@ -86,22 +86,23 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 	case PathTypeArray:
 		list := reflect.ValueOf(element)
 		if list.Kind() != reflect.Slice {
-			// TODO path
+			lastPathElement.Type = PathTypeElement
 			f(newNotFoundContext(parent, path, p.Name, index))
 			return
 		}
 		length := list.Len()
 		if p.Next.Type != PathTypeElement && length == 0 {
+			lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
 			f(newNotFoundContext(element, path, "", index))
 			return
 		}
 		if p.Index != nil {
-			if *p.Index >= length {
+			lastPathElement.Index = p.Index
+			lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
+			if *p.Index >= length || *p.Index < 0 {
 				f(newNotFoundContext(element, path, "", *p.Index))
 				return
 			}
-			lastPathElement.Index = p.Index
-			lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 			v := list.Index(*p.Index)
 			value := v.Interface()
 			p.Next.walk(value, element, *p.Index, path, lastPathElement.Next, f)

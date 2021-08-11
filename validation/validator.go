@@ -388,12 +388,12 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName]
-		validateField(fieldName, field, isJSON, data, data, now, language, errors)
+		validateField(fieldName, field, isJSON, data, data, nil, now, language, errors)
 	}
 	return errors
 }
 
-func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, now time.Time, language string, errors Errors) {
+func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, parentPath *walk.Path, now time.Time, language string, errors Errors) {
 	field.Path.Walk(walkData, func(c walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
 		if parentIsObject && !field.IsNullable() && c.Value == nil {
@@ -426,7 +426,16 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				}
 			}
 
-			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, now, language, errors)
+			path := c.Path
+			if parentPath != nil {
+				clone := parentPath.Clone()
+				tail := clone.Tail()
+				tail.Type = walk.PathTypeArray
+				tail.Index = &c.Index
+				tail.Next = path.Next
+				path = clone
+			}
+			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, path, now, language, errors)
 		}
 
 		value := c.Value
@@ -448,8 +457,17 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				Name:   c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {
+				path := c.Path
+				if parentPath != nil {
+					clone := parentPath.Clone()
+					tail := clone.Tail()
+					tail.Type = walk.PathTypeArray
+					tail.Index = &c.Index
+					tail.Next = &walk.Path{Type: walk.PathTypeElement}
+					path = clone
+				}
 				message := processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(value), language), language)
-				errors.Add(c.Path, message)
+				errors.Add(path, message)
 				continue
 			}
 

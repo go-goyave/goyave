@@ -1477,14 +1477,24 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 			Fields: Errors{
 				"array": &FieldErrors{
 					Elements: ArrayErrors{
-						0: &FieldErrors{Errors: []string{"The array values must be arrays."}},
+						0: &FieldErrors{
+							Errors: []string{"The array values must be arrays."},
+							Elements: ArrayErrors{
+								-1: &FieldErrors{Errors: []string{"The array[] values are required.", "The array[] values must be strings."}},
+							},
+						},
 						1: &FieldErrors{
 							Elements: ArrayErrors{
 								0: &FieldErrors{Errors: []string{"The array[] values must be at least 2 characters."}},
 								1: &FieldErrors{Errors: []string{"The array[] values must be at least 2 characters."}},
 							},
 						},
-						2: &FieldErrors{Errors: []string{"The array values must be arrays."}},
+						2: &FieldErrors{
+							Errors: []string{"The array values must be arrays."},
+							Elements: ArrayErrors{
+								-1: &FieldErrors{Errors: []string{"The array[] values are required.", "The array[] values must be strings."}},
+							},
+						},
 					},
 				},
 			},

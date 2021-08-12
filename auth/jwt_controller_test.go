@@ -219,8 +219,8 @@ func (suite *JWTControllerTestSuite) TestValidation() {
 			err := suite.GetJSONBody(resp, &json)
 			suite.Nil(err)
 			if err == nil {
-				suite.Len(json["validationError"]["username"], 2)
-				suite.Len(json["validationError"]["password"], 2)
+				suite.Len(json["validationError"]["username"].Errors, 2)
+				suite.Len(json["validationError"]["password"].Errors, 2)
 			}
 		}
 	})

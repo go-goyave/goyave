@@ -12,6 +12,10 @@ import (
 	"goyave.dev/goyave/v3/lang"
 )
 
+const (
+	CurrentElement = ""
+)
+
 // Ruler adapter interface for method dispatching between RuleSet and Rules
 // at route registration time. Allows to input both of these types as parameters
 // of the Route.Validate method.
@@ -70,9 +74,19 @@ type RuleDefinition struct {
 	ComparesFields bool
 }
 
+type RuleSetApplier interface {
+	apply(set RuleSet, name string)
+}
+
+type List []string
+
+func (r List) apply(set RuleSet, name string) {
+	set[name] = r
+}
+
 // RuleSet is a request rules definition. Each entry is a field in the request.
 // TODO map of some interface to be able to use composition
-type RuleSet map[string][]string
+type RuleSet map[string]RuleSetApplier
 
 var _ Ruler = (RuleSet)(nil) // implements Ruler
 
@@ -84,20 +98,39 @@ func (r RuleSet) AsRules() *Rules {
 // Parse converts the more convenient RuleSet validation rules syntax to
 // a Rules map.
 func (r RuleSet) parse() *Rules {
+	r.processComposition()
 	rules := &Rules{
 		Fields: make(FieldMap, len(r)),
 	}
-	for k, r := range r {
+	for k, fieldRules := range r {
 		field := &Field{
-			Rules: make([]*Rule, 0, len(r)),
+			Rules: make([]*Rule, 0, len(fieldRules.(List))),
 		}
-		for _, v := range r {
+		for _, v := range fieldRules.(List) {
 			field.Rules = append(field.Rules, parseRule(v))
 		}
 		rules.Fields[k] = field
 	}
 	rules.Check()
 	return rules
+}
+
+func (r RuleSet) processComposition() {
+	for name, field := range r {
+		field.apply(r, name)
+	}
+}
+
+func (r RuleSet) apply(set RuleSet, name string) {
+	for k, rules := range r {
+		if k != CurrentElement {
+			rules.apply(set, name+"."+k)
+		}
+	}
+	rules, ok := r[CurrentElement]
+	if ok {
+		rules.apply(set, name)
+	}
 }
 
 // Rule is a component of rule sets for route validation. Each validated fields

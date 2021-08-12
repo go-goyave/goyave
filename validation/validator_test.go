@@ -741,7 +741,12 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 
 		suite.True(field.isRequired)
 		suite.False(field.isArray)
+		suite.False(field.isObject)
 		suite.False(field.isNullable)
+		suite.False(field.IsArray())
+		suite.False(field.IsObject())
+		suite.False(field.IsNullable())
+		suite.True(field.IsRequired())
 	})
 
 	suite.NotPanics(func() {
@@ -756,7 +761,32 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 
 		suite.False(field.isRequired)
 		suite.True(field.isArray)
+		suite.False(field.isObject)
 		suite.True(field.isNullable)
+		suite.True(field.IsArray())
+		suite.False(field.IsObject())
+		suite.True(field.IsNullable())
+		suite.False(field.IsRequired())
+	})
+
+	suite.NotPanics(func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "nullable"},
+				{Name: "object"},
+			},
+		}
+
+		field.Check()
+
+		suite.False(field.isRequired)
+		suite.False(field.isArray)
+		suite.True(field.isObject)
+		suite.True(field.isNullable)
+		suite.False(field.IsArray())
+		suite.True(field.IsObject())
+		suite.True(field.IsNullable())
+		suite.False(field.IsRequired())
 	})
 
 	suite.Panics(func() {

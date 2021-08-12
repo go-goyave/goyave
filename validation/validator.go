@@ -166,7 +166,6 @@ func (f *Field) IsArray() bool {
 
 // IsObject check if a field has the "object" rule
 func (f *Field) IsObject() bool {
-	// TODO test this
 	return f.isObject
 }
 

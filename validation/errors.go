@@ -15,75 +15,41 @@ type FieldErrors struct {
 }
 
 func (e Errors) Add(path *walk.Path, message string) {
-	switch path.Type {
-	case walk.PathTypeElement:
-		errs, ok := e[path.Name]
-		if !ok {
-			errs = &FieldErrors{}
-			e[path.Name] = errs
-		}
-		errs.Errors = append(errs.Errors, message)
-	case walk.PathTypeArray:
-		errs, ok := e[path.Name]
-		if !ok {
-			errs = &FieldErrors{}
-			e[path.Name] = errs
-		}
-		if errs.Elements == nil {
-			errs.Elements = make(map[int]*FieldErrors)
-		}
-		index := -1
-		if path.Index != nil {
-			index = *path.Index
-		}
-		errs.Elements.Add(path.Next, index, message)
-	case walk.PathTypeObject:
-		// TODO factorize this, if ok or not ok is repeated
-		errs, ok := e[path.Name]
-		if !ok {
-			errs = &FieldErrors{}
-			e[path.Name] = errs
-		}
-		if errs.Fields == nil {
-			errs.Fields = make(Errors)
-		}
-		errs.Fields.Add(path.Next, message)
+	errs, ok := e[path.Name]
+	if !ok {
+		errs = &FieldErrors{}
+		e[path.Name] = errs
 	}
+	errs.Add(path, message)
 }
 
 func (e ArrayErrors) Add(path *walk.Path, index int, message string) {
+	errs, ok := e[index]
+	if !ok {
+		errs = &FieldErrors{}
+		e[index] = errs
+	}
+	errs.Add(path, message)
+}
+
+func (e *FieldErrors) Add(path *walk.Path, message string) {
 	switch path.Type {
 	case walk.PathTypeElement:
-		elem, ok := e[index]
-		if !ok {
-			elem = &FieldErrors{}
-			e[index] = elem
-		}
-		elem.Errors = append(elem.Errors, message)
+		e.Errors = append(e.Errors, message)
 	case walk.PathTypeArray:
-		errs, ok := e[index]
-		if !ok {
-			errs = &FieldErrors{}
-			e[index] = errs
-		}
-		if errs.Elements == nil {
-			errs.Elements = make(map[int]*FieldErrors)
+		if e.Elements == nil {
+			e.Elements = make(map[int]*FieldErrors)
 		}
 
 		index := -1
 		if path.Index != nil {
 			index = *path.Index
 		}
-		errs.Elements.Add(path.Next, index, message)
+		e.Elements.Add(path.Next, index, message)
 	case walk.PathTypeObject:
-		errs, ok := e[index]
-		if !ok {
-			errs = &FieldErrors{}
-			e[index] = errs
+		if e.Fields == nil {
+			e.Fields = make(Errors)
 		}
-		if errs.Fields == nil {
-			errs.Fields = make(Errors)
-		}
-		errs.Fields.Add(path.Next, message)
+		e.Fields.Add(path.Next, message)
 	}
 }

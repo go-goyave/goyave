@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v3"
 	"goyave.dev/goyave/v3/config"

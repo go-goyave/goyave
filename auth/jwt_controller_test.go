@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"goyave.dev/goyave/v3"
 	"goyave.dev/goyave/v3/config"

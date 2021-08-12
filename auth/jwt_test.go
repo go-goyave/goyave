@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"goyave.dev/goyave/v3"
 	"goyave.dev/goyave/v3/config"
 	"goyave.dev/goyave/v3/database"

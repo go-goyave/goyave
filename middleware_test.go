@@ -434,7 +434,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 	}
 	result.Body.Close()
 	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
-	suite.Equal("{\"validationError\":{\"number\":[\"The number must be at least 50.\"]}}\n", string(body))
+	suite.Equal("{\"validationError\":{\"number\":{\"errors\":[\"The number must be at least 50.\"]}}}\n", string(body))
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", nil)
 	rawRequest.Header.Set("Content-Type", "application/json")
@@ -448,7 +448,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 	}
 	result.Body.Close()
 	suite.Equal(http.StatusBadRequest, result.StatusCode)
-	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
+	suite.Equal("{\"validationError\":{\"[data]\":{\"errors\":[\"Malformed JSON\"]}}}\n", string(body))
 }
 
 func (suite *MiddlewareTestSuite) TestCORSMiddleware() {

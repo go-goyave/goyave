@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"goyave.dev/goyave/v3/helper"
 	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/helper/walk"
 	"goyave.dev/goyave/v3/lang"
 )
 
@@ -34,14 +35,14 @@ func (suite *ValidatorTestSuite) TestParseRule() {
 }
 
 func (suite *ValidatorTestSuite) TestGetMessage() {
-	suite.Equal("The :field is required.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
-	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{Name: "numeric"}}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field is required.", getMessage(&Field{Rules: []*Rule{}, Path: &walk.Path{}}, &Rule{Name: "required"}, reflect.ValueOf("test"), "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{Name: "numeric"}}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
 
 	field := &Field{
 		Rules: []*Rule{{Name: "numeric"}},
-		Path: &PathItem{
-			Type: PathTypeArray,
-			Next: &PathItem{Type: PathTypeElement},
+		Path: &walk.Path{
+			Type: walk.PathTypeArray,
+			Next: &walk.Path{Type: walk.PathTypeElement},
 		},
 	}
 	suite.Equal("The :field values must be at least :min.", getMessage(field, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
@@ -51,19 +52,19 @@ func (suite *ValidatorTestSuite) TestGetMessage() {
 			{Name: "numeric"},
 			{Name: "min", Params: []string{"5"}},
 		},
-		Path: &PathItem{
-			Type: PathTypeArray,
-			Next: &PathItem{Type: PathTypeElement},
+		Path: &walk.Path{
+			Type: walk.PathTypeArray,
+			Next: &walk.Path{Type: walk.PathTypeElement},
 		},
 	}
 	suite.Equal("The :field values must be at least :min.", getMessage(field, field.Rules[1], reflect.ValueOf(42), "en-US"))
 
 	// Test type fallback if no type rule is found
-	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
-	suite.Equal("The :field must be at least :min characters.", getMessage(&Field{Rules: []*Rule{}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.ValueOf(42), "en-US"))
+	suite.Equal("The :field must be at least :min characters.", getMessage(&Field{Rules: []*Rule{}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.ValueOf("test"), "en-US"))
 
 	// Integer share message with numeric
-	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{"integer", nil}}, Path: &PathItem{}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
+	suite.Equal("The :field must be at least :min.", getMessage(&Field{Rules: []*Rule{{"integer", nil}}, Path: &walk.Path{}}, &Rule{Name: "min"}, reflect.Value{}, "en-US"))
 }
 
 func (suite *ValidatorTestSuite) TestAddRule() {
@@ -87,19 +88,19 @@ func (suite *ValidatorTestSuite) TestAddRule() {
 func (suite *ValidatorTestSuite) TestValidate() {
 	errors := Validate(nil, &Rules{}, false, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed request", errors["error"][0])
+	suite.Equal("Malformed request", errors["[data]"].Errors[0])
 
 	errors = Validate(nil, RuleSet{}, false, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed request", errors["error"][0])
+	suite.Equal("Malformed request", errors["[data]"].Errors[0])
 
 	errors = Validate(nil, &Rules{}, true, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed JSON", errors["error"][0])
+	suite.Equal("Malformed JSON", errors["[data]"].Errors[0])
 
 	errors = Validate(nil, RuleSet{}, true, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("Malformed JSON", errors["error"][0])
+	suite.Equal("Malformed JSON", errors["[data]"].Errors[0])
 
 	errors = Validate(map[string]interface{}{
 		"string": "hello world",
@@ -192,7 +193,7 @@ func (suite *ValidatorTestSuite) TestValidate() {
 		},
 	}, true, "en-US")
 	suite.Equal(1, len(errors))
-	suite.Equal("The text is required.", errors["text"][0])
+	suite.Equal("The text is required.", errors["text"].Errors[0])
 }
 
 func (suite *ValidatorTestSuite) TestValidateWithArray() {
@@ -740,7 +741,12 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 
 		suite.True(field.isRequired)
 		suite.False(field.isArray)
+		suite.False(field.isObject)
 		suite.False(field.isNullable)
+		suite.False(field.IsArray())
+		suite.False(field.IsObject())
+		suite.False(field.IsNullable())
+		suite.True(field.IsRequired())
 	})
 
 	suite.NotPanics(func() {
@@ -755,7 +761,32 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 
 		suite.False(field.isRequired)
 		suite.True(field.isArray)
+		suite.False(field.isObject)
 		suite.True(field.isNullable)
+		suite.True(field.IsArray())
+		suite.False(field.IsObject())
+		suite.True(field.IsNullable())
+		suite.False(field.IsRequired())
+	})
+
+	suite.NotPanics(func() {
+		field := &Field{
+			Rules: []*Rule{
+				{Name: "nullable"},
+				{Name: "object"},
+			},
+		}
+
+		field.Check()
+
+		suite.False(field.isRequired)
+		suite.False(field.isArray)
+		suite.True(field.isObject)
+		suite.True(field.isNullable)
+		suite.False(field.IsArray())
+		suite.True(field.IsObject())
+		suite.True(field.IsNullable())
+		suite.False(field.IsRequired())
 	})
 
 	suite.Panics(func() {
@@ -781,7 +812,7 @@ func (suite *ValidatorTestSuite) TestFieldCheckArrayProhibitedRules() {
 				Rules: []*Rule{
 					{Name: v},
 				},
-				Path: &PathItem{Type: PathTypeArray},
+				Path: &walk.Path{Type: walk.PathTypeArray},
 			}
 			field.Check()
 		})
@@ -802,10 +833,10 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	suite.Equal(&Rule{Name: "array", Params: []string{"string"}}, rules.Fields["string"].Rules[1])
 	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["string"].Elements.Rules[0])
 
-	expectedPath := &PathItem{
-		Type: PathTypeArray,
-		Next: &PathItem{
-			Type: PathTypeElement,
+	expectedPath := &walk.Path{
+		Type: walk.PathTypeArray,
+		Next: &walk.Path{
+			Type: walk.PathTypeElement,
 		},
 	}
 	suite.Equal(expectedPath, rules.Fields["string"].Elements.Path)
@@ -1318,12 +1349,24 @@ func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {
 		"array":         {"required", "array:object"},
 		"array[].field": {"numeric", "min:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
 
-	e, ok := errors["array[].field"]
-	if suite.True(ok) {
-		suite.Len(e, 1)
+	expected := Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+					},
+				},
+				1: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 
 	// array[].subarray[].field
 	data = map[string]interface{}{
@@ -1342,12 +1385,39 @@ func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {
 		"array[].subarray":         {"array:object"},
 		"array[].subarray[].field": {"numeric", "min:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
-
-	e, ok = errors["array[].subarray[].field"]
-	if suite.True(ok) {
-		suite.Len(e, 1)
+	expected = Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Fields: Errors{
+						"subarray": &FieldErrors{
+							Elements: ArrayErrors{
+								0: &FieldErrors{
+									Fields: Errors{
+										"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+									},
+								},
+							},
+						},
+					},
+				},
+				1: &FieldErrors{
+					Fields: Errors{
+						"subarray": &FieldErrors{
+							Elements: ArrayErrors{
+								0: &FieldErrors{
+									Fields: Errors{
+										"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 }
 
 func (suite *ValidatorTestSuite) TestValidateRequiredInObjectInArray() {
@@ -1362,12 +1432,23 @@ func (suite *ValidatorTestSuite) TestValidateRequiredInObjectInArray() {
 		"array":         {"required", "array:object"},
 		"array[].field": {"required", "numeric", "min:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
-
-	e, ok := errors["array[].field"]
-	if suite.True(ok) {
-		suite.Len(e, 3)
+	expected := Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+					},
+				},
+				1: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 
 	data = map[string]interface{}{
 		"array": [][]interface{}{
@@ -1382,12 +1463,22 @@ func (suite *ValidatorTestSuite) TestValidateRequiredInObjectInArray() {
 		"array[]":         {"required", "array:object"},
 		"array[][].field": {"required", "numeric", "max:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
-
-	e, ok = errors["array[][].field"]
-	if suite.True(ok) {
-		suite.Len(e, 2)
+	expected = Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Elements: ArrayErrors{
+						0: &FieldErrors{
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 }
 
 func (suite *ValidatorTestSuite) TestValidateWrongBody() {
@@ -1421,6 +1512,7 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 				},
 			},
 		},
+		"edgecase": []string{},
 	}
 
 	errors := Validate(data, RuleSet{
@@ -1435,16 +1527,109 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 		"object.array[][]":      {"required", "string", "min:2"},
 		"object2.array":         {"required", "array:object"},
 		"object2.array[].field": {"required", "object"},
+		"edgecase[][][][]":      {"required", "string"},
 	}, true, "en-US")
 
-	suite.Len(errors, 7)
-	suite.Equal([]string{"The field is required.", "The field must be numeric.", "The field may not be greater than 3."}, errors["array[].field"])
-	suite.Equal([]string{"The narray[] values must be objects."}, errors["narray[][]"])
-	suite.Equal([]string{"The field is required.", "The field must be numeric."}, errors["narray[][].field"])
-	suite.Equal([]string{"The array values must be arrays."}, errors["object.array[]"])
-	suite.Equal([]string{"The array[] values are required.", "The array[] values must be strings.", "The array[] values must be at least 2 characters."}, errors["object.array[][]"])
-	suite.Equal([]string{"The array must be an array."}, errors["object2.array"])
-	suite.Equal([]string{"The field is required.", "The field must be an object."}, errors["object2.array[].field"])
+	expected := Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				1: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+					},
+				},
+				2: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field may not be greater than 3."}},
+					},
+				},
+			},
+		},
+		"narray": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Elements: ArrayErrors{
+						1: &FieldErrors{
+							Errors: []string{"The narray[] values must be objects."},
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+							},
+						},
+						2: &FieldErrors{
+							Errors: []string{"The narray[] values must be objects."},
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"object": &FieldErrors{
+			Fields: Errors{
+				"array": &FieldErrors{
+					Elements: ArrayErrors{
+						0: &FieldErrors{
+							Errors: []string{"The array values must be arrays."},
+							Elements: ArrayErrors{
+								-1: &FieldErrors{Errors: []string{"The array[] values are required.", "The array[] values must be strings."}},
+							},
+						},
+						1: &FieldErrors{
+							Elements: ArrayErrors{
+								0: &FieldErrors{Errors: []string{"The array[] values must be at least 2 characters."}},
+								1: &FieldErrors{Errors: []string{"The array[] values must be at least 2 characters."}},
+							},
+						},
+						2: &FieldErrors{
+							Errors: []string{"The array values must be arrays."},
+							Elements: ArrayErrors{
+								-1: &FieldErrors{Errors: []string{"The array[] values are required.", "The array[] values must be strings."}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"object2": &FieldErrors{
+			Fields: Errors{
+				"array": &FieldErrors{
+					Errors: []string{"The array must be an array."},
+					Elements: ArrayErrors{
+						0: &FieldErrors{
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be an object."}},
+							},
+						},
+						1: &FieldErrors{
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field must be an object."}},
+							},
+						},
+					},
+				},
+			},
+		},
+		"edgecase": &FieldErrors{
+			Elements: ArrayErrors{
+				-1: &FieldErrors{
+					Elements: ArrayErrors{
+						-1: &FieldErrors{
+							Elements: ArrayErrors{
+								-1: &FieldErrors{
+									Elements: ArrayErrors{
+										-1: &FieldErrors{Errors: []string{"The edgecase[][][] values are required.", "The edgecase[][][] values must be strings."}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	suite.Equal(expected, errors)
 }
 
 func (suite *ValidatorTestSuite) TestValidateArrayNoConversionIfAllElementsNotSameType() {

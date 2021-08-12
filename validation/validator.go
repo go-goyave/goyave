@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v3/helper/walk"
 	"goyave.dev/goyave/v3/lang"
 )
 
@@ -138,11 +139,12 @@ func (r *Rule) IsTypeDependent() bool {
 // Field is a component of route validation. A Field is a value in
 // a Rules map, the key being the name of the field.
 type Field struct {
-	Path     *PathItem
+	Path     *walk.Path
 	Elements *Field // If the field is an array, the field representing its elements, or nil
 	// Maybe use the same concept for objects too?
 	Rules      []*Rule
 	isArray    bool
+	isObject   bool
 	isRequired bool
 	isNullable bool
 }
@@ -162,6 +164,11 @@ func (f *Field) IsArray() bool {
 	return f.isArray
 }
 
+// IsObject check if a field has the "object" rule
+func (f *Field) IsObject() bool {
+	return f.isObject
+}
+
 // Check if rules meet the minimum parameters requirement and update
 // the isRequired, isNullable and isArray fields.
 func (f *Field) Check() {
@@ -179,6 +186,8 @@ func (f *Field) Check() {
 			continue
 		case "array":
 			f.isArray = true
+		case "object":
+			f.isObject = true
 		}
 
 		def, exists := validationRules[rule.Name]
@@ -189,6 +198,24 @@ func (f *Field) Check() {
 			panic(fmt.Sprintf("Rule \"%s\" requires %d parameter(s)", rule.Name, def.RequiredParameters))
 		}
 	}
+}
+
+func (f *Field) getErrorPath(parentPath *walk.Path, c walk.Context) *walk.Path {
+	if parentPath != nil {
+		clone := parentPath.Clone()
+		tail := clone.Tail()
+		tail.Type = walk.PathTypeArray
+		tail.Index = &c.Index
+		tail.Next = &walk.Path{Type: walk.PathTypeElement}
+		return clone
+	}
+
+	_, parentIsObject := c.Parent.(map[string]interface{})
+	if c.NotFound && c.Index == -1 && !parentIsObject {
+		return f.Path
+	}
+
+	return c.Path
 }
 
 // FieldMap is an alias to shorten verbose validation rules declaration.
@@ -220,20 +247,21 @@ func (r *Rules) Check() {
 		r.sortKeys()
 		for _, path := range r.sortedKeys {
 			field := r.Fields[path]
-			p, err := ComputePath(path)
+			p, err := walk.Parse(path)
 			if err != nil {
 				panic(err)
 			}
 			field.Path = p
 			field.Check()
-			if strings.HasSuffix(path, "[]") { // This field is an element of an array, find it and assign it to f.Elements
+			if strings.HasSuffix(path, "[]") {
+				// This field is an element of an array, find it and assign it to f.Elements
 				parent, ok := r.Fields[path[:len(path)-2]]
 				if ok {
 					parent.Elements = field
-					field.Path = &PathItem{
-						Type: PathTypeArray,
-						Next: &PathItem{
-							Type: PathTypeElement,
+					field.Path = &walk.Path{
+						Type: walk.PathTypeArray,
+						Next: &walk.Path{
+							Type: walk.PathTypeElement,
 						},
 					}
 					delete(r.Fields, path)
@@ -272,10 +300,6 @@ func (r *Rules) sortKeys() {
 		return count1 > count2
 	})
 }
-
-// Errors is a map of validation errors with the field name as a key.
-// TODO Errors should be map[string]interface{} so it's easier to read errors related to object fields
-type Errors map[string][]string
 
 var validationRules map[string]*RuleDefinition
 
@@ -354,7 +378,7 @@ func AddRule(name string, rule *RuleDefinition) {
 }
 
 // Validate the given data with the given rule set.
-// If all validation rules pass, returns an empty "validation.Errors".
+// If all validation rules pass, returns nil.
 // Third parameter tells the function if the data comes from a JSON request.
 // Last parameter sets the language of the validation error messages.
 func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language string) Errors {
@@ -365,10 +389,14 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 		} else {
 			malformedMessage = lang.Get(language, "malformed-request")
 		}
-		return map[string][]string{"error": {malformedMessage}}
+		return Errors{"[data]": &FieldErrors{Errors: []string{malformedMessage}}}
 	}
 
-	return validate(data, isJSON, rules.AsRules(), language)
+	errsBag := validate(data, isJSON, rules.AsRules(), language)
+	if len(errsBag) == 0 {
+		return nil
+	}
+	return errsBag
 }
 
 func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {
@@ -377,16 +405,16 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName]
-		validateField(fieldName, field, isJSON, data, data, now, language, errors)
+		validateField(fieldName, field, isJSON, data, data, nil, now, language, errors)
 	}
 	return errors
 }
 
-func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, now time.Time, language string, errors Errors) {
-	field.Path.Walk(walkData, func(c WalkContext) {
+func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, parentPath *walk.Path, now time.Time, language string, errors Errors) {
+	field.Path.Walk(walkData, func(c walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
 		if parentIsObject && !field.IsNullable() && c.Value == nil {
-			delete(parentObject, fieldName)
+			delete(parentObject, c.Name)
 		}
 
 		if shouldConvertSingleValueArray(fieldName, isJSON) {
@@ -394,15 +422,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			parentObject[c.Name] = c.Value
 		}
 
-		requiredCtx := &Context{
-			Data:   data,
-			Value:  c.Value,
-			Parent: c.Parent,
-			Field:  field,
-			Rule:   &Rule{Name: "required"},
-			Name:   c.Name,
-		}
-		if !field.IsRequired() && !validateRequired(requiredCtx) {
+		if isAbsent(field, c, data) {
 			return
 		}
 
@@ -415,7 +435,16 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				}
 			}
 
-			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, now, language, errors)
+			path := c.Path
+			if parentPath != nil {
+				clone := parentPath.Clone()
+				tail := clone.Tail()
+				tail.Type = walk.PathTypeArray
+				tail.Index = &c.Index
+				tail.Next = path.Next
+				path = clone
+			}
+			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, path, now, language, errors)
 		}
 
 		value := c.Value
@@ -437,8 +466,9 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				Name:   c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {
-				// TODO add index to message?
-				setError(errors, fieldName, field, rule, c.Value, language)
+				path := field.getErrorPath(parentPath, c)
+				message := processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(value), language), language)
+				errors.Add(path, message)
 				continue
 			}
 
@@ -449,11 +479,23 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 	})
 }
 
+func isAbsent(field *Field, c walk.Context, data map[string]interface{}) bool {
+	requiredCtx := &Context{
+		Data:   data,
+		Value:  c.Value,
+		Parent: c.Parent,
+		Field:  field,
+		Rule:   &Rule{Name: "required"},
+		Name:   c.Name,
+	}
+	return !field.IsRequired() && !validateRequired(requiredCtx)
+}
+
 func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
 	return !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
-func replaceValue(value interface{}, c WalkContext) {
+func replaceValue(value interface{}, c walk.Context) {
 	if c.NotFound {
 		return
 	}
@@ -463,16 +505,6 @@ func replaceValue(value interface{}, c WalkContext) {
 	} else {
 		// Parent is slice
 		reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
-	}
-}
-
-func setError(errors Errors, fieldName string, field *Field, rule *Rule, value interface{}, language string) {
-	message := processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(value), language), language)
-	if !helper.ContainsStr(errors[fieldName], message) {
-		errors[fieldName] = append(
-			errors[fieldName],
-			message,
-		)
 	}
 }
 
@@ -516,7 +548,7 @@ func getMessage(field *Field, rule *Rule, value reflect.Value, language string) 
 	}
 
 	lastParent := field.Path.LastParent()
-	if lastParent != nil && lastParent.Type == PathTypeArray {
+	if lastParent != nil && lastParent.Type == walk.PathTypeArray {
 		langEntry += ".array"
 	}
 

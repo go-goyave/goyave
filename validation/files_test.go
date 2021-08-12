@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v3/helper/walk"
 )
 
 const (
@@ -110,7 +111,7 @@ func TestValidateMIME(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "mime"},
 			},
-			Path: &PathItem{},
+			Path: &walk.Path{},
 		}
 		field.Check()
 	})
@@ -135,7 +136,7 @@ func TestValidateExtension(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "extension"},
 			},
-			Path: &PathItem{},
+			Path: &walk.Path{},
 		}
 		field.Check()
 	})
@@ -153,7 +154,7 @@ func TestValidateCount(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count"},
 			},
-			Path: &PathItem{},
+			Path: &walk.Path{},
 		}
 		field.Check()
 	})
@@ -171,7 +172,7 @@ func TestValidateCountMin(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_min"},
 			},
-			Path: &PathItem{},
+			Path: &walk.Path{},
 		}
 		field.Check()
 	})
@@ -189,7 +190,7 @@ func TestValidateCountMax(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_max"},
 			},
-			Path: &PathItem{},
+			Path: &walk.Path{},
 		}
 		field.Check()
 	})
@@ -216,7 +217,7 @@ func TestValidateCountBetween(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_between"},
 			},
-			Path: &PathItem{},
+			Path: &walk.Path{},
 		}
 		field.Check()
 	})
@@ -226,7 +227,7 @@ func TestValidateCountBetween(t *testing.T) {
 			Rules: []*Rule{
 				{Name: "count_between", Params: []string{"2"}},
 			},
-			Path: &PathItem{},
+			Path: &walk.Path{},
 		}
 		field.Check()
 	})

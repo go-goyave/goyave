@@ -1,4 +1,4 @@
-package validation
+package walk
 
 import (
 	"bufio"
@@ -16,7 +16,7 @@ const (
 	PathTypeElement PathType = iota
 
 	// PathTypeArray the explored element is used as an array and not a final element.
-	// All elements in the array will be explored using the next PathItem.
+	// All elements in the array will be explored using the next Path.
 	PathTypeArray
 
 	// PathTypeObject the explored element is used as an object (`map[string]interface{}`)
@@ -24,32 +24,41 @@ const (
 	PathTypeObject
 )
 
-// PathItem step in exploration.
+// Path allows for complex untyped data structure exploration.
+// An instance of this structure represents a step in exploration.
 // Items NOT having `PathTypeElement` as a `Type` are expected to have a non-nil `Next`.
-type PathItem struct {
-	Next *PathItem
-	Name string
-	Type PathType
+type Path struct {
+	Next  *Path
+	Index *int
+	Name  string
+	Type  PathType
 }
 
-// WalkContext information sent to walk function.
-type WalkContext struct {
+// Context information sent to walk function.
+type Context struct {
 	Value    interface{}
 	Parent   interface{} // Either map[string]interface{} or a slice
+	Path     *Path       // Exact Path to the current element
 	Name     string      // Name of the current element
 	Index    int         // If parent is a slice, the index of the current element in the slice, else -1
 	NotFound bool        // True if the path could not be completely explored
 }
 
-// Walk this path and execute the given behavior for each matching element.
+// Walk this path and execute the given behavior for each matching element. Elements are final,
+// meaning they are the deepest explorable element using this path.
+// Only `map[string]interface{}` and n-dimensional slices parents are supported.
 // The given "f" function is executed for each final element matched. If the path
 // cannot be completed because the step's name doesn't exist in the currently explored map,
-// the function will be executed as well, with a the `WalkContext`'s `NotFound` field set to `true`.
-func (p *PathItem) Walk(currentElement interface{}, f func(WalkContext)) {
-	p.walk(currentElement, nil, -1, f)
+// the function will be executed as well, with a the `Context`'s `NotFound` field set to `true`.
+func (p *Path) Walk(currentElement interface{}, f func(Context)) {
+	path := &Path{
+		Name: p.Name,
+		Type: p.Type,
+	}
+	p.walk(currentElement, nil, -1, path, path, f)
 }
 
-func (p *PathItem) walk(currentElement interface{}, parent interface{}, index int, f func(WalkContext)) {
+func (p *Path) walk(currentElement interface{}, parent interface{}, index int, path *Path, lastPathElement *Path, f func(Context)) {
 	element := currentElement
 	if p.Name != "" {
 		ce, ok := currentElement.(map[string]interface{})
@@ -58,13 +67,8 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 			index = -1
 		}
 		if !ok {
-			f(WalkContext{
-				Value:    nil,
-				Parent:   currentElement,
-				Name:     p.Name,
-				Index:    index,
-				NotFound: true,
-			})
+			lastPathElement.Type = PathTypeElement
+			f(newNotFoundContext(currentElement, path, p.Name, index))
 			return
 		}
 		parent = currentElement
@@ -72,37 +76,67 @@ func (p *PathItem) walk(currentElement interface{}, parent interface{}, index in
 
 	switch p.Type {
 	case PathTypeElement:
-		f(WalkContext{
+		f(Context{
 			Value:  element,
 			Parent: parent,
+			Path:   path,
 			Name:   p.Name,
 			Index:  index,
 		})
 	case PathTypeArray:
 		list := reflect.ValueOf(element)
 		if list.Kind() != reflect.Slice {
-			f(WalkContext{
-				Value:    nil,
-				Parent:   parent,
-				Name:     p.Name,
-				Index:    index,
-				NotFound: true,
-			})
+			lastPathElement.Type = PathTypeElement
+			f(newNotFoundContext(parent, path, p.Name, index))
 			return
 		}
 		length := list.Len()
+		if p.Next.Type != PathTypeElement && length == 0 {
+			lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
+			f(newNotFoundContext(element, path, "", index))
+			return
+		}
+		if p.Index != nil {
+			lastPathElement.Index = p.Index
+			lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
+			if *p.Index >= length || *p.Index < 0 {
+				f(newNotFoundContext(element, path, "", *p.Index))
+				return
+			}
+			v := list.Index(*p.Index)
+			value := v.Interface()
+			p.Next.walk(value, element, *p.Index, path, lastPathElement.Next, f)
+			return
+		}
 		for i := 0; i < length; i++ {
+			j := i
+			clone := path.Clone()
+			tail := clone.Tail()
+			tail.Index = &j
+			tail.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 			v := list.Index(i)
 			value := v.Interface()
-			p.Next.walk(value, element, i, f)
+			p.Next.walk(value, element, i, clone, tail.Next, f)
 		}
 	case PathTypeObject:
-		p.Next.walk(element, parent, index, f)
+		lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
+		p.Next.walk(element, parent, index, path, lastPathElement.Next, f)
+	}
+}
+
+func newNotFoundContext(parent interface{}, path *Path, name string, index int) Context {
+	return Context{
+		Value:    nil,
+		Parent:   parent,
+		Path:     path,
+		Name:     name,
+		Index:    index,
+		NotFound: true,
 	}
 }
 
 // HasArray returns true if a least one step in the path involves an array.
-func (p *PathItem) HasArray() bool {
+func (p *Path) HasArray() bool {
 	step := p
 	for step != nil {
 		if step.Type == PathTypeArray {
@@ -115,7 +149,7 @@ func (p *PathItem) HasArray() bool {
 
 // LastParent returns the last step in the path that is not a PathTypeElement, excluding
 // the first step in the path, or nil.
-func (p *PathItem) LastParent() *PathItem {
+func (p *Path) LastParent() *Path {
 	step := p
 	for step != nil {
 		if step.Next != nil && step.Next.Type == PathTypeElement {
@@ -126,7 +160,30 @@ func (p *PathItem) LastParent() *PathItem {
 	return nil
 }
 
-// ComputePath transform given path string representation into usable PathItem.
+// Tail returns the last step in the path.
+func (p *Path) Tail() *Path {
+	step := p
+	for step.Next != nil {
+		step = step.Next
+	}
+	return step
+}
+
+// Clone returns a deep clone of this Path.
+func (p *Path) Clone() *Path {
+	clone := &Path{
+		Name:  p.Name,
+		Type:  p.Type,
+		Index: p.Index,
+	}
+	if p.Next != nil {
+		clone.Next = p.Next.Clone()
+	}
+
+	return clone
+}
+
+// Parse transform given path string representation into usable Path.
 //
 // Example paths:
 //   name
@@ -134,8 +191,8 @@ func (p *PathItem) LastParent() *PathItem {
 //   object.subobject.field
 //   object.array[]
 //   object.arrayOfObjects[].field
-func ComputePath(p string) (*PathItem, error) {
-	rootPath := &PathItem{}
+func Parse(p string) (*Path, error) {
+	rootPath := &Path{}
 	path := rootPath
 
 	scanner := createPathScanner(p)
@@ -144,7 +201,7 @@ func ComputePath(p string) (*PathItem, error) {
 		switch t {
 		case "[]":
 			if path.Type == PathTypeArray {
-				path.Next = &PathItem{
+				path.Next = &Path{
 					Type: PathTypeArray,
 				}
 				path = path.Next
@@ -153,16 +210,16 @@ func ComputePath(p string) (*PathItem, error) {
 			}
 		case ".":
 			if path.Type == PathTypeArray {
-				path.Next = &PathItem{
+				path.Next = &Path{
 					Type: PathTypeObject,
-					Next: &PathItem{
+					Next: &Path{
 						Type: PathTypeElement,
 					},
 				}
 				path = path.Next.Next
 			} else {
 				path.Type = PathTypeObject
-				path.Next = &PathItem{
+				path.Next = &Path{
 					Type: PathTypeElement,
 				}
 				path = path.Next
@@ -177,7 +234,7 @@ func ComputePath(p string) (*PathItem, error) {
 	}
 
 	if path.Type != PathTypeElement {
-		path.Next = &PathItem{
+		path.Next = &Path{
 			Type: PathTypeElement,
 		}
 	}

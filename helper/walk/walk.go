@@ -67,7 +67,7 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 			index = -1
 		}
 		if !ok {
-			lastPathElement.Type = PathTypeElement
+			p.completePath(lastPathElement)
 			f(newNotFoundContext(currentElement, path, p.Name, index))
 			return
 		}
@@ -121,6 +121,18 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 	case PathTypeObject:
 		lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 		p.Next.walk(element, parent, index, path, lastPathElement.Next, f)
+	}
+}
+
+func (p *Path) completePath(lastPathElement *Path) {
+	completedPath := lastPathElement
+	if p.Type == PathTypeArray {
+		i := -1
+		completedPath.Index = &i
+	}
+	if p.Type != PathTypeElement {
+		completedPath.Next = p.Next.Clone()
+		completedPath.Next.setAllMissingIndexes()
 	}
 }
 
@@ -181,6 +193,16 @@ func (p *Path) Clone() *Path {
 	}
 
 	return clone
+}
+
+// setAllMissingIndexes set Index to -1 for all `PathTypeArray` steps in this path.
+func (p *Path) setAllMissingIndexes() {
+	i := -1
+	for step := p; step != nil; step = step.Next {
+		if step.Type == PathTypeArray {
+			step.Index = &i
+		}
+	}
 }
 
 // Parse transform given path string representation into usable Path.

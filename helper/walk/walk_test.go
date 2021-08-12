@@ -255,6 +255,7 @@ func TestPathWalk(t *testing.T) {
 	j := 1
 	k := 2
 	l := 3
+	m := -1
 	expected = []Context{
 		{
 			Value:  "a",
@@ -425,8 +426,10 @@ func TestPathWalk(t *testing.T) {
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name: "field",
-						Type: PathTypeElement,
+						Name:  "field",
+						Type:  PathTypeArray,
+						Index: &m,
+						Next:  &Path{},
 					},
 				},
 			},
@@ -802,4 +805,60 @@ func TestPathWalkWithIndexOutOfBounds(t *testing.T) {
 		},
 	}
 	assert.Equal(t, expected, matches)
+}
+
+func TestPathWalkMissingObject(t *testing.T) {
+	data := map[string]interface{}{}
+
+	path := &Path{
+		Name: "object",
+		Type: PathTypeObject,
+		Next: &Path{
+			Type: PathTypeObject,
+			Name: "subobject",
+			Next: &Path{
+				Name: "field",
+				Type: PathTypeElement,
+			},
+		},
+	}
+
+	matches := make([]Context, 0, 1)
+
+	path.Walk(data, func(c Context) {
+		matches = append(matches, c)
+	})
+
+	expected := []Context{
+		{
+			Value:    nil,
+			Parent:   data,
+			Path:     path,
+			Name:     "object",
+			Index:    -1,
+			NotFound: true,
+		},
+	}
+	assert.Equal(t, expected, matches)
+}
+
+func TestPathSetAllMissingIndexes(t *testing.T) {
+	path := &Path{
+		Name: "array",
+		Type: PathTypeArray,
+		Next: &Path{
+			Type: PathTypeObject,
+			Name: "object",
+			Next: &Path{
+				Name: "field",
+				Type: PathTypeArray,
+				Next: &Path{},
+			},
+		},
+	}
+
+	path.setAllMissingIndexes()
+
+	assert.Equal(t, -1, *path.Index)
+	assert.Equal(t, -1, *path.Next.Next.Index)
 }

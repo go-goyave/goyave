@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -1515,19 +1517,24 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 		"edgecase": []string{},
 	}
 
+	// TODO test array[].field[] when field is missing
+
 	errors := Validate(data, RuleSet{
-		"array":                 {"required", "array:object"},
-		"array[]":               {"required", "object"},
-		"array[].field":         {"required", "numeric", "max:3"},
-		"narray[][]":            {"object"},
-		"narray[][].field":      {"required", "numeric"},
-		"object":                {"required", "object"},
-		"object.array":          {"required", "array"},
-		"object.array[]":        {"required", "array:string"},
-		"object.array[][]":      {"required", "string", "min:2"},
-		"object2.array":         {"required", "array:object"},
-		"object2.array[].field": {"required", "object"},
-		"edgecase[][][][]":      {"required", "string"},
+		"array":                         {"required", "array:object"},
+		"array[]":                       {"required", "object"},
+		"array[].field":                 {"required", "numeric", "max:3"},
+		"narray[][]":                    {"object"},
+		"narray[][].field":              {"required", "numeric"},
+		"object":                        {"required", "object"},
+		"object.array":                  {"required", "array"},
+		"object.array[]":                {"required", "array:string"},
+		"object.array[][]":              {"required", "string", "min:2"},
+		"object2.array":                 {"required", "array:object"},
+		"object2.array[].field":         {"required", "object"},
+		"edgecase[][][][]":              {"required", "string"},
+		"missingobject":                 {"required", "object"},
+		"missingobject.subobject":       {"required", "object"},
+		"missingobject.subobject.field": {"required", "string"},
 	}, true, "en-US")
 
 	expected := Errors{
@@ -1627,8 +1634,21 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 				},
 			},
 		},
+		"missingobject": &FieldErrors{
+			Errors: []string{"The missingobject is required.", "The missingobject must be an object."},
+			Fields: Errors{
+				"subobject": &FieldErrors{
+					Errors: []string{"The subobject is required.", "The subobject must be an object."},
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be a string."}},
+					},
+				},
+			},
+		},
 	}
 
+	d, _ := json.MarshalIndent(errors, "", "  ")
+	fmt.Println(string(d))
 	suite.Equal(expected, errors)
 }
 

@@ -50,7 +50,7 @@ func NewJWTController(model interface{}) *JWTController {
 		if signingMethod == nil {
 			signingMethod = jwt.SigningMethodHS256
 		}
-		return GenerateTokenWithClaims(jwt.MapClaims{"userid": r.String(controller.UsernameField)}, signingMethod)
+		return GenerateTokenWithClaims(jwt.MapClaims{"sub": r.String(controller.UsernameField)}, signingMethod)
 	}
 	return controller
 }

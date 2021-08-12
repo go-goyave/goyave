@@ -1512,6 +1512,7 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 				},
 			},
 		},
+		"edgecase": []string{},
 	}
 
 	errors := Validate(data, RuleSet{
@@ -1526,6 +1527,7 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 		"object.array[][]":      {"required", "string", "min:2"},
 		"object2.array":         {"required", "array:object"},
 		"object2.array[].field": {"required", "object"},
+		"edgecase[][][][]":      {"required", "string"},
 	}, true, "en-US")
 
 	expected := Errors{
@@ -1608,9 +1610,24 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 				},
 			},
 		},
+		"edgecase": &FieldErrors{
+			Elements: ArrayErrors{
+				-1: &FieldErrors{
+					Elements: ArrayErrors{
+						-1: &FieldErrors{
+							Elements: ArrayErrors{
+								-1: &FieldErrors{
+									Elements: ArrayErrors{
+										-1: &FieldErrors{Errors: []string{"The edgecase[][][] values are required.", "The edgecase[][][] values must be strings."}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
-
-	// TODO test extreme case "array[][][][]" where array is a one-dimensional array
 
 	suite.Equal(expected, errors)
 }

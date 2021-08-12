@@ -22,7 +22,6 @@ func (e Errors) Add(path *walk.Path, message string) {
 			errs = &FieldErrors{}
 			e[path.Name] = errs
 		}
-		// TODO check duplicate messages
 		errs.Errors = append(errs.Errors, message)
 	case walk.PathTypeArray:
 		errs, ok := e[path.Name]
@@ -33,8 +32,11 @@ func (e Errors) Add(path *walk.Path, message string) {
 		if errs.Elements == nil {
 			errs.Elements = make(map[int]*FieldErrors)
 		}
-		// FIXME can crash if path.Index is nil
-		errs.Elements.Add(path.Next, *path.Index, message)
+		index := -1
+		if path.Index != nil {
+			index = *path.Index
+		}
+		errs.Elements.Add(path.Next, index, message)
 	case walk.PathTypeObject:
 		// TODO factorize this, if ok or not ok is repeated
 		errs, ok := e[path.Name]
@@ -57,7 +59,6 @@ func (e ArrayErrors) Add(path *walk.Path, index int, message string) {
 			elem = &FieldErrors{}
 			e[index] = elem
 		}
-		// TODO check duplicate messages
 		elem.Errors = append(elem.Errors, message)
 	case walk.PathTypeArray:
 		errs, ok := e[index]
@@ -68,7 +69,12 @@ func (e ArrayErrors) Add(path *walk.Path, index int, message string) {
 		if errs.Elements == nil {
 			errs.Elements = make(map[int]*FieldErrors)
 		}
-		errs.Elements.Add(path.Next, *path.Index, message)
+
+		index := -1
+		if path.Index != nil {
+			index = *path.Index
+		}
+		errs.Elements.Add(path.Next, index, message)
 	case walk.PathTypeObject:
 		errs, ok := e[index]
 		if !ok {

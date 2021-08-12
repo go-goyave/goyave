@@ -200,6 +200,24 @@ func (f *Field) Check() {
 	}
 }
 
+func (f *Field) getErrorPath(parentPath *walk.Path, c walk.Context) *walk.Path {
+	if parentPath != nil {
+		clone := parentPath.Clone()
+		tail := clone.Tail()
+		tail.Type = walk.PathTypeArray
+		tail.Index = &c.Index
+		tail.Next = &walk.Path{Type: walk.PathTypeElement}
+		return clone
+	}
+
+	_, parentIsObject := c.Parent.(map[string]interface{})
+	if c.NotFound && c.Index == -1 && !parentIsObject {
+		return f.Path
+	}
+
+	return c.Path
+}
+
 // FieldMap is an alias to shorten verbose validation rules declaration.
 // Maps a field name (key) with a Field struct (value).
 type FieldMap map[string]*Field
@@ -448,15 +466,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				Name:   c.Name,
 			}
 			if !validationRules[rule.Name].Function(ctx) {
-				path := c.Path
-				if parentPath != nil {
-					clone := parentPath.Clone()
-					tail := clone.Tail()
-					tail.Type = walk.PathTypeArray
-					tail.Index = &c.Index
-					tail.Next = &walk.Path{Type: walk.PathTypeElement}
-					path = clone
-				}
+				path := field.getErrorPath(parentPath, c)
 				message := processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(value), language), language)
 				errors.Add(path, message)
 				continue

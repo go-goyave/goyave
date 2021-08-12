@@ -1319,12 +1319,24 @@ func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {
 		"array":         {"required", "array:object"},
 		"array[].field": {"numeric", "min:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
 
-	e, ok := errors["array[].field"]
-	if suite.True(ok) {
-		suite.Len(e, 1)
+	expected := Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+					},
+				},
+				1: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 
 	// array[].subarray[].field
 	data = map[string]interface{}{
@@ -1343,12 +1355,39 @@ func (suite *ValidatorTestSuite) TestValidateObjectInArrayErrors() {
 		"array[].subarray":         {"array:object"},
 		"array[].subarray[].field": {"numeric", "min:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
-
-	e, ok = errors["array[].subarray[].field"]
-	if suite.True(ok) {
-		suite.Len(e, 1)
+	expected = Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Fields: Errors{
+						"subarray": &FieldErrors{
+							Elements: ArrayErrors{
+								0: &FieldErrors{
+									Fields: Errors{
+										"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+									},
+								},
+							},
+						},
+					},
+				},
+				1: &FieldErrors{
+					Fields: Errors{
+						"subarray": &FieldErrors{
+							Elements: ArrayErrors{
+								0: &FieldErrors{
+									Fields: Errors{
+										"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 }
 
 func (suite *ValidatorTestSuite) TestValidateRequiredInObjectInArray() {
@@ -1363,12 +1402,23 @@ func (suite *ValidatorTestSuite) TestValidateRequiredInObjectInArray() {
 		"array":         {"required", "array:object"},
 		"array[].field": {"required", "numeric", "min:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
-
-	e, ok := errors["array[].field"]
-	if suite.True(ok) {
-		suite.Len(e, 3)
+	expected := Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field must be at least 3."}},
+					},
+				},
+				1: &FieldErrors{
+					Fields: Errors{
+						"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 
 	data = map[string]interface{}{
 		"array": [][]interface{}{
@@ -1383,12 +1433,22 @@ func (suite *ValidatorTestSuite) TestValidateRequiredInObjectInArray() {
 		"array[]":         {"required", "array:object"},
 		"array[][].field": {"required", "numeric", "max:3"},
 	}, true, "en-US")
-	suite.Len(errors, 1)
-
-	e, ok = errors["array[][].field"]
-	if suite.True(ok) {
-		suite.Len(e, 2)
+	expected = Errors{
+		"array": &FieldErrors{
+			Elements: ArrayErrors{
+				0: &FieldErrors{
+					Elements: ArrayErrors{
+						0: &FieldErrors{
+							Fields: Errors{
+								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
+	suite.Equal(expected, errors)
 }
 
 func (suite *ValidatorTestSuite) TestValidateWrongBody() {
@@ -1519,6 +1579,8 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 			},
 		},
 	}
+
+	// TODO test extreme case "array[][][][]" where array is a one-dimensional array
 
 	suite.Equal(expected, errors)
 }

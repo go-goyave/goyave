@@ -33,6 +33,7 @@ func (e Errors) Add(path *walk.Path, message string) {
 		if errs.Elements == nil {
 			errs.Elements = make(map[int]*FieldErrors)
 		}
+		// FIXME can crash if path.Index is nil
 		errs.Elements.Add(path.Next, *path.Index, message)
 	case walk.PathTypeObject:
 		// TODO factorize this, if ok or not ok is repeated

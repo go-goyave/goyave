@@ -125,7 +125,6 @@ var enUS language = language{
 			"same.array":                       "The :field values and the :other must match.",
 			"different":                        "The :field and the :other must be different.",
 			"different.array":                  "The :field values and the :other must be different.",
-			"confirmed":                        "The :field confirmation doesn't match.",
 			"file":                             "The :field must be a file.",
 			"mime":                             "The :field must be a file of type: :values.",
 			"image":                            "The :field must be an image.",

@@ -803,7 +803,7 @@ func (suite *ValidatorTestSuite) TestFieldCheck() {
 
 func (suite *ValidatorTestSuite) TestFieldCheckArrayProhibitedRules() {
 	prohibitedRules := []string{
-		"confirmed", "file", "mime", "image", "extension", "count",
+		"file", "mime", "image", "extension", "count",
 		"count_min", "count_max", "count_between",
 	}
 	for _, v := range prohibitedRules {

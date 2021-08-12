@@ -302,11 +302,6 @@ func validateDifferent(ctx *Context) bool {
 	return !validateSame(ctx)
 }
 
-func validateConfirmed(ctx *Context) bool { // FIXME confirmed rule doesn't work on same depth
-	ctx.Rule.Params = []string{ctx.Name + "_confirmation"}
-	return validateSame(ctx)
-}
-
 func validateSize(ctx *Context) bool {
 	size, err := strconv.Atoi(ctx.Rule.Params[0])
 	if err != nil {

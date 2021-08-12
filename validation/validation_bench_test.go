@@ -13,9 +13,11 @@ func setupValidationBench(b *testing.B) {
 
 func BenchmarkValidateWithParsing(b *testing.B) {
 	set := RuleSet{
-		"email":    {"required", "string", "between:3,125", "email"},
-		"password": {"required", "string", "between:6,64", "confirmed"},
-		"info":     {"nullable", "array:string", ">min:2"},
+		"email":                 {"required", "string", "between:3,125", "email"},
+		"password":              {"required", "string", "between:6,64"},
+		"password_confirmation": {"required", "string", "same:password"},
+		"info":                  {"nullable", "array:string", "min:2"},
+		"info[]":                {"string", "min:2"},
 	}
 	data := map[string]interface{}{
 		"email":                 "pedro@example.org",
@@ -45,7 +47,13 @@ func BenchmarkValidatePreParsed(b *testing.B) {
 					{Name: "required"},
 					{Name: "string"},
 					{Name: "between", Params: []string{"6", "64"}},
-					{Name: "confirmed"},
+				},
+			},
+			"password_confirmation": {
+				Rules: []*Rule{
+					{Name: "required"},
+					{Name: "string"},
+					{Name: "same", Params: []string{"password"}},
 				},
 			},
 			"info": {
@@ -77,9 +85,11 @@ func BenchmarkValidatePreParsed(b *testing.B) {
 
 func BenchmarkParseAndCheck(b *testing.B) {
 	set := RuleSet{
-		"email":    {"required", "string", "between:3,125", "email"},
-		"password": {"required", "string", "between:6,64", "confirmed"},
-		"info":     {"nullable", "array:string", ">min:2"},
+		"email":                 {"required", "string", "between:3,125", "email"},
+		"password":              {"required", "string", "between:6,64"},
+		"password_confirmation": {"required", "string", "same:password"},
+		"info":                  {"nullable", "array:string"},
+		"info[]":                {"string", "min:2"},
 	}
 	setupValidationBench(b)
 	for n := 0; n < b.N; n++ {
@@ -103,7 +113,13 @@ func BenchmarkCheck(b *testing.B) {
 					{Name: "required"},
 					{Name: "string"},
 					{Name: "between", Params: []string{"6", "64"}},
-					{Name: "confirmed"},
+				},
+			},
+			"password_confirmation": {
+				Rules: []*Rule{
+					{Name: "required"},
+					{Name: "string"},
+					{Name: "same", Params: []string{"password"}},
 				},
 			},
 			"info": {

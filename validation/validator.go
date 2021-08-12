@@ -174,7 +174,7 @@ func (f *Field) IsObject() bool {
 func (f *Field) Check() {
 	for _, rule := range f.Rules {
 		switch rule.Name {
-		case "confirmed", "file", "mime", "image", "extension", "count",
+		case "file", "mime", "image", "extension", "count",
 			"count_min", "count_max", "count_between":
 			if f.Path.HasArray() {
 				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name))
@@ -341,7 +341,6 @@ func init() {
 		"bool":               {validateBool, 0, true, false, false},
 		"same":               {validateSame, 1, false, false, true},
 		"different":          {validateDifferent, 1, false, false, true},
-		"confirmed":          {validateConfirmed, 0, false, false, false},
 		"file":               {validateFile, 0, false, false, false},
 		"mime":               {validateMIME, 1, false, false, false},
 		"image":              {validateImage, 0, false, false, false},

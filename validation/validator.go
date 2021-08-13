@@ -13,6 +13,10 @@ import (
 )
 
 const (
+	// CurrentElement special key for field name in composite rule sets.
+	// Use it if you want to apply rules to the current object element.
+	// You cannot apply rules on the root element, these rules will only
+	// apply if the rule set is used with composition.
 	CurrentElement = ""
 )
 
@@ -74,10 +78,14 @@ type RuleDefinition struct {
 	ComparesFields bool
 }
 
+// RuleSetApplier types implementing this interface define their behavior
+// when they're applied to a RuleSet. This enables rule sets composition.
 type RuleSetApplier interface {
 	apply(set RuleSet, name string)
 }
 
+// List of rules string representation.
+// e.g.: `validation.List{"required", "min:10"}`
 type List []string
 
 func (r List) apply(set RuleSet, name string) {
@@ -85,7 +93,6 @@ func (r List) apply(set RuleSet, name string) {
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
-// TODO map of some interface to be able to use composition
 type RuleSet map[string]RuleSetApplier
 
 var _ Ruler = (RuleSet)(nil) // implements Ruler
@@ -119,6 +126,7 @@ func (r RuleSet) processComposition() {
 	for name, field := range r {
 		field.apply(r, name)
 	}
+	delete(r, CurrentElement)
 }
 
 func (r RuleSet) apply(set RuleSet, name string) {
@@ -130,6 +138,7 @@ func (r RuleSet) apply(set RuleSet, name string) {
 	rules, ok := r[CurrentElement]
 	if ok {
 		rules.apply(set, name)
+		delete(r, CurrentElement)
 	}
 }
 

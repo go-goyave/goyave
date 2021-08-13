@@ -13,11 +13,11 @@ func setupValidationBench(b *testing.B) {
 
 func BenchmarkValidateWithParsing(b *testing.B) {
 	set := RuleSet{
-		"email":                 {"required", "string", "between:3,125", "email"},
-		"password":              {"required", "string", "between:6,64"},
-		"password_confirmation": {"required", "string", "same:password"},
-		"info":                  {"nullable", "array:string", "min:2"},
-		"info[]":                {"string", "min:2"},
+		"email":                 List{"required", "string", "between:3,125", "email"},
+		"password":              List{"required", "string", "between:6,64"},
+		"password_confirmation": List{"required", "string", "same:password"},
+		"info":                  List{"nullable", "array:string", "min:2"},
+		"info[]":                List{"string", "min:2"},
 	}
 	data := map[string]interface{}{
 		"email":                 "pedro@example.org",
@@ -85,11 +85,11 @@ func BenchmarkValidatePreParsed(b *testing.B) {
 
 func BenchmarkParseAndCheck(b *testing.B) {
 	set := RuleSet{
-		"email":                 {"required", "string", "between:3,125", "email"},
-		"password":              {"required", "string", "between:6,64"},
-		"password_confirmation": {"required", "string", "same:password"},
-		"info":                  {"nullable", "array:string"},
-		"info[]":                {"string", "min:2"},
+		"email":                 List{"required", "string", "between:3,125", "email"},
+		"password":              List{"required", "string", "between:6,64"},
+		"password_confirmation": List{"required", "string", "same:password"},
+		"info":                  List{"nullable", "array:string"},
+		"info[]":                List{"string", "min:2"},
 	}
 	setupValidationBench(b)
 	for n := 0; n < b.N; n++ {

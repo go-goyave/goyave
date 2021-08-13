@@ -11,11 +11,11 @@ import (
 type Paginator struct {
 	db *gorm.DB
 
-	Records     interface{}
-	MaxPage     int64
-	Total       int64
-	PageSize    int
-	CurrentPage int
+	Records     interface{} `json:"records"`
+	MaxPage     int64       `json:"maxPage"`
+	Total       int64       `json:"total"`
+	PageSize    int         `json:"pageSize"`
+	CurrentPage int         `json:"currentPage"`
 }
 
 func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {

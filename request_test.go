@@ -108,13 +108,13 @@ func TestRequestValidate(t *testing.T) {
 
 	request.Rules = &validation.Rules{
 		Fields: validation.FieldMap{
-			"string": {
+			"string": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},
 				},
 			},
-			"number": {
+			"number": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "numeric"},

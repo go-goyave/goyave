@@ -116,13 +116,13 @@ func (suite *ValidatorTestSuite) TestValidate() {
 		"number": 42,
 	}, &Rules{
 		Fields: FieldMap{
-			"string": {
+			"string": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
 				},
 			},
-			"number": {
+			"number": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "numeric"},
@@ -167,7 +167,7 @@ func (suite *ValidatorTestSuite) TestValidate() {
 
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"nullField": {
+			"nullField": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "nullable"},
@@ -184,7 +184,7 @@ func (suite *ValidatorTestSuite) TestValidate() {
 	data = map[string]interface{}{}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"text": {
+			"text": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
@@ -209,7 +209,7 @@ func (suite *ValidatorTestSuite) TestValidateWithArray() {
 
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"string": {
+			"string": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
@@ -234,13 +234,13 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"string": {
+			"string": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"string[]": {
+			"string[]": &Field{
 				Rules: []*Rule{
 					{Name: "min", Params: []string{"3"}},
 				},
@@ -260,13 +260,13 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"string": {
+			"string": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"string[]": {
+			"string[]": &Field{
 				Rules: []*Rule{
 					{Name: "min", Params: []string{"3"}},
 				},
@@ -286,13 +286,13 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"string": {
+			"string": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array", Params: []string{"string"}},
 				},
 			},
-			"string[]": {
+			"string[]": &Field{
 				Rules: []*Rule{
 					{Name: "email"},
 				},
@@ -313,12 +313,12 @@ func (suite *ValidatorTestSuite) TestValidateArrayValues() {
 
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"string": {
+			"string": &Field{
 				Rules: []*Rule{
 					{Name: "array"},
 				},
 			},
-			"string[]": {
+			"string[]": &Field{
 				Rules: []*Rule{
 					{Name: "uuid", Params: []string{"5"}},
 				},
@@ -352,13 +352,13 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
@@ -393,13 +393,13 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 					{Name: "min", Params: []string{"3"}},
@@ -426,13 +426,13 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 					{Name: "min", Params: []string{"3"}},
@@ -457,18 +457,18 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
-			"values[][]": {
+			"values[][]": &Field{
 				Rules: []*Rule{
 					{Name: "min", Params: []string{"3"}},
 				},
@@ -492,18 +492,18 @@ func (suite *ValidatorTestSuite) TestValidateTwoDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
-			"values[][]": {
+			"values[][]": &Field{
 				Rules: []*Rule{
 					{Name: "min", Params: []string{"3"}},
 				},
@@ -547,24 +547,24 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array"},
 					{Name: "max", Params: []string{"3"}},
 				},
 			},
-			"values[][]": {
+			"values[][]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
-			"values[][][]": {
+			"values[][][]": &Field{
 				Rules: []*Rule{
 					{Name: "max", Params: []string{"4"}},
 				},
@@ -606,24 +606,24 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array"},
 					{Name: "max", Params: []string{"3"}},
 				},
 			},
-			"values[][]": {
+			"values[][]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
-			"values[][][]": {
+			"values[][][]": &Field{
 				Rules: []*Rule{
 					{Name: "max", Params: []string{"4"}},
 				},
@@ -654,24 +654,24 @@ func (suite *ValidatorTestSuite) TestValidateNDimensionalArray() {
 	}
 	errors = Validate(data, &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array"},
 					{Name: "max", Params: []string{"3"}},
 				},
 			},
-			"values[][]": {
+			"values[][]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
-			"values[][][]": {
+			"values[][][]": &Field{
 				Rules: []*Rule{
 					{Name: "max", Params: []string{"4"}},
 				},
@@ -828,10 +828,10 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 
 	rules := set.parse()
 	suite.Len(rules.Fields, 2)
-	suite.Len(rules.Fields["string"].Rules, 2)
-	suite.Equal(&Rule{Name: "required", Params: []string{}}, rules.Fields["string"].Rules[0])
-	suite.Equal(&Rule{Name: "array", Params: []string{"string"}}, rules.Fields["string"].Rules[1])
-	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["string"].Elements.Rules[0])
+	suite.Len(rules.Fields["string"].(*Field).Rules, 2)
+	suite.Equal(&Rule{Name: "required", Params: []string{}}, rules.Fields["string"].(*Field).Rules[0])
+	suite.Equal(&Rule{Name: "array", Params: []string{"string"}}, rules.Fields["string"].(*Field).Rules[1])
+	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["string"].(*Field).Elements.Rules[0])
 
 	expectedPath := &walk.Path{
 		Type: walk.PathTypeArray,
@@ -839,9 +839,9 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 			Type: walk.PathTypeElement,
 		},
 	}
-	suite.Equal(expectedPath, rules.Fields["string"].Elements.Path)
-	suite.Len(rules.Fields["number"].Rules, 1)
-	suite.Equal(&Rule{Name: "numeric", Params: []string{}}, rules.Fields["number"].Rules[0])
+	suite.Equal(expectedPath, rules.Fields["string"].(*Field).Elements.Path)
+	suite.Len(rules.Fields["number"].(*Field).Rules, 1)
+	suite.Equal(&Rule{Name: "numeric", Params: []string{}}, rules.Fields["number"].(*Field).Rules[0])
 
 	parsed := set.AsRules()
 	suite.Equal(rules.Fields, parsed.Fields)
@@ -861,24 +861,24 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 func (suite *ValidatorTestSuite) TestAsRules() {
 	rules := &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array"},
 					{Name: "max", Params: []string{"3"}},
 				},
 			},
-			"values[][]": {
+			"values[][]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
-			"values[][][]": {
+			"values[][][]": &Field{
 				Rules: []*Rule{
 					{Name: "max", Params: []string{"4"}},
 				},
@@ -890,7 +890,7 @@ func (suite *ValidatorTestSuite) TestAsRules() {
 	suite.Panics(func() {
 		rules := &Rules{
 			Fields: FieldMap{
-				"values": {
+				"values": &Field{
 					Rules: []*Rule{
 						{Name: "not a rule"},
 					},
@@ -905,24 +905,24 @@ func (suite *ValidatorTestSuite) TestAsRules() {
 func (suite *ValidatorTestSuite) TestRulesCheck() {
 	rules := &Rules{
 		Fields: FieldMap{
-			"values": {
+			"values": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "array"},
 				},
 			},
-			"values[]": {
+			"values[]": &Field{
 				Rules: []*Rule{
 					{Name: "array"},
 					{Name: "max", Params: []string{"3"}},
 				},
 			},
-			"values[][]": {
+			"values[][]": &Field{
 				Rules: []*Rule{
 					{Name: "array", Params: []string{"numeric"}},
 				},
 			},
-			"values[][][]": {
+			"values[][][]": &Field{
 				Rules: []*Rule{
 					{Name: "max", Params: []string{"4"}},
 				},
@@ -934,7 +934,7 @@ func (suite *ValidatorTestSuite) TestRulesCheck() {
 	suite.True(rules.checked)
 
 	// Check should not be executed multiple times
-	rules.Fields["values"].Rules[0].Name = "not a rule"
+	rules.Fields["values"].(*Field).Rules[0].Name = "not a rule"
 	suite.NotPanics(func() {
 		rules.Check()
 	})
@@ -1055,11 +1055,11 @@ func (suite *ValidatorTestSuite) TestRuleIsTypeDependent() {
 
 func (suite *ValidatorTestSuite) TestRuleComparisonNonGuaranteedOrder() { // https://github.com/go-goyave/goyave/issues/144
 	rules := &Rules{
-		Fields: map[string]*Field{
-			"start": {Rules: []*Rule{
+		Fields: FieldMap{
+			"start": &Field{Rules: []*Rule{
 				{Name: "date", Params: []string{"02-01-2006"}}, // Use another date format to prevent auto-conversion
 			}},
-			"end": {Rules: []*Rule{
+			"end": &Field{Rules: []*Rule{
 				{Name: "date", Params: []string{"02-01-2006"}},
 				{Name: "after", Params: []string{"start"}},
 			}},
@@ -1080,20 +1080,20 @@ func (suite *ValidatorTestSuite) TestRuleComparisonNonGuaranteedOrder() { // htt
 
 func (suite *ValidatorTestSuite) TestSortKeys() {
 	rules := &Rules{
-		Fields: map[string]*Field{
-			"text": {Rules: []*Rule{
+		Fields: FieldMap{
+			"text": &Field{Rules: []*Rule{
 				{Name: "string"},
 			}},
-			"mid": {Rules: []*Rule{
+			"mid": &Field{Rules: []*Rule{
 				{Name: "date"},
 				{Name: "after", Params: []string{"start"}},
 				{Name: "before", Params: []string{"end"}},
 			}},
-			"end": {Rules: []*Rule{
+			"end": &Field{Rules: []*Rule{
 				{Name: "date"},
 				{Name: "after", Params: []string{"start"}},
 			}},
-			"start": {Rules: []*Rule{
+			"start": &Field{Rules: []*Rule{
 				{Name: "date"},
 			}},
 		},
@@ -1116,12 +1116,12 @@ func (suite *ValidatorTestSuite) TestSortKeys() {
 
 func (suite *ValidatorTestSuite) TestSortKeysIncoherent() {
 	rules := &Rules{
-		Fields: map[string]*Field{
-			"end": {Rules: []*Rule{
+		Fields: FieldMap{
+			"end": &Field{Rules: []*Rule{
 				{Name: "date"},
 				{Name: "after", Params: []string{"start"}},
 			}},
-			"start": {Rules: []*Rule{
+			"start": &Field{Rules: []*Rule{
 				{Name: "date"},
 				{Name: "after", Params: []string{"end"}},
 			}},
@@ -1137,20 +1137,20 @@ func (suite *ValidatorTestSuite) TestSortKeysIncoherent() {
 
 func (suite *ValidatorTestSuite) TestSortKeysMultipleComparedFields() {
 	rules := &Rules{
-		Fields: map[string]*Field{
-			"text": {Rules: []*Rule{
+		Fields: FieldMap{
+			"text": &Field{Rules: []*Rule{
 				{Name: "string"},
 			}},
-			"mid": {Rules: []*Rule{
+			"mid": &Field{Rules: []*Rule{
 				{Name: "date"},
 				{Name: "after", Params: []string{"start"}},
 				{Name: "before", Params: []string{"end"}},
 			}},
-			"end": {Rules: []*Rule{
+			"end": &Field{Rules: []*Rule{
 				{Name: "date"},
 				{Name: "date_between", Params: []string{"start", "end"}},
 			}},
-			"start": {Rules: []*Rule{
+			"start": &Field{Rules: []*Rule{
 				{Name: "date"},
 			}},
 		},
@@ -1197,12 +1197,12 @@ func (suite *ValidatorTestSuite) TestSortKeysWithNullable() {
 
 func (suite *ValidatorTestSuite) testSortKeysWithRule(rule string) {
 	rules := &Rules{
-		Fields: map[string]*Field{
-			"one": {Rules: []*Rule{
+		Fields: FieldMap{
+			"one": &Field{Rules: []*Rule{
 				{Name: "string"},
 				{Name: rule, Params: []string{"two"}},
 			}},
-			"two": {Rules: []*Rule{
+			"two": &Field{Rules: []*Rule{
 				{Name: "string"},
 			}},
 		},
@@ -1739,6 +1739,54 @@ func (suite *ValidatorTestSuite) TestRuleSetComposition() {
 		"user.name":  List{"required", "string"},
 		"user.email": List{"required", "email"},
 		"field":      List{"nullable", "numeric"},
+	}
+
+	suite.Equal(expected, rules)
+}
+
+func (suite *ValidatorTestSuite) TestRulesComposition() {
+	user := &Rules{
+		Fields: FieldMap{
+			CurrentElement: &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "object"}},
+			},
+			"name": &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "object"}},
+			},
+			"email": &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "email"}},
+			},
+		},
+	}
+
+	rules := &Rules{
+		Fields: FieldMap{
+			CurrentElement: &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "object"}},
+			},
+			"user": user,
+			"field": &Field{
+				Rules: []*Rule{{Name: "nullable"}, {Name: "numeric"}},
+			},
+		},
+	}
+	rules.processComposition()
+
+	expected := &Rules{
+		Fields: FieldMap{
+			"user": &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "object"}},
+			},
+			"user.name": &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "object"}},
+			},
+			"user.email": &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "email"}},
+			},
+			"field": &Field{
+				Rules: []*Rule{{Name: "nullable"}, {Name: "numeric"}},
+			},
+		},
 	}
 
 	suite.Equal(expected, rules)

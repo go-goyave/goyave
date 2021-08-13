@@ -107,13 +107,13 @@ func JWTRoutes(router *goyave.Router, model interface{}) *goyave.Router {
 	jwtRouter := router.Subrouter("/auth")
 	jwtRouter.Route("POST", "/login", NewJWTController(model).Login).Validate(&validation.Rules{
 		Fields: validation.FieldMap{
-			"username": {
+			"username": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},
 				},
 			},
-			"password": {
+			"password": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},

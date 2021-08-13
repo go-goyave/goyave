@@ -34,7 +34,7 @@ func BenchmarkValidateWithParsing(b *testing.B) {
 func BenchmarkValidatePreParsed(b *testing.B) {
 	rules := &Rules{
 		Fields: FieldMap{
-			"email": {
+			"email": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
@@ -42,27 +42,27 @@ func BenchmarkValidatePreParsed(b *testing.B) {
 					{Name: "email"},
 				},
 			},
-			"password": {
+			"password": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
 					{Name: "between", Params: []string{"6", "64"}},
 				},
 			},
-			"password_confirmation": {
+			"password_confirmation": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
 					{Name: "same", Params: []string{"password"}},
 				},
 			},
-			"info": {
+			"info": &Field{
 				Rules: []*Rule{
 					{Name: "nullable"},
 					{Name: "array", Params: []string{"string"}},
 				},
 			},
-			"info[]": {
+			"info[]": &Field{
 				Rules: []*Rule{
 					{Name: "min", Params: []string{"2"}},
 				},
@@ -100,7 +100,7 @@ func BenchmarkParseAndCheck(b *testing.B) {
 func BenchmarkCheck(b *testing.B) {
 	rules := &Rules{
 		Fields: FieldMap{
-			"email": {
+			"email": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
@@ -108,27 +108,27 @@ func BenchmarkCheck(b *testing.B) {
 					{Name: "email"},
 				},
 			},
-			"password": {
+			"password": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
 					{Name: "between", Params: []string{"6", "64"}},
 				},
 			},
-			"password_confirmation": {
+			"password_confirmation": &Field{
 				Rules: []*Rule{
 					{Name: "required"},
 					{Name: "string"},
 					{Name: "same", Params: []string{"password"}},
 				},
 			},
-			"info": {
+			"info": &Field{
 				Rules: []*Rule{
 					{Name: "nullable"},
 					{Name: "array", Params: []string{"string"}},
 				},
 			},
-			"info[]": {
+			"info[]": &Field{
 				Rules: []*Rule{
 					{Name: "min", Params: []string{"2"}},
 				},

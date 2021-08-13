@@ -303,8 +303,8 @@ func TestValidateDateConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":      {"required", "object"},
-		"object.time": {"required", "date"},
+		"object":      List{"required", "object"},
+		"object.time": List{"required", "date"},
 	}
 
 	errors := Validate(data, set, true, "en-US")

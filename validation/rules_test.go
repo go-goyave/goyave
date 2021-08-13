@@ -481,8 +481,8 @@ func TestValidateBoolConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":      {"required", "object"},
-		"object.bool": {"required", "bool"},
+		"object":      List{"required", "object"},
+		"object.bool": List{"required", "bool"},
 	}
 
 	errors := Validate(data, set, true, "en-US")

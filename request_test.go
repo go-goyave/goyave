@@ -93,8 +93,8 @@ func TestRequestValidate(t *testing.T) {
 		"number": 42,
 	}
 	request.Rules = validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:10"},
+		"string": validation.List{"required", "string"},
+		"number": validation.List{"required", "numeric", "min:10"},
 	}.AsRules()
 	errors := request.validate()
 	assert.Nil(t, errors)
@@ -108,13 +108,13 @@ func TestRequestValidate(t *testing.T) {
 
 	request.Rules = &validation.Rules{
 		Fields: validation.FieldMap{
-			"string": {
+			"string": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},
 				},
 			},
-			"number": {
+			"number": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "numeric"},

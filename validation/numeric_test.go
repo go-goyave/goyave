@@ -48,8 +48,8 @@ func TestValidateNumericConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":         {"required", "object"},
-		"object.numeric": {"required", "numeric"},
+		"object":         List{"required", "object"},
+		"object.numeric": List{"required", "numeric"},
 	}
 
 	errors := Validate(data, set, true, "en-US")
@@ -102,8 +102,8 @@ func TestValidateIntegerConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":         {"required", "object"},
-		"object.integer": {"required", "integer"},
+		"object":         List{"required", "object"},
+		"object.integer": List{"required", "integer"},
 	}
 
 	errors := Validate(data, set, true, "en-US")

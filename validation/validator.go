@@ -12,6 +12,14 @@ import (
 	"goyave.dev/goyave/v3/lang"
 )
 
+const (
+	// CurrentElement special key for field name in composite rule sets.
+	// Use it if you want to apply rules to the current object element.
+	// You cannot apply rules on the root element, these rules will only
+	// apply if the rule set is used with composition.
+	CurrentElement = ""
+)
+
 // Ruler adapter interface for method dispatching between RuleSet and Rules
 // at route registration time. Allows to input both of these types as parameters
 // of the Route.Validate method.
@@ -70,9 +78,29 @@ type RuleDefinition struct {
 	ComparesFields bool
 }
 
+// RuleSetApplier types implementing this interface define their behavior
+// when they're applied to a RuleSet. This enables rule sets composition.
+type RuleSetApplier interface {
+	apply(set RuleSet, name string)
+}
+
+// FieldMapApplier types implementing this interface define their behavior
+// when they're applied to a FieldMap. This enables verbose syntax
+// rule sets composition.
+type FieldMapApplier interface {
+	apply(fieldMap FieldMap, name string)
+}
+
+// List of rules string representation.
+// e.g.: `validation.List{"required", "min:10"}`
+type List []string
+
+func (r List) apply(set RuleSet, name string) {
+	set[name] = r
+}
+
 // RuleSet is a request rules definition. Each entry is a field in the request.
-// TODO map of some interface to be able to use composition
-type RuleSet map[string][]string
+type RuleSet map[string]RuleSetApplier
 
 var _ Ruler = (RuleSet)(nil) // implements Ruler
 
@@ -84,20 +112,41 @@ func (r RuleSet) AsRules() *Rules {
 // Parse converts the more convenient RuleSet validation rules syntax to
 // a Rules map.
 func (r RuleSet) parse() *Rules {
+	r.processComposition()
 	rules := &Rules{
 		Fields: make(FieldMap, len(r)),
 	}
-	for k, r := range r {
+	for k, fieldRules := range r {
 		field := &Field{
-			Rules: make([]*Rule, 0, len(r)),
+			Rules: make([]*Rule, 0, len(fieldRules.(List))),
 		}
-		for _, v := range r {
+		for _, v := range fieldRules.(List) {
 			field.Rules = append(field.Rules, parseRule(v))
 		}
 		rules.Fields[k] = field
 	}
 	rules.Check()
 	return rules
+}
+
+func (r RuleSet) processComposition() {
+	for name, field := range r {
+		field.apply(r, name)
+	}
+	delete(r, CurrentElement)
+}
+
+func (r RuleSet) apply(set RuleSet, name string) {
+	for k, rules := range r {
+		if k != CurrentElement {
+			rules.apply(set, name+"."+k)
+		}
+	}
+	rules, ok := r[CurrentElement]
+	if ok {
+		rules.apply(set, name)
+		delete(r, CurrentElement)
+	}
 }
 
 // Rule is a component of rule sets for route validation. Each validated fields
@@ -218,9 +267,13 @@ func (f *Field) getErrorPath(parentPath *walk.Path, c walk.Context) *walk.Path {
 	return c.Path
 }
 
+func (f *Field) apply(fieldMap FieldMap, name string) {
+	fieldMap[name] = f
+}
+
 // FieldMap is an alias to shorten verbose validation rules declaration.
 // Maps a field name (key) with a Field struct (value).
-type FieldMap map[string]*Field
+type FieldMap map[string]FieldMapApplier
 
 // Rules is a component of route validation and maps a
 // field name (key) with a Field struct (value).
@@ -242,11 +295,14 @@ func (r *Rules) AsRules() *Rules {
 // any of the rules doesn't refer to an existing RuleDefinition, doesn't
 // meet the parameters requirement, or if the rule cannot be used in array validation
 // while ArrayDimension is not equal to 0.
+// Also processes composition. After calling this function, you can safely assume all
+// `Fields` elements are of type `*Field`.
 func (r *Rules) Check() {
 	if !r.checked {
+		r.processComposition()
 		r.sortKeys()
 		for _, path := range r.sortedKeys {
-			field := r.Fields[path]
+			field := r.Fields[path].(*Field)
 			p, err := walk.Parse(path)
 			if err != nil {
 				panic(err)
@@ -257,7 +313,7 @@ func (r *Rules) Check() {
 				// This field is an element of an array, find it and assign it to f.Elements
 				parent, ok := r.Fields[path[:len(path)-2]]
 				if ok {
-					parent.Elements = field
+					parent.(*Field).Elements = field
 					field.Path = &walk.Path{
 						Type: walk.PathTypeArray,
 						Next: &walk.Path{
@@ -273,6 +329,26 @@ func (r *Rules) Check() {
 	}
 }
 
+func (r *Rules) processComposition() {
+	for name, field := range r.Fields {
+		field.apply(r.Fields, name)
+	}
+	delete(r.Fields, CurrentElement)
+}
+
+func (r *Rules) apply(fieldMap FieldMap, name string) {
+	for k, f := range r.Fields {
+		if k != CurrentElement {
+			f.apply(fieldMap, name+"."+k)
+		}
+	}
+	fields, ok := r.Fields[CurrentElement]
+	if ok {
+		fields.apply(fieldMap, name)
+		delete(r.Fields, CurrentElement)
+	}
+}
+
 func (r *Rules) sortKeys() {
 	r.sortedKeys = make([]string, 0, len(r.Fields))
 
@@ -282,7 +358,7 @@ func (r *Rules) sortKeys() {
 
 	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
 		fieldName1 := r.sortedKeys[i]
-		field2 := r.Fields[r.sortedKeys[j]]
+		field2 := r.Fields[r.sortedKeys[j]].(*Field)
 		for _, r := range field2.Rules {
 			def, ok := validationRules[r.Name]
 			if ok && def.ComparesFields && helper.ContainsStr(r.Params, fieldName1) {
@@ -403,7 +479,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 	now := time.Now()
 
 	for _, fieldName := range rules.sortedKeys {
-		field := rules.Fields[fieldName]
+		field := rules.Fields[fieldName].(*Field)
 		validateField(fieldName, field, isJSON, data, data, nil, now, language, errors)
 	}
 	return errors

@@ -165,8 +165,8 @@ func TestValidateTimezoneConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":          {"required", "object"},
-		"object.timezone": {"required", "timezone"},
+		"object":          List{"required", "object"},
+		"object.timezone": List{"required", "timezone"},
 	}
 
 	errors := Validate(data, set, true, "en-US")
@@ -212,8 +212,8 @@ func TestValidateIPConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":    {"required", "object"},
-		"object.ip": {"required", "ip"},
+		"object":    List{"required", "object"},
+		"object.ip": List{"required", "ip"},
 	}
 
 	errors := Validate(data, set, true, "en-US")
@@ -248,8 +248,8 @@ func TestValidateIPv4ConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":    {"required", "object"},
-		"object.ip": {"required", "ipv4"},
+		"object":    List{"required", "object"},
+		"object.ip": List{"required", "ipv4"},
 	}
 
 	errors := Validate(data, set, true, "en-US")
@@ -284,8 +284,8 @@ func TestValidateIPv6ConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":    {"required", "object"},
-		"object.ip": {"required", "ipv6"},
+		"object":    List{"required", "object"},
+		"object.ip": List{"required", "ipv6"},
 	}
 
 	errors := Validate(data, set, true, "en-US")
@@ -347,8 +347,8 @@ func TestValidateJSONConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":      {"required", "object"},
-		"object.json": {"required", "json"},
+		"object":      List{"required", "object"},
+		"object.json": List{"required", "json"},
 	}
 
 	errors := Validate(data, set, true, "en-US")
@@ -391,8 +391,8 @@ func TestValidateURLConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":     {"required", "object"},
-		"object.url": {"required", "url"},
+		"object":     List{"required", "object"},
+		"object.url": List{"required", "url"},
 	}
 
 	errors := Validate(data, set, true, "en-US")
@@ -437,8 +437,8 @@ func TestValidateUUIDConvertInObject(t *testing.T) {
 	}
 
 	set := RuleSet{
-		"object":      {"required", "object"},
-		"object.uuid": {"required", "uuid"},
+		"object":      List{"required", "object"},
+		"object.uuid": List{"required", "uuid"},
 	}
 
 	errors := Validate(data, set, true, "en-US")

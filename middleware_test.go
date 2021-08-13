@@ -403,8 +403,8 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"number": 42,
 	}
 	rules := validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:10"},
+		"string": validation.List{"required", "string"},
+		"number": validation.List{"required", "numeric", "min:10"},
 	}
 	request := suite.CreateTestRequest(rawRequest)
 	request.Data = data
@@ -420,8 +420,8 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"number": 42,
 	}
 	rules = validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:50"},
+		"string": validation.List{"required", "string"},
+		"number": validation.List{"required", "numeric", "min:50"},
 	}
 
 	request = suite.CreateTestRequest(rawRequest)

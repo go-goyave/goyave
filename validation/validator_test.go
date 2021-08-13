@@ -1792,6 +1792,20 @@ func (suite *ValidatorTestSuite) TestRulesComposition() {
 	suite.Equal(expected, rules)
 }
 
+func (suite *ValidatorTestSuite) TestValidateNonNullableInQuery() {
+	data := map[string]interface{}{}
+
+	rules := RuleSet{
+		"page":   List{"integer"},
+		"search": List{"string"},
+	}
+
+	errors := Validate(data, rules, false, "en-US")
+	suite.Nil(errors)
+
+	suite.Empty(data)
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

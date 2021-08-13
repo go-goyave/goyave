@@ -492,7 +492,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			delete(parentObject, c.Name)
 		}
 
-		if shouldConvertSingleValueArray(fieldName, isJSON) {
+		if shouldConvertSingleValueArray(fieldName, isJSON) && !c.NotFound {
 			c.Value = convertSingleValueArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
 			parentObject[c.Name] = c.Value
 		}
@@ -500,6 +500,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 		if isAbsent(field, c, data) {
 			return
 		}
+		fmt.Println(fieldName, "not absent")
 
 		if field.Elements != nil {
 			// This is an array, recursively validate it so it can be converted to correct type

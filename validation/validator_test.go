@@ -1,8 +1,6 @@
 package validation
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -1535,6 +1533,9 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 		"missingobject":                 {"required", "object"},
 		"missingobject.subobject":       {"required", "object"},
 		"missingobject.subobject.field": {"required", "string"},
+		"missingobject.array":           {"required", "array:object"},
+		"missingobject.array[].field":   {"required", "array:string"},
+		"missingobject.array[].field[]": {"required", "string"},
 	}, true, "en-US")
 
 	expected := Errors{
@@ -1643,12 +1644,27 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 						"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be a string."}},
 					},
 				},
+				"array": &FieldErrors{
+					Errors: []string{"The array is required.", "The array must be an array."},
+					Elements: ArrayErrors{
+						-1: &FieldErrors{
+							Fields: Errors{
+								"field": &FieldErrors{
+									Errors: []string{"The field is required.", "The field must be an array."},
+									Elements: ArrayErrors{
+										-1: &FieldErrors{
+											Errors: []string{"The field values are required.", "The field values must be strings."},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
 
-	d, _ := json.MarshalIndent(errors, "", "  ")
-	fmt.Println(string(d))
 	suite.Equal(expected, errors)
 }
 

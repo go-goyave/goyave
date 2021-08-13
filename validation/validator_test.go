@@ -1515,8 +1515,6 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 		"edgecase": []string{},
 	}
 
-	// TODO test array[].field[] when field is missing
-
 	errors := Validate(data, RuleSet{
 		"array":                         {"required", "array:object"},
 		"array[]":                       {"required", "object"},

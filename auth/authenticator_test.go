@@ -128,7 +128,7 @@ func (suite *AuthenticationTestSuite) TestAuthMiddlewareUnauthorizer() {
 	defer result.Body.Close()
 
 	data := map[string]interface{}{}
-	if suite.Nil(suite.GetJSONBody(result, data)) {
+	if suite.Nil(suite.GetJSONBody(result, &data)) {
 		suite.Contains(data, "custom error key")
 	}
 	suite.Equal(http.StatusUnauthorized, result.StatusCode)

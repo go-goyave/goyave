@@ -27,7 +27,7 @@ type Authenticator interface {
 }
 
 // Unauthorizer can be implemented by Authenticators to define custom behavior
-// when authantication fails.
+// when authentication fails.
 type Unauthorizer interface {
 	OnUnauthorized(*goyave.Response, *goyave.Request, error)
 }

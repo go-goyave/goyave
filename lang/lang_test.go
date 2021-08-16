@@ -32,7 +32,7 @@ func (suite *LangTestSuite) TestLang() {
 	suite.Equal("email address", Get("en-US", "validation.fields.email"))
 	suite.Equal("The :field is required.", Get("en-US", "validation.rules.required"))
 	suite.Equal("Non-validated fields are forbidden.", Get("en-US", "disallow-non-validated-fields"))
-	suite.Equal("These credentials don't match our records.", Get("en-US", "auth.invalid-credentials"))
+	suite.Equal("Invalid credentials.", Get("en-US", "auth.invalid-credentials"))
 	suite.Equal("doesn't.exist", Get("en-US", "doesn't.exist"))
 	suite.Equal("doesn'texist", Get("en-US", "doesn'texist"))
 	suite.Equal("validation.doesn't.exist", Get("en-US", "validation.doesn't.exist"))

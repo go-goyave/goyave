@@ -500,7 +500,6 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 		if isAbsent(field, c, data) {
 			return
 		}
-		fmt.Println(fieldName, "not absent")
 
 		if field.Elements != nil {
 			// This is an array, recursively validate it so it can be converted to correct type

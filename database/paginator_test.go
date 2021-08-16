@@ -139,7 +139,7 @@ func (suite *PaginatorTestSuite) TestCountError() {
 	db := GetConnection().Table("not a table")
 	paginator := NewPaginator(db, 1, 10, []interface{}{})
 	suite.Panics(func() {
-		paginator.updatePageInfo()
+		paginator.UpdatePageInfo()
 	})
 }
 

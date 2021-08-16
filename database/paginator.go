@@ -16,6 +16,8 @@ type Paginator struct {
 	Total       int64       `json:"total"`
 	PageSize    int         `json:"pageSize"`
 	CurrentPage int         `json:"currentPage"`
+
+	loadedPageInfo bool
 }
 
 func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
@@ -47,7 +49,8 @@ func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator 
 	}
 }
 
-func (p *Paginator) updatePageInfo() {
+// UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
+func (p *Paginator) UpdatePageInfo() {
 	count := int64(0)
 	if err := p.db.Model(p.Records).Count(&count).Error; err != nil {
 		panic(err)
@@ -57,12 +60,15 @@ func (p *Paginator) updatePageInfo() {
 	if p.MaxPage == 0 {
 		p.MaxPage = 1
 	}
+	p.loadedPageInfo = true
 }
 
 // Find requests page information (total records and max page) and
 // executes the transaction. The Paginate struct is updated automatically, as
 // well as the destination slice given in NewPaginate().
 func (p *Paginator) Find() *gorm.DB {
-	p.updatePageInfo()
+	if !p.loadedPageInfo {
+		p.UpdatePageInfo()
+	}
 	return p.db.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records)
 }

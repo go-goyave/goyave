@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/base64"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -29,6 +30,14 @@ type TestUserOverride struct {
 	Name     string `gorm:"type:varchar(100)"`
 	Password string `gorm:"type:varchar(100);column:password_override" auth:"password"`
 	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
+}
+
+type TestBasicUnauthorizer struct {
+	BasicAuthenticator
+}
+
+func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.Response, request *goyave.Request, err error) {
+	response.JSON(http.StatusUnauthorized, map[string]string{"custom error key": err.Error()})
 }
 
 type AuthenticationTestSuite struct {
@@ -94,7 +103,8 @@ func (suite *AuthenticationTestSuite) TestAuthMiddleware() {
 	result := suite.Middleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 		suite.Fail("Auth middleware passed")
 	})
-	suite.Equal(401, result.StatusCode)
+	result.Body.Close()
+	suite.Equal(http.StatusUnauthorized, result.StatusCode)
 
 	request = suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
 	request.Header().Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("johndoe@example.org:password")))
@@ -103,7 +113,25 @@ func (suite *AuthenticationTestSuite) TestAuthMiddleware() {
 		suite.Equal("Admin", request.User.(*TestUser).Name)
 		response.Status(200)
 	})
+	result.Body.Close()
 	suite.Equal(200, result.StatusCode)
+}
+
+func (suite *AuthenticationTestSuite) TestAuthMiddlewareUnauthorizer() {
+	authenticator := Middleware(&TestUser{}, &TestBasicUnauthorizer{})
+
+	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
+	request.Header().Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("johndoe@example.org:wrong_password")))
+	result := suite.Middleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
+		suite.Fail("Auth middleware passed")
+	})
+	defer result.Body.Close()
+
+	data := map[string]interface{}{}
+	if suite.Nil(suite.GetJSONBody(result, data)) {
+		suite.Contains(data, "custom error key")
+	}
+	suite.Equal(http.StatusUnauthorized, result.StatusCode)
 }
 
 func (suite *AuthenticationTestSuite) TearDownTest() {

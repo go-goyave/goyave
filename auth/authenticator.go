@@ -26,6 +26,12 @@ type Authenticator interface {
 	Authenticate(request *goyave.Request, user interface{}) error
 }
 
+// Unauthorizer can be implemented by Authenticators to define custom behavior
+// when authantication fails.
+type Unauthorizer interface {
+	OnUnauthorized(*goyave.Response, *goyave.Request, error)
+}
+
 // Middleware create a new authenticator middleware to authenticate
 // the given model using the given authenticator.
 func Middleware(model interface{}, authenticator Authenticator) goyave.Middleware {
@@ -35,6 +41,10 @@ func Middleware(model interface{}, authenticator Authenticator) goyave.Middlewar
 			user := reflect.New(userType).Interface()
 			r.User = user
 			if err := authenticator.Authenticate(r, r.User); err != nil {
+				if unauthorizer, ok := authenticator.(Unauthorizer); ok {
+					unauthorizer.OnUnauthorized(response, r, err)
+					return
+				}
 				response.JSON(http.StatusUnauthorized, map[string]string{"authError": err.Error()})
 				return
 			}

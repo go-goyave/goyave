@@ -65,7 +65,7 @@ func (p *Paginator) UpdatePageInfo() {
 
 // Find requests page information (total records and max page) and
 // executes the transaction. The Paginate struct is updated automatically, as
-// well as the destination slice given in NewPaginate().
+// well as the destination slice given in NewPaginator().
 func (p *Paginator) Find() *gorm.DB {
 	if !p.loadedPageInfo {
 		p.UpdatePageInfo()

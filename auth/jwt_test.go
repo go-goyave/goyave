@@ -265,7 +265,7 @@ func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenInvalidCredentials() {
 	authenticatedUser := &TestUser{}
 	token, err := GenerateToken("wrongemail@example.org")
 	suite.Nil(err)
-	suite.Equal("These credentials don't match our records.", tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser).Error())
+	suite.Equal("Invalid credentials.", tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser).Error())
 }
 func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenWithClaimsInvalidCredentials() {
 	tokenAuthenticator := &JWTAuthenticator{}
@@ -275,7 +275,7 @@ func (suite *JWTAuthenticatorTestSuite) TestGenerateTokenWithClaimsInvalidCreden
 		"userid": suite.user.ID,
 	}, jwt.SigningMethodHS256)
 	suite.Nil(err)
-	suite.Equal("These credentials don't match our records.", tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser).Error())
+	suite.Equal("Invalid credentials.", tokenAuthenticator.Authenticate(suite.createRequest(token), authenticatedUser).Error())
 }
 
 func (suite *JWTAuthenticatorTestSuite) TestAuthenticateInvalidToken() {

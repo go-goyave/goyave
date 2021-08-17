@@ -11,6 +11,10 @@ func init() {
 		Function:           validateUnique,
 		RequiredParameters: 1,
 	})
+	validation.AddRule("exists", &validation.RuleDefinition{
+		Function:           validateExists,
+		RequiredParameters: 1,
+	})
 }
 
 func validateUnique(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
@@ -24,4 +28,8 @@ func validateUnique(field string, value interface{}, parameters []string, form m
 		panic(err)
 	}
 	return count == 0
+}
+
+func validateExists(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
+	return !validateUnique(field, value, parameters, form)
 }

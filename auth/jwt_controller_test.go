@@ -90,7 +90,7 @@ func (suite *JWTControllerTestSuite) TestLogin() {
 	if err == nil {
 		errMessage, ok := json["validationError"]
 		suite.True(ok)
-		suite.Equal("These credentials don't match our records.", errMessage)
+		suite.Equal("Invalid credentials.", errMessage)
 	}
 	result.Body.Close()
 }
@@ -161,7 +161,7 @@ func (suite *JWTControllerTestSuite) TestLoginWithCustomTokenFunc() {
 	if err == nil {
 		errMessage, ok := json["validationError"]
 		suite.True(ok)
-		suite.Equal("These credentials don't match our records.", errMessage)
+		suite.Equal("Invalid credentials.", errMessage)
 	}
 	result.Body.Close()
 }

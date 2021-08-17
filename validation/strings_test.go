@@ -48,7 +48,7 @@ func TestValidateRegex(t *testing.T) {
 				{Name: "regex"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -110,7 +110,7 @@ func TestValidateStartsWith(t *testing.T) {
 				{Name: "starts_with"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -125,7 +125,7 @@ func TestValidateEndsWith(t *testing.T) {
 				{Name: "ends_with"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 

@@ -67,7 +67,7 @@ func TestValidateBefore(t *testing.T) {
 				{Name: "before"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -105,7 +105,7 @@ func TestValidateBeforeEqual(t *testing.T) {
 				{Name: "before_equal"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -152,7 +152,7 @@ func TestValidateAfter(t *testing.T) {
 				{Name: "after"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -191,7 +191,7 @@ func TestValidateAfterEqual(t *testing.T) {
 				{Name: "after_equal"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -235,7 +235,7 @@ func TestValidateDateEquals(t *testing.T) {
 				{Name: "date_equals"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects
@@ -263,7 +263,7 @@ func TestValidateDateBetween(t *testing.T) {
 				{Name: "date_between"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	assert.Panics(t, func() {
@@ -272,7 +272,7 @@ func TestValidateDateBetween(t *testing.T) {
 				{Name: "date_between", Params: []string{"2019-11-03T00:00:00"}},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	// Objects

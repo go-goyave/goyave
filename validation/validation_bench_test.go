@@ -57,7 +57,7 @@ func BenchmarkValidatePreParsed(b *testing.B) {
 			},
 		},
 	}
-	rules.check()
+	rules.Check()
 	data := map[string]interface{}{
 		"email":                 "pedro@example.org",
 		"password":              "this is a strong password",
@@ -113,7 +113,7 @@ func BenchmarkCheck(b *testing.B) {
 	}
 	setupValidationBench(b)
 	for n := 0; n < b.N; n++ {
-		rules.check()
+		rules.Check()
 		rules.checked = false
 	}
 }

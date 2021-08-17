@@ -81,7 +81,7 @@ func (r RuleSet) parse() *Rules {
 		}
 		rules.Fields[k] = field
 	}
-	rules.check()
+	rules.Check()
 	rules.sortKeys()
 	return rules
 }
@@ -147,9 +147,9 @@ func (f *Field) IsArray() bool {
 	return f.isArray
 }
 
-// check if rules meet the minimum parameters requirement and update
+// Check if rules meet the minimum parameters requirement and update
 // the isRequired, isNullable and isArray fields.
-func (f *Field) check() {
+func (f *Field) Check() {
 	for _, rule := range f.Rules {
 		switch rule.Name {
 		case "confirmed", "file", "mime", "image", "extension", "count",
@@ -192,21 +192,21 @@ var _ Ruler = (*Rules)(nil) // implements Ruler
 
 // AsRules performs the checking and returns the same Rules instance.
 func (r *Rules) AsRules() *Rules {
-	r.check()
+	r.Check()
 	if r.sortedKeys == nil {
 		r.sortKeys()
 	}
 	return r
 }
 
-// check all rules in this set. This function will panic if
+// Check all rules in this set. This function will panic if
 // any of the rules doesn't refer to an existing RuleDefinition, doesn't
 // meet the parameters requirement, or if the rule cannot be used in array validation
 // while ArrayDimension is not equal to 0.
-func (r *Rules) check() {
+func (r *Rules) Check() {
 	if !r.checked {
 		for _, field := range r.Fields {
-			field.check()
+			field.Check()
 		}
 		r.checked = true
 	}

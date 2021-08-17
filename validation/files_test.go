@@ -111,7 +111,7 @@ func TestValidateMIME(t *testing.T) {
 				{Name: "mime"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -135,7 +135,7 @@ func TestValidateExtension(t *testing.T) {
 				{Name: "extension"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -152,7 +152,7 @@ func TestValidateCount(t *testing.T) {
 				{Name: "count"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -169,7 +169,7 @@ func TestValidateCountMin(t *testing.T) {
 				{Name: "count_min"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -186,7 +186,7 @@ func TestValidateCountMax(t *testing.T) {
 				{Name: "count_max"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }
 
@@ -206,7 +206,7 @@ func TestValidateCountBetween(t *testing.T) {
 				{Name: "count_between"},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 
 	assert.Panics(t, func() {
@@ -215,6 +215,6 @@ func TestValidateCountBetween(t *testing.T) {
 				{Name: "count_between", Params: []string{"2"}},
 			},
 		}
-		field.check()
+		field.Check()
 	})
 }

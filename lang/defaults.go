@@ -5,7 +5,7 @@ var enUS language = language{
 		"disallow-non-validated-fields": "Non-validated fields are forbidden.",
 		"malformed-request":             "Malformed request",
 		"malformed-json":                "Malformed JSON",
-		"auth.invalid-credentials":      "These credentials don't match our records.",
+		"auth.invalid-credentials":      "Invalid credentials.",
 		"auth.no-credentials-provided":  "Invalid or missing authentication header.",
 		"auth.jwt-invalid":              "Your authentication token is invalid.",
 		"auth.jwt-not-valid-yet":        "Your authentication token is not valid yet.",
@@ -152,6 +152,8 @@ var enUS language = language{
 			"object.array":                     "The :field values must be objects.",
 			"unique":                           "The :field has already been taken.",
 			"unique.array":                     "At least one of the :field values has already been taken.",
+			"exists":                           "The :field does not exist.",
+			"exists.array":                     "At least one of the :field values does not exist.",
 		},
 		fields: map[string]attribute{
 			"email": {

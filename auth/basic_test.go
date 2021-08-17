@@ -48,9 +48,9 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticate() {
 	suite.Equal("Admin", user.Name)
 
 	user = &TestUser{}
-	suite.Equal("These credentials don't match our records.", basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "wrong password"), user).Error())
+	suite.Equal("Invalid credentials.", basicAuthenticator.Authenticate(suite.createRequest("johndoe@example.org", "wrong password"), user).Error())
 	user = &TestUser{}
-	suite.Equal("These credentials don't match our records.", basicAuthenticator.Authenticate(suite.createRequest("wrongemail@example.org", "password"), user).Error())
+	suite.Equal("Invalid credentials.", basicAuthenticator.Authenticate(suite.createRequest("wrongemail@example.org", "password"), user).Error())
 
 	user = &TestUser{}
 	request := suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))

@@ -193,6 +193,10 @@ func Only(data interface{}, fields ...string) map[string]interface{} {
 		value = value.Elem()
 	}
 
+	if !value.IsValid() {
+		return result
+	}
+
 	switch t.Kind() {
 	case reflect.Map:
 		if t.Key().Kind() != reflect.String {
@@ -207,9 +211,13 @@ func Only(data interface{}, fields ...string) map[string]interface{} {
 	case reflect.Struct:
 		for i := 0; i < t.NumField(); i++ {
 			field := value.Field(i)
-			fieldType := t.Field(i)
-			name := fieldType.Name
-			if field.Kind() == reflect.Struct && fieldType.Anonymous {
+			strctType := t.Field(i)
+			fieldType := strctType.Type
+			if fieldType.Kind() == reflect.Ptr {
+				fieldType = fieldType.Elem()
+			}
+			name := strctType.Name
+			if fieldType.Kind() == reflect.Struct && strctType.Anonymous {
 				for k, v := range Only(field.Interface(), fields...) {
 					// Check if fields are conflicting
 					// Highest level fields have priority

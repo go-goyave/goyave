@@ -198,6 +198,10 @@ func TestOnly(t *testing.T) {
 		Other string
 		Data
 	}
+	type PromotePtr struct {
+		*Data
+		Other string
+	}
 
 	data := map[string]interface{}{
 		"field": "value",
@@ -246,6 +250,34 @@ func TestOnly(t *testing.T) {
 	res = Only(promote, "Field", "Slice", "Other")
 	assert.Equal(t, expected, res)
 	assert.Equal(t, promote.Slice, res["Slice"])
+
+	// Promoted fields ptr
+	promotePtr := PromotePtr{
+		Data: &Data{
+			Field: "value",
+			Num:   42,
+			Slice: []float64{3, 6, 9},
+		},
+		Other: "test",
+	}
+	expected = map[string]interface{}{
+		"Field": "value",
+		"Slice": []float64{3, 6, 9},
+		"Other": "test",
+	}
+	res = Only(promotePtr, "Field", "Slice", "Other")
+	assert.Equal(t, expected, res)
+	assert.Equal(t, promote.Slice, res["Slice"])
+
+	// Promoted fields ptr nil
+	promotePtr = PromotePtr{
+		Other: "test",
+	}
+	expected = map[string]interface{}{
+		"Other": "test",
+	}
+	res = Only(promotePtr, "Field", "Slice", "Other")
+	assert.Equal(t, expected, res)
 }
 
 func TestOnlyError(t *testing.T) {

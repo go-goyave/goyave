@@ -32,6 +32,13 @@ type TestUserOverride struct {
 	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
 }
 
+type TestUserInvalidOverride struct {
+	gorm.Model
+	Name     string `gorm:"type:varchar(100)"`
+	Password string `gorm:"type:varchar(100);column:" auth:"password"`
+	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
+}
+
 type TestBasicUnauthorizer struct {
 	BasicAuthenticator
 }
@@ -78,6 +85,11 @@ func (suite *AuthenticationTestSuite) TestFindColumns() {
 	fields = FindColumns(userOverride, "password")
 	suite.Len(fields, 1)
 	suite.Equal("password_override", fields[0].Name)
+
+	userInvalidOverride := &TestUserInvalidOverride{}
+	fields = FindColumns(userInvalidOverride, "password")
+	suite.Len(fields, 1)
+	suite.Equal("password", fields[0].Name)
 }
 
 func (suite *AuthenticationTestSuite) TestFindColumnsPromoted() {

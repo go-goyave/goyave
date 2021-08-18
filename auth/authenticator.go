@@ -94,7 +94,7 @@ func FindColumns(strct interface{}, fields ...string) []*Column {
 		tag := fieldType.Tag.Get("auth")
 		if index := helper.IndexOf(fields, tag); index != -1 {
 			result[index] = &Column{
-				Name:  columnName(&fieldType),
+				Name:  columnName(fieldType),
 				Field: &fieldType,
 			}
 		}
@@ -103,11 +103,15 @@ func FindColumns(strct interface{}, fields ...string) []*Column {
 	return result
 }
 
-func columnName(field *reflect.StructField) string {
+func columnName(field reflect.StructField) string {
 	for _, t := range strings.Split(field.Tag.Get("gorm"), ";") { // Check for gorm column name override
 		if strings.HasPrefix(t, "column") {
-			v := strings.Split(t, ":")
-			return strings.TrimSpace(v[1])
+			i := strings.Index(t, ":")
+			if i == -1 || i+1 >= len(t) {
+				// Invalid syntax, fallback to auto-naming
+				break
+			}
+			return strings.TrimSpace(t[i+1:])
 		}
 	}
 

@@ -25,6 +25,10 @@ type TestUserPromoted struct {
 	TestUser
 }
 
+type TestUserPromotedPtr struct {
+	*TestUser
+}
+
 type TestUserOverride struct {
 	gorm.Model
 	Name     string `gorm:"type:varchar(100)"`
@@ -104,6 +108,12 @@ func (suite *AuthenticationTestSuite) TestFindColumnsPromoted() {
 	suite.Equal("email", fields[0].Name)
 	suite.Nil(fields[1])
 	suite.Equal("password", fields[2].Name)
+
+	userPtr := &TestUserPromotedPtr{}
+	fields = FindColumns(userPtr, "username", "password")
+	suite.Len(fields, 2)
+	suite.Equal("email", fields[0].Name)
+	suite.Equal("password", fields[1].Name)
 }
 
 func (suite *AuthenticationTestSuite) TestAuthMiddleware() {

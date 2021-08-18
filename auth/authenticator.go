@@ -73,7 +73,7 @@ func FindColumns(strct interface{}, fields ...string) []*Column {
 	result := make([]*Column, length)
 
 	value := reflect.ValueOf(strct)
-	t := reflect.TypeOf(strct)
+	t := value.Type()
 	if t.Kind() == reflect.Ptr {
 		value = value.Elem()
 		t = t.Elem()

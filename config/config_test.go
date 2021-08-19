@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -46,7 +45,7 @@ func (suite *ConfigTestSuite) TestReadConfigFile() {
 	suite.False(ok)
 
 	// Error
-	err = ioutil.WriteFile("test-forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
+	err = os.WriteFile("test-forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
 	if err != nil {
 		panic(err)
 	}
@@ -315,7 +314,7 @@ func (suite *ConfigTestSuite) TestLoad() {
 
 	// readConfigFile error
 	Clear()
-	err = ioutil.WriteFile("config.forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
+	err = os.WriteFile("config.forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
 	if err != nil {
 		panic(err)
 	}

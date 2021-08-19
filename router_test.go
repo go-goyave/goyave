@@ -1,7 +1,7 @@
 package goyave
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -130,7 +130,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("inline", result.Header.Get("Content-Disposition"))
 
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -145,7 +145,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	suite.Equal(200, result.StatusCode) // Not written yet
 	suite.Equal(404, response.GetStatus())
 
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -161,7 +161,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	suite.Equal("application/json", result.Header.Get("Content-Type"))
 	suite.Equal("attachment; filename=\"config.test.json\"", result.Header.Get("Content-Disposition"))
 
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -187,7 +187,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	suite.Equal(route, tmp)
 
 	result := writer.Result()
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -208,7 +208,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	router.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -230,7 +230,7 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 	router.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -350,7 +350,7 @@ func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	suite.Equal(404, result.StatusCode)
 	suite.Equal("application/json; charset=utf-8", result.Header.Get("Content-Type"))
 
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -377,7 +377,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	router.requestHandler(match, writer, rawRequest)
 
 	result := writer.Result()
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -392,7 +392,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	subrouter.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -416,7 +416,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	subrouter.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -436,7 +436,7 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	subrouter.requestHandler(match, writer, rawRequest)
 
 	result = writer.Result()
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -531,7 +531,7 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	config.Set("app.debug", prev)
 
 	result := writer.Result()
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -690,7 +690,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "http://localhost:443/test?param=1", nil))
 	result := recorder.Result()
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	suite.Nil(err)
 	result.Body.Close()
 
@@ -704,7 +704,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "https://localhost:80/test?param=1", nil))
 	result = recorder.Result()
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	suite.Nil(err)
 	result.Body.Close()
 
@@ -715,7 +715,7 @@ func (suite *RouterTestSuite) TestScheme() {
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequest("GET", "/test?param=1", nil))
 	result = recorder.Result()
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	suite.Nil(err)
 	result.Body.Close()
 

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -291,7 +291,7 @@ func (suite *CustomTestSuite) TestJSONSlice() {
 }
 
 func (suite *CustomTestSuite) TestCreateTestFiles() {
-	err := ioutil.WriteFile("test-file.txt", []byte("test-content"), 0644)
+	err := os.WriteFile("test-file.txt", []byte("test-content"), 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -299,7 +299,7 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 	files := suite.CreateTestFiles("test-file.txt")
 	suite.Equal(1, len(files))
 	suite.Equal("test-file.txt", files[0].Header.Filename)
-	body, err := ioutil.ReadAll(files[0].Data)
+	body, err := io.ReadAll(files[0].Data)
 	if err != nil {
 		panic(err)
 	}
@@ -315,7 +315,7 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 
 func (suite *CustomTestSuite) TestMultipartForm() {
 	const path = "test-file.txt"
-	err := ioutil.WriteFile(path, []byte("test-content"), 0644)
+	err := os.WriteFile(path, []byte("test-content"), 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -323,7 +323,7 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 
 	suite.RunServer(func(router *Router) {
 		router.Route("POST", "/post", func(response *Response, request *Request) {
-			content, err := ioutil.ReadAll(request.File("file")[0].Data)
+			content, err := io.ReadAll(request.File("file")[0].Data)
 			if err != nil {
 				panic(err)
 			}

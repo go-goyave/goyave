@@ -3,7 +3,7 @@ package goyave
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -130,7 +130,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		if resp != nil {
 			suite.Equal(308, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello\">Permanent Redirect</a>.\n\n", string(body))
@@ -146,7 +146,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		if resp != nil {
 			suite.Equal(308, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello?param=1\">Permanent Redirect</a>.\n\n", string(body))
@@ -162,7 +162,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
@@ -229,7 +229,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			resp.Body.Close()
 		}
 
-		err = ioutil.WriteFile("resources/template/test-static-serve.txt", []byte("test-content"), 0644)
+		err = os.WriteFile("resources/template/test-static-serve.txt", []byte("test-content"), 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -243,7 +243,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("test-content", string(body))
@@ -361,7 +361,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
@@ -401,7 +401,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -66,7 +65,7 @@ func (suite *LogMiddlewareTestSuite) TestCommonWrite() {
 
 	suite.Equal(200, result.StatusCode)
 
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -97,7 +96,7 @@ func (suite *LogMiddlewareTestSuite) TestCombinedWrite() {
 
 	suite.Equal(200, result.StatusCode)
 
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}

@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -236,7 +235,7 @@ func (s *TestSuite) Request(method, route string, headers map[string]string, bod
 // GetBody read the whole body of a response.
 // If read failed, test fails and return empty byte slice.
 func (s *TestSuite) GetBody(response *http.Response) []byte {
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		s.Fail("Couldn't read response body", err)
 	}

@@ -3,7 +3,6 @@ package filesystem
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -86,7 +85,7 @@ func TestGetMIMEType(t *testing.T) {
 	assert.Equal(t, "text/javascript; charset=utf-8", mime)
 
 	cssPath := toAbsolutePath("helper/filesystem/test.css")
-	err := ioutil.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)
+	err := os.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)
 	if err != nil {
 		panic(err)
 	}

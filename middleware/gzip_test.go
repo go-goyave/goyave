@@ -3,7 +3,6 @@ package middleware
 import (
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,7 +42,7 @@ func (suite *GzipMiddlewareTestSuite) TestGzipMiddleware() {
 	rawRequest := httptest.NewRequest("GET", "/", nil)
 	request := suite.CreateTestRequest(rawRequest)
 	result := suite.Middleware(Gzip(), request, handler)
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +59,7 @@ func (suite *GzipMiddlewareTestSuite) TestGzipMiddleware() {
 	if err != nil {
 		panic(err)
 	}
-	body, err = ioutil.ReadAll(reader)
+	body, err = io.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +89,7 @@ func (suite *GzipMiddlewareTestSuite) TestCloseNonCloseable() {
 		panic(err)
 	}
 
-	body, err := ioutil.ReadAll(reader)
+	body, err := io.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}
@@ -124,7 +123,7 @@ func (suite *GzipMiddlewareTestSuite) TestCloseChild() {
 			panic(err)
 		}
 
-		body, err := ioutil.ReadAll(reader)
+		body, err := io.ReadAll(reader)
 		if err != nil {
 			panic(err)
 		}
@@ -180,7 +179,7 @@ func (suite *GzipMiddlewareTestSuite) TestWriteFile() {
 			panic(err)
 		}
 
-		body, err := ioutil.ReadAll(reader)
+		body, err := io.ReadAll(reader)
 		if err != nil {
 			panic(err)
 		}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -128,7 +127,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 	suite.Equal(200, response.status)
 	suite.Equal(200, resp.StatusCode)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("message", string(body))
@@ -417,7 +416,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 	request.Data = data
 	request.Rules = rules.AsRules()
 	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -431,7 +430,7 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 	request.Data = nil
 	request.Rules = rules.AsRules()
 	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -455,7 +454,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Hi!")
 	})
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -469,7 +468,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Passthrough")
 	})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -482,7 +481,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Hi!")
 	})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -498,7 +497,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Hi!")
 	})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}

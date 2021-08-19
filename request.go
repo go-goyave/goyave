@@ -95,7 +95,7 @@ func (r *Request) RemoteAddress() string {
 }
 
 // Cookies returns the HTTP cookies sent with the request.
-func (r *Request) Cookies(name string) []*http.Cookie {
+func (r *Request) Cookies() []*http.Cookie {
 	if r.cookies == nil {
 		r.cookies = r.httpRequest.Cookies()
 	}

@@ -9,7 +9,7 @@ import (
 // Paginator structure containing pagination information and result records.
 // Can be sent to the client directly.
 type Paginator struct {
-	db *gorm.DB
+	DB *gorm.DB `json:"-"`
 
 	Records     interface{} `json:"records"`
 	MaxPage     int64       `json:"maxPage"`
@@ -42,7 +42,7 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 //
 func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator {
 	return &Paginator{
-		db:          db,
+		DB:          db,
 		CurrentPage: page,
 		PageSize:    pageSize,
 		Records:     dest,
@@ -52,7 +52,7 @@ func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator 
 // UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
 func (p *Paginator) UpdatePageInfo() {
 	count := int64(0)
-	if err := p.db.Model(p.Records).Count(&count).Error; err != nil {
+	if err := p.DB.Model(p.Records).Count(&count).Error; err != nil {
 		panic(err)
 	}
 	p.Total = count
@@ -70,5 +70,5 @@ func (p *Paginator) Find() *gorm.DB {
 	if !p.loadedPageInfo {
 		p.UpdatePageInfo()
 	}
-	return p.db.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records)
+	return p.DB.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records)
 }

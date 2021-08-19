@@ -54,7 +54,7 @@ func (suite *PaginatorTestSuite) TestPaginator() {
 	paginator := NewPaginator(db, 1, 10, &results)
 	suite.Equal(1, paginator.CurrentPage)
 	suite.Equal(10, paginator.PageSize)
-	suite.Equal(db, paginator.db)
+	suite.Equal(db, paginator.DB)
 	res := paginator.Find()
 	suite.Nil(res.Error)
 	if res.Error == nil {

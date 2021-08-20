@@ -52,7 +52,7 @@ func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator 
 // UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
 func (p *Paginator) UpdatePageInfo() {
 	count := int64(0)
-	if err := p.DB.Model(p.Records).Count(&count).Error; err != nil {
+	if err := p.DB.Session(&gorm.Session{}).Model(p.Records).Count(&count).Error; err != nil {
 		panic(err)
 	}
 	p.Total = count

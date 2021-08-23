@@ -259,11 +259,6 @@ func (f *Field) getErrorPath(parentPath *walk.Path, c walk.Context) *walk.Path {
 		return clone
 	}
 
-	_, parentIsObject := c.Parent.(map[string]interface{})
-	if c.NotFound && c.Index == -1 && !parentIsObject {
-		return f.Path
-	}
-
 	return c.Path
 }
 
@@ -492,7 +487,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			delete(parentObject, c.Name)
 		}
 
-		if shouldConvertSingleValueArray(fieldName, isJSON) && !c.NotFound {
+		if shouldConvertSingleValueArray(fieldName, isJSON) && c.Found == walk.Found {
 			c.Value = convertSingleValueArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
 			parentObject[c.Name] = c.Value
 		}
@@ -555,6 +550,9 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 }
 
 func isAbsent(field *Field, c walk.Context, data map[string]interface{}) bool {
+	if c.Found == walk.ParentNotFound {
+		return true
+	}
 	requiredCtx := &Context{
 		Data:   data,
 		Value:  c.Value,
@@ -571,7 +569,7 @@ func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
 }
 
 func replaceValue(value interface{}, c walk.Context) {
-	if c.NotFound {
+	if c.Found != walk.Found {
 		return
 	}
 

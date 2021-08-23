@@ -1499,6 +1499,7 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 			"array": []interface{}{
 				5,
 				[]string{"a", "b"},
+				[]string{},
 				map[string]interface{}{
 					"field": "1",
 				},
@@ -1557,15 +1558,9 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 					Elements: ArrayErrors{
 						1: &FieldErrors{
 							Errors: []string{"The narray[] values must be objects."},
-							Fields: Errors{
-								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
-							},
 						},
 						2: &FieldErrors{
 							Errors: []string{"The narray[] values must be objects."},
-							Fields: Errors{
-								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be numeric."}},
-							},
 						},
 					},
 				},
@@ -1577,9 +1572,6 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 					Elements: ArrayErrors{
 						0: &FieldErrors{
 							Errors: []string{"The array values must be arrays."},
-							Elements: ArrayErrors{
-								-1: &FieldErrors{Errors: []string{"The array[] values are required.", "The array[] values must be strings."}},
-							},
 						},
 						1: &FieldErrors{
 							Elements: ArrayErrors{
@@ -1588,10 +1580,12 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 							},
 						},
 						2: &FieldErrors{
-							Errors: []string{"The array values must be arrays."},
 							Elements: ArrayErrors{
 								-1: &FieldErrors{Errors: []string{"The array[] values are required.", "The array[] values must be strings."}},
 							},
+						},
+						3: &FieldErrors{
+							Errors: []string{"The array values must be arrays."},
 						},
 					},
 				},
@@ -1602,11 +1596,6 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 				"array": &FieldErrors{
 					Errors: []string{"The array must be an array."},
 					Elements: ArrayErrors{
-						0: &FieldErrors{
-							Fields: Errors{
-								"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be an object."}},
-							},
-						},
 						1: &FieldErrors{
 							Fields: Errors{
 								"field": &FieldErrors{Errors: []string{"The field must be an object."}},
@@ -1616,50 +1605,8 @@ func (suite *ValidatorTestSuite) TestValidateWrongBody() {
 				},
 			},
 		},
-		"edgecase": &FieldErrors{
-			Elements: ArrayErrors{
-				-1: &FieldErrors{
-					Elements: ArrayErrors{
-						-1: &FieldErrors{
-							Elements: ArrayErrors{
-								-1: &FieldErrors{
-									Elements: ArrayErrors{
-										-1: &FieldErrors{Errors: []string{"The edgecase[][][] values are required.", "The edgecase[][][] values must be strings."}},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
 		"missingobject": &FieldErrors{
 			Errors: []string{"The missingobject is required.", "The missingobject must be an object."},
-			Fields: Errors{
-				"subobject": &FieldErrors{
-					Errors: []string{"The subobject is required.", "The subobject must be an object."},
-					Fields: Errors{
-						"field": &FieldErrors{Errors: []string{"The field is required.", "The field must be a string."}},
-					},
-				},
-				"array": &FieldErrors{
-					Errors: []string{"The array is required.", "The array must be an array."},
-					Elements: ArrayErrors{
-						-1: &FieldErrors{
-							Fields: Errors{
-								"field": &FieldErrors{
-									Errors: []string{"The field is required.", "The field must be an array."},
-									Elements: ArrayErrors{
-										-1: &FieldErrors{
-											Errors: []string{"The field values are required.", "The field values must be strings."},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 	}
 
@@ -1804,6 +1751,35 @@ func (suite *ValidatorTestSuite) TestValidateNonNullableInQuery() {
 	suite.Nil(errors)
 
 	suite.Empty(data)
+}
+
+func (suite *ValidatorTestSuite) TestValidateRequiredFieldInNonRequiredObject() {
+	// Object is not required so if object is not given, "object.field" should pass validation.
+	data := map[string]interface{}{}
+	rules := RuleSet{
+		"object":       List{"object"},
+		"object.field": List{"required", "string"},
+	}
+
+	errors := Validate(data, rules, false, "en-US")
+	suite.Nil(errors)
+}
+
+func (suite *ValidatorTestSuite) TestValidateRequiredFieldInNonRequiredArray() {
+	// Array is not required so if array is not given, elements should pass validation.
+	// Array elements should not fail validation if the array is empty.
+	data := map[string]interface{}{}
+	rules := RuleSet{
+		"array":         List{"array:object"},
+		"array[].field": List{"required", "string"},
+	}
+
+	errors := Validate(data, rules, false, "en-US")
+	suite.Nil(errors)
+
+	data["array"] = []map[string]interface{}{}
+	errors = Validate(data, rules, false, "en-US")
+	suite.Nil(errors)
 }
 
 func TestValidatorTestSuite(t *testing.T) {

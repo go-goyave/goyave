@@ -11,6 +11,10 @@ import (
 // PathType type of the element being explored.
 type PathType int
 
+// FoundType adds extra information about not found elements whether
+// what's not found is their parent or themselves.
+type FoundType int
+
 const (
 	// PathTypeElement the explored element is used as a final element (leaf).
 	PathTypeElement PathType = iota
@@ -22,6 +26,16 @@ const (
 	// PathTypeObject the explored element is used as an object (`map[string]interface{}`)
 	// and not a final element.
 	PathTypeObject
+)
+
+const (
+	// Found indicates the element could be found.
+	Found FoundType = iota
+	// ParentNotFound indicates one of the parents of the element could no be found.
+	ParentNotFound
+	// ElementNotFound indicates all parents of the element were found but the element
+	// itself could not.
+	ElementNotFound
 )
 
 // Path allows for complex untyped data structure exploration.
@@ -36,12 +50,12 @@ type Path struct {
 
 // Context information sent to walk function.
 type Context struct {
-	Value    interface{}
-	Parent   interface{} // Either map[string]interface{} or a slice
-	Path     *Path       // Exact Path to the current element
-	Name     string      // Name of the current element
-	Index    int         // If parent is a slice, the index of the current element in the slice, else -1
-	NotFound bool        // True if the path could not be completely explored
+	Value  interface{}
+	Parent interface{} // Either map[string]interface{} or a slice
+	Path   *Path       // Exact Path to the current element
+	Name   string      // Name of the current element
+	Index  int         // If parent is a slice, the index of the current element in the slice, else -1
+	Found  FoundType   // True if the path could not be completely explored
 }
 
 // Walk this path and execute the given behavior for each matching element. Elements are final,
@@ -62,13 +76,17 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 	element := currentElement
 	if p.Name != "" {
 		ce, ok := currentElement.(map[string]interface{})
+		found := ParentNotFound
 		if ok {
 			element, ok = ce[p.Name]
+			if !ok && p.Type == PathTypeElement {
+				found = ElementNotFound
+			}
 			index = -1
 		}
 		if !ok {
 			p.completePath(lastPathElement)
-			f(newNotFoundContext(currentElement, path, p.Name, index))
+			f(newNotFoundContext(currentElement, path, p.Name, index, found))
 			return
 		}
 		parent = currentElement
@@ -87,25 +105,29 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 		list := reflect.ValueOf(element)
 		if list.Kind() != reflect.Slice {
 			lastPathElement.Type = PathTypeElement
-			f(newNotFoundContext(parent, path, p.Name, index))
+			f(newNotFoundContext(parent, path, p.Name, index, ParentNotFound))
 			return
 		}
 		length := list.Len()
-		if p.Next.Type != PathTypeElement && length == 0 {
-			lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
-			f(newNotFoundContext(element, path, "", index))
-			return
-		}
 		if p.Index != nil {
 			lastPathElement.Index = p.Index
 			lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
-			if *p.Index >= length || *p.Index < 0 {
-				f(newNotFoundContext(element, path, "", *p.Index))
+			if p.outOfBounds(length) {
+				f(newNotFoundContext(element, path, "", *p.Index, ElementNotFound))
 				return
 			}
 			v := list.Index(*p.Index)
 			value := v.Interface()
 			p.Next.walk(value, element, *p.Index, path, lastPathElement.Next, f)
+			return
+		}
+		if length == 0 {
+			lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
+			found := ElementNotFound
+			if p.Next.Type != PathTypeElement {
+				found = ParentNotFound
+			}
+			f(newNotFoundContext(element, path, "", -1, found))
 			return
 		}
 		for i := 0; i < length; i++ {
@@ -124,6 +146,10 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 	}
 }
 
+func (p *Path) outOfBounds(length int) bool {
+	return *p.Index >= length || *p.Index < 0
+}
+
 func (p *Path) completePath(lastPathElement *Path) {
 	completedPath := lastPathElement
 	if p.Type == PathTypeArray {
@@ -136,14 +162,14 @@ func (p *Path) completePath(lastPathElement *Path) {
 	}
 }
 
-func newNotFoundContext(parent interface{}, path *Path, name string, index int) Context {
+func newNotFoundContext(parent interface{}, path *Path, name string, index int, found FoundType) Context {
 	return Context{
-		Value:    nil,
-		Parent:   parent,
-		Path:     path,
-		Name:     name,
-		Index:    index,
-		NotFound: true,
+		Value:  nil,
+		Parent: parent,
+		Path:   path,
+		Name:   name,
+		Index:  index,
+		Found:  found,
 	}
 }
 

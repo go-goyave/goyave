@@ -79,8 +79,9 @@ func TestRequestCookies(t *testing.T) {
 		Value: "test",
 	})
 	request := createTestRequest(rawRequest)
-	cookies := request.Cookies("cookie-name")
+	cookies := request.Cookies()
 	assert.Equal(t, 1, len(cookies))
+	assert.Equal(t, "cookie-name", cookies[0].Name)
 	assert.Equal(t, "test", cookies[0].Value)
 }
 

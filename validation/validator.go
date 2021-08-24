@@ -95,8 +95,8 @@ type FieldMapApplier interface {
 // e.g.: `validation.List{"required", "min:10"}`
 type List []string
 
-func (r List) apply(set RuleSet, name string) {
-	set[name] = r
+func (l List) apply(set RuleSet, name string) {
+	set[name] = l
 }
 
 // RuleSet is a request rules definition. Each entry is a field in the request.
@@ -145,7 +145,6 @@ func (r RuleSet) apply(set RuleSet, name string) {
 	rules, ok := r[CurrentElement]
 	if ok {
 		rules.apply(set, name)
-		delete(r, CurrentElement)
 	}
 }
 
@@ -319,8 +318,8 @@ func (r *Rules) Check() {
 				}
 			}
 		}
-		r.checked = true
 		r.sortKeys()
+		r.checked = true
 	}
 }
 
@@ -340,7 +339,6 @@ func (r *Rules) apply(fieldMap FieldMap, name string) {
 	fields, ok := r.Fields[CurrentElement]
 	if ok {
 		fields.apply(fieldMap, name)
-		delete(r.Fields, CurrentElement)
 	}
 }
 
@@ -348,7 +346,9 @@ func (r *Rules) sortKeys() {
 	r.sortedKeys = make([]string, 0, len(r.Fields))
 
 	for k := range r.Fields {
-		r.sortedKeys = append(r.sortedKeys, k)
+		if k != CurrentElement {
+			r.sortedKeys = append(r.sortedKeys, k)
+		}
 	}
 
 	sort.SliceStable(r.sortedKeys, func(i, j int) bool {

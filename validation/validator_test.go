@@ -1081,6 +1081,7 @@ func (suite *ValidatorTestSuite) TestRuleComparisonNonGuaranteedOrder() { // htt
 func (suite *ValidatorTestSuite) TestSortKeys() {
 	rules := &Rules{
 		Fields: FieldMap{
+			CurrentElement: &Field{Rules: []*Rule{}},
 			"text": &Field{Rules: []*Rule{
 				{Name: "string"},
 			}},
@@ -1112,6 +1113,7 @@ func (suite *ValidatorTestSuite) TestSortKeys() {
 	suite.Contains(rules.sortedKeys, "mid")
 	suite.Contains(rules.sortedKeys, "end")
 	suite.Contains(rules.sortedKeys, "text")
+	suite.NotContains(rules.sortedKeys, CurrentElement)
 }
 
 func (suite *ValidatorTestSuite) TestSortKeysIncoherent() {
@@ -1689,6 +1691,14 @@ func (suite *ValidatorTestSuite) TestRuleSetComposition() {
 	}
 
 	suite.Equal(expected, rules)
+
+	// Original is not altered
+	expectedUser := RuleSet{
+		CurrentElement: List{"required", "object"},
+		"name":         List{"required", "string"},
+		"email":        List{"required", "email"},
+	}
+	suite.Equal(expectedUser, user)
 }
 
 func (suite *ValidatorTestSuite) TestRulesComposition() {
@@ -1737,6 +1747,22 @@ func (suite *ValidatorTestSuite) TestRulesComposition() {
 	}
 
 	suite.Equal(expected, rules)
+
+	// Original is not altered
+	expectedUser := &Rules{
+		Fields: FieldMap{
+			CurrentElement: &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "object"}},
+			},
+			"name": &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "object"}},
+			},
+			"email": &Field{
+				Rules: []*Rule{{Name: "required"}, {Name: "email"}},
+			},
+		},
+	}
+	suite.Equal(expectedUser, user)
 }
 
 func (suite *ValidatorTestSuite) TestValidateNonNullableInQuery() {

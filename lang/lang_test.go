@@ -138,6 +138,29 @@ func (suite *LangTestSuite) TestPlaceholders() {
 	suite.Equal("Greetings, Kevin, today is :today", convertEmptyLine("greetings", "Greetings, :username, today is :today", []string{":username", "Kevin", ":today"}))
 }
 
+func (suite *LangTestSuite) TestSetDefault() {
+	SetDefaultLine("test-line", "It's sunny today")
+	suite.Equal("It's sunny today", enUS.lines["test-line"])
+	delete(enUS.lines, "test-line")
+
+	SetDefaultValidationRule("test-validation-rules", "It's sunny today")
+	suite.Equal("It's sunny today", enUS.validation.rules["test-validation-rules"])
+	delete(enUS.validation.rules, "test-validation-rules")
+
+	SetDefaultFieldName("test-field-name", "Sun")
+	suite.Equal(attribute{Name: "Sun"}, enUS.validation.fields["test-field-name"])
+	delete(enUS.validation.fields, "test-field-name")
+
+	// Test no override
+	enUS.validation.fields["test-field"] = attribute{
+		Name:  "test",
+		Rules: map[string]string{"a": "b"},
+	}
+	SetDefaultFieldName("test-field", "Sun")
+	suite.Equal(attribute{Name: "Sun", Rules: map[string]string{"a": "b"}}, enUS.validation.fields["test-field"])
+	delete(enUS.validation.fields, "test-field")
+}
+
 func (suite *LangTestSuite) TearDownAllSuite() {
 	languages = map[string]language{}
 }

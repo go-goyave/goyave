@@ -3,7 +3,6 @@ package lang
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -84,7 +83,7 @@ func LoadAllAvailableLanguages() {
 	}
 	langDirectory := workingDir + sep + "resources" + sep + "lang" + sep
 	if filesystem.IsDirectory(langDirectory) {
-		files, err := ioutil.ReadDir(langDirectory)
+		files, err := os.ReadDir(langDirectory)
 		if err != nil {
 			panic(err)
 		}

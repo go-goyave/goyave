@@ -725,9 +725,21 @@ A big "Thank you" to the Goyave contributors:
 - [Alexandre GV.](https://github.com/alexandregv) (Install script MacOS compatibility)
 - [jRimbault](https://github.com/jRimbault) (CI and code analysis)
 - [Guillermo Galvan](https://github.com/gmgalvan) (Request extra data)
-- [Albert Shirima](https://github.com/agbaraka) (Rate limiting)
+- [Albert Shirima](https://github.com/agbaraka) (Rate limiting and various contributions)
 - [Łukasz Sowa](https://github.com/Morishiri) (Custom claims in JWT)
-- [Zao SOULA](https://github.com/zaosoula) (Custom GORM.Config{} in config file)
+- [Zao SOULA](https://github.com/zaosoula) (Custom `gorm.Config{}` in config file)
+
+## Used by
+
+<p align="center">
+    <a href="https://adagio.io" target="_blank" rel="nofollow">
+        <img src=".github/usedby/adagio.webp" alt="Adagio.io"/>
+    </a>
+</p>
+
+<p align="center">
+    Do you want to be featured here? <a href="https://github.com/go-goyave/goyave/issues/new" target="_blank" rel="nofollow">Open an issue</a>.
+</p>
 
 ## License
 

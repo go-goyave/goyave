@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4/helper"
 )
 
 func validateNumeric(ctx *Context) bool {

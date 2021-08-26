@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4/helper"
 )
 
 // createArray create a slice of the same type as the given type.

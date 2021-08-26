@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"goyave.dev/goyave/v3/cors"
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v4/helper/filesystem"
 )
 
 type routeMatcher interface {

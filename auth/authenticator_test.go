@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
 
-	_ "goyave.dev/goyave/v3/database/dialect/mysql"
+	_ "goyave.dev/goyave/v4/database/dialect/mysql"
 )
 
 type TestUser struct {

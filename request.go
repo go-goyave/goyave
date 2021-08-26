@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/imdario/mergo"
-	"goyave.dev/goyave/v3/cors"
+	"goyave.dev/goyave/v4/cors"
 
 	"github.com/google/uuid"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/validation"
 )
 
 // Request struct represents an http request.

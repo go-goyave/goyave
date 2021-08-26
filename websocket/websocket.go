@@ -7,8 +7,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
 
 	ws "github.com/gorilla/websocket"
 )

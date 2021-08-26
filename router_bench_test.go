@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4/validation"
 )
 
 type routerDefinition struct {

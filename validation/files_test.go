@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/helper/walk"
+	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/helper/walk"
 )
 
 const (

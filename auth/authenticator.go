@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/helper"
 )
 
 // Column matches a column name with a struct field.

@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/mysql"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/validation"
 )
 
 type ValidationTestSuite struct {

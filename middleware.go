@@ -10,9 +10,9 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/lang"
 )
 
 // Middleware function generating middleware handler function.

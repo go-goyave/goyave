@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4/config"
 )
 
 type PaginatorTestSuite struct {

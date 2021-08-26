@@ -39,7 +39,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 <a href="https://goyave.dev/guide/installation"><h3 align="center">Read the documentation</h3></a>
 
-<a href="https://pkg.go.dev/goyave.dev/goyave/v3"><h3 align="center">pkg.go.dev</h3></a>
+<a href="https://pkg.go.dev/goyave.dev/goyave/v4"><h3 align="center">pkg.go.dev</h3></a>
 
 <a href="https://github.com/go-goyave/goyave-blog-example"><h3 align="center">Example project</h3></a>
 
@@ -82,7 +82,7 @@ abc 123
 
 ## Features tour
 
-This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/goyave.dev/goyave/v3) and the [official documentation](https://goyave.dev/guide/).
+This section's goal is to give a **brief** look at the main features of the framework. It doesn't describe everything the framework has to offer, so don't consider this documentation. If you want a complete reference and documentation, head to [pkg.go.dev](https://pkg.go.dev/goyave.dev/goyave/v4) and the [official documentation](https://goyave.dev/guide/).
 
 - [Hello world from scratch](#hello-world-from-scratch)
 - [Configuration](#configuration)
@@ -104,7 +104,7 @@ This section's goal is to give a **brief** look at the main features of the fram
 The example below shows a basic `Hello world` application using Goyave.
 
 ``` go
-import "goyave.dev/goyave/v3"
+import "goyave.dev/goyave/v4"
 
 func registerRoutes(router *goyave.Router) {
     router.Get("/hello", func(response *goyave.Response, request *goyave.Request) {
@@ -331,10 +331,10 @@ Rule sets are defined in the same package as the controller, typically in a sepa
 **Example:** (`http/controller/product/request.go`)
 ``` go
 var (
-    StoreRequest validation.RuleSet = validation.RuleSet{
-        "name":  {"required", "string", "between:3,50"},
-        "price": {"required", "numeric", "min:0.01"},
-        "image": {"nullable", "file", "image", "max:2048", "count:1"},
+    StoreRequest = validation.RuleSet{
+        "name":  validation.List{"required", "string", "between:3,50"},
+        "price": validation.List{"required", "numeric", "min:0.01"},
+        "image": validation.List{"nullable", "file", "image", "max:2048", "count:1"},
     }
 
     // ...
@@ -477,7 +477,7 @@ The following example is a **functional** test and would be located in the `test
 ``` go
 import (
     "github.com/username/projectname/http/route"
-    "goyave.dev/goyave/v3"
+    "goyave.dev/goyave/v4"
 )
 
 type CustomTestSuite struct {
@@ -569,7 +569,7 @@ The following file `http/controller/status/status.go` is an example of custom 40
 ``` go
 package status
 
-import "goyave.dev/goyave/v3"
+import "goyave.dev/goyave/v4"
 
 func NotFound(response *goyave.Response, request *goyave.Request) {
     if err := response.RenderHTML(response.GetStatus(), "errors/404.html", nil); err != nil {
@@ -613,7 +613,7 @@ router.CORS(options)
 Goyave provides a convenient and expandable way of handling authentication in your application. Authentication can be enabled when registering your routes:
 
 ``` go
-import "goyave.dev/goyave/v3/auth"
+import "goyave.dev/goyave/v4/auth"
 
 //...
 
@@ -657,7 +657,7 @@ The middleware will always add the following headers to the response:
 - `RateLimit-Reset`: containing the time remaining in the current window, specified in seconds
 
 ```go
-import "goyave.dev/goyave/v3/middleware/ratelimiter"
+import "goyave.dev/goyave/v4/middleware/ratelimiter"
 
 ratelimiterMiddleware := ratelimiter.New(func(request *goyave.Request) ratelimiter.Config {
     return ratelimiter.Config {

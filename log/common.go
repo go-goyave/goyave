@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v4"
 )
 
 const (

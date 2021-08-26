@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4/helper"
 )
 
 // Options holds the CORS configuration for a router.

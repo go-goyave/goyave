@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/Code-Hex/uniseg"
-	"goyave.dev/goyave/v3/helper"
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/helper/filesystem"
 )
 
 func validateRequired(ctx *Context) bool {

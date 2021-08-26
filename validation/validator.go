@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"goyave.dev/goyave/v3/helper"
-	"goyave.dev/goyave/v3/helper/walk"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/helper/walk"
+	"goyave.dev/goyave/v4/lang"
 )
 
 const (

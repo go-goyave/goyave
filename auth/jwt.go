@@ -8,10 +8,10 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/lang"
 )
 
 func init() {

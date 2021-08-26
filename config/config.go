@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4/helper"
 )
 
 type object map[string]interface{}

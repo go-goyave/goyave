@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v4"
 )
 
 type GzipMiddlewareTestSuite struct {

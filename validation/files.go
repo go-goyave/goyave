@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"goyave.dev/goyave/v3/helper"
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/helper/filesystem"
 )
 
 func validateFile(ctx *Context) bool {

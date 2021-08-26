@@ -9,7 +9,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4/config"
 )
 
 // Initializer is a function meant to modify a connection settings

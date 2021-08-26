@@ -5,8 +5,8 @@ import (
 	"crypto/rsa"
 	"testing"
 
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
 )
 
 type KeyCacheTestSuite struct {

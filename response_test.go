@@ -14,8 +14,8 @@ import (
 	"testing"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
 )
 
 type ResponseTestSuite struct {

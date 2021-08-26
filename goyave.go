@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/lang"
 )
 
 var (
@@ -118,7 +118,7 @@ func ClearShutdownHooks() {
 // Start starts the web server.
 // The routeRegistrer parameter is a function aimed at registering all your routes and middleware.
 //  import (
-//      "goyave.dev/goyave/v3"
+//      "goyave.dev/goyave/v4"
 //      "github.com/username/projectname/route"
 //  )
 //

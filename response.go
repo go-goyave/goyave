@@ -16,8 +16,8 @@ import (
 	"text/template"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/helper/filesystem"
 )
 
 var (

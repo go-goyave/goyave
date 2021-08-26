@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/golang-jwt/jwt"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4/config"
 )
 
 var (

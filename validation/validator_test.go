@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"goyave.dev/goyave/v3/helper"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/helper/walk"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/helper/walk"
+	"goyave.dev/goyave/v4/lang"
 )
 
 type ValidatorTestSuite struct {

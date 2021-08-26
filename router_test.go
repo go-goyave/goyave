@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/cors"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/cors"
 )
 
 type RouterTestSuite struct {

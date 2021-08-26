@@ -14,11 +14,11 @@ import (
 	"strings"
 	"testing"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/cors"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/lang"
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/validation"
 )
 
 type MiddlewareTestSuite struct {

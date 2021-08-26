@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
 )
 
 type JWTAuthenticatorTestSuite struct {

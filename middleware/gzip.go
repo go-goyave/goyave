@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/helper"
 )
 
 type gzipWriter struct {

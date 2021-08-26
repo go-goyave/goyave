@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/lang"
 )
 
 type CustomTestSuite struct {

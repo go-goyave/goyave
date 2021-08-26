@@ -738,7 +738,7 @@ A big "Thank you" to the Goyave contributors:
 </p>
 
 <p align="center">
-    Do you want to be featured here? <a href="https://github.com/go-goyave/goyave/issues/new" target="_blank" rel="nofollow">Open an issue</a>.
+    Do you want to be featured here? <a href="https://github.com/go-goyave/goyave/issues/new?template=used_by.md" target="_blank" rel="nofollow">Open an issue</a>.
 </p>
 
 ## License

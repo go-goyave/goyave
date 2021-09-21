@@ -32,8 +32,8 @@ func TestValidateRequired(t *testing.T) {
 	assert.True(t, validateRequired(newTestContextWithField("field", []float64{}, []string{}, map[string]interface{}{"field": []float64{}}, &Field{})))
 	assert.True(t, validateRequired(newTestContextWithField("field", 0, []string{}, map[string]interface{}{"field": 0}, &Field{})))
 	assert.True(t, validateRequired(newTestContextWithField("field", nil, []string{}, map[string]interface{}{"field": nil}, &Field{isNullable: true})))
+	assert.True(t, validateRequired(newTestContextWithField("field", "", []string{}, map[string]interface{}{"field": ""}, &Field{})))
 	assert.False(t, validateRequired(newTestContextWithField("field", nil, []string{}, map[string]interface{}{"field": nil}, &Field{})))
-	assert.False(t, validateRequired(newTestContextWithField("field", "", []string{}, map[string]interface{}{"field": ""}, &Field{})))
 
 	data := map[string]interface{}{
 		"object": map[string]interface{}{

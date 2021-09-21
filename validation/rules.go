@@ -15,9 +15,6 @@ func validateRequired(ctx *Context) bool {
 	if !ctx.Field.IsNullable() && ctx.Value == nil {
 		return false
 	}
-	if str, okStr := ctx.Value.(string); okStr && str == "" {
-		return false
-	}
 	return true
 }
 

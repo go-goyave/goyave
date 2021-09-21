@@ -1808,6 +1808,18 @@ func (suite *ValidatorTestSuite) TestValidateRequiredFieldInNonRequiredArray() {
 	suite.Nil(errors)
 }
 
+func (suite *ValidatorTestSuite) TestValidateEmptyStringNotRequired() {
+	rules := RuleSet{
+		"name": List{"between:5,50"},
+	}
+	data := map[string]interface{}{
+		"name": "",
+	}
+
+	errors := Validate(data, rules, false, "en-US")
+	suite.NotNil(errors)
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

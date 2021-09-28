@@ -728,6 +728,9 @@ A big "Thank you" to the Goyave contributors:
 - [Albert Shirima](https://github.com/agbaraka) (Rate limiting and various contributions)
 - [Łukasz Sowa](https://github.com/Morishiri) (Custom claims in JWT)
 - [Zao SOULA](https://github.com/zaosoula) (Custom `gorm.Config{}` in config file)
+- [Ajtene Kurtaliqi](https://github.com/akurtaliqi) (Documentation landing page)
+- [Louis Laurent](https://github.com/ulphidius) ([`gyv`](https://github.com/go-goyave/gyv) productivity CLI)
+- [Clement3](https://github.com/Clement3) (`search` feature on [`goyave.dev/filter`](https://github.com/go-goyave/filter))
 
 ## Used by
 

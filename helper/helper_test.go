@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
@@ -127,65 +126,6 @@ func TestParseMultiValuesHeader(t *testing.T) {
 	expected = []HeaderValue{{Value: "fr", Priority: 0.3}}
 	result = ParseMultiValuesHeader("fr;q=0.3")
 	assert.True(t, SliceEqual(expected, result))
-}
-
-func TestRemoveHiddenFields(t *testing.T) {
-	type Model struct {
-		Password string `model:"hide" json:",omitempty"`
-		Username string
-	}
-
-	model := &Model{
-		Password: "bcrypted password",
-		Username: "Jeff",
-	}
-
-	RemoveHiddenFields(model)
-	assert.Empty(t, model.Password)
-	assert.Equal(t, "Jeff", model.Username)
-
-	json, _ := json.Marshal(model)
-	assert.Equal(t, "{\"Username\":\"Jeff\"}", string(json))
-}
-
-func TestRemoveHiddenPromotedFields(t *testing.T) {
-	type PasswordHolder struct {
-		Password     string `model:"hide" json:",omitempty"`
-		privateField string `model:"hide"`
-	}
-
-	type Model struct {
-		PasswordHolder
-		Username string
-	}
-
-	model := &Model{
-		PasswordHolder: PasswordHolder{
-			Password:     "bcrypted password",
-			privateField: "this is private",
-		},
-		Username: "Jeff",
-	}
-
-	RemoveHiddenFields(model)
-	assert.Empty(t, model.Password)
-	assert.Equal(t, "Jeff", model.Username)
-	assert.Equal(t, "this is private", model.privateField)
-
-	json, _ := json.Marshal(model)
-	assert.Equal(t, "{\"Username\":\"Jeff\"}", string(json))
-}
-
-func TestRemoveHiddenFieldsNotStruct(t *testing.T) {
-	assert.NotPanics(t, func() {
-		RemoveHiddenFields(map[string]string{})
-	})
-	assert.NotPanics(t, func() {
-		RemoveHiddenFields("test")
-	})
-	assert.NotPanics(t, func() {
-		RemoveHiddenFields([]string{})
-	})
 }
 
 func TestOnly(t *testing.T) {

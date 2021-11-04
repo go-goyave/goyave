@@ -128,38 +128,6 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 	return values
 }
 
-// RemoveHiddenFields if the given model is a struct pointer.
-// All fields marked with the tag `model:"hide"` will be
-// set to their zero value.
-func RemoveHiddenFields(model interface{}) {
-	t := reflect.TypeOf(model)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-		if t.Kind() == reflect.Struct {
-			value := reflect.ValueOf(model).Elem()
-			for i := 0; i < t.NumField(); i++ {
-				field := value.Field(i)
-				fieldType := t.Field(i)
-
-				if !field.CanSet() {
-					continue
-				}
-
-				if field.Kind() == reflect.Struct && fieldType.Anonymous {
-					// Check promoted fields recursively
-					RemoveHiddenFields(field.Addr().Interface())
-					continue
-				}
-
-				tag := strings.Split(fieldType.Tag.Get("model"), ";")
-				if ContainsStr(tag, "hide") {
-					field.Set(reflect.Zero(fieldType.Type))
-				}
-			}
-		}
-	}
-}
-
 // Only extracts the requested field from the given map[string] or structure and
 // returns a map[string]interface{} containing only those values.
 //

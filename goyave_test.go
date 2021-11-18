@@ -69,6 +69,33 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
 }
 
+func (suite *GoyaveTestSuite) TestProxyBaseURL() {
+	suite.loadConfig()
+
+	suite.Equal(BaseURL(), ProxyBaseURL())
+	config.Set("server.proxy.host", "127.0.0.1")
+	config.Set("server.proxy.port", 1235)
+	suite.Equal("http://127.0.0.1:1235", ProxyBaseURL())
+	config.Set("server.proxy.protocol", "https")
+	suite.Equal("https://127.0.0.1:1235", ProxyBaseURL())
+
+	config.Set("server.proxy.protocol", "http")
+	config.Set("server.proxy.host", "test.system-glitch.me")
+	suite.Equal("http://test.system-glitch.me:1235", ProxyBaseURL())
+	config.Set("server.proxy.protocol", "https")
+	suite.Equal("https://test.system-glitch.me:1235", ProxyBaseURL())
+
+	config.Set("server.proxy.protocol", "http")
+	config.Set("server.proxy.port", 80)
+	suite.Equal("http://test.system-glitch.me", ProxyBaseURL())
+
+	config.Set("server.proxy.protocol", "https")
+	config.Set("server.proxy.port", 443)
+	suite.Equal("https://test.system-glitch.me", ProxyBaseURL())
+	config.Set("server.proxy.base", "/baseurl")
+	suite.Equal("https://test.system-glitch.me/baseurl", ProxyBaseURL())
+}
+
 func (suite *GoyaveTestSuite) TestStartStopServer() {
 	config.Clear()
 	proc, err := os.FindProcess(os.Getpid())

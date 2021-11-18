@@ -49,6 +49,12 @@ var configDefaults = object{
 			"cert": &Entry{nil, []interface{}{}, reflect.String, false},
 			"key":  &Entry{nil, []interface{}{}, reflect.String, false},
 		},
+		"proxy": object{
+			"protocol": &Entry{"http", []interface{}{"http", "https"}, reflect.String, false},
+			"host":     &Entry{nil, []interface{}{}, reflect.String, false},
+			"port":     &Entry{80, []interface{}{}, reflect.Int, false},
+			"base":     &Entry{"", []interface{}{}, reflect.String, false},
+		},
 	},
 	"database": object{
 		"connection":         &Entry{"none", []interface{}{}, reflect.String, false},

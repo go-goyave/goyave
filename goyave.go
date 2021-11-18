@@ -263,15 +263,13 @@ func getHost(protocol string) string {
 
 func getAddress(protocol string) string {
 	var shouldShowPort bool
-	var port string
+	var port int
 	if protocol == "https" {
-		p := config.GetInt("server.httpsPort")
-		port = strconv.Itoa(p)
-		shouldShowPort = p != 443
+		port = config.GetInt("server.httpsPort")
+		shouldShowPort = port != 443
 	} else {
-		p := config.GetInt("server.port")
-		port = strconv.Itoa(p)
-		shouldShowPort = p != 80
+		port = config.GetInt("server.port")
+		shouldShowPort = port != 80
 	}
 	host := config.GetString("server.domain")
 	if len(host) == 0 {
@@ -282,7 +280,7 @@ func getAddress(protocol string) string {
 	}
 
 	if shouldShowPort {
-		host += ":" + port
+		host += ":" + strconv.Itoa(port)
 	}
 
 	return protocol + "://" + host
@@ -291,6 +289,30 @@ func getAddress(protocol string) string {
 // BaseURL returns the base URL of your application.
 func BaseURL() string {
 	return getAddress(protocol)
+}
+
+// ProxyBaseURL returns the base URL of your application based on the "server.proxy" configuration.
+// This is useful when you want to generate an URL when your application is served behind a reverse proxy.
+// If "server.proxy.host" configuration is not set, returns the same value as "BaseURL()".
+func ProxyBaseURL() string {
+	if !config.Has("server.proxy.host") {
+		return BaseURL()
+	}
+
+	var shouldShowPort bool
+	proto := config.GetString("server.proxy.protocol")
+	port := config.GetInt("server.proxy.port")
+	if proto == "https" {
+		shouldShowPort = port != 443
+	} else {
+		shouldShowPort = port != 80
+	}
+	host := config.GetString("server.proxy.host")
+	if shouldShowPort {
+		host += ":" + strconv.Itoa(port)
+	}
+
+	return proto + "://" + host + config.GetString("server.proxy.base")
 }
 
 func startTLSRedirectServer() {

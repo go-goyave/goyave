@@ -290,7 +290,7 @@ func getAddress(protocol string) string {
 
 // BaseURL returns the base URL of your application.
 func BaseURL() string {
-	return getAddress(config.GetString("server.protocol"))
+	return getAddress(protocol)
 }
 
 func startTLSRedirectServer() {

@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v4/util/fsutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/helper/filesystem"
 	"goyave.dev/goyave/v4/validation"
 )
 
@@ -164,7 +164,7 @@ func TestRequestAccessors(t *testing.T) {
 		"integer":  42,
 		"numeric":  42.3,
 		"bool":     true,
-		"file":     []filesystem.File{{MIMEType: "image/png"}},
+		"file":     []fsutil.File{{MIMEType: "image/png"}},
 		"timezone": loc,
 		"ip":       net.ParseIP("127.0.0.1"),
 		"uuid":     uid,

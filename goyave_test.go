@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/util/fsutil"
 
 	_ "goyave.dev/goyave/v4/database/dialect/mysql"
 )
@@ -260,7 +260,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 		if err != nil {
 			panic(err)
 		}
-		defer filesystem.Delete("resources/template/test-static-serve.txt")
+		defer fsutil.Delete("resources/template/test-static-serve.txt")
 		resp, err = netClient.Get("http://127.0.0.1:1235/resources/template/test-static-serve.txt")
 		suite.Nil(err)
 		if err != nil {

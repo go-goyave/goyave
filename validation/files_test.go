@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/helper/filesystem"
-	"goyave.dev/goyave/v4/helper/walk"
+	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v4/util/walk"
 )
 
 const (
@@ -40,7 +40,7 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 	}
 }
 
-func createTestFiles(files ...string) []filesystem.File {
+func createTestFiles(files ...string) []fsutil.File {
 	_, filename, _, _ := runtime.Caller(1)
 
 	body := &bytes.Buffer{}
@@ -62,10 +62,10 @@ func createTestFiles(files ...string) []filesystem.File {
 	if err := req.ParseMultipartForm(10 << 20); err != nil {
 		panic(err)
 	}
-	return filesystem.ParseMultipartFiles(req, "file")
+	return fsutil.ParseMultipartFiles(req, "file")
 }
 
-func createTestFileWithNoExtension() []filesystem.File {
+func createTestFileWithNoExtension() []fsutil.File {
 	_, filename, _, _ := runtime.Caller(1)
 
 	body := &bytes.Buffer{}
@@ -84,7 +84,7 @@ func createTestFileWithNoExtension() []filesystem.File {
 	if err := req.ParseMultipartForm(10 << 20); err != nil {
 		panic(err)
 	}
-	return filesystem.ParseMultipartFiles(req, "file")
+	return fsutil.ParseMultipartFiles(req, "file")
 }
 
 func TestValidateFile(t *testing.T) {

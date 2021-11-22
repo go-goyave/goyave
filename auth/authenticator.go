@@ -7,7 +7,7 @@ import (
 
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/database"
-	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/util/sliceutil"
 )
 
 // Column matches a column name with a struct field.
@@ -96,7 +96,7 @@ func findColumns(t reflect.Type, fields []string) []*Column {
 		}
 
 		tag := strctType.Tag.Get("auth")
-		if index := helper.IndexOf(fields, tag); index != -1 {
+		if index := sliceutil.IndexOf(fields, tag); index != -1 {
 			result[index] = &Column{
 				Name:  columnName(strctType),
 				Field: &strctType,

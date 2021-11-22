@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"goyave.dev/goyave/v4/helper"
-	"goyave.dev/goyave/v4/helper/filesystem"
-	"goyave.dev/goyave/v4/helper/walk"
 	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v4/util/sliceutil"
+	"goyave.dev/goyave/v4/util/walk"
 )
 
 type ValidatorTestSuite struct {
@@ -947,7 +947,7 @@ func (suite *ValidatorTestSuite) TestGetFieldType() {
 	suite.Equal("numeric", getFieldType(reflect.ValueOf(float32(1))))
 	suite.Equal("string", getFieldType(reflect.ValueOf("hello")))
 	suite.Equal("array", getFieldType(reflect.ValueOf([]string{"hello", "world"})))
-	suite.Equal("file", getFieldType(reflect.ValueOf([]filesystem.File{})))
+	suite.Equal("file", getFieldType(reflect.ValueOf([]fsutil.File{})))
 	suite.Equal("object", getFieldType(reflect.ValueOf(map[string]interface{}{"hello": 1, "world": "!"})))
 	suite.Equal("unsupported", getFieldType(reflect.ValueOf(nil)))
 	suite.Equal("unsupported", getFieldType(reflect.ValueOf(map[string]int{"hello": 1, "world": 2})))
@@ -1103,9 +1103,9 @@ func (suite *ValidatorTestSuite) TestSortKeys() {
 
 	// Expect [text start end mid]
 	// Use relative indexes because order is not guaranteed (text may be anywhere)
-	indexStart := helper.IndexOfStr(rules.sortedKeys, "start")
-	indexEnd := helper.IndexOfStr(rules.sortedKeys, "end")
-	indexMid := helper.IndexOfStr(rules.sortedKeys, "mid")
+	indexStart := sliceutil.IndexOfStr(rules.sortedKeys, "start")
+	indexEnd := sliceutil.IndexOfStr(rules.sortedKeys, "end")
+	indexMid := sliceutil.IndexOfStr(rules.sortedKeys, "mid")
 	suite.Greater(indexEnd, indexStart)
 	suite.Greater(indexMid, indexStart)
 	suite.Greater(indexMid, indexEnd)
@@ -1158,9 +1158,9 @@ func (suite *ValidatorTestSuite) TestSortKeysMultipleComparedFields() {
 		},
 	}
 	rules.sortKeys()
-	indexStart := helper.IndexOfStr(rules.sortedKeys, "start")
-	indexEnd := helper.IndexOfStr(rules.sortedKeys, "end")
-	indexMid := helper.IndexOfStr(rules.sortedKeys, "mid")
+	indexStart := sliceutil.IndexOfStr(rules.sortedKeys, "start")
+	indexEnd := sliceutil.IndexOfStr(rules.sortedKeys, "end")
+	indexMid := sliceutil.IndexOfStr(rules.sortedKeys, "mid")
 	suite.Greater(indexEnd, indexStart)
 	suite.Greater(indexMid, indexStart)
 	suite.Greater(indexMid, indexEnd)

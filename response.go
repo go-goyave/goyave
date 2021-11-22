@@ -17,7 +17,7 @@ import (
 
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 var (
@@ -227,13 +227,13 @@ func (r *Response) String(responseCode int, message string) error {
 }
 
 func (r *Response) writeFile(file string, disposition string) (int64, error) {
-	if !filesystem.FileExists(file) {
+	if !fsutil.FileExists(file) {
 		r.Status(http.StatusNotFound)
 		return 0, &os.PathError{Op: "open", Path: file, Err: fmt.Errorf("no such file or directory")}
 	}
 	r.empty = false
 	r.status = http.StatusOK
-	mime, size := filesystem.GetMIMEType(file)
+	mime, size := fsutil.GetMIMEType(file)
 	header := r.responseWriter.Header()
 	header.Set("Content-Disposition", disposition)
 
@@ -244,8 +244,8 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := os.Open(file)
-	// No need to check for errors, filesystem.FileExists(file) and
-	// filesystem.GetMIMEType(file) already handled that.
+	// No need to check for errors, fsutil.FileExists(file) and
+	// fsutil.GetMIMEType(file) already handled that.
 	defer f.Close()
 	return io.Copy(r, f)
 }

@@ -10,9 +10,9 @@ import (
 
 	"github.com/imdario/mergo"
 	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v4/util/fsutil"
 
 	"github.com/google/uuid"
-	"goyave.dev/goyave/v4/helper/filesystem"
 	"goyave.dev/goyave/v4/validation"
 )
 
@@ -190,8 +190,8 @@ func (r *Request) Bool(field string) bool {
 
 // File get a file field from the request data.
 // Panics if the field is not numeric.
-func (r *Request) File(field string) []filesystem.File {
-	str, ok := r.Data[field].([]filesystem.File)
+func (r *Request) File(field string) []fsutil.File {
+	str, ok := r.Data[field].([]fsutil.File)
 	if !ok {
 		panic(fmt.Sprintf("Field \"%s\" is not a file", field))
 	}

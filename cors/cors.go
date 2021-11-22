@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/util/sliceutil"
 )
 
 // Options holds the CORS configuration for a router.
@@ -124,5 +124,5 @@ func (o *Options) HandlePreflight(headers http.Header, requestHeaders http.Heade
 func (o *Options) validateOrigin(requestHeaders http.Header) bool {
 	return len(o.AllowedOrigins) == 0 ||
 		o.AllowedOrigins[0] == "*" ||
-		helper.ContainsStr(o.AllowedOrigins, requestHeaders.Get("Origin"))
+		sliceutil.ContainsStr(o.AllowedOrigins, requestHeaders.Get("Origin"))
 }

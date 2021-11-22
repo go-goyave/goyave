@@ -1,4 +1,4 @@
-package filesystem
+package fsutil
 
 import (
 	"bytes"
@@ -84,7 +84,7 @@ func TestGetMIMEType(t *testing.T) {
 	mime, _ = GetMIMEType(toAbsolutePath("resources/test_script.js"))
 	assert.Equal(t, "text/javascript; charset=utf-8", mime)
 
-	cssPath := toAbsolutePath("helper/filesystem/test.css")
+	cssPath := toAbsolutePath("util/fsutil/test.css")
 	err := os.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)
 	if err != nil {
 		panic(err)

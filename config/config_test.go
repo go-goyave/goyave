@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 type ConfigTestSuite struct {
@@ -49,7 +49,7 @@ func (suite *ConfigTestSuite) TestReadConfigFile() {
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete("test-forbidden.json")
+	defer fsutil.Delete("test-forbidden.json")
 	obj, err = readConfigFile("test-forbidden.json")
 
 	suite.NotNil(err)
@@ -318,7 +318,7 @@ func (suite *ConfigTestSuite) TestLoad() {
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete("config.forbidden.json")
+	defer fsutil.Delete("config.forbidden.json")
 	if e := os.Setenv("GOYAVE_ENV", "forbidden"); e != nil {
 		panic(e)
 	}

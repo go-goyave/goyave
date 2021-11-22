@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"goyave.dev/goyave/v4/helper"
-	"goyave.dev/goyave/v4/helper/walk"
 	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/sliceutil"
+	"goyave.dev/goyave/v4/util/walk"
 )
 
 const (
@@ -356,7 +356,7 @@ func (r *Rules) sortKeys() {
 		field2 := r.Fields[r.sortedKeys[j]].(*Field)
 		for _, r := range field2.Rules {
 			def, ok := validationRules[r.Name]
-			if ok && def.ComparesFields && helper.ContainsStr(r.Params, fieldName1) {
+			if ok && def.ComparesFields && sliceutil.ContainsStr(r.Params, fieldName1) {
 				return true
 			}
 		}
@@ -644,7 +644,7 @@ func findTypeRule(rules []*Rule) string {
 //  - "numeric" if the value is an int, uint or a float
 //  - "string" if the value is a string
 //  - "array" if the value is a slice
-//  - "file" if the value is a slice of "filesystem.File"
+//  - "file" if the value is a slice of "fsutil.File"
 //  - "unsupported" otherwise
 func GetFieldType(value interface{}) string {
 	return getFieldType(reflect.ValueOf(value))
@@ -658,7 +658,7 @@ func getFieldType(value reflect.Value) string {
 	case kind == "string":
 		return "string"
 	case kind == "slice":
-		if value.Type().String() == "[]filesystem.File" {
+		if value.Type().String() == "[]fsutil.File" {
 			return "file"
 		}
 		return "array"

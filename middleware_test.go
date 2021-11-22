@@ -16,8 +16,8 @@ import (
 
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/cors"
-	"goyave.dev/goyave/v4/helper/filesystem"
 	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/fsutil"
 	"goyave.dev/goyave/v4/validation"
 )
 
@@ -273,7 +273,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 		suite.Equal(3, len(r.Data))
 		suite.Equal("hello", r.Data["test"])
 		suite.Equal("world", r.Data["field"])
-		files, ok := r.Data["file"].([]filesystem.File)
+		files, ok := r.Data["file"].([]fsutil.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))
 		executed = true
@@ -312,7 +312,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 	res := testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal(2, len(r.Data))
 		suite.Equal("world", r.Data["field"])
-		files, ok := r.Data["file"].([]filesystem.File)
+		files, ok := r.Data["file"].([]fsutil.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))
 		executed = true

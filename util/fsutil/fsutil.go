@@ -1,4 +1,4 @@
-package filesystem
+package fsutil
 
 import (
 	"net/http"
@@ -29,7 +29,7 @@ func GetFileExtension(file string) string {
 // GetMIMEType get the mime type and size of the given file.
 //
 // If the file cannot be opened, panics. You should check if the
-// file exists, using "filesystem.FileExists()"", before calling this function.
+// file exists, using "fsutil.FileExists()"", before calling this function.
 func GetMIMEType(file string) (string, int64) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -91,36 +91,6 @@ func Delete(path string) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-// ParseMultipartFiles parse a single file field in a request.
-func ParseMultipartFiles(request *http.Request, field string) []File {
-	files := []File{}
-	for _, fh := range request.MultipartForm.File[field] {
-		f, err := fh.Open()
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		fileHeader := make([]byte, 512)
-
-		if _, err := f.Read(fileHeader); err != nil {
-			panic(err)
-		}
-
-		if _, err := f.Seek(0, 0); err != nil {
-			panic(err)
-		}
-
-		file := File{
-			Header:   fh,
-			MIMEType: http.DetectContentType(fileHeader),
-			Data:     f,
-		}
-		files = append(files, file)
-	}
-	return files
 }
 
 func timestampFileName(name string) string {

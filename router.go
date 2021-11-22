@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"goyave.dev/goyave/v4/cors"
-	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 type routeMatcher interface {
@@ -402,7 +402,7 @@ func staticHandler(directory string, download bool) Handler {
 func cleanStaticPath(directory string, file string) string {
 	file = strings.TrimPrefix(file, "/")
 	path := directory + "/" + file
-	if filesystem.IsDirectory(path) {
+	if fsutil.IsDirectory(path) {
 		if !strings.HasSuffix(path, "/") {
 			path += "/"
 		}

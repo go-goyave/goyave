@@ -7,8 +7,9 @@ import (
 	"strings"
 
 	"github.com/Code-Hex/uniseg"
-	"goyave.dev/goyave/v4/helper"
-	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v4/util/sliceutil"
+	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func validateRequired(ctx *Context) bool {
@@ -25,7 +26,7 @@ func validateMin(ctx *Context) bool {
 	}
 	switch GetFieldType(ctx.Value) {
 	case "numeric":
-		floatValue, _ := helper.ToFloat64(ctx.Value)
+		floatValue, _ := typeutil.ToFloat64(ctx.Value)
 		return floatValue >= min
 	case "string":
 		return uniseg.GraphemeClusterCount(ctx.Value.(string)) >= int(min)
@@ -33,7 +34,7 @@ func validateMin(ctx *Context) bool {
 		list := reflect.ValueOf(ctx.Value)
 		return list.Len() >= int(min)
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
 		for _, file := range files {
 			if file.Header.Size < int64(min)*1024 {
 				return false
@@ -52,7 +53,7 @@ func validateMax(ctx *Context) bool {
 	}
 	switch GetFieldType(ctx.Value) {
 	case "numeric":
-		floatValue, _ := helper.ToFloat64(ctx.Value)
+		floatValue, _ := typeutil.ToFloat64(ctx.Value)
 		return floatValue <= max
 	case "string":
 		return uniseg.GraphemeClusterCount(ctx.Value.(string)) <= int(max)
@@ -60,7 +61,7 @@ func validateMax(ctx *Context) bool {
 		list := reflect.ValueOf(ctx.Value)
 		return list.Len() <= int(max)
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
 		for _, file := range files {
 			if file.Header.Size > int64(max)*1024 {
 				return false
@@ -84,7 +85,7 @@ func validateBetween(ctx *Context) bool {
 
 	switch GetFieldType(ctx.Value) {
 	case "numeric":
-		floatValue, _ := helper.ToFloat64(ctx.Value)
+		floatValue, _ := typeutil.ToFloat64(ctx.Value)
 		return floatValue >= min && floatValue <= max
 	case "string":
 		length := uniseg.GraphemeClusterCount(ctx.Value.(string))
@@ -94,7 +95,7 @@ func validateBetween(ctx *Context) bool {
 		length := list.Len()
 		return length >= int(min) && length <= int(max)
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
 		for _, file := range files {
 			minSize := int64(min) * 1024
 			maxSize := int64(max) * 1024
@@ -118,16 +119,16 @@ func validateGreaterThan(ctx *Context) bool {
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helper.ToFloat64(ctx.Value)
-		comparedFloatValue, _ := helper.ToFloat64(compared)
+		floatValue, _ := typeutil.ToFloat64(ctx.Value)
+		comparedFloatValue, _ := typeutil.ToFloat64(compared)
 		return floatValue > comparedFloatValue
 	case "string":
 		return uniseg.GraphemeClusterCount(ctx.Value.(string)) > uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(ctx.Value).Len() > reflect.ValueOf(compared).Len()
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
-		comparedFiles, _ := compared.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
+		comparedFiles, _ := compared.([]fsutil.File)
 		for _, file := range files {
 			for _, comparedFile := range comparedFiles {
 				if file.Header.Size <= comparedFile.Header.Size {
@@ -151,16 +152,16 @@ func validateGreaterThanEqual(ctx *Context) bool {
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helper.ToFloat64(ctx.Value)
-		comparedFloatValue, _ := helper.ToFloat64(compared)
+		floatValue, _ := typeutil.ToFloat64(ctx.Value)
+		comparedFloatValue, _ := typeutil.ToFloat64(compared)
 		return floatValue >= comparedFloatValue
 	case "string":
 		return uniseg.GraphemeClusterCount(ctx.Value.(string)) >= uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(ctx.Value).Len() >= reflect.ValueOf(compared).Len()
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
-		comparedFiles, _ := compared.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
+		comparedFiles, _ := compared.([]fsutil.File)
 		for _, file := range files {
 			for _, comparedFile := range comparedFiles {
 				if file.Header.Size < comparedFile.Header.Size {
@@ -184,16 +185,16 @@ func validateLowerThan(ctx *Context) bool {
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helper.ToFloat64(ctx.Value)
-		comparedFloatValue, _ := helper.ToFloat64(compared)
+		floatValue, _ := typeutil.ToFloat64(ctx.Value)
+		comparedFloatValue, _ := typeutil.ToFloat64(compared)
 		return floatValue < comparedFloatValue
 	case "string":
 		return uniseg.GraphemeClusterCount(ctx.Value.(string)) < uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(ctx.Value).Len() < reflect.ValueOf(compared).Len()
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
-		comparedFiles, _ := compared.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
+		comparedFiles, _ := compared.([]fsutil.File)
 		for _, file := range files {
 			for _, comparedFile := range comparedFiles {
 				if file.Header.Size >= comparedFile.Header.Size {
@@ -217,16 +218,16 @@ func validateLowerThanEqual(ctx *Context) bool {
 
 	switch valueType {
 	case "numeric":
-		floatValue, _ := helper.ToFloat64(ctx.Value)
-		comparedFloatValue, _ := helper.ToFloat64(compared)
+		floatValue, _ := typeutil.ToFloat64(ctx.Value)
+		comparedFloatValue, _ := typeutil.ToFloat64(compared)
 		return floatValue <= comparedFloatValue
 	case "string":
 		return uniseg.GraphemeClusterCount(ctx.Value.(string)) <= uniseg.GraphemeClusterCount(compared.(string))
 	case "array":
 		return reflect.ValueOf(ctx.Value).Len() <= reflect.ValueOf(compared).Len()
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
-		comparedFiles, _ := compared.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
+		comparedFiles, _ := compared.([]fsutil.File)
 		for _, file := range files {
 			for _, comparedFile := range comparedFiles {
 				if file.Header.Size > comparedFile.Header.Size {
@@ -247,7 +248,7 @@ func validateBool(ctx *Context) bool {
 	case kind == "bool":
 		return true
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
-		v, _ := helper.ToFloat64(ctx.Value)
+		v, _ := typeutil.ToFloat64(ctx.Value)
 		if v == 1 {
 			ctx.Value = true
 			return true
@@ -277,15 +278,15 @@ func validateSame(ctx *Context) bool {
 		if valueType == otherType {
 			switch valueType {
 			case "numeric":
-				f1, _ := helper.ToFloat64(ctx.Value)
-				f2, _ := helper.ToFloat64(other)
+				f1, _ := typeutil.ToFloat64(ctx.Value)
+				f2, _ := typeutil.ToFloat64(other)
 				return f1 == f2
 			case "string":
 				s1, _ := ctx.Value.(string)
 				s2, _ := other.(string)
 				return s1 == s2
 			case "array":
-				return helper.SliceEqual(ctx.Value, other)
+				return sliceutil.Equal(ctx.Value, other)
 			case "object":
 				return reflect.DeepEqual(ctx.Value, other)
 			}
@@ -307,7 +308,7 @@ func validateSize(ctx *Context) bool {
 
 	switch GetFieldType(ctx.Value) {
 	case "numeric":
-		floatVal, _ := helper.ToFloat64(ctx.Value)
+		floatVal, _ := typeutil.ToFloat64(ctx.Value)
 		return floatVal == float64(size)
 	case "string":
 		return uniseg.GraphemeClusterCount(ctx.Value.(string)) == size
@@ -315,7 +316,7 @@ func validateSize(ctx *Context) bool {
 		list := reflect.ValueOf(ctx.Value)
 		return list.Len() == size
 	case "file":
-		files, _ := ctx.Value.([]filesystem.File)
+		files, _ := ctx.Value.([]fsutil.File)
 		for _, file := range files {
 			if int64(math.Round(float64(file.Header.Size)/1024.0)) != int64(size) {
 				return false

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func validateNumeric(ctx *Context) bool {
@@ -15,7 +15,7 @@ func validateNumeric(ctx *Context) bool {
 	case strings.HasPrefix(kind, "float"):
 		return true
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
-		floatVal, err := helper.ToFloat64(ctx.Value)
+		floatVal, err := typeutil.ToFloat64(ctx.Value)
 		ok := err == nil
 		if ok {
 			ctx.Value = floatVal

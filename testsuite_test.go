@@ -18,8 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/database"
-	"goyave.dev/goyave/v4/helper/filesystem"
 	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 type CustomTestSuite struct {
@@ -295,7 +295,7 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete("test-file.txt")
+	defer fsutil.Delete("test-file.txt")
 	files := suite.CreateTestFiles("test-file.txt")
 	suite.Equal(1, len(files))
 	suite.Equal("test-file.txt", files[0].Header.Filename)
@@ -319,7 +319,7 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete(path)
+	defer fsutil.Delete(path)
 
 	suite.RunServer(func(router *Router) {
 		router.Route("POST", "/post", func(response *Response, request *Request) {

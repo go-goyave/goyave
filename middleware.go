@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/helper/filesystem"
 	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 // Middleware function generating middleware handler function.
@@ -127,7 +127,7 @@ func generateFlatMap(request *http.Request, maxSize int64) map[string]interface{
 		flatten(flatMap, request.MultipartForm.Value)
 
 		for field := range request.MultipartForm.File {
-			flatMap[field] = filesystem.ParseMultipartFiles(request, field)
+			flatMap[field] = fsutil.ParseMultipartFiles(request, field)
 		}
 	}
 

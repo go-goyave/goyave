@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"goyave.dev/goyave/v4/helper/walk"
+	"goyave.dev/goyave/v4/util/walk"
 )
 
 // Errors structure representing errors associated with an element of the validated data.

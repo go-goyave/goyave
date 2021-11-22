@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/util/sliceutil"
 )
 
 type object map[string]interface{}
@@ -600,7 +600,7 @@ func (e *Entry) validate(key string) error {
 					return fmt.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
 				}
 			}
-		} else if !helper.Contains(e.AuthorizedValues, e.Value) {
+		} else if !sliceutil.Contains(e.AuthorizedValues, e.Value) {
 			return fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
 		}
 	}

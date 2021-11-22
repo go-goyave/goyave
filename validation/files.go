@@ -4,24 +4,24 @@ import (
 	"strconv"
 	"strings"
 
-	"goyave.dev/goyave/v4/helper"
-	"goyave.dev/goyave/v4/helper/filesystem"
+	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v4/util/sliceutil"
 )
 
 func validateFile(ctx *Context) bool {
-	_, ok := ctx.Value.([]filesystem.File)
+	_, ok := ctx.Value.([]fsutil.File)
 	return ok
 }
 
 func validateMIME(ctx *Context) bool {
-	files, ok := ctx.Value.([]filesystem.File)
+	files, ok := ctx.Value.([]fsutil.File)
 	if ok {
 		for _, file := range files {
 			mime := file.MIMEType
 			if i := strings.Index(mime, ";"); i != -1 { // Ignore MIME settings (example: "text/plain; charset=utf-8")
 				mime = mime[:i]
 			}
-			if !helper.ContainsStr(ctx.Rule.Params, mime) {
+			if !sliceutil.ContainsStr(ctx.Rule.Params, mime) {
 				return false
 			}
 		}
@@ -36,11 +36,11 @@ func validateImage(ctx *Context) bool {
 }
 
 func validateExtension(ctx *Context) bool {
-	files, ok := ctx.Value.([]filesystem.File)
+	files, ok := ctx.Value.([]fsutil.File)
 	if ok {
 		for _, file := range files {
 			if i := strings.LastIndex(file.Header.Filename, "."); i != -1 {
-				if !helper.ContainsStr(ctx.Rule.Params, file.Header.Filename[i+1:]) {
+				if !sliceutil.ContainsStr(ctx.Rule.Params, file.Header.Filename[i+1:]) {
 					return false
 				}
 			} else {
@@ -53,7 +53,7 @@ func validateExtension(ctx *Context) bool {
 }
 
 func validateCount(ctx *Context) bool {
-	files, ok := ctx.Value.([]filesystem.File)
+	files, ok := ctx.Value.([]fsutil.File)
 	size, err := strconv.Atoi(ctx.Rule.Params[0])
 	if err != nil {
 		panic(err)
@@ -67,7 +67,7 @@ func validateCount(ctx *Context) bool {
 }
 
 func validateCountMin(ctx *Context) bool {
-	files, ok := ctx.Value.([]filesystem.File)
+	files, ok := ctx.Value.([]fsutil.File)
 	size, err := strconv.Atoi(ctx.Rule.Params[0])
 	if err != nil {
 		panic(err)
@@ -81,7 +81,7 @@ func validateCountMin(ctx *Context) bool {
 }
 
 func validateCountMax(ctx *Context) bool {
-	files, ok := ctx.Value.([]filesystem.File)
+	files, ok := ctx.Value.([]fsutil.File)
 	size, err := strconv.Atoi(ctx.Rule.Params[0])
 	if err != nil {
 		panic(err)
@@ -95,7 +95,7 @@ func validateCountMax(ctx *Context) bool {
 }
 
 func validateCountBetween(ctx *Context) bool {
-	files, ok := ctx.Value.([]filesystem.File)
+	files, ok := ctx.Value.([]fsutil.File)
 	min, errMin := strconv.Atoi(ctx.Rule.Params[0])
 	max, errMax := strconv.Atoi(ctx.Rule.Params[1])
 	if errMin != nil {

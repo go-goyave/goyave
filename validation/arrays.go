@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"goyave.dev/goyave/v4/helper"
+	"goyave.dev/goyave/v4/util/sliceutil"
+	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 // createArray create a slice of the same type as the given type.
@@ -146,7 +147,7 @@ func validateDistinct(ctx *Context) bool {
 	list := reflect.ValueOf(ctx.Value)
 	for i := 0; i < list.Len(); i++ {
 		v := list.Index(i).Interface()
-		if helper.Contains(found, v) {
+		if sliceutil.Contains(found, v) {
 			return false
 		}
 		found = append(found, v)
@@ -157,8 +158,8 @@ func validateDistinct(ctx *Context) bool {
 
 func checkInNumeric(parameters []string, value interface{}) bool {
 	for _, v := range parameters {
-		floatVal, _ := helper.ToFloat64(value)
-		other, err := helper.ToFloat64(v)
+		floatVal, _ := typeutil.ToFloat64(value)
+		other, err := typeutil.ToFloat64(v)
 		if err == nil && floatVal == other { // Compare only values of the same type
 			return true
 		}
@@ -171,7 +172,7 @@ func validateIn(ctx *Context) bool {
 	case "numeric":
 		return checkInNumeric(ctx.Rule.Params, ctx.Value)
 	case "string":
-		return helper.Contains(ctx.Rule.Params, ctx.Value)
+		return sliceutil.Contains(ctx.Rule.Params, ctx.Value)
 	}
 	// Don't check arrays and files
 	return false
@@ -182,7 +183,7 @@ func validateNotIn(ctx *Context) bool {
 	case "numeric":
 		return !checkInNumeric(ctx.Rule.Params, ctx.Value)
 	case "string":
-		return !helper.ContainsStr(ctx.Rule.Params, ctx.Value.(string))
+		return !sliceutil.ContainsStr(ctx.Rule.Params, ctx.Value.(string))
 	}
 	// Don't check arrays and files
 	return false
@@ -191,7 +192,7 @@ func validateNotIn(ctx *Context) bool {
 func validateInArray(ctx *Context) bool {
 	_, other, _, exists := GetFieldFromName(ctx.Rule.Params[0], ctx.Data)
 	if exists && GetFieldType(other) == "array" {
-		return helper.Contains(other, ctx.Value)
+		return sliceutil.Contains(other, ctx.Value)
 	}
 	return false
 }
@@ -199,7 +200,7 @@ func validateInArray(ctx *Context) bool {
 func validateNotInArray(ctx *Context) bool {
 	_, other, _, exists := GetFieldFromName(ctx.Rule.Params[0], ctx.Data)
 	if exists && GetFieldType(other) == "array" {
-		return !helper.Contains(other, ctx.Value)
+		return !sliceutil.Contains(other, ctx.Value)
 	}
 	return false
 }

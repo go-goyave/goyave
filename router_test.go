@@ -49,7 +49,8 @@ func (suite *RouterTestSuite) TestNewRouter() {
 	suite.Nil(router.parent)
 	suite.Empty(router.prefix)
 	suite.False(router.hasCORSMiddleware)
-	suite.Equal(3, len(router.middleware))
+	suite.Equal(0, len(router.middleware))
+	suite.Equal(3, len(router.globalMiddleware.middleware))
 	suite.NotEmpty(router.statusHandlers)
 }
 
@@ -90,19 +91,30 @@ func (suite *RouterTestSuite) TestRouterRegisterRoute() {
 
 func (suite *RouterTestSuite) TestRouterMiddleware() {
 	router := NewRouter()
+	suite.Equal(0, len(router.middleware))
 	router.Middleware(suite.routerTestMiddleware)
-	suite.Equal(4, len(router.middleware))
+	suite.Equal(1, len(router.middleware))
 }
 
 func (suite *RouterTestSuite) TestSubRouter() {
 	router := NewRouter()
+	suite.Equal(0, len(router.middleware))
 	router.Middleware(suite.routerTestMiddleware)
-	suite.Equal(4, len(router.middleware))
+	suite.Equal(1, len(router.middleware))
 
 	subrouter := router.Subrouter("/sub")
 	suite.Contains(router.subrouters, subrouter)
 	suite.Equal(0, len(subrouter.middleware)) // Middleware inherited, not copied
+	suite.Equal(router.globalMiddleware.middleware, subrouter.globalMiddleware.middleware)
 	suite.Equal(len(router.statusHandlers), len(subrouter.statusHandlers))
+
+	subrouter.Middleware(suite.routerTestMiddleware)
+	suite.Equal(1, len(router.middleware))
+	suite.Equal(1, len(subrouter.middleware))
+
+	subrouter.GlobalMiddleware(suite.routerTestMiddleware)
+	suite.Equal(4, len(router.globalMiddleware.middleware))
+	suite.Equal(router.globalMiddleware.middleware, subrouter.globalMiddleware.middleware)
 
 	router = NewRouter()
 	subrouter = router.Subrouter("/")
@@ -143,7 +155,7 @@ func (suite *RouterTestSuite) TestStaticHandler() {
 	handler(response, request)
 	result = response.responseWriter.(*httptest.ResponseRecorder).Result()
 	suite.Equal(200, result.StatusCode) // Not written yet
-	suite.Equal(404, response.GetStatus())
+	suite.Equal(http.StatusNotFound, response.GetStatus())
 
 	body, err = io.ReadAll(result.Body)
 	if err != nil {
@@ -235,8 +247,8 @@ func (suite *RouterTestSuite) TestRequestHandler() {
 		panic(err)
 	}
 	result.Body.Close()
-	suite.Equal(404, result.StatusCode)
-	suite.Equal("{\"error\":\""+http.StatusText(404)+"\"}\n", string(body))
+	suite.Equal(http.StatusNotFound, result.StatusCode)
+	suite.Equal("{\"error\":\""+http.StatusText(http.StatusNotFound)+"\"}\n", string(body))
 }
 
 func (suite *RouterTestSuite) TestCORS() {
@@ -344,10 +356,10 @@ func (suite *RouterTestSuite) TestPanicStatusHandler() {
 
 func (suite *RouterTestSuite) TestErrorStatusHandler() {
 	request, response := createRouterTestRequest("/uri")
-	response.Status(404)
+	response.Status(http.StatusNotFound)
 	ErrorStatusHandler(response, request)
 	result := response.responseWriter.(*httptest.ResponseRecorder).Result()
-	suite.Equal(404, result.StatusCode)
+	suite.Equal(http.StatusNotFound, result.StatusCode)
 	suite.Equal("application/json; charset=utf-8", result.Header.Get("Content-Type"))
 
 	body, err := io.ReadAll(result.Body)
@@ -355,7 +367,7 @@ func (suite *RouterTestSuite) TestErrorStatusHandler() {
 		panic(err)
 	}
 	result.Body.Close()
-	suite.Equal("{\"error\":\""+http.StatusText(404)+"\"}\n", string(body))
+	suite.Equal("{\"error\":\""+http.StatusText(http.StatusNotFound)+"\"}\n", string(body))
 }
 
 func (suite *RouterTestSuite) TestStatusHandlers() {
@@ -404,12 +416,12 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 	writer = httptest.NewRecorder()
 	subrouter.StatusHandler(func(response *Response, request *Request) {
 		response.String(response.GetStatus(), http.StatusText(response.GetStatus()))
-	}, 400, 404)
+	}, http.StatusBadRequest, http.StatusNotFound)
 
 	match = &routeMatch{
 		route: &Route{
 			handler: func(response *Response, request *Request) {
-				response.Status(400)
+				response.Status(http.StatusBadRequest)
 			},
 		},
 	}
@@ -421,15 +433,15 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 		panic(err)
 	}
 	result.Body.Close()
-	suite.Equal(400, result.StatusCode)
-	suite.Equal(http.StatusText(400), string(body))
+	suite.Equal(http.StatusBadRequest, result.StatusCode)
+	suite.Equal(http.StatusText(http.StatusBadRequest), string(body))
 
 	writer = httptest.NewRecorder()
 
 	match = &routeMatch{
 		route: &Route{
 			handler: func(response *Response, request *Request) {
-				response.Status(404)
+				response.Status(http.StatusNotFound)
 			},
 		},
 	}
@@ -441,8 +453,8 @@ func (suite *RouterTestSuite) TestStatusHandlers() {
 		panic(err)
 	}
 	result.Body.Close()
-	suite.Equal(404, result.StatusCode)
-	suite.Equal(http.StatusText(404), string(body))
+	suite.Equal(http.StatusNotFound, result.StatusCode)
+	suite.Equal(http.StatusText(http.StatusNotFound), string(body))
 }
 
 func (suite *RouterTestSuite) TestRouteNoMatch() {
@@ -495,9 +507,11 @@ func (suite *RouterTestSuite) TestMiddleware() {
 	}
 	router := NewRouter()
 	router.Middleware(middleware[0])
+	router.GlobalMiddleware(suite.createOrderedTestMiddleware(&result, "g1"), suite.createOrderedTestMiddleware(&result, "g2"))
 
 	subrouter := router.Subrouter("/")
 	subrouter.Middleware(middleware[1])
+	subrouter.GlobalMiddleware(suite.createOrderedTestMiddleware(&result, "g3"))
 
 	handler := func(response *Response, r *Request) {
 		result += "5"
@@ -511,7 +525,7 @@ func (suite *RouterTestSuite) TestMiddleware() {
 	}
 	router.requestHandler(&match, httptest.NewRecorder(), rawRequest)
 
-	suite.Equal("12345", result)
+	suite.Equal("g1g2g312345", result)
 }
 
 func (suite *RouterTestSuite) TestCoreMiddleware() {
@@ -563,10 +577,46 @@ func (suite *RouterTestSuite) TestCoreMiddleware() {
 	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
 	suite.Empty(strResult)
 
+	strResult = ""
 	match = &routeMatch{route: methodNotAllowedRoute}
 	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
 	suite.Empty(strResult)
 
+	// Global middleware should be executed
+	router.GlobalMiddleware(testMiddleware)
+	strResult = ""
+	match = &routeMatch{route: methodNotAllowedRoute}
+	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Equal("1", strResult)
+
+	strResult = ""
+	match = &routeMatch{route: notFoundRoute}
+	router.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Equal("1", strResult)
+
+	// On subrouter
+	router.globalMiddleware.middleware = []Middleware{}
+	subrouter := router.Subrouter("/sub")
+	strResult = ""
+	match = &routeMatch{route: notFoundRoute}
+	subrouter.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Empty(strResult)
+
+	strResult = ""
+	match = &routeMatch{route: methodNotAllowedRoute}
+	subrouter.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Empty(strResult)
+
+	router.GlobalMiddleware(testMiddleware)
+	strResult = ""
+	match = &routeMatch{route: methodNotAllowedRoute}
+	subrouter.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Equal("1", strResult)
+
+	strResult = ""
+	match = &routeMatch{route: notFoundRoute}
+	subrouter.requestHandler(match, httptest.NewRecorder(), httptest.NewRequest("GET", "/uri", nil))
+	suite.Equal("1", strResult)
 }
 
 func (suite *RouterTestSuite) TestMiddlewareHolder() {

@@ -25,6 +25,7 @@ type Router struct {
 
 	parameterizable
 	middlewareHolder
+	globalMiddleware *middlewareHolder
 
 	prefix            string
 	routes            []*Route
@@ -61,10 +62,6 @@ var (
 		response.Status(http.StatusNotFound)
 	})
 )
-
-func init() {
-	methodNotAllowedRoute.name = "method-not-allowed"
-}
 
 // PanicStatusHandler for the HTTP 500 error.
 // If debugging is enabled, writes the error details to the response and
@@ -113,6 +110,9 @@ func NewRouter() *Router {
 		statusHandlers:    make(map[int]Handler, 41),
 		namedRoutes:       make(map[string]*Route, 5),
 		middlewareHolder: middlewareHolder{
+			middleware: nil,
+		},
+		globalMiddleware: &middlewareHolder{
 			middleware: make([]Middleware, 0, 3),
 		},
 		regexCache: make(map[string]*regexp.Regexp, 5),
@@ -127,7 +127,7 @@ func NewRouter() *Router {
 	}
 	router.StatusHandler(ErrorStatusHandler, 421, 428, 429, 431, 444, 451)
 	router.StatusHandler(ErrorStatusHandler, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
-	router.Middleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
+	router.GlobalMiddleware(recoveryMiddleware, parseRequestMiddleware, languageMiddleware)
 	return router
 }
 
@@ -242,7 +242,8 @@ func (r *Router) Subrouter(prefix string) *Router {
 		middlewareHolder: middlewareHolder{
 			middleware: nil,
 		},
-		regexCache: r.regexCache,
+		globalMiddleware: r.globalMiddleware,
+		regexCache:       r.regexCache,
 	}
 	router.compileParameters(router.prefix, false, r.regexCache)
 	r.subrouters = append(r.subrouters, router)
@@ -252,6 +253,16 @@ func (r *Router) Subrouter(prefix string) *Router {
 // Group create a new sub-router with an empty prefix.
 func (r *Router) Group() *Router {
 	return r.Subrouter("")
+}
+
+// GlobalMiddleware apply one or more global middleware. Global middleware are
+// executed for every request, including when the requests doesn't match any route
+// or if it results in "Method Not Allowed".
+// These middleware are global to the main Router: they will also be executed for subrouters.
+// Global Middleware are always executed first.
+// Use global middleware for logging and rate limiting for example.
+func (r *Router) GlobalMiddleware(middleware ...Middleware) {
+	r.globalMiddleware.middleware = append(r.globalMiddleware.middleware, middleware...)
 }
 
 // Middleware apply one or more middleware to the route group.
@@ -444,6 +455,8 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 		handler = parent.applyMiddleware(handler)
 		parent = parent.parent
 	}
+
+	handler = r.globalMiddleware.applyMiddleware(handler)
 
 	handler(response, request)
 

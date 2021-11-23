@@ -256,7 +256,7 @@ func (r *Router) Group() *Router {
 }
 
 // GlobalMiddleware apply one or more global middleware. Global middleware are
-// executed for every request, including when the requests doesn't match any route
+// executed for every request, including when the request doesn't match any route
 // or if it results in "Method Not Allowed".
 // These middleware are global to the main Router: they will also be executed for subrouters.
 // Global Middleware are always executed first.

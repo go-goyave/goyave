@@ -288,6 +288,9 @@ func getAddress(protocol string) string {
 
 // BaseURL returns the base URL of your application.
 func BaseURL() string {
+	if protocol == "" {
+		protocol = config.GetString("server.protocol")
+	}
 	return getAddress(protocol)
 }
 

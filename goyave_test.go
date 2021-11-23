@@ -67,6 +67,11 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	config.Set("server.httpsPort", 1236)
 	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
 	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
+
+	// Clear cached protocol value
+	// Should be loaded if not already
+	protocol = ""
+	suite.Equal(getAddress("http"), BaseURL())
 }
 
 func (suite *GoyaveTestSuite) TestProxyBaseURL() {

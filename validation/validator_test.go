@@ -824,10 +824,14 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 		"string":   List{"required", "array:string"},
 		"string[]": List{"min:3"},
 		"number":   List{"numeric"},
+		"structRepr": StructList{
+			{Name: "numeric"},
+			{Name: "min", Params: []string{"3"}},
+		},
 	}
 
 	rules := set.parse()
-	suite.Len(rules.Fields, 2)
+	suite.Len(rules.Fields, 3)
 	suite.Len(rules.Fields["string"].(*Field).Rules, 2)
 	suite.Equal(&Rule{Name: "required", Params: []string{}}, rules.Fields["string"].(*Field).Rules[0])
 	suite.Equal(&Rule{Name: "array", Params: []string{"string"}}, rules.Fields["string"].(*Field).Rules[1])
@@ -842,6 +846,10 @@ func (suite *ValidatorTestSuite) TestParseRuleSet() {
 	suite.Equal(expectedPath, rules.Fields["string"].(*Field).Elements.Path)
 	suite.Len(rules.Fields["number"].(*Field).Rules, 1)
 	suite.Equal(&Rule{Name: "numeric", Params: []string{}}, rules.Fields["number"].(*Field).Rules[0])
+
+	suite.Len(rules.Fields["structRepr"].(*Field).Rules, 2)
+	suite.Equal(&Rule{Name: "numeric", Params: []string{}}, rules.Fields["structRepr"].(*Field).Rules[0])
+	suite.Equal(&Rule{Name: "min", Params: []string{"3"}}, rules.Fields["structRepr"].(*Field).Rules[1])
 
 	parsed := set.AsRules()
 	suite.Equal(rules.Fields, parsed.Fields)

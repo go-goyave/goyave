@@ -31,6 +31,7 @@ type Ruler interface {
 // Contains all the information needed for validation rules.
 type Context struct {
 	Data   map[string]interface{}
+	Extra  map[string]interface{}
 	Value  interface{}
 	Parent interface{}
 	Field  *Field
@@ -530,6 +531,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 
 			ctx := &Context{
 				Data:   data,
+				Extra:  map[string]interface{}{},
 				Value:  value,
 				Parent: c.Parent,
 				Field:  field,

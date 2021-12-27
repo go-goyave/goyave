@@ -10,7 +10,7 @@ import (
 
 // Placeholder function defining a placeholder in a validation message.
 // This function should return the value to replace the placeholder with.
-type Placeholder func(string, string, []string, string) string
+type Placeholder func(fieldName string, language string, ctx *Context) string
 
 var placeholders = map[string]Placeholder{}
 var sortedKeys = []string{}
@@ -30,15 +30,15 @@ func SetPlaceholder(placeholderName string, replacer Placeholder) {
 	sort.Sort(sort.Reverse(sort.StringSlice(sortedKeys)))
 }
 
-func processPlaceholders(field string, rule string, params []string, message string, language string) string {
-	if i := strings.LastIndex(field, "."); i != -1 {
-		field = field[i+1:]
+func processPlaceholders(fieldName string, message string, language string, ctx *Context) string {
+	if i := strings.LastIndex(fieldName, "."); i != -1 {
+		fieldName = fieldName[i+1:]
 	}
-	field = strings.TrimSuffix(field, "[]")
+	fieldName = strings.TrimSuffix(fieldName, "[]")
 	for _, placeholder := range sortedKeys {
 		if strings.Contains(message, placeholder) {
 			replacer := placeholders[placeholder]
-			message = strings.ReplaceAll(message, placeholder, replacer(field, rule, params, language))
+			message = strings.ReplaceAll(message, placeholder, replacer(fieldName, language, ctx))
 		}
 	}
 	return message
@@ -53,8 +53,8 @@ func replaceField(field, language string) string {
 	return attr
 }
 
-func simpleParameterPlaceholder(field string, rule string, parameters []string, language string) string {
-	return parameters[0]
+func simpleParameterPlaceholder(field string, language string, ctx *Context) string {
+	return ctx.Rule.Params[0]
 }
 
 func datePlaceholder(index int, parameters []string, language string) string {
@@ -67,34 +67,34 @@ func datePlaceholder(index int, parameters []string, language string) string {
 }
 
 func init() {
-	SetPlaceholder("field", func(field string, rule string, parameters []string, language string) string {
+	SetPlaceholder("field", func(field string, language string, ctx *Context) string {
 		return replaceField(field, language)
 	})
 	SetPlaceholder("value", simpleParameterPlaceholder)
 	SetPlaceholder("min", simpleParameterPlaceholder)
-	SetPlaceholder("max", func(field string, rule string, parameters []string, language string) string {
+	SetPlaceholder("max", func(field string, language string, ctx *Context) string {
 		index := 0
-		if strings.Contains(rule, "between") {
+		if strings.Contains(ctx.Rule.Name, "between") {
 			index = 1
 		}
-		return parameters[index]
+		return ctx.Rule.Params[index]
 	})
-	SetPlaceholder("other", func(field string, rule string, parameters []string, language string) string {
-		return replaceField(parameters[0], language)
+	SetPlaceholder("other", func(field string, language string, ctx *Context) string {
+		return replaceField(ctx.Rule.Params[0], language)
 	})
-	SetPlaceholder("values", func(field string, rule string, parameters []string, language string) string {
-		return strings.Join(parameters, ", ")
+	SetPlaceholder("values", func(field string, language string, ctx *Context) string {
+		return strings.Join(ctx.Rule.Params, ", ")
 	})
-	SetPlaceholder("version", func(field string, rule string, parameters []string, language string) string {
-		if len(parameters) > 0 {
-			return "v" + parameters[0]
+	SetPlaceholder("version", func(field string, language string, ctx *Context) string {
+		if len(ctx.Rule.Params) > 0 {
+			return "v" + ctx.Rule.Params[0]
 		}
 		return ""
 	})
-	SetPlaceholder("date", func(field string, rule string, parameters []string, language string) string {
-		return datePlaceholder(0, parameters, language)
+	SetPlaceholder("date", func(field string, language string, ctx *Context) string {
+		return datePlaceholder(0, ctx.Rule.Params, language)
 	})
-	SetPlaceholder("max_date", func(field string, rule string, parameters []string, language string) string {
-		return datePlaceholder(1, parameters, language)
+	SetPlaceholder("max_date", func(field string, language string, ctx *Context) string {
+		return datePlaceholder(1, ctx.Rule.Params, language)
 	})
 }

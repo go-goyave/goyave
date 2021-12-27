@@ -21,30 +21,30 @@ func (suite *PlaceholderTestSuite) SetupSuite() {
 }
 
 func (suite *PlaceholderTestSuite) TestPlaceholders() {
-	suite.Equal("fieldName", placeholders[":field"]("fieldName", "required", []string{}, "en-US"))
-	suite.Equal("email address", placeholders[":field"]("email", "required", []string{}, "en-US"))
-	suite.Equal("5", placeholders[":min"]("field", "min", []string{"5"}, "en-US"))
-	suite.Equal("5", placeholders[":max"]("field", "max", []string{"5"}, "en-US"))
-	suite.Equal("10", placeholders[":max"]("field", "between", []string{"5", "10"}, "en-US"))
+	suite.Equal("fieldName", placeholders[":field"]("fieldName", "en-US", &Context{Rule: &Rule{Name: "required", Params: []string{}}}))
+	suite.Equal("email address", placeholders[":field"]("email", "en-US", &Context{Rule: &Rule{Name: "required", Params: []string{}}}))
+	suite.Equal("5", placeholders[":min"]("field", "en-US", &Context{Rule: &Rule{Name: "min", Params: []string{"5"}}}))
+	suite.Equal("5", placeholders[":max"]("field", "en-US", &Context{Rule: &Rule{Name: "max", Params: []string{"5"}}}))
+	suite.Equal("10", placeholders[":max"]("field", "en-US", &Context{Rule: &Rule{Name: "between", Params: []string{"5", "10"}}}))
 
-	suite.Equal("email address", placeholders[":other"]("field", "greater_than", []string{"email"}, "en-US"))
-	suite.Equal("otherField", placeholders[":other"]("field", "greater_than", []string{"otherField"}, "en-US"))
+	suite.Equal("email address", placeholders[":other"]("field", "en-US", &Context{Rule: &Rule{Name: "greater_than", Params: []string{"email"}}}))
+	suite.Equal("otherField", placeholders[":other"]("field", "en-US", &Context{Rule: &Rule{Name: "greater_than", Params: []string{"otherField"}}}))
 
-	suite.Equal("a, b, c", placeholders[":values"]("field", "in", []string{"a", "b", "c"}, "en-US"))
-	suite.Equal("", placeholders[":version"]("field", "uuid", []string{}, "en-US"))
-	suite.Equal("v5", placeholders[":version"]("field", "uuid", []string{"5"}, "en-US"))
+	suite.Equal("a, b, c", placeholders[":values"]("field", "en-US", &Context{Rule: &Rule{Name: "in", Params: []string{"a", "b", "c"}}}))
+	suite.Equal("", placeholders[":version"]("field", "en-US", &Context{Rule: &Rule{Name: "uuid", Params: []string{}}}))
+	suite.Equal("v5", placeholders[":version"]("field", "en-US", &Context{Rule: &Rule{Name: "uuid", Params: []string{"5"}}}))
 
-	suite.Equal("email address", placeholders[":date"]("field", "date", []string{"email"}, "en-US"))
-	suite.Equal("2019-11-02T17:00:00", placeholders[":date"]("field", "date", []string{"2019-11-02T17:00:00"}, "en-US"))
-	suite.Equal("2019-11-03T17:00:00", placeholders[":max_date"]("field", "date", []string{"2019-11-02T17:00:00", "2019-11-03T17:00:00"}, "en-US"))
+	suite.Equal("email address", placeholders[":date"]("field", "en-US", &Context{Rule: &Rule{Name: "date", Params: []string{"email"}}}))
+	suite.Equal("2019-11-02T17:00:00", placeholders[":date"]("field", "en-US", &Context{Rule: &Rule{Name: "date", Params: []string{"2019-11-02T17:00:00"}}}))
+	suite.Equal("2019-11-03T17:00:00", placeholders[":max_date"]("field", "en-US", &Context{Rule: &Rule{Name: "date", Params: []string{"2019-11-02T17:00:00", "2019-11-03T17:00:00"}}}))
 }
 
 func (suite *PlaceholderTestSuite) TestProcessPlaceholders() {
-	suite.Equal("The email address is required.", processPlaceholders("email", "required", []string{}, "The :field is required.", "en-US"))
-	suite.Equal("The email address is required.", processPlaceholders("user.email", "required", []string{}, "The :field is required.", "en-US"))
-	suite.Equal("The image must be a file with one of the following extensions: ppm.", processPlaceholders("image", "extension", []string{"ppm"}, "The :field must be a file with one of the following extensions: :values.", "en-US"))
-	suite.Equal("The image must be a file with one of the following extensions: ppm, png.", processPlaceholders("image", "extension", []string{"ppm", "png"}, "The :field must be a file with one of the following extensions: :values.", "en-US"))
-	suite.Equal("The image must have exactly 2 file(s).", processPlaceholders("image", "count", []string{"2"}, "The :field must have exactly :value file(s).", "en-US"))
+	suite.Equal("The email address is required.", processPlaceholders("email", "The :field is required.", "en-US", &Context{Rule: &Rule{Name: "required", Params: []string{}}}))
+	suite.Equal("The email address is required.", processPlaceholders("user.email", "The :field is required.", "en-US", &Context{Rule: &Rule{Name: "required", Params: []string{}}}))
+	suite.Equal("The image must be a file with one of the following extensions: ppm.", processPlaceholders("image", "The :field must be a file with one of the following extensions: :values.", "en-US", &Context{Rule: &Rule{Name: "extension", Params: []string{"ppm"}}}))
+	suite.Equal("The image must be a file with one of the following extensions: ppm, png.", processPlaceholders("image", "The :field must be a file with one of the following extensions: :values.", "en-US", &Context{Rule: &Rule{Name: "extension", Params: []string{"ppm", "png"}}}))
+	suite.Equal("The image must have exactly 2 file(s).", processPlaceholders("image", "The :field must have exactly :value file(s).", "en-US", &Context{Rule: &Rule{Name: "count", Params: []string{"2"}}}))
 }
 
 func TestPlaceholderTestSuite(t *testing.T) {

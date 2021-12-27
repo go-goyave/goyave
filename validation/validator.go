@@ -36,7 +36,9 @@ type Context struct {
 	Field  *Field
 	Rule   *Rule
 	Now    time.Time
-	Name   string
+
+	// The name of the field under validation
+	Name string
 }
 
 // RuleFunc function defining a validation rule.
@@ -537,7 +539,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 			}
 			if !validationRules[rule.Name].Function(ctx) {
 				path := field.getErrorPath(parentPath, c)
-				message := processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field, rule, reflect.ValueOf(value), language), language)
+				message := processPlaceholders(fieldName, getMessage(field, rule, reflect.ValueOf(value), language), language, ctx)
 				errors.Add(path, message)
 				continue
 			}

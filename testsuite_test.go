@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 type CustomTestSuite struct {
@@ -291,15 +291,15 @@ func (suite *CustomTestSuite) TestJSONSlice() {
 }
 
 func (suite *CustomTestSuite) TestCreateTestFiles() {
-	err := ioutil.WriteFile("test-file.txt", []byte("test-content"), 0644)
+	err := os.WriteFile("test-file.txt", []byte("test-content"), 0644)
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete("test-file.txt")
+	defer fsutil.Delete("test-file.txt")
 	files := suite.CreateTestFiles("test-file.txt")
 	suite.Equal(1, len(files))
 	suite.Equal("test-file.txt", files[0].Header.Filename)
-	body, err := ioutil.ReadAll(files[0].Data)
+	body, err := io.ReadAll(files[0].Data)
 	if err != nil {
 		panic(err)
 	}
@@ -315,15 +315,15 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 
 func (suite *CustomTestSuite) TestMultipartForm() {
 	const path = "test-file.txt"
-	err := ioutil.WriteFile(path, []byte("test-content"), 0644)
+	err := os.WriteFile(path, []byte("test-content"), 0644)
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete(path)
+	defer fsutil.Delete(path)
 
 	suite.RunServer(func(router *Router) {
 		router.Route("POST", "/post", func(response *Response, request *Request) {
-			content, err := ioutil.ReadAll(request.File("file")[0].Data)
+			content, err := io.ReadAll(request.File("file")[0].Data)
 			if err != nil {
 				panic(err)
 			}

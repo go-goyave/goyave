@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
 
-	_ "goyave.dev/goyave/v3/database/dialect/mysql"
+	_ "goyave.dev/goyave/v4/database/dialect/mysql"
 )
 
 type TestUser struct {
@@ -25,10 +25,21 @@ type TestUserPromoted struct {
 	TestUser
 }
 
+type TestUserPromotedPtr struct {
+	*TestUser
+}
+
 type TestUserOverride struct {
 	gorm.Model
 	Name     string `gorm:"type:varchar(100)"`
 	Password string `gorm:"type:varchar(100);column:password_override" auth:"password"`
+	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
+}
+
+type TestUserInvalidOverride struct {
+	gorm.Model
+	Name     string `gorm:"type:varchar(100)"`
+	Password string `gorm:"type:varchar(100);column:" auth:"password"`
 	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
 }
 
@@ -78,6 +89,11 @@ func (suite *AuthenticationTestSuite) TestFindColumns() {
 	fields = FindColumns(userOverride, "password")
 	suite.Len(fields, 1)
 	suite.Equal("password_override", fields[0].Name)
+
+	userInvalidOverride := &TestUserInvalidOverride{}
+	fields = FindColumns(userInvalidOverride, "password")
+	suite.Len(fields, 1)
+	suite.Equal("password", fields[0].Name)
 }
 
 func (suite *AuthenticationTestSuite) TestFindColumnsPromoted() {
@@ -92,6 +108,12 @@ func (suite *AuthenticationTestSuite) TestFindColumnsPromoted() {
 	suite.Equal("email", fields[0].Name)
 	suite.Nil(fields[1])
 	suite.Equal("password", fields[2].Name)
+
+	userPtr := &TestUserPromotedPtr{}
+	fields = FindColumns(userPtr, "username", "password")
+	suite.Len(fields, 2)
+	suite.Equal("email", fields[0].Name)
+	suite.Equal("password", fields[1].Name)
 }
 
 func (suite *AuthenticationTestSuite) TestAuthMiddleware() {

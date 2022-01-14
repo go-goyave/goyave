@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4/config"
 
 	ws "github.com/gorilla/websocket"
 )
@@ -88,7 +88,7 @@ func (c *Conn) CloseWithError(err error) error {
 // Calling this function multiple times is safe and only the first call will
 // write the close frame to the connection.
 func (c *Conn) Close(code int, message string) error {
-	var err error = nil
+	var err error
 	c.closeOnce.Do(func() {
 		m := ws.FormatCloseMessage(code, message)
 		writeErr := c.WriteControl(ws.CloseMessage, m, time.Now().Add(c.timeout))

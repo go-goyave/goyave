@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4/util/sliceutil"
 )
 
 type object map[string]interface{}
@@ -29,7 +29,7 @@ type readFunc func(string) (object, error)
 
 var config object
 
-var configDefaults object = object{
+var configDefaults = object{
 	"app": object{
 		"name":            &Entry{"goyave", []interface{}{}, reflect.String, false},
 		"environment":     &Entry{"localhost", []interface{}{}, reflect.String, false},
@@ -48,6 +48,12 @@ var configDefaults object = object{
 		"tls": object{
 			"cert": &Entry{nil, []interface{}{}, reflect.String, false},
 			"key":  &Entry{nil, []interface{}{}, reflect.String, false},
+		},
+		"proxy": object{
+			"protocol": &Entry{"http", []interface{}{"http", "https"}, reflect.String, false},
+			"host":     &Entry{nil, []interface{}{}, reflect.String, false},
+			"port":     &Entry{80, []interface{}{}, reflect.Int, false},
+			"base":     &Entry{"", []interface{}{}, reflect.String, false},
 		},
 	},
 	"database": object{
@@ -594,7 +600,7 @@ func (e *Entry) validate(key string) error {
 					return fmt.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
 				}
 			}
-		} else if !helper.Contains(e.AuthorizedValues, e.Value) {
+		} else if !sliceutil.Contains(e.AuthorizedValues, e.Value) {
 			return fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
 		}
 	}

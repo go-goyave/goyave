@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -15,11 +14,11 @@ import (
 	"strings"
 	"testing"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/cors"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/lang"
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v4/validation"
 )
 
 type MiddlewareTestSuite struct {
@@ -128,7 +127,7 @@ func (suite *MiddlewareTestSuite) TestRecoveryMiddlewareNoPanic() {
 	suite.Equal(200, response.status)
 	suite.Equal(200, resp.StatusCode)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("message", string(body))
@@ -172,17 +171,6 @@ func (suite *MiddlewareTestSuite) TestParsePostRequestMiddleware() {
 	res := testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal("hello world", r.Data["string"])
 		suite.Equal("42", r.Data["number"])
-		executed = true
-	})
-	suite.True(executed)
-	res.Body.Close()
-
-	// Invalid form
-	executed = false
-	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("%9"))
-	rawRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-	res = testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
-		suite.Nil(r.Data)
 		executed = true
 	})
 	suite.True(executed)
@@ -285,7 +273,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartRequestMiddleware() {
 		suite.Equal(3, len(r.Data))
 		suite.Equal("hello", r.Data["test"])
 		suite.Equal("world", r.Data["field"])
-		files, ok := r.Data["file"].([]filesystem.File)
+		files, ok := r.Data["file"].([]fsutil.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))
 		executed = true
@@ -324,7 +312,7 @@ func (suite *MiddlewareTestSuite) TestParseMultipartOverrideMiddleware() {
 	res := testMiddleware(parseRequestMiddleware, rawRequest, nil, validation.RuleSet{}, nil, func(response *Response, r *Request) {
 		suite.Equal(2, len(r.Data))
 		suite.Equal("world", r.Data["field"])
-		files, ok := r.Data["file"].([]filesystem.File)
+		files, ok := r.Data["file"].([]fsutil.File)
 		suite.True(ok)
 		suite.Equal(1, len(files))
 		executed = true
@@ -403,8 +391,8 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"number": 42,
 	}
 	rules := validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:10"},
+		"string": validation.List{"required", "string"},
+		"number": validation.List{"required", "numeric", "min:10"},
 	}
 	request := suite.CreateTestRequest(rawRequest)
 	request.Data = data
@@ -420,21 +408,21 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 		"number": 42,
 	}
 	rules = validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:50"},
+		"string": validation.List{"required", "string"},
+		"number": validation.List{"required", "numeric", "min:50"},
 	}
 
 	request = suite.CreateTestRequest(rawRequest)
 	request.Data = data
 	request.Rules = rules.AsRules()
 	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
 	result.Body.Close()
 	suite.Equal(http.StatusUnprocessableEntity, result.StatusCode)
-	suite.Equal("{\"validationError\":{\"number\":[\"The number must be at least 50.\"]}}\n", string(body))
+	suite.Equal("{\"validationError\":{\"number\":{\"errors\":[\"The number must be at least 50.\"]}}}\n", string(body))
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", nil)
 	rawRequest.Header.Set("Content-Type", "application/json")
@@ -442,13 +430,13 @@ func (suite *MiddlewareTestSuite) TestValidateMiddleware() {
 	request.Data = nil
 	request.Rules = rules.AsRules()
 	result = suite.Middleware(validateRequestMiddleware, request, func(response *Response, r *Request) {})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
 	result.Body.Close()
 	suite.Equal(http.StatusBadRequest, result.StatusCode)
-	suite.Equal("{\"validationError\":{\"error\":[\"Malformed JSON\"]}}\n", string(body))
+	suite.Equal("{\"validationError\":{\"[data]\":{\"errors\":[\"Malformed JSON\"]}}}\n", string(body))
 }
 
 func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
@@ -466,7 +454,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Hi!")
 	})
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -480,7 +468,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Passthrough")
 	})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -493,7 +481,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Hi!")
 	})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -509,7 +497,7 @@ func (suite *MiddlewareTestSuite) TestCORSMiddleware() {
 	result = testMiddleware(corsMiddleware, rawRequest, nil, nil, options, func(response *Response, r *Request) {
 		response.String(200, "Hi!")
 	})
-	body, err = ioutil.ReadAll(result.Body)
+	body, err = io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}

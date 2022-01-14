@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"goyave.dev/goyave/v3/cors"
+	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v4/util/fsutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v3/helper/filesystem"
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4/validation"
 )
 
 func createTestRequest(rawRequest *http.Request) *Request {
@@ -79,8 +79,9 @@ func TestRequestCookies(t *testing.T) {
 		Value: "test",
 	})
 	request := createTestRequest(rawRequest)
-	cookies := request.Cookies("cookie-name")
+	cookies := request.Cookies()
 	assert.Equal(t, 1, len(cookies))
+	assert.Equal(t, "cookie-name", cookies[0].Name)
 	assert.Equal(t, "test", cookies[0].Value)
 }
 
@@ -93,8 +94,8 @@ func TestRequestValidate(t *testing.T) {
 		"number": 42,
 	}
 	request.Rules = validation.RuleSet{
-		"string": {"required", "string"},
-		"number": {"required", "numeric", "min:10"},
+		"string": validation.List{"required", "string"},
+		"number": validation.List{"required", "numeric", "min:10"},
 	}.AsRules()
 	errors := request.validate()
 	assert.Nil(t, errors)
@@ -108,13 +109,13 @@ func TestRequestValidate(t *testing.T) {
 
 	request.Rules = &validation.Rules{
 		Fields: validation.FieldMap{
-			"string": {
+			"string": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},
 				},
 			},
-			"number": {
+			"number": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "numeric"},
@@ -125,7 +126,7 @@ func TestRequestValidate(t *testing.T) {
 	}
 	errors = request.validate()
 	assert.NotNil(t, errors)
-	assert.Equal(t, 2, len(errors["number"]))
+	assert.Equal(t, 2, len(errors["number"].Errors))
 
 	rawRequest = httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/json")
@@ -163,7 +164,7 @@ func TestRequestAccessors(t *testing.T) {
 		"integer":  42,
 		"numeric":  42.3,
 		"bool":     true,
-		"file":     []filesystem.File{{MIMEType: "image/png"}},
+		"file":     []fsutil.File{{MIMEType: "image/png"}},
 		"timezone": loc,
 		"ip":       net.ParseIP("127.0.0.1"),
 		"uuid":     uid,

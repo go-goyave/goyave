@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/util/sliceutil"
 )
 
 // Column matches a column name with a struct field.
@@ -69,21 +69,25 @@ func Middleware(model interface{}, authenticator Authenticator) goyave.Middlewar
 //
 // The result will be the "Email" field, "nil" and the "Password" field.
 func FindColumns(strct interface{}, fields ...string) []*Column {
+	return findColumns(reflect.TypeOf(strct), fields)
+}
+
+func findColumns(t reflect.Type, fields []string) []*Column {
 	length := len(fields)
 	result := make([]*Column, length)
 
-	value := reflect.ValueOf(strct)
-	t := reflect.TypeOf(strct)
 	if t.Kind() == reflect.Ptr {
-		value = value.Elem()
 		t = t.Elem()
 	}
 	for i := 0; i < t.NumField(); i++ {
-		field := value.Field(i)
-		fieldType := t.Field(i)
-		if field.Kind() == reflect.Struct && fieldType.Anonymous {
+		strctType := t.Field(i)
+		fieldType := strctType.Type
+		if fieldType.Kind() == reflect.Ptr {
+			fieldType = fieldType.Elem()
+		}
+		if fieldType.Kind() == reflect.Struct && strctType.Anonymous {
 			// Check promoted fields recursively
-			for i, v := range FindColumns(field.Interface(), fields...) {
+			for i, v := range findColumns(fieldType, fields) {
 				if v != nil {
 					result[i] = v
 				}
@@ -91,11 +95,11 @@ func FindColumns(strct interface{}, fields ...string) []*Column {
 			continue
 		}
 
-		tag := fieldType.Tag.Get("auth")
-		if index := helper.IndexOf(fields, tag); index != -1 {
+		tag := strctType.Tag.Get("auth")
+		if index := sliceutil.IndexOf(fields, tag); index != -1 {
 			result[index] = &Column{
-				Name:  columnName(&fieldType),
-				Field: &fieldType,
+				Name:  columnName(strctType),
+				Field: &strctType,
 			}
 		}
 	}
@@ -103,11 +107,15 @@ func FindColumns(strct interface{}, fields ...string) []*Column {
 	return result
 }
 
-func columnName(field *reflect.StructField) string {
+func columnName(field reflect.StructField) string {
 	for _, t := range strings.Split(field.Tag.Get("gorm"), ";") { // Check for gorm column name override
 		if strings.HasPrefix(t, "column") {
-			v := strings.Split(t, ":")
-			return strings.TrimSpace(v[1])
+			i := strings.Index(t, ":")
+			if i == -1 || i+1 >= len(t) {
+				// Invalid syntax, fallback to auto-naming
+				break
+			}
+			return strings.TrimSpace(t[i+1:])
 		}
 	}
 

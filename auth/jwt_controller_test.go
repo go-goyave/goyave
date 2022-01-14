@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/validation"
 )
 
 const testUserPassword = "secret"
@@ -219,8 +219,8 @@ func (suite *JWTControllerTestSuite) TestValidation() {
 			err := suite.GetJSONBody(resp, &json)
 			suite.Nil(err)
 			if err == nil {
-				suite.Len(json["validationError"]["username"], 2)
-				suite.Len(json["validationError"]["password"], 2)
+				suite.Len(json["validationError"]["username"].Errors, 2)
+				suite.Len(json["validationError"]["password"].Errors, 2)
 			}
 		}
 	})

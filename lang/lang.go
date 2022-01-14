@@ -3,15 +3,13 @@ package lang
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/helper"
-
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v4/util/httputil"
 )
 
 type validationLines struct {
@@ -83,8 +81,8 @@ func LoadAllAvailableLanguages() {
 		panic(err)
 	}
 	langDirectory := workingDir + sep + "resources" + sep + "lang" + sep
-	if filesystem.IsDirectory(langDirectory) {
-		files, err := ioutil.ReadDir(langDirectory)
+	if fsutil.IsDirectory(langDirectory) {
+		files, err := os.ReadDir(langDirectory)
 		if err != nil {
 			panic(err)
 		}
@@ -109,7 +107,7 @@ func LoadAllAvailableLanguages() {
 func Load(language, path string) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if filesystem.IsDirectory(path) {
+	if fsutil.IsDirectory(path) {
 		load(language, path)
 	} else {
 		panic(fmt.Sprintf("Failed loading language \"%s\", directory \"%s\" doesn't exist", language, path))
@@ -131,7 +129,7 @@ func load(lang string, path string) {
 }
 
 func readLangFile(path string, dest interface{}) {
-	if filesystem.FileExists(path) {
+	if fsutil.FileExists(path) {
 		langFile, _ := os.Open(path)
 		defer langFile.Close()
 
@@ -273,7 +271,7 @@ func GetAvailableLanguages() []string {
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
 func DetectLanguage(lang string) string {
-	values := helper.ParseMultiValuesHeader(lang)
+	values := httputil.ParseMultiValuesHeader(lang)
 	for _, l := range values {
 		if l.Value == "*" { // Accept anything, so return default language
 			break

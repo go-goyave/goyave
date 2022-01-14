@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4/validation"
 )
 
 type RouteTestSuite struct {
@@ -216,8 +216,8 @@ func (suite *RouteTestSuite) TestValidate() {
 		methods: []string{"GET", "POST"},
 	}
 	rules := &validation.Rules{
-		Fields: map[string]*validation.Field{
-			"field": {
+		Fields: validation.FieldMap{
+			"field": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},
@@ -269,7 +269,7 @@ func (suite *RouteTestSuite) TestGetValidationRules() {
 	}
 	rules := &validation.Rules{
 		Fields: validation.FieldMap{
-			"email": {
+			"email": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},

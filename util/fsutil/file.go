@@ -1,8 +1,9 @@
-package filesystem
+package fsutil
 
 import (
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 )
 
@@ -37,4 +38,34 @@ func (file *File) Save(path string, name string) string {
 	}
 	file.Data.Close()
 	return name
+}
+
+// ParseMultipartFiles parse a single file field in a request.
+func ParseMultipartFiles(request *http.Request, field string) []File {
+	files := []File{}
+	for _, fh := range request.MultipartForm.File[field] {
+		f, err := fh.Open()
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		fileHeader := make([]byte, 512)
+
+		if _, err := f.Read(fileHeader); err != nil {
+			panic(err)
+		}
+
+		if _, err := f.Seek(0, 0); err != nil {
+			panic(err)
+		}
+
+		file := File{
+			Header:   fh,
+			MIMEType: http.DetectContentType(fileHeader),
+			Data:     f,
+		}
+		files = append(files, file)
+	}
+	return files
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -15,8 +14,8 @@ import (
 	"testing"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
 )
 
 type ResponseTestSuite struct {
@@ -91,7 +90,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 
 	suite.Equal(500, resp.StatusCode)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
@@ -107,7 +106,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	suite.Equal(500, resp.StatusCode)
 	suite.NotNil(response.err)
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("{\"error\":\"random error\"}\n", string(body))
@@ -123,7 +122,7 @@ func (suite *ResponseTestSuite) TestResponseError() {
 
 	suite.Equal(500, response.GetStatus())
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Empty("", string(body))
@@ -218,7 +217,7 @@ func (suite *ResponseTestSuite) TestResponseJSON() {
 	suite.Equal("application/json; charset=utf-8", resp.Header.Get("Content-Type"))
 	suite.False(response.empty)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		panic(err)
@@ -264,7 +263,7 @@ func (suite *ResponseTestSuite) TestResponseRedirect() {
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(308, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Permanent Redirect</a>.\n\n", string(body))
@@ -280,7 +279,7 @@ func (suite *ResponseTestSuite) TestResponseTemporaryRedirect() {
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
 
 	suite.Equal(307, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<a href=\"https://www.google.com\">Temporary Redirect</a>.\n\n", string(body))
@@ -309,7 +308,7 @@ func (suite *ResponseTestSuite) TestResponseWrite() {
 	response := newResponse(httptest.NewRecorder(), rawRequest)
 	response.Write([]byte("byte array"))
 	resp := response.responseWriter.(*httptest.ResponseRecorder).Result()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("byte array", string(body))
@@ -337,7 +336,7 @@ func (suite *ResponseTestSuite) TestRender() {
 	suite.Nil(response.Render(http.StatusNotFound, "error.txt", mapData))
 	resp := recorder.Result()
 	suite.Equal(404, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("Error 404: Not Found.", string(body))
@@ -356,7 +355,7 @@ func (suite *ResponseTestSuite) TestRender() {
 	suite.Nil(response.Render(http.StatusNotFound, "error.txt", structData))
 	resp = recorder.Result()
 	suite.Equal(404, resp.StatusCode)
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("Error 404: Not Found.", string(body))
@@ -387,7 +386,7 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 	suite.Nil(response.RenderHTML(http.StatusNotFound, "error.html", mapData))
 	resp := recorder.Result()
 	suite.Equal(404, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
@@ -406,7 +405,7 @@ func (suite *ResponseTestSuite) TestRenderHTML() {
 	suite.Nil(response.RenderHTML(http.StatusNotFound, "error.html", structData))
 	resp = recorder.Result()
 	suite.Equal(404, resp.StatusCode)
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
 	suite.Equal("<html>\n    <head></head>\n    <body>\n        <p>Error 404: Not Found.</p>\n    </body>\n</html>", string(body))
@@ -574,7 +573,7 @@ func (suite *ResponseTestSuite) TestErrorOnHijacked() {
 	defer res.Body.Close()
 	suite.Equal(http.StatusInternalServerError, resp.status)
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	suite.Nil(err)
 	suite.Empty(body)
 }
@@ -629,7 +628,7 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	suite.True(testWr.closed)
 
 	resp := writer.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Equal("hello world", string(body))
 
@@ -647,7 +646,7 @@ func (suite *ResponseTestSuite) TestChainedWriter() {
 	suite.True(response.wroteHeader)
 	suite.False(response.empty)
 	resp = writer.Result()
-	body, _ = ioutil.ReadAll(resp.Body)
+	body, _ = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Equal("hello world", string(body))
 }

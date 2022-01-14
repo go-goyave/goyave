@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -19,13 +18,13 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/util/fsutil"
 
 	"github.com/stretchr/testify/assert"
 	testify "github.com/stretchr/testify/suite"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/lang"
 )
 
 // ITestSuite is an extension of testify's Suite for
@@ -48,7 +47,7 @@ type ITestSuite interface {
 
 	GetBody(*http.Response) []byte
 	GetJSONBody(*http.Response, interface{}) error
-	CreateTestFiles(paths ...string) []filesystem.File
+	CreateTestFiles(paths ...string) []fsutil.File
 	WriteFile(*multipart.Writer, string, string, string)
 	WriteField(*multipart.Writer, string, string)
 	CreateTestRequest(*http.Request) *Request
@@ -236,7 +235,7 @@ func (s *TestSuite) Request(method, route string, headers map[string]string, bod
 // GetBody read the whole body of a response.
 // If read failed, test fails and return empty byte slice.
 func (s *TestSuite) GetBody(response *http.Response) []byte {
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		s.Fail("Couldn't read response body", err)
 	}
@@ -254,10 +253,10 @@ func (s *TestSuite) GetJSONBody(response *http.Response, data interface{}) error
 	return nil
 }
 
-// CreateTestFiles create a slice of "filesystem.File" from the given paths.
+// CreateTestFiles create a slice of "fsutil.File" from the given paths.
 // Files are passed to a temporary http request and parsed as Multipart form,
 // to reproduce the way files are obtained in real scenarios.
-func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
+func (s *TestSuite) CreateTestFiles(paths ...string) []fsutil.File {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, p := range paths {
@@ -273,7 +272,7 @@ func (s *TestSuite) CreateTestFiles(paths ...string) []filesystem.File {
 	if err := req.ParseMultipartForm(10 << 20); err != nil {
 		panic(err)
 	}
-	return filesystem.ParseMultipartFiles(req, "file")
+	return fsutil.ParseMultipartFiles(req, "file")
 }
 
 // WriteFile write a file to the given writer.
@@ -387,9 +386,9 @@ func setRootWorkingDirectory() {
 	sep := string(os.PathSeparator)
 	_, filename, _, _ := runtime.Caller(2)
 	directory := path.Dir(filename) + sep
-	for !filesystem.FileExists(directory + sep + "go.mod") {
+	for !fsutil.FileExists(directory + sep + "go.mod") {
 		directory += ".." + sep
-		if !filesystem.IsDirectory(directory) {
+		if !fsutil.IsDirectory(directory) {
 			panic("Couldn't find project's root directory.")
 		}
 	}

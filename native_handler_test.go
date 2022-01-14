@@ -2,7 +2,7 @@ package goyave
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -25,7 +25,7 @@ func (suite *NativeHandlerTestSuite) TestNativeHandler() {
 
 	handler(response, request)
 	result := recorder.Result()
-	body, err := ioutil.ReadAll(result.Body)
+	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +38,7 @@ func (suite *NativeHandlerTestSuite) TestNativeHandler() {
 func (suite *NativeHandlerTestSuite) TestNativeHandlerBody() {
 
 	handler := NativeHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		res, err := ioutil.ReadAll(r.Body)
+		res, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -65,7 +65,7 @@ func (suite *NativeHandlerTestSuite) TestNativeHandlerBody() {
 func (suite *NativeHandlerTestSuite) TestNativeHandlerBodyJSON() {
 
 	handler := NativeHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		res, err := ioutil.ReadAll(r.Body)
+		res, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -105,7 +105,7 @@ func (suite *NativeHandlerTestSuite) TestNativeMiddleware() {
 	handlerExecuted := false
 	handler := func(response *Response, r *Request) {
 		result := recorder.Result()
-		body, err := ioutil.ReadAll(result.Body)
+		body, err := io.ReadAll(result.Body)
 		if err != nil {
 			panic(err)
 		}

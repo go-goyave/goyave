@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/util/httputil"
 )
 
 type gzipWriter struct {
@@ -81,7 +81,7 @@ func GzipLevel(level int) goyave.Middleware {
 }
 
 func acceptsGzip(request *goyave.Request) bool {
-	encodings := helper.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
+	encodings := httputil.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
 	for _, h := range encodings {
 		if h.Value == "gzip" {
 			return true

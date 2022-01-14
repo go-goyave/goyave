@@ -3,7 +3,7 @@ package goyave
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/util/fsutil"
 
-	_ "goyave.dev/goyave/v3/database/dialect/mysql"
+	_ "goyave.dev/goyave/v4/database/dialect/mysql"
 )
 
 type GoyaveTestSuite struct {
@@ -67,6 +67,38 @@ func (suite *GoyaveTestSuite) TestGetAddress() {
 	config.Set("server.httpsPort", 1236)
 	suite.Equal("http://127.0.0.1:1235", getAddress("http"))
 	suite.Equal("https://127.0.0.1:1236", getAddress("https"))
+
+	// Clear cached protocol value
+	// Should be loaded if not already
+	protocol = ""
+	suite.Equal(getAddress("http"), BaseURL())
+}
+
+func (suite *GoyaveTestSuite) TestProxyBaseURL() {
+	suite.loadConfig()
+
+	suite.Equal(BaseURL(), ProxyBaseURL())
+	config.Set("server.proxy.host", "127.0.0.1")
+	config.Set("server.proxy.port", 1235)
+	suite.Equal("http://127.0.0.1:1235", ProxyBaseURL())
+	config.Set("server.proxy.protocol", "https")
+	suite.Equal("https://127.0.0.1:1235", ProxyBaseURL())
+
+	config.Set("server.proxy.protocol", "http")
+	config.Set("server.proxy.host", "test.system-glitch.me")
+	suite.Equal("http://test.system-glitch.me:1235", ProxyBaseURL())
+	config.Set("server.proxy.protocol", "https")
+	suite.Equal("https://test.system-glitch.me:1235", ProxyBaseURL())
+
+	config.Set("server.proxy.protocol", "http")
+	config.Set("server.proxy.port", 80)
+	suite.Equal("http://test.system-glitch.me", ProxyBaseURL())
+
+	config.Set("server.proxy.protocol", "https")
+	config.Set("server.proxy.port", 443)
+	suite.Equal("https://test.system-glitch.me", ProxyBaseURL())
+	config.Set("server.proxy.base", "/baseurl")
+	suite.Equal("https://test.system-glitch.me/baseurl", ProxyBaseURL())
 }
 
 func (suite *GoyaveTestSuite) TestStartStopServer() {
@@ -130,7 +162,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		if resp != nil {
 			suite.Equal(308, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello\">Permanent Redirect</a>.\n\n", string(body))
@@ -146,7 +178,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		if resp != nil {
 			suite.Equal(308, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("<a href=\"https://127.0.0.1:1236/hello?param=1\">Permanent Redirect</a>.\n\n", string(body))
@@ -162,7 +194,7 @@ func (suite *GoyaveTestSuite) TestTLSServer() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
@@ -229,11 +261,11 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 			resp.Body.Close()
 		}
 
-		err = ioutil.WriteFile("resources/template/test-static-serve.txt", []byte("test-content"), 0644)
+		err = os.WriteFile("resources/template/test-static-serve.txt", []byte("test-content"), 0644)
 		if err != nil {
 			panic(err)
 		}
-		defer filesystem.Delete("resources/template/test-static-serve.txt")
+		defer fsutil.Delete("resources/template/test-static-serve.txt")
 		resp, err = netClient.Get("http://127.0.0.1:1235/resources/template/test-static-serve.txt")
 		suite.Nil(err)
 		if err != nil {
@@ -243,7 +275,7 @@ func (suite *GoyaveTestSuite) TestStaticServing() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("test-content", string(body))
@@ -361,7 +393,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))
@@ -401,7 +433,7 @@ func (suite *GoyaveTestSuite) TestMaintenanceMode() {
 		if resp != nil {
 			suite.Equal(200, resp.StatusCode)
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			suite.Nil(err)
 			suite.Equal("Hi!", string(body))

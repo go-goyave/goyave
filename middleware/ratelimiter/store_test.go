@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v4"
 )
 
 func TestNewLimiter(t *testing.T) {

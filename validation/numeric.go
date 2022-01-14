@@ -5,28 +5,27 @@ import (
 	"strconv"
 	"strings"
 
-	"goyave.dev/goyave/v3/helper"
+	"goyave.dev/goyave/v4/util/typeutil"
 )
 
-func validateNumeric(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	rv := reflect.ValueOf(value)
+func validateNumeric(ctx *Context) bool {
+	rv := reflect.ValueOf(ctx.Value)
 	kind := rv.Kind().String()
-	fieldName, _, parent, _ := GetFieldFromName(field, form)
 	switch {
 	case strings.HasPrefix(kind, "float"):
 		return true
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
-		floatVal, err := helper.ToFloat64(value)
+		floatVal, err := typeutil.ToFloat64(ctx.Value)
 		ok := err == nil
 		if ok {
-			parent[fieldName] = floatVal
+			ctx.Value = floatVal
 		}
 		return ok
 	case kind == "string":
-		floatVal, err := strconv.ParseFloat(value.(string), 64)
+		floatVal, err := strconv.ParseFloat(ctx.Value.(string), 64)
 		ok := err == nil
 		if ok {
-			parent[fieldName] = floatVal
+			ctx.Value = floatVal
 		}
 		return ok
 	default:
@@ -34,33 +33,32 @@ func validateNumeric(field string, value interface{}, parameters []string, form 
 	}
 }
 
-func validateInteger(field string, value interface{}, parameters []string, form map[string]interface{}) bool {
-	rv := reflect.ValueOf(value)
+func validateInteger(ctx *Context) bool {
+	rv := reflect.ValueOf(ctx.Value)
 	kind := rv.Kind().String()
-	fieldName, _, parent, _ := GetFieldFromName(field, form)
 	switch {
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr":
 		return true
 	case strings.HasPrefix(kind, "float"):
 		if kind == "float64" {
-			val, _ := value.(float64)
+			val, _ := ctx.Value.(float64)
 			if val-float64(int(val)) > 0 {
 				return false
 			}
-			parent[fieldName] = int(val)
+			ctx.Value = int(val)
 			return true
 		}
 
-		val, _ := value.(float32)
+		val, _ := ctx.Value.(float32)
 		if val-float32(int(val)) > 0 {
 			return false
 		}
-		parent[fieldName] = int(val)
+		ctx.Value = int(val)
 		return true
 	case kind == "string":
-		intVal, err := strconv.Atoi(value.(string))
+		intVal, err := strconv.Atoi(ctx.Value.(string))
 		if err == nil {
-			parent[fieldName] = intVal
+			ctx.Value = intVal
 		}
 		return err == nil
 	default:

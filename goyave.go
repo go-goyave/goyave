@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/lang"
 )
 
 var (
@@ -23,9 +23,9 @@ var (
 	router             *Router
 	maintenanceHandler http.Handler
 	sigChannel         chan os.Signal
-	tlsStopChannel     chan struct{} = make(chan struct{}, 1)
-	stopChannel        chan struct{} = make(chan struct{}, 1)
-	hookChannel        chan struct{} = make(chan struct{}, 1)
+	tlsStopChannel     = make(chan struct{}, 1)
+	stopChannel        = make(chan struct{}, 1)
+	hookChannel        = make(chan struct{}, 1)
 
 	// Critical config entries (cached for better performance)
 	protocol        string
@@ -34,23 +34,23 @@ var (
 
 	startupHooks       []func()
 	shutdownHooks      []func()
-	ready              bool = false
-	maintenanceEnabled bool = false
-	mutex                   = &sync.RWMutex{}
+	ready              = false
+	maintenanceEnabled = false
+	mutex              = &sync.RWMutex{}
 	once               sync.Once
 
 	// Logger the logger for default output
 	// Writes to stdout by default.
-	Logger *log.Logger = log.New(os.Stdout, "", log.LstdFlags)
+	Logger = log.New(os.Stdout, "", log.LstdFlags)
 
 	// AccessLogger the logger for access. This logger
 	// is used by the logging middleware.
 	// Writes to stdout by default.
-	AccessLogger *log.Logger = log.New(os.Stdout, "", 0)
+	AccessLogger = log.New(os.Stdout, "", 0)
 
 	// ErrLogger the logger in which errors and stacktraces are written.
 	// Writes to stderr by default.
-	ErrLogger *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
+	ErrLogger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
 const (
@@ -118,7 +118,7 @@ func ClearShutdownHooks() {
 // Start starts the web server.
 // The routeRegistrer parameter is a function aimed at registering all your routes and middleware.
 //  import (
-//      "goyave.dev/goyave/v3"
+//      "goyave.dev/goyave/v4"
 //      "github.com/username/projectname/route"
 //  )
 //
@@ -263,15 +263,13 @@ func getHost(protocol string) string {
 
 func getAddress(protocol string) string {
 	var shouldShowPort bool
-	var port string
+	var port int
 	if protocol == "https" {
-		p := config.GetInt("server.httpsPort")
-		port = strconv.Itoa(p)
-		shouldShowPort = p != 443
+		port = config.GetInt("server.httpsPort")
+		shouldShowPort = port != 443
 	} else {
-		p := config.GetInt("server.port")
-		port = strconv.Itoa(p)
-		shouldShowPort = p != 80
+		port = config.GetInt("server.port")
+		shouldShowPort = port != 80
 	}
 	host := config.GetString("server.domain")
 	if len(host) == 0 {
@@ -282,7 +280,7 @@ func getAddress(protocol string) string {
 	}
 
 	if shouldShowPort {
-		host += ":" + port
+		host += ":" + strconv.Itoa(port)
 	}
 
 	return protocol + "://" + host
@@ -290,7 +288,34 @@ func getAddress(protocol string) string {
 
 // BaseURL returns the base URL of your application.
 func BaseURL() string {
-	return getAddress(config.GetString("server.protocol"))
+	if protocol == "" {
+		protocol = config.GetString("server.protocol")
+	}
+	return getAddress(protocol)
+}
+
+// ProxyBaseURL returns the base URL of your application based on the "server.proxy" configuration.
+// This is useful when you want to generate an URL when your application is served behind a reverse proxy.
+// If "server.proxy.host" configuration is not set, returns the same value as "BaseURL()".
+func ProxyBaseURL() string {
+	if !config.Has("server.proxy.host") {
+		return BaseURL()
+	}
+
+	var shouldShowPort bool
+	proto := config.GetString("server.proxy.protocol")
+	port := config.GetInt("server.proxy.port")
+	if proto == "https" {
+		shouldShowPort = port != 443
+	} else {
+		shouldShowPort = port != 80
+	}
+	host := config.GetString("server.proxy.host")
+	if shouldShowPort {
+		host += ":" + strconv.Itoa(port)
+	}
+
+	return proto + "://" + host + config.GetString("server.proxy.base")
 }
 
 func startTLSRedirectServer() {

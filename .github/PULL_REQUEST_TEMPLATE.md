@@ -2,7 +2,7 @@
 
 Make a clear and detailed description of your changes, with the added benefits.
 
-If your pull request is functional (new utilities, helpers or middleware for example), **include some usage examples**.
+If your pull request is functional (new utilities or middleware for example), **include some usage examples**.
 
 ### Possible drawbacks
 

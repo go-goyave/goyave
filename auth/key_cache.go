@@ -3,8 +3,8 @@ package auth
 import (
 	"io/ioutil"
 
-	"github.com/dgrijalva/jwt-go"
-	"goyave.dev/goyave/v3/config"
+	"github.com/golang-jwt/jwt"
+	"goyave.dev/goyave/v4/config"
 )
 
 var (

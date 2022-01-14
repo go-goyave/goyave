@@ -125,7 +125,6 @@ var enUS language = language{
 			"same.array":                       "The :field values and the :other must match.",
 			"different":                        "The :field and the :other must be different.",
 			"different.array":                  "The :field values and the :other must be different.",
-			"confirmed":                        "The :field confirmation doesn't match.",
 			"file":                             "The :field must be a file.",
 			"mime":                             "The :field must be a file of type: :values.",
 			"image":                            "The :field must be an image.",
@@ -148,6 +147,10 @@ var enUS language = language{
 			"date_equals.array":                "The :field values must be dates equal to :date.",
 			"date_between":                     "The :field must be a date between :date and :max_date.",
 			"date_between.array":               "The :field must be dates between :date and :max_date.",
+			"before_now":                       "The :field must be a date in the past.",
+			"before_now.array":                 "The :field must be dates in the past.",
+			"after_now":                        "The :field must be a date in the future.",
+			"after_now.array":                  "The :field must be dates in the future.",
 			"object":                           "The :field must be an object.",
 			"object.array":                     "The :field values must be objects.",
 			"unique":                           "The :field has already been taken.",
@@ -161,4 +164,27 @@ var enUS language = language{
 			},
 		},
 	},
+}
+
+// SetDefaultLine set the language line identified by the given key in the
+// default "en-US" language.
+// Values set this way can be overridden by language files.
+func SetDefaultLine(key, line string) {
+	enUS.lines[key] = line
+}
+
+// SetDefaultValidationRule set the validation error message  for the rule identified by
+// the given key in the default "en-US" language.
+// Values set this way can be overridden by language files.
+func SetDefaultValidationRule(key, line string) {
+	enUS.validation.rules[key] = line
+}
+
+// SetDefaultFieldName set the field name used in validation error message placeholders
+// for the given field in the default "en-US" language.
+// Values set this way can be overridden by language files.
+func SetDefaultFieldName(field, name string) {
+	attr := enUS.validation.fields[field]
+	attr.Name = name
+	enUS.validation.fields[field] = attr
 }

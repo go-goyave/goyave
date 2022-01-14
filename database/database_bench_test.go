@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"gorm.io/driver/mysql"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4/config"
 )
 
 func setupDatabaseBench(b *testing.B) {

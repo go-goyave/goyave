@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/lang"
 )
 
 func init() {
@@ -45,11 +45,11 @@ func registerKeyConfigEntry(name string) {
 // the `auth.jwt.expiry` config entry.
 //
 // The generated token will contain the following claims:
-// - `userid`: has the value of the `id` parameter
+// - `sub`: has the value of the `id` parameter
 // - `nbf`: "Not before", the current timestamp is used
 // - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
 func GenerateToken(username interface{}) (string, error) {
-	return GenerateTokenWithClaims(jwt.MapClaims{"userid": username}, jwt.SigningMethodHS256)
+	return GenerateTokenWithClaims(jwt.MapClaims{"sub": username}, jwt.SigningMethodHS256)
 }
 
 // GenerateTokenWithClaims generates a new JWT with custom claims.
@@ -108,7 +108,7 @@ type JWTAuthenticator struct {
 	SigningMethod jwt.SigningMethod
 
 	// ClaimName the name of the claim used to retrieve the user.
-	// Defaults to "userid".
+	// Defaults to "sub".
 	ClaimName string
 
 	// Optional defines if the authenticator allows requests that
@@ -147,7 +147,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user interface{
 			column := FindColumns(user, "username")[0]
 			claimName := a.ClaimName
 			if claimName == "" {
-				claimName = "userid"
+				claimName = "sub"
 			}
 			result := database.GetConnection().Where(column.Name+" = ?", claims[claimName]).First(user)
 

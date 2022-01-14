@@ -3,7 +3,7 @@ package middleware
 import (
 	"testing"
 
-	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v4"
 )
 
 type TrimMiddlewareTestSuite struct {

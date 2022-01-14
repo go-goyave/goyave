@@ -1,13 +1,12 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"goyave.dev/goyave/v3/helper/filesystem"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 type ConfigTestSuite struct {
@@ -46,11 +45,11 @@ func (suite *ConfigTestSuite) TestReadConfigFile() {
 	suite.False(ok)
 
 	// Error
-	err = ioutil.WriteFile("test-forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
+	err = os.WriteFile("test-forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete("test-forbidden.json")
+	defer fsutil.Delete("test-forbidden.json")
 	obj, err = readConfigFile("test-forbidden.json")
 
 	suite.NotNil(err)
@@ -315,11 +314,11 @@ func (suite *ConfigTestSuite) TestLoad() {
 
 	// readConfigFile error
 	Clear()
-	err = ioutil.WriteFile("config.forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
+	err = os.WriteFile("config.forbidden.json", []byte("{\"app\":\"test\"}"), 0111)
 	if err != nil {
 		panic(err)
 	}
-	defer filesystem.Delete("config.forbidden.json")
+	defer fsutil.Delete("config.forbidden.json")
 	if e := os.Setenv("GOYAVE_ENV", "forbidden"); e != nil {
 		panic(e)
 	}

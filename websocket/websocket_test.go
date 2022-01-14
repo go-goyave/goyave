@@ -11,8 +11,8 @@ import (
 	"time"
 
 	ws "github.com/gorilla/websocket"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
 )
 
 type WebsocketTestSuite struct {

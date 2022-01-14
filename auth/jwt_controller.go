@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3"
-	"goyave.dev/goyave/v3/database"
-	"goyave.dev/goyave/v3/lang"
-	"goyave.dev/goyave/v3/validation"
+	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/validation"
 )
 
 // TokenFunc is the function used by JWTController to generate tokens
@@ -50,7 +50,7 @@ func NewJWTController(model interface{}) *JWTController {
 		if signingMethod == nil {
 			signingMethod = jwt.SigningMethodHS256
 		}
-		return GenerateTokenWithClaims(jwt.MapClaims{"userid": r.String(controller.UsernameField)}, signingMethod)
+		return GenerateTokenWithClaims(jwt.MapClaims{"sub": r.String(controller.UsernameField)}, signingMethod)
 	}
 	return controller
 }
@@ -107,13 +107,13 @@ func JWTRoutes(router *goyave.Router, model interface{}) *goyave.Router {
 	jwtRouter := router.Subrouter("/auth")
 	jwtRouter.Route("POST", "/login", NewJWTController(model).Login).Validate(&validation.Rules{
 		Fields: validation.FieldMap{
-			"username": {
+			"username": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},
 				},
 			},
-			"password": {
+			"password": &validation.Field{
 				Rules: []*validation.Rule{
 					{Name: "required"},
 					{Name: "string"},

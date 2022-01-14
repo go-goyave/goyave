@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v3/config"
+	"goyave.dev/goyave/v4/config"
 )
 
 type PaginatorTestSuite struct {
@@ -54,7 +54,7 @@ func (suite *PaginatorTestSuite) TestPaginator() {
 	paginator := NewPaginator(db, 1, 10, &results)
 	suite.Equal(1, paginator.CurrentPage)
 	suite.Equal(10, paginator.PageSize)
-	suite.Equal(db, paginator.db)
+	suite.Equal(db, paginator.DB)
 	res := paginator.Find()
 	suite.Nil(res.Error)
 	if res.Error == nil {
@@ -139,7 +139,7 @@ func (suite *PaginatorTestSuite) TestCountError() {
 	db := GetConnection().Table("not a table")
 	paginator := NewPaginator(db, 1, 10, []interface{}{})
 	suite.Panics(func() {
-		paginator.updatePageInfo()
+		paginator.UpdatePageInfo()
 	})
 }
 

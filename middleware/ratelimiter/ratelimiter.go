@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v4"
 )
 
 // Config for setting configuration for the limiter middleware

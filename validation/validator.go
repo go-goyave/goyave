@@ -5,9 +5,19 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
-	"goyave.dev/goyave/v3/helper"
-	"goyave.dev/goyave/v3/lang"
+	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/util/sliceutil"
+	"goyave.dev/goyave/v4/util/walk"
+)
+
+const (
+	// CurrentElement special key for field name in composite rule sets.
+	// Use it if you want to apply rules to the current object element.
+	// You cannot apply rules on the root element, these rules will only
+	// apply if the rule set is used with composition.
+	CurrentElement = ""
 )
 
 // Ruler adapter interface for method dispatching between RuleSet and Rules
@@ -17,12 +27,27 @@ type Ruler interface {
 	AsRules() *Rules
 }
 
+// Context validation context for RuleFunc.
+// Contains all the information needed for validation rules.
+type Context struct {
+	Data   map[string]interface{}
+	Extra  map[string]interface{}
+	Value  interface{}
+	Parent interface{}
+	Field  *Field
+	Rule   *Rule
+	Now    time.Time
+
+	// The name of the field under validation
+	Name string
+}
+
 // RuleFunc function defining a validation rule.
 // Passing rules should return true, false otherwise.
 //
 // Rules can modifiy the validated value if needed.
 // For example, the "numeric" rule converts the data to float64 if it's a string.
-type RuleFunc func(string, interface{}, []string, map[string]interface{}) bool
+type RuleFunc func(*Context) bool
 
 // RuleDefinition is the definition of a rule, containing the information
 // related to the behavior executed on validation-time.
@@ -56,8 +81,41 @@ type RuleDefinition struct {
 	ComparesFields bool
 }
 
+// RuleSetApplier types implementing this interface define their behavior
+// when they're applied to a RuleSet. This enables rule sets composition.
+type RuleSetApplier interface {
+	apply(set RuleSet, name string)
+}
+
+// FieldMapApplier types implementing this interface define their behavior
+// when they're applied to a FieldMap. This enables verbose syntax
+// rule sets composition.
+type FieldMapApplier interface {
+	apply(fieldMap FieldMap, name string)
+}
+
+// List of rules string representation.
+// e.g.: `validation.List{"required", "min:10"}`
+type List []string
+
+func (l List) apply(set RuleSet, name string) {
+	set[name] = l
+}
+
+// StructList of rules struct representation.
+// e.g.:
+//  validation.StructList{
+//  	{Name: "required"},
+//  	{Name: "min", Params: []string{"3"}},
+//  }
+type StructList []*Rule
+
+func (l StructList) apply(set RuleSet, name string) {
+	set[name] = l
+}
+
 // RuleSet is a request rules definition. Each entry is a field in the request.
-type RuleSet map[string][]string
+type RuleSet map[string]RuleSetApplier
 
 var _ Ruler = (RuleSet)(nil) // implements Ruler
 
@@ -69,21 +127,49 @@ func (r RuleSet) AsRules() *Rules {
 // Parse converts the more convenient RuleSet validation rules syntax to
 // a Rules map.
 func (r RuleSet) parse() *Rules {
+	r.processComposition()
 	rules := &Rules{
 		Fields: make(FieldMap, len(r)),
 	}
-	for k, r := range r {
-		field := &Field{
-			Rules: make([]*Rule, 0, len(r)),
+	for k, fieldRules := range r {
+		var parsedRules []*Rule
+		switch fr := fieldRules.(type) {
+		case List:
+			parsedRules = make([]*Rule, 0, len(fr))
+			for _, v := range fr {
+				parsedRules = append(parsedRules, parseRule(v))
+			}
+		case StructList:
+			parsedRules = make([]*Rule, 0, len(fr))
+			for _, v := range fr {
+				cpy := &Rule{Name: v.Name, Params: []string{}}
+				cpy.Params = append(cpy.Params, v.Params...)
+				parsedRules = append(parsedRules, cpy)
+			}
 		}
-		for _, v := range r {
-			field.Rules = append(field.Rules, parseRule(v))
-		}
-		rules.Fields[k] = field
+		rules.Fields[k] = &Field{Rules: parsedRules}
 	}
 	rules.Check()
-	rules.sortKeys()
 	return rules
+}
+
+func (r RuleSet) processComposition() {
+	for name, field := range r {
+		field.apply(r, name)
+	}
+	delete(r, CurrentElement)
+}
+
+func (r RuleSet) apply(set RuleSet, name string) {
+	for k, rules := range r {
+		if k != CurrentElement {
+			rules.apply(set, name+"."+k)
+		}
+	}
+	rules, ok := r[CurrentElement]
+	if ok {
+		rules.apply(set, name)
+	}
 }
 
 // Rule is a component of rule sets for route validation. Each validated fields
@@ -92,9 +178,8 @@ func (r RuleSet) parse() *Rules {
 // This inludes the rule name (referring to a RuleDefinition), the parameters
 // and the array dimension for array validation.
 type Rule struct {
-	Name           string
-	Params         []string
-	ArrayDimension uint8
+	Name   string
+	Params []string
 }
 
 // IsType returns true if the rule definition is a type rule.
@@ -123,62 +208,9 @@ func (r *Rule) IsTypeDependent() bool {
 	return def.IsTypeDependent
 }
 
-// Field is a component of route validation. A Field is a value in
-// a Rules map, the key being the name of the field.
-type Field struct {
-	Rules      []*Rule
-	isArray    bool
-	isRequired bool
-	isNullable bool
-}
-
-// IsRequired check if a field has the "required" rule
-func (f *Field) IsRequired() bool {
-	return f.isRequired
-}
-
-// IsNullable check if a field has the "nullable" rule
-func (f *Field) IsNullable() bool {
-	return f.isNullable
-}
-
-// IsArray check if a field has the "array" rule
-func (f *Field) IsArray() bool {
-	return f.isArray
-}
-
-// Check if rules meet the minimum parameters requirement and update
-// the isRequired, isNullable and isArray fields.
-func (f *Field) Check() {
-	for _, rule := range f.Rules {
-		switch rule.Name {
-		case "confirmed", "file", "mime", "image", "extension", "count",
-			"count_min", "count_max", "count_between":
-			if rule.ArrayDimension != 0 {
-				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name))
-			}
-		case "required":
-			f.isRequired = true
-		case "nullable":
-			f.isNullable = true
-			continue
-		case "array":
-			f.isArray = true
-		}
-
-		def, exists := validationRules[rule.Name]
-		if !exists {
-			panic(fmt.Sprintf("Rule \"%s\" doesn't exist", rule.Name))
-		}
-		if len(rule.Params) < def.RequiredParameters {
-			panic(fmt.Sprintf("Rule \"%s\" requires %d parameter(s)", rule.Name, def.RequiredParameters))
-		}
-	}
-}
-
 // FieldMap is an alias to shorten verbose validation rules declaration.
 // Maps a field name (key) with a Field struct (value).
-type FieldMap map[string]*Field
+type FieldMap map[string]FieldMapApplier
 
 // Rules is a component of route validation and maps a
 // field name (key) with a Field struct (value).
@@ -193,9 +225,6 @@ var _ Ruler = (*Rules)(nil) // implements Ruler
 // AsRules performs the checking and returns the same Rules instance.
 func (r *Rules) AsRules() *Rules {
 	r.Check()
-	if r.sortedKeys == nil {
-		r.sortKeys()
-	}
 	return r
 }
 
@@ -203,12 +232,56 @@ func (r *Rules) AsRules() *Rules {
 // any of the rules doesn't refer to an existing RuleDefinition, doesn't
 // meet the parameters requirement, or if the rule cannot be used in array validation
 // while ArrayDimension is not equal to 0.
+// Also processes composition. After calling this function, you can safely assume all
+// `Fields` elements are of type `*Field`.
 func (r *Rules) Check() {
 	if !r.checked {
-		for _, field := range r.Fields {
+		r.processComposition()
+		r.sortKeys()
+		for _, path := range r.sortedKeys {
+			field := r.Fields[path].(*Field)
+			p, err := walk.Parse(path)
+			if err != nil {
+				panic(err)
+			}
+			field.Path = p
 			field.Check()
+			if strings.HasSuffix(path, "[]") {
+				// This field is an element of an array, find it and assign it to f.Elements
+				parent, ok := r.Fields[path[:len(path)-2]]
+				if ok {
+					parent.(*Field).Elements = field
+					field.Path = &walk.Path{
+						Type: walk.PathTypeArray,
+						Next: &walk.Path{
+							Type: walk.PathTypeElement,
+						},
+					}
+					delete(r.Fields, path)
+				}
+			}
 		}
+		r.sortKeys()
 		r.checked = true
+	}
+}
+
+func (r *Rules) processComposition() {
+	for name, field := range r.Fields {
+		field.apply(r.Fields, name)
+	}
+	delete(r.Fields, CurrentElement)
+}
+
+func (r *Rules) apply(fieldMap FieldMap, name string) {
+	for k, f := range r.Fields {
+		if k != CurrentElement {
+			f.apply(fieldMap, name+"."+k)
+		}
+	}
+	fields, ok := r.Fields[CurrentElement]
+	if ok {
+		fields.apply(fieldMap, name)
 	}
 }
 
@@ -216,24 +289,31 @@ func (r *Rules) sortKeys() {
 	r.sortedKeys = make([]string, 0, len(r.Fields))
 
 	for k := range r.Fields {
-		r.sortedKeys = append(r.sortedKeys, k)
+		if k != CurrentElement {
+			r.sortedKeys = append(r.sortedKeys, k)
+		}
 	}
 
 	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
 		fieldName1 := r.sortedKeys[i]
-		field2 := r.Fields[r.sortedKeys[j]]
+		field2 := r.Fields[r.sortedKeys[j]].(*Field)
 		for _, r := range field2.Rules {
 			def, ok := validationRules[r.Name]
-			if ok && def.ComparesFields && helper.ContainsStr(r.Params, fieldName1) {
+			if ok && def.ComparesFields && sliceutil.ContainsStr(r.Params, fieldName1) {
 				return true
 			}
 		}
 		return false
 	})
+	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
+		count1 := strings.Count(r.sortedKeys[i], "[]")
+		count2 := strings.Count(r.sortedKeys[j], "[]")
+		if count1 == count2 {
+			return false
+		}
+		return count1 > count2
+	})
 }
-
-// Errors is a map of validation errors with the field name as a key.
-type Errors map[string][]string
 
 var validationRules map[string]*RuleDefinition
 
@@ -275,7 +355,6 @@ func init() {
 		"bool":               {validateBool, 0, true, false, false},
 		"same":               {validateSame, 1, false, false, true},
 		"different":          {validateDifferent, 1, false, false, true},
-		"confirmed":          {validateConfirmed, 0, false, false, false},
 		"file":               {validateFile, 0, false, false, false},
 		"mime":               {validateMIME, 1, false, false, false},
 		"image":              {validateImage, 0, false, false, false},
@@ -291,6 +370,8 @@ func init() {
 		"after_equal":        {validateAfterEqual, 1, false, false, true},
 		"date_equals":        {validateDateEquals, 1, false, false, true},
 		"date_between":       {validateDateBetween, 2, false, false, true},
+		"before_now":         {validateDateBeforeNow, 0, false, false, false},
+		"after_now":          {validateDateAfterNow, 0, false, false, false},
 		"object":             {validateObject, 0, true, false, false},
 	}
 }
@@ -310,7 +391,7 @@ func AddRule(name string, rule *RuleDefinition) {
 }
 
 // Validate the given data with the given rule set.
-// If all validation rules pass, returns an empty "validation.Errors".
+// If all validation rules pass, returns nil.
 // Third parameter tells the function if the data comes from a JSON request.
 // Last parameter sets the language of the validation error messages.
 func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language string) Errors {
@@ -321,113 +402,158 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 		} else {
 			malformedMessage = lang.Get(language, "malformed-request")
 		}
-		return map[string][]string{"error": {malformedMessage}}
+		return Errors{"[data]": &FieldErrors{Errors: []string{malformedMessage}}}
 	}
 
-	return validate(data, isJSON, rules.AsRules(), language)
+	errsBag := validate(data, isJSON, rules.AsRules(), language)
+	if len(errsBag) == 0 {
+		return nil
+	}
+	return errsBag
 }
 
 func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {
 	errors := Errors{}
+	now := time.Now()
 
 	for _, fieldName := range rules.sortedKeys {
-		field := rules.Fields[fieldName]
-		name, fieldVal, parent, _ := GetFieldFromName(fieldName, data)
-		if !field.IsNullable() && fieldVal == nil {
-			delete(parent, fieldName)
+		field := rules.Fields[fieldName].(*Field)
+		validateField(fieldName, field, isJSON, data, data, nil, now, language, errors)
+	}
+	return errors
+}
+
+func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, parentPath *walk.Path, now time.Time, language string, errors Errors) {
+	field.Path.Walk(walkData, func(c walk.Context) {
+		parentObject, parentIsObject := c.Parent.(map[string]interface{})
+		if parentIsObject && !field.IsNullable() && c.Value == nil {
+			delete(parentObject, c.Name)
 		}
 
-		if !field.IsRequired() && !validateRequired(fieldName, fieldVal, nil, data) {
-			continue
+		if shouldConvertSingleValueArray(fieldName, isJSON) && c.Found == walk.Found {
+			c.Value = convertSingleValueArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
+			parentObject[c.Name] = c.Value
 		}
 
-		convertArray(isJSON, name, field, parent) // Convert single value arrays in url-encoded requests
+		if isAbsent(field, c, data) {
+			return
+		}
 
+		if field.Elements != nil {
+			// This is an array, recursively validate it so it can be converted to correct type
+			if _, ok := c.Value.([]interface{}); !ok {
+				if newValue, ok := makeGenericSlice(c.Value); ok {
+					replaceValue(c.Value, c)
+					c.Value = newValue
+				}
+			}
+
+			path := c.Path
+			if parentPath != nil {
+				clone := parentPath.Clone()
+				tail := clone.Tail()
+				tail.Type = walk.PathTypeArray
+				tail.Index = &c.Index
+				tail.Next = path.Next
+				path = clone
+			}
+			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, path, now, language, errors)
+		}
+
+		value := c.Value
 		for _, rule := range field.Rules {
-			fieldVal = parent[name]
 			if rule.Name == "nullable" {
-				if fieldVal == nil {
+				if value == nil {
 					break
 				}
 				continue
 			}
 
-			if rule.ArrayDimension > 0 {
-				if ok, errorValue := validateRuleInArray(rule, fieldName, rule.ArrayDimension, data); !ok {
-					errors[fieldName] = append(
-						errors[fieldName],
-						processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, errorValue, language), language),
-					)
-				}
-			} else if !validationRules[rule.Name].Function(fieldName, fieldVal, rule.Params, data) {
-				errors[fieldName] = append(
-					errors[fieldName],
-					processPlaceholders(fieldName, rule.Name, rule.Params, getMessage(field.Rules, rule, reflect.ValueOf(fieldVal), language), language),
-				)
+			ctx := &Context{
+				Data:   data,
+				Extra:  map[string]interface{}{},
+				Value:  value,
+				Parent: c.Parent,
+				Field:  field,
+				Rule:   rule,
+				Now:    now,
+				Name:   c.Name,
 			}
+			if !validationRules[rule.Name].Function(ctx) {
+				path := field.getErrorPath(parentPath, c)
+				message := processPlaceholders(fieldName, getMessage(field, rule, reflect.ValueOf(value), language), language, ctx)
+				errors.Add(path, message)
+				continue
+			}
+
+			value = ctx.Value
 		}
-	}
-	return errors
+		// Value may be modified (converting rule), replace it in the parent element
+		replaceValue(value, c)
+	})
 }
 
-func validateRuleInArray(rule *Rule, fieldName string, arrayDimension uint8, data map[string]interface{}) (bool, reflect.Value) {
-	if t := GetFieldType(data[fieldName]); t != "array" {
-		return false, reflect.ValueOf(data[fieldName])
+func isAbsent(field *Field, c walk.Context, data map[string]interface{}) bool {
+	if c.Found == walk.ParentNotFound {
+		return true
+	}
+	requiredCtx := &Context{
+		Data:   data,
+		Value:  c.Value,
+		Parent: c.Parent,
+		Field:  field,
+		Rule:   &Rule{Name: "required"},
+		Name:   c.Name,
+	}
+	return !field.IsRequired() && !validateRequired(requiredCtx)
+}
+
+func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
+	return !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
+}
+
+func replaceValue(value interface{}, c walk.Context) {
+	if c.Found != walk.Found {
+		return
 	}
 
-	converted := false
-	var convertedArr reflect.Value
-	list := reflect.ValueOf(data[fieldName])
+	if parentObject, ok := c.Parent.(map[string]interface{}); ok {
+		parentObject[c.Name] = value
+	} else {
+		// Parent is slice
+		reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
+	}
+}
+
+func makeGenericSlice(original interface{}) ([]interface{}, bool) {
+	list := reflect.ValueOf(original)
+	if list.Kind() != reflect.Slice {
+		return nil, false
+	}
 	length := list.Len()
+	newSlice := make([]interface{}, 0, length)
 	for i := 0; i < length; i++ {
-		v := list.Index(i)
-		value := v.Interface()
-		tmpData := map[string]interface{}{fieldName: value}
-		if arrayDimension > 1 {
-			ok, errorValue := validateRuleInArray(rule, fieldName, arrayDimension-1, tmpData)
-			if !ok {
-				return false, errorValue
-			}
-		} else if !validationRules[rule.Name].Function(fieldName, value, rule.Params, tmpData) {
-			return false, v
-		}
-
-		// Update original array if value has been modified.
-		if rule.Name == "array" {
-			if !converted { // Ensure field is a two dimensional array of the correct type
-				convertedArr = reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(tmpData[fieldName])), 0, length)
-				converted = true
-			}
-			convertedArr = reflect.Append(convertedArr, reflect.ValueOf(tmpData[fieldName]))
-		} else {
-			v.Set(reflect.ValueOf(tmpData[fieldName]))
-		}
+		newSlice = append(newSlice, list.Index(i).Interface())
 	}
-
-	if converted {
-		data[fieldName] = convertedArr.Interface()
-	}
-	return true, reflect.Value{}
+	return newSlice, true
 }
 
-func convertArray(isJSON bool, fieldName string, field *Field, data map[string]interface{}) {
-	if !isJSON {
-		val := data[fieldName]
-		rv := reflect.ValueOf(val)
-		kind := rv.Kind().String()
-		if field.IsArray() && kind != "slice" {
-			rt := reflect.TypeOf(val)
-			slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
-			slice = reflect.Append(slice, rv)
-			data[fieldName] = slice.Interface()
-		}
+func convertSingleValueArray(field *Field, value interface{}, data map[string]interface{}) interface{} {
+	rv := reflect.ValueOf(value)
+	kind := rv.Kind().String()
+	if field.IsArray() && kind != "slice" {
+		rt := reflect.TypeOf(value)
+		slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
+		slice = reflect.Append(slice, rv)
+		return slice.Interface()
 	}
+	return value
 }
 
-func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string) string {
+func getMessage(field *Field, rule *Rule, value reflect.Value, language string) string {
 	langEntry := "validation.rules." + rule.Name
 	if validationRules[rule.Name].IsTypeDependent {
-		expectedType := findTypeRule(rules, rule.ArrayDimension)
+		expectedType := findTypeRule(field.Rules)
 		if expectedType == "unsupported" {
 			langEntry += "." + getFieldType(value)
 		} else {
@@ -438,7 +564,8 @@ func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string)
 		}
 	}
 
-	if rule.ArrayDimension > 0 {
+	lastParent := field.Path.LastParent()
+	if lastParent != nil && lastParent.Type == walk.PathTypeArray {
 		langEntry += ".array"
 	}
 
@@ -446,11 +573,9 @@ func getMessage(rules []*Rule, rule *Rule, value reflect.Value, language string)
 }
 
 // findTypeRule find the expected type of a field for a given array dimension.
-func findTypeRule(rules []*Rule, arrayDimension uint8) string {
+func findTypeRule(rules []*Rule) string {
 	for _, rule := range rules {
-		if rule.ArrayDimension == arrayDimension-1 && rule.Name == "array" && len(rule.Params) > 0 {
-			return rule.Params[0]
-		} else if rule.ArrayDimension == arrayDimension && validationRules[rule.Name].IsType {
+		if validationRules[rule.Name].IsType {
 			return rule.Name
 		}
 	}
@@ -463,7 +588,7 @@ func findTypeRule(rules []*Rule, arrayDimension uint8) string {
 //  - "numeric" if the value is an int, uint or a float
 //  - "string" if the value is a string
 //  - "array" if the value is a slice
-//  - "file" if the value is a slice of "filesystem.File"
+//  - "file" if the value is a slice of "fsutil.File"
 //  - "unsupported" otherwise
 func GetFieldType(value interface{}) string {
 	return getFieldType(reflect.ValueOf(value))
@@ -477,7 +602,7 @@ func getFieldType(value reflect.Value) string {
 	case kind == "string":
 		return "string"
 	case kind == "slice":
-		if value.Type().String() == "[]filesystem.File" {
+		if value.Type().String() == "[]fsutil.File" {
 			return "file"
 		}
 		return "array"
@@ -517,7 +642,6 @@ func GetFieldFromName(name string, data map[string]interface{}) (string, interfa
 func parseRule(rule string) *Rule {
 	indexName := strings.Index(rule, ":")
 	params := []string{}
-	arrayDimensions := uint8(0)
 	var ruleName string
 	if indexName == -1 {
 		if strings.Count(rule, ",") > 0 {
@@ -529,12 +653,5 @@ func parseRule(rule string) *Rule {
 		params = strings.Split(rule[indexName+1:], ",")
 	}
 
-	if ruleName[0] == '>' {
-		for ruleName[0] == '>' {
-			ruleName = ruleName[1:]
-			arrayDimensions++
-		}
-	}
-
-	return &Rule{ruleName, params, arrayDimensions}
+	return &Rule{ruleName, params}
 }

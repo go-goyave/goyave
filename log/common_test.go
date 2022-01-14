@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v4"
 )
 
 type CommonTestSuite struct {

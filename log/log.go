@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"goyave.dev/goyave/v3"
+	"goyave.dev/goyave/v4"
 )
 
 // Formatter is a function that builds a log entry.

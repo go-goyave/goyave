@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"os"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/utils/tests"
 )
 
 type User struct {
@@ -50,7 +52,7 @@ func (suite *DatabaseTestSuite) TestGetConnection() {
 	db = Conn()
 	suite.NotNil(db)
 	suite.Equal(dbConnection, db)
-	Close()
+	suite.Nil(Close())
 }
 
 func (suite *DatabaseTestSuite) TestLogLevel() {
@@ -172,6 +174,46 @@ func (suite *DatabaseTestSuite) TestRegisterDialect() {
 	t, ok = dialects["newdialect"]
 	suite.True(ok)
 	suite.Equal(template, t.template)
+}
+
+type DummyDialector struct {
+	tests.DummyDialector
+	DriverName string
+}
+
+func (d DummyDialector) Initialize(db *gorm.DB) error {
+	pool, err := sql.Open(d.DriverName, "")
+	if err != nil {
+		return err
+	}
+	db.ConnPool = pool
+	return d.DummyDialector.Initialize(db)
+}
+
+func (suite *DatabaseTestSuite) TestSetConnection() {
+	Close()
+	defer Close()
+	initializerOK := false
+	AddInitializer(func(db *gorm.DB) {
+		initializerOK = true
+	})
+
+	// No connection yet
+	db, err := SetConnection(DummyDialector{DriverName: "mysql"})
+	suite.Nil(err)
+	suite.Same(db, dbConnection)
+	suite.True(initializerOK)
+
+	// Connection replaced
+	db2, err2 := SetConnection(DummyDialector{DriverName: "mysql"})
+	suite.Nil(err2)
+	suite.Same(db2, dbConnection)
+	suite.NotSame(db, db2)
+
+	// Open error
+	db3, err3 := SetConnection(DummyDialector{DriverName: "not a driver"})
+	suite.NotNil(err3)
+	suite.Nil(db3)
 }
 
 func (suite *DatabaseTestSuite) TearDownAllSuite() {

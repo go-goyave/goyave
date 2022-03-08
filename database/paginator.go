@@ -14,8 +14,10 @@ type Paginator struct {
 
 	Records interface{} `json:"records"`
 
-	rawQuery      string
-	rawCountQuery string
+	rawQuery          string
+	rawQueryVars      []interface{}
+	rawCountQuery     string
+	rawCountQueryVars []interface{}
 
 	MaxPage     int64 `json:"maxPage"`
 	Total       int64 `json:"total"`
@@ -58,9 +60,11 @@ func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator 
 // The Paginator will execute the raw queries instead of automatically creating them.
 // The raw query should not contain the "LIMIT" and "OFFSET" clauses, they will be added automatically.
 // The count query should return a single number (`COUNT(*)` for example).
-func (p *Paginator) Raw(query string, countQuery string) *Paginator {
+func (p *Paginator) Raw(query string, vars []interface{}, countQuery string, countVars []interface{}) *Paginator {
 	p.rawQuery = query
+	p.rawQueryVars = vars
 	p.rawCountQuery = countQuery
+	p.rawCountQueryVars = vars
 	return p
 }
 
@@ -70,7 +74,7 @@ func (p *Paginator) UpdatePageInfo() {
 	db := p.DB.Session(&gorm.Session{})
 	var err error
 	if p.rawCountQuery != "" {
-		err = db.Raw(p.rawCountQuery).Scan(&count).Error
+		err = db.Raw(p.rawCountQuery, p.rawCountQueryVars...).Scan(&count).Error
 	} else {
 		err = db.Model(p.Records).Count(&count).Error
 	}
@@ -100,7 +104,7 @@ func (p *Paginator) Find() *gorm.DB {
 
 func (p *Paginator) rawStatement() *gorm.DB {
 	offset := (p.CurrentPage - 1) * p.PageSize
-	db := p.DB.Raw(p.rawQuery)
+	db := p.DB.Raw(p.rawQuery, p.rawQueryVars...)
 	db.Statement.SQL.WriteString(" ")
 	clause.Limit{Limit: p.PageSize, Offset: offset}.Build(db.Statement)
 	return db

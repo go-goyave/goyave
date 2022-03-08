@@ -153,7 +153,8 @@ func (suite *PaginatorTestSuite) TestPaginatorRawQuery() {
 	}()
 
 	results := []User{}
-	paginator := NewPaginator(db, 1, 5, &results).Raw("SELECT * FROM users WHERE id > 0", "SELECT COUNT(*) FROM users WHERE id > 0")
+	vars := []interface{}{0}
+	paginator := NewPaginator(db, 1, 5, &results).Raw("SELECT * FROM users WHERE id > ?", vars, "SELECT COUNT(*) FROM users WHERE id > ?", vars)
 	res := paginator.Find()
 	if suite.Nil(res.Error) {
 		suite.Len(results, 5)

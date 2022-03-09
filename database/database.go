@@ -64,18 +64,43 @@ func Conn() *gorm.DB {
 	return GetConnection()
 }
 
-// Close the database connections if they exist.
-func Close() error {
-	var err error
+// SetConnection manually replace the automatic DB connection.
+// If a connection already exists, closes it before discarding it.
+// This can be used to create a mock DB in tests. Using this function
+// is not recommended outside of tests. Prefer using a custom dialect.
+func SetConnection(dialector gorm.Dialector) (*gorm.DB, error) {
 	mu.Lock()
 	defer mu.Unlock()
+	if dbConnection != nil {
+		if err := close(); err != nil {
+			return nil, err
+		}
+	}
+	db, err := gorm.Open(dialector, newConfig())
+	if err != nil {
+		return nil, err
+	}
+
+	initSQLDB(db)
+	dbConnection = db
+	return dbConnection, nil
+}
+
+func close() error {
+	var err error
 	if dbConnection != nil {
 		db, _ := dbConnection.DB()
 		err = db.Close()
 		dbConnection = nil
 	}
-
 	return err
+}
+
+// Close the database connections if they exist.
+func Close() error {
+	mu.Lock()
+	defer mu.Unlock()
+	return close()
 }
 
 // AddInitializer adds a database connection initializer function.
@@ -154,18 +179,27 @@ func newConnection() *gorm.DB {
 		panic("Cannot create DB connection. Database is set to \"none\" in the config")
 	}
 
-	logLevel := logger.Silent
-	if config.GetBool("app.debug") {
-		logLevel = logger.Info
-	}
-
 	dialect, ok := dialects[driver]
 	if !ok {
 		panic(fmt.Sprintf("DB Connection %q not supported, forgotten import?", driver))
 	}
 
 	dsn := dialect.buildDSN()
-	db, err := gorm.Open(dialect.initializer(dsn), &gorm.Config{
+	db, err := gorm.Open(dialect.initializer(dsn), newConfig())
+	if err != nil {
+		panic(err)
+	}
+
+	initSQLDB(db)
+	return db
+}
+
+func newConfig() *gorm.Config {
+	logLevel := logger.Silent
+	if config.GetBool("app.debug") {
+		logLevel = logger.Info
+	}
+	return &gorm.Config{
 		Logger:                                   logger.Default.LogMode(logLevel),
 		SkipDefaultTransaction:                   config.GetBool("database.config.skipDefaultTransaction"),
 		DryRun:                                   config.GetBool("database.config.dryRun"),
@@ -174,23 +208,21 @@ func newConnection() *gorm.DB {
 		AllowGlobalUpdate:                        config.GetBool("database.config.allowGlobalUpdate"),
 		DisableAutomaticPing:                     config.GetBool("database.config.disableAutomaticPing"),
 		DisableForeignKeyConstraintWhenMigrating: config.GetBool("database.config.disableForeignKeyConstraintWhenMigrating"),
-	})
-	if err != nil {
-		panic(err)
 	}
+}
 
-	sql, err := db.DB()
+func initSQLDB(db *gorm.DB) {
+	sqlDB, err := db.DB()
 	if err != nil {
 		panic(err)
 	}
-	sql.SetMaxOpenConns(config.GetInt("database.maxOpenConnections"))
-	sql.SetMaxIdleConns(config.GetInt("database.maxIdleConnections"))
-	sql.SetConnMaxLifetime(time.Duration(config.GetInt("database.maxLifetime")) * time.Second)
+	sqlDB.SetMaxOpenConns(config.GetInt("database.maxOpenConnections"))
+	sqlDB.SetMaxIdleConns(config.GetInt("database.maxIdleConnections"))
+	sqlDB.SetConnMaxLifetime(time.Duration(config.GetInt("database.maxLifetime")) * time.Second)
 
 	for _, initializer := range initializers {
 		initializer(db)
 	}
-	return db
 }
 
 func (d dialect) buildDSN() string {

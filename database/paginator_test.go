@@ -127,11 +127,39 @@ func (suite *PaginatorTestSuite) TestPaginatorWithWhereClause() {
 	db = db.Where("name = ?", "1")
 	paginator := NewPaginator(db, 1, 10, &results)
 	res := paginator.Find()
-	suite.Nil(res.Error)
-	if res.Error == nil {
+	if suite.Nil(res.Error) {
 		suite.Len(results, 1)
 		suite.Equal(int64(1), paginator.Total)
 		suite.Equal(int64(1), paginator.MaxPage)
+	}
+}
+
+func (suite *PaginatorTestSuite) TestPaginatorRawQuery() {
+	// Generate records
+	const userCount = 10
+	users := make([]User, 0, userCount)
+	for i := 0; i < userCount; i++ {
+		users = append(users, User{strconv.Itoa(i), "johndoe@example.org", 0})
+	}
+
+	db := GetConnection()
+	if err := db.Create(users).Error; err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
+			panic(err)
+		}
+	}()
+
+	results := []User{}
+	vars := []interface{}{0}
+	paginator := NewPaginator(db, 1, 5, &results).Raw("SELECT * FROM users WHERE id > ?", vars, "SELECT COUNT(*) FROM users WHERE id > ?", vars)
+	res := paginator.Find()
+	if suite.Nil(res.Error) {
+		suite.Len(results, 5)
+		suite.Equal(int64(10), paginator.Total)
+		suite.Equal(int64(2), paginator.MaxPage)
 	}
 }
 

@@ -37,7 +37,6 @@ func getDates(ctx *Context) ([]time.Time, error) {
 				continue
 			}
 
-			// TODO v4: avoid reparsing the date every single time
 			t, err := parseDate(param, "2006-01-02T15:04:05")
 			if err != nil {
 				panic(err)

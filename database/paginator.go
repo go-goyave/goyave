@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Paginator structure containing pagination information and result records.
@@ -11,11 +12,17 @@ import (
 type Paginator struct {
 	DB *gorm.DB `json:"-"`
 
-	Records     interface{} `json:"records"`
-	MaxPage     int64       `json:"maxPage"`
-	Total       int64       `json:"total"`
-	PageSize    int         `json:"pageSize"`
-	CurrentPage int         `json:"currentPage"`
+	Records interface{} `json:"records"`
+
+	rawQuery          string
+	rawQueryVars      []interface{}
+	rawCountQuery     string
+	rawCountQueryVars []interface{}
+
+	MaxPage     int64 `json:"maxPage"`
+	Total       int64 `json:"total"`
+	PageSize    int   `json:"pageSize"`
+	CurrentPage int   `json:"currentPage"`
 
 	loadedPageInfo bool
 }
@@ -49,10 +56,29 @@ func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator 
 	}
 }
 
+// Raw set a raw SQL query and count query.
+// The Paginator will execute the raw queries instead of automatically creating them.
+// The raw query should not contain the "LIMIT" and "OFFSET" clauses, they will be added automatically.
+// The count query should return a single number (`COUNT(*)` for example).
+func (p *Paginator) Raw(query string, vars []interface{}, countQuery string, countVars []interface{}) *Paginator {
+	p.rawQuery = query
+	p.rawQueryVars = vars
+	p.rawCountQuery = countQuery
+	p.rawCountQueryVars = vars
+	return p
+}
+
 // UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
 func (p *Paginator) UpdatePageInfo() {
 	count := int64(0)
-	if err := p.DB.Session(&gorm.Session{}).Model(p.Records).Count(&count).Error; err != nil {
+	db := p.DB.Session(&gorm.Session{})
+	var err error
+	if p.rawCountQuery != "" {
+		err = db.Raw(p.rawCountQuery, p.rawCountQueryVars...).Scan(&count).Error
+	} else {
+		err = db.Model(p.Records).Count(&count).Error
+	}
+	if err != nil {
 		panic(err)
 	}
 	p.Total = count
@@ -70,5 +96,16 @@ func (p *Paginator) Find() *gorm.DB {
 	if !p.loadedPageInfo {
 		p.UpdatePageInfo()
 	}
+	if p.rawQuery != "" {
+		return p.rawStatement().Scan(p.Records)
+	}
 	return p.DB.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records)
+}
+
+func (p *Paginator) rawStatement() *gorm.DB {
+	offset := (p.CurrentPage - 1) * p.PageSize
+	db := p.DB.Raw(p.rawQuery, p.rawQueryVars...)
+	db.Statement.SQL.WriteString(" ")
+	clause.Limit{Limit: p.PageSize, Offset: offset}.Build(db.Statement)
+	return db
 }

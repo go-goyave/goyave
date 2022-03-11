@@ -72,6 +72,13 @@ func (p *Paginator) Raw(query string, vars []interface{}, countQuery string, cou
 func (p *Paginator) UpdatePageInfo() {
 	count := int64(0)
 	db := p.DB.Session(&gorm.Session{})
+	prevPreloads := db.Statement.Preloads
+	if len(prevPreloads) > 0 {
+		db.Statement.Preloads = map[string][]interface{}{}
+		defer func() {
+			db.Statement.Preloads = prevPreloads
+		}()
+	}
 	var err error
 	if p.rawCountQuery != "" {
 		err = db.Raw(p.rawCountQuery, p.rawCountQueryVars...).Scan(&count).Error

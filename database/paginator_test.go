@@ -163,6 +163,35 @@ func (suite *PaginatorTestSuite) TestPaginatorRawQuery() {
 	}
 }
 
+func (suite *PaginatorTestSuite) TestPaginatorRemovePreloads() {
+	// Preloads should be removed for the count query.
+	// Generate records
+	const userCount = 10
+	users := make([]User, 0, userCount)
+	for i := 0; i < userCount; i++ {
+		users = append(users, User{strconv.Itoa(i), "johndoe@example.org", 0})
+	}
+
+	db := GetConnection()
+	if err := db.Create(users).Error; err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
+			panic(err)
+		}
+	}()
+
+	results := []User{}
+	db = db.Preload("relation")
+	paginator := NewPaginator(db, 1, 5, &results)
+	suite.NotPanics(func() {
+		paginator.UpdatePageInfo()
+		suite.Equal(int64(10), paginator.Total)
+		suite.Equal(int64(2), paginator.MaxPage)
+	})
+}
+
 func (suite *PaginatorTestSuite) TestCountError() {
 	db := GetConnection().Table("not a table")
 	paginator := NewPaginator(db, 1, 10, []interface{}{})

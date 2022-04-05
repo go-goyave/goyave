@@ -325,10 +325,14 @@ func (s *TestSuite) getHTTPClient() *http.Client {
 }
 
 // ClearDatabase delete all records in all tables.
-// This function only clears the tables of registered models.
+// This function only clears the tables of registered models, ignoring
+// models implementing `database.IView`.
 func (s *TestSuite) ClearDatabase() {
 	db := database.GetConnection()
 	for _, m := range database.GetRegisteredModels() {
+		if view, ok := m.(database.IView); ok && view.IsView() {
+			continue
+		}
 		tx := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(m)
 		if tx.Error != nil {
 			panic(tx.Error)

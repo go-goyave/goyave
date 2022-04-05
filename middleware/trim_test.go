@@ -13,9 +13,10 @@ type TrimMiddlewareTestSuite struct {
 func (suite *TrimMiddlewareTestSuite) TestTrimMiddleware() {
 	request := suite.CreateTestRequest(nil)
 	request.Data = map[string]interface{}{"text": " \t  trimmed\n  \t"}
-	suite.Middleware(Trim, request, func(response *goyave.Response, r *goyave.Request) {
+	resp := suite.Middleware(Trim, request, func(response *goyave.Response, r *goyave.Request) {
 		suite.Equal("trimmed", r.String("text"))
 	})
+	resp.Body.Close()
 }
 
 func TestTrimMiddlewareTestSuite(t *testing.T) {

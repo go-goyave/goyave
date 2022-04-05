@@ -80,6 +80,7 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticateViaConfig() {
 	result := suite.Middleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 		suite.Fail("Auth middleware passed")
 	})
+	result.Body.Close()
 	suite.Equal(401, result.StatusCode)
 
 	request = suite.CreateTestRequest(httptest.NewRequest("GET", "/", nil))
@@ -89,6 +90,7 @@ func (suite *BasicAuthenticatorTestSuite) TestAuthenticateViaConfig() {
 		suite.Equal("admin", request.User.(*BasicUser).Name)
 		response.Status(200)
 	})
+	result.Body.Close()
 	suite.Equal(200, result.StatusCode)
 }
 

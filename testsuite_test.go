@@ -44,6 +44,12 @@ type TestModel struct {
 	ID   uint   `gorm:"primaryKey"`
 }
 
+type TestViewModel struct {
+	database.View
+	Name string `gorm:"type:varchar(100)"`
+	ID   uint   `gorm:"primaryKey"`
+}
+
 func genericHandler(message string) func(response *Response, request *Request) {
 	return func(response *Response, request *Request) {
 		response.String(http.StatusOK, message)
@@ -376,6 +382,26 @@ func (suite *CustomTestSuite) TestClearDatabase() {
 
 	db.Migrator().DropTable(&TestModel{})
 	config.Set("database.connection", "none")
+}
+
+func (suite *CustomTestSuite) TestClearDatabaseView() {
+	config.Set("database.connection", "mysql")
+	db := database.GetConnection()
+	db.AutoMigrate(&TestViewModel{})
+
+	for i := 0; i < 5; i++ {
+		db.Create(&TestViewModel{Name: fmt.Sprintf("Test %d", i)})
+	}
+	count := int64(0)
+	db.Model(&TestViewModel{}).Count(&count)
+	suite.Equal(int64(5), count)
+
+	database.RegisterModel(&TestViewModel{})
+	suite.ClearDatabase()
+	database.ClearRegisteredModels()
+
+	db.Model(&TestViewModel{}).Count(&count)
+	suite.Equal(int64(5), count)
 }
 
 func (suite *CustomTestSuite) TestClearDatabaseTables() {

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [1.16, 1.17]
+        go: [1.17, 1.18]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -32,7 +32,7 @@ jobs:
           sudo mysql -proot -e 'CREATE USER "goyave"@"%" IDENTIFIED BY "secret"'
           sudo mysql -proot -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
           go test -v -p 1 -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
-      - if: ${{ matrix.go == 1.17 }}
+      - if: ${{ matrix.go == 1.18 }}
         uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: coverage.txt
@@ -45,5 +45,5 @@ jobs:
       - name: Run lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.43
+          version: v1.45
           args: --timeout 5m

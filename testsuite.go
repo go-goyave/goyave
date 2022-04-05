@@ -358,9 +358,11 @@ func RunTest(t *testing.T, suite ITestSuite) bool {
 	if suite.Timeout() == 0 {
 		suite.SetTimeout(5 * time.Second)
 	}
-	oldEnv := os.Getenv("GOYAVE_ENV")
-	os.Setenv("GOYAVE_ENV", "test")
-	defer os.Setenv("GOYAVE_ENV", oldEnv)
+	_, ok := os.LookupEnv("GOYAVE_ENV")
+	if !ok {
+		os.Setenv("GOYAVE_ENV", "test")
+		defer os.Unsetenv("GOYAVE_ENV")
+	}
 	setRootWorkingDirectory()
 
 	if !config.IsLoaded() {

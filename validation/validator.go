@@ -552,7 +552,7 @@ func convertSingleValueArray(field *Field, value interface{}, data map[string]in
 
 func getMessage(field *Field, rule *Rule, value reflect.Value, language string) string {
 	langEntry := "validation.rules." + rule.Name
-	if validationRules[rule.Name].IsTypeDependent {
+	if rule.IsTypeDependent() {
 		expectedType := findTypeRule(field.Rules)
 		if expectedType == "unsupported" {
 			langEntry += "." + getFieldType(value)
@@ -575,7 +575,7 @@ func getMessage(field *Field, rule *Rule, value reflect.Value, language string) 
 // findTypeRule find the expected type of a field for a given array dimension.
 func findTypeRule(rules []*Rule) string {
 	for _, rule := range rules {
-		if validationRules[rule.Name].IsType {
+		if rule.IsType() {
 			return rule.Name
 		}
 	}

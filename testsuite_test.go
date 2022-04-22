@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/database"
 	"goyave.dev/goyave/v4/lang"
@@ -392,6 +393,11 @@ func (suite *CustomTestSuite) TestClearDatabaseView() {
 	for i := 0; i < 5; i++ {
 		db.Create(&TestViewModel{Name: fmt.Sprintf("Test %d", i)})
 	}
+	defer func() {
+		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&TestViewModel{}).Error; err != nil {
+			panic(err)
+		}
+	}()
 	count := int64(0)
 	db.Model(&TestViewModel{}).Count(&count)
 	suite.Equal(int64(5), count)

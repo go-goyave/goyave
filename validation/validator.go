@@ -208,6 +208,14 @@ func (r *Rule) IsTypeDependent() bool {
 	return def.IsTypeDependent
 }
 
+// PostValidationHook executed after the whole validation process is over, no matter
+// if the validation passes or not. The errors parameter is never nil (but can be empty).
+// A post validation hook can process additional checks on the data and alter the resulting "validation.Errors"
+// as needed.
+// These hooks always return a "validation.Errors", typically the same as the one they received as
+// a paramater, but it is possible to return an entirely different instance of "validation.Errors".
+type PostValidationHook func(data map[string]interface{}, errors Errors, now time.Time) Errors
+
 // FieldMap is an alias to shorten verbose validation rules declaration.
 // Maps a field name (key) with a Field struct (value).
 type FieldMap map[string]FieldMapApplier
@@ -215,9 +223,10 @@ type FieldMap map[string]FieldMapApplier
 // Rules is a component of route validation and maps a
 // field name (key) with a Field struct (value).
 type Rules struct {
-	Fields     FieldMap
-	sortedKeys []string
-	checked    bool
+	Fields              FieldMap
+	PostValidationHooks []PostValidationHook
+	sortedKeys          []string
+	checked             bool
 }
 
 var _ Ruler = (*Rules)(nil) // implements Ruler
@@ -419,6 +428,9 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName].(*Field)
 		validateField(fieldName, field, isJSON, data, data, nil, now, language, errors)
+	}
+	for _, hook := range rules.PostValidationHooks {
+		errors = hook(data, errors, now)
 	}
 	return errors
 }

@@ -3,6 +3,7 @@ package validation
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"goyave.dev/goyave/v4/lang"
@@ -1826,6 +1827,33 @@ func (suite *ValidatorTestSuite) TestValidateEmptyStringNotRequired() {
 
 	errors := Validate(data, rules, false, "en-US")
 	suite.NotNil(errors)
+}
+
+func (suite *ValidatorTestSuite) TestPostValidationHook() {
+	data := map[string]interface{}{"text": "Lailai"}
+	rules := RuleSet{
+		"text": List{"string"},
+	}.AsRules()
+
+	hook1Executed := false
+	hook2Executed := false
+	hook1 := func(d map[string]interface{}, errors Errors, now time.Time) Errors {
+		suite.Equal(data, d)
+		suite.NotNil(errors)
+		hook1Executed = true
+		return errors
+	}
+	hook2 := func(d map[string]interface{}, errors Errors, now time.Time) Errors {
+		hook2Executed = true
+		return errors
+	}
+
+	rules.PostValidationHooks = append(rules.PostValidationHooks, hook1, hook2)
+
+	errors := Validate(data, rules, false, "en-US")
+	suite.Nil(errors)
+	suite.True(hook1Executed)
+	suite.True(hook2Executed)
 }
 
 func TestValidatorTestSuite(t *testing.T) {

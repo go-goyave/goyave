@@ -215,9 +215,10 @@ type FieldMap map[string]FieldMapApplier
 // Rules is a component of route validation and maps a
 // field name (key) with a Field struct (value).
 type Rules struct {
-	Fields     FieldMap
-	sortedKeys []string
-	checked    bool
+	Fields              FieldMap
+	PostValidationHooks []func(data map[string]interface{}, errors Errors, now time.Time) Errors
+	sortedKeys          []string
+	checked             bool
 }
 
 var _ Ruler = (*Rules)(nil) // implements Ruler
@@ -419,6 +420,9 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName].(*Field)
 		validateField(fieldName, field, isJSON, data, data, nil, now, language, errors)
+	}
+	for _, hook := range rules.PostValidationHooks {
+		errors = hook(data, errors, now)
 	}
 	return errors
 }

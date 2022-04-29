@@ -9,12 +9,12 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/imdario/mergo v0.3.12
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
+	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	gorm.io/driver/mysql v1.3.3
-	gorm.io/driver/postgres v1.3.4
-	gorm.io/driver/sqlite v1.3.1
+	gorm.io/driver/postgres v1.3.5
+	gorm.io/driver/sqlite v1.3.2
 	gorm.io/driver/sqlserver v1.3.2
-	gorm.io/gorm v1.23.4
+	gorm.io/gorm v1.23.5
 )
 
 require (

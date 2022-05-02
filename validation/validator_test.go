@@ -1864,6 +1864,7 @@ func (suite *ValidatorTestSuite) TestValidateWithExtra() {
 			return true
 		},
 	}
+	defer delete(validationRules, "test_extra")
 
 	data := map[string]interface{}{"text": "Lailai"}
 	rules := RuleSet{

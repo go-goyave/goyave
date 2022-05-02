@@ -89,12 +89,22 @@ func TestRequestValidate(t *testing.T) {
 	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("string=hello%20world&number=42"))
 	rawRequest.Header.Set("Content-Type", "application/json")
 	request := createTestRequest(rawRequest)
+
+	validation.AddRule("test_extra_request", &validation.RuleDefinition{
+		Function: func(ctx *validation.Context) bool {
+			r, ok := ctx.Extra["request"].(*Request)
+			assert.True(t, ok)
+			assert.Equal(t, request, r)
+			return true
+		},
+	})
+
 	request.Data = map[string]interface{}{
 		"string": "hello world",
 		"number": 42,
 	}
 	request.Rules = validation.RuleSet{
-		"string": validation.List{"required", "string"},
+		"string": validation.List{"required", "string", "test_extra_request"},
 		"number": validation.List{"required", "numeric", "min:10"},
 	}.AsRules()
 	errors := request.validate()

@@ -277,6 +277,9 @@ func (r *Request) validate() validation.Errors {
 		return nil
 	}
 
+	extra := map[string]interface{}{
+		"request": r,
+	}
 	contentType := r.httpRequest.Header.Get("Content-Type")
-	return validation.Validate(r.Data, r.Rules, strings.HasPrefix(contentType, "application/json"), r.Lang)
+	return validation.ValidateWithExtra(r.Data, r.Rules, strings.HasPrefix(contentType, "application/json"), r.Lang, extra)
 }

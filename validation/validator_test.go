@@ -1856,6 +1856,25 @@ func (suite *ValidatorTestSuite) TestPostValidationHook() {
 	suite.True(hook2Executed)
 }
 
+func (suite *ValidatorTestSuite) TestValidateWithExtra() {
+	extraValue := ""
+	validationRules["test_extra"] = &RuleDefinition{
+		Function: func(ctx *Context) bool {
+			extraValue = ctx.Extra["hello"].(string)
+			return true
+		},
+	}
+	defer delete(validationRules, "test_extra")
+
+	data := map[string]interface{}{"text": "Lailai"}
+	rules := RuleSet{
+		"text": List{"string", "test_extra"},
+	}
+	errors := ValidateWithExtra(data, rules, false, "en-US", map[string]interface{}{"hello": "world"})
+	suite.Nil(errors)
+	suite.Equal("world", extraValue)
+}
+
 func TestValidatorTestSuite(t *testing.T) {
 	suite.Run(t, new(ValidatorTestSuite))
 }

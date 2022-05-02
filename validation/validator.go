@@ -404,6 +404,17 @@ func AddRule(name string, rule *RuleDefinition) {
 // Third parameter tells the function if the data comes from a JSON request.
 // Last parameter sets the language of the validation error messages.
 func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language string) Errors {
+	return ValidateWithExtra(data, rules, isJSON, language, map[string]interface{}{})
+}
+
+// ValidateWithExtra the given data with the given rule set.
+// If all validation rules pass, returns nil.
+// Third parameter tells the function if the data comes from a JSON request.
+// The fourth parameter sets the language of the validation error messages.
+// The last parameter is a map of extra information given to validation rules via `validation.Context.Extra`.
+// This map is copied for each validation rule. One copy of the extra map is therefore scoped to a single
+// validation rule function call and the resulting validation error message / placeholder.
+func ValidateWithExtra(data map[string]interface{}, rules Ruler, isJSON bool, language string, extra map[string]interface{}) Errors {
 	if data == nil {
 		var malformedMessage string
 		if isJSON {
@@ -414,20 +425,20 @@ func Validate(data map[string]interface{}, rules Ruler, isJSON bool, language st
 		return Errors{"[data]": &FieldErrors{Errors: []string{malformedMessage}}}
 	}
 
-	errsBag := validate(data, isJSON, rules.AsRules(), language)
+	errsBag := validate(data, isJSON, rules.AsRules(), language, extra)
 	if len(errsBag) == 0 {
 		return nil
 	}
 	return errsBag
 }
 
-func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string) Errors {
+func validate(data map[string]interface{}, isJSON bool, rules *Rules, language string, extra map[string]interface{}) Errors {
 	errors := Errors{}
 	now := time.Now()
 
 	for _, fieldName := range rules.sortedKeys {
 		field := rules.Fields[fieldName].(*Field)
-		validateField(fieldName, field, isJSON, data, data, nil, now, language, errors)
+		validateField(fieldName, field, isJSON, data, data, nil, now, language, extra, errors)
 	}
 	for _, hook := range rules.PostValidationHooks {
 		errors = hook(data, errors, now)
@@ -435,7 +446,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 	return errors
 }
 
-func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, parentPath *walk.Path, now time.Time, language string, errors Errors) {
+func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, parentPath *walk.Path, now time.Time, language string, extra map[string]interface{}, errors Errors) {
 	field.Path.Walk(walkData, func(c walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
 		if parentIsObject && !field.IsNullable() && c.Value == nil {
@@ -469,7 +480,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 				tail.Next = path.Next
 				path = clone
 			}
-			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, path, now, language, errors)
+			validateField(fieldName+"[]", field.Elements, isJSON, data, c.Value, path, now, language, extra, errors)
 		}
 
 		value := c.Value
@@ -483,7 +494,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 
 			ctx := &Context{
 				Data:   data,
-				Extra:  map[string]interface{}{},
+				Extra:  cloneMap(extra),
 				Value:  value,
 				Parent: c.Parent,
 				Field:  field,
@@ -503,6 +514,14 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 		// Value may be modified (converting rule), replace it in the parent element
 		replaceValue(value, c)
 	})
+}
+
+func cloneMap(m map[string]interface{}) map[string]interface{} {
+	clone := make(map[string]interface{}, len(m))
+	for k, v := range m {
+		clone[k] = v
+	}
+	return clone
 }
 
 func isAbsent(field *Field, c walk.Context, data map[string]interface{}) bool {

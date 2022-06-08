@@ -203,7 +203,7 @@ func (suite *PaginatorTestSuite) TestCountError() {
 func (suite *PaginatorTestSuite) TearDownAllSuite() {
 	defer os.Setenv("GOYAVE_ENV", suite.previousEnv)
 	db := GetConnection()
-	if err := db.Migrator().DropTable(&User{}).Error; err != nil {
+	if err := db.Migrator().DropTable(&User{}); err != nil {
 		panic(err)
 	}
 }

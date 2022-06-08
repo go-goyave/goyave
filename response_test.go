@@ -125,11 +125,29 @@ func (suite *ResponseTestSuite) TestResponseError() {
 	body, err = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	suite.Nil(err)
-	suite.Empty("", string(body))
+	suite.Empty(string(body))
 	suite.True(response.empty)
 	suite.Equal("random error", response.GetError())
 	suite.Equal(500, response.status)
 	config.Set("app.debug", true)
+
+	// Take user-defined status code in debug mode
+	rawRequest = httptest.NewRequest("GET", "/test-route", strings.NewReader("body"))
+	response = newResponse(httptest.NewRecorder(), rawRequest)
+	response.Status(503)
+	response.Error("random error")
+	resp = response.responseWriter.(*httptest.ResponseRecorder).Result()
+
+	suite.Equal(503, response.GetStatus())
+
+	body, err = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"random error\"}\n", string(body))
+	suite.False(response.empty)
+	suite.Equal("random error", response.GetError())
+	suite.Equal(503, response.status)
+	suite.NotNil(response.err)
 }
 
 func (suite *ResponseTestSuite) TestIsEmpty() {

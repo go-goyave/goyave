@@ -171,6 +171,7 @@ func (s *TestSuite) RunServer(routeRegistrer func(*Router), procedure func()) {
 		s.True(sig)
 	}
 	ClearStartupHooks()
+	ClearShutdownHooks()
 	<-c2
 }
 

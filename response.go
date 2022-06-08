@@ -275,7 +275,8 @@ func (r *Response) Download(file string, fileName string) error {
 	return err
 }
 
-// Error print the error in the console and return it with an error code 500.
+// Error print the error in the console and return it with an error code 500 (or previously defined
+// status code using `response.Status()`).
 // If debugging is enabled in the config, the error is also written in the response
 // and the stacktrace is printed in the console.
 // If debugging is not enabled, only the status code is set, which means you can still
@@ -300,7 +301,11 @@ func (r *Response) error(err interface{}) error {
 			} else {
 				message = err
 			}
-			return r.JSON(http.StatusInternalServerError, map[string]interface{}{"error": message})
+			status := http.StatusInternalServerError
+			if r.status != 0 {
+				status = r.status
+			}
+			return r.JSON(status, map[string]interface{}{"error": message})
 		}
 	}
 

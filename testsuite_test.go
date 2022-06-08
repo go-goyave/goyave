@@ -95,6 +95,8 @@ func (suite *CustomTestSuite) TestCreateTestRequest() {
 }
 
 func (suite *CustomTestSuite) TestRunServer() {
+	RegisterStartupHook(func() {})
+	RegisterShutdownHook(func() {})
 	suite.RunServer(func(router *Router) {
 		router.Route("GET", "/hello", func(response *Response, request *Request) {
 			response.String(http.StatusOK, "Hi!")
@@ -114,9 +116,12 @@ func (suite *CustomTestSuite) TestRunServer() {
 		}
 	})
 	suite.Empty(startupHooks)
+	suite.Empty(shutdownHooks)
 }
 
 func (suite *CustomTestSuite) TestRunServerTimeout() {
+	RegisterStartupHook(func() {})
+	RegisterShutdownHook(func() {})
 	suite.SetTimeout(time.Second)
 	oldT := suite.T()
 	suite.SetT(new(testing.T))
@@ -127,9 +132,12 @@ func (suite *CustomTestSuite) TestRunServerTimeout() {
 	suite.SetTimeout(5 * time.Second)
 	suite.SetT(oldT)
 	suite.Empty(startupHooks)
+	suite.Empty(shutdownHooks)
 }
 
 func (suite *CustomTestSuite) TestRunServerError() {
+	RegisterStartupHook(func() {})
+	RegisterShutdownHook(func() {})
 	config.Clear()
 	oldT := suite.T()
 	suite.SetT(new(testing.T))
@@ -144,6 +152,7 @@ func (suite *CustomTestSuite) TestRunServerError() {
 		suite.Fail(err.Error())
 	}
 	suite.Empty(startupHooks)
+	suite.Empty(shutdownHooks)
 }
 
 func (suite *CustomTestSuite) TestMiddleware() {

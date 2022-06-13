@@ -594,4 +594,8 @@ func TestValidateSize(t *testing.T) {
 func TestValidateObject(t *testing.T) {
 	assert.False(t, validateObject(newTestContext("field", "123", []string{}, map[string]interface{}{})))
 	assert.True(t, validateObject(newTestContext("field", map[string]interface{}{"hello": "world"}, []string{}, map[string]interface{}{})))
+
+	// From a JSON string
+	assert.False(t, validateObject(newTestContext("field", "[1,2,3]", []string{}, map[string]interface{}{})))
+	assert.True(t, validateObject(newTestContext("field", `{"hello": "world"}`, []string{}, map[string]interface{}{})))
 }

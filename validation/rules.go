@@ -330,5 +330,10 @@ func validateSize(ctx *Context) bool {
 
 func validateObject(ctx *Context) bool {
 	_, ok := ctx.Value.(map[string]interface{})
+	if !ok {
+		if validateJSON(ctx) {
+			_, ok = ctx.Value.(map[string]interface{})
+		}
+	}
 	return ok
 }

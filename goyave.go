@@ -75,6 +75,10 @@ const (
 	// server.Start is called on an already running server
 	// or a stopped server
 	ExitStateError = 7
+
+	// ExitLanguageError the exit code returned when
+	// the language files could not be loaded
+	ExitLanguageError = 8
 )
 
 // Error wrapper for errors directely related to the server itself.

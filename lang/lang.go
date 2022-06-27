@@ -129,16 +129,18 @@ func load(lang string, path string) {
 	}
 }
 
-func readLangFile(path string, dest interface{}) {
+func readLangFile(path string, dest interface{}) (err error) {
 	if fsutil.FileExists(path) {
 		langFile, _ := os.Open(path)
-		defer langFile.Close()
+		defer func() {
+			if err == nil {
+				err = langFile.Close()
+			}
+		}()
 
-		errParse := json.NewDecoder(langFile).Decode(&dest)
-		if errParse != nil {
-			panic(errParse)
-		}
+		err = json.NewDecoder(langFile).Decode(&dest)
 	}
+	return err
 }
 
 func mergeLang(dst language, src language) {
@@ -271,7 +273,7 @@ func GetAvailableLanguages() []string {
 // If no variant is given (for example "en"), the first available variant will be used.
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
-func DetectLanguage(lang string) string {
+func DetectLanguage(lang string) string { // TODO how to do this? uses config
 	values := httputil.ParseMultiValuesHeader(lang)
 	for _, l := range values {
 		if l.Value == "*" { // Accept anything, so return default language

@@ -16,13 +16,14 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v4/lang"
 )
 
 // Server the central component of a Goyave application.
 type Server struct {
 	server *http.Server
 	config *config.Config
-	// Language files
+	Lang   *lang.Languages
 
 	router *Router
 	db     *gorm.DB
@@ -79,6 +80,12 @@ func NewWithConfig(cfg *config.Config) (*Server, error) {
 
 	errLogger := log.New(os.Stderr, "", log.LstdFlags)
 
+	languages := lang.New()
+	languages.Default = cfg.GetString("app.defaultLanguage")
+	if err := languages.LoadAllAvailableLanguages(); err != nil {
+		return nil, &Error{err, ExitLanguageError}
+	}
+
 	return &Server{
 		server: &http.Server{
 			Addr:         cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port")),
@@ -90,6 +97,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) {
 		},
 		config:        cfg,
 		db:            db,
+		Lang:          languages,
 		stopChannel:   make(chan struct{}, 1),
 		startupHooks:  []func(*Server){},
 		shutdownHooks: []func(*Server){},

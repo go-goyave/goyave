@@ -237,3 +237,13 @@ func (d dialect) buildDSN() string {
 
 	return connStr
 }
+
+func (d dialect) buildDSNV5(cfg *config.Config) string {
+	connStr := d.template
+	for k, v := range optionPlaceholders {
+		connStr = strings.Replace(connStr, k, cfg.GetString(v), 1)
+	}
+	connStr = strings.Replace(connStr, "{port}", strconv.Itoa(cfg.GetInt("database.port")), 1)
+
+	return connStr
+}

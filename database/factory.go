@@ -39,7 +39,7 @@ func (f *Factory) Override(override interface{}) *Factory {
 // meaning you can type-assert safely.
 //
 //	factory.Generate(5).([]*User)
-func (f *Factory) Generate(count int) interface{} {
+func (f *Factory) Generate(count int) interface{} { // TODO generics for factory
 	if count <= 0 {
 		return []interface{}{}
 	}
@@ -68,7 +68,7 @@ func (f *Factory) Generate(count int) interface{} {
 //
 //	factory.Save(5).([]*User)
 func (f *Factory) Save(count int) interface{} {
-	db := GetConnection()
+	db := GetConnection() // TODO don't use the global db instance (in NewFactory?)
 	records := f.Generate(count)
 
 	if err := db.Create(records).Error; err != nil {

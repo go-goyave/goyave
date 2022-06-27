@@ -65,17 +65,31 @@ const (
 	// ExitHTTPError the exit code returned when an error
 	// occurs in the HTTP server (port already in use for example)
 	ExitHTTPError = 5
+
+	// ExitDatabaseError the exit code returned when the
+	// connection to the database could not be established
+	// or if an auto-migration failed
+	ExitDatabaseError = 6
+
+	// ExitStateError the exit code returned when
+	// server.Start is called on an already running server
+	// or a stopped server
+	ExitStateError = 7
 )
 
 // Error wrapper for errors directely related to the server itself.
 // Contains an exit code and the original error.
 type Error struct {
-	Err      error
+	err      error
 	ExitCode int
 }
 
 func (e *Error) Error() string {
-	return e.Err.Error()
+	return e.err.Error()
+}
+
+func (e *Error) Unwrap() error {
+	return e.err
 }
 
 // IsReady returns true if the server has finished initializing and

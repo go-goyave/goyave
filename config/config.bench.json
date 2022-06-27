@@ -1,0 +1,57 @@
+{
+  "app": {
+    "name": "goyave",
+    "environment": "test",
+    "debug": false,
+    "defaultLanguage": "en-US"
+  },
+  "server": {
+    "maintenance": false,
+    "protocol": "http",
+    "domain": "",
+    "port": 1235,
+    "httpsPort": 1236,
+    "timeout": 10,
+    "maxUploadSize": 10
+  },
+  "database": {
+    "connection": "none",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "name": "goyave",
+    "username": "goyave",
+    "password": "secret",
+    "options": "charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local",
+    "maxOpenConnections": 20,
+    "maxIdleConnections": 20,
+    "maxLifetime": 300,
+    "autoMigrate": false,
+    "config": {
+      "skipDefaultTransaction": false,
+      "dryRun": false,
+      "prepareStmt": true,
+      "disableNestedTransaction": false,
+      "allowGlobalUpdate": false,
+      "disableAutomaticPing": false,
+      "disableForeignKeyConstraintWhenMigrating": false
+    }
+  },
+  "auth": {
+    "jwt": {
+      "expiry": 300.0,
+      "secret": "jwt-secret",
+      "rsa": {
+        "private": "resources/rsa/private.pem",
+        "public": "resources/rsa/public.pem"
+      },
+      "ecdsa": {
+        "private": "resources/ecdsa/private.pem",
+        "public": "resources/ecdsa/public.pem"
+      }
+    },
+    "basic": {
+      "username": "admin",
+      "password": "admin"
+    }
+  }
+}

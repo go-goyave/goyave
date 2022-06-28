@@ -22,7 +22,7 @@ type File struct {
 // Creates directories if needed.
 //
 // Returns the actual file name.
-func (file *File) Save(path string, name string) string {
+func (file *File) Save(path string, name string) string { // TODO handle io.FS
 	name = timestampFileName(name)
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		panic(err)

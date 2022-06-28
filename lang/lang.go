@@ -129,7 +129,7 @@ func load(lang string, path string) {
 	}
 }
 
-func readLangFile(path string, dest interface{}) (err error) {
+func readLangFile(path string, dest any) (err error) {
 	if fsutil.FileExists(path) {
 		langFile, _ := os.Open(path)
 		defer func() {

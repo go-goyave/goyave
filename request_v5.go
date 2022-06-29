@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-type RequestV5[T any] struct {
+type RequestV5 struct {
 	httpRequest *http.Request
-	Data        T // TODO separate data from query (two middleware: ValidateQuery, ValidateBody)
+	Data        any // TODO separate data from query (two middleware: ValidateQuery, ValidateBody)
 	Query       url.Values
 	Lang        string
 	cookies     []*http.Cookie
 }
 
-func newRequest[T any](httpRequest *http.Request) *RequestV5[T] {
-	return &RequestV5[T]{
+func newRequest(httpRequest *http.Request) *RequestV5 {
+	return &RequestV5{
 		httpRequest: httpRequest,
 		Query:       httpRequest.URL.Query(),
 		// Lang is set inside the language middleware
@@ -24,26 +24,26 @@ func newRequest[T any](httpRequest *http.Request) *RequestV5[T] {
 
 // Request return the raw http request.
 // Prefer using the "goyave.Request" accessors.
-func (r *RequestV5[T]) Request() *http.Request {
+func (r *RequestV5) Request() *http.Request {
 	return r.httpRequest
 }
 
 // Method specifies the HTTP method (GET, POST, PUT, etc.).
-func (r *RequestV5[T]) Method() string {
+func (r *RequestV5) Method() string {
 	return r.httpRequest.Method
 }
 
 // Protocol the protocol used by this request, "HTTP/1.1" for example.
-func (r *RequestV5[T]) Protocol() string {
+func (r *RequestV5) Protocol() string {
 	return r.httpRequest.Proto
 }
 
 // URL specifies the URL being requested.
-func (r *RequestV5[T]) URL() *url.URL {
+func (r *RequestV5) URL() *url.URL {
 	return r.httpRequest.URL
 }
 
-// Header contains the request header fields either received
+// RequestHeader contains the request header fields either received
 // by the server or to be sent by the client.
 // Header names are case-insensitive.
 //
@@ -62,24 +62,24 @@ func (r *RequestV5[T]) URL() *url.URL {
 //		"Accept-Language": {"en-us"},
 //		"Foo": {"Bar", "two"},
 //	}
-func (r *RequestV5[T]) Header() http.Header {
+func (r *RequestV5) RequestHeader() http.Header {
 	return r.httpRequest.Header
 }
 
 // ContentLength records the length of the associated content.
 // The value -1 indicates that the length is unknown.
-func (r *RequestV5[T]) ContentLength() int64 {
+func (r *RequestV5) ContentLength() int64 {
 	return r.httpRequest.ContentLength
 }
 
 // RemoteAddress allows to record the network address that
 // sent the request, usually for logging.
-func (r *RequestV5[T]) RemoteAddress() string {
+func (r *RequestV5) RemoteAddress() string {
 	return r.httpRequest.RemoteAddr
 }
 
 // Cookies returns the HTTP cookies sent with the request.
-func (r *RequestV5[T]) Cookies() []*http.Cookie {
+func (r *RequestV5) Cookies() []*http.Cookie {
 	if r.cookies == nil {
 		r.cookies = r.httpRequest.Cookies()
 	}
@@ -87,27 +87,27 @@ func (r *RequestV5[T]) Cookies() []*http.Cookie {
 }
 
 // Referrer returns the referring URL, if sent in the request.
-func (r *RequestV5[T]) Referrer() string {
+func (r *RequestV5) Referrer() string {
 	return r.httpRequest.Referer()
 }
 
 // UserAgent returns the client's User-Agent, if sent in the request.
-func (r *RequestV5[T]) UserAgent() string {
+func (r *RequestV5) UserAgent() string {
 	return r.httpRequest.UserAgent()
 }
 
 // BasicAuth returns the username and password provided in the request's
 // Authorization header, if the request uses HTTP Basic Authentication.
-func (r *RequestV5[T]) BasicAuth() (username, password string, ok bool) {
+func (r *RequestV5) BasicAuth() (username, password string, ok bool) {
 	return r.httpRequest.BasicAuth()
 }
 
 // BearerToken extract the auth token from the "Authorization" header.
 // Only takes tokens of type "Bearer".
 // Returns empty string if no token found or the header is invalid.
-func (r *RequestV5[T]) BearerToken() (string, bool) {
+func (r *RequestV5) BearerToken() (string, bool) {
 	const schema = "Bearer "
-	header := r.Header().Get("Authorization")
+	header := r.RequestHeader().Get("Authorization")
 	if !strings.HasPrefix(header, schema) {
 		return "", false
 	}

@@ -25,7 +25,7 @@ type Server struct {
 	config *config.Config
 	Lang   *lang.Languages
 
-	router *Router
+	router *RouterV5
 	db     *gorm.DB
 
 	// TODO use a logging library?
@@ -245,7 +245,7 @@ func (s *Server) closeDB() error {
 // Auto-migrations are run first if they are enabled in the configuration.
 //
 // Errors returned can be safely type-asserted to `*goyave.Error`.
-func (s *Server) Start(routeRegistrer func(*Server, *Router)) error { // Give the routeRegister in New ? (would be before automigrations :/ )
+func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error { // Give the routeRegister in New ? (would be before automigrations :/ )
 	state := atomic.LoadUint32(&s.state)
 	if state == 1 || state == 2 {
 		return &Error{
@@ -300,8 +300,8 @@ func (s *Server) Start(routeRegistrer func(*Server, *Router)) error { // Give th
 	return nil
 }
 
-func (s *Server) prepare(routeRegistrer func(*Server, *Router)) error { // TODO rename routeRegistrer to "initServer"?
-	s.router = NewRouter()
+func (s *Server) prepare(routeRegistrer func(*Server, *RouterV5)) error { // TODO rename routeRegistrer to "initServer"?
+	s.router = NewRouterV5(s)
 	routeRegistrer(s, s.router)
 	s.router.ClearRegexCache()
 	s.server.Handler = s.router

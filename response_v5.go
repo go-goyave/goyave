@@ -27,6 +27,18 @@ type ResponseV5 struct {
 	hijacked    bool
 }
 
+// newResponse create a new Response using the given http.ResponseWriter and raw request.
+func newResponseV5(writer http.ResponseWriter, rawRequest *http.Request) *ResponseV5 {
+	return &ResponseV5{
+		responseWriter: writer,
+		writer:         writer,
+		httpRequest:    rawRequest,
+		empty:          true,
+		status:         0,
+		wroteHeader:    false,
+	}
+}
+
 // --------------------------------------
 // PreWriter implementation
 

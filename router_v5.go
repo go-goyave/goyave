@@ -14,15 +14,15 @@ const (
 )
 
 var (
-	methodNotAllowedRouteV5 = newRouteV5(func(c *Context) {
-		c.Status(http.StatusMethodNotAllowed)
+	methodNotAllowedRouteV5 = newRouteV5(func(response *ResponseV5, request *RequestV5) {
+		response.Status(http.StatusMethodNotAllowed)
 	})
-	notFoundRouteV5 = newRouteV5(func(c *Context) {
-		c.Status(http.StatusNotFound)
+	notFoundRouteV5 = newRouteV5(func(response *ResponseV5, request *RequestV5) {
+		response.Status(http.StatusNotFound)
 	})
 )
 
-type HandlerV5 func(*Context)
+type HandlerV5 func(*ResponseV5, *RequestV5)
 
 type routeMatcherV5 interface {
 	match(req *http.Request, match *routeMatchV5) bool
@@ -52,7 +52,7 @@ func (rm *routeMatchV5) trimCurrentPath(fullMatch string) {
 type RouterV5 struct {
 	server         *Server
 	parent         *RouterV5
-	statusHandlers map[int]HandlerV5
+	statusHandlers map[int]StatusHandler
 	namedRoutes    map[string]*RouteV5
 	regexCache     map[string]*regexp.Regexp
 	Meta           map[string]any
@@ -82,7 +82,7 @@ func NewRouterV5(server *Server) *RouterV5 {
 		server:         server,
 		parent:         nil,
 		prefix:         "",
-		statusHandlers: make(map[int]HandlerV5, 41),
+		statusHandlers: make(map[int]StatusHandler, 41),
 		namedRoutes:    make(map[string]*RouteV5, 5),
 		middlewareHolderV5: middlewareHolderV5{
 			middleware: nil,
@@ -93,17 +93,17 @@ func NewRouterV5(server *Server) *RouterV5 {
 		regexCache: make(map[string]*regexp.Regexp, 5),
 		Meta:       make(map[string]any),
 	}
-	router.StatusHandler(PanicStatusHandlerV5, http.StatusInternalServerError)
-	router.StatusHandler(ValidationStatusHandlerV5, http.StatusBadRequest, http.StatusUnprocessableEntity)
+	router.StatusHandler(&PanicStatusHandlerV5{}, http.StatusInternalServerError)
+	router.StatusHandler(&ValidationStatusHandlerV5{}, http.StatusBadRequest, http.StatusUnprocessableEntity)
 	for i := 401; i <= 418; i++ {
-		router.StatusHandler(ErrorStatusHandlerV5, i)
+		router.StatusHandler(&ErrorStatusHandlerV5{}, i)
 	}
 	for i := 423; i <= 426; i++ {
-		router.StatusHandler(ErrorStatusHandlerV5, i)
+		router.StatusHandler(&ErrorStatusHandlerV5{}, i)
 	}
-	router.StatusHandler(ErrorStatusHandlerV5, 421, 428, 429, 431, 444, 451)
-	router.StatusHandler(ErrorStatusHandlerV5, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
-	router.GlobalMiddleware(recoveryMiddlewareV5, languageMiddlewareV5)
+	router.StatusHandler(&ErrorStatusHandlerV5{}, 421, 428, 429, 431, 444, 451)
+	router.StatusHandler(&ErrorStatusHandlerV5{}, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
+	router.GlobalMiddleware(&recoveryMiddlewareV5{}, &languageMiddlewareV5{})
 	return router
 }
 
@@ -155,7 +155,10 @@ func (r *RouterV5) RemoveMeta(key string) *RouterV5 {
 // These middleware are global to the main Router: they will also be executed for subrouters.
 // Global Middleware are always executed first.
 // Use global middleware for logging and rate limiting for example.
-func (r *RouterV5) GlobalMiddleware(middleware ...MiddlewareV5) *RouterV5 { // TODO middleware signature will be changed automatically when Handler signature is changed
+func (r *RouterV5) GlobalMiddleware(middleware ...MiddlewareV5) *RouterV5 {
+	for _, m := range middleware {
+		m.setServer(r.server)
+	}
 	r.globalMiddleware.middleware = append(r.globalMiddleware.middleware, middleware...)
 	return r
 }
@@ -164,6 +167,9 @@ func (r *RouterV5) GlobalMiddleware(middleware ...MiddlewareV5) *RouterV5 { // T
 func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
 	if r.middleware == nil {
 		r.middleware = make([]MiddlewareV5, 0, 3)
+	}
+	for _, m := range middleware {
+		m.setServer(r.server)
 	}
 	r.middleware = append(r.middleware, middleware...)
 	return r
@@ -181,7 +187,8 @@ func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
 // will not modify its parent's.
 //
 // Codes in the 400 and 500 ranges have a default status handler.
-func (r *RouterV5) StatusHandler(handler HandlerV5, status int, additionalStatuses ...int) {
+func (r *RouterV5) StatusHandler(handler StatusHandler, status int, additionalStatuses ...int) {
+	handler.setServer(r.server)
 	r.statusHandlers[status] = handler
 	for _, s := range additionalStatuses {
 		r.statusHandlers[s] = handler
@@ -359,14 +366,15 @@ func (r *RouterV5) registerRoute(methods string, uri string, handler HandlerV5) 
 	return route
 }
 
+func (r *RouterV5) Controller(controller Registrer) *RouterV5 {
+	controller.setServer(r.server)
+	controller.RegisterRoutes(r)
+	return r
+}
+
 func (r *RouterV5) requestHandler(match *routeMatchV5, w http.ResponseWriter, rawRequest *http.Request) {
-	ctx := &Context{
-		server:     r.server,
-		route:      match.route,
-		RequestV5:  newRequest(rawRequest),
-		ResponseV5: newResponseV5(w, rawRequest),
-		Extra:      make(map[string]any),
-	}
+	request := newRequest(rawRequest, match.route)
+	response := newResponseV5(r.server, request, w, rawRequest)
 	handler := match.route.handler
 
 	// Validate last.
@@ -374,6 +382,8 @@ func (r *RouterV5) requestHandler(match *routeMatchV5, w http.ResponseWriter, ra
 	// middleware and before validation.
 	// handler = validateRequestMiddleware(handler)
 	// TODO re-enable validation middleware
+
+	// TODO a generic function that returns a normal handler but converts the body automatically
 
 	// Route-specific middleware is executed after router middleware
 	handler = match.route.applyMiddleware(handler)
@@ -386,30 +396,30 @@ func (r *RouterV5) requestHandler(match *routeMatchV5, w http.ResponseWriter, ra
 
 	handler = r.globalMiddleware.applyMiddleware(handler)
 
-	handler(ctx)
+	handler(response, request)
 
-	if err := r.finalize(ctx); err != nil {
+	if err := r.finalize(response, request); err != nil {
 		r.server.ErrLogger.Println(err)
 	}
 }
 
 // finalize the request's life-cycle.
-func (r *RouterV5) finalize(ctx *Context) error {
-	if ctx.ResponseV5.empty {
-		if ctx.ResponseV5.status == 0 {
+func (r *RouterV5) finalize(response *ResponseV5, request *RequestV5) error {
+	if response.empty {
+		if response.status == 0 {
 			// If the response is empty, return status 204 to
 			// comply with RFC 7231, 6.3.5
-			ctx.Status(http.StatusNoContent)
-		} else if statusHandler, ok := r.statusHandlers[ctx.ResponseV5.status]; ok {
+			response.Status(http.StatusNoContent)
+		} else if statusHandler, ok := r.statusHandlers[response.status]; ok {
 			// Status has been set but body is empty.
 			// Execute status handler if exists.
-			statusHandler(ctx)
+			statusHandler.Handle(response, request)
 		}
 	}
 
-	if !ctx.ResponseV5.wroteHeader && !ctx.ResponseV5.hijacked {
-		ctx.WriteHeader(ctx.ResponseV5.status)
+	if !response.wroteHeader && !response.hijacked {
+		response.WriteHeader(response.status)
 	}
 
-	return ctx.ResponseV5.close()
+	return response.close()
 }

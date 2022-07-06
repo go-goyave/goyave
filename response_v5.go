@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strconv"
 
 	"goyave.dev/goyave/v4/util/fsutil"
@@ -18,6 +19,8 @@ type ResponseV5 struct {
 	responseWriter http.ResponseWriter
 	httpRequest    *http.Request
 	status         int
+	server         *Server
+	request        *RequestV5
 
 	// Used to check if controller didn't write anything so
 	// core can write default 204 No Content.
@@ -28,8 +31,10 @@ type ResponseV5 struct {
 }
 
 // newResponse create a new Response using the given http.ResponseWriter and raw request.
-func newResponseV5(writer http.ResponseWriter, rawRequest *http.Request) *ResponseV5 {
+func newResponseV5(server *Server, request *RequestV5, writer http.ResponseWriter, rawRequest *http.Request) *ResponseV5 {
 	return &ResponseV5{
+		server:         server,
+		request:        request,
 		responseWriter: writer,
 		writer:         writer,
 		httpRequest:    rawRequest,
@@ -242,4 +247,43 @@ func (r *ResponseV5) File(file string) {
 // If you want the file to be sent as an inline element ("Content-Disposition: inline"), use the "File" function instead.
 func (r *ResponseV5) Download(file string, fileName string) {
 	r.writeFile(file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+}
+
+// Error print the error in the console and return it with an error code 500 (or previously defined
+// status code using `response.Status()`).
+// If debugging is enabled in the config, the error is also written in the response
+// and the stacktrace is printed in the console.
+// If debugging is not enabled, only the status code is set, which means you can still
+// write to the response, or use your error status handler.
+func (r *ResponseV5) Error(err any) {
+	r.server.ErrLogger.Println(err)
+	r.error(err)
+}
+
+func (r *ResponseV5) error(err any) {
+	r.request.Extra[ExtraError] = err
+	if r.server.Config().GetBool("app.debug") {
+		stacktrace := r.request.Extra[ExtraStacktrace]
+		if stacktrace == "" {
+			stacktrace = string(debug.Stack())
+		}
+		r.server.ErrLogger.Print(stacktrace)
+		if !r.Hijacked() {
+			var message interface{}
+			if e, ok := err.(error); ok {
+				message = e.Error()
+			} else {
+				message = err
+			}
+			status := http.StatusInternalServerError
+			if r.status != 0 {
+				status = r.status
+			}
+			r.JSON(status, map[string]interface{}{"error": message})
+			return
+		}
+	}
+
+	// Don't set r.empty to false to let error status handler process the error
+	r.Status(http.StatusInternalServerError)
 }

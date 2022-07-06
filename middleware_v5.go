@@ -10,7 +10,10 @@ import (
 // Request data is available to middleware, but bear in mind that
 // it had not been validated yet. That means that you can modify or
 // filter data.
-type MiddlewareV5 func(HandlerV5) HandlerV5
+type MiddlewareV5 interface {
+	IController
+	Handle(HandlerV5) HandlerV5
+}
 
 type middlewareHolderV5 struct {
 	middleware []MiddlewareV5
@@ -18,31 +21,39 @@ type middlewareHolderV5 struct {
 
 func (h *middlewareHolderV5) applyMiddleware(handler HandlerV5) HandlerV5 {
 	for i := len(h.middleware) - 1; i >= 0; i-- {
-		handler = h.middleware[i](handler)
+		handler = h.middleware[i].Handle(handler)
 	}
 	return handler
+}
+
+type recoveryMiddlewareV5 struct {
+	Controller
 }
 
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
 // If debugging is enabled in the config and the default status handler for the 500 status code
 // had not been changed, the error is also written in the response.
-func recoveryMiddlewareV5(next HandlerV5) HandlerV5 {
-	return func(c *Context) {
+func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
+	return func(response *ResponseV5, request *RequestV5) {
 		panicked := true
 		defer func() {
 			if err := recover(); err != nil || panicked {
-				c.Server().ErrLogger.Println(err)
-				c.Extra[ExtraError] = err
-				if c.Config().GetBool("app.debug") {
-					c.Extra[ExtraStacktrace] = string(debug.Stack())
+				m.ErrLogger().Println(err)
+				request.Extra[ExtraError] = err
+				if m.Config().GetBool("app.debug") {
+					request.Extra[ExtraStacktrace] = string(debug.Stack())
 				}
-				c.Status(http.StatusInternalServerError)
+				response.Status(http.StatusInternalServerError)
 			}
 		}()
 
-		next(c)
+		next(response, request)
 		panicked = false
 	}
+}
+
+type languageMiddlewareV5 struct {
+	Controller
 }
 
 // languageMiddleware is a middleware that sets the language of a request.
@@ -57,13 +68,13 @@ func recoveryMiddlewareV5(next HandlerV5) HandlerV5 {
 // If no variant is given (for example "en"), the first available variant will be used.
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
-func languageMiddlewareV5(next HandlerV5) HandlerV5 {
-	return func(c *Context) {
-		if header := c.RequestHeader().Get("Accept-Language"); len(header) > 0 {
-			c.Lang = c.Server().Lang.DetectLanguage(header)
+func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
+	return func(response *ResponseV5, request *RequestV5) {
+		if header := request.RequestHeader().Get("Accept-Language"); len(header) > 0 {
+			request.Lang = m.Lang().DetectLanguage(header)
 		} else {
-			c.Lang = c.Server().Lang.Default
+			request.Lang = m.Lang().Default
 		}
-		next(c)
+		next(response, request)
 	}
 }

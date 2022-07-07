@@ -113,7 +113,7 @@ func (r *RouteV5) Validate(validationRules validation.Ruler) *RouteV5 {
 //
 // Returns itself.
 func (r *RouteV5) Middleware(middleware ...MiddlewareV5) *RouteV5 {
-	r.middleware = middleware
+	r.middleware = append(r.middleware, middleware...)
 	return r
 }
 

@@ -6,6 +6,16 @@ import (
 	"strings"
 )
 
+const (
+	// ExtraError the key used in Context.Extra to store an error
+	// reported with the Error function or via the recovery middleware.
+	ExtraError = "goyave.error"
+
+	// ExtraStacktrace the key used in Context.Extra to store the
+	// stacktrace if debug is enabled and an error is reported.
+	ExtraStacktrace = "goyave.stacktrace"
+)
+
 type RequestV5 struct {
 	httpRequest *http.Request
 	Data        any // TODO separate data from query (two middleware: ValidateQuery, ValidateBody)

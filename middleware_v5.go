@@ -5,11 +5,6 @@ import (
 	"runtime/debug"
 )
 
-// Middleware function generating middleware handler function.
-//
-// Request data is available to middleware, but bear in mind that
-// it had not been validated yet. That means that you can modify or
-// filter data.
 type MiddlewareV5 interface {
 	IController
 	Handle(HandlerV5) HandlerV5
@@ -26,13 +21,13 @@ func (h *middlewareHolderV5) applyMiddleware(handler HandlerV5) HandlerV5 {
 	return handler
 }
 
+// recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
+// If debugging is enabled in the config and the default status handler for the 500 status code
+// had not been changed, the error is also written in the response.
 type recoveryMiddlewareV5 struct {
 	Controller
 }
 
-// recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
-// If debugging is enabled in the config and the default status handler for the 500 status code
-// had not been changed, the error is also written in the response.
 func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	return func(response *ResponseV5, request *RequestV5) {
 		panicked := true
@@ -52,10 +47,6 @@ func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	}
 }
 
-type languageMiddlewareV5 struct {
-	Controller
-}
-
 // languageMiddleware is a middleware that sets the language of a request.
 //
 // Uses the "Accept-Language" header to determine which language to use. If
@@ -68,6 +59,10 @@ type languageMiddlewareV5 struct {
 // If no variant is given (for example "en"), the first available variant will be used.
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
+type languageMiddlewareV5 struct {
+	Controller
+}
+
 func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	return func(response *ResponseV5, request *RequestV5) {
 		if header := request.RequestHeader().Get("Accept-Language"); len(header) > 0 {

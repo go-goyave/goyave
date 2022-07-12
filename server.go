@@ -359,11 +359,9 @@ func (s *Server) RegisterSignalHook() {
 	signal.Notify(s.sigChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		select {
-		case _, ok := <-s.sigChannel:
-			if ok {
-				s.Stop()
-			}
+		_, ok := <-s.sigChannel
+		if ok {
+			s.Stop()
 		}
 	}()
 }

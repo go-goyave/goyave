@@ -10,7 +10,6 @@ import (
 
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/util/fsutil"
-	"goyave.dev/goyave/v4/validation"
 )
 
 type ParseRequest struct {
@@ -22,10 +21,8 @@ func (m *ParseRequest) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, r *goyave.RequestV5) {
 
 		if err := parseQuery(r); err != nil {
-			r.Extra[goyave.ExtraQueryParseError] = &validation.FieldErrors{
-				Errors: []string{err.Error()}, // TODO don't use go built-in error message
-			}
 			response.Status(http.StatusBadRequest)
+			return
 		}
 
 		r.Data = nil

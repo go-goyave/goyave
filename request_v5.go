@@ -15,8 +15,6 @@ const (
 	// stacktrace if debug is enabled and an error is reported.
 	ExtraStacktrace = "goyave.stacktrace"
 
-	ExtraParseError           = "goyave.parseError"
-	ExtraQueryParseError      = "goyave.queryParseError"
 	ExtraValidationError      = "goyave.validationError"
 	ExtraQueryValidationError = "goyave.queryValidationError"
 )

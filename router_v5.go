@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	MetaValidationRules = "goyave.validationRules"
-	MetaCORS            = "goyave.cors"
+	MetaValidationRules      = "goyave.validationRules"
+	MetaQueryValidationRules = "goyave.queryValidationRules"
+	MetaCORS                 = "goyave.cors"
 )
 
 var (
@@ -94,10 +95,10 @@ func NewRouterV5(server *Server) *RouterV5 {
 		Meta:       make(map[string]any),
 	}
 	router.StatusHandler(&PanicStatusHandlerV5{}, http.StatusInternalServerError)
-	router.StatusHandler(&ValidationStatusHandlerV5{}, http.StatusBadRequest, http.StatusUnprocessableEntity)
-	for i := 401; i <= 418; i++ {
+	for i := 400; i <= 418; i++ {
 		router.StatusHandler(&ErrorStatusHandlerV5{}, i)
 	}
+	router.StatusHandler(&ValidationStatusHandlerV5{}, http.StatusUnprocessableEntity)
 	for i := 423; i <= 426; i++ {
 		router.StatusHandler(&ErrorStatusHandlerV5{}, i)
 	}
@@ -272,7 +273,7 @@ func (r *RouterV5) Subrouter(prefix string) *RouterV5 {
 		parent:         r,
 		prefix:         prefix,
 		statusHandlers: maputil.Clone(r.statusHandlers),
-		Meta:           maputil.Clone(r.Meta),
+		Meta:           maputil.Clone(r.Meta), // TODO do we really want Meta to be inherited?
 		namedRoutes:    r.namedRoutes,
 		routes:         make([]*RouteV5, 0, 5), // Typical CRUD has 5 routes
 		middlewareHolderV5: middlewareHolderV5{

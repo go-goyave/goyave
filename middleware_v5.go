@@ -3,6 +3,9 @@ package goyave
 import (
 	"net/http"
 	"runtime/debug"
+	"strings"
+
+	"goyave.dev/goyave/v4/validation"
 )
 
 type MiddlewareV5 interface {
@@ -19,6 +22,15 @@ func (h *middlewareHolderV5) applyMiddleware(handler HandlerV5) HandlerV5 {
 		handler = h.middleware[i].Handle(handler)
 	}
 	return handler
+}
+
+func hasMiddleware[T MiddlewareV5](m []MiddlewareV5) bool {
+	for _, middleware := range m {
+		if _, ok := middleware.(T); ok {
+			return ok
+		}
+	}
+	return false
 }
 
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
@@ -65,11 +77,93 @@ type languageMiddlewareV5 struct {
 
 func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	return func(response *ResponseV5, request *RequestV5) {
-		if header := request.RequestHeader().Get("Accept-Language"); len(header) > 0 {
+		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
 			request.Lang = m.Lang().DetectLanguage(header)
 		} else {
 			request.Lang = m.Lang().Default
 		}
 		next(response, request)
+	}
+}
+
+// validateRequestMiddleware is a middleware that validates the request.
+// If validation is not rules are not met, sets the response status to 422 Unprocessable Entity
+// or 400 Bad Request and the response error (which can be retrieved with `GetError()`) to the
+// `validation.Errors` returned by the validator.
+// This data can then be used in a status handler.
+type validateRequestMiddlewareV5 struct {
+	Controller
+}
+
+func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
+	return func(response *ResponseV5, r *RequestV5) {
+		route := r.Route()
+
+		extra := map[string]any{
+			validation.ExtraRequest: r,
+		}
+		contentType := r.Header().Get("Content-Type")
+		rules, hasRules := route.Meta[MetaValidationRules]
+		queryRules, hasQueryRules := route.Meta[MetaValidationRules]
+
+		var code int
+		if hasRules && r.Data == nil {
+			code = http.StatusBadRequest
+		} else {
+			code = http.StatusUnprocessableEntity
+		}
+
+		var errsBag validation.Errors
+		var queryErrsBag validation.Errors
+		var errors []error
+		if hasQueryRules {
+			opt := &validation.Options{
+				Data:      r.Query,
+				Rules:     queryRules.(validation.Ruler),
+				IsJSON:    false,
+				Languages: m.Lang(),
+				Lang:      r.Lang,
+				Extra:     extra,
+			}
+			var err []error
+			queryErrsBag, err = validation.ValidateV5(opt)
+			if queryErrsBag != nil {
+				r.Extra[ExtraValidationError] = queryErrsBag
+			}
+			if err != nil {
+				errors = append(errors, err...)
+			}
+		}
+		if hasRules {
+			opt := &validation.Options{
+				Data:      r.Data,
+				Rules:     rules.(validation.Ruler),
+				IsJSON:    strings.HasPrefix(contentType, "application/json"),
+				Languages: m.Lang(),
+				Lang:      r.Lang,
+				Extra:     extra,
+			}
+			var err []error
+			errsBag, err = validation.ValidateV5(opt)
+			if errsBag != nil {
+				r.Extra[ExtraQueryValidationError] = errsBag
+			}
+			if err != nil {
+				errors = append(errors, err...)
+			}
+		}
+		// TODO if opt.Data is converted, it should be replaced in the request (use the value from validation.Options)
+
+		if errors != nil && len(errors) == 0 {
+			response.Error(errors)
+			return
+		}
+
+		if errsBag != nil || queryErrsBag != nil {
+			response.Status(code)
+			return
+		}
+
+		next(response, r)
 	}
 }

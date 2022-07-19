@@ -12,12 +12,18 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
+// TODO move Rules and RuleSet in another file so this one is less busy
+
 const (
 	// CurrentElement special key for field name in composite rule sets.
 	// Use it if you want to apply rules to the current object element.
 	// You cannot apply rules on the root element, these rules will only
 	// apply if the rule set is used with composition.
 	CurrentElement = ""
+
+	// ExtraRequest extra key used when validating a request so the
+	// request's information is accessible to validation rules
+	ExtraRequest = "request"
 )
 
 // Ruler adapter interface for method dispatching between RuleSet and Rules

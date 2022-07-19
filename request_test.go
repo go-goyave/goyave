@@ -92,7 +92,7 @@ func TestRequestValidate(t *testing.T) {
 
 	validation.AddRule("test_extra_request", &validation.RuleDefinition{
 		Function: func(ctx *validation.Context) bool {
-			r, ok := ctx.Extra["request"].(*Request)
+			r, ok := ctx.Extra[validation.ExtraRequest].(*Request)
 			assert.True(t, ok)
 			assert.Equal(t, request, r)
 			return true

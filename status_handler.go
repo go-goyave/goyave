@@ -1,6 +1,10 @@
 package goyave
 
-import "net/http"
+import (
+	"net/http"
+
+	"goyave.dev/goyave/v4/validation"
+)
 
 // TODO status handler should also have access to server resources (config, lang, etc)
 
@@ -41,13 +45,28 @@ func (*ErrorStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
 	response.JSON(response.GetStatus(), message)
 }
 
-// ValidationStatusHandler for HTTP 400 and HTTP 422 errors.
+// ValidationStatusHandler for HTTP 422 errors.
 // Writes the validation errors to the response.
 type ValidationStatusHandlerV5 struct {
 	Controller
 }
 
 func (*ValidationStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
-	message := map[string]any{"validationError": request.Extra[ExtraError]}
+	type ValidationErrorResponse struct {
+		Body  validation.Errors `json:"body,omitempty"`
+		Query validation.Errors `json:"query,omitempty"`
+	}
+
+	errs := &ValidationErrorResponse{}
+
+	if e, ok := request.Extra[ExtraValidationError]; ok {
+		errs.Body = e.(validation.Errors)
+	}
+
+	if e, ok := request.Extra[ExtraQueryValidationError]; ok {
+		errs.Query = e.(validation.Errors)
+	}
+
+	message := map[string]*ValidationErrorResponse{"error": errs}
 	response.JSON(response.GetStatus(), message)
 }

@@ -98,14 +98,19 @@ func (r *RouteV5) RemoveMeta(key string) *RouteV5 {
 	return r
 }
 
-// Validate adds validation rules to this route. If the user-submitted data
-// doesn't pass validation, the user will receive an error and messages explaining
-// what is wrong.
-//
-// Returns itself.
-func (r *RouteV5) Validate(validationRules validation.Ruler) *RouteV5 {
-	// TODO ValidateQuery too!
+func (r *RouteV5) ValidateBody(validationRules validation.Ruler) *RouteV5 {
 	r.Meta[MetaValidationRules] = validationRules.AsRules()
+	if !hasMiddleware[*validateRequestMiddlewareV5](r.middleware) {
+		r.Middleware(&validateRequestMiddlewareV5{})
+	}
+	return r
+}
+
+func (r *RouteV5) ValidateQuery(validationRules validation.Ruler) *RouteV5 {
+	r.Meta[MetaQueryValidationRules] = validationRules.AsRules()
+	if !hasMiddleware[*validateRequestMiddlewareV5](r.middleware) {
+		r.Middleware(&validateRequestMiddlewareV5{})
+	}
 	return r
 }
 
@@ -114,6 +119,9 @@ func (r *RouteV5) Validate(validationRules validation.Ruler) *RouteV5 {
 // Returns itself.
 func (r *RouteV5) Middleware(middleware ...MiddlewareV5) *RouteV5 {
 	r.middleware = append(r.middleware, middleware...)
+	for _, m := range middleware {
+		m.setServer(r.parent.server)
+	}
 	return r
 }
 

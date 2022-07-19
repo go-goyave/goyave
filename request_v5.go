@@ -14,12 +14,17 @@ const (
 	// ExtraStacktrace the key used in Context.Extra to store the
 	// stacktrace if debug is enabled and an error is reported.
 	ExtraStacktrace = "goyave.stacktrace"
+
+	ExtraParseError           = "goyave.parseError"
+	ExtraQueryParseError      = "goyave.queryParseError"
+	ExtraValidationError      = "goyave.validationError"
+	ExtraQueryValidationError = "goyave.queryValidationError"
 )
 
 type RequestV5 struct {
 	httpRequest *http.Request
-	Data        any // TODO separate data from query (two middleware: ValidateQuery, ValidateBody)
-	Query       url.Values
+	Data        any
+	Query       map[string]any
 	Lang        string
 	Extra       map[string]any
 	route       *RouteV5
@@ -31,9 +36,9 @@ func newRequest(httpRequest *http.Request, route *RouteV5) *RequestV5 {
 	return &RequestV5{
 		httpRequest: httpRequest,
 		route:       route,
-		Query:       httpRequest.URL.Query(),
 		Extra:       map[string]any{},
 		// Lang is set inside the language middleware
+		// Query is set inside the parse request middleware
 	}
 }
 
@@ -58,7 +63,7 @@ func (r *RequestV5) URL() *url.URL {
 	return r.httpRequest.URL
 }
 
-// RequestHeader contains the request header fields either received
+// Header contains the request header fields either received
 // by the server or to be sent by the client.
 // Header names are case-insensitive.
 //
@@ -77,7 +82,7 @@ func (r *RequestV5) URL() *url.URL {
 //		"Accept-Language": {"en-us"},
 //		"Foo": {"Bar", "two"},
 //	}
-func (r *RequestV5) RequestHeader() http.Header {
+func (r *RequestV5) Header() http.Header {
 	return r.httpRequest.Header
 }
 
@@ -122,7 +127,7 @@ func (r *RequestV5) BasicAuth() (username, password string, ok bool) {
 // Returns empty string if no token found or the header is invalid.
 func (r *RequestV5) BearerToken() (string, bool) {
 	const schema = "Bearer "
-	header := r.RequestHeader().Get("Authorization")
+	header := r.Header().Get("Authorization")
 	if !strings.HasPrefix(header, schema) {
 		return "", false
 	}

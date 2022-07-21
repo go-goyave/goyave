@@ -21,6 +21,8 @@ type RouteV5 struct {
 
 var _ routeMatcherV5 = (*RouteV5)(nil) // implements routeMatcher
 
+type RulerFunc func(*RequestV5) validation.RulerV5
+
 // newRoute create a new route without any settings except its handler.
 // This is used to generate a fake route for the Method Not Allowed and Not Found handlers.
 // This route has the core middleware enabled and can be used without a parent router.
@@ -98,16 +100,16 @@ func (r *RouteV5) RemoveMeta(key string) *RouteV5 {
 	return r
 }
 
-func (r *RouteV5) ValidateBody(validationRules validation.Ruler) *RouteV5 {
-	r.Meta[MetaValidationRules] = validationRules.AsRules()
+func (r *RouteV5) ValidateBody(validationRules RulerFunc) *RouteV5 {
+	r.Meta[MetaValidationRules] = validationRules
 	if !hasMiddleware[*validateRequestMiddlewareV5](r.middleware) {
 		r.Middleware(&validateRequestMiddlewareV5{})
 	}
 	return r
 }
 
-func (r *RouteV5) ValidateQuery(validationRules validation.Ruler) *RouteV5 {
-	r.Meta[MetaQueryValidationRules] = validationRules.AsRules()
+func (r *RouteV5) ValidateQuery(validationRules RulerFunc) *RouteV5 {
+	r.Meta[MetaQueryValidationRules] = validationRules
 	if !hasMiddleware[*validateRequestMiddlewareV5](r.middleware) {
 		r.Middleware(&validateRequestMiddlewareV5{})
 	}

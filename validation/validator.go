@@ -569,12 +569,12 @@ func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
 	return !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
-func replaceValue(value interface{}, c walk.Context) {
+func replaceValue(value any, c walk.Context) {
 	if c.Found != walk.Found {
 		return
 	}
 
-	if parentObject, ok := c.Parent.(map[string]interface{}); ok {
+	if parentObject, ok := c.Parent.(map[string]any); ok {
 		parentObject[c.Name] = value
 	} else {
 		// Parent is slice
@@ -582,13 +582,13 @@ func replaceValue(value interface{}, c walk.Context) {
 	}
 }
 
-func makeGenericSlice(original interface{}) ([]interface{}, bool) {
+func makeGenericSlice(original any) ([]any, bool) {
 	list := reflect.ValueOf(original)
 	if list.Kind() != reflect.Slice {
 		return nil, false
 	}
 	length := list.Len()
-	newSlice := make([]interface{}, 0, length)
+	newSlice := make([]any, 0, length)
 	for i := 0; i < length; i++ {
 		newSlice = append(newSlice, list.Index(i).Interface())
 	}

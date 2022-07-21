@@ -104,7 +104,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		}
 		contentType := r.Header().Get("Content-Type")
 		rules, hasRules := route.Meta[MetaValidationRules]
-		queryRules, hasQueryRules := route.Meta[MetaValidationRules]
+		queryRules, hasQueryRules := route.Meta[MetaQueryValidationRules]
 
 		var code int
 		if hasRules && r.Data == nil {
@@ -113,13 +113,13 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			code = http.StatusUnprocessableEntity
 		}
 
-		var errsBag validation.Errors
-		var queryErrsBag validation.Errors
+		var errsBag *validation.ErrorsV5
+		var queryErrsBag *validation.ErrorsV5
 		var errors []error
 		if hasQueryRules {
 			opt := &validation.Options{
 				Data:      r.Query,
-				Rules:     queryRules.(validation.Ruler),
+				Rules:     queryRules.(RulerFunc)(r),
 				IsJSON:    false,
 				Languages: m.Lang(),
 				Lang:      r.Lang,
@@ -128,7 +128,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			var err []error
 			queryErrsBag, err = validation.ValidateV5(opt)
 			if queryErrsBag != nil {
-				r.Extra[ExtraValidationError] = queryErrsBag
+				r.Extra[ExtraQueryValidationError] = queryErrsBag
 			}
 			if err != nil {
 				errors = append(errors, err...)
@@ -137,7 +137,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		if hasRules {
 			opt := &validation.Options{
 				Data:      r.Data,
-				Rules:     rules.(validation.Ruler),
+				Rules:     rules.(RulerFunc)(r),
 				IsJSON:    strings.HasPrefix(contentType, "application/json"),
 				Languages: m.Lang(),
 				Lang:      r.Lang,
@@ -146,7 +146,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			var err []error
 			errsBag, err = validation.ValidateV5(opt)
 			if errsBag != nil {
-				r.Extra[ExtraQueryValidationError] = errsBag
+				r.Extra[ExtraValidationError] = errsBag
 			}
 			if err != nil {
 				errors = append(errors, err...)

@@ -60,11 +60,12 @@ type Context struct {
 
 // Walk this path and execute the given behavior for each matching element. Elements are final,
 // meaning they are the deepest explorable element using this path.
-// Only `map[string]interface{}` and n-dimensional slices parents are supported.
+// Only `map[string]any` and n-dimensional slices parents are supported.
 // The given "f" function is executed for each final element matched. If the path
 // cannot be completed because the step's name doesn't exist in the currently explored map,
 // the function will be executed as well, with a the `Context`'s `NotFound` field set to `true`.
-func (p *Path) Walk(currentElement interface{}, f func(Context)) {
+func (p *Path) Walk(currentElement any, f func(Context)) {
+	// TODO support all root types
 	path := &Path{
 		Name: p.Name,
 		Type: p.Type,

@@ -57,7 +57,6 @@ func (m *ParseRequest) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 						response.Status(http.StatusBadRequest)
 					}
 				}
-				fmt.Println("body", r.Data)
 			} else {
 				response.Status(http.StatusBadRequest)
 			}

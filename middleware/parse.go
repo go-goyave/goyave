@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -32,6 +33,7 @@ func (m *ParseRequest) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 			maxValueBytes := maxSize
 			var bodyBuf bytes.Buffer
 			n, err := io.CopyN(&bodyBuf, r.Request().Body, maxValueBytes+1)
+			_ = r.Request().Body.Close()
 			if err == nil || err == io.EOF {
 				maxValueBytes -= n
 				if maxValueBytes < 0 {
@@ -47,16 +49,19 @@ func (m *ParseRequest) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 					}
 					r.Data = body
 				} else {
-					r.Data, err = generateFlatMap(r.Request(), maxSize)
+					req := r.Request()
+					req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+					r.Data, err = generateFlatMap(req, maxSize)
 					if err != nil {
+						fmt.Println(err)
 						response.Status(http.StatusBadRequest)
 					}
 				}
+				fmt.Println("body", r.Data)
 			} else {
 				response.Status(http.StatusBadRequest)
 			}
 		}
-		_ = r.Request().Body.Close()
 
 		if response.GetStatus() != http.StatusBadRequest {
 			next(response, r)
@@ -87,8 +92,8 @@ func generateFlatMap(request *http.Request, maxSize int64) (map[string]any, erro
 		}
 	}
 
-	if request.Form != nil {
-		flatten(flatMap, request.Form)
+	if request.PostForm != nil {
+		flatten(flatMap, request.PostForm)
 	}
 	if request.MultipartForm != nil {
 		flatten(flatMap, request.MultipartForm.Value)

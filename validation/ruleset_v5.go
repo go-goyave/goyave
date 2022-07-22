@@ -90,9 +90,7 @@ func (r *RulesV5) sortKeys() {
 	r.sortedKeys = make([]string, 0, len(r.Fields))
 
 	for k := range r.Fields {
-		if k != CurrentElement {
-			r.sortedKeys = append(r.sortedKeys, k)
-		}
+		r.sortedKeys = append(r.sortedKeys, k)
 	}
 
 	sort.SliceStable(r.sortedKeys, func(i, j int) bool {

@@ -51,10 +51,10 @@ func (e *ErrorsV5) Add(path *walk.Path, message string) {
 // Add an error message to the element identified by the given path.
 // Creates all missing elements in the path.
 func (e FieldsErrors) Add(path *walk.Path, message string) {
-	errs, ok := e[path.Name]
+	errs, ok := e[*path.Name]
 	if !ok {
 		errs = &ErrorsV5{}
-		e[path.Name] = errs
+		e[*path.Name] = errs
 	}
 	errs.Add(path, message)
 }

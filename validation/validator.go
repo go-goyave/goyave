@@ -566,7 +566,7 @@ func isAbsent(field *Field, c walk.Context, data map[string]interface{}) bool {
 }
 
 func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
-	return !isJSON && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
+	return !isJSON && fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
 func replaceValue(value any, c walk.Context) {

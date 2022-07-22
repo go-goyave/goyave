@@ -28,10 +28,10 @@ type FieldErrors struct {
 // Add an error message to the element identified by the given path.
 // Creates all missing elements in the path.
 func (e Errors) Add(path *walk.Path, message string) {
-	errs, ok := e[path.Name]
+	errs, ok := e[*path.Name]
 	if !ok {
 		errs = &FieldErrors{}
-		e[path.Name] = errs
+		e[*path.Name] = errs
 	}
 	errs.Add(path, message)
 }

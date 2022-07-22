@@ -23,7 +23,7 @@ const (
 	// All elements in the array will be explored using the next Path.
 	PathTypeArray
 
-	// PathTypeObject the explored element is used as an object (`map[string]interface{}`)
+	// PathTypeObject the explored element is used as an object (`map[string]any`)
 	// and not a final element.
 	PathTypeObject
 )
@@ -44,18 +44,18 @@ const (
 type Path struct {
 	Next  *Path
 	Index *int
-	Name  string
+	Name  *string
 	Type  PathType
 }
 
 // Context information sent to walk function.
 type Context struct {
-	Value  interface{}
-	Parent interface{} // Either map[string]interface{} or a slice
-	Path   *Path       // Exact Path to the current element
-	Name   string      // Name of the current element
-	Index  int         // If parent is a slice, the index of the current element in the slice, else -1
-	Found  FoundType   // True if the path could not be completely explored
+	Value  any
+	Parent any       // Either map[string]any or a slice
+	Path   *Path     // Exact Path to the current element
+	Name   string    // Name of the current element
+	Index  int       // If parent is a slice, the index of the current element in the slice, else -1
+	Found  FoundType // True if the path could not be completely explored
 }
 
 // Walk this path and execute the given behavior for each matching element. Elements are final,
@@ -65,7 +65,6 @@ type Context struct {
 // cannot be completed because the step's name doesn't exist in the currently explored map,
 // the function will be executed as well, with a the `Context`'s `NotFound` field set to `true`.
 func (p *Path) Walk(currentElement any, f func(Context)) {
-	// TODO support all root types
 	path := &Path{
 		Name: p.Name,
 		Type: p.Type,
@@ -73,13 +72,13 @@ func (p *Path) Walk(currentElement any, f func(Context)) {
 	p.walk(currentElement, nil, -1, path, path, f)
 }
 
-func (p *Path) walk(currentElement interface{}, parent interface{}, index int, path *Path, lastPathElement *Path, f func(Context)) {
+func (p *Path) walk(currentElement any, parent any, index int, path *Path, lastPathElement *Path, f func(Context)) {
 	element := currentElement
-	if p.Name != "" {
-		ce, ok := currentElement.(map[string]interface{})
+	if p.Name != nil {
+		ce, ok := currentElement.(map[string]any)
 		found := ParentNotFound
 		if ok {
-			element, ok = ce[p.Name]
+			element, ok = ce[*p.Name]
 			if !ok && p.Type == PathTypeElement {
 				found = ElementNotFound
 			}
@@ -95,13 +94,16 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 
 	switch p.Type {
 	case PathTypeElement:
-		f(Context{
+		c := Context{
 			Value:  element,
 			Parent: parent,
 			Path:   path,
-			Name:   p.Name,
 			Index:  index,
-		})
+		}
+		if p.Name != nil {
+			c.Name = *p.Name
+		}
+		f(c)
 	case PathTypeArray:
 		list := reflect.ValueOf(element)
 		if list.Kind() != reflect.Slice {
@@ -114,7 +116,7 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 			lastPathElement.Index = p.Index
 			lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 			if p.outOfBounds(length) {
-				f(newNotFoundContext(element, path, "", *p.Index, ElementNotFound))
+				f(newNotFoundContext(element, path, nil, *p.Index, ElementNotFound))
 				return
 			}
 			v := list.Index(*p.Index)
@@ -128,7 +130,7 @@ func (p *Path) walk(currentElement interface{}, parent interface{}, index int, p
 			if p.Next.Type != PathTypeElement {
 				found = ParentNotFound
 			}
-			f(newNotFoundContext(element, path, "", -1, found))
+			f(newNotFoundContext(element, path, nil, -1, found))
 			return
 		}
 		for i := 0; i < length; i++ {
@@ -163,15 +165,18 @@ func (p *Path) completePath(lastPathElement *Path) {
 	}
 }
 
-func newNotFoundContext(parent interface{}, path *Path, name string, index int, found FoundType) Context {
-	return Context{
+func newNotFoundContext(parent any, path *Path, name *string, index int, found FoundType) Context {
+	c := Context{
 		Value:  nil,
 		Parent: parent,
 		Path:   path,
-		Name:   name,
 		Index:  index,
 		Found:  found,
 	}
+	if name != nil {
+		c.Name = *name
+	}
+	return c
 }
 
 // HasArray returns true if a least one step in the path involves an array.
@@ -245,6 +250,10 @@ func Parse(p string) (*Path, error) {
 	rootPath := &Path{}
 	path := rootPath
 
+	if p == "" {
+		rootPath.Name = &p
+		return rootPath, nil
+	}
 	scanner := createPathScanner(p)
 	for scanner.Scan() {
 		t := scanner.Text()
@@ -275,7 +284,7 @@ func Parse(p string) (*Path, error) {
 				path = path.Next
 			}
 		default:
-			path.Name = t
+			path.Name = &t
 		}
 	}
 

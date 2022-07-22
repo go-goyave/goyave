@@ -106,13 +106,6 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		rules, hasRules := route.Meta[MetaValidationRules]
 		queryRules, hasQueryRules := route.Meta[MetaQueryValidationRules]
 
-		var code int
-		if hasRules && r.Data == nil {
-			code = http.StatusBadRequest
-		} else {
-			code = http.StatusUnprocessableEntity
-		}
-
 		var errsBag *validation.ErrorsV5
 		var queryErrsBag *validation.ErrorsV5
 		var errors []error
@@ -160,7 +153,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		}
 
 		if errsBag != nil || queryErrsBag != nil {
-			response.Status(code)
+			response.Status(http.StatusUnprocessableEntity)
 			return
 		}
 

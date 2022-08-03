@@ -28,7 +28,7 @@ func (v *Nullable) Validate(ctx *ContextV5) bool {
 func (v *Nullable) Name() string { return "nullable" }
 
 // TODO design: try with just a function (Name() may not be required)
-// TODO design: Message() in interface? or register rules as before? -> would allow more computation for more complex messages instead of placeholders
+// TODO design: Message() in interface? or register rules as before? -> would allow more computation for more complex messages instead of placeholders (and remove the difference between validation placeholders and regular placeholders)
 
 type Between struct {
 	BaseValidator
@@ -63,4 +63,5 @@ func (v *Between) Validate(ctx *ContextV5) bool {
 	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
-func (v *Between) Name() string { return "between" }
+func (v *Between) Name() string          { return "between" }
+func (v *Between) IsTypeDependent() bool { return true }

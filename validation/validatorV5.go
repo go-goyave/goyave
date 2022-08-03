@@ -200,7 +200,7 @@ func (v *validator) isAbsent(field *FieldV5, c walk.Context, data any) bool {
 		Field:   field,
 		Name:    c.Name,
 	}
-	return !field.IsRequired() && (&Required{}).Validate(requiredCtx)
+	return !field.IsRequired() && !(&Required{}).Validate(requiredCtx)
 }
 
 func (v *validator) getMessage(field *FieldV5, rule Validator, value reflect.Value) string {

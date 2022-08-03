@@ -23,6 +23,7 @@ type Validator interface { // TODO rename to Rule?
 
 type ComparatorValidator interface {
 	ComparesWith() string
+	// TODO compares with value at the same level? or from the root level? In arrays of objects?
 }
 
 type BaseValidator struct{}

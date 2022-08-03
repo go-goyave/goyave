@@ -144,8 +144,8 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			if err != nil {
 				errors = append(errors, err...)
 			}
+			r.Data = opt.Data
 		}
-		// TODO if opt.Data is converted, it should be replaced in the request (use the value from validation.Options)
 
 		if errors != nil && len(errors) == 0 {
 			response.Error(errors)

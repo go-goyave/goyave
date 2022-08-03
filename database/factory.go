@@ -10,7 +10,7 @@ import (
 type Generator func() interface{}
 
 // Factory an object used to generate records or seed the database.
-type Factory struct {
+type Factory struct { // TODO use generics for Factory
 	generator Generator
 	override  interface{}
 }

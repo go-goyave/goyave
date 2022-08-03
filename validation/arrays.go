@@ -12,54 +12,76 @@ import (
 	"goyave.dev/goyave/v4/util/typeutil"
 )
 
+type ArrayType string
+
+const (
+	ArrayTypeString   ArrayType = "string"
+	ArrayTypeNumeric            = "numeric"
+	ArrayTypeInteger            = "integer"
+	ArrayTypeTimezone           = "timezone"
+	ArrayTypeIP                 = "ip"
+	ArrayTypeIPV4               = "ipv4"
+	ArrayTypeIPV6               = "ipv6"
+	ArrayTypeJSON               = "json"
+	ArrayTypeURL                = "url"
+	ArrayTypeUUID               = "uuid"
+	ArrayTypeBool               = "bool"
+	ArrayTypeDate               = "date"
+	ArrayTypeObject             = "object"
+)
+
+// TODO ArrayType rename to Type?
+
 // createArray create a slice of the same type as the given type.
-func createArray(dataType string, length int) reflect.Value {
+func createArray(dataType ArrayType, length int) reflect.Value {
+
 	var arr reflect.Value
 	switch dataType {
-	case "string":
+	case ArrayTypeString:
 		newArray := make([]string, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "numeric":
+	case ArrayTypeNumeric:
 		newArray := make([]float64, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "integer":
+	case ArrayTypeInteger:
 		newArray := make([]int, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "timezone":
+	case ArrayTypeTimezone:
 		newArray := make([]*time.Location, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "ip", "ipv4", "ipv6":
+	case ArrayTypeIP, ArrayTypeIPV4, ArrayTypeIPV6:
 		newArray := make([]net.IP, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "json":
-		newArray := make([]interface{}, length)
+	case ArrayTypeJSON:
+		newArray := make([]any, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "url":
+	case ArrayTypeURL:
 		newArray := make([]*url.URL, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "uuid":
+	case ArrayTypeUUID:
 		newArray := make([]uuid.UUID, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "bool":
+	case ArrayTypeBool:
 		newArray := make([]bool, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "date":
+	case ArrayTypeDate:
 		newArray := make([]time.Time, length)
 		arr = reflect.ValueOf(&newArray).Elem()
-	case "object":
-		newArray := make([]map[string]interface{}, length)
+	case ArrayTypeObject:
+		newArray := make([]map[string]any, length)
 		arr = reflect.ValueOf(&newArray).Elem()
 	default:
 		panic(fmt.Sprintf("Unsupported array type %q", dataType))
 	}
-	// TODO only works with built-in type rules
+	// TODO how could Array validation rule support custom type rules?
+	// Maybe convert to []any then call convertArray? Not the most efficient but that works
 	return arr
 }
 
 // convertArray to its correct type based on its elements' type.
 // If all elements have the same type, the array is converted to
 // a slice of this type.
-func convertArray(array interface{}, parentType reflect.Type) interface{} {
+func convertArray(array any, parentType reflect.Type) any {
 	list := reflect.ValueOf(array)
 	length := list.Len()
 	if length <= 0 {
@@ -73,7 +95,7 @@ func convertArray(array interface{}, parentType reflect.Type) interface{} {
 	elemType := elemVal.Elem().Type()
 	for i := 1; i < length; i++ {
 		if list.Index(i).Elem().Type() != elemType {
-			// Not all elements have the same type, keep it []interface{}
+			// Not all elements have the same type, keep it []any
 			return array
 		}
 	}
@@ -110,7 +132,7 @@ func validateArray(ctx *Context) bool {
 
 		list := reflect.ValueOf(ctx.Value)
 		length := list.Len()
-		arr := createArray(ctx.Rule.Params[0], length)
+		arr := createArray(ArrayType(ctx.Rule.Params[0]), length)
 		if !arr.Type().AssignableTo(parentType.Elem()) {
 			arr = list
 		}

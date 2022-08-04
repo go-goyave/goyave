@@ -111,12 +111,12 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		var errors []error
 		if hasQueryRules {
 			opt := &validation.Options{
-				Data:      r.Query,
-				Rules:     queryRules.(RulerFunc)(r),
-				IsJSON:    false,
-				Languages: m.Lang(),
-				Lang:      r.Lang,
-				Extra:     extra,
+				Data:                     r.Query,
+				Rules:                    queryRules.(RulerFunc)(r),
+				ConvertSingleValueArrays: true,
+				Languages:                m.Lang(),
+				Lang:                     r.Lang,
+				Extra:                    extra,
 			}
 			var err []error
 			queryErrsBag, err = validation.ValidateV5(opt)
@@ -129,12 +129,12 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		}
 		if hasRules {
 			opt := &validation.Options{
-				Data:      r.Data,
-				Rules:     rules.(RulerFunc)(r),
-				IsJSON:    strings.HasPrefix(contentType, "application/json"),
-				Languages: m.Lang(),
-				Lang:      r.Lang,
-				Extra:     extra,
+				Data:                     r.Data,
+				Rules:                    rules.(RulerFunc)(r),
+				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
+				Languages:                m.Lang(),
+				Lang:                     r.Lang,
+				Extra:                    extra,
 			}
 			var err []error
 			errsBag, err = validation.ValidateV5(opt)

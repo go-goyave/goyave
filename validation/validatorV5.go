@@ -2,6 +2,7 @@ package validation
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,14 +13,25 @@ import (
 )
 
 type Options struct {
-	Data      any
-	Rules     RulerV5
-	IsJSON    bool
-	Languages *lang.Languages
-	DB        *gorm.DB
-	Config    *config.Config
-	Lang      string
-	Extra     map[string]any
+	Data  any
+	Rules RulerV5
+
+	// ConvertSingleValueArrays set to true to convert fields that are expected
+	// to be an array into an array with a single value.
+	//
+	// It is recommended to set this option to `true` when validating url-encoded requests.
+	// For example, if set to `false`:
+	//  field=A         --> map[string]any{"field": "A"}
+	//  field=A&field=B --> map[string]any{"field": []string{"A", "B"}}
+	// If set to `true` and `field` has the `Array` rule:
+	//  field=A         --> map[string]any{"field": []string{"A"}}
+	//  field=A&field=B --> map[string]any{"field": []string{"A", "B"}}
+	ConvertSingleValueArrays bool
+	Languages                *lang.Languages
+	DB                       *gorm.DB
+	Config                   *config.Config
+	Lang                     string
+	Extra                    map[string]any
 }
 
 type ContextV5 struct {
@@ -110,8 +122,8 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			delete(parentObject, c.Name)
 		}
 
-		if shouldConvertSingleValueArray(fieldName, v.options.IsJSON) && c.Found == walk.Found {
-			c.Value = v.convertSingleValueArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
+		if v.options.ConvertSingleValueArrays && v.shouldConvertSingleValueArray(fieldName) && c.Found == walk.Found {
+			c.Value = v.convertSingleValueArray(field, c.Value, parentObject)
 			parentObject[c.Name] = c.Value
 		}
 
@@ -177,6 +189,10 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 		// Value may be modified (converting rule), replace it in the parent element
 		replaceValue(value, c)
 	})
+}
+
+func (v *validator) shouldConvertSingleValueArray(fieldName string) bool {
+	return fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
 func (v *validator) convertSingleValueArray(field *FieldV5, value any, data map[string]any) any {

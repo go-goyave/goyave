@@ -716,6 +716,8 @@ I'm very grateful to my patrons, sponsors and donators:
 - Ben Hyrman
 - Massimiliano Bertinetti
 - ethicnology
+- Yariya
+- sebastien-d-me
 
 ### Contributors
 

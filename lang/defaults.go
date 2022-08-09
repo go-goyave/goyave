@@ -98,7 +98,7 @@ var enUS = language{
 			"ends_with":                        "The :field must end with one of the following values: :values.",
 			"ends_with.array":                  "The :field values must end with one of the following values: :values.",
 			"in":                               "The :field must have one of the following values: :values.",
-			"in.values":                        "The :field values must have one of the following values: :values.",
+			"in.array":                         "The :field values must have one of the following values: :values.",
 			"not_in":                           "The :field must not have one of the following values: :values.",
 			"not_in.array":                     "The :field values must not have one of the following values: :values.",
 			"in_array":                         "The :field doesn't exist in the :other.",

@@ -2,8 +2,8 @@ package auth
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -193,7 +193,7 @@ func (suite *JWTAuthenticatorTestSuite) TestRSASignedToken() {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.rsa.public"))
+		data, _ := os.ReadFile(config.GetString("auth.jwt.rsa.public"))
 		return jwt.ParseRSAPublicKeyFromPEM(data)
 	})
 	suite.Nil(err)
@@ -218,7 +218,7 @@ func (suite *JWTAuthenticatorTestSuite) TestECDSASignedToken() {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		data, _ := ioutil.ReadFile(config.GetString("auth.jwt.ecdsa.public"))
+		data, _ := os.ReadFile(config.GetString("auth.jwt.ecdsa.public"))
 		return jwt.ParseECPublicKeyFromPEM(data)
 	})
 	suite.Nil(err)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"runtime/debug"
@@ -158,7 +157,7 @@ func parseQuery(request *Request) error {
 }
 
 func resetRequestBody(request *Request, bodyBytes []byte) {
-	request.httpRequest.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	request.httpRequest.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 }
 
 // corsMiddleware is the middleware handling CORS, using the options set in the router.

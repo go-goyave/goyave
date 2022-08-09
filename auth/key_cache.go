@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/golang-jwt/jwt"
 	"goyave.dev/goyave/v4/config"
@@ -16,7 +16,7 @@ func loadKey(cfg string) (interface{}, error) {
 		return k, nil
 	}
 
-	data, err := ioutil.ReadFile(config.GetString(cfg))
+	data, err := os.ReadFile(config.GetString(cfg))
 	if err != nil {
 		return nil, err
 	}

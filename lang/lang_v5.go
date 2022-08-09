@@ -62,10 +62,11 @@ func (l *Languages) LoadAllAvailableLanguages() error {
 // Load a language directory.
 //
 // Directory structure of a language directory:
-//  en-UK
-//    ├─ locale.json     (contains the normal language lines)
-//    ├─ rules.json      (contains the validation messages)
-//    └─ attributes.json (contains the attribute-specific validation messages)
+//
+//	en-UK
+//	  ├─ locale.json     (contains the normal language lines)
+//	  ├─ rules.json      (contains the validation messages)
+//	  └─ attributes.json (contains the attribute-specific validation messages)
 //
 // Each file is optional.
 func (l *Languages) Load(language, path string) error {
@@ -112,7 +113,7 @@ func (l *Languages) load(lang string, path string) error {
 // replacement. In the following example, the placeholder ":username" will be replaced
 // with the Name field in the user struct.
 //
-// 	lang.Get("en-US", "greetings", ":username", user.Name)
+//	lang.Get("en-US", "greetings", ":username", user.Name)
 func (l *Languages) Get(lang string, line string, placeholders ...string) string {
 	if !l.IsAvailable(lang) {
 		return line
@@ -162,9 +163,9 @@ func (l *Languages) IsAvailable(lang string) bool {
 // This can be used to generate different routes for all languages
 // supported by your applications.
 //
-//  /en/products
-//  /fr/produits
-//  ...
+//	/en/products
+//	/fr/produits
+//	...
 func (l *Languages) GetAvailableLanguages() []string {
 	langs := []string{}
 	for lang := range l.languages {

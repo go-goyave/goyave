@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 	"strconv"
 
+	"github.com/samber/lo"
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
@@ -264,22 +265,25 @@ func (r *ResponseV5) error(err any) {
 	r.request.Extra[ExtraError] = err
 	if r.server.Config().GetBool("app.debug") {
 		stacktrace := r.request.Extra[ExtraStacktrace]
-		if stacktrace == "" {
+		if stacktrace == nil {
 			stacktrace = string(debug.Stack())
 		}
 		r.server.ErrLogger.Print(stacktrace)
 		if !r.Hijacked() {
-			var message interface{}
-			if e, ok := err.(error); ok {
+			var message any
+			switch e := err.(type) {
+			case error:
 				message = e.Error()
-			} else {
-				message = err
+			case []error:
+				message = lo.Map(e, func(x error, _ int) string { return x.Error() })
+			default:
+				message = e
 			}
 			status := http.StatusInternalServerError
 			if r.status != 0 {
 				status = r.status
 			}
-			r.JSON(status, map[string]interface{}{"error": message})
+			r.JSON(status, map[string]any{"error": message})
 			return
 		}
 	}

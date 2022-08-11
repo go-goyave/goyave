@@ -48,7 +48,7 @@ func (c *Controller) AccessLogger() *log.Logger {
 }
 
 func (c *Controller) DB() *gorm.DB {
-	return c.server.DB()
+	return c.server.DB().Session(&gorm.Session{NewDB: true})
 }
 
 func (c *Controller) Config() *config.Config {

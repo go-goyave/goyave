@@ -14,10 +14,10 @@ import (
 // In order to use a specific driver / dialect ("mysql", "sqlite3", ...), you must not
 // forget to blank-import it in your main file.
 //
-//   import _ "goyave.dev/goyave/v5/database/dialect/mysql"
-//   import _ "goyave.dev/goyave/v5/database/dialect/postgres"
-//   import _ "goyave.dev/goyave/v5/database/dialect/sqlite"
-//   import _ "goyave.dev/goyave/v5/database/dialect/mssql"
+//	import _ "goyave.dev/goyave/v5/database/dialect/mysql"
+//	import _ "goyave.dev/goyave/v5/database/dialect/postgres"
+//	import _ "goyave.dev/goyave/v5/database/dialect/sqlite"
+//	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
 func New(cfg *config.Config) (*gorm.DB, error) {
 	driver := cfg.GetString("database.connection")
 
@@ -79,15 +79,11 @@ func initSQLDBV5(cfg *config.Config, db *gorm.DB) {
 	sqlDB.SetMaxOpenConns(cfg.GetInt("database.maxOpenConnections"))
 	sqlDB.SetMaxIdleConns(cfg.GetInt("database.maxIdleConnections"))
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.GetInt("database.maxLifetime")) * time.Second)
-
-	for _, initializer := range initializers {
-		initializer(db)
-	}
 }
 
 // Migrate migrates all registered models.
 func MigrateV5(db *gorm.DB) error {
-	for _, model := range models {
+	for _, model := range models { // TODO use a single transaction for migrations (so one failed migration rolls back everything)
 		if err := db.AutoMigrate(model); err != nil {
 			return err
 		}

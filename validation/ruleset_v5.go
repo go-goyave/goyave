@@ -22,8 +22,10 @@ type Validator interface { // TODO rename to Rule?
 }
 
 type ComparatorValidator interface {
-	ComparesWith() string
-	// TODO compares with value at the same level? or from the root level? In arrays of objects?
+	ComparesWith() string // Returns a path to the compared element
+	// TODO in compositions, compares with value at the same level? or from the root level? In arrays of objects?
+	// Idea: when a field is added via composition, keep the prefix somewhere in memory so it can be used to make sure the scope is preserved.
+	// If a path created that way contains arrays, there may be a way to inject the matching indexes
 }
 
 type BaseValidator struct{}

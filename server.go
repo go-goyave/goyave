@@ -205,7 +205,7 @@ func (s *Server) DB() *gorm.DB {
 	if s.db == nil {
 		s.ErrLogger.Panicf("No database connection. Database is set to \"none\" in the config")
 	}
-	return s.db.Session(&gorm.Session{NewDB: true})
+	return s.db
 }
 
 // ReplaceDB manually replace the automatic DB connection.
@@ -307,7 +307,7 @@ func (s *Server) prepare(routeRegistrer func(*Server, *RouterV5)) error { // TOD
 	s.server.Handler = s.router
 
 	if s.config.GetBool("database.autoMigrate") && s.db != nil {
-		if err := database.MigrateV5(s.DB()); err != nil {
+		if err := database.MigrateV5(s.DB().Session(&gorm.Session{NewDB: true})); err != nil {
 			return &Error{err, ExitDatabaseError}
 		}
 	}

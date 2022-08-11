@@ -124,20 +124,20 @@ func ClearInitializers() {
 //	 func init() {
 //			database.RegisterModel(&MyModel{})
 //	 }
-func RegisterModel(model interface{}) {
+func RegisterModel(model any) {
 	models = append(models, model)
 }
 
 // GetRegisteredModels get the registered models.
 // The returned slice is a copy of the original, so it
 // cannot be modified.
-func GetRegisteredModels() []interface{} {
-	return append(make([]interface{}, 0, len(models)), models...)
+func GetRegisteredModels() []any {
+	return append(make([]any, 0, len(models)), models...)
 }
 
 // ClearRegisteredModels unregister all models.
 func ClearRegisteredModels() {
-	models = []interface{}{}
+	models = []any{}
 }
 
 // Migrate migrates all registered models.

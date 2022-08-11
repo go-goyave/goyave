@@ -70,8 +70,15 @@ func (c *ContextV5) Config() *config.Config {
 // AddError adds an error to the validation context. This is NOT supposed
 // to be used when the field under validation doesn't match the rule, but rather
 // when there has been an operation error (such as a database error).
-func (c *ContextV5) AddError(err error) {
-	c.errors = append(c.errors, err)
+func (c *ContextV5) AddError(err ...error) {
+	c.errors = append(c.errors, err...)
+}
+
+// Errors returns this validation context's errors. Because each rule on each field
+// has its own Context, the returned array will only contain errors related to the
+// current field and the current rule.
+func (c *ContextV5) Errors() []error {
+	return c.errors
 }
 
 type validator struct {
@@ -171,7 +178,12 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 				Now:     v.now,
 				Name:    c.Name,
 			}
-			if !rule.Validate(ctx) {
+			ok := rule.Validate(ctx)
+			if len(ctx.errors) > 0 {
+				v.errors = append(v.errors, ctx.errors...)
+				continue
+			}
+			if !ok {
 				path := field.getErrorPath(parentPath, c)
 				// message := processPlaceholders(fieldName, v.getMessage(field, rule, reflect.ValueOf(value)), language, ctx)
 				// TODO placeholderV5

@@ -40,7 +40,12 @@ func (v *Array) Validate(ctx *ContextV5) bool {
 				Parent:  ctx.Value,
 				Now:     ctx.Now,
 			}
-			if !v.ElementsType.Validate(tmpCtx) {
+			ok := v.ElementsType.Validate(tmpCtx)
+			if len(tmpCtx.errors) > 0 {
+				ctx.AddError(tmpCtx.errors...)
+				return false
+			}
+			if !ok {
 				return false
 			}
 			arr.Index(i).Set(reflect.ValueOf(tmpCtx.Value))

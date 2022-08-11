@@ -1,24 +1,21 @@
 package database
 
 import (
-	"reflect"
-
 	"github.com/imdario/mergo"
+	"gorm.io/gorm"
 )
 
-// Generator a generator function generates a single record.
-type Generator func() interface{}
-
 // Factory an object used to generate records or seed the database.
-type Factory struct {
-	generator Generator
-	override  interface{}
+type FactoryV5[T any] struct {
+	db        *gorm.DB
+	generator func() *T
+	override  *T
 }
 
 // NewFactory create a new Factory.
 // The given generator function will be used to generate records.
-func NewFactory(generator Generator) *Factory {
-	return &Factory{
+func NewFactoryV5[T any](generator func() *T) *FactoryV5[T] {
+	return &FactoryV5[T]{
 		generator: generator,
 		override:  nil,
 	}
@@ -29,46 +26,34 @@ func NewFactory(generator Generator) *Factory {
 // in the generated records.
 // This function expects a struct pointer as parameter.
 // Returns the same instance of `Factory` so this method can be chained.
-func (f *Factory) Override(override interface{}) *Factory {
+func (f *FactoryV5[T]) Override(override *T) *FactoryV5[T] {
 	f.override = override
 	return f
 }
 
 // Generate a number of records using the given factory.
-// Returns a slice of the actual type of the generated records,
-// meaning you can type-assert safely.
-//
-//	factory.Generate(5).([]*User)
-func (f *Factory) Generate(count int) interface{} {
+func (f *FactoryV5[T]) Generate(count int) []*T {
 	if count <= 0 {
-		return []interface{}{}
+		return []*T{}
 	}
-	var t reflect.Type
-	var slice reflect.Value
+
+	slice := make([]*T, 0, count)
+
 	for i := 0; i < count; i++ {
 		record := f.generator()
-		if t == nil {
-			t = reflect.TypeOf(record)
-			slice = reflect.MakeSlice(reflect.SliceOf(t), 0, count)
-		}
 		if f.override != nil {
 			if err := mergo.Merge(record, f.override, mergo.WithOverride); err != nil {
 				panic(err)
 			}
 		}
-		slice = reflect.Append(slice, reflect.ValueOf(record))
+		slice = append(slice, record)
 	}
-	return slice.Interface()
+	return slice
 }
 
 // Save generate a number of records using the given factory,
 // insert them in the database and return the inserted records.
-// The returned slice is a slice of the actual type of the generated records,
-// meaning you can type-assert safely.
-//
-//	factory.Save(5).([]*User)
-func (f *Factory) Save(count int) interface{} {
-	db := GetConnection()
+func (f *FactoryV5[T]) Save(db *gorm.DB, count int) []*T {
 	records := f.Generate(count)
 
 	if err := db.Create(records).Error; err != nil {

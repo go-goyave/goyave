@@ -736,7 +736,7 @@ A big "Thank you" to the Goyave contributors:
 
 <p align="center">
     <a href="https://adagio.io" target="_blank" rel="nofollow">
-        <img src=".github/usedby/adagio.webp" alt="Adagio.io" style="background-color:white;border-radius:1rem;"/>
+        <img src=".github/usedby/adagio.webp" alt="Adagio.io"/>
     </a>
 </p>
 

@@ -3,6 +3,7 @@ package goyave
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/samber/lo"
+	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
@@ -290,4 +292,31 @@ func (r *ResponseV5) error(err any) {
 
 	// Don't set r.empty to false to let error status handler process the error
 	r.Status(http.StatusInternalServerError)
+}
+
+// DBError takes a database query result and checks if any error has occurred.
+//
+// Automatically writes HTTP status code 404 Not Found if the error is a "Not found" error.
+// Calls `Response.Error()` if there is another type of error.
+//
+// Returns true if there is an error. You can then safely `return` in you controller.
+//
+//	func (ctrl *ProductController) Show(response *goyave.Response, request *goyave.Request) {
+//	    product := model.Product{}
+//	    result := ctrl.DB().First(&product, request.Params["id"])
+//	    if response.DBError(result) {
+//	        return
+//	    }
+//	    response.JSON(http.StatusOK, product)
+//	}
+func (r *ResponseV5) DBError(db *gorm.DB) bool {
+	if db.Error != nil {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
+			r.Status(http.StatusNotFound)
+		} else {
+			r.Error(db.Error)
+		}
+		return true
+	}
+	return false
 }

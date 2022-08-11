@@ -468,5 +468,3 @@ func registerShutdownHook(readyChan chan struct{}, hook func(context.Context) er
 		}
 	}()
 }
-
-// TODO refactor server sartup (use context)

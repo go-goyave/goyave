@@ -273,7 +273,7 @@ func GetAvailableLanguages() []string {
 // If no variant is given (for example "en"), the first available variant will be used.
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
-func DetectLanguage(lang string) string { // TODO how to do this? uses config
+func DetectLanguage(lang string) string {
 	values := httputil.ParseMultiValuesHeader(lang)
 	for _, l := range values {
 		if l.Value == "*" { // Accept anything, so return default language

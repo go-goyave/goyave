@@ -48,7 +48,7 @@ The Goyave framework has an extensive documentation covering in-depth subjects a
 
 ### Requirements
 
-- Go 1.16+
+- Go 1.17+
 - Go modules
 
 ### Install using the template project

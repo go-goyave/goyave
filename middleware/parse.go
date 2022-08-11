@@ -3,7 +3,6 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -53,7 +52,6 @@ func (m *ParseRequest) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 					req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 					r.Data, err = generateFlatMap(req, maxSize)
 					if err != nil {
-						fmt.Println(err)
 						response.Status(http.StatusBadRequest)
 					}
 				}

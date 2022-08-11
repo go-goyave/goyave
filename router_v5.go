@@ -120,6 +120,11 @@ func (r *RouterV5) ClearRegexCache() {
 	}
 }
 
+// GetParent returns the parent Router of this router (can be `nil`).
+func (r *RouterV5) GetParent() *RouterV5 {
+	return r.parent
+}
+
 // GetRoutes returns the list of routes belonging to this router.
 func (r *RouterV5) GetRoutes() []*RouteV5 {
 	cpy := make([]*RouteV5, len(r.routes))
@@ -295,7 +300,8 @@ func (r *RouterV5) Group() *RouterV5 {
 // Route register a new route.
 //
 // Multiple methods can be passed using a pipe-separated string.
-//  "PUT|PATCH"
+//
+//	"PUT|PATCH"
 //
 // The validation rules set is optional. If you don't want your route
 // to be validated, pass "nil".

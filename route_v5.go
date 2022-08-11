@@ -216,6 +216,7 @@ func (r *RouteV5) GetHandler() HandlerV5 {
 	return r.handler
 }
 
+// GetParent returns the parent Router of this route.
 func (r *RouteV5) GetParent() *RouterV5 {
 	return r.parent
 }

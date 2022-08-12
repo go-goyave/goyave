@@ -155,6 +155,14 @@ func (r *RouterV5) RemoveMeta(key string) *RouterV5 {
 	return r
 }
 
+func (r *RouterV5) LookupMeta(key string) (any, bool) {
+	val, ok := r.Meta[key]
+	if ok {
+		return val, ok
+	}
+	return r.parent.LookupMeta(key)
+}
+
 // GlobalMiddleware apply one or more global middleware. Global middleware are
 // executed for every request, including when the request doesn't match any route
 // or if it results in "Method Not Allowed".
@@ -278,7 +286,7 @@ func (r *RouterV5) Subrouter(prefix string) *RouterV5 {
 		parent:         r,
 		prefix:         prefix,
 		statusHandlers: maputil.Clone(r.statusHandlers),
-		Meta:           maputil.Clone(r.Meta), // TODO do we really want Meta to be inherited?
+		Meta:           make(map[string]any),
 		namedRoutes:    r.namedRoutes,
 		routes:         make([]*RouteV5, 0, 5), // Typical CRUD has 5 routes
 		middlewareHolderV5: middlewareHolderV5{
@@ -348,6 +356,8 @@ func (r *RouterV5) Options(uri string, handler HandlerV5) *RouteV5 {
 }
 
 func (r *RouterV5) registerRoute(methods string, uri string, handler HandlerV5) *RouteV5 {
+	// TODO automatically add the "OPTIONS" method if the CORS middleware is added
+	// Add a "setup" function for middleware so they can alter the route, add meta, etc
 	// if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
 	// 	methods += "|OPTIONS"
 	// }

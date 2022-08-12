@@ -100,6 +100,14 @@ func (r *RouteV5) RemoveMeta(key string) *RouteV5 {
 	return r
 }
 
+func (r *RouteV5) LookupMeta(key string) (any, bool) {
+	val, ok := r.Meta[key]
+	if ok {
+		return val, ok
+	}
+	return r.parent.LookupMeta(key)
+}
+
 func (r *RouteV5) ValidateBody(validationRules RulerFunc) *RouteV5 {
 	r.Meta[MetaValidationRules] = validationRules
 	if !hasMiddleware[*validateRequestMiddlewareV5](r.middleware) {

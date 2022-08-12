@@ -9,9 +9,7 @@ import (
 )
 
 const (
-	MetaValidationRules      = "goyave.validationRules"
-	MetaQueryValidationRules = "goyave.queryValidationRules"
-	MetaCORS                 = "goyave.cors"
+	MetaCORS = "goyave.cors"
 )
 
 var (
@@ -358,7 +356,7 @@ func (r *RouterV5) Options(uri string, handler HandlerV5) *RouteV5 {
 func (r *RouterV5) registerRoute(methods string, uri string, handler HandlerV5) *RouteV5 {
 	// TODO automatically add the "OPTIONS" method if the CORS middleware is added
 	// Add a "setup" function for middleware so they can alter the route, add meta, etc
-	// if r.corsOptions != nil && !strings.Contains(methods, "OPTIONS") {
+	// if r.corsOptions != nil && !strings.Contains(methods, http.MethodOptions) {
 	// 	methods += "|OPTIONS"
 	// }
 
@@ -393,14 +391,6 @@ func (r *RouterV5) requestHandler(match *routeMatchV5, w http.ResponseWriter, ra
 	request := newRequest(rawRequest, match.route)
 	response := newResponseV5(r.server, request, w, rawRequest)
 	handler := match.route.handler
-
-	// Validate last.
-	// Allows custom middleware to be executed after core
-	// middleware and before validation.
-	// handler = validateRequestMiddleware(handler)
-	// TODO re-enable validation middleware
-
-	// TODO a generic function that returns a normal handler but converts the body automatically
 
 	// Route-specific middleware is executed after router middleware
 	handler = match.route.applyMiddleware(handler)

@@ -109,17 +109,21 @@ func (r *RouteV5) LookupMeta(key string) (any, bool) {
 }
 
 func (r *RouteV5) ValidateBody(validationRules RulerFunc) *RouteV5 {
-	r.Meta[MetaValidationRules] = validationRules
-	if !hasMiddleware[*validateRequestMiddlewareV5](r.middleware) {
-		r.Middleware(&validateRequestMiddlewareV5{})
+	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
+	if validationMiddleware == nil {
+		r.Middleware(&validateRequestMiddlewareV5{BodyRules: validationRules})
+	} else {
+		validationMiddleware.BodyRules = validationRules
 	}
 	return r
 }
 
 func (r *RouteV5) ValidateQuery(validationRules RulerFunc) *RouteV5 {
-	r.Meta[MetaQueryValidationRules] = validationRules
-	if !hasMiddleware[*validateRequestMiddlewareV5](r.middleware) {
-		r.Middleware(&validateRequestMiddlewareV5{})
+	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
+	if validationMiddleware == nil {
+		r.Middleware(&validateRequestMiddlewareV5{QueryRules: validationRules})
+	} else {
+		validationMiddleware.QueryRules = validationRules
 	}
 	return r
 }
@@ -227,11 +231,6 @@ func (r *RouteV5) GetHandler() HandlerV5 {
 // GetParent returns the parent Router of this route.
 func (r *RouteV5) GetParent() *RouterV5 {
 	return r.parent
-}
-
-// GetValidationRules returns the validation rules associated with this route.
-func (r *RouteV5) GetValidationRules() *validation.Rules {
-	return r.Meta[MetaValidationRules].(*validation.Rules)
 }
 
 // GetFullURIAndParameters get the full uri and parameters for this route and all its parent routers.

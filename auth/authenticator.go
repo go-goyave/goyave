@@ -26,6 +26,10 @@ type Authenticator interface {
 	Authenticate(request *goyave.Request, user interface{}) error
 }
 
+// TODO MutliAuthenticator,an authenticator that contains multiple authenticators
+// so the route can accept multiple authentication mechanisms. If all of them fail
+// then return Unauthorized. Otherwise use the first that succeeded.
+
 // Unauthorizer can be implemented by Authenticators to define custom behavior
 // when authentication fails.
 type Unauthorizer interface {

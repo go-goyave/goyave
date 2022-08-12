@@ -24,13 +24,14 @@ func (h *middlewareHolderV5) applyMiddleware(handler HandlerV5) HandlerV5 {
 	return handler
 }
 
-func hasMiddleware[T MiddlewareV5](m []MiddlewareV5) bool {
+func findMiddleware[T MiddlewareV5](m []MiddlewareV5) T {
 	for _, middleware := range m {
-		if _, ok := middleware.(T); ok {
-			return ok
+		if m, ok := middleware.(T); ok {
+			return m
 		}
 	}
-	return false
+	var t T
+	return t
 }
 
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
@@ -93,26 +94,24 @@ func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 // This data can then be used in a status handler.
 type validateRequestMiddlewareV5 struct {
 	Controller
+	BodyRules  RulerFunc
+	QueryRules RulerFunc
 }
 
 func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	return func(response *ResponseV5, r *RequestV5) {
-		route := r.Route()
-
 		extra := map[string]any{
 			validation.ExtraRequest: r,
 		}
 		contentType := r.Header().Get("Content-Type")
-		rules, hasRules := route.Meta[MetaValidationRules]
-		queryRules, hasQueryRules := route.Meta[MetaQueryValidationRules]
 
 		var errsBag *validation.ErrorsV5
 		var queryErrsBag *validation.ErrorsV5
 		var errors []error
-		if hasQueryRules {
+		if m.QueryRules != nil {
 			opt := &validation.Options{
 				Data:                     r.Query,
-				Rules:                    queryRules.(RulerFunc)(r),
+				Rules:                    m.QueryRules(r),
 				ConvertSingleValueArrays: true,
 				Languages:                m.Lang(),
 				Lang:                     r.Lang,
@@ -127,10 +126,10 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				errors = append(errors, err...)
 			}
 		}
-		if hasRules {
+		if m.BodyRules != nil {
 			opt := &validation.Options{
 				Data:                     r.Data,
-				Rules:                    rules.(RulerFunc)(r),
+				Rules:                    m.BodyRules(r),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
 				Languages:                m.Lang(),
 				Lang:                     r.Lang,

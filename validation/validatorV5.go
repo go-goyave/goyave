@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/maps"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/lang"
-	"goyave.dev/goyave/v4/util/maputil"
 	"goyave.dev/goyave/v4/util/walk"
 )
 
@@ -171,7 +171,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			ctx := &ContextV5{
 				Options: v.options,
 				Data:    v.options.Data,
-				Extra:   maputil.Clone(v.options.Extra),
+				Extra:   maps.Clone(v.options.Extra),
 				Value:   value,
 				Parent:  c.Parent,
 				Field:   field,

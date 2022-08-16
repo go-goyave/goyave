@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/exp/maps"
 	"goyave.dev/goyave/v4/cors"
-	"goyave.dev/goyave/v4/util/maputil"
 )
 
 const (
@@ -295,7 +295,7 @@ func (r *RouterV5) Subrouter(prefix string) *RouterV5 {
 		server:         r.server,
 		parent:         r,
 		prefix:         prefix,
-		statusHandlers: maputil.Clone(r.statusHandlers),
+		statusHandlers: maps.Clone(r.statusHandlers),
 		Meta:           make(map[string]any),
 		namedRoutes:    r.namedRoutes,
 		routes:         make([]*RouteV5, 0, 5), // Typical CRUD has 5 routes

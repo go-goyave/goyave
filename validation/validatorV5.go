@@ -235,11 +235,11 @@ func (v *validator) getMessage(field *FieldV5, rule Validator, value reflect.Val
 	langEntry := "validation.rules." + rule.Name()
 	if rule.IsTypeDependent() {
 		expectedType := v.findTypeRule(field.Rules)
-		if expectedType == "unsupported" {
+		if expectedType == FieldTypeUnsupported {
 			langEntry += "." + getFieldType(value)
 		} else {
 			if expectedType == "integer" {
-				expectedType = "numeric"
+				expectedType = FieldTypeNumeric
 			}
 			langEntry += "." + expectedType
 		}

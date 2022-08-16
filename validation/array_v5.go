@@ -9,7 +9,7 @@ type Array struct {
 }
 
 func (v *Array) Validate(ctx *ContextV5) bool {
-	if GetFieldType(ctx.Value) != "array" {
+	if GetFieldType(ctx.Value) != FieldTypeArray {
 		return false
 	}
 	ctx.Value = convertArray(ctx.Value, reflect.TypeOf(ctx.Parent))

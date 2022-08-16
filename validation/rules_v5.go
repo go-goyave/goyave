@@ -38,17 +38,17 @@ type Between struct {
 
 func (v *Between) Validate(ctx *ContextV5) bool {
 	switch GetFieldType(ctx.Value) {
-	case "numeric":
+	case FieldTypeNumeric:
 		floatValue, _ := typeutil.ToFloat64(ctx.Value)
 		return floatValue >= float64(v.Min) && floatValue <= float64(v.Max)
-	case "string":
+	case FieldTypeString:
 		length := uniseg.GraphemeClusterCount(ctx.Value.(string))
 		return length >= v.Min && length <= v.Max
-	case "array":
+	case FieldTypeArray, FieldTypeObject: // TODO test for object (validates the number of keys)
 		list := reflect.ValueOf(ctx.Value)
 		length := list.Len()
 		return length >= v.Min && length <= v.Max
-	case "file":
+	case FieldTypeFile:
 		files, _ := ctx.Value.([]fsutil.File)
 		for _, file := range files {
 			minSize := int64(v.Min) * 1024

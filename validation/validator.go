@@ -26,6 +26,16 @@ const (
 	ExtraRequest = "request"
 )
 
+// FieldType returned by the GetFieldType function.
+const (
+	FieldTypeNumeric     = "numeric"
+	FieldTypeString      = "string"
+	FieldTypeFile        = "file"
+	FieldTypeArray       = "array"
+	FieldTypeObject      = "object"
+	FieldTypeUnsupported = "unsupported"
+)
+
 // Ruler adapter interface for method dispatching between RuleSet and Rules
 // at route registration time. Allows to input both of these types as parameters
 // of the Route.Validate method.
@@ -658,21 +668,21 @@ func getFieldType(value reflect.Value) string { // TODO use consts for the retur
 	kind := value.Kind().String()
 	switch {
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr", strings.HasPrefix(kind, "float"):
-		return "numeric"
+		return FieldTypeNumeric
 	case kind == "string":
-		return "string"
+		return FieldTypeString
 	case kind == "slice":
 		if value.Type().String() == "[]fsutil.File" {
-			return "file"
+			return FieldTypeFile
 		}
-		return "array"
+		return FieldTypeArray
 	default:
 		if value.IsValid() {
 			if _, ok := value.Interface().(map[string]any); ok {
-				return "object"
+				return FieldTypeObject
 			}
 		}
-		return "unsupported"
+		return FieldTypeUnsupported
 	}
 }
 

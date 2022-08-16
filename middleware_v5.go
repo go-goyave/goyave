@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"goyave.dev/goyave/v4/cors"
 	"goyave.dev/goyave/v4/validation"
 )
 
@@ -24,14 +25,40 @@ func (h *middlewareHolderV5) applyMiddleware(handler HandlerV5) HandlerV5 {
 	return handler
 }
 
+// GetMiddleware returns a copy of the middleware applied on this holder.
+func (h *middlewareHolderV5) GetMiddleware() []MiddlewareV5 {
+	return append(make([]MiddlewareV5, 0, len(h.middleware)), h.middleware...)
+}
+
 func findMiddleware[T MiddlewareV5](m []MiddlewareV5) T {
 	for _, middleware := range m {
 		if m, ok := middleware.(T); ok {
 			return m
 		}
 	}
-	var t T
-	return t
+	var zero T
+	return zero
+}
+
+func hasMiddleware[T MiddlewareV5](m []MiddlewareV5) bool {
+	for _, middleware := range m {
+		if _, ok := middleware.(T); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// routeHasMiddleware returns true if the given route or any of its
+// parents has a middleware of the T type.
+func routeHasMiddleware[T MiddlewareV5](route *RouteV5) bool {
+	return hasMiddleware[T](route.middleware)
+}
+
+// routerHasMiddleware returns true if the given route or any of its
+// parents has a middleware of the T type.
+func routerHasMiddleware[T MiddlewareV5](router *RouterV5) bool {
+	return hasMiddleware[T](router.middleware) || (router.parent != nil && routerHasMiddleware[T](router.parent))
 }
 
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
@@ -157,5 +184,37 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		}
 
 		next(response, r)
+	}
+}
+
+type corsMiddlewareV5 struct {
+	Controller
+}
+
+func (m *corsMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
+	return func(response *ResponseV5, request *RequestV5) {
+		o, ok := request.Route().LookupMeta(MetaCORS)
+		if !ok || o == nil {
+			next(response, request)
+			return
+		}
+
+		options := o.(*cors.Options)
+		headers := response.Header()
+		requestHeaders := request.Header()
+
+		options.ConfigureCommon(headers, requestHeaders)
+
+		if request.Method() == http.MethodOptions && requestHeaders.Get("Access-Control-Request-Method") != "" {
+			options.HandlePreflight(headers, requestHeaders)
+			if options.OptionsPassthrough {
+				next(response, request)
+			} else {
+				response.WriteHeader(http.StatusNoContent)
+			}
+		} else {
+			next(response, request)
+		}
+		next(response, request)
 	}
 }

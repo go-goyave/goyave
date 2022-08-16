@@ -128,6 +128,17 @@ func (r *RouteV5) ValidateQuery(validationRules RulerFunc) *RouteV5 {
 	return r
 }
 
+// CORS set the CORS options for this route only.
+// If the options are not `nil`, the CORS middleware is automatically added.
+// To disable CORS, give `nil` options.
+func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
+	r.Meta[MetaCORS] = options
+	if !routeHasMiddleware[*corsMiddlewareV5](r) {
+		r.Middleware(&corsMiddlewareV5{})
+	}
+	return r
+}
+
 // Middleware register middleware for this route only.
 //
 // Returns itself.
@@ -142,10 +153,9 @@ func (r *RouteV5) Middleware(middleware ...MiddlewareV5) *RouteV5 {
 // BuildURL build a full URL pointing to this route.
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
-// func (r *RouteV5) BuildURL(parameters ...string) string {
-// 	return r.parent.BaseURL() + r.BuildURI(parameters...)
-//  FIXME BaseURL accessed from?
-// }
+func (r *RouteV5) BuildURL(parameters ...string) string {
+	return r.parent.server.BaseURL() + r.BuildURI(parameters...)
+}
 
 // BuildURI build a full URI pointing to this route. The returned
 // string doesn't include the protocol and domain. (e.g. "/user/login")

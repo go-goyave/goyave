@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"goyave.dev/goyave/v4/cors"
 	"goyave.dev/goyave/v4/util/maputil"
 )
 
@@ -184,6 +185,17 @@ func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
 		m.setServer(r.server)
 	}
 	r.middleware = append(r.middleware, middleware...)
+	return r
+}
+
+// CORS set the CORS options for this route group.
+// If the options are not `nil`, the CORS middleware is automatically added.
+// To disable CORS, give `nil` options.
+func (r *RouterV5) CORS(options *cors.Options) *RouterV5 {
+	r.Meta[MetaCORS] = options
+	if !routerHasMiddleware[*corsMiddlewareV5](r) {
+		r.Middleware(&corsMiddlewareV5{})
+	}
 	return r
 }
 

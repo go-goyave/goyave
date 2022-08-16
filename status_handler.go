@@ -6,8 +6,6 @@ import (
 	"goyave.dev/goyave/v4/validation"
 )
 
-// TODO status handler should also have access to server resources (config, lang, etc)
-
 type StatusHandler interface {
 	IController
 	Handle(response *ResponseV5, request *RequestV5)

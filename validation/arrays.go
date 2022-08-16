@@ -73,8 +73,6 @@ func createArray(dataType ArrayType, length int) reflect.Value {
 	default:
 		panic(fmt.Sprintf("Unsupported array type %q", dataType))
 	}
-	// TODO how could Array validation rule support custom type rules?
-	// Maybe convert to []any then call convertArray? Not the most efficient but that works
 	return arr
 }
 

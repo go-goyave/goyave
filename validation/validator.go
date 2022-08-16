@@ -650,11 +650,11 @@ func findTypeRule(rules []*Rule) string {
 //   - "array" if the value is a slice
 //   - "file" if the value is a slice of "fsutil.File"
 //   - "unsupported" otherwise
-func GetFieldType(value interface{}) string {
+func GetFieldType(value any) string {
 	return getFieldType(reflect.ValueOf(value))
 }
 
-func getFieldType(value reflect.Value) string {
+func getFieldType(value reflect.Value) string { // TODO use consts for the return value
 	kind := value.Kind().String()
 	switch {
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr", strings.HasPrefix(kind, "float"):
@@ -668,7 +668,7 @@ func getFieldType(value reflect.Value) string {
 		return "array"
 	default:
 		if value.IsValid() {
-			if _, ok := value.Interface().(map[string]interface{}); ok {
+			if _, ok := value.Interface().(map[string]any); ok {
 				return "object"
 			}
 		}
@@ -679,7 +679,7 @@ func getFieldType(value reflect.Value) string {
 // GetFieldFromName find potentially nested field by it's dot-separated path
 // in the given object.
 // Returns the name without its prefix, the value, its parent object and a bool indicating if it has been found or not.
-func GetFieldFromName(name string, data map[string]interface{}) (string, interface{}, map[string]interface{}, bool) {
+func GetFieldFromName(name string, data map[string]any) (string, any, map[string]any, bool) {
 	key := name
 	i := strings.Index(name, ".")
 	if i != -1 {
@@ -691,7 +691,7 @@ func GetFieldFromName(name string, data map[string]interface{}) (string, interfa
 	}
 
 	if i != -1 {
-		if obj, ok := val.(map[string]interface{}); ok {
+		if obj, ok := val.(map[string]any); ok {
 			return GetFieldFromName(name[len(key)+1:], obj)
 		}
 	}

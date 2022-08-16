@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"goyave.dev/goyave/v4/util/sliceutil"
+	"golang.org/x/exp/slices"
 )
 
 // Only extracts the requested field from the given map[string] or structure and
-// returns a map[string]interface{} containing only those values.
+// returns a map[string]any containing only those values.
 //
 // For example:
 //
@@ -26,15 +26,15 @@ import (
 //
 // Result:
 //
-//	 map[string]interface{}{
+//	 map[string]any{
 //		  "Field": "value",
 //		  "Slice": []float64{3, 6, 9},
 //	 }
 //
 // In case of conflicting fields (if a promoted field has the same name as a parent's
 // struct field), the higher level field is kept.
-func Only(data interface{}, fields ...string) map[string]interface{} {
-	result := make(map[string]interface{}, len(fields))
+func Only(data any, fields ...string) map[string]any {
+	result := make(map[string]any, len(fields))
 	t := reflect.TypeOf(data)
 	value := reflect.ValueOf(data)
 	if t.Kind() == reflect.Ptr {
@@ -53,7 +53,7 @@ func Only(data interface{}, fields ...string) map[string]interface{} {
 		}
 		for _, k := range value.MapKeys() {
 			name := k.String()
-			if sliceutil.ContainsStr(fields, name) {
+			if slices.Contains(fields, name) {
 				result[name] = value.MapIndex(k).Interface()
 			}
 		}
@@ -74,7 +74,7 @@ func Only(data interface{}, fields ...string) map[string]interface{} {
 						result[k] = v
 					}
 				}
-			} else if sliceutil.ContainsStr(fields, name) {
+			} else if slices.Contains(fields, name) {
 				result[name] = value.Field(i).Interface()
 			}
 		}

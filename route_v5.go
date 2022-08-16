@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"goyave.dev/goyave/v4/cors"
 	"goyave.dev/goyave/v4/validation"
 )
 

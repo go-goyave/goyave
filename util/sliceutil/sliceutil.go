@@ -2,6 +2,8 @@ package sliceutil
 
 import "reflect"
 
+// TODO this package needs to be removed eventually
+
 // IndexOf get the index of the given value in the given slice,
 // or -1 if not found.
 func IndexOf(slice interface{}, value interface{}) int {

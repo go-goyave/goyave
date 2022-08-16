@@ -12,15 +12,15 @@ import (
 	"goyave.dev/goyave/v4/util/sliceutil"
 )
 
-type object map[string]interface{}
+type object map[string]any
 
 // Entry is the internal reprensentation of a config entry.
 // It contains the entry value, its expected type (for validation)
 // and a slice of authorized values (for validation too). If this slice
 // is empty, it means any value can be used, provided it is of the correct type.
 type Entry struct {
-	Value            interface{}
-	AuthorizedValues []interface{} // Leave empty for "any"
+	Value            any
+	AuthorizedValues []any // Leave empty for "any"
 	Type             reflect.Kind
 	IsSlice          bool
 }
@@ -31,51 +31,51 @@ var config object
 
 var configDefaults = object{
 	"app": object{
-		"name":            &Entry{"goyave", []interface{}{}, reflect.String, false},
-		"environment":     &Entry{"localhost", []interface{}{}, reflect.String, false},
-		"debug":           &Entry{true, []interface{}{}, reflect.Bool, false},
-		"defaultLanguage": &Entry{"en-US", []interface{}{}, reflect.String, false},
+		"name":            &Entry{"goyave", []any{}, reflect.String, false},
+		"environment":     &Entry{"localhost", []any{}, reflect.String, false},
+		"debug":           &Entry{true, []any{}, reflect.Bool, false},
+		"defaultLanguage": &Entry{"en-US", []any{}, reflect.String, false},
 	},
 	"server": object{
-		"host":          &Entry{"127.0.0.1", []interface{}{}, reflect.String, false},
-		"domain":        &Entry{"", []interface{}{}, reflect.String, false},
-		"protocol":      &Entry{"http", []interface{}{"http", "https"}, reflect.String, false},
-		"port":          &Entry{8080, []interface{}{}, reflect.Int, false},
-		"httpsPort":     &Entry{8081, []interface{}{}, reflect.Int, false},
-		"timeout":       &Entry{10, []interface{}{}, reflect.Int, false},
-		"maxUploadSize": &Entry{10.0, []interface{}{}, reflect.Float64, false},
-		"maintenance":   &Entry{false, []interface{}{}, reflect.Bool, false},
+		"host":          &Entry{"127.0.0.1", []any{}, reflect.String, false},
+		"domain":        &Entry{"", []any{}, reflect.String, false},
+		"protocol":      &Entry{"http", []any{"http", "https"}, reflect.String, false},
+		"port":          &Entry{8080, []any{}, reflect.Int, false},
+		"httpsPort":     &Entry{8081, []any{}, reflect.Int, false},
+		"timeout":       &Entry{10, []any{}, reflect.Int, false},
+		"maxUploadSize": &Entry{10.0, []any{}, reflect.Float64, false},
+		"maintenance":   &Entry{false, []any{}, reflect.Bool, false},
 		"tls": object{
-			"cert": &Entry{nil, []interface{}{}, reflect.String, false},
-			"key":  &Entry{nil, []interface{}{}, reflect.String, false},
+			"cert": &Entry{nil, []any{}, reflect.String, false},
+			"key":  &Entry{nil, []any{}, reflect.String, false},
 		},
 		"proxy": object{
-			"protocol": &Entry{"http", []interface{}{"http", "https"}, reflect.String, false},
-			"host":     &Entry{nil, []interface{}{}, reflect.String, false},
-			"port":     &Entry{80, []interface{}{}, reflect.Int, false},
-			"base":     &Entry{"", []interface{}{}, reflect.String, false},
+			"protocol": &Entry{"http", []any{"http", "https"}, reflect.String, false},
+			"host":     &Entry{nil, []any{}, reflect.String, false},
+			"port":     &Entry{80, []any{}, reflect.Int, false},
+			"base":     &Entry{"", []any{}, reflect.String, false},
 		},
 	},
 	"database": object{
-		"connection":         &Entry{"none", []interface{}{}, reflect.String, false},
-		"host":               &Entry{"127.0.0.1", []interface{}{}, reflect.String, false},
-		"port":               &Entry{3306, []interface{}{}, reflect.Int, false},
-		"name":               &Entry{"goyave", []interface{}{}, reflect.String, false},
-		"username":           &Entry{"root", []interface{}{}, reflect.String, false},
-		"password":           &Entry{"root", []interface{}{}, reflect.String, false},
-		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", []interface{}{}, reflect.String, false},
-		"maxOpenConnections": &Entry{20, []interface{}{}, reflect.Int, false},
-		"maxIdleConnections": &Entry{20, []interface{}{}, reflect.Int, false},
-		"maxLifetime":        &Entry{300, []interface{}{}, reflect.Int, false},
-		"autoMigrate":        &Entry{false, []interface{}{}, reflect.Bool, false},
+		"connection":         &Entry{"none", []any{}, reflect.String, false},
+		"host":               &Entry{"127.0.0.1", []any{}, reflect.String, false},
+		"port":               &Entry{3306, []any{}, reflect.Int, false},
+		"name":               &Entry{"goyave", []any{}, reflect.String, false},
+		"username":           &Entry{"root", []any{}, reflect.String, false},
+		"password":           &Entry{"root", []any{}, reflect.String, false},
+		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", []any{}, reflect.String, false},
+		"maxOpenConnections": &Entry{20, []any{}, reflect.Int, false},
+		"maxIdleConnections": &Entry{20, []any{}, reflect.Int, false},
+		"maxLifetime":        &Entry{300, []any{}, reflect.Int, false},
+		"autoMigrate":        &Entry{false, []any{}, reflect.Bool, false},
 		"config": object{
-			"skipDefaultTransaction":                   &Entry{false, []interface{}{}, reflect.Bool, false},
-			"dryRun":                                   &Entry{false, []interface{}{}, reflect.Bool, false},
-			"prepareStmt":                              &Entry{true, []interface{}{}, reflect.Bool, false},
-			"disableNestedTransaction":                 &Entry{false, []interface{}{}, reflect.Bool, false},
-			"allowGlobalUpdate":                        &Entry{false, []interface{}{}, reflect.Bool, false},
-			"disableAutomaticPing":                     &Entry{false, []interface{}{}, reflect.Bool, false},
-			"disableForeignKeyConstraintWhenMigrating": &Entry{false, []interface{}{}, reflect.Bool, false},
+			"skipDefaultTransaction":                   &Entry{false, []any{}, reflect.Bool, false},
+			"dryRun":                                   &Entry{false, []any{}, reflect.Bool, false},
+			"prepareStmt":                              &Entry{true, []any{}, reflect.Bool, false},
+			"disableNestedTransaction":                 &Entry{false, []any{}, reflect.Bool, false},
+			"allowGlobalUpdate":                        &Entry{false, []any{}, reflect.Bool, false},
+			"disableAutomaticPing":                     &Entry{false, []any{}, reflect.Bool, false},
+			"disableForeignKeyConstraintWhenMigrating": &Entry{false, []any{}, reflect.Bool, false},
 		},
 	},
 }
@@ -467,7 +467,7 @@ func loadDefaults(src object, dst object) {
 
 func override(src object, dst object) error {
 	for k, v := range src {
-		if obj, ok := v.(map[string]interface{}); ok {
+		if obj, ok := v.(map[string]any); ok {
 			if dstObj, ok := dst[k]; !ok {
 				dst[k] = make(object, len(obj))
 			} else if _, ok := dstObj.(object); !ok {
@@ -494,7 +494,7 @@ func override(src object, dst object) error {
 	return nil
 }
 
-func makeEntryFromValue(value interface{}) *Entry {
+func makeEntryFromValue(value any) *Entry {
 	isSlice := false
 	t := reflect.TypeOf(value)
 	kind := t.Kind()
@@ -502,7 +502,7 @@ func makeEntryFromValue(value interface{}) *Entry {
 		kind = t.Elem().Kind()
 		isSlice = true
 	}
-	return &Entry{value, []interface{}{}, kind, isSlice}
+	return &Entry{value, []any{}, kind, isSlice}
 }
 
 func readConfigFile(file string) (object, error) {
@@ -601,6 +601,8 @@ func (e *Entry) validate(key string) error {
 				}
 			}
 		} else if !sliceutil.Contains(e.AuthorizedValues, e.Value) {
+			// TODO cannot use slices.Contains because []any doesn't implement type constraint "comparable"
+			// See issue: https://github.com/golang/go/issues/51257
 			return fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
 		}
 	}
@@ -609,7 +611,7 @@ func (e *Entry) validate(key string) error {
 }
 
 // authorizedValuesContains avoids to recreate the reflect.Value of the list for every check
-func (e *Entry) authorizedValuesContains(list reflect.Value, value interface{}) bool {
+func (e *Entry) authorizedValuesContains(list reflect.Value, value any) bool {
 	length := list.Len()
 	for i := 0; i < length; i++ {
 		if list.Index(i).Interface() == value {
@@ -670,7 +672,7 @@ func (e *Entry) tryEnvVarConversion(key string) error {
 	return nil
 }
 
-func (e *Entry) convertEnvVar(str, key string) (interface{}, error) {
+func (e *Entry) convertEnvVar(str, key string) (any, error) {
 	if strings.HasPrefix(str, "${") && strings.HasSuffix(str, "}") {
 		varName := str[2 : len(str)-1]
 		value, set := os.LookupEnv(varName)

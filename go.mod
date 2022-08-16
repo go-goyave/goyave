@@ -12,6 +12,7 @@ require (
 	github.com/samber/lo v1.27.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.9.0
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
 	gorm.io/driver/mysql v1.5.0
 	gorm.io/driver/postgres v1.5.0
 	gorm.io/driver/sqlite v1.5.0
@@ -32,7 +33,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16 // indirect
 	github.com/microsoft/go-mssqldb v0.21.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

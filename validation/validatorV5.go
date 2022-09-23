@@ -161,7 +161,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 
 		value := c.Value
 		for _, rule := range field.Rules {
-			if _, ok := rule.(*Nullable); ok {
+			if _, ok := rule.(*NullableValidator); ok {
 				if value == nil {
 					break
 				}
@@ -228,7 +228,7 @@ func (v *validator) isAbsent(field *FieldV5, c walk.Context, data any) bool {
 		Field:   field,
 		Name:    c.Name,
 	}
-	return !field.IsRequired() && !(&Required{}).Validate(requiredCtx)
+	return !field.IsRequired() && !(&RequiredValidator{}).Validate(requiredCtx)
 }
 
 func (v *validator) getMessage(field *FieldV5, rule Validator, value reflect.Value) string {

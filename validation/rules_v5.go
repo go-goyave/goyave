@@ -8,35 +8,43 @@ import (
 	"goyave.dev/goyave/v4/util/typeutil"
 )
 
-type Required struct{ BaseValidator }
+type RequiredValidator struct{ BaseValidator }
 
-func (v *Required) Validate(ctx *ContextV5) bool {
+func (v *RequiredValidator) Validate(ctx *ContextV5) bool {
 	if !ctx.Field.IsNullable() && ctx.Value == nil {
 		return false
 	}
 	return true
 }
 
-func (v *Required) Name() string { return "required" }
+func (v *RequiredValidator) Name() string { return "required" }
 
-type Nullable struct{ BaseValidator }
+func Required() *RequiredValidator {
+	return &RequiredValidator{}
+}
 
-func (v *Nullable) Validate(ctx *ContextV5) bool {
+type NullableValidator struct{ BaseValidator }
+
+func (v *NullableValidator) Validate(ctx *ContextV5) bool {
 	return true
 }
 
-func (v *Nullable) Name() string { return "nullable" }
+func (v *NullableValidator) Name() string { return "nullable" }
+
+func Nullable() *NullableValidator {
+	return &NullableValidator{}
+}
 
 // TODO design: try with just a function (Name() may not be required)
 // TODO design: Message() in interface? or register rules as before? -> would allow more computation for more complex messages instead of placeholders (and remove the difference between validation placeholders and regular placeholders)
 
-type Between struct {
+type BetweenValidator struct {
 	BaseValidator
 	Min int
 	Max int
 }
 
-func (v *Between) Validate(ctx *ContextV5) bool {
+func (v *BetweenValidator) Validate(ctx *ContextV5) bool {
 	switch GetFieldType(ctx.Value) {
 	case FieldTypeNumeric:
 		floatValue, _ := typeutil.ToFloat64(ctx.Value)
@@ -63,5 +71,9 @@ func (v *Between) Validate(ctx *ContextV5) bool {
 	return true // Pass if field type cannot be checked (bool, dates, ...)
 }
 
-func (v *Between) Name() string          { return "between" }
-func (v *Between) IsTypeDependent() bool { return true }
+func (v *BetweenValidator) Name() string          { return "between" }
+func (v *BetweenValidator) IsTypeDependent() bool { return true }
+
+func Between(min, max int) *BetweenValidator {
+	return &BetweenValidator{Min: min, Max: max}
+}

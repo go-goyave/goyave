@@ -4,11 +4,11 @@ import (
 	"reflect"
 )
 
-type Array struct {
+type ArrayValidator struct {
 	BaseValidator
 }
 
-func (v *Array) Validate(ctx *ContextV5) bool {
+func (v *ArrayValidator) Validate(ctx *ContextV5) bool {
 	if GetFieldType(ctx.Value) != FieldTypeArray {
 		return false
 	}
@@ -16,4 +16,8 @@ func (v *Array) Validate(ctx *ContextV5) bool {
 	return true
 }
 
-func (v *Array) Name() string { return "array" }
+func (v *ArrayValidator) Name() string { return "array" }
+
+func Array() *ArrayValidator {
+	return &ArrayValidator{}
+}

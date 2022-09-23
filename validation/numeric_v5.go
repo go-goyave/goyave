@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-type Integer struct{ BaseValidator }
+type IntegerValidator struct{ BaseValidator }
 
-func (v *Integer) Validate(ctx *ContextV5) bool {
+func (v *IntegerValidator) Validate(ctx *ContextV5) bool {
 	rv := reflect.ValueOf(ctx.Value)
 	kind := rv.Kind().String()
 	switch {
@@ -41,5 +41,9 @@ func (v *Integer) Validate(ctx *ContextV5) bool {
 	}
 }
 
-func (v *Integer) Name() string { return "integer" }
-func (v *Integer) IsType() bool { return true }
+func (v *IntegerValidator) Name() string { return "integer" }
+func (v *IntegerValidator) IsType() bool { return true }
+
+func Integer() *IntegerValidator {
+	return &IntegerValidator{}
+}

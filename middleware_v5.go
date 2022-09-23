@@ -215,6 +215,5 @@ func (m *corsMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		} else {
 			next(response, request)
 		}
-		next(response, request)
 	}
 }

@@ -109,6 +109,27 @@ func (r *RouteV5) LookupMeta(key string) (any, bool) {
 	return r.parent.LookupMeta(key)
 }
 
+// TODO middleware design notes
+// Meta:
+// - allows overriding of the middleware settings in a child router/route
+// - inconvenient / not very clean because it separates the middleware config from the middleware itself
+// - Slightly slower because need too lookup in Meta maps?
+// - Easier to read route information for OpenAPI generation
+//
+// Struct fields:
+// - Clean, config is not separated from the middleware and everything is grouped into a nice package, easier to write
+// - Cannot override settings into a child router/route (inconvenient for CORS middleware for example)
+// - Harder to read route definition for OpenAPI generation (less interoperability for custom middleware)
+//   But meta can have any type anyway so its just moving the problem somewhere else (still would require type-asserts)
+//
+// In the end it pretty much boils down to "should a middleware config be overridden when matching a child router/route?"
+//
+// How many actual cases there could be where we need to override config? (other than CORS)
+//
+// Allow both systems? Use the meta for the exceptions like CORS, and the struct fields
+// Also add a .CORS() method for easier setup, just like validation.
+// Validation could use struct fields though.
+
 func (r *RouteV5) ValidateBody(validationRules RulerFunc) *RouteV5 {
 	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
 	if validationMiddleware == nil {

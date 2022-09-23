@@ -25,7 +25,7 @@ var timeout time.Duration
 
 func setTimeout() {
 	if timeout == 0 {
-		timeout = time.Duration(config.GetInt("server.timeout")) * time.Second
+		timeout = time.Duration(config.GetInt("server.websocketTimeout")) * time.Second
 	}
 }
 

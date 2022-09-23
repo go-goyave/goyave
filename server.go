@@ -67,8 +67,6 @@ func New() (*Server, error) {
 
 // NewWithConfig create a new `Server` using the provided configuration.
 func NewWithConfig(cfg *config.Config) (*Server, error) {
-	timeout := time.Duration(cfg.GetInt("server.timeout")) * time.Second
-
 	var db *gorm.DB
 	var err error
 	if cfg.GetString("database.connection") != "none" {
@@ -89,9 +87,9 @@ func NewWithConfig(cfg *config.Config) (*Server, error) {
 	return &Server{
 		server: &http.Server{
 			Addr:         cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port")),
-			WriteTimeout: timeout,
-			ReadTimeout:  timeout,
-			IdleTimeout:  timeout * 2,
+			WriteTimeout: time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
+			ReadTimeout:  time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
+			IdleTimeout:  time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
 			Handler:      router,
 			ErrorLog:     errLogger, // TODO what if it is replaced in the goyave.Server struct?
 		},

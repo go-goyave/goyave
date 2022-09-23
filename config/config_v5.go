@@ -38,8 +38,8 @@ func LoadFromV5(path string) (*Config, error) {
 	return loadV5(readConfigFile, path)
 }
 
-func LoadJSONV5(cfg string) error {
-	return load(readString, cfg)
+func LoadJSONV5(cfg string) (*Config, error) {
+	return loadV5(readString, cfg)
 }
 
 func loadV5(readFunc readFunc, source string) (*Config, error) {
@@ -196,12 +196,12 @@ func (c *Config) Has(key string) bool {
 // The change is temporary and will not be saved for next boot.
 // Use "nil" to unset a value.
 //
-//  - A category cannot be replaced with an entry.
-//  - An entry cannot be replaced with a category.
-//  - New categories can be created with they don't already exist.
-//  - New entries can be created if they don't already exist. This new entry
-//    will be subsequently validated using the type of its initial value and
-//    have an empty slice as authorized values (meaning it can have any value of its type)
+//   - A category cannot be replaced with an entry.
+//   - An entry cannot be replaced with a category.
+//   - New categories can be created with they don't already exist.
+//   - New entries can be created if they don't already exist. This new entry
+//     will be subsequently validated using the type of its initial value and
+//     have an empty slice as authorized values (meaning it can have any value of its type)
 //
 // Panics and revert changes in case of error.
 //

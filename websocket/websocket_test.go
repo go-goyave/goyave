@@ -21,13 +21,13 @@ type WebsocketTestSuite struct {
 }
 
 func (suite *WebsocketTestSuite) SetupSuite() {
-	suite.previousTimeout = config.GetInt("server.timeout")
-	config.Set("server.timeout", 1)
+	suite.previousTimeout = config.GetInt("server.websocketTimeout")
+	config.Set("server.websocketTimeout", 1)
 	setTimeout()
 }
 
 func (suite *WebsocketTestSuite) TearDownSuite() {
-	config.Set("server.timeout", suite.previousTimeout)
+	config.Set("server.websocketTimeout", suite.previousTimeout)
 }
 
 func (suite *WebsocketTestSuite) echoWSHandler(wg *sync.WaitGroup) Handler {

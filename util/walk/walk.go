@@ -227,6 +227,8 @@ func (p *Path) Clone() *Path {
 	return clone
 }
 
+// TODO implement String() on Path
+
 // setAllMissingIndexes set Index to -1 for all `PathTypeArray` steps in this path.
 func (p *Path) setAllMissingIndexes() {
 	i := -1

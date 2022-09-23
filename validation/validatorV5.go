@@ -170,7 +170,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 
 			ctx := &ContextV5{
 				Options: v.options,
-				Data:    v.options.Data,
+				Data:    v.options.Data, // TODO could this be the root of the ruleSet? (for composition and comparison)
 				Extra:   maps.Clone(v.options.Extra),
 				Value:   value,
 				Parent:  c.Parent,

@@ -60,9 +60,7 @@ type RulesV5 struct {
 
 func (r *RulesV5) Check() {
 	if !r.checked {
-		r.sortKeys()
-		for _, path := range r.sortedKeys {
-			field := r.Fields[path]
+		for path, field := range r.Fields {
 			p, err := walk.Parse(path)
 			if err != nil {
 				panic(err)
@@ -101,7 +99,7 @@ func (r *RulesV5) sortKeys() {
 		field2 := r.Fields[r.sortedKeys[j]]
 		for _, r := range field2.Rules {
 			c, ok := r.(ComparatorValidator)
-			if ok && c.ComparesWith() == fieldName1 {
+			if ok && strings.HasPrefix(c.ComparesWith(), fieldName1) {
 				return true
 			}
 		}

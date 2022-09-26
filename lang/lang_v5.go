@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/exp/maps"
 	"goyave.dev/goyave/v4/util/fsutil"
 	"goyave.dev/goyave/v4/util/httputil"
 )
@@ -14,7 +15,7 @@ import (
 // This structure is not protected for concurrent usage. Therefore, don't load
 // more languages when this instance is expected to receive reads.
 type Languages struct {
-	languages map[string]language
+	languages map[string]*Language
 	Default   string
 }
 
@@ -26,7 +27,7 @@ type Languages struct {
 // in the returned struct.
 func New() *Languages {
 	l := &Languages{
-		languages: make(map[string]language, 1),
+		languages: make(map[string]*Language, 1),
 		Default:   "en-US",
 	}
 	l.languages["en-US"] = enUS.clone()
@@ -78,7 +79,7 @@ func (l *Languages) Load(language, path string) error {
 }
 
 func (l *Languages) load(lang string, path string) error {
-	langStruct := language{}
+	langStruct := &Language{}
 	sep := string(os.PathSeparator)
 	if err := readLangFile(path+sep+"locale.json", &langStruct.lines); err != nil {
 		return err
@@ -98,59 +99,9 @@ func (l *Languages) load(lang string, path string) error {
 	return nil
 }
 
-// Get a language line.
-//
-// For validation rules and attributes messages, use a dot-separated path:
-// - "validation.rules.<rule_name>"
-// - "validation.fields.<field_name>"
-// - "validation.fields.<field_name>.<rule_name>"
-// For normal lines, just use the name of the line. Note that if you have
-// a line called "validation", it won't conflict with the dot-separated paths.
-//
-// If not found, returns the exact "line" attribute.
-//
-// The placeholders parameter is a variadic associative slice of placeholders and their
-// replacement. In the following example, the placeholder ":username" will be replaced
-// with the Name field in the user struct.
-//
-//	lang.Get("en-US", "greetings", ":username", user.Name)
-func (l *Languages) Get(lang string, line string, placeholders ...string) string {
-	if !l.IsAvailable(lang) {
-		return line
-	}
-
-	if strings.Count(line, ".") > 0 {
-		path := strings.Split(line, ".")
-		if path[0] == "validation" {
-			switch path[1] {
-			case "rules":
-				if len(path) < 3 {
-					return line
-				}
-				return convertEmptyLine(line, l.languages[lang].validation.rules[strings.Join(path[2:], ".")], placeholders)
-			case "fields":
-				len := len(path)
-				if len < 3 {
-					return line
-				}
-				attr := l.languages[lang].validation.fields[path[2]]
-				if len == 4 {
-					if attr.Rules == nil {
-						return line
-					}
-					return convertEmptyLine(line, attr.Rules[path[3]], placeholders)
-				} else if len == 3 {
-					return convertEmptyLine(line, attr.Name, placeholders)
-				} else {
-					return line
-				}
-			default:
-				return line
-			}
-		}
-	}
-
-	return convertEmptyLine(line, l.languages[lang].lines[line], placeholders)
+// GetLanguage returns a language by its name. May return `nil`.
+func (l *Languages) GetLanguage(lang string) *Language {
+	return l.languages[lang]
 }
 
 // IsAvailable returns true if the language is available.
@@ -167,11 +118,7 @@ func (l *Languages) IsAvailable(lang string) bool {
 //	/fr/produits
 //	...
 func (l *Languages) GetAvailableLanguages() []string {
-	langs := []string{}
-	for lang := range l.languages {
-		langs = append(langs, lang)
-	}
-	return langs
+	return maps.Keys(l.languages)
 }
 
 // DetectLanguage detects the language to use based on the given lang string.
@@ -200,4 +147,28 @@ func (l *Languages) DetectLanguage(lang string) string {
 	}
 
 	return l.Default
+}
+
+// Get a language line.
+//
+// For validation rules and attributes messages, use a dot-separated path:
+// - "validation.rules.<rule_name>"
+// - "validation.fields.<field_name>"
+// - "validation.fields.<field_name>.<rule_name>"
+// For normal lines, just use the name of the line. Note that if you have
+// a line called "validation", it won't conflict with the dot-separated paths.
+//
+// If not found, returns the exact "line" attribute.
+//
+// The placeholders parameter is a variadic associative slice of placeholders and their
+// replacement. In the following example, the placeholder ":username" will be replaced
+// with the Name field in the user struct.
+//
+//	lang.Get("en-US", "greetings", ":username", user.Name)
+func (l *Languages) Get(lang string, line string, placeholders ...string) string {
+	if !l.IsAvailable(lang) {
+		return line
+	}
+
+	return l.languages[lang].Get(line, placeholders...)
 }

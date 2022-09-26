@@ -28,17 +28,17 @@ type attribute struct {
 	Name string `json:"name"`
 }
 
-// language represents a full language
-type language struct {
+// Language represents a full Language.
+type Language struct {
 	lines      map[string]string
 	validation validationLines
 }
 
-var languages map[string]language
+var languages map[string]*Language
 var mutex = &sync.RWMutex{}
 
-func (l *language) clone() language {
-	cpy := language{
+func (l *Language) clone() *Language {
+	cpy := &Language{
 		lines: make(map[string]string, len(l.lines)),
 		validation: validationLines{
 			rules:  make(map[string]string, len(l.validation.rules)),
@@ -61,12 +61,63 @@ func (l *language) clone() language {
 	return cpy
 }
 
+// Get a language line.
+//
+// For validation rules and attributes messages, use a dot-separated path:
+// - "validation.rules.<rule_name>"
+// - "validation.fields.<field_name>"
+// - "validation.fields.<field_name>.<rule_name>"
+// For normal lines, just use the name of the line. Note that if you have
+// a line called "validation", it won't conflict with the dot-separated paths.
+//
+// If not found, returns the exact "line" attribute.
+//
+// The placeholders parameter is a variadic associative slice of placeholders and their
+// replacement. In the following example, the placeholder ":username" will be replaced
+// with the Name field in the user struct.
+//
+//	lang.Get("greetings", ":username", user.Name)
+func (l *Language) Get(line string, placeholders ...string) string {
+	if strings.Count(line, ".") > 0 {
+		path := strings.Split(line, ".")
+		if path[0] == "validation" {
+			switch path[1] {
+			case "rules":
+				if len(path) < 3 {
+					return line
+				}
+				return convertEmptyLine(line, l.validation.rules[strings.Join(path[2:], ".")], placeholders)
+			case "fields":
+				len := len(path)
+				if len < 3 {
+					return line
+				}
+				attr := l.validation.fields[path[2]]
+				if len == 4 {
+					if attr.Rules == nil {
+						return line
+					}
+					return convertEmptyLine(line, attr.Rules[path[3]], placeholders)
+				} else if len == 3 {
+					return convertEmptyLine(line, attr.Name, placeholders)
+				} else {
+					return line
+				}
+			default:
+				return line
+			}
+		}
+	}
+
+	return convertEmptyLine(line, l.lines[line], placeholders)
+}
+
 // LoadDefault load the fallback language ("en-US").
 // This function is intended for internal use only.
 func LoadDefault() {
 	mutex.Lock()
 	defer mutex.Unlock()
-	languages = make(map[string]language, 1)
+	languages = make(map[string]*Language, 1)
 	languages["en-US"] = enUS.clone()
 }
 
@@ -116,7 +167,7 @@ func Load(language, path string) {
 }
 
 func load(lang string, path string) {
-	langStruct := language{}
+	langStruct := &Language{}
 	sep := string(os.PathSeparator)
 	readLangFile(path+sep+"locale.json", &langStruct.lines)
 	readLangFile(path+sep+"rules.json", &langStruct.validation.rules)
@@ -143,7 +194,7 @@ func readLangFile(path string, dest any) (err error) {
 	return err
 }
 
-func mergeLang(dst language, src language) {
+func mergeLang(dst *Language, src *Language) {
 	mergeMap(dst.lines, src.lines)
 	mergeMap(dst.validation.rules, src.validation.rules)
 

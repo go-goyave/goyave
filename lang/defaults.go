@@ -1,6 +1,6 @@
 package lang
 
-var enUS = language{
+var enUS = &Language{
 	lines: map[string]string{
 		"disallow-non-validated-fields": "Non-validated fields are forbidden.",
 		"malformed-request":             "Malformed request",

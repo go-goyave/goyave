@@ -93,7 +93,7 @@ func (suite *LangTestSuite) TestLoad() {
 }
 
 func (suite *LangTestSuite) TestMerge() {
-	dst := language{
+	dst := &Language{
 		lines: map[string]string{"line": "line 1"},
 		validation: validationLines{
 			rules: map[string]string{},
@@ -104,7 +104,7 @@ func (suite *LangTestSuite) TestMerge() {
 			},
 		},
 	}
-	src := language{
+	src := &Language{
 		lines: map[string]string{"other": "line 2"},
 		validation: validationLines{
 			rules: map[string]string{},
@@ -162,7 +162,7 @@ func (suite *LangTestSuite) TestSetDefault() {
 }
 
 func (suite *LangTestSuite) TearDownAllSuite() {
-	languages = map[string]language{}
+	languages = map[string]*Language{}
 }
 
 func TestLangTestSuite(t *testing.T) {

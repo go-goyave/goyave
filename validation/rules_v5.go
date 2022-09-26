@@ -81,15 +81,14 @@ func Between(min, max int) *BetweenValidator {
 
 type GreaterThanValidator struct {
 	BaseValidator
-	Path string // TODO no need to keep the orignal path once walk.Path implements String()
-	path *walk.Path
+	Path *walk.Path
 }
 
 func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
 	valueType := GetFieldType(ctx.Value)
 
 	ok := true
-	v.path.Walk(ctx.Data, func(c walk.Context) {
+	v.Path.Walk(ctx.Data, func(c walk.Context) {
 		if !ok {
 			// TODO add a way to "break" from path.Walk? (stop iterating in array elements if not necessary)
 			return
@@ -131,12 +130,12 @@ func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
 
 func (v *GreaterThanValidator) Name() string          { return "greater_than" }
 func (v *GreaterThanValidator) IsTypeDependent() bool { return true }
-func (v *GreaterThanValidator) ComparesWith() string  { return v.Path }
+func (v *GreaterThanValidator) ComparesWith() string  { return v.Path.String() }
 
 func GreaterThan(path string) *GreaterThanValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
 		panic(fmt.Errorf("validation.GreaterThan: path parse error: %w", err))
 	}
-	return &GreaterThanValidator{Path: path, path: p}
+	return &GreaterThanValidator{Path: p}
 }

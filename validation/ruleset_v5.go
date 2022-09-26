@@ -23,9 +23,6 @@ type Validator interface { // TODO rename to Rule?
 
 type ComparatorValidator interface {
 	ComparesWith() string // Returns a path to the compared element
-	// TODO in compositions, compares with value at the same level? or from the root level? In arrays of objects?
-	// Idea: when a field is added via composition, keep the prefix somewhere in memory so it can be used to make sure the scope is preserved.
-	// If a path created that way contains arrays, there may be a way to inject the matching indexes
 }
 
 type BaseValidator struct{}
@@ -34,7 +31,11 @@ func (v *BaseValidator) IsTypeDependent() bool { return false }
 func (v *BaseValidator) IsType() bool          { return false }
 func (v *BaseValidator) ComparesFields() bool  { return false }
 
-type Applier interface { // TODO rename this
+// Applier interface allowing RuleSet composition.
+// Types implementing this interface define how they should
+// be applied to the `Fields` map of the `Rules` struct when being converted
+// using `AsRules()`.
+type Applier interface {
 	apply(fields map[string]*FieldV5, path string, prefixDepth uint)
 }
 
@@ -82,8 +83,7 @@ func (r RuleSetV5) AsRules() *RulesV5 {
 // Before use, parses field paths and creates a sorted map keys slice
 // to ensure validation order.
 type RulesV5 struct {
-	Fields map[string]*FieldV5
-	// PostValidationHooks []PostValidationHook
+	Fields     map[string]*FieldV5
 	sortedKeys []string
 	checked    bool
 }

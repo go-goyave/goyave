@@ -1052,3 +1052,34 @@ func TestPathTruncate(t *testing.T) {
 	assert.Equal(t, path, truncated)
 	assert.Nil(t, path.Truncate(0))
 }
+
+func TestPathString(t *testing.T) {
+	path, _ := Parse("a.b.c")
+	assert.Equal(t, "a.b.c", path.String())
+
+	path, _ = Parse("a[].b.c")
+	assert.Equal(t, "a[].b.c", path.String())
+
+	path, _ = Parse("a[][]")
+	assert.Equal(t, "a[][]", path.String())
+
+	path, _ = Parse("a[][].b")
+	assert.Equal(t, "a[][].b", path.String())
+
+	i := 1
+	path = &Path{
+		Name:  strPtr("array"),
+		Type:  PathTypeArray,
+		Index: &i,
+		Next: &Path{
+			Type: PathTypeObject,
+			Next: &Path{
+				Name:  strPtr("field"),
+				Type:  PathTypeArray,
+				Index: &i,
+				Next:  &Path{},
+			},
+		},
+	}
+	assert.Equal(t, "array[1].field[1]", path.String())
+}

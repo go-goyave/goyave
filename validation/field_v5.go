@@ -12,7 +12,11 @@ type FieldV5 struct {
 	Path     *walk.Path
 	Elements *FieldV5 // If the field is an array, the field representing its elements, or nil
 	// Maybe use the same concept for objects too?
-	Rules       []Validator
+	Rules []Validator
+
+	// prefixDepth When using composition, `prefixDepth` allows to truncate the path to the
+	// validated element in order to retrieve the root object or array relative to
+	// the composed RuleSet.
 	prefixDepth uint
 
 	isArray    bool
@@ -49,7 +53,7 @@ func (f *FieldV5) Check() {
 		case "file", "mime", "image", "extension", "count",
 			"count_min", "count_max", "count_between":
 			if f.Path.HasArray() {
-				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name))
+				panic(fmt.Sprintf("Cannot use rule \"%s\" in array validation", rule.Name()))
 			}
 		case "required":
 			f.isRequired = true

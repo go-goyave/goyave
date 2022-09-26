@@ -260,7 +260,29 @@ func (p *Path) Clone() *Path {
 	return clone
 }
 
-// TODO implement String() on Path
+// String returns a string representation of the Path.
+func (p *Path) String() string {
+	path := ""
+	if p.Name != nil {
+		path += *p.Name
+	}
+	switch p.Type {
+	case PathTypeElement:
+	case PathTypeArray:
+		if p.Index != nil {
+			path += fmt.Sprintf("[%d]", *p.Index)
+		} else {
+			path += "[]"
+		}
+	case PathTypeObject:
+		path += "."
+	}
+
+	if p.Next != nil {
+		path += p.Next.String()
+	}
+	return path
+}
 
 // setAllMissingIndexes set Index to -1 for all `PathTypeArray` steps in this path.
 func (p *Path) setAllMissingIndexes() {

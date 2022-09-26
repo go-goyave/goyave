@@ -108,10 +108,6 @@ func ValidateV5(options *Options) (*ErrorsV5, []error) {
 			validator.validateField(fieldName, field, options.Data, nil)
 		}
 	}
-	// TODO PostValidationHooksV5
-	// for _, hook := range rules.PostValidationHooks {
-	// 	errors = hook(data, errors, now)
-	// }
 
 	if len(validator.errors) != 0 {
 		return nil, validator.errors

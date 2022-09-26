@@ -294,7 +294,7 @@ func (r *ResponseV5) error(err any) {
 	r.Status(http.StatusInternalServerError)
 }
 
-// DBError takes a database query result and checks if any error has occurred.
+// WriteDBError takes a database query result and checks if any error has occurred.
 //
 // Automatically writes HTTP status code 404 Not Found if the error is a "Not found" error.
 // Calls `Response.Error()` if there is another type of error.
@@ -304,12 +304,12 @@ func (r *ResponseV5) error(err any) {
 //	func (ctrl *ProductController) Show(response *goyave.Response, request *goyave.Request) {
 //	    product := model.Product{}
 //	    result := ctrl.DB().First(&product, request.Params["id"])
-//	    if response.DBError(result) {
+//	    if response.WriteDBError(result) {
 //	        return
 //	    }
 //	    response.JSON(http.StatusOK, product)
 //	}
-func (r *ResponseV5) DBError(db *gorm.DB) bool {
+func (r *ResponseV5) WriteDBError(db *gorm.DB) bool {
 	if db.Error != nil {
 		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 			r.Status(http.StatusNotFound)

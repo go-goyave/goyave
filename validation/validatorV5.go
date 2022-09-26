@@ -159,6 +159,15 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			v.validateField(fieldName+"[]", field.Elements, c.Value, path)
 		}
 
+		data := v.options.Data
+		if rootPath := c.Path.Truncate(field.prefixDepth); rootPath != nil {
+			rootPath.Walk(walkData, func(ctx walk.Context) {
+				// This function will be called only once because
+				// the path contains indexes.
+				data = ctx.Value
+			})
+		}
+
 		value := c.Value
 		for _, rule := range field.Rules {
 			if _, ok := rule.(*NullableValidator); ok {
@@ -170,7 +179,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 
 			ctx := &ContextV5{
 				Options: v.options,
-				Data:    v.options.Data, // TODO could this be the root of the ruleSet? (for composition and comparison)
+				Data:    data,
 				Extra:   maps.Clone(v.options.Extra),
 				Value:   value,
 				Parent:  c.Parent,

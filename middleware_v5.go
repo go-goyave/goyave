@@ -121,8 +121,8 @@ func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 // This data can then be used in a status handler.
 type validateRequestMiddlewareV5 struct {
 	Controller
-	BodyRules  RulerFunc
-	QueryRules RulerFunc
+	BodyRules  RuleSetFunc
+	QueryRules RuleSetFunc
 }
 
 func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {

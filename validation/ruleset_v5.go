@@ -34,23 +34,53 @@ func (v *BaseValidator) IsTypeDependent() bool { return false }
 func (v *BaseValidator) IsType() bool          { return false }
 func (v *BaseValidator) ComparesFields() bool  { return false }
 
-type RuleSetV5 map[string][]Validator
+type Applier interface { // TODO rename this
+	apply(fields map[string]*FieldV5, path string, prefixDepth uint)
+}
 
-func (r RuleSetV5) AsRules() *RulesV5 { // TODO composition
+type ListV5 []Validator
+
+type RuleSetV5 map[string]Applier
+
+func (r RuleSetV5) apply(fields map[string]*FieldV5, path string, prefixDepth uint) {
+	prefix, err := walk.Parse(path)
+	if err != nil {
+		panic(err)
+	}
+	pDepth := prefix.Depth()
+
+	for k, rules := range r {
+		p := path
+		if k != CurrentElement && !strings.HasPrefix("[]", k) { // TODO test the use of composition on CurrentElement and arrays
+			p += "." + k
+		}
+		rules.apply(fields, p, pDepth)
+	}
+}
+
+func (r ListV5) apply(fields map[string]*FieldV5, path string, prefixDepth uint) {
+	fields[path] = &FieldV5{Rules: r, prefixDepth: prefixDepth}
+}
+
+// TODO test composition with special cases (arrays, recursive composition, nested composition, etc)
+
+func (r RuleSetV5) AsRules() *RulesV5 {
 	rules := &RulesV5{
 		Fields: make(map[string]*FieldV5, len(r)),
 	}
 
 	for k, v := range r {
-		rules.Fields[k] = &FieldV5{Rules: v}
+		v.apply(rules.Fields, k, 0)
 	}
 
 	rules.Check()
 	return rules
 }
 
-// Rules is a component of route validation and maps a
-// field name (key) with a Field struct (value).
+// Rules is the result of the transformation of RuleSet using `AsRules()`.
+// It is a format that is more easily machine-readable than RuleSet.
+// Before use, parses field paths and creates a sorted map keys slice
+// to ensure validation order.
 type RulesV5 struct {
 	Fields map[string]*FieldV5
 	// PostValidationHooks []PostValidationHook

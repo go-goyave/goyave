@@ -213,6 +213,39 @@ func (p *Path) Tail() *Path {
 	return step
 }
 
+func (p *Path) Depth() uint {
+	depth := uint(1)
+	step := p
+	for step.Next != nil {
+		step = step.Next
+		depth++
+	}
+	return depth
+}
+
+func (p *Path) Truncate(depth uint) *Path {
+	if depth == 0 {
+		return nil
+	}
+	if depth == 1 {
+		return &Path{
+			Name:  p.Name,
+			Type:  PathTypeElement,
+			Index: p.Index,
+		}
+	}
+	clone := &Path{
+		Name:  p.Name,
+		Type:  p.Type,
+		Index: p.Index,
+	}
+	if p.Next != nil {
+		clone.Next = p.Next.Truncate(depth - 1)
+	}
+
+	return clone
+}
+
 // Clone returns a deep clone of this Path.
 func (p *Path) Clone() *Path {
 	clone := &Path{

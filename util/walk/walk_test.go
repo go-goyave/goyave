@@ -996,3 +996,59 @@ func TestPathSetAllMissingIndexes(t *testing.T) {
 	assert.Equal(t, -1, *path.Index)
 	assert.Equal(t, -1, *path.Next.Next.Index)
 }
+
+func TestPathDepth(t *testing.T) {
+	path, _ := Parse("a.b.c")
+	assert.Equal(t, path.Depth(), uint(3))
+	path, _ = Parse("a[].b.c")
+	assert.Equal(t, path.Depth(), uint(4))
+	path, _ = Parse("a")
+	assert.Equal(t, path.Depth(), uint(1))
+}
+
+func TestPathTruncate(t *testing.T) {
+	path, _ := Parse("a.b.c")
+	truncated := path.Truncate(3)
+	assert.Equal(t, path, truncated)
+	truncated = path.Truncate(2)
+	expected := &Path{
+		Name: strPtr("a"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("b"),
+			Type: PathTypeElement,
+		},
+	}
+	assert.Equal(t, expected, truncated)
+
+	path, _ = Parse("a[].b.c")
+	truncated = path.Truncate(3)
+	expected = &Path{
+		Name: strPtr("a"),
+		Type: PathTypeArray,
+		Next: &Path{
+			Type: PathTypeObject,
+			Next: &Path{
+				Name: strPtr("b"),
+				Type: PathTypeElement,
+			},
+		},
+	}
+	assert.Equal(t, expected, truncated)
+
+	path, _ = Parse("array[][]")
+	truncated = path.Truncate(2)
+	expected = &Path{
+		Name: strPtr("array"),
+		Type: PathTypeArray,
+		Next: &Path{
+			Type: PathTypeElement,
+		},
+	}
+	assert.Equal(t, expected, truncated)
+
+	path, _ = Parse("a")
+	truncated = path.Truncate(1)
+	assert.Equal(t, path, truncated)
+	assert.Nil(t, path.Truncate(0))
+}

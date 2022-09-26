@@ -12,7 +12,8 @@ type FieldV5 struct {
 	Path     *walk.Path
 	Elements *FieldV5 // If the field is an array, the field representing its elements, or nil
 	// Maybe use the same concept for objects too?
-	Rules []Validator
+	Rules       []Validator
+	prefixDepth uint
 
 	isArray    bool
 	isObject   bool

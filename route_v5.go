@@ -22,7 +22,7 @@ type RouteV5 struct {
 
 var _ routeMatcherV5 = (*RouteV5)(nil) // implements routeMatcher
 
-type RulerFunc func(*RequestV5) validation.RulerV5
+type RuleSetFunc func(*RequestV5) validation.RuleSetV5
 
 // newRoute create a new route without any settings except its handler.
 // This is used to generate a fake route for the Method Not Allowed and Not Found handlers.
@@ -130,7 +130,7 @@ func (r *RouteV5) LookupMeta(key string) (any, bool) {
 // Also add a .CORS() method for easier setup, just like validation.
 // Validation could use struct fields though.
 
-func (r *RouteV5) ValidateBody(validationRules RulerFunc) *RouteV5 {
+func (r *RouteV5) ValidateBody(validationRules RuleSetFunc) *RouteV5 {
 	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
 	if validationMiddleware == nil {
 		r.Middleware(&validateRequestMiddlewareV5{BodyRules: validationRules})
@@ -140,7 +140,7 @@ func (r *RouteV5) ValidateBody(validationRules RulerFunc) *RouteV5 {
 	return r
 }
 
-func (r *RouteV5) ValidateQuery(validationRules RulerFunc) *RouteV5 {
+func (r *RouteV5) ValidateQuery(validationRules RuleSetFunc) *RouteV5 {
 	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
 	if validationMiddleware == nil {
 		r.Middleware(&validateRequestMiddlewareV5{QueryRules: validationRules})

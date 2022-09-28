@@ -111,7 +111,7 @@ func (l *Languages) GetLanguage(lang string) *Language {
 		lines: make(map[string]string, 0),
 		validation: validationLines{
 			rules:  make(map[string]string, 0),
-			fields: make(map[string]attribute, 0),
+			fields: make(map[string]field, 0),
 		},
 	}
 }

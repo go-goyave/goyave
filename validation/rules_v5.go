@@ -3,8 +3,10 @@ package validation
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/Code-Hex/uniseg"
+	"goyave.dev/goyave/v4/lang"
 	"goyave.dev/goyave/v4/util/fsutil"
 	"goyave.dev/goyave/v4/util/typeutil"
 	"goyave.dev/goyave/v4/util/walk"
@@ -74,6 +76,12 @@ func (v *BetweenValidator) Validate(ctx *ContextV5) bool {
 
 func (v *BetweenValidator) Name() string          { return "between" }
 func (v *BetweenValidator) IsTypeDependent() bool { return true }
+func (v *BetweenValidator) MessagePlaceholders(l *lang.Language) []string {
+	return []string{
+		":min", strconv.Itoa(v.Min),
+		":max", strconv.Itoa(v.Max),
+	}
+}
 
 func Between(min, max int) *BetweenValidator {
 	return &BetweenValidator{Min: min, Max: max}
@@ -131,6 +139,11 @@ func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
 func (v *GreaterThanValidator) Name() string          { return "greater_than" }
 func (v *GreaterThanValidator) IsTypeDependent() bool { return true }
 func (v *GreaterThanValidator) ComparesWith() string  { return v.Path.String() }
+func (v *GreaterThanValidator) MessagePlaceholders(l *lang.Language) []string {
+	return []string{
+		":other", GetFieldName(l, v.Path),
+	}
+}
 
 func GreaterThan(path string) *GreaterThanValidator {
 	p, err := walk.Parse(path)

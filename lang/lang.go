@@ -17,10 +17,10 @@ type validationLines struct {
 	rules map[string]string
 
 	// Attribute-specific rules messages
-	fields map[string]attribute
+	fields map[string]field
 }
 
-type attribute struct {
+type field struct {
 	// A custom message for when a rule doesn't pass with this attribute
 	Rules map[string]string `json:"rules"`
 
@@ -49,7 +49,7 @@ func (l *Language) clone() *Language {
 		lines: make(map[string]string, len(l.lines)),
 		validation: validationLines{
 			rules:  make(map[string]string, len(l.validation.rules)),
-			fields: make(map[string]attribute, len(l.validation.fields)),
+			fields: make(map[string]field, len(l.validation.fields)),
 		},
 	}
 
@@ -57,7 +57,7 @@ func (l *Language) clone() *Language {
 	mergeMap(cpy.validation.rules, l.validation.rules)
 
 	for key, attr := range l.validation.fields {
-		attrCpy := attribute{
+		attrCpy := field{
 			Name:  attr.Name,
 			Rules: make(map[string]string, len(attr.Rules)),
 		}

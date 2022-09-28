@@ -189,9 +189,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			}
 			if !ok {
 				path := field.getErrorPath(parentPath, c)
-				// message := processPlaceholders(fieldName, v.getMessage(field, rule, reflect.ValueOf(value)), language, ctx)
-				// TODO placeholderV5
-				message := v.getMessage(field, rule, reflect.ValueOf(value))
+				message := v.getMessage(fieldName, field, rule, reflect.ValueOf(value))
 				if fieldName == CurrentElement {
 					v.validationErrors.Add(path, message)
 				} else {
@@ -235,7 +233,7 @@ func (v *validator) isAbsent(field *FieldV5, c walk.Context, data any) bool {
 	return !field.IsRequired() && !(&RequiredValidator{}).Validate(requiredCtx)
 }
 
-func (v *validator) getMessage(field *FieldV5, rule Validator, value reflect.Value) string {
+func (v *validator) getMessage(fieldName string, field *FieldV5, rule Validator, value reflect.Value) string {
 	langEntry := "validation.rules." + rule.Name()
 	if rule.IsTypeDependent() {
 		expectedType := v.findTypeRule(field.Rules)
@@ -254,7 +252,12 @@ func (v *validator) getMessage(field *FieldV5, rule Validator, value reflect.Val
 		langEntry += ".array"
 	}
 
-	return v.options.Language.Get(langEntry)
+	if i := strings.LastIndex(fieldName, "."); i != -1 {
+		fieldName = fieldName[i+1:]
+	}
+	fieldName = strings.TrimSuffix(fieldName, "[]")
+
+	return v.options.Language.Get(langEntry, append([]string{":field", fieldName}, rule.MessagePlaceholders(v.options.Language)...)...)
 }
 
 // findTypeRule find the expected type of a field for a given array dimension.
@@ -264,5 +267,6 @@ func (v *validator) findTypeRule(rules []Validator) string {
 			return rule.Name()
 		}
 	}
-	return "unsupported"
+
+	return FieldTypeUnsupported
 }

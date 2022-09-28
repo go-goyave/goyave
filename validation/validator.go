@@ -655,16 +655,16 @@ func findTypeRule(rules []*Rule) string {
 // GetFieldType returns the non-technical type of the given "value" interface.
 // This is used by validation rules to know if the input data is a candidate
 // for validation or not and is especially useful for type-dependent rules.
-//   - "numeric" if the value is an int, uint or a float
-//   - "string" if the value is a string
-//   - "array" if the value is a slice
-//   - "file" if the value is a slice of "fsutil.File"
-//   - "unsupported" otherwise
+//   - "numeric" (`lang.FieldTypeNumeric`) if the value is an int, uint or a float
+//   - "string" (`lang.FieldTypeString`) if the value is a string
+//   - "array" (`lang.FieldTypeArray`) if the value is a slice
+//   - "file" (`lang.FieldTypeFile`) if the value is a slice of "fsutil.File"
+//   - "unsupported" (`lang.FieldTypeUnsupported`) otherwise
 func GetFieldType(value any) string {
 	return getFieldType(reflect.ValueOf(value))
 }
 
-func getFieldType(value reflect.Value) string { // TODO use consts for the return value
+func getFieldType(value reflect.Value) string {
 	kind := value.Kind().String()
 	switch {
 	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr", strings.HasPrefix(kind, "float"):
@@ -684,6 +684,24 @@ func getFieldType(value reflect.Value) string { // TODO use consts for the retur
 		}
 		return FieldTypeUnsupported
 	}
+}
+
+// GetFieldName returns the localized name of the field identified
+// by the given path.
+func GetFieldName(lang *lang.Language, path *walk.Path) string {
+	fieldName := path.String()
+	if i := strings.LastIndex(fieldName, "."); i != -1 {
+		fieldName = fieldName[i+1:]
+	}
+
+	fieldName = strings.TrimSuffix(fieldName, "[]")
+
+	entry := "validation.fields." + fieldName
+	attr := lang.Get(entry)
+	if attr == entry {
+		return fieldName
+	}
+	return attr
 }
 
 // GetFieldFromName find potentially nested field by it's dot-separated path

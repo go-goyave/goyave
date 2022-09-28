@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"goyave.dev/goyave/v4/lang"
 	"goyave.dev/goyave/v4/util/walk"
 )
 
@@ -19,6 +20,7 @@ type Validator interface { // TODO rename to Rule?
 	Name() string
 	IsTypeDependent() bool
 	IsType() bool
+	MessagePlaceholders(l *lang.Language) []string
 }
 
 type ComparatorValidator interface {
@@ -27,9 +29,10 @@ type ComparatorValidator interface {
 
 type BaseValidator struct{}
 
-func (v *BaseValidator) IsTypeDependent() bool { return false }
-func (v *BaseValidator) IsType() bool          { return false }
-func (v *BaseValidator) ComparesFields() bool  { return false }
+func (v *BaseValidator) IsTypeDependent() bool                         { return false }
+func (v *BaseValidator) IsType() bool                                  { return false }
+func (v *BaseValidator) ComparesFields() bool                          { return false }
+func (v *BaseValidator) MessagePlaceholders(l *lang.Language) []string { return []string{} }
 
 // Applier interface allowing RuleSet composition.
 // Types implementing this interface define how they should

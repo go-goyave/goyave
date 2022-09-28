@@ -158,7 +158,7 @@ var enUS = &Language{
 			"exists":                           "The :field does not exist.",
 			"exists.array":                     "The :field value does not exist.",
 		},
-		fields: map[string]attribute{
+		fields: map[string]field{
 			"email": {
 				Name: "email address",
 			},

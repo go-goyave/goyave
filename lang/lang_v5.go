@@ -79,7 +79,7 @@ func (l *Languages) Load(language, path string) error {
 }
 
 func (l *Languages) load(lang string, path string) error {
-	langStruct := &Language{}
+	langStruct := &Language{name: lang}
 	sep := string(os.PathSeparator)
 	if err := readLangFile(path+sep+"locale.json", &langStruct.lines); err != nil {
 		return err
@@ -99,9 +99,26 @@ func (l *Languages) load(lang string, path string) error {
 	return nil
 }
 
-// GetLanguage returns a language by its name. May return `nil`.
+// GetLanguage returns a language by its name.
+// If the language is not available, returns a dummy language
+// that will always return the entry name.
 func (l *Languages) GetLanguage(lang string) *Language {
-	return l.languages[lang]
+	if lang, ok := l.languages[lang]; ok {
+		return lang
+	}
+	return &Language{
+		name:  "dummy",
+		lines: make(map[string]string, 0),
+		validation: validationLines{
+			rules:  make(map[string]string, 0),
+			fields: make(map[string]attribute, 0),
+		},
+	}
+}
+
+// GetDefault is an alias for `l.GetLanguage(l.Default)`
+func (l *Languages) GetDefault() *Language {
+	return l.GetLanguage(l.Default)
 }
 
 // IsAvailable returns true if the language is available.
@@ -129,24 +146,26 @@ func (l *Languages) GetAvailableLanguages() []string {
 // and if none are available, the default language will be used.
 // If no variant is given (for example "en"), the first available variant will be used.
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
-// "en-US" will be used.
-func (l *Languages) DetectLanguage(lang string) string {
+// "en-US" will be returned.
+func (l *Languages) DetectLanguage(lang string) *Language {
 	values := httputil.ParseMultiValuesHeader(lang)
 	for _, lang := range values {
 		if lang.Value == "*" { // Accept anything, so return default language
 			break
 		}
-		if IsAvailable(lang.Value) {
-			return lang.Value
+		if match, ok := l.languages[lang.Value]; ok {
+			return match
 		}
-		for key := range l.languages {
+		for key, v := range l.languages {
 			if strings.HasPrefix(key, lang.Value) {
-				return key
+				// TODO priority for languages? The "first available variant" is random because keys are not ordered.
+				// Ordering alphabetically won't always produce the desired result (e.g. en-UK < en-US)
+				return v
 			}
 		}
 	}
 
-	return l.Default
+	return l.GetLanguage(l.Default)
 }
 
 // Get a language line.

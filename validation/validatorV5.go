@@ -27,10 +27,9 @@ type Options struct {
 	//  field=A         --> map[string]any{"field": []string{"A"}}
 	//  field=A&field=B --> map[string]any{"field": []string{"A", "B"}}
 	ConvertSingleValueArrays bool
-	Languages                *lang.Languages
+	Language                 *lang.Language
 	DB                       *gorm.DB
 	Config                   *config.Config
-	Lang                     string
 	Extra                    map[string]any
 }
 
@@ -255,7 +254,7 @@ func (v *validator) getMessage(field *FieldV5, rule Validator, value reflect.Val
 		langEntry += ".array"
 	}
 
-	return v.options.Languages.Get(v.options.Lang, langEntry)
+	return v.options.Language.Get(langEntry)
 }
 
 // findTypeRule find the expected type of a field for a given array dimension.

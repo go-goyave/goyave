@@ -108,7 +108,7 @@ func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
 			request.Lang = m.Lang().DetectLanguage(header)
 		} else {
-			request.Lang = m.Lang().Default
+			request.Lang = m.Lang().GetDefault()
 		}
 		next(response, request)
 	}
@@ -140,8 +140,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				Data:                     r.Query,
 				Rules:                    m.QueryRules(r),
 				ConvertSingleValueArrays: true,
-				Languages:                m.Lang(),
-				Lang:                     r.Lang,
+				Language:                 r.Lang,
 				Extra:                    extra,
 			}
 			var err []error
@@ -158,8 +157,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				Data:                     r.Data,
 				Rules:                    m.BodyRules(r),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
-				Languages:                m.Lang(),
-				Lang:                     r.Lang,
+				Language:                 r.Lang,
 				Extra:                    extra,
 			}
 			var err []error

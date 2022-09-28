@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"goyave.dev/goyave/v4/lang"
 )
 
 const (
@@ -23,7 +25,7 @@ type RequestV5 struct {
 	httpRequest *http.Request
 	Data        any
 	Query       map[string]any
-	Lang        string
+	Lang        *lang.Language
 	Extra       map[string]any
 	route       *RouteV5
 	RouteParams map[string]string

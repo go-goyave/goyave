@@ -32,13 +32,20 @@ type attribute struct {
 type Language struct {
 	lines      map[string]string
 	validation validationLines
+	name       string
 }
 
 var languages map[string]*Language
 var mutex = &sync.RWMutex{}
 
+// Name returns the name of the language. For example "en-US".
+func (l *Language) Name() string {
+	return l.name
+}
+
 func (l *Language) clone() *Language {
 	cpy := &Language{
+		name:  l.name,
 		lines: make(map[string]string, len(l.lines)),
 		validation: validationLines{
 			rules:  make(map[string]string, len(l.validation.rules)),
@@ -167,7 +174,7 @@ func Load(language, path string) {
 }
 
 func load(lang string, path string) {
-	langStruct := &Language{}
+	langStruct := &Language{name: lang}
 	sep := string(os.PathSeparator)
 	readLangFile(path+sep+"locale.json", &langStruct.lines)
 	readLangFile(path+sep+"rules.json", &langStruct.validation.rules)

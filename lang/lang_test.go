@@ -31,7 +31,7 @@ func (suite *LangTestSuite) SetupSuite() {
 func (suite *LangTestSuite) TestLang() {
 	suite.Equal("email address", Get("en-US", "validation.fields.email"))
 	suite.Equal("The :field is required.", Get("en-US", "validation.rules.required"))
-	suite.Equal("Non-validated fields are forbidden.", Get("en-US", "disallow-non-validated-fields"))
+	suite.Equal("Malformed request", Get("en-US", "malformed-request"))
 	suite.Equal("Invalid credentials.", Get("en-US", "auth.invalid-credentials"))
 	suite.Equal("doesn't.exist", Get("en-US", "doesn't.exist"))
 	suite.Equal("doesn'texist", Get("en-US", "doesn'texist"))
@@ -40,14 +40,6 @@ func (suite *LangTestSuite) TestLang() {
 	suite.Equal("validation.rules.doesn't.exist", Get("en-US", "validation.rules.doesn't.exist"))
 	suite.Equal("validation.fields.doesn't", Get("en-US", "validation.fields.doesn't"))
 	suite.Equal("validation.fields.doesn.t.", Get("en-US", "validation.fields.doesn.t."))
-
-	languages["en-US"].validation.fields["test"] = field{Rules: map[string]string{"required": "test is required"}}
-	suite.Equal("validation.fields.test", Get("en-US", "validation.fields.test"))
-	suite.Equal("test is required", Get("en-US", "validation.fields.test.required"))
-	suite.Equal("validation.fields.test.test", Get("en-US", "validation.fields.test.test"))
-
-	languages["en-US"].validation.fields["test2"] = field{}
-	suite.Equal("validation.fields.test2.required", Get("en-US", "validation.fields.test2.required"))
 
 	suite.Equal("validation.fields", Get("en-US", "validation.fields"))
 	suite.Equal("doesn't.exist", Get("not a language", "doesn't.exist"))
@@ -82,10 +74,9 @@ func (suite *LangTestSuite) TestLoad() {
 	Load("en-US", "../resources/lang/en-US") // Is an override
 	suite.Equal("rule override", languages["en-US"].validation.rules["required"])
 
-	suite.Panics(func() {
-		dest := map[string]string{}
-		readLangFile("../resources/lang/invalid.json", &dest)
-	})
+	dest := map[string]string{}
+	err := readLangFile("../resources/lang/invalid.json", &dest)
+	suite.NotNil(err)
 
 	// Ensure default lang is not changed
 	suite.Equal("The :field is required.", enUS.validation.rules["required"])
@@ -97,10 +88,8 @@ func (suite *LangTestSuite) TestMerge() {
 		lines: map[string]string{"line": "line 1"},
 		validation: validationLines{
 			rules: map[string]string{},
-			fields: map[string]field{
-				"test": {
-					Name: "test field",
-				},
+			fields: map[string]string{
+				"test": "test field",
 			},
 		},
 	}
@@ -108,15 +97,9 @@ func (suite *LangTestSuite) TestMerge() {
 		lines: map[string]string{"other": "line 2"},
 		validation: validationLines{
 			rules: map[string]string{},
-			fields: map[string]field{
-				"email": {
-					Name:  "email address",
-					Rules: map[string]string{"required": "The email address is required"},
-				},
-				"test": {
-					Name:  "test field override",
-					Rules: map[string]string{"required": "The test field override is required"},
-				},
+			fields: map[string]string{
+				"email": "email address",
+				"test":  "test field override",
 			},
 		},
 	}
@@ -125,11 +108,9 @@ func (suite *LangTestSuite) TestMerge() {
 	suite.Equal("line 1", dst.lines["line"])
 	suite.Equal("line 2", dst.lines["other"])
 
-	suite.Equal("email address", dst.validation.fields["email"].Name)
-	suite.Equal("The email address is required", dst.validation.fields["email"].Rules["required"])
+	suite.Equal("email address", dst.validation.fields["email"])
 
-	suite.Equal("test field override", dst.validation.fields["test"].Name)
-	suite.Equal("The test field override is required", dst.validation.fields["test"].Rules["required"])
+	suite.Equal("test field override", dst.validation.fields["test"])
 }
 
 func (suite *LangTestSuite) TestPlaceholders() {
@@ -148,16 +129,13 @@ func (suite *LangTestSuite) TestSetDefault() {
 	delete(enUS.validation.rules, "test-validation-rules")
 
 	SetDefaultFieldName("test-field-name", "Sun")
-	suite.Equal(field{Name: "Sun"}, enUS.validation.fields["test-field-name"])
+	suite.Equal("Sun", enUS.validation.fields["test-field-name"])
 	delete(enUS.validation.fields, "test-field-name")
 
 	// Test no override
-	enUS.validation.fields["test-field"] = field{
-		Name:  "test",
-		Rules: map[string]string{"a": "b"},
-	}
+	enUS.validation.fields["test-field"] = "test"
 	SetDefaultFieldName("test-field", "Sun")
-	suite.Equal(field{Name: "Sun", Rules: map[string]string{"a": "b"}}, enUS.validation.fields["test-field"])
+	suite.Equal("Sun", enUS.validation.fields["test-field"])
 	delete(enUS.validation.fields, "test-field")
 }
 

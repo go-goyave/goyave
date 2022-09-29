@@ -16,16 +16,8 @@ type validationLines struct {
 	// Default messages for rules
 	rules map[string]string
 
-	// Attribute-specific rules messages
-	fields map[string]field
-}
-
-type field struct {
-	// A custom message for when a rule doesn't pass with this attribute
-	Rules map[string]string `json:"rules"`
-
-	// The value with which the :field placeholder will be replaced
-	Name string `json:"name"`
+	// Field names translations
+	fields map[string]string
 }
 
 // Language represents a full Language.
@@ -49,35 +41,26 @@ func (l *Language) clone() *Language {
 		lines: make(map[string]string, len(l.lines)),
 		validation: validationLines{
 			rules:  make(map[string]string, len(l.validation.rules)),
-			fields: make(map[string]field, len(l.validation.fields)),
+			fields: make(map[string]string, len(l.validation.fields)),
 		},
 	}
 
 	mergeMap(cpy.lines, l.lines)
 	mergeMap(cpy.validation.rules, l.validation.rules)
-
-	for key, attr := range l.validation.fields {
-		attrCpy := field{
-			Name:  attr.Name,
-			Rules: make(map[string]string, len(attr.Rules)),
-		}
-		mergeMap(attrCpy.Rules, attrCpy.Rules)
-		cpy.validation.fields[key] = attrCpy
-	}
+	mergeMap(cpy.validation.fields, l.validation.fields)
 
 	return cpy
 }
 
 // Get a language line.
 //
-// For validation rules and attributes messages, use a dot-separated path:
+// For validation rules messages and field names, use a dot-separated path:
 // - "validation.rules.<rule_name>"
 // - "validation.fields.<field_name>"
-// - "validation.fields.<field_name>.<rule_name>"
 // For normal lines, just use the name of the line. Note that if you have
 // a line called "validation", it won't conflict with the dot-separated paths.
 //
-// If not found, returns the exact "line" attribute.
+// If not found, returns the exact "line" argument.
 //
 // The placeholders parameter is a variadic associative slice of placeholders and their
 // replacement. In the following example, the placeholder ":username" will be replaced
@@ -85,35 +68,10 @@ func (l *Language) clone() *Language {
 //
 //	lang.Get("greetings", ":username", user.Name)
 func (l *Language) Get(line string, placeholders ...string) string {
-	if strings.Count(line, ".") > 0 {
-		path := strings.Split(line, ".")
-		if path[0] == "validation" {
-			switch path[1] {
-			case "rules":
-				if len(path) < 3 {
-					return line
-				}
-				return convertEmptyLine(line, l.validation.rules[strings.Join(path[2:], ".")], placeholders)
-			case "fields":
-				len := len(path)
-				if len < 3 {
-					return line
-				}
-				attr := l.validation.fields[path[2]]
-				if len == 4 {
-					if attr.Rules == nil {
-						return line
-					}
-					return convertEmptyLine(line, attr.Rules[path[3]], placeholders)
-				} else if len == 3 {
-					return convertEmptyLine(line, attr.Name, placeholders)
-				} else {
-					return line
-				}
-			default:
-				return line
-			}
-		}
+	if strings.HasPrefix(line, "validation.rules.") {
+		return convertEmptyLine(line, l.validation.rules[line[17:]], placeholders)
+	} else if strings.HasPrefix(line, "validation.fields.") {
+		return convertEmptyLine(line, l.validation.fields[line[18:]], placeholders)
 	}
 
 	return convertEmptyLine(line, l.lines[line], placeholders)
@@ -125,7 +83,7 @@ func LoadDefault() {
 	mutex.Lock()
 	defer mutex.Unlock()
 	languages = make(map[string]*Language, 1)
-	languages["en-US"] = enUS.clone()
+	languages[enUS.name] = enUS.clone()
 }
 
 // LoadAllAvailableLanguages loads every language directory
@@ -204,19 +162,7 @@ func readLangFile(path string, dest any) (err error) {
 func mergeLang(dst *Language, src *Language) {
 	mergeMap(dst.lines, src.lines)
 	mergeMap(dst.validation.rules, src.validation.rules)
-
-	for key, value := range src.validation.fields {
-		if attr, exists := dst.validation.fields[key]; !exists {
-			dst.validation.fields[key] = value
-		} else {
-			attr.Name = value.Name
-			if attr.Rules == nil {
-				attr.Rules = make(map[string]string)
-			}
-			mergeMap(attr.Rules, value.Rules)
-			dst.validation.fields[key] = attr
-		}
-	}
+	mergeMap(dst.validation.fields, src.validation.fields)
 }
 
 func mergeMap(dst map[string]string, src map[string]string) {
@@ -227,14 +173,13 @@ func mergeMap(dst map[string]string, src map[string]string) {
 
 // Get a language line.
 //
-// For validation rules and attributes messages, use a dot-separated path:
+// For validation rules messages and field names, use a dot-separated path:
 // - "validation.rules.<rule_name>"
 // - "validation.fields.<field_name>"
-// - "validation.fields.<field_name>.<rule_name>"
 // For normal lines, just use the name of the line. Note that if you have
 // a line called "validation", it won't conflict with the dot-separated paths.
 //
-// If not found, returns the exact "line" attribute.
+// If not found, returns the exact "line" argument.
 //
 // The placeholders parameter is a variadic associative slice of placeholders and their
 // replacement. In the following example, the placeholder ":username" will be replaced
@@ -258,21 +203,10 @@ func Get(lang string, line string, placeholders ...string) string {
 				}
 				return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")], placeholders)
 			case "fields":
-				length := len(path)
-				if length < 3 {
+				if len(path) != 3 {
 					return line
 				}
-				attr := languages[lang].validation.fields[path[2]]
-				if length == 4 {
-					if attr.Rules == nil {
-						return line
-					}
-					return convertEmptyLine(line, attr.Rules[path[3]], placeholders)
-				} else if length == 3 {
-					return convertEmptyLine(line, attr.Name, placeholders)
-				} else {
-					return line
-				}
+				return convertEmptyLine(line, languages[lang].validation.fields[path[2]], placeholders)
 			default:
 				return line
 			}

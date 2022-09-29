@@ -67,7 +67,7 @@ func (l *Languages) LoadAllAvailableLanguages() error {
 //	en-UK
 //	  ├─ locale.json     (contains the normal language lines)
 //	  ├─ rules.json      (contains the validation messages)
-//	  └─ attributes.json (contains the attribute-specific validation messages)
+//	  └─ fields.json     (contains the field-specific validation messages)
 //
 // Each file is optional.
 func (l *Languages) Load(language, path string) error {
@@ -111,7 +111,7 @@ func (l *Languages) GetLanguage(lang string) *Language {
 		lines: make(map[string]string, 0),
 		validation: validationLines{
 			rules:  make(map[string]string, 0),
-			fields: make(map[string]field, 0),
+			fields: make(map[string]string, 0),
 		},
 	}
 }
@@ -170,14 +170,14 @@ func (l *Languages) DetectLanguage(lang string) *Language {
 
 // Get a language line.
 //
-// For validation rules and attributes messages, use a dot-separated path:
+// For validation rules messages and field names, use a dot-separated path:
 // - "validation.rules.<rule_name>"
 // - "validation.fields.<field_name>"
 // - "validation.fields.<field_name>.<rule_name>"
 // For normal lines, just use the name of the line. Note that if you have
 // a line called "validation", it won't conflict with the dot-separated paths.
 //
-// If not found, returns the exact "line" attribute.
+// If not found, returns the exact "line" argument.
 //
 // The placeholders parameter is a variadic associative slice of placeholders and their
 // replacement. In the following example, the placeholder ":username" will be replaced

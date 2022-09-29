@@ -39,8 +39,6 @@ func Nullable() *NullableValidator {
 	return &NullableValidator{}
 }
 
-// TODO design: Message() in interface? or register rules as before? -> would allow more computation for more complex messages instead of placeholders (and remove the difference between validation placeholders and regular placeholders)
-
 type BetweenValidator struct {
 	BaseValidator
 	Min int

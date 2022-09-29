@@ -1,5 +1,3 @@
 {
-    "email": {
-        "name": "email address"
-    }
+    "email": "email address"
 }

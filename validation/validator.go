@@ -688,7 +688,7 @@ func getFieldType(value reflect.Value) string {
 
 // GetFieldName returns the localized name of the field identified
 // by the given path.
-func GetFieldName(lang *lang.Language, path *walk.Path) string {
+func GetFieldName(lang *lang.Language, path *walk.Path) string { // TODO test this
 	fieldName := path.String()
 	if i := strings.LastIndex(fieldName, "."); i != -1 {
 		fieldName = fieldName[i+1:]
@@ -697,11 +697,11 @@ func GetFieldName(lang *lang.Language, path *walk.Path) string {
 	fieldName = strings.TrimSuffix(fieldName, "[]")
 
 	entry := "validation.fields." + fieldName
-	attr := lang.Get(entry)
-	if attr == entry {
+	name := lang.Get(entry)
+	if name == entry {
 		return fieldName
 	}
-	return attr
+	return name
 }
 
 // GetFieldFromName find potentially nested field by it's dot-separated path

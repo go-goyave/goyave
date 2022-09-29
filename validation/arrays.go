@@ -30,8 +30,6 @@ const (
 	ArrayTypeObject             = "object"
 )
 
-// TODO ArrayType rename to Type?
-
 // createArray create a slice of the same type as the given type.
 func createArray(dataType ArrayType, length int) reflect.Value {
 

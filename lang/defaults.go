@@ -1,15 +1,15 @@
 package lang
 
 var enUS = &Language{
+	name: "en-US",
 	lines: map[string]string{
-		"disallow-non-validated-fields": "Non-validated fields are forbidden.",
-		"malformed-request":             "Malformed request",
-		"malformed-json":                "Malformed JSON",
-		"auth.invalid-credentials":      "Invalid credentials.",
-		"auth.no-credentials-provided":  "Invalid or missing authentication header.",
-		"auth.jwt-invalid":              "Your authentication token is invalid.",
-		"auth.jwt-not-valid-yet":        "Your authentication token is not valid yet.",
-		"auth.jwt-expired":              "Your authentication token is expired.",
+		"malformed-request":            "Malformed request",
+		"malformed-json":               "Malformed JSON",
+		"auth.invalid-credentials":     "Invalid credentials.",
+		"auth.no-credentials-provided": "Invalid or missing authentication header.",
+		"auth.jwt-invalid":             "Your authentication token is invalid.",
+		"auth.jwt-not-valid-yet":       "Your authentication token is not valid yet.",
+		"auth.jwt-expired":             "Your authentication token is expired.",
 	},
 	validation: validationLines{
 		rules: map[string]string{
@@ -21,7 +21,7 @@ var enUS = &Language{
 			"integer.array":                    "The :field values must be integers.",
 			"string":                           "The :field must be a string.",
 			"string.array":                     "The :field values must be strings.",
-			"array":                            "The :field must be an array.", // TODO add type of values in array if provided
+			"array":                            "The :field must be an array.",
 			"array.array":                      "The :field values must be arrays.",
 			"min.string":                       "The :field must be at least :min characters.",
 			"min.numeric":                      "The :field must be at least :min.",
@@ -158,10 +158,8 @@ var enUS = &Language{
 			"exists":                           "The :field does not exist.",
 			"exists.array":                     "The :field value does not exist.",
 		},
-		fields: map[string]field{
-			"email": {
-				Name: "email address",
-			},
+		fields: map[string]string{
+			"email": "email address",
 		},
 	},
 }
@@ -184,7 +182,5 @@ func SetDefaultValidationRule(key, line string) {
 // for the given field in the default "en-US" language.
 // Values set this way can be overridden by language files.
 func SetDefaultFieldName(field, name string) {
-	attr := enUS.validation.fields[field]
-	attr.Name = name
-	enUS.validation.fields[field] = attr
+	enUS.validation.fields[field] = name
 }

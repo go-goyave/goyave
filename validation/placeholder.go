@@ -48,11 +48,11 @@ func processPlaceholders(fieldName string, originalMessage string, language stri
 
 func replaceField(field, language string) string {
 	entry := "validation.fields." + field
-	attr := lang.Get(language, entry)
-	if attr == entry {
+	fieldName := lang.Get(language, entry)
+	if fieldName == entry {
 		return field
 	}
-	return attr
+	return fieldName
 }
 
 func simpleParameterPlaceholder(_ string, _ string, ctx *Context) string {

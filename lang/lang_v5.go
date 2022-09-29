@@ -68,7 +68,7 @@ func (l *Languages) LoadAllAvailableLanguages() error {
 //	en-UK
 //	  ├─ locale.json     (contains the normal language lines)
 //	  ├─ rules.json      (contains the validation messages)
-//	  └─ fields.json     (contains the field-specific validation messages)
+//	  └─ fields.json     (contains the field names)
 //
 // Each file is optional.
 func (l *Languages) Load(language, path string) error {
@@ -153,8 +153,6 @@ func (l *Languages) GetAvailableLanguages() []string {
 // If multiple languages are given, the first available language will be used,
 // and if none are available, the default language will be used.
 // If no variant is given (for example "en"), the first available variant will be used.
-// For example, if "en-US" and "en-UK" are available and the request accepts "en",
-// "en-US" will be returned.
 func (l *Languages) DetectLanguage(lang string) *Language {
 	values := httputil.ParseMultiValuesHeader(lang)
 	for _, lang := range values {
@@ -181,7 +179,6 @@ func (l *Languages) DetectLanguage(lang string) *Language {
 // For validation rules messages and field names, use a dot-separated path:
 // - "validation.rules.<rule_name>"
 // - "validation.fields.<field_name>"
-// - "validation.fields.<field_name>.<rule_name>"
 // For normal lines, just use the name of the line. Note that if you have
 // a line called "validation", it won't conflict with the dot-separated paths.
 //

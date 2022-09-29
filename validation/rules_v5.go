@@ -150,3 +150,7 @@ func GreaterThan(path string) *GreaterThanValidator {
 	}
 	return &GreaterThanValidator{Path: p}
 }
+
+// TODO implement more rules
+// After that I think the new validation system will be complete
+// Also will need a lot of documentation and testing

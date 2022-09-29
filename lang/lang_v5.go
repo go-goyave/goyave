@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -75,11 +76,18 @@ func (l *Languages) Load(language, path string) error {
 		return l.load(language, path)
 	}
 
-	return fmt.Errorf("Failed loading language \"%s\", directory \"%s\" doesn't exist", language, path)
+	return fmt.Errorf("Failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path)
 }
 
 func (l *Languages) load(lang string, path string) error {
-	langStruct := &Language{name: lang}
+	langStruct := &Language{
+		name:  lang,
+		lines: map[string]string{},
+		validation: validationLines{
+			rules:  map[string]string{},
+			fields: map[string]string{},
+		},
+	}
 	sep := string(os.PathSeparator)
 	if err := readLangFile(path+sep+"locale.json", &langStruct.lines); err != nil {
 		return err
@@ -185,9 +193,39 @@ func (l *Languages) DetectLanguage(lang string) *Language {
 //
 //	lang.Get("en-US", "greetings", ":username", user.Name)
 func (l *Languages) Get(lang string, line string, placeholders ...string) string {
-	if !l.IsAvailable(lang) {
+	language, exists := l.languages[lang]
+	if !exists {
 		return line
 	}
 
-	return l.languages[lang].Get(line, placeholders...)
+	return language.Get(line, placeholders...)
+}
+
+func readLangFile(path string, dest any) (err error) {
+	if !fsutil.FileExists(path) {
+		return nil
+	}
+
+	langFile, _ := os.Open(path)
+	defer func() {
+		closeErr := langFile.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+
+	err = json.NewDecoder(langFile).Decode(&dest)
+	return
+}
+
+func mergeLang(dst *Language, src *Language) {
+	mergeMap(dst.lines, src.lines)
+	mergeMap(dst.validation.rules, src.validation.rules)
+	mergeMap(dst.validation.fields, src.validation.fields)
+}
+
+func mergeMap(dst map[string]string, src map[string]string) {
+	for key, value := range src {
+		dst[key] = value
+	}
 }

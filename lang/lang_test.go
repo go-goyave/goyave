@@ -1,86 +1,201 @@
 package lang
 
 import (
+	"os"
 	"path"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v4/util/fsutil"
 )
 
 type LangTestSuite struct {
 	suite.Suite
 }
 
-func loadTestLang(lang string) {
+func setRootWorkingDirectory() {
+	sep := string(os.PathSeparator)
 	_, filename, _, _ := runtime.Caller(1)
-	load(lang, path.Dir(filename)+"/../resources/lang/en-US")
+	directory := path.Dir(filename) + sep
+	for !fsutil.FileExists(directory + sep + "go.mod") {
+		directory += ".." + sep
+		if !fsutil.IsDirectory(directory) {
+			panic("Couldn't find project's root directory.")
+		}
+	}
+	if err := os.Chdir(directory); err != nil {
+		panic(err)
+	}
 }
 
 func (suite *LangTestSuite) SetupSuite() {
-	LoadDefault()
-	LoadAllAvailableLanguages()
+	setRootWorkingDirectory()
+}
 
-	if err := config.LoadFrom("../config.test.json"); err != nil {
-		suite.FailNow(err.Error())
+func (suite *LangTestSuite) TestNew() {
+	l := New()
+	expected := &Languages{
+		languages: map[string]*Language{enUS.name: enUS},
+		Default:   enUS.name,
 	}
-	config.Set("app.defaultLanguage", "en-US")
+	suite.Equal(expected, l)
 }
 
-func (suite *LangTestSuite) TestLang() {
-	suite.Equal("email address", Get("en-US", "validation.fields.email"))
-	suite.Equal("The :field is required.", Get("en-US", "validation.rules.required"))
-	suite.Equal("Malformed request", Get("en-US", "malformed-request"))
-	suite.Equal("Invalid credentials.", Get("en-US", "auth.invalid-credentials"))
-	suite.Equal("doesn't.exist", Get("en-US", "doesn't.exist"))
-	suite.Equal("doesn'texist", Get("en-US", "doesn'texist"))
-	suite.Equal("validation.doesn't.exist", Get("en-US", "validation.doesn't.exist"))
-	suite.Equal("validation.rules", Get("en-US", "validation.rules"))
-	suite.Equal("validation.rules.doesn't.exist", Get("en-US", "validation.rules.doesn't.exist"))
-	suite.Equal("validation.fields.doesn't", Get("en-US", "validation.fields.doesn't"))
-	suite.Equal("validation.fields.doesn.t.", Get("en-US", "validation.fields.doesn.t."))
-
-	suite.Equal("validation.fields", Get("en-US", "validation.fields"))
-	suite.Equal("doesn't.exist", Get("not a language", "doesn't.exist"))
+func (suite *LangTestSuite) TestLoadError() {
+	l := New()
+	err := l.Load("notalanguagedir", "notalanguagepath")
+	suite.NotNil(err)
+	suite.Len(l.languages, 1)
 }
 
-func (suite *LangTestSuite) TestDetectLanguage() {
-	loadTestLang("fr-FR")
-	loadTestLang("fr-FR") // Merge existing
+func (suite *LangTestSuite) TestLoadInvalid() {
+	dst := map[string]string{}
+	suite.NotNil(readLangFile("resources/lang/invalid.json", &dst))
+}
 
-	suite.Equal("en-US", DetectLanguage("en"))
-	suite.Equal("en-US", DetectLanguage("en-US, fr"))
-	suite.Equal("fr-FR", DetectLanguage("fr-FR"))
-	suite.Equal("fr-FR", DetectLanguage("fr"))
-	suite.Equal("en-US", DetectLanguage("fr, en-US"))
-	suite.Equal("fr-FR", DetectLanguage("fr-FR, en-US"))
-	suite.Equal("fr-FR", DetectLanguage("fr, en-US;q=0.9"))
-	suite.Equal("en-US", DetectLanguage("en, fr-FR;q=0.9"))
-	suite.Equal("en-US", DetectLanguage("*"))
-	suite.Equal("en-US", DetectLanguage("notalang"))
-
-	langs := GetAvailableLanguages()
-	suite.Equal(2, len(langs))
-	suite.Contains(langs, "en-US")
-	suite.Contains(langs, "fr-FR")
+func (suite *LangTestSuite) TestLoadOverride() {
+	l := New()
+	err := l.Load("en-US", "resources/lang/en-US")
+	suite.Nil(err)
+	suite.Len(l.languages, 1)
+	suite.Equal("rule override", l.languages["en-US"].validation.rules["required"])
+	suite.Equal("Custom line", l.languages["en-US"].lines["custom-line"])
 }
 
 func (suite *LangTestSuite) TestLoad() {
-	suite.Panics(func() {
-		Load("notalanguagedir", "notalanguagepath")
-	})
+	l := New()
+	err := l.Load("en-UK", "resources/lang/en-UK")
+	suite.Nil(err)
+	suite.Len(l.languages, 2)
+	expected := &Language{
+		name: "en-UK",
+		lines: map[string]string{
+			"malformed-request": "Malformed request",
+			"malformed-json":    "Malformed JSON",
+		},
+		validation: validationLines{
+			rules:  map[string]string{},
+			fields: map[string]string{},
+		},
+	}
+	suite.Equal(expected, l.languages["en-UK"])
 
-	Load("en-US", "../resources/lang/en-US") // Is an override
-	suite.Equal("rule override", languages["en-US"].validation.rules["required"])
+	err = l.Load("en-UK", "resources/lang/en-US") // Overriding en-UK with the lines in en-US
+	suite.Nil(err)
+	suite.Len(l.languages, 2)
+	expected = &Language{
+		name: "en-UK",
+		lines: map[string]string{
+			"malformed-request": "Malformed request",
+			"malformed-json":    "Malformed JSON",
+			"custom-line":       "Custom line",
+			"placeholder":       "Line with :placeholders",
+			"many-placeholders": "Line with :count :placeholders",
+		},
+		validation: validationLines{
+			rules: map[string]string{
+				"required":       "rule override",
+				"required.array": "The :field values are required.",
+			},
+			fields: map[string]string{
+				"email": "email address",
+			},
+		},
+	}
+	suite.Equal(expected, l.languages["en-UK"])
+}
 
-	dest := map[string]string{}
-	err := readLangFile("../resources/lang/invalid.json", &dest)
-	suite.NotNil(err)
+func (suite *LangTestSuite) TestLoadAllAvailableLanguages() {
+	l := New()
+	suite.Nil(l.LoadAllAvailableLanguages())
+	suite.Len(l.languages, 2)
+	suite.Contains(l.languages, "en-US")
+	suite.Contains(l.languages, "en-UK")
+}
 
-	// Ensure default lang is not changed
-	suite.Equal("The :field is required.", enUS.validation.rules["required"])
+func (suite *LangTestSuite) TestGetLanguage() {
+	l := New()
+	if err := l.LoadAllAvailableLanguages(); err != nil {
+		suite.Error(err)
+		return
+	}
+	suite.Equal(l.languages["en-UK"], l.GetLanguage("en-UK"))
+	suite.Equal("dummy", l.GetLanguage("fr-FR").Name())
+}
 
+func (suite *LangTestSuite) TestDummyLanguage() {
+	l := New()
+	lang := l.GetLanguage("dummy")
+	suite.Equal("malformed-request", lang.Get("malformed-request"))
+	suite.Equal("validation.rules.required", lang.Get("validation.rules.required"))
+	suite.Equal("validation.fields.email", lang.Get("validation.fields.email"))
+}
+
+func (suite *LangTestSuite) TestGetDefault() {
+	l := New()
+	suite.Equal(l.languages["en-US"], l.GetDefault())
+}
+
+func (suite *LangTestSuite) TestIsAvailable() {
+	l := New()
+	suite.True(l.IsAvailable("en-US"))
+	suite.False(l.IsAvailable("fr-FR"))
+}
+
+func (suite *LangTestSuite) TestGetAvailableLanguages() {
+	l := New()
+	if err := l.LoadAllAvailableLanguages(); err != nil {
+		suite.Error(err)
+		return
+	}
+
+	suite.ElementsMatch([]string{"en-US", "en-UK"}, l.GetAvailableLanguages())
+}
+
+func (suite *LangTestSuite) TestDetectLanguage() {
+	l := New()
+	if err := l.Load("fr-FR", "resources/lang/en-US"); err != nil {
+		panic(err)
+	}
+
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("en"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("en-US, fr"))
+	suite.Equal(l.languages["fr-FR"], l.DetectLanguage("fr-FR"))
+	suite.Equal(l.languages["fr-FR"], l.DetectLanguage("fr"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("fr, en-US"))
+	suite.Equal(l.languages["fr-FR"], l.DetectLanguage("fr-FR, en-US"))
+	suite.Equal(l.languages["fr-FR"], l.DetectLanguage("fr, en-US;q=0.9"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("en, fr-FR;q=0.9"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("*"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("notalang"))
+}
+
+func (suite *LangTestSuite) TestLanguagesGet() {
+	l := New()
+	if err := l.LoadAllAvailableLanguages(); err != nil {
+		suite.Error(err)
+		return
+	}
+
+	suite.Equal("malformed-request", l.Get("fr-FR", "malformed-request"))
+	suite.Equal("Malformed request", l.Get("en-US", "malformed-request"))
+	suite.Equal("Line with awesomeness", l.Get("en-US", "placeholder", ":placeholders", "awesomeness"))
+}
+
+func (suite *LangTestSuite) TestGet() {
+	l := New()
+	if err := l.LoadAllAvailableLanguages(); err != nil {
+		suite.Error(err)
+		return
+	}
+
+	lang := l.GetLanguage("en-US")
+	suite.Equal("Malformed request", lang.Get("malformed-request"))
+	suite.Equal("notaline", lang.Get("notaline"))
+	suite.Equal("validation.rules.notarule", lang.Get("validation.rules.notarule"))
+	suite.Equal("validation.rules.notafield", lang.Get("validation.rules.notafield"))
+	suite.Equal("Line with an infinite amount of awesomeness", lang.Get("many-placeholders", ":placeholders", "awesomeness", ":count", "an infinite amount of"))
 }
 
 func (suite *LangTestSuite) TestMerge() {
@@ -114,6 +229,7 @@ func (suite *LangTestSuite) TestMerge() {
 }
 
 func (suite *LangTestSuite) TestPlaceholders() {
+	suite.Equal("notaline", convertEmptyLine("notaline", "", []string{":username", "Kevin"}))
 	suite.Equal("Greetings, Kevin", convertEmptyLine("greetings", "Greetings, :username", []string{":username", "Kevin"}))
 	suite.Equal("Greetings, Kevin, today is Monday", convertEmptyLine("greetings", "Greetings, :username, today is :today", []string{":username", "Kevin", ":today", "Monday"}))
 	suite.Equal("Greetings, Kevin, today is :today", convertEmptyLine("greetings", "Greetings, :username, today is :today", []string{":username", "Kevin", ":today"}))
@@ -137,10 +253,6 @@ func (suite *LangTestSuite) TestSetDefault() {
 	SetDefaultFieldName("test-field", "Sun")
 	suite.Equal("Sun", enUS.validation.fields["test-field"])
 	delete(enUS.validation.fields, "test-field")
-}
-
-func (suite *LangTestSuite) TearDownAllSuite() {
-	languages = map[string]*Language{}
 }
 
 func TestLangTestSuite(t *testing.T) {

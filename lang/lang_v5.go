@@ -28,9 +28,9 @@ type Languages struct {
 func New() *Languages {
 	l := &Languages{
 		languages: make(map[string]*Language, 1),
-		Default:   "en-US",
+		Default:   enUS.name,
 	}
-	l.languages["en-US"] = enUS.clone()
+	l.languages[enUS.name] = enUS.clone()
 	return l
 }
 

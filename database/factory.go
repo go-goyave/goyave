@@ -38,7 +38,7 @@ func (f *Factory) Override(override interface{}) *Factory {
 // Returns a slice of the actual type of the generated records,
 // meaning you can type-assert safely.
 //
-//  factory.Generate(5).([]*User)
+//	factory.Generate(5).([]*User)
 func (f *Factory) Generate(count int) interface{} {
 	if count <= 0 {
 		return []interface{}{}
@@ -66,7 +66,7 @@ func (f *Factory) Generate(count int) interface{} {
 // The returned slice is a slice of the actual type of the generated records,
 // meaning you can type-assert safely.
 //
-//  factory.Save(5).([]*User)
+//	factory.Save(5).([]*User)
 func (f *Factory) Save(count int) interface{} {
 	db := GetConnection()
 	records := f.Generate(count)

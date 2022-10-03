@@ -17,9 +17,10 @@ var sortedKeys = []string{}
 
 // SetPlaceholder sets the replacer function for the given placeholder.
 // If a placeholder with this name already exists, the latter will be overridden.
-//  validation.SetPlaceholder("min", func(field string, rule string, parameters []string, language string) string {
-//  	return parameters[0] // Replace ":min" by the first parameter in the rule definition
-//  })
+//
+//	validation.SetPlaceholder("min", func(field string, rule string, parameters []string, language string) string {
+//		return parameters[0] // Replace ":min" by the first parameter in the rule definition
+//	})
 func SetPlaceholder(placeholderName string, replacer Placeholder) {
 	key := ":" + placeholderName
 	placeholders[key] = replacer

@@ -130,21 +130,21 @@ func LoadFrom(path string) error {
 // LoadJSON load a configuration file from raw JSON. Can be used in combination with
 // Go's 1.16 embed directive.
 //
-//  var (
-//  	//go:embed config.json
-//  	cfg string
-//  )
+//	 var (
+//	 	//go:embed config.json
+//	 	cfg string
+//	 )
 //
-//  func main() {
-//  	if err := config.LoadJSON(cfg); err != nil {
-//  		goyave.ErrLogger.Println(err)
-//  		os.Exit(goyave.ExitInvalidConfig)
-//  	}
+//	 func main() {
+//	 	if err := config.LoadJSON(cfg); err != nil {
+//	 		goyave.ErrLogger.Println(err)
+//	 		os.Exit(goyave.ExitInvalidConfig)
+//	 	}
 //
-//  	if err := goyave.Start(route.Register); err != nil {
-//  		os.Exit(err.(*goyave.Error).ExitCode)
-// 	 }
-//  }
+//	 	if err := goyave.Start(route.Register); err != nil {
+//	 		os.Exit(err.(*goyave.Error).ExitCode)
+//		 }
+//	 }
 func LoadJSON(cfg string) error {
 	return load(readString, cfg)
 }
@@ -326,12 +326,12 @@ func Has(key string) bool {
 // The change is temporary and will not be saved for next boot.
 // Use "nil" to unset a value.
 //
-//  - A category cannot be replaced with an entry.
-//  - An entry cannot be replaced with a category.
-//  - New categories can be created with they don't already exist.
-//  - New entries can be created if they don't already exist. This new entry
-//    will be subsequently validated using the type of its initial value and
-//    have an empty slice as authorized values (meaning it can have any value of its type)
+//   - A category cannot be replaced with an entry.
+//   - An entry cannot be replaced with a category.
+//   - New categories can be created with they don't already exist.
+//   - New entries can be created if they don't already exist. This new entry
+//     will be subsequently validated using the type of its initial value and
+//     have an empty slice as authorized values (meaning it can have any value of its type)
 //
 // Panics and revert changes in case of error.
 func Set(key string, value interface{}) {

@@ -120,9 +120,10 @@ func ClearInitializers() {
 
 // RegisterModel registers a model for auto-migration.
 // When writing a model file, you should always register it in the init() function.
-//  func init() {
-//		database.RegisterModel(&MyModel{})
-//  }
+//
+//	 func init() {
+//			database.RegisterModel(&MyModel{})
+//	 }
 func RegisterModel(model interface{}) {
 	models = append(models, model)
 }
@@ -155,14 +156,16 @@ func Migrate() {
 //
 // Template format accepts the following placeholders, which will be replaced with
 // the corresponding configuration entries automatically:
-//  - "{username}"
-//  - "{password}"
-//  - "{host}"
-//  - "{port}"
-//  - "{name}"
-//  - "{options}"
+//   - "{username}"
+//   - "{password}"
+//   - "{host}"
+//   - "{port}"
+//   - "{name}"
+//   - "{options}"
+//
 // Example template for the "mysql" dialect:
-//  {username}:{password}@({host}:{port})/{name}?{options}
+//
+//	{username}:{password}@({host}:{port})/{name}?{options}
 func RegisterDialect(name, template string, initializer DialectorInitializer) {
 	mu.Lock()
 	defer mu.Unlock()

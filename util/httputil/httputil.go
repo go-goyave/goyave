@@ -23,9 +23,12 @@ var multiValuesHeaderRegex *regexp.Regexp
 // See: https://developer.mozilla.org/en-US/docs/Glossary/Quality_values
 //
 // For the following header:
-//  "text/html,text/*;q=0.5,*/*;q=0.7"
-// then
-//  [{text/html 1} {*/* 0.7} {text/* 0.5}]
+//
+//	"text/html,text/*;q=0.5,*/*;q=0.7"
+//
+// returns
+//
+//	[{text/html 1} {*/* 0.7} {text/* 0.5}]
 func ParseMultiValuesHeader(header string) []HeaderValue {
 	if multiValuesHeaderRegex == nil {
 		multiValuesHeaderRegex = regexp.MustCompile(`^q=([01]\.[0-9]{1,3})$`)

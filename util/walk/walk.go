@@ -234,11 +234,12 @@ func (p *Path) setAllMissingIndexes() {
 // Parse transform given path string representation into usable Path.
 //
 // Example paths:
-//   name
-//   object.field
-//   object.subobject.field
-//   object.array[]
-//   object.arrayOfObjects[].field
+//
+//	name
+//	object.field
+//	object.subobject.field
+//	object.array[]
+//	object.arrayOfObjects[].field
 func Parse(p string) (*Path, error) {
 	rootPath := &Path{}
 	path := rootPath

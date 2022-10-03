@@ -98,10 +98,11 @@ func LoadAllAvailableLanguages() {
 // Load a language directory.
 //
 // Directory structure of a language directory:
-//  en-UK
-//    ├─ locale.json     (contains the normal language lines)
-//    ├─ rules.json      (contains the validation messages)
-//    └─ attributes.json (contains the attribute-specific validation messages)
+//
+//	en-UK
+//	  ├─ locale.json (contains the normal language lines)
+//	  ├─ rules.json  (contains the validation messages)
+//	  └─ fields.json (contains the attribute-specific validation messages)
 //
 // Each file is optional.
 func Load(language, path string) {
@@ -179,7 +180,7 @@ func mergeMap(dst map[string]string, src map[string]string) {
 // replacement. In the following example, the placeholder ":username" will be replaced
 // with the Name field in the user struct.
 //
-// 	lang.Get("en-US", "greetings", ":username", user.Name)
+//	lang.Get("en-US", "greetings", ":username", user.Name)
 func Get(lang string, line string, placeholders ...string) string {
 	if !IsAvailable(lang) {
 		return line
@@ -248,9 +249,9 @@ func IsAvailable(lang string) bool {
 // This can be used to generate different routes for all languages
 // supported by your applications.
 //
-//  /en/products
-//  /fr/produits
-//  ...
+//	/en/products
+//	/fr/produits
+//	...
 func GetAvailableLanguages() []string {
 	mutex.RLock()
 	defer mutex.RUnlock()

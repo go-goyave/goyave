@@ -39,14 +39,13 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 // Given DB transaction can contain clauses already, such as WHERE, if you want to
 // filter results.
 //
-//  articles := []model.Article{}
-//  tx := database.Conn().Where("title LIKE ?", "%"+sqlutil.EscapeLike(search)+"%")
-//  paginator := database.NewPaginator(tx, page, pageSize, &articles)
-//  result := paginator.Find()
-//  if response.HandleDatabaseError(result) {
-//      response.JSON(http.StatusOK, paginator)
-//  }
-//
+//	articles := []model.Article{}
+//	tx := database.Conn().Where("title LIKE ?", "%"+sqlutil.EscapeLike(search)+"%")
+//	paginator := database.NewPaginator(tx, page, pageSize, &articles)
+//	result := paginator.Find()
+//	if response.HandleDatabaseError(result) {
+//	    response.JSON(http.StatusOK, paginator)
+//	}
 func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator {
 	return &Paginator{
 		DB:          db,

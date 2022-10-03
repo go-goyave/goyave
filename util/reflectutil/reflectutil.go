@@ -11,23 +11,25 @@ import (
 // returns a map[string]interface{} containing only those values.
 //
 // For example:
-//  type Model struct {
-//    Field string
-//    Num   int
-//    Slice []float64
-//  }
-//  model := Model{
-// 	  Field: "value",
-// 	  Num:   42,
-// 	  Slice: []float64{3, 6, 9},
-//  }
-//  res := reflectutil.Only(model, "Field", "Slice")
+//
+//	 type Model struct {
+//	   Field string
+//	   Num   int
+//	   Slice []float64
+//	 }
+//	 model := Model{
+//		  Field: "value",
+//		  Num:   42,
+//		  Slice: []float64{3, 6, 9},
+//	 }
+//	 res := reflectutil.Only(model, "Field", "Slice")
 //
 // Result:
-//  map[string]interface{}{
-// 	  "Field": "value",
-// 	  "Slice": []float64{3, 6, 9},
-//  }
+//
+//	 map[string]interface{}{
+//		  "Field": "value",
+//		  "Slice": []float64{3, 6, 9},
+//	 }
 //
 // In case of conflicting fields (if a promoted field has the same name as a parent's
 // struct field), the higher level field is kept.

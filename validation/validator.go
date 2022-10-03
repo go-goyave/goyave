@@ -457,9 +457,7 @@ func validateField(fieldName string, field *Field, isJSON bool, data map[string]
 
 			if shouldConvertSingleValueArray(fieldName, isJSON) {
 				c.Value = convertSingleValueArray(field, c.Value) // Convert single value arrays in url-encoded requests
-				if parentIsObject {
-					parentObject[c.Name] = c.Value
-				}
+				parentObject[c.Name] = c.Value
 			}
 		}
 

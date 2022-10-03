@@ -120,13 +120,15 @@ func ValidateV5(options *Options) (*ErrorsV5, []error) {
 func (v *validator) validateField(fieldName string, field *FieldV5, walkData any, parentPath *walk.Path) {
 	field.Path.Walk(walkData, func(c walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]any)
-		if parentIsObject && !field.IsNullable() && c.Value == nil {
-			delete(parentObject, c.Name)
-		}
+		if c.Found == walk.Found {
+			if parentIsObject && !field.IsNullable() && c.Value == nil {
+				delete(parentObject, c.Name)
+			}
 
-		if v.options.ConvertSingleValueArrays && v.shouldConvertSingleValueArray(fieldName) && c.Found == walk.Found {
-			c.Value = v.convertSingleValueArray(field, c.Value, parentObject)
-			parentObject[c.Name] = c.Value
+			if v.shouldConvertSingleValueArray(fieldName) {
+				c.Value = v.convertSingleValueArray(field, c.Value, parentObject)
+				parentObject[c.Name] = c.Value
+			}
 		}
 
 		if v.isAbsent(field, c, v.options.Data) {
@@ -206,7 +208,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 }
 
 func (v *validator) shouldConvertSingleValueArray(fieldName string) bool {
-	return fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
+	return v.options.ConvertSingleValueArrays && fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
 func (v *validator) convertSingleValueArray(field *FieldV5, value any, data map[string]any) any {

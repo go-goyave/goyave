@@ -117,16 +117,17 @@ func ClearShutdownHooks() {
 
 // Start starts the web server.
 // The routeRegistrer parameter is a function aimed at registering all your routes and middleware.
-//  import (
-//      "goyave.dev/goyave/v4"
-//      "github.com/username/projectname/route"
-//  )
 //
-//  func main() {
-//      if err := goyave.Start(route.Register); err != nil {
-//          os.Exit(err.(*goyave.Error).ExitCode)
-//      }
-//  }
+//	import (
+//	    "goyave.dev/goyave/v4"
+//	    "github.com/username/projectname/route"
+//	)
+//
+//	func main() {
+//	    if err := goyave.Start(route.Register); err != nil {
+//	        os.Exit(err.(*goyave.Error).ExitCode)
+//	    }
+//	}
 //
 // Errors returned can be safely type-asserted to "*goyave.Error".
 // Panics if the server is already running.

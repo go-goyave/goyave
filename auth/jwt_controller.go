@@ -98,8 +98,8 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 // validated route. Returns the new route group.
 //
 // Validation rules are as follows:
-//  - "username": required string
-//  - "password": required string
+//   - "username": required string
+//   - "password": required string
 //
 // The given model is used for username and password retrieval and for
 // instantiating an authenticated request's user.

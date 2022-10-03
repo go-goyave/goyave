@@ -57,15 +57,15 @@ func GenerateToken(username interface{}) (string, error) {
 // the `auth.jwt.expiry` config entry.
 // Depending on the given signing method, the following configuration entries
 // will be used:
-// - RSA:
-//   - `auth.jwt.rsa.private`: path to the private PEM-encoded RSA key.
-//   - `auth.jwt.rsa.password`: optional password for the private RSA key.
-// - ECDSA: `auth.jwt.ecdsa.private`: path to the private PEM-encoded ECDSA key.
-// - HMAC: `auth.jwt.secret`: HMAC secret
+//   - RSA:
+//     `auth.jwt.rsa.private`: path to the private PEM-encoded RSA key.
+//     `auth.jwt.rsa.password`: optional password for the private RSA key.
+//   - ECDSA: `auth.jwt.ecdsa.private`: path to the private PEM-encoded ECDSA key.
+//   - HMAC: `auth.jwt.secret`: HMAC secret
 //
 // The generated token will also contain the following claims:
-// - `nbf`: "Not before", the current timestamp is used
-// - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
+//   - `nbf`: "Not before", the current timestamp is used
+//   - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
 //
 // `nbf` and `exp` can be overridden if they are set in the `claims` parameter.
 func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {

@@ -276,7 +276,8 @@ func (r *Router) Middleware(middleware ...Middleware) {
 // Route register a new route.
 //
 // Multiple methods can be passed using a pipe-separated string.
-//  "PUT|PATCH"
+//
+//	"PUT|PATCH"
 //
 // The validation rules set is optional. If you don't want your route
 // to be validated, pass "nil".

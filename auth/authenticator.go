@@ -60,12 +60,13 @@ func Middleware(model interface{}, authenticator Authenticator) goyave.Middlewar
 // Promoted fields are matched as well.
 //
 // Given the following struct and "username", "notatag", "password":
-//  type TestUser struct {
-// 		gorm.Model
-// 		Name     string `gorm:"type:varchar(100)"`
-// 		Password string `gorm:"type:varchar(100)" auth:"password"`
-// 		Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
-//  }
+//
+//	 type TestUser struct {
+//			gorm.Model
+//			Name     string `gorm:"type:varchar(100)"`
+//			Password string `gorm:"type:varchar(100)" auth:"password"`
+//			Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
+//	 }
 //
 // The result will be the "Email" field, "nil" and the "Password" field.
 func FindColumns(strct interface{}, fields ...string) []*Column {

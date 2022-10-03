@@ -66,19 +66,19 @@ func (e *PanicError) Unwrap() error {
 //
 // The following websocket Handler is an example of an "echo" feature using websockets:
 //
-//  func Echo(c *websocket.Conn, request *goyave.Request) error {
-//  	for {
-//  		mt, message, err := c.ReadMessage()
-//  		if err != nil {
-//  			return err
-//  		}
-//  		goyave.Logger.Printf("recv: %s", message)
-//  		err = c.WriteMessage(mt, message)
-//  		if err != nil {
-//  			return fmt.Errorf("write: %w", err)
-//  		}
-//  	}
-//  }
+//	func Echo(c *websocket.Conn, request *goyave.Request) error {
+//		for {
+//			mt, message, err := c.ReadMessage()
+//			if err != nil {
+//				return err
+//			}
+//			goyave.Logger.Printf("recv: %s", message)
+//			err = c.WriteMessage(mt, message)
+//			if err != nil {
+//				return fmt.Errorf("write: %w", err)
+//			}
+//		}
+//	}
 type Handler func(*Conn, *goyave.Request) error
 
 // UpgradeErrorHandler is a specific Handler type for connection upgrade errors.

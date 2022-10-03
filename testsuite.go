@@ -88,11 +88,11 @@ func (s *TestSuite) SetTimeout(timeout time.Duration) {
 //
 // If passed request is "nil", a default GET request to "/" is used.
 //
-//  rawRequest := httptest.NewRequest("GET", "/test-route", nil)
-//  rawRequest.Header.Set("Content-Type", "application/json")
-//  request := goyave.CreateTestRequest(rawRequest)
-//  request.Lang = "en-US"
-//  request.Data = map[string]interface{}{"field": "value"}
+//	rawRequest := httptest.NewRequest("GET", "/test-route", nil)
+//	rawRequest.Header.Set("Content-Type", "application/json")
+//	request := goyave.CreateTestRequest(rawRequest)
+//	request.Lang = "en-US"
+//	request.Data = map[string]interface{}{"field": "value"}
 func (s *TestSuite) CreateTestRequest(rawRequest *http.Request) *Request {
 	if rawRequest == nil {
 		rawRequest = httptest.NewRequest("GET", "/", nil)
@@ -111,11 +111,11 @@ func (s *TestSuite) CreateTestRequest(rawRequest *http.Request) *Request {
 // CreateTestResponse create an empty response with the given response writer.
 // This function is aimed at making it easier to unit test Responses.
 //
-//  writer := httptest.NewRecorder()
-//  response := suite.CreateTestResponse(writer)
-//  response.Status(http.StatusNoContent)
-//  result := writer.Result()
-//  fmt.Println(result.StatusCode) // 204
+//	writer := httptest.NewRecorder()
+//	response := suite.CreateTestResponse(writer)
+//	response.Status(http.StatusNoContent)
+//	result := writer.Result()
+//	fmt.Println(result.StatusCode) // 204
 func (s *TestSuite) CreateTestResponse(recorder http.ResponseWriter) *Response {
 	return newResponse(recorder, nil)
 }
@@ -124,12 +124,12 @@ func (s *TestSuite) CreateTestResponse(recorder http.ResponseWriter) *Response {
 // This function is aimed at making it easier to unit test Responses needing the raw request's
 // information, such as redirects.
 //
-//  writer := httptest.NewRecorder()
-//  rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("body"))
-//  response := suite.CreateTestResponseWithRequest(writer, rawRequest)
-//  response.Status(http.StatusNoContent)
-//  result := writer.Result()
-//  fmt.Println(result.StatusCode) // 204
+//	writer := httptest.NewRecorder()
+//	rawRequest := httptest.NewRequest("POST", "/test-route", strings.NewReader("body"))
+//	response := suite.CreateTestResponseWithRequest(writer, rawRequest)
+//	response.Status(http.StatusNoContent)
+//	result := writer.Result()
+//	fmt.Println(result.StatusCode) // 204
 func (s *TestSuite) CreateTestResponseWithRequest(recorder http.ResponseWriter, rawRequest *http.Request) *Response {
 	return newResponse(recorder, rawRequest)
 }

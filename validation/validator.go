@@ -104,10 +104,11 @@ func (l List) apply(set RuleSet, name string) {
 
 // StructList of rules struct representation.
 // e.g.:
-//  validation.StructList{
-//  	{Name: "required"},
-//  	{Name: "min", Params: []string{"3"}},
-//  }
+//
+//	validation.StructList{
+//		{Name: "required"},
+//		{Name: "min", Params: []string{"3"}},
+//	}
 type StructList []*Rule
 
 func (l StructList) apply(set RuleSet, name string) {
@@ -449,13 +450,17 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, parentPath *walk.Path, now time.Time, language string, extra map[string]interface{}, errors Errors) {
 	field.Path.Walk(walkData, func(c walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
-		if parentIsObject && !field.IsNullable() && c.Value == nil {
-			delete(parentObject, c.Name)
-		}
+		if c.Found == walk.Found {
+			if parentIsObject && !field.IsNullable() && c.Value == nil {
+				delete(parentObject, c.Name)
+			}
 
-		if shouldConvertSingleValueArray(fieldName, isJSON) && c.Found == walk.Found {
-			c.Value = convertSingleValueArray(field, c.Value, parentObject) // Convert single value arrays in url-encoded requests
-			parentObject[c.Name] = c.Value
+			if shouldConvertSingleValueArray(fieldName, isJSON) {
+				c.Value = convertSingleValueArray(field, c.Value) // Convert single value arrays in url-encoded requests
+				if parentIsObject {
+					parentObject[c.Name] = c.Value
+				}
+			}
 		}
 
 		if isAbsent(field, c, data) {
@@ -569,7 +574,7 @@ func makeGenericSlice(original interface{}) ([]interface{}, bool) {
 	return newSlice, true
 }
 
-func convertSingleValueArray(field *Field, value interface{}, data map[string]interface{}) interface{} {
+func convertSingleValueArray(field *Field, value interface{}) interface{} {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	if field.IsArray() && kind != "slice" {
@@ -616,11 +621,11 @@ func findTypeRule(rules []*Rule) string {
 // GetFieldType returns the non-technical type of the given "value" interface.
 // This is used by validation rules to know if the input data is a candidate
 // for validation or not and is especially useful for type-dependent rules.
-//  - "numeric" if the value is an int, uint or a float
-//  - "string" if the value is a string
-//  - "array" if the value is a slice
-//  - "file" if the value is a slice of "fsutil.File"
-//  - "unsupported" otherwise
+//   - "numeric" if the value is an int, uint or a float
+//   - "string" if the value is a string
+//   - "array" if the value is a slice
+//   - "file" if the value is a slice of "fsutil.File"
+//   - "unsupported" otherwise
 func GetFieldType(value interface{}) string {
 	return getFieldType(reflect.ValueOf(value))
 }

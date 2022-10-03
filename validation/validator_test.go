@@ -197,6 +197,77 @@ func (suite *ValidatorTestSuite) TestValidate() {
 	suite.Equal("The text is required.", errors["text"].Errors[0])
 }
 
+func (suite *ValidatorTestSuite) TestValidateRemoveNonNillable() {
+	data := map[string]interface{}{
+		"object": map[string]interface{}{
+			"array": []map[string]interface{}{
+				{
+					"nullField": nil,
+				},
+			},
+		},
+	}
+	errors := Validate(data, RuleSet{
+		"object.array[].nullField": List{"nullable", "numeric"},
+	}, true, "en-US")
+	val, exists := data["object"].(map[string]interface{})["array"].([]map[string]interface{})[0]["nullField"]
+	suite.True(exists)
+	suite.Nil(val)
+	suite.Nil(errors)
+
+	data = map[string]interface{}{
+		"object": map[string]interface{}{
+			"array": []map[string]interface{}{
+				{
+					"nullField": nil,
+				},
+			},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"object.array[].nullField": List{"numeric"},
+	}, true, "en-US")
+	object, objExists := data["object"].(map[string]interface{})
+	if !suite.True(objExists) {
+		return
+	}
+	array, arrayExists := object["array"].([]map[string]interface{})
+	if !suite.True(arrayExists) || !suite.Len(array, 1) {
+		return
+	}
+	_, exists = array[0]["nullField"]
+	suite.False(exists)
+	suite.Nil(errors)
+
+	// Parent not found (parent should not be removed)
+	data = map[string]interface{}{
+		"object": map[string]interface{}{},
+	}
+	errors = Validate(data, RuleSet{
+		"object.array[].nullField": List{"numeric"},
+	}, true, "en-US")
+	suite.Contains(data, "object")
+	suite.Nil(errors)
+
+	// Parent not correct type (parent should not be removed)
+	data = map[string]interface{}{
+		"object": map[string]interface{}{
+			"array": map[string]interface{}{
+				"nullField": nil,
+			},
+		},
+	}
+	errors = Validate(data, RuleSet{
+		"object.array[].nullField": List{"numeric"},
+	}, true, "en-US")
+	object, objExists = data["object"].(map[string]interface{})
+	if !suite.True(objExists) {
+		return
+	}
+	suite.Contains(object, "array")
+	suite.Nil(errors)
+}
+
 func (suite *ValidatorTestSuite) TestValidateWithArray() {
 	data := map[string]interface{}{
 		"string": "hello",

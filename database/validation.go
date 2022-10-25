@@ -39,3 +39,4 @@ func validateExists(ctx *validation.Context) bool {
 
 // TODO move those to the validation package
 // TODO Find a way to add an "except" parameter
+// TODO validateUnique and validateExists add support for arrays (all elements of the array must satisfy the criteria)

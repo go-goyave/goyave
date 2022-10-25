@@ -72,21 +72,35 @@ func (p *Path) Walk(currentElement any, f func(Context)) {
 	p.walk(currentElement, nil, -1, path, path, f)
 }
 
-func (p *Path) walk(currentElement any, parent any, index int, path *Path, lastPathElement *Path, f func(Context)) {
+func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(Context)) { // TODO refactor this to reduce cyclomatic complexity
 	element := currentElement
 	if p.Name != nil {
 		ce, ok := currentElement.(map[string]any)
-		found := ParentNotFound
+		notFoundType := ParentNotFound
 		if ok {
+			if *p.Name == "*" && len(ce) != 0 {
+				for k := range ce {
+					key := k
+					trackClone := trackPath.Clone()
+					tail := trackClone.Tail()
+					tail.Name = &key
+
+					clone := p.Clone()
+					clone.Name = &key
+					clone.walk(element, parent, -1, trackClone, tail, f)
+				}
+				return
+			}
+
 			element, ok = ce[*p.Name]
 			if !ok && p.Type == PathTypeElement {
-				found = ElementNotFound
+				notFoundType = ElementNotFound
 			}
 			index = -1
 		}
 		if !ok {
 			p.completePath(lastPathElement)
-			f(newNotFoundContext(currentElement, path, p.Name, index, found))
+			f(newNotFoundContext(currentElement, trackPath, p.Name, index, notFoundType))
 			return
 		}
 		parent = currentElement
@@ -97,7 +111,7 @@ func (p *Path) walk(currentElement any, parent any, index int, path *Path, lastP
 		c := Context{
 			Value:  element,
 			Parent: parent,
-			Path:   path,
+			Path:   trackPath,
 			Index:  index,
 		}
 		if p.Name != nil {
@@ -108,7 +122,7 @@ func (p *Path) walk(currentElement any, parent any, index int, path *Path, lastP
 		list := reflect.ValueOf(element)
 		if list.Kind() != reflect.Slice {
 			lastPathElement.Type = PathTypeElement
-			f(newNotFoundContext(parent, path, p.Name, index, ParentNotFound))
+			f(newNotFoundContext(parent, trackPath, p.Name, index, ParentNotFound))
 			return
 		}
 		length := list.Len()
@@ -116,36 +130,36 @@ func (p *Path) walk(currentElement any, parent any, index int, path *Path, lastP
 			lastPathElement.Index = p.Index
 			lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 			if p.outOfBounds(length) {
-				f(newNotFoundContext(element, path, nil, *p.Index, ElementNotFound))
+				f(newNotFoundContext(element, trackPath, nil, *p.Index, ElementNotFound))
 				return
 			}
 			v := list.Index(*p.Index)
 			value := v.Interface()
-			p.Next.walk(value, element, *p.Index, path, lastPathElement.Next, f)
+			p.Next.walk(value, element, *p.Index, trackPath, lastPathElement.Next, f)
 			return
 		}
 		if length == 0 {
 			lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
-			found := ElementNotFound
+			notFoundType := ElementNotFound
 			if p.Next.Type != PathTypeElement {
-				found = ParentNotFound
+				notFoundType = ParentNotFound
 			}
-			f(newNotFoundContext(element, path, nil, -1, found))
+			f(newNotFoundContext(element, trackPath, nil, -1, notFoundType))
 			return
 		}
 		for i := 0; i < length; i++ {
 			j := i
-			clone := path.Clone()
-			tail := clone.Tail()
+			trackClone := trackPath.Clone()
+			tail := trackClone.Tail()
 			tail.Index = &j
 			tail.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 			v := list.Index(i)
 			value := v.Interface()
-			p.Next.walk(value, element, i, clone, tail.Next, f)
+			p.Next.walk(value, element, i, trackClone, tail.Next, f)
 		}
 	case PathTypeObject:
 		lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
-		p.Next.walk(element, parent, index, path, lastPathElement.Next, f)
+		p.Next.walk(element, parent, index, trackPath, lastPathElement.Next, f)
 	}
 }
 
@@ -213,6 +227,7 @@ func (p *Path) Tail() *Path {
 	return step
 }
 
+// Depth returns the depth of the path. For each step in the path, increments the depth by one.
 func (p *Path) Depth() uint {
 	depth := uint(1)
 	step := p
@@ -223,6 +238,8 @@ func (p *Path) Depth() uint {
 	return depth
 }
 
+// Truncate returns the n first steps of the path so the returned path's depth
+// equals the given depth.
 func (p *Path) Truncate(depth uint) *Path {
 	if depth == 0 {
 		return nil
@@ -301,9 +318,11 @@ func (p *Path) setAllMissingIndexes() {
 //	name
 //	object.field
 //	object.subobject.field
+//	object.*
 //	object.array[]
 //	object.arrayOfObjects[].field
 func Parse(p string) (*Path, error) {
+	// TODO add escape system so '*', '[]' can be escaped
 	rootPath := &Path{}
 	path := rootPath
 

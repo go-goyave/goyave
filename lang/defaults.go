@@ -160,6 +160,7 @@ var enUS = &Language{
 		},
 		fields: map[string]string{
 			"email": "email address",
+			"*":     "object property",
 		},
 	},
 }

@@ -155,3 +155,4 @@ func GreaterThan(path string) *GreaterThanValidator {
 // After that I think the new validation system will be complete
 // Also will need a lot of documentation and testing
 // TODO add support for dynamic map/object keys (should be easy by adding a new identifier to "walk.Path")
+// TODO one file per rule

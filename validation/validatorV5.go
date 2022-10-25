@@ -124,6 +124,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			if parentIsObject && !field.IsNullable() && c.Value == nil {
 				delete(parentObject, c.Name)
 			}
+			// TODO if the parent is an array, should be removed too!
 
 			if v.shouldConvertSingleValueArray(fieldName) {
 				c.Value = v.convertSingleValueArray(field, c.Value, parentObject)

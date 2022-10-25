@@ -207,6 +207,21 @@ func TestParse(t *testing.T) {
 		},
 	}, path)
 
+	path, err = Parse("object.*.prop")
+	assert.Nil(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("*"),
+			Type: PathTypeObject,
+			Next: &Path{
+				Name: strPtr("prop"),
+				Type: PathTypeElement,
+			},
+		},
+	}, path)
+
 	path, err = Parse("")
 	assert.Nil(t, err)
 	assert.Equal(t, &Path{
@@ -220,7 +235,7 @@ func TestParse(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func testWalk(t *testing.T, data map[string]interface{}, p string) []Context {
+func testWalk(t *testing.T, data map[string]any, p string) []Context {
 	matches := make([]Context, 0, 5)
 	path, err := Parse(p)
 
@@ -237,8 +252,8 @@ func testWalk(t *testing.T, data map[string]interface{}, p string) []Context {
 
 func TestPathWalk(t *testing.T) {
 	// ""
-	data := map[string]interface{}{
-		"": map[string]interface{}{
+	data := map[string]any{
+		"": map[string]any{
 			"field": 5,
 		},
 	}
@@ -259,8 +274,8 @@ func TestPathWalk(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	// object
-	data = map[string]interface{}{
-		"object": map[string]interface{}{
+	data = map[string]any{
+		"object": map[string]any{
 			"field": 5,
 		},
 	}
@@ -281,8 +296,8 @@ func TestPathWalk(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	// object.field
-	data = map[string]interface{}{
-		"object": map[string]interface{}{
+	data = map[string]any{
+		"object": map[string]any{
 			"field": 5,
 		},
 	}
@@ -303,8 +318,166 @@ func TestPathWalk(t *testing.T) {
 	matches = testWalk(t, data, "object.field")
 	assert.Equal(t, expected, matches)
 
+	// object.field but object is not an object
+	data = map[string]any{
+		"object": 5,
+	}
+	expected = []Context{
+		{
+			Value:  nil,
+			Parent: data["object"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{Name: strPtr("field")},
+			},
+			Name:  "field",
+			Index: -1,
+			Found: ParentNotFound,
+		},
+	}
+	matches = testWalk(t, data, "object.field")
+	assert.Equal(t, expected, matches)
+
+	// object.*
+	data = map[string]any{
+		"object": map[string]any{
+			"field":  5,
+			"field2": "6",
+		},
+	}
+	expected = []Context{
+		{
+			Value:  5,
+			Parent: data["object"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{Name: strPtr("field")},
+			},
+			Name:  "field",
+			Index: -1,
+			Found: Found,
+		},
+		{
+			Value:  "6",
+			Parent: data["object"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{Name: strPtr("field2")},
+			},
+			Name:  "field2",
+			Index: -1,
+			Found: Found,
+		},
+	}
+	matches = testWalk(t, data, "object.*")
+	assert.ElementsMatch(t, expected, matches)
+
+	// object.* but object is not an object
+	data = map[string]any{
+		"object": []string{
+			"a", "b", "c",
+		},
+	}
+	expected = []Context{
+		{
+			Value:  nil,
+			Parent: data["object"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{Name: strPtr("*")},
+			},
+			Name:  "*",
+			Index: -1,
+			Found: ParentNotFound,
+		},
+	}
+	matches = testWalk(t, data, "object.*")
+	assert.Equal(t, expected, matches)
+
+	// object.*.prop
+	data = map[string]any{
+		"object": map[string]any{
+			"field": map[string]any{
+				"prop": 5,
+			},
+			"field2": "6",
+		},
+	}
+	expected = []Context{
+		{
+			Value:  5,
+			Parent: data["object"].(map[string]any)["field"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{
+					Name: strPtr("field"),
+					Type: PathTypeObject,
+					Next: &Path{Name: strPtr("prop")},
+				},
+			},
+			Name:  "prop",
+			Index: -1,
+			Found: Found,
+		},
+		{
+			Value:  nil,
+			Parent: data["object"].(map[string]any)["field2"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{
+					Name: strPtr("field2"),
+					Type: PathTypeObject,
+					Next: &Path{Name: strPtr("prop")},
+				},
+			},
+			Name:  "prop",
+			Index: -1,
+			Found: ParentNotFound,
+		},
+	}
+	matches = testWalk(t, data, "object.*.prop")
+	assert.ElementsMatch(t, expected, matches)
+
+	// *
+	data = map[string]any{
+		"prop1": 3,
+		"prop2": 4,
+	}
+	expected = []Context{
+		{
+			Value:  3,
+			Parent: data,
+			Path: &Path{
+				Name: strPtr("prop1"),
+				Type: PathTypeElement,
+			},
+			Name:  "prop1",
+			Index: -1,
+			Found: Found,
+		},
+		{
+			Value:  4,
+			Parent: data,
+			Path: &Path{
+				Name: strPtr("prop2"),
+				Type: PathTypeElement,
+			},
+			Name:  "prop2",
+			Index: -1,
+			Found: Found,
+		},
+	}
+	matches = testWalk(t, data, "*")
+	assert.Equal(t, expected, matches)
+
 	// array[]
-	data = map[string]interface{}{
+	data = map[string]any{
 		"array": []string{"a", "b", "c"},
 	}
 	i := 0
@@ -357,7 +530,7 @@ func TestPathWalk(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	// array[][]
-	data = map[string]interface{}{
+	data = map[string]any{
 		"array": [][]string{
 			{},
 			{"a", "b"},
@@ -437,8 +610,8 @@ func TestPathWalk(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	// array[].field[]
-	data = map[string]interface{}{
-		"array": []map[string]interface{}{
+	data = map[string]any{
+		"array": []map[string]any{
 			{"field": []string{}},
 			{"field": []string{"a", "b"}},
 			{},
@@ -448,7 +621,7 @@ func TestPathWalk(t *testing.T) {
 	expected = []Context{
 		{
 			Value:  nil,
-			Parent: data["array"].([]map[string]interface{})[0]["field"],
+			Parent: data["array"].([]map[string]any)[0]["field"],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -468,7 +641,7 @@ func TestPathWalk(t *testing.T) {
 		},
 		{
 			Value:  "a",
-			Parent: data["array"].([]map[string]interface{})[1]["field"],
+			Parent: data["array"].([]map[string]any)[1]["field"],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -489,7 +662,7 @@ func TestPathWalk(t *testing.T) {
 		},
 		{
 			Value:  "b",
-			Parent: data["array"].([]map[string]interface{})[1]["field"],
+			Parent: data["array"].([]map[string]any)[1]["field"],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -510,7 +683,7 @@ func TestPathWalk(t *testing.T) {
 		},
 		{
 			Value:  nil,
-			Parent: data["array"].([]map[string]interface{})[2],
+			Parent: data["array"].([]map[string]any)[2],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -531,7 +704,7 @@ func TestPathWalk(t *testing.T) {
 		},
 		{
 			Value:  "c",
-			Parent: data["array"].([]map[string]interface{})[3]["field"],
+			Parent: data["array"].([]map[string]any)[3]["field"],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -558,7 +731,7 @@ func TestPathWalk(t *testing.T) {
 	expected = []Context{
 		{
 			Value:  []string{},
-			Parent: data["array"].([]map[string]interface{})[0],
+			Parent: data["array"].([]map[string]any)[0],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -574,7 +747,7 @@ func TestPathWalk(t *testing.T) {
 		},
 		{
 			Value:  []string{"a", "b"},
-			Parent: data["array"].([]map[string]interface{})[1],
+			Parent: data["array"].([]map[string]any)[1],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -590,7 +763,7 @@ func TestPathWalk(t *testing.T) {
 		},
 		{
 			Value:  nil,
-			Parent: data["array"].([]map[string]interface{})[2],
+			Parent: data["array"].([]map[string]any)[2],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -606,7 +779,7 @@ func TestPathWalk(t *testing.T) {
 		},
 		{
 			Value:  []string{"c"},
-			Parent: data["array"].([]map[string]interface{})[3],
+			Parent: data["array"].([]map[string]any)[3],
 			Path: &Path{
 				Name:  strPtr("array"),
 				Type:  PathTypeArray,
@@ -625,8 +798,53 @@ func TestPathWalk(t *testing.T) {
 	assert.Equal(t, expected, matches)
 }
 
+func TestPathWalkWildcardEmptyObject(t *testing.T) {
+	// object.*
+	data := map[string]any{
+		"object": map[string]any{},
+	}
+	expected := []Context{
+		{
+			Value:  nil,
+			Parent: data["object"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{Name: strPtr("*")},
+			},
+			Name:  "*",
+			Index: -1,
+			Found: ElementNotFound,
+		},
+	}
+	matches := testWalk(t, data, "object.*")
+	assert.Equal(t, expected, matches)
+
+	// object.*.prop
+	expected = []Context{
+		{
+			Value:  nil,
+			Parent: data["object"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{
+					Name: strPtr("*"),
+					Type: PathTypeObject,
+					Next: &Path{Name: strPtr("prop")},
+				},
+			},
+			Name:  "*",
+			Index: -1,
+			Found: ParentNotFound,
+		},
+	}
+	matches = testWalk(t, data, "object.*.prop")
+	assert.Equal(t, expected, matches)
+}
+
 func TestPathWalkEmptyArray(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"array":  []string{},
 		"narray": [][][]string{},
 	}
@@ -668,8 +886,8 @@ func TestPathWalkEmptyArray(t *testing.T) {
 }
 
 func TestPathWalkNotFoundInObject(t *testing.T) {
-	data := map[string]interface{}{
-		"object": map[string]interface{}{
+	data := map[string]any{
+		"object": map[string]any{
 			"field": 5,
 		},
 	}
@@ -692,8 +910,8 @@ func TestPathWalkNotFoundInObject(t *testing.T) {
 }
 
 func TestPathWalkNotFoundInArray(t *testing.T) {
-	data := map[string]interface{}{
-		"array": []map[string]interface{}{},
+	data := map[string]any{
+		"array": []map[string]any{},
 	}
 	expected := []Context{
 		{
@@ -714,13 +932,13 @@ func TestPathWalkNotFoundInArray(t *testing.T) {
 }
 
 func TestPathWalkSliceExpected(t *testing.T) {
-	data := map[string]interface{}{
-		"object": map[string]interface{}{
+	data := map[string]any{
+		"object": map[string]any{
 			"field": []string{"a", "b"},
-			"array": []interface{}{
+			"array": []any{
 				5,
 				[]string{"a", "b"},
-				map[string]interface{}{"field": "1"},
+				map[string]any{"field": "1"},
 			},
 		},
 	}
@@ -730,7 +948,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 	expected := []Context{
 		{
 			Value:  nil,
-			Parent: data["object"].(map[string]interface{})["field"],
+			Parent: data["object"].(map[string]any)["field"],
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
@@ -747,7 +965,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 		},
 		{
 			Value:  nil,
-			Parent: data["object"].(map[string]interface{})["field"],
+			Parent: data["object"].(map[string]any)["field"],
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
@@ -769,7 +987,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 	expected = []Context{
 		{
 			Value:  nil,
-			Parent: data["object"].(map[string]interface{})["array"],
+			Parent: data["object"].(map[string]any)["array"],
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
@@ -786,7 +1004,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 		},
 		{
 			Value:  "a",
-			Parent: data["object"].(map[string]interface{})["array"].([]interface{})[1],
+			Parent: data["object"].(map[string]any)["array"].([]any)[1],
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
@@ -807,7 +1025,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 		},
 		{
 			Value:  "b",
-			Parent: data["object"].(map[string]interface{})["array"].([]interface{})[1],
+			Parent: data["object"].(map[string]any)["array"].([]any)[1],
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
@@ -828,7 +1046,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 		},
 		{
 			Value:  nil,
-			Parent: data["object"].(map[string]interface{})["array"],
+			Parent: data["object"].(map[string]any)["array"],
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
@@ -849,8 +1067,8 @@ func TestPathWalkSliceExpected(t *testing.T) {
 }
 
 func TestPathWalkWithIndex(t *testing.T) {
-	data := map[string]interface{}{
-		"array": []map[string]interface{}{
+	data := map[string]any{
+		"array": []map[string]any{
 			{"field": []string{}},
 			{"field": []string{"a", "b"}},
 			{},
@@ -884,7 +1102,7 @@ func TestPathWalkWithIndex(t *testing.T) {
 	expected := []Context{
 		{
 			Value:  "b",
-			Parent: data["array"].([]map[string]interface{})[i]["field"],
+			Parent: data["array"].([]map[string]any)[i]["field"],
 			Path:   path,
 			Name:   "",
 			Index:  i,
@@ -895,8 +1113,8 @@ func TestPathWalkWithIndex(t *testing.T) {
 }
 
 func TestPathWalkWithIndexOutOfBounds(t *testing.T) {
-	data := map[string]interface{}{
-		"array": []map[string]interface{}{
+	data := map[string]any{
+		"array": []map[string]any{
 			{"field": []string{}},
 			{"field": []string{"a", "b"}},
 			{},
@@ -931,7 +1149,7 @@ func TestPathWalkWithIndexOutOfBounds(t *testing.T) {
 	expected := []Context{
 		{
 			Value:  nil,
-			Parent: data["array"].([]map[string]interface{})[i]["field"],
+			Parent: data["array"].([]map[string]any)[i]["field"],
 			Path:   path,
 			Name:   "",
 			Index:  j,
@@ -942,7 +1160,7 @@ func TestPathWalkWithIndexOutOfBounds(t *testing.T) {
 }
 
 func TestPathWalkMissingObject(t *testing.T) {
-	data := map[string]interface{}{}
+	data := map[string]any{}
 
 	path := &Path{
 		Name: strPtr("object"),

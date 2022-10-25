@@ -72,7 +72,7 @@ func (p *Path) Walk(currentElement any, f func(Context)) {
 	p.walk(currentElement, nil, -1, path, path, f)
 }
 
-func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(Context)) { // TODO refactor this to reduce cyclomatic complexity
+func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(Context)) {
 	element := currentElement
 	if p.Name != nil {
 		ce, ok := currentElement.(map[string]any)
@@ -119,47 +119,51 @@ func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, 
 		}
 		f(c)
 	case PathTypeArray:
-		list := reflect.ValueOf(element)
-		if list.Kind() != reflect.Slice {
-			lastPathElement.Type = PathTypeElement
-			f(newNotFoundContext(parent, trackPath, p.Name, index, ParentNotFound))
-			return
-		}
-		length := list.Len()
-		if p.Index != nil {
-			lastPathElement.Index = p.Index
-			lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
-			if p.outOfBounds(length) {
-				f(newNotFoundContext(element, trackPath, nil, *p.Index, ElementNotFound))
-				return
-			}
-			v := list.Index(*p.Index)
-			value := v.Interface()
-			p.Next.walk(value, element, *p.Index, trackPath, lastPathElement.Next, f)
-			return
-		}
-		if length == 0 {
-			lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
-			notFoundType := ElementNotFound
-			if p.Next.Type != PathTypeElement {
-				notFoundType = ParentNotFound
-			}
-			f(newNotFoundContext(element, trackPath, nil, -1, notFoundType))
-			return
-		}
-		for i := 0; i < length; i++ {
-			j := i
-			trackClone := trackPath.Clone()
-			tail := trackClone.Tail()
-			tail.Index = &j
-			tail.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
-			v := list.Index(i)
-			value := v.Interface()
-			p.Next.walk(value, element, i, trackClone, tail.Next, f)
-		}
+		p.walkArray(element, parent, index, trackPath, lastPathElement, f)
 	case PathTypeObject:
 		lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 		p.Next.walk(element, parent, index, trackPath, lastPathElement.Next, f)
+	}
+}
+
+func (p *Path) walkArray(element any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(Context)) {
+	list := reflect.ValueOf(element)
+	if list.Kind() != reflect.Slice {
+		lastPathElement.Type = PathTypeElement
+		f(newNotFoundContext(parent, trackPath, p.Name, index, ParentNotFound))
+		return
+	}
+	length := list.Len()
+	if p.Index != nil {
+		lastPathElement.Index = p.Index
+		lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
+		if p.outOfBounds(length) {
+			f(newNotFoundContext(element, trackPath, nil, *p.Index, ElementNotFound))
+			return
+		}
+		v := list.Index(*p.Index)
+		value := v.Interface()
+		p.Next.walk(value, element, *p.Index, trackPath, lastPathElement.Next, f)
+		return
+	}
+	if length == 0 {
+		lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
+		notFoundType := ElementNotFound
+		if p.Next.Type != PathTypeElement {
+			notFoundType = ParentNotFound
+		}
+		f(newNotFoundContext(element, trackPath, nil, -1, notFoundType))
+		return
+	}
+	for i := 0; i < length; i++ {
+		j := i
+		trackClone := trackPath.Clone()
+		tail := trackClone.Tail()
+		tail.Index = &j
+		tail.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
+		v := list.Index(i)
+		value := v.Interface()
+		p.Next.walk(value, element, i, trackClone, tail.Next, f)
 	}
 }
 

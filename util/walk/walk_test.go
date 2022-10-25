@@ -474,7 +474,7 @@ func TestPathWalk(t *testing.T) {
 		},
 	}
 	matches = testWalk(t, data, "*")
-	assert.Equal(t, expected, matches)
+	assert.ElementsMatch(t, expected, matches)
 
 	// array[]
 	data = map[string]any{

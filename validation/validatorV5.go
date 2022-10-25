@@ -255,12 +255,7 @@ func (v *validator) getMessage(fieldName string, field *FieldV5, rule Validator,
 		langEntry += ".array"
 	}
 
-	if i := strings.LastIndex(fieldName, "."); i != -1 {
-		fieldName = fieldName[i+1:]
-	}
-	fieldName = strings.TrimSuffix(fieldName, "[]")
-
-	return v.options.Language.Get(langEntry, append([]string{":field", fieldName}, rule.MessagePlaceholders(v.options.Language)...)...)
+	return v.options.Language.Get(langEntry, append([]string{":field", translateFieldName(v.options.Language, fieldName)}, rule.MessagePlaceholders(v.options.Language)...)...)
 }
 
 // findTypeRule find the expected type of a field for a given array dimension.

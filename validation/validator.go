@@ -689,13 +689,14 @@ func getFieldType(value reflect.Value) string {
 // GetFieldName returns the localized name of the field identified
 // by the given path.
 func GetFieldName(lang *lang.Language, path *walk.Path) string { // TODO test this
-	fieldName := path.String()
+	return translateFieldName(lang, path.String())
+}
+
+func translateFieldName(lang *lang.Language, fieldName string) string {
 	if i := strings.LastIndex(fieldName, "."); i != -1 {
 		fieldName = fieldName[i+1:]
 	}
-
 	fieldName = strings.TrimSuffix(fieldName, "[]")
-
 	entry := "validation.fields." + fieldName
 	name := lang.Get(entry)
 	if name == entry {

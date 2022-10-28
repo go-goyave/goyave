@@ -7,9 +7,9 @@ import (
 
 // Factory an object used to generate records or seed the database.
 type FactoryV5[T any] struct {
-	db        *gorm.DB
 	generator func() *T
 	override  *T
+	BatchSize int
 }
 
 // NewFactory create a new Factory.
@@ -18,6 +18,7 @@ func NewFactoryV5[T any](generator func() *T) *FactoryV5[T] {
 	return &FactoryV5[T]{
 		generator: generator,
 		override:  nil,
+		BatchSize: 100,
 	}
 }
 
@@ -56,7 +57,7 @@ func (f *FactoryV5[T]) Generate(count int) []*T {
 func (f *FactoryV5[T]) Save(db *gorm.DB, count int) []*T {
 	records := f.Generate(count)
 
-	if err := db.Create(records).Error; err != nil {
+	if err := db.CreateInBatches(records, f.BatchSize).Error; err != nil {
 		panic(err)
 	}
 	return records

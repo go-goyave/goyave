@@ -112,6 +112,7 @@ func (p *Paginator) rawStatement() *gorm.DB {
 	offset := (p.CurrentPage - 1) * p.PageSize
 	db := p.DB.Raw(p.rawQuery, p.rawQueryVars...)
 	db.Statement.SQL.WriteString(" ")
-	clause.Limit{Limit: p.PageSize, Offset: offset}.Build(db.Statement)
+	pageSize := p.PageSize
+	clause.Limit{Limit: &pageSize, Offset: offset}.Build(db.Statement)
 	return db
 }

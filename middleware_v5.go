@@ -75,9 +75,7 @@ func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			if err := recover(); err != nil || panicked {
 				m.ErrLogger().Println(err)
 				request.Extra[ExtraError] = err
-				if m.Config().GetBool("app.debug") {
-					request.Extra[ExtraStacktrace] = string(debug.Stack())
-				}
+				request.Extra[ExtraStacktrace] = string(debug.Stack())
 				response.Status(http.StatusInternalServerError)
 			}
 		}()

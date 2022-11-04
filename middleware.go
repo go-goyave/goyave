@@ -9,7 +9,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/lang"
 	"goyave.dev/goyave/v4/util/fsutil"
 )
@@ -31,9 +30,7 @@ func recoveryMiddleware(next Handler) Handler {
 			if err := recover(); err != nil || panicked {
 				ErrLogger.Println(err)
 				response.err = err
-				if config.GetBool("app.debug") {
-					response.stacktrace = string(debug.Stack())
-				}
+				response.stacktrace = string(debug.Stack())
 				response.Status(http.StatusInternalServerError)
 			}
 		}()

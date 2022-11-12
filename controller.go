@@ -21,7 +21,7 @@ type Registrer interface {
 	RegisterRoutes(*RouterV5)
 }
 
-type Controller struct {
+type Controller struct { // TODO rename this to something else? It's used everywhere, in middleware, in authenticator, desptite the fact they are not stricly controllers
 	server *Server
 }
 

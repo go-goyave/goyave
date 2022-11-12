@@ -3,15 +3,39 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/database"
 	"goyave.dev/goyave/v4/lang"
 )
+
+func init() {
+	config.Register("auth.jwt.expiry", config.Entry{
+		Value:            300,
+		Type:             reflect.Int,
+		IsSlice:          false,
+		AuthorizedValues: []any{},
+	})
+	registerKeyConfigEntry("auth.jwt.secret")
+	registerKeyConfigEntry("auth.jwt.rsa.public")
+	registerKeyConfigEntry("auth.jwt.rsa.private")
+	registerKeyConfigEntry("auth.jwt.rsa.password")
+	registerKeyConfigEntry("auth.jwt.ecdsa.public")
+	registerKeyConfigEntry("auth.jwt.ecdsa.private")
+}
+
+func registerKeyConfigEntry(name string) {
+	config.Register(name, config.Entry{
+		Value:            nil,
+		Type:             reflect.String,
+		IsSlice:          false,
+		AuthorizedValues: []any{},
+	})
+}
 
 // GenerateToken generate a new JWT.
 // The token is created using the HMAC SHA256 method and signed using
@@ -23,8 +47,8 @@ import (
 // - `sub`: has the value of the `id` parameter
 // - `nbf`: "Not before", the current timestamp is used
 // - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
-func GenerateToken(username any) (string, error) {
-	return GenerateTokenWithClaims(jwt.MapClaims{"sub": username}, jwt.SigningMethodHS256)
+func GenerateTokenV5(cfg *config.Config, username any) (string, error) {
+	return GenerateTokenWithClaimsV5(cfg, jwt.MapClaims{"sub": username}, jwt.SigningMethodHS256)
 }
 
 // GenerateTokenWithClaims generates a new JWT with custom claims.
@@ -43,40 +67,28 @@ func GenerateToken(username any) (string, error) {
 //   - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
 //
 // `nbf` and `exp` can be overridden if they are set in the `claims` parameter.
-func GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {
-	expiry := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
+func GenerateTokenWithClaimsV5(cfg *config.Config, claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {
+	exp := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()
 	customClaims := jwt.MapClaims{
-		"nbf": now.Unix(),             // Not Before
-		"exp": now.Add(expiry).Unix(), // Expiry
+		"nbf": now.Unix(),          // Not Before
+		"exp": now.Add(exp).Unix(), // Expiry
 	}
 	for k, c := range claims {
 		customClaims[k] = c
 	}
 	token := jwt.NewWithClaims(signingMethod, customClaims)
 
-	key, err := getKey(signingMethod)
+	key, err := globalKeyCache.getPrivateKey(cfg, signingMethod)
 	if err != nil {
 		panic(err)
 	}
 	return token.SignedString(key)
 }
 
-func getKey(signingMethod jwt.SigningMethod) (any, error) {
-	switch signingMethod.(type) {
-	case *jwt.SigningMethodRSA:
-		return loadKey("auth.jwt.rsa.private")
-	case *jwt.SigningMethodECDSA:
-		return loadKey("auth.jwt.ecdsa.private")
-	case *jwt.SigningMethodHMAC:
-		return []byte(config.GetString("auth.jwt.secret")), nil
-	default:
-		return nil, errors.New("Unsupported JWT signing method: " + signingMethod.Alg())
-	}
-}
-
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
-type JWTAuthenticator struct {
+type JWTAuthenticatorV5 struct {
+	goyave.Controller
 
 	// SigningMethod expected by this authenticator when parsing JWT.
 	// Defaults to HMAC.
@@ -92,7 +104,7 @@ type JWTAuthenticator struct {
 	Optional bool
 }
 
-var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
+var _ AuthenticatorV5 = (*JWTAuthenticatorV5)(nil) // implements Authenticator
 
 // Authenticate fetch the user corresponding to the token
 // found in the given request and puts the result in the given user pointer.
@@ -104,31 +116,30 @@ var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
 // If the token is valid and has claims, those claims will be added to `request.Extra` with the key "jwt_claims".
 //
 // This implementation is a JWT-based authentication using HMAC SHA256, supporting only one active token.
-func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error {
-
+func (a *JWTAuthenticatorV5) Authenticate(request *goyave.RequestV5, user any) error {
 	tokenString, ok := request.BearerToken()
 	if tokenString == "" || !ok {
 		if a.Optional {
 			return nil
 		}
-		return fmt.Errorf(lang.Get(request.Lang, "auth.no-credentials-provided"))
+		return fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	token, err := jwt.Parse(tokenString, a.keyFunc)
 
 	if err == nil && token.Valid {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			request.Extra["jwt_claims"] = claims
-			column := FindColumns(user, "username")[0]
+			request.Extra[goyave.ExtraJWTClaims] = claims
+			column := FindColumnsV5(a.DB(), user, "username")[0]
 			claimName := a.ClaimName
 			if claimName == "" {
 				claimName = "sub"
 			}
-			result := database.GetConnection().Where(column.Name+" = ?", claims[claimName]).First(user)
+			result := a.DB().Where(column.Name, claims[claimName]).First(user)
 
 			if result.Error != nil {
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-					return fmt.Errorf(lang.Get(request.Lang, "auth.invalid-credentials"))
+					return fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
 				}
 				panic(result.Error)
 			}
@@ -140,13 +151,13 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error
 	return a.makeError(request.Lang, err.(*jwt.ValidationError).Errors)
 }
 
-func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (any, error) {
+func (a *JWTAuthenticatorV5) keyFunc(token *jwt.Token) (any, error) {
 	switch a.SigningMethod.(type) {
 	case *jwt.SigningMethodRSA:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		key, err := loadKey("auth.jwt.rsa.public")
+		key, err := globalKeyCache.loadKey(a.Config(), "auth.jwt.rsa.public")
 		if err != nil {
 			panic(err)
 		}
@@ -155,7 +166,7 @@ func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		key, err := loadKey("auth.jwt.ecdsa.public")
+		key, err := globalKeyCache.loadKey(a.Config(), "auth.jwt.ecdsa.public")
 		if err != nil {
 			panic(err)
 		}
@@ -170,11 +181,11 @@ func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (any, error) {
 	}
 }
 
-func (a *JWTAuthenticator) makeError(language string, bitfield uint32) error {
+func (a *JWTAuthenticatorV5) makeError(language *lang.Language, bitfield uint32) error {
 	if bitfield&jwt.ValidationErrorNotValidYet != 0 {
-		return fmt.Errorf(lang.Get(language, "auth.jwt-not-valid-yet"))
+		return fmt.Errorf(language.Get("auth.jwt-not-valid-yet"))
 	} else if bitfield&jwt.ValidationErrorExpired != 0 {
-		return fmt.Errorf(lang.Get(language, "auth.jwt-expired"))
+		return fmt.Errorf(language.Get("auth.jwt-expired"))
 	}
-	return fmt.Errorf(lang.Get(language, "auth.jwt-invalid"))
+	return fmt.Errorf(language.Get("auth.jwt-invalid"))
 }

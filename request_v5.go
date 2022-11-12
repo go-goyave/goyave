@@ -19,11 +19,16 @@ const (
 
 	ExtraValidationError      = "goyave.validationError"
 	ExtraQueryValidationError = "goyave.queryValidationError"
+
+	// ExtraJWTClaims when using the built-in `JWTAuthenticator`, this
+	// extra key can be used to retrieve the JWT claims.
+	ExtraJWTClaims = "goyave.jwtClaims"
 )
 
 type RequestV5 struct {
 	httpRequest *http.Request
 	Data        any
+	User        any
 	Query       map[string]any
 	Lang        *lang.Language
 	Extra       map[string]any

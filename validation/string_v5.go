@@ -1,11 +1,15 @@
 package validation
 
-type String struct{ BaseValidator }
+type StringValidator struct{ BaseValidator }
 
-func (v *String) Validate(ctx *ContextV5) bool {
+func (v *StringValidator) Validate(ctx *ContextV5) bool {
 	_, ok := ctx.Value.(string)
 	return ok
 }
 
-func (v *String) Name() string { return "string" }
-func (v *String) IsType() bool { return true }
+func (v *StringValidator) Name() string { return "string" }
+func (v *StringValidator) IsType() bool { return true }
+
+func String() *StringValidator {
+	return &StringValidator{}
+}

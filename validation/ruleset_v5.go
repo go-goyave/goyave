@@ -93,7 +93,8 @@ type RulesV5 struct {
 
 func (r *RulesV5) Check() {
 	if !r.checked {
-		for path, field := range r.Fields {
+		for _, path := range r.sortKeysByArrayDimension() {
+			field := r.Fields[path]
 			p, err := walk.Parse(path)
 			if err != nil {
 				panic(err)
@@ -127,29 +128,34 @@ func (r *RulesV5) sortKeys() {
 		r.sortedKeys = append(r.sortedKeys, k)
 	}
 
-	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
+	sort.Slice(r.sortedKeys, func(i, j int) bool {
 		fieldName1 := r.sortedKeys[i]
 		field2 := r.Fields[r.sortedKeys[j]]
 		for _, r := range field2.Rules {
 			c, ok := r.(ComparatorValidator)
-			if ok && strings.HasPrefix(c.ComparesWith(), fieldName1) {
+			if ok && strings.HasPrefix(c.ComparesWith(), fieldName1) { // FIXME This doesn't work with composition (because the fieldName has the prefix, ComparesWith doesn't)
 				return true
 			}
 		}
 		return false
 	})
 	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
-		count1 := strings.Count(r.sortedKeys[i], "[]")
-		count2 := strings.Count(r.sortedKeys[j], "[]")
-		if count1 == count2 {
-			return false
-		}
-		return count1 > count2
-	})
-	sort.SliceStable(r.sortedKeys, func(i, j int) bool {
 		// CurrentElement must always be first
 		return r.sortedKeys[i] == CurrentElement
 	})
+}
+
+func (r *RulesV5) sortKeysByArrayDimension() []string {
+	keys := make([]string, 0, len(r.Fields))
+	for k := range r.Fields {
+		keys = append(keys, k)
+	}
+	sort.SliceStable(keys, func(i, j int) bool {
+		count1 := strings.Count(keys[i], "[]")
+		count2 := strings.Count(keys[j], "[]")
+		return count1 > count2
+	})
+	return keys
 }
 
 func (r *RulesV5) AsRules() *RulesV5 {

@@ -15,7 +15,7 @@ import (
 
 // Authenticator is an object in charge of authenticating a model.
 type AuthenticatorV5 interface {
-	goyave.IController
+	goyave.IComponent
 
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and puts the result in the given user pointer.

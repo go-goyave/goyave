@@ -7,7 +7,7 @@ import (
 )
 
 type StatusHandler interface {
-	IController
+	IComponent
 	Handle(response *ResponseV5, request *RequestV5)
 }
 
@@ -17,7 +17,7 @@ type StatusHandler interface {
 // If debugging is not enabled, writes `{"error": "Internal Server Error"}`
 // to the response.
 type PanicStatusHandlerV5 struct {
-	Controller
+	Component
 }
 
 func (*PanicStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
@@ -33,7 +33,7 @@ func (*PanicStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
 // ErrorStatusHandler a generic status handler for non-success codes.
 // Writes the corresponding status message to the response.
 type ErrorStatusHandlerV5 struct {
-	Controller
+	Component
 }
 
 func (*ErrorStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
@@ -46,7 +46,7 @@ func (*ErrorStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
 // ValidationStatusHandler for HTTP 422 errors.
 // Writes the validation errors to the response.
 type ValidationStatusHandlerV5 struct {
-	Controller
+	Component
 }
 
 func (*ValidationStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {

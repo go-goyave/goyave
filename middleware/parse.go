@@ -14,7 +14,7 @@ import (
 
 type ParseRequest struct {
 	// FIXME import path is not convenient because it clashes with custom middleware package in convention (move it to "goyave" package?)
-	goyave.Controller
+	goyave.Component
 }
 
 func (m *ParseRequest) Handle(next goyave.HandlerV5) goyave.HandlerV5 {

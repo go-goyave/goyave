@@ -53,6 +53,9 @@ type Server struct {
 	shutdownHooks []func(*Server)
 
 	state uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
+
+	// TODO plugin storage
+	// plugins map[string]any (interface Plugin maybe?)
 }
 
 // New create a new `Server` using automatically loaded configuration.

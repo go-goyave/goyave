@@ -8,53 +8,59 @@ import (
 	"goyave.dev/goyave/v4/lang"
 )
 
-type IController interface {
+type IComponent interface {
 	setServer(*Server)
 	Server() *Server
 	DB() *gorm.DB
 	Config() *config.Config
 	Lang() *lang.Languages
+	Logger() *log.Logger
+	ErrLogger() *log.Logger
+	AccessLogger() *log.Logger
+	// TODO plugins? ability to access an instance-scoped service/system from this
+	// Plugin(name string) (any, ok)
+	// RequirePlugin(name string) any (or panics)
 }
 
 type Registrer interface {
-	IController
+	IComponent
 	RegisterRoutes(*RouterV5)
 }
 
-type Controller struct { // TODO rename this to something else? It's used everywhere, in middleware, in authenticator, desptite the fact they are not stricly controllers
+type Component struct {
 	server *Server
 }
 
-var _ IController = (*Controller)(nil)
+var _ IComponent = (*Component)(nil)
 
-func (c *Controller) setServer(server *Server) {
+func (c *Component) setServer(server *Server) {
 	c.server = server
 }
 
-func (c *Controller) Server() *Server {
+func (c *Component) Server() *Server {
 	return c.server
 }
 
-func (c *Controller) Logger() *log.Logger {
+func (c *Component) Logger() *log.Logger {
 	return c.server.Logger
 }
 
-func (c *Controller) ErrLogger() *log.Logger {
+func (c *Component) ErrLogger() *log.Logger {
 	return c.server.ErrLogger
 }
 
-func (c *Controller) AccessLogger() *log.Logger {
+func (c *Component) AccessLogger() *log.Logger {
 	return c.server.AccessLogger
 }
 
-func (c *Controller) DB() *gorm.DB {
+func (c *Component) DB() *gorm.DB {
 	return c.server.DB().Session(&gorm.Session{NewDB: true})
 }
 
-func (c *Controller) Config() *config.Config {
+func (c *Component) Config() *config.Config {
 	return c.server.Config()
 }
 
-func (c *Controller) Lang() *lang.Languages {
+func (c *Component) Lang() *lang.Languages {
 	return c.server.Lang
 }

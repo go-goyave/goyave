@@ -15,7 +15,7 @@ import (
 // BasicAuthenticator implementation of Authenticator with the Basic
 // authentication method.
 type BasicAuthenticatorV5 struct {
-	goyave.Controller
+	goyave.Component
 
 	// Optional defines if the authenticator allows requests that
 	// don't provide credentials. Handlers should therefore check
@@ -86,7 +86,7 @@ type BasicUser struct {
 // ConfigBasicAuthenticator implementation of Authenticator with the Basic
 // authentication method, using username and password from the configuration.
 type ConfigBasicAuthenticator struct {
-	goyave.Controller
+	goyave.Component
 }
 
 var _ AuthenticatorV5 = (*ConfigBasicAuthenticator)(nil) // implements Authenticator

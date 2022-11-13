@@ -19,7 +19,7 @@ type TokenFuncV5 func(request *goyave.RequestV5, user any) (string, error)
 
 // JWTController controller adding a login route returning a JWT.
 type JWTControllerV5 struct { // TODO refresh token
-	goyave.Controller
+	goyave.Component
 
 	model any
 

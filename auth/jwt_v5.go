@@ -88,7 +88,7 @@ func GenerateTokenWithClaimsV5(cfg *config.Config, claims jwt.MapClaims, signing
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
 type JWTAuthenticatorV5 struct {
-	goyave.Controller
+	goyave.Component
 
 	// SigningMethod expected by this authenticator when parsing JWT.
 	// Defaults to HMAC.

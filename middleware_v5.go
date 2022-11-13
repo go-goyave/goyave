@@ -10,7 +10,7 @@ import (
 )
 
 type MiddlewareV5 interface {
-	IController
+	IComponent
 	Handle(HandlerV5) HandlerV5
 }
 
@@ -65,7 +65,7 @@ func routerHasMiddleware[T MiddlewareV5](router *RouterV5) bool {
 // If debugging is enabled in the config and the default status handler for the 500 status code
 // had not been changed, the error is also written in the response.
 type recoveryMiddlewareV5 struct {
-	Controller
+	Component
 }
 
 func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
@@ -98,7 +98,7 @@ func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
 type languageMiddlewareV5 struct {
-	Controller
+	Component
 }
 
 func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
@@ -118,7 +118,7 @@ func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 // `validation.Errors` returned by the validator.
 // This data can then be used in a status handler.
 type validateRequestMiddlewareV5 struct {
-	Controller
+	Component
 	BodyRules  RuleSetFunc
 	QueryRules RuleSetFunc
 }
@@ -184,7 +184,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 }
 
 type corsMiddlewareV5 struct {
-	Controller
+	Component
 }
 
 func (m *corsMiddlewareV5) Handle(next HandlerV5) HandlerV5 {

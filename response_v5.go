@@ -271,7 +271,7 @@ func (r *ResponseV5) error(err any) {
 			stacktrace = string(debug.Stack())
 		}
 		r.server.ErrLogger.Print(stacktrace)
-		if !r.Hijacked() {
+		if r.IsEmpty() && !r.Hijacked() {
 			var message any
 			switch e := err.(type) {
 			case error:

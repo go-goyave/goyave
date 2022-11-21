@@ -170,7 +170,7 @@ func (r *RouterV5) LookupMeta(key string) (any, bool) {
 // Use global middleware for logging and rate limiting for example.
 func (r *RouterV5) GlobalMiddleware(middleware ...MiddlewareV5) *RouterV5 {
 	for _, m := range middleware {
-		m.setServer(r.server)
+		m.Init(r.server)
 	}
 	r.globalMiddleware.middleware = append(r.globalMiddleware.middleware, middleware...)
 	return r
@@ -182,7 +182,7 @@ func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
 		r.middleware = make([]MiddlewareV5, 0, 3)
 	}
 	for _, m := range middleware {
-		m.setServer(r.server)
+		m.Init(r.server)
 	}
 	r.middleware = append(r.middleware, middleware...)
 	return r
@@ -212,7 +212,7 @@ func (r *RouterV5) CORS(options *cors.Options) *RouterV5 {
 //
 // Codes in the 400 and 500 ranges have a default status handler.
 func (r *RouterV5) StatusHandler(handler StatusHandler, status int, additionalStatuses ...int) {
-	handler.setServer(r.server)
+	handler.Init(r.server)
 	r.statusHandlers[status] = handler
 	for _, s := range additionalStatuses {
 		r.statusHandlers[s] = handler
@@ -394,7 +394,7 @@ func (r *RouterV5) registerRoute(methods string, uri string, handler HandlerV5) 
 }
 
 func (r *RouterV5) Controller(controller Registrer) *RouterV5 {
-	controller.setServer(r.server)
+	controller.Init(r.server)
 	controller.RegisterRoutes(r)
 	return r
 }

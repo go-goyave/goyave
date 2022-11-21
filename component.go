@@ -9,7 +9,7 @@ import (
 )
 
 type IComponent interface {
-	setServer(*Server)
+	Init(*Server)
 	Server() *Server
 	DB() *gorm.DB
 	Config() *config.Config
@@ -33,7 +33,7 @@ type Component struct {
 
 var _ IComponent = (*Component)(nil)
 
-func (c *Component) setServer(server *Server) {
+func (c *Component) Init(server *Server) {
 	c.server = server
 }
 

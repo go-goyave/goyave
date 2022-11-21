@@ -146,7 +146,7 @@ func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
 func (r *RouteV5) Middleware(middleware ...MiddlewareV5) *RouteV5 {
 	r.middleware = append(r.middleware, middleware...)
 	for _, m := range middleware {
-		m.setServer(r.parent.server)
+		m.Init(r.parent.server)
 	}
 	return r
 }

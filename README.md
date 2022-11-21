@@ -5,10 +5,9 @@
 
 <p align="center">
     <a href="https://github.com/go-goyave/goyave/releases"><img src="https://img.shields.io/github/v/release/go-goyave/goyave?include_prereleases" alt="Version"/></a>
-    <a href="https://github.com/go-goyave/goyave/actions"><img src="https://github.com/go-goyave/goyave/workflows/Test/badge.svg?branch=develop" alt="Build Status"/></a>
+    <a href="https://github.com/go-goyave/goyave/actions"><img src="https://github.com/go-goyave/goyave/workflows/CI/badge.svg?branch=develop" alt="Build Status"/></a>
     <a href="https://coveralls.io/github/go-goyave/goyave?branch=master"><img src="https://coveralls.io/repos/github/go-goyave/goyave/badge.svg" alt="Coverage Status"/></a>
     <a href="https://goreportcard.com/report/goyave.dev/goyave"><img src="https://goreportcard.com/badge/goyave.dev/goyave" alt="Go Report"/></a>
-    
 </p>
 
 <p align="center">

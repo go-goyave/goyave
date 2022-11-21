@@ -69,7 +69,7 @@ func New() (*Server, error) {
 }
 
 // NewWithConfig create a new `Server` using the provided configuration.
-func NewWithConfig(cfg *config.Config) (*Server, error) {
+func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? (for loggers, lang, etc) Could take a io.FS as input for resources directory
 	var db *gorm.DB
 	var err error
 	if cfg.GetString("database.connection") != "none" {

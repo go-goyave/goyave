@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
 	"goyave.dev/goyave/v4/cors"
 )
@@ -366,14 +367,14 @@ func (r *RouterV5) Options(uri string, handler HandlerV5) *RouteV5 {
 }
 
 func (r *RouterV5) registerRoute(methods string, uri string, handler HandlerV5) *RouteV5 {
-	// TODO automatically add the "OPTIONS" method if the CORS middleware is added
-	// Add a "setup" function for middleware so they can alter the route, add meta, etc
-	// if r.corsOptions != nil && !strings.Contains(methods, http.MethodOptions) {
-	// 	methods += "|OPTIONS"
-	// }
+	methodsSlice := strings.Split(methods, "|")
 
-	if strings.Contains(methods, http.MethodGet) && !strings.Contains(methods, http.MethodHead) {
-		methods += "|HEAD"
+	if !routerHasMiddleware[*corsMiddlewareV5](r) && !lo.Contains(methodsSlice, http.MethodOptions) {
+		methodsSlice = append(methodsSlice, http.MethodOptions)
+	}
+
+	if lo.Contains(methodsSlice, http.MethodGet) && !lo.Contains(methodsSlice, http.MethodHead) {
+		methodsSlice = append(methodsSlice, http.MethodHead)
 	}
 
 	if uri == "/" && r.parent != nil && !(r.prefix == "" && r.parent.parent == nil) {
@@ -383,7 +384,7 @@ func (r *RouterV5) registerRoute(methods string, uri string, handler HandlerV5) 
 	route := &RouteV5{
 		name:    "",
 		uri:     uri,
-		methods: strings.Split(methods, "|"),
+		methods: methodsSlice,
 		parent:  r,
 		handler: handler,
 		Meta:    make(map[string]any),

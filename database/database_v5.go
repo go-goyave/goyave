@@ -83,10 +83,12 @@ func initSQLDBV5(cfg *config.Config, db *gorm.DB) {
 
 // Migrate migrates all registered models.
 func MigrateV5(db *gorm.DB) error {
-	for _, model := range models { // TODO use a single transaction for migrations (so one failed migration rolls back everything)
-		if err := db.AutoMigrate(model); err != nil {
-			return err
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, model := range models {
+			if err := db.AutoMigrate(model); err != nil {
+				return err
+			}
 		}
-	}
-	return nil
+		return nil
+	})
 }

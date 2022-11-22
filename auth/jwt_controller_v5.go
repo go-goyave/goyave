@@ -59,9 +59,9 @@ func (c *JWTControllerV5) RegisterRoutes(router *goyave.RouterV5) {
 
 func (c *JWTControllerV5) validationRules(r *goyave.RequestV5) validation.RuleSetV5 {
 	return validation.RuleSetV5{
-		validation.CurrentElement:                                      validation.ListV5{validation.Required(), validation.Object()},
-		lo.Ternary(c.UsernameField == "", "username", c.UsernameField): validation.ListV5{validation.Required(), validation.String()},
-		lo.Ternary(c.PasswordField == "", "password", c.PasswordField): validation.ListV5{validation.Required(), validation.String()},
+		{validation.CurrentElement, validation.ListV5{validation.Required(), validation.Object()}},
+		{lo.Ternary(c.UsernameField == "", "username", c.UsernameField), validation.ListV5{validation.Required(), validation.String()}},
+		{lo.Ternary(c.PasswordField == "", "password", c.PasswordField), validation.ListV5{validation.Required(), validation.String()}},
 	}
 }
 

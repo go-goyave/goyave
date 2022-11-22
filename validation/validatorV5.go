@@ -96,15 +96,14 @@ func ValidateV5(options *Options) (*ErrorsV5, []error) {
 	}
 
 	rules := options.Rules.AsRules()
-	for _, fieldName := range rules.sortedKeys {
-		field := rules.Fields[fieldName]
-		if fieldName == CurrentElement {
+	for _, field := range rules {
+		if *field.Path.Name == CurrentElement {
 			// Validate the root element
 			fakeParent := map[string]any{CurrentElement: options.Data}
-			validator.validateField(fieldName, field, fakeParent, nil)
+			validator.validateField(*field.Path.Name, field, fakeParent, nil)
 			options.Data = fakeParent[CurrentElement]
 		} else {
-			validator.validateField(fieldName, field, options.Data, nil)
+			validator.validateField(*field.Path.Name, field, options.Data, nil)
 		}
 	}
 
@@ -137,7 +136,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 		}
 
 		if field.Elements != nil {
-			// This is an array, recursively validate it so it can be converted to correct type
+			// This is an array, validate its elements first so it can be converted to correct type
 			if _, ok := c.Value.([]any); !ok {
 				if newValue, ok := makeGenericSlice(c.Value); ok {
 					replaceValue(c.Value, c)
@@ -167,8 +166,8 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 		}
 
 		value := c.Value
-		for _, rule := range field.Rules {
-			if _, ok := rule.(*NullableValidator); ok {
+		for _, validator := range field.Validators {
+			if _, ok := validator.(*NullableValidator); ok {
 				if value == nil {
 					break
 				}
@@ -185,18 +184,18 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 				Now:     v.now,
 				Name:    c.Name,
 			}
-			ok := rule.Validate(ctx)
+			ok := validator.Validate(ctx)
 			if len(ctx.errors) > 0 {
 				v.errors = append(v.errors, ctx.errors...)
 				continue
 			}
 			if !ok {
-				path := field.getErrorPath(parentPath, c)
-				message := v.getMessage(fieldName, field, rule, reflect.ValueOf(value))
+				errorPath := field.getErrorPath(parentPath, c)
+				message := v.getMessage(fieldName, field, validator, reflect.ValueOf(value))
 				if fieldName == CurrentElement {
-					v.validationErrors.Add(path, message)
+					v.validationErrors.Add(errorPath, message)
 				} else {
-					v.validationErrors.Add(&walk.Path{Type: walk.PathTypeObject, Next: path}, message)
+					v.validationErrors.Add(&walk.Path{Type: walk.PathTypeObject, Next: errorPath}, message)
 				}
 				continue
 			}
@@ -233,13 +232,13 @@ func (v *validator) isAbsent(field *FieldV5, c walk.Context, data any) bool {
 		Field:   field,
 		Name:    c.Name,
 	}
-	return !field.IsRequired() && !(&RequiredValidator{}).Validate(requiredCtx)
+	return !field.IsRequired() && !(&RequiredValidator{}).Validate(requiredCtx) // TODO required_if
 }
 
-func (v *validator) getMessage(fieldName string, field *FieldV5, rule Validator, value reflect.Value) string {
-	langEntry := "validation.rules." + rule.Name()
-	if rule.IsTypeDependent() {
-		expectedType := v.findTypeRule(field.Rules)
+func (v *validator) getMessage(fieldName string, field *FieldV5, validator Validator, value reflect.Value) string {
+	langEntry := "validation.rules." + validator.Name()
+	if validator.IsTypeDependent() {
+		expectedType := v.findTypeRule(field.Validators)
 		if expectedType == FieldTypeUnsupported {
 			langEntry += "." + getFieldType(value)
 		} else {
@@ -255,7 +254,7 @@ func (v *validator) getMessage(fieldName string, field *FieldV5, rule Validator,
 		langEntry += ".array"
 	}
 
-	return v.options.Language.Get(langEntry, append([]string{":field", translateFieldName(v.options.Language, fieldName)}, rule.MessagePlaceholders(v.options.Language)...)...)
+	return v.options.Language.Get(langEntry, append([]string{":field", translateFieldName(v.options.Language, fieldName)}, validator.MessagePlaceholders(v.options.Language)...)...)
 }
 
 // findTypeRule find the expected type of a field for a given array dimension.

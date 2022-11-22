@@ -12,8 +12,6 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
-// TODO move Rules and RuleSet in another file so this one is less busy
-
 const (
 	// CurrentElement special key for field name in composite rule sets.
 	// Use it if you want to apply rules to the current object element.

@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -74,7 +75,7 @@ func (v *intValidator[T]) getBitSize() int {
 }
 
 func (v *intValidator[T]) checkFloat64Range(ctx *ContextV5, val float64) bool {
-	ok := (v.isUnsigned() && val < 0) || uint(val) > v.max() || val-float64(T(val)) > 0
+	ok := !((v.isUnsigned() && val < 0) || math.Abs(val-float64(T(val))) > 0 || (val < 0 && int(val) < v.min()) || (val > 0 && uint(val) > v.max()))
 	if ok {
 		ctx.Value = T(val)
 	}
@@ -82,7 +83,7 @@ func (v *intValidator[T]) checkFloat64Range(ctx *ContextV5, val float64) bool {
 }
 
 func (v *intValidator[T]) checkFloat32Range(ctx *ContextV5, val float32) bool {
-	ok := (v.isUnsigned() && val < 0) || uint(val) > v.max() || val-float32(T(val)) > 0
+	ok := !((v.isUnsigned() && val < 0) || math.Abs(float64(val-float32(T(val)))) > 0 || (val < 0 && int(val) < v.min()) || (val > 0 && uint(val) > v.max()))
 	if ok {
 		ctx.Value = T(val)
 	}
@@ -90,7 +91,7 @@ func (v *intValidator[T]) checkFloat32Range(ctx *ContextV5, val float32) bool {
 }
 
 func (v *intValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
-	ok := val < v.min() || val > int(v.max())
+	ok := val >= v.min() && val <= int(v.max())
 	if ok {
 		ctx.Value = T(val)
 	}
@@ -98,7 +99,7 @@ func (v *intValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
 }
 
 func (v *intValidator[T]) checkUintRange(ctx *ContextV5, val uint) bool {
-	ok := val > v.max()
+	ok := val <= v.max()
 	if ok {
 		ctx.Value = T(val)
 	}

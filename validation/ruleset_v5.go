@@ -17,16 +17,41 @@ type RulerV5 interface {
 }
 
 type Validator interface {
+
+	// Validate checks the field under validation satisfies this validator's criteria.
 	Validate(*ContextV5) bool
+
+	// Name returns the string name of the validator.
+	// This is used to generate the language entry for the
+	// validation error message.
 	Name() string
+
+	// IsTypeDependent returns true if the validator is type-dependent.
+	// Type-dependent validators can be used with different field types
+	// (numeric, string, arrays and files) and have a different validation messages
+	// depending on the type.
+	// The language entry used will be "validation.rules.rulename.type"
 	IsTypeDependent() bool
+
+	// IsType returns true if the validator if a type validator.
+	// A type validator checks if a field has a certain type
+	// and can convert the raw value to a value fitting. For example, the UUID
+	// validator is a type validator because it takes a string as input, checks if it's a
+	// valid UUID and converts it to a `uuid.UUID`.
 	IsType() bool
+
+	// TODO document MessagePlaceholders
 	MessagePlaceholders(l *lang.Language) []string
 }
 
+// BaseValidator composable structure that implements the basic functions required to
+// satisfy the `Validator` interface.
 type BaseValidator struct{}
 
-func (v *BaseValidator) IsTypeDependent() bool                         { return false }
+// IsTypeDependent returns false.
+func (v *BaseValidator) IsTypeDependent() bool { return false }
+
+// IsType returns false.
 func (v *BaseValidator) IsType() bool                                  { return false }
 func (v *BaseValidator) MessagePlaceholders(l *lang.Language) []string { return []string{} }
 
@@ -164,6 +189,7 @@ func (r RuleSetV5) sort() {
 // It is a format that is more easily machine-readable than RuleSet.
 type RulesV5 []*FieldV5
 
+// AsRules returns itself.
 func (r RulesV5) AsRules() RulesV5 {
 	return r
 }

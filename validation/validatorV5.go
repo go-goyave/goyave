@@ -243,7 +243,7 @@ func (v *validator) getMessage(fieldName string, field *FieldV5, validator Valid
 		if expectedType == FieldTypeUnsupported {
 			langEntry += "." + getFieldType(value)
 		} else {
-			if expectedType == "integer" {
+			if strings.HasPrefix(expectedType, "int") || strings.HasPrefix(expectedType, "uint") || strings.HasPrefix(expectedType, "float") {
 				expectedType = FieldTypeNumeric
 			}
 			langEntry += "." + expectedType

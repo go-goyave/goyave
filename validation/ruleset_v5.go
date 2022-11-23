@@ -73,7 +73,7 @@ func (l ListV5) apply(rules RulesV5, path string, field *FieldRules, pDepth uint
 }
 
 type FieldRules struct {
-	// TODO what behavior if there are duplicates?
+	// TODO what behavior if there are duplicates? If it ever becomes a problem, can probably merge the Lists. But it's unnecessary for now.
 	Path  string
 	Rules FieldRulesApplier
 }

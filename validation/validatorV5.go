@@ -100,10 +100,10 @@ func ValidateV5(options *Options) (*ErrorsV5, []error) {
 		if *field.Path.Name == CurrentElement {
 			// Validate the root element
 			fakeParent := map[string]any{CurrentElement: options.Data}
-			validator.validateField(*field.Path.Name, field, fakeParent, nil)
+			validator.validateField(*field.Path.Name, field, fakeParent, nil) // TODO field name for the root element?
 			options.Data = fakeParent[CurrentElement]
 		} else {
-			validator.validateField(*field.Path.Name, field, options.Data, nil)
+			validator.validateField(*field.Path.Tail().Name, field, options.Data, nil)
 		}
 	}
 

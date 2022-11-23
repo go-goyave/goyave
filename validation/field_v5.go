@@ -50,7 +50,7 @@ func newField(path string, validators []Validator, prefixDepth uint) *FieldV5 {
 	return f
 }
 
-func (f *FieldV5) getErrorPath(parentPath *walk.Path, c walk.Context) *walk.Path {
+func (f *FieldV5) getErrorPath(parentPath *walk.Path, c *walk.Context) *walk.Path {
 	if parentPath != nil {
 		clone := parentPath.Clone()
 		tail := clone.Tail()

@@ -116,7 +116,7 @@ func ValidateV5(options *Options) (*ErrorsV5, []error) {
 }
 
 func (v *validator) validateField(fieldName string, field *FieldV5, walkData any, parentPath *walk.Path) {
-	field.Path.Walk(walkData, func(c walk.Context) {
+	field.Path.Walk(walkData, func(c *walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]any)
 		if c.Found == walk.Found {
 			if parentIsObject && !field.IsNullable() && c.Value == nil {
@@ -157,7 +157,8 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 
 		data := v.options.Data
 		if rootPath := c.Path.Truncate(field.prefixDepth); rootPath != nil {
-			rootPath.Walk(walkData, func(ctx walk.Context) {
+			rootPath.Walk(walkData, func(ctx *walk.Context) {
+				// TODO use First function
 				// This function will be called only once because
 				// the path contains indexes.
 				data = ctx.Value
@@ -222,7 +223,7 @@ func (v *validator) convertSingleValueArray(field *FieldV5, value any, data map[
 	return value
 }
 
-func (v *validator) isAbsent(field *FieldV5, c walk.Context, data any) bool {
+func (v *validator) isAbsent(field *FieldV5, c *walk.Context, data any) bool {
 	requiredCtx := &ContextV5{
 		Options: v.options,
 		Data:    data,

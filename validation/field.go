@@ -70,7 +70,7 @@ func (f *Field) Check() {
 	}
 }
 
-func (f *Field) getErrorPath(parentPath *walk.Path, c walk.Context) *walk.Path {
+func (f *Field) getErrorPath(parentPath *walk.Path, c *walk.Context) *walk.Path {
 	if parentPath != nil {
 		clone := parentPath.Clone()
 		tail := clone.Tail()

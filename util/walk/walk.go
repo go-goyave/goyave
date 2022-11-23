@@ -56,6 +56,14 @@ type Context struct {
 	Name   string    // Name of the current element
 	Index  int       // If parent is a slice, the index of the current element in the slice, else -1
 	Found  FoundType // True if the path could not be completely explored
+
+	stop bool
+}
+
+// Break when called, indicates the path walker to stop.
+// This means the current call of the callback function will be the last.
+func (c *Context) Break() {
+	c.stop = true
 }
 
 // Walk this path and execute the given behavior for each matching element. Elements are final,
@@ -64,7 +72,7 @@ type Context struct {
 // The given "f" function is executed for each final element matched. If the path
 // cannot be completed because the step's name doesn't exist in the currently explored map,
 // the function will be executed as well, with a the `Context`'s `NotFound` field set to `true`.
-func (p *Path) Walk(currentElement any, f func(Context)) {
+func (p *Path) Walk(currentElement any, f func(*Context)) { // TODO document callback is now a pointer
 	path := &Path{
 		Name: p.Name,
 		Type: p.Type,
@@ -72,7 +80,7 @@ func (p *Path) Walk(currentElement any, f func(Context)) {
 	p.walk(currentElement, nil, -1, path, path, f)
 }
 
-func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(Context)) {
+func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(*Context)) bool {
 	element := currentElement
 	if p.Name != nil {
 		ce, ok := currentElement.(map[string]any)
@@ -87,9 +95,12 @@ func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, 
 
 					clone := p.Clone()
 					clone.Name = &key
-					clone.walk(element, parent, -1, trackClone, tail, f)
+					if !clone.walk(element, parent, -1, trackClone, tail, f) {
+						return false
+					}
+
 				}
-				return
+				return true
 			}
 
 			element, ok = ce[*p.Name]
@@ -100,51 +111,58 @@ func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, 
 		}
 		if !ok {
 			p.completePath(lastPathElement)
-			f(newNotFoundContext(currentElement, trackPath, p.Name, index, notFoundType))
-			return
+			ctx := newNotFoundContext(currentElement, trackPath, p.Name, index, notFoundType)
+			f(ctx)
+			return !ctx.stop
 		}
 		parent = currentElement
 	}
 
+	stop := false
 	switch p.Type {
 	case PathTypeElement:
-		c := Context{
+		c := &Context{
 			Value:  element,
 			Parent: parent,
-			Path:   trackPath,
+			Path:   trackPath.Clone(),
 			Index:  index,
 		}
 		if p.Name != nil {
 			c.Name = *p.Name
 		}
 		f(c)
+		stop = c.stop
 	case PathTypeArray:
-		p.walkArray(element, parent, index, trackPath, lastPathElement, f)
+		stop = !p.walkArray(element, parent, index, trackPath, lastPathElement, f)
 	case PathTypeObject:
 		lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
-		p.Next.walk(element, parent, index, trackPath, lastPathElement.Next, f)
+		stop = !p.Next.walk(element, parent, index, trackPath, lastPathElement.Next, f)
 	}
+	return !stop
 }
 
-func (p *Path) walkArray(element any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(Context)) {
+// TODO func First (returns the first matched context)
+
+func (p *Path) walkArray(element any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(*Context)) bool {
 	list := reflect.ValueOf(element)
 	if list.Kind() != reflect.Slice {
 		lastPathElement.Type = PathTypeElement
-		f(newNotFoundContext(parent, trackPath, p.Name, index, ParentNotFound))
-		return
+		ctx := newNotFoundContext(parent, trackPath, p.Name, index, ParentNotFound)
+		f(ctx)
+		return !ctx.stop
 	}
 	length := list.Len()
 	if p.Index != nil {
 		lastPathElement.Index = p.Index
 		lastPathElement.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 		if p.outOfBounds(length) {
-			f(newNotFoundContext(element, trackPath, nil, *p.Index, ElementNotFound))
-			return
+			ctx := newNotFoundContext(element, trackPath, nil, *p.Index, ElementNotFound)
+			f(ctx)
+			return !ctx.stop
 		}
 		v := list.Index(*p.Index)
 		value := v.Interface()
-		p.Next.walk(value, element, *p.Index, trackPath, lastPathElement.Next, f)
-		return
+		return p.Next.walk(value, element, *p.Index, trackPath, lastPathElement.Next, f)
 	}
 	if length == 0 {
 		lastPathElement.Next = &Path{Name: p.Next.Name, Type: PathTypeElement}
@@ -152,8 +170,9 @@ func (p *Path) walkArray(element any, parent any, index int, trackPath *Path, la
 		if p.Next.Type != PathTypeElement {
 			notFoundType = ParentNotFound
 		}
-		f(newNotFoundContext(element, trackPath, nil, -1, notFoundType))
-		return
+		ctx := newNotFoundContext(element, trackPath, nil, -1, notFoundType)
+		f(ctx)
+		return !ctx.stop
 	}
 	for i := 0; i < length; i++ {
 		j := i
@@ -163,8 +182,11 @@ func (p *Path) walkArray(element any, parent any, index int, trackPath *Path, la
 		tail.Next = &Path{Name: p.Next.Name, Type: p.Next.Type}
 		v := list.Index(i)
 		value := v.Interface()
-		p.Next.walk(value, element, i, trackClone, tail.Next, f)
+		if !p.Next.walk(value, element, i, trackClone, tail.Next, f) {
+			return false
+		}
 	}
+	return true
 }
 
 func (p *Path) outOfBounds(length int) bool {
@@ -183,13 +205,14 @@ func (p *Path) completePath(lastPathElement *Path) {
 	}
 }
 
-func newNotFoundContext(parent any, path *Path, name *string, index int, found FoundType) Context {
-	c := Context{
+func newNotFoundContext(parent any, path *Path, name *string, index int, found FoundType) *Context {
+	c := &Context{
 		Value:  nil,
 		Parent: parent,
-		Path:   path,
+		Path:   path.Clone(),
 		Index:  index,
 		Found:  found,
+		stop:   false,
 	}
 	if name != nil {
 		c.Name = *name

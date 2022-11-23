@@ -476,7 +476,7 @@ func validate(data map[string]interface{}, isJSON bool, rules *Rules, language s
 }
 
 func validateField(fieldName string, field *Field, isJSON bool, data map[string]interface{}, walkData interface{}, parentPath *walk.Path, now time.Time, language string, extra map[string]interface{}, errors Errors) {
-	field.Path.Walk(walkData, func(c walk.Context) {
+	field.Path.Walk(walkData, func(c *walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]interface{})
 		if c.Found == walk.Found {
 			if parentIsObject && !field.IsNullable() && c.Value == nil {
@@ -558,7 +558,7 @@ func cloneMap(m map[string]interface{}) map[string]interface{} {
 	return clone
 }
 
-func isAbsent(field *Field, c walk.Context, data map[string]interface{}) bool {
+func isAbsent(field *Field, c *walk.Context, data map[string]interface{}) bool {
 	if c.Found == walk.ParentNotFound {
 		return true
 	}
@@ -577,7 +577,7 @@ func shouldConvertSingleValueArray(fieldName string, isJSON bool) bool {
 	return !isJSON && fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
-func replaceValue(value any, c walk.Context) {
+func replaceValue(value any, c *walk.Context) {
 	if c.Found != walk.Found {
 		return
 	}

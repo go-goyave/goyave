@@ -235,16 +235,32 @@ func TestParse(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func testWalk(t *testing.T, data map[string]any, p string) []Context {
-	matches := make([]Context, 0, 5)
+func testWalk(t *testing.T, data map[string]any, p string) []*Context {
+	matches := make([]*Context, 0, 5)
 	path, err := Parse(p)
 
 	if !assert.Nil(t, err) {
 		assert.FailNow(t, err.Error())
 	}
 
-	path.Walk(data, func(c Context) {
+	path.Walk(data, func(c *Context) {
 		matches = append(matches, c)
+	})
+
+	return matches
+}
+
+func testWalkBreak(t *testing.T, data map[string]any, p string) []*Context {
+	matches := make([]*Context, 0, 5)
+	path, err := Parse(p)
+
+	if !assert.Nil(t, err) {
+		assert.FailNow(t, err.Error())
+	}
+
+	path.Walk(data, func(c *Context) {
+		matches = append(matches, c)
+		c.Break()
 	})
 
 	return matches
@@ -257,7 +273,7 @@ func TestPathWalk(t *testing.T) {
 			"field": 5,
 		},
 	}
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  data[""],
 			Parent: data,
@@ -279,7 +295,7 @@ func TestPathWalk(t *testing.T) {
 			"field": 5,
 		},
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  data["object"],
 			Parent: data,
@@ -301,7 +317,7 @@ func TestPathWalk(t *testing.T) {
 			"field": 5,
 		},
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  5,
 			Parent: data["object"],
@@ -322,7 +338,7 @@ func TestPathWalk(t *testing.T) {
 	data = map[string]any{
 		"object": 5,
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  nil,
 			Parent: data["object"],
@@ -346,7 +362,7 @@ func TestPathWalk(t *testing.T) {
 			"field2": "6",
 		},
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  5,
 			Parent: data["object"],
@@ -381,7 +397,7 @@ func TestPathWalk(t *testing.T) {
 			"a", "b", "c",
 		},
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  nil,
 			Parent: data["object"],
@@ -407,7 +423,7 @@ func TestPathWalk(t *testing.T) {
 			"field2": "6",
 		},
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  5,
 			Parent: data["object"].(map[string]any)["field"],
@@ -449,7 +465,7 @@ func TestPathWalk(t *testing.T) {
 		"prop1": 3,
 		"prop2": 4,
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  3,
 			Parent: data,
@@ -485,7 +501,7 @@ func TestPathWalk(t *testing.T) {
 	k := 2
 	l := 3
 	m := -1
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  "a",
 			Parent: data["array"],
@@ -537,7 +553,7 @@ func TestPathWalk(t *testing.T) {
 			{"c"},
 		},
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  nil,
 			Parent: data["array"].([][]string)[0],
@@ -618,7 +634,7 @@ func TestPathWalk(t *testing.T) {
 			{"field": []string{"c"}},
 		},
 	}
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  nil,
 			Parent: data["array"].([]map[string]any)[0]["field"],
@@ -728,7 +744,7 @@ func TestPathWalk(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	// array[].field index check
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  []string{},
 			Parent: data["array"].([]map[string]any)[0],
@@ -803,7 +819,7 @@ func TestPathWalkWildcardEmptyObject(t *testing.T) {
 	data := map[string]any{
 		"object": map[string]any{},
 	}
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  nil,
 			Parent: data["object"],
@@ -821,7 +837,7 @@ func TestPathWalkWildcardEmptyObject(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	// object.*.prop
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  nil,
 			Parent: data["object"],
@@ -849,7 +865,7 @@ func TestPathWalkEmptyArray(t *testing.T) {
 		"narray": [][][]string{},
 	}
 
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  nil,
 			Parent: data["array"],
@@ -868,7 +884,7 @@ func TestPathWalkEmptyArray(t *testing.T) {
 	assert.Equal(t, expected, matches)
 
 	matches = testWalk(t, data, "narray[][][]")
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  nil,
 			Parent: data["narray"],
@@ -891,7 +907,7 @@ func TestPathWalkNotFoundInObject(t *testing.T) {
 			"field": 5,
 		},
 	}
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  nil,
 			Parent: data["object"],
@@ -913,7 +929,7 @@ func TestPathWalkNotFoundInArray(t *testing.T) {
 	data := map[string]any{
 		"array": []map[string]any{},
 	}
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  nil,
 			Parent: data["array"],
@@ -945,7 +961,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 	i := 0
 	j := 1
 	k := 2
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  nil,
 			Parent: data["object"].(map[string]any)["field"],
@@ -984,7 +1000,7 @@ func TestPathWalkSliceExpected(t *testing.T) {
 	matches := testWalk(t, data, "object.field[][]")
 	assert.Equal(t, expected, matches)
 
-	expected = []Context{
+	expected = []*Context{
 		{
 			Value:  nil,
 			Parent: data["object"].(map[string]any)["array"],
@@ -1093,13 +1109,13 @@ func TestPathWalkWithIndex(t *testing.T) {
 		},
 	}
 
-	matches := make([]Context, 0, 1)
+	matches := make([]*Context, 0, 1)
 
-	path.Walk(data, func(c Context) {
+	path.Walk(data, func(c *Context) {
 		matches = append(matches, c)
 	})
 
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  "b",
 			Parent: data["array"].([]map[string]any)[i]["field"],
@@ -1140,13 +1156,13 @@ func TestPathWalkWithIndexOutOfBounds(t *testing.T) {
 		},
 	}
 
-	matches := make([]Context, 0, 1)
+	matches := make([]*Context, 0, 1)
 
-	path.Walk(data, func(c Context) {
+	path.Walk(data, func(c *Context) {
 		matches = append(matches, c)
 	})
 
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  nil,
 			Parent: data["array"].([]map[string]any)[i]["field"],
@@ -1175,13 +1191,13 @@ func TestPathWalkMissingObject(t *testing.T) {
 		},
 	}
 
-	matches := make([]Context, 0, 1)
+	matches := make([]*Context, 0, 1)
 
-	path.Walk(data, func(c Context) {
+	path.Walk(data, func(c *Context) {
 		matches = append(matches, c)
 	})
 
-	expected := []Context{
+	expected := []*Context{
 		{
 			Value:  nil,
 			Parent: data,
@@ -1191,6 +1207,62 @@ func TestPathWalkMissingObject(t *testing.T) {
 			Found:  ParentNotFound,
 		},
 	}
+	assert.Equal(t, expected, matches)
+}
+
+func TestPathWalkBreak(t *testing.T) {
+	// object.*
+	data := map[string]any{
+		"object": map[string]any{
+			"field":  5,
+			"field2": "6",
+		},
+	}
+	matches := testWalkBreak(t, data, "object.*")
+	assert.Len(t, matches, 1)
+
+	// object.*.prop
+	data = map[string]any{
+		"object": map[string]any{
+			"field": map[string]any{
+				"prop": 5,
+			},
+			"field2": "6",
+		},
+	}
+	matches = testWalkBreak(t, data, "object.*.prop")
+	assert.Len(t, matches, 1)
+
+	// *
+	data = map[string]any{
+		"prop1": 3,
+		"prop2": 4,
+	}
+	matches = testWalkBreak(t, data, "*")
+	assert.Len(t, matches, 1)
+
+	// array[]
+	data = map[string]any{
+		"array": []string{"a", "b", "c"},
+	}
+	i := 0
+	expected := []*Context{
+		{
+			Value:  "a",
+			Parent: data["array"],
+			Path: &Path{
+				Name:  strPtr("array"),
+				Type:  PathTypeArray,
+				Index: &i,
+				Next:  &Path{},
+			},
+			Name:  "",
+			Index: 0,
+			Found: Found,
+			stop:  true,
+		},
+	}
+	matches = testWalkBreak(t, data, "array[]")
 	assert.Equal(t, expected, matches)
 }
 

@@ -67,17 +67,14 @@ func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
 	valueType := GetFieldType(ctx.Value)
 
 	ok := true
-	v.Path.Walk(ctx.Data, func(c walk.Context) {
-		if !ok {
-			// TODO add a way to "break" from path.Walk? (stop iterating in array elements if not necessary)
-			return
-		}
+	v.Path.Walk(ctx.Data, func(c *walk.Context) {
 		if c.Path.Type == walk.PathTypeArray && c.Found == walk.ElementNotFound {
 			return
 		}
 
 		if c.Found != walk.Found || valueType != GetFieldType(c.Value) {
 			ok = false
+			c.Break()
 			// TODO maybe we could? For example comparing a numeric with an array length (following the "size" rule principle)
 			return // Can't compare two different types or missing field
 		}
@@ -98,10 +95,14 @@ func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
 				for _, comparedFile := range comparedFiles {
 					if file.Header.Size <= comparedFile.Header.Size {
 						ok = false
+						c.Break()
 						return
 					}
 				}
 			}
+		}
+		if !ok {
+			c.Break()
 		}
 	})
 	return ok

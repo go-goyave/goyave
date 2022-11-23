@@ -16,7 +16,7 @@ type FieldV5 struct {
 
 	isArray    bool
 	isObject   bool
-	isRequired bool
+	isRequired func(*ContextV5) bool
 	isNullable bool
 }
 
@@ -35,7 +35,9 @@ func newField(path string, validators []Validator, prefixDepth uint) *FieldV5 {
 	for _, v := range validators {
 		switch v.(type) {
 		case *RequiredValidator:
-			f.isRequired = true // TODO required_if
+			f.isRequired = func(ctx *ContextV5) bool { return true }
+		case *RequiredIfValidator:
+			f.isRequired = v.(*RequiredIfValidator).Condition
 		case *NullableValidator:
 			f.isNullable = true
 		case *ArrayValidator:
@@ -62,9 +64,8 @@ func (f *FieldV5) getErrorPath(parentPath *walk.Path, c walk.Context) *walk.Path
 }
 
 // IsRequired check if a field has the "required" rule
-func (f *FieldV5) IsRequired() bool {
-	// TODO required_if
-	return f.isRequired
+func (f *FieldV5) IsRequired(ctx *ContextV5) bool {
+	return f.isRequired(ctx)
 }
 
 // IsNullable check if a field has the "nullable" rule

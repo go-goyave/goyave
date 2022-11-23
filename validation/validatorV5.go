@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/lang"
@@ -177,7 +176,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			ctx := &ContextV5{
 				Options: v.options,
 				Data:    data,
-				Extra:   maps.Clone(v.options.Extra),
+				Extra:   v.options.Extra, // TODO document extra are not scoped anymore (and not copied)
 				Value:   value,
 				Parent:  c.Parent,
 				Field:   field,
@@ -227,12 +226,13 @@ func (v *validator) isAbsent(field *FieldV5, c walk.Context, data any) bool {
 	requiredCtx := &ContextV5{
 		Options: v.options,
 		Data:    data,
+		Extra:   v.options.Extra,
 		Value:   c.Value,
 		Parent:  c.Parent,
 		Field:   field,
 		Name:    c.Name,
 	}
-	return !field.IsRequired() && !(&RequiredValidator{}).Validate(requiredCtx) // TODO required_if
+	return !field.IsRequired(requiredCtx) && !(&RequiredValidator{}).Validate(requiredCtx)
 }
 
 func (v *validator) getMessage(fieldName string, field *FieldV5, validator Validator, value reflect.Value) string {

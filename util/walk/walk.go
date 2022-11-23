@@ -66,18 +66,18 @@ func (c *Context) Break() {
 	c.stop = true
 }
 
-// Walk this path and execute the given behavior for each matching element. Elements are final,
+// Walk this path and execute the given callback for each matching element. Elements are final,
 // meaning they are the deepest explorable element using this path.
 // Only `map[string]any` and n-dimensional slices parents are supported.
 // The given "f" function is executed for each final element matched. If the path
 // cannot be completed because the step's name doesn't exist in the currently explored map,
 // the function will be executed as well, with a the `Context`'s `NotFound` field set to `true`.
-func (p *Path) Walk(currentElement any, f func(*Context)) { // TODO document callback is now a pointer
-	path := &Path{
+func (p *Path) Walk(currentElement any, f func(*Context)) { // TODO document callback parameter is now a pointer
+	trackPath := &Path{
 		Name: p.Name,
 		Type: p.Type,
 	}
-	p.walk(currentElement, nil, -1, path, path, f)
+	p.walk(currentElement, nil, -1, trackPath, trackPath, f)
 }
 
 func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(*Context)) bool {
@@ -140,8 +140,6 @@ func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, 
 	}
 	return !stop
 }
-
-// TODO func First (returns the first matched context)
 
 func (p *Path) walkArray(element any, parent any, index int, trackPath *Path, lastPathElement *Path, f func(*Context)) bool {
 	list := reflect.ValueOf(element)
@@ -218,6 +216,22 @@ func newNotFoundContext(parent any, path *Path, name *string, index int, found F
 		c.Name = *name
 	}
 	return c
+}
+
+// First returns the first final element matched by the Path.
+// Note that the returned Context may indicate that the value could
+// not be found, so you should always check `Context.Found` before using
+// `Context.Value`.
+//
+// Bear in mind that map iteration order is not guaranteed. Using paths containing
+// wildcards `*` will not always yield the same result.
+func (p *Path) First(currentElement any) *Context {
+	var result *Context
+	p.Walk(currentElement, func(ctx *Context) {
+		result = ctx
+		ctx.Break()
+	})
+	return result
 }
 
 // HasArray returns true if a least one step in the path involves an array.
@@ -402,6 +416,15 @@ func Parse(p string) (*Path, error) {
 	}
 
 	return rootPath, nil
+}
+
+// MustParse is the same as `Parse` but panics if there is an error.
+func MustParse(p string) *Path {
+	path, err := Parse(p)
+	if err != nil {
+		panic(err)
+	}
+	return path
 }
 
 func createPathScanner(path string) *bufio.Scanner {

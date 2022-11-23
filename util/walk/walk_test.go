@@ -235,6 +235,29 @@ func TestParse(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestMustParse(t *testing.T) {
+	path := MustParse("object.array[].field")
+	assert.Equal(t, &Path{
+		Name: strPtr("object"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("array"),
+			Type: PathTypeArray,
+			Next: &Path{
+				Type: PathTypeObject,
+				Next: &Path{
+					Name: strPtr("field"),
+					Type: PathTypeElement,
+				},
+			},
+		},
+	}, path)
+
+	assert.Panics(t, func() {
+		MustParse("object.array.[].field")
+	})
+}
+
 func testWalk(t *testing.T, data map[string]any, p string) []*Context {
 	matches := make([]*Context, 0, 5)
 	path, err := Parse(p)
@@ -1264,6 +1287,106 @@ func TestPathWalkBreak(t *testing.T) {
 	}
 	matches = testWalkBreak(t, data, "array[]")
 	assert.Equal(t, expected, matches)
+}
+
+func TestPathFirst(t *testing.T) {
+	// object.field
+	data := map[string]any{
+		"object": map[string]any{
+			"field":  5,
+			"field2": "6",
+		},
+	}
+	path, _ := Parse("object.field")
+	ctx := path.First(data)
+	expected := &Context{
+		Value:  data["object"].(map[string]any)["field"],
+		Parent: data["object"],
+		Path: &Path{
+			Name: strPtr("object"),
+			Type: PathTypeObject,
+			Next: &Path{Name: strPtr("field")},
+		},
+		Name:  "field",
+		Index: -1,
+		Found: Found,
+		stop:  true,
+	}
+	assert.Equal(t, expected, ctx)
+
+	// object.not_a_field
+	path, _ = Parse("object.not_a_field")
+	ctx = path.First(data)
+	expected = &Context{
+		Value:  nil,
+		Parent: data["object"],
+		Path: &Path{
+			Name: strPtr("object"),
+			Type: PathTypeObject,
+			Next: &Path{Name: strPtr("not_a_field")},
+		},
+		Name:  "not_a_field",
+		Index: -1,
+		Found: ElementNotFound,
+		stop:  true,
+	}
+	assert.Equal(t, expected, ctx)
+
+	// object.*
+	path, _ = Parse("object.*")
+	ctx = path.First(data)
+	expected = &Context{
+		Value:  data["object"].(map[string]any)["field"],
+		Parent: data["object"],
+		Path: &Path{
+			Name: strPtr("object"),
+			Type: PathTypeObject,
+			Next: &Path{Name: strPtr("field")},
+		},
+		Name:  "field",
+		Index: -1,
+		Found: Found,
+		stop:  true,
+	}
+	expected2 := &Context{
+		Value:  data["object"].(map[string]any)["field2"],
+		Parent: data["object"],
+		Path: &Path{
+			Name: strPtr("object"),
+			Type: PathTypeObject,
+			Next: &Path{Name: strPtr("field2")},
+		},
+		Name:  "field2",
+		Index: -1,
+		Found: Found,
+		stop:  true,
+	}
+	if !assert.ObjectsAreEqual(expected, ctx) && !assert.ObjectsAreEqual(expected2, ctx) {
+		assert.Fail(t, "Expected context is not equal to actual", ctx)
+	}
+
+	// array[]
+	data = map[string]any{
+		"array": []string{"a", "b", "c"},
+	}
+	i := 0
+	path, _ = Parse("array[]")
+	ctx = path.First(data)
+	expected = &Context{
+		Value:  "a",
+		Parent: data["array"],
+		Path: &Path{
+			Name:  strPtr("array"),
+			Type:  PathTypeArray,
+			Index: &i,
+			Next:  &Path{},
+		},
+		Name:  "",
+		Index: 0,
+		Found: Found,
+		stop:  true,
+	}
+	assert.Equal(t, expected, ctx)
 }
 
 func TestPathSetAllMissingIndexes(t *testing.T) {

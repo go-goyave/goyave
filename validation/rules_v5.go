@@ -12,33 +12,6 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
-type RequiredValidator struct{ BaseValidator }
-
-func (v *RequiredValidator) Validate(ctx *ContextV5) bool {
-	if !ctx.Field.IsNullable() && ctx.Value == nil {
-		return false
-	}
-	return true
-}
-
-func (v *RequiredValidator) Name() string { return "required" }
-
-func Required() *RequiredValidator {
-	return &RequiredValidator{}
-}
-
-type NullableValidator struct{ BaseValidator }
-
-func (v *NullableValidator) Validate(ctx *ContextV5) bool {
-	return true
-}
-
-func (v *NullableValidator) Name() string { return "nullable" }
-
-func Nullable() *NullableValidator {
-	return &NullableValidator{}
-}
-
 type BetweenValidator struct {
 	BaseValidator
 	Min int

@@ -110,7 +110,6 @@ func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
 
 func (v *GreaterThanValidator) Name() string          { return "greater_than" }
 func (v *GreaterThanValidator) IsTypeDependent() bool { return true }
-func (v *GreaterThanValidator) ComparesWith() string  { return v.Path.String() }
 func (v *GreaterThanValidator) MessagePlaceholders(l *lang.Language) []string {
 	return []string{
 		":other", GetFieldName(l, v.Path),
@@ -128,5 +127,4 @@ func GreaterThan(path string) *GreaterThanValidator {
 // TODO implement more rules
 // After that I think the new validation system will be complete
 // Also will need a lot of documentation and testing
-// TODO add support for dynamic map/object keys (should be easy by adding a new identifier to "walk.Path")
 // TODO one file per rule

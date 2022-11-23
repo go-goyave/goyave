@@ -24,15 +24,10 @@ type Validator interface {
 	MessagePlaceholders(l *lang.Language) []string
 }
 
-type ComparatorValidator interface { // TODO remove this, it is not needed anymore
-	ComparesWith() string // Returns a path to the compared element
-}
-
 type BaseValidator struct{}
 
 func (v *BaseValidator) IsTypeDependent() bool                         { return false }
 func (v *BaseValidator) IsType() bool                                  { return false }
-func (v *BaseValidator) ComparesFields() bool                          { return false }
 func (v *BaseValidator) MessagePlaceholders(l *lang.Language) []string { return []string{} }
 
 type FieldRulesApplier interface {

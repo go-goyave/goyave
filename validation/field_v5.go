@@ -65,7 +65,7 @@ func (f *FieldV5) getErrorPath(parentPath *walk.Path, c *walk.Context) *walk.Pat
 
 // IsRequired check if a field has the "required" rule
 func (f *FieldV5) IsRequired(ctx *ContextV5) bool {
-	return f.isRequired(ctx)
+	return f.isRequired != nil && f.isRequired(ctx)
 }
 
 // IsNullable check if a field has the "nullable" rule

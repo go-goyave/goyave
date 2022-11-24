@@ -198,7 +198,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			ctx := &ContextV5{
 				Options: v.options,
 				Data:    data,
-				Extra:   v.options.Extra, // TODO document extra are not scoped anymore (and not copied)
+				Extra:   make(map[string]any),
 				Value:   value,
 				Parent:  c.Parent,
 				Field:   field,

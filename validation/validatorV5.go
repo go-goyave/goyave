@@ -191,7 +191,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			}
 			if !ok {
 				errorPath := field.getErrorPath(parentPath, c)
-				message := v.getMessage(fieldName, field, validator, reflect.ValueOf(value))
+				message := v.getMessage(fieldName, ctx, validator)
 				if fieldName == CurrentElement {
 					v.validationErrors.Add(errorPath, message)
 				} else {
@@ -236,35 +236,40 @@ func (v *validator) isAbsent(field *FieldV5, c *walk.Context, data any) bool {
 	return !field.IsRequired(requiredCtx) && !(&RequiredValidator{}).Validate(requiredCtx)
 }
 
-func (v *validator) getMessage(fieldName string, field *FieldV5, validator Validator, value reflect.Value) string {
+func (v *validator) getMessage(fieldName string, ctx *ContextV5, validator Validator) string {
+	value := reflect.ValueOf(ctx.Value)
 	langEntry := "validation.rules." + validator.Name()
 	if validator.IsTypeDependent() {
-		expectedType := v.findTypeRule(field.Validators)
-		if expectedType == FieldTypeUnsupported {
+		typeValidator := v.findTypeValidator(ctx.Field.Validators)
+		if typeValidator == nil {
 			langEntry += "." + getFieldType(value)
 		} else {
-			if strings.HasPrefix(expectedType, "int") || strings.HasPrefix(expectedType, "uint") || strings.HasPrefix(expectedType, "float") {
-				expectedType = FieldTypeNumeric
+			typeName := typeValidator.Name()
+			switch typeValidator.(type) {
+			case *Float32Validator, *Float64Validator,
+				*IntValidator, *Int8Validator, *Int16Validator, *Int32Validator, *Int64Validator,
+				*UintValidator, *Uint8Validator, *Uint16Validator, *Uint32Validator, *Uint64Validator:
+				typeName = FieldTypeNumeric
 			}
-			langEntry += "." + expectedType
+			langEntry += "." + typeName
 		}
 	}
 
-	lastParent := field.Path.LastParent()
+	lastParent := ctx.Field.Path.LastParent()
 	if lastParent != nil && lastParent.Type == walk.PathTypeArray {
 		langEntry += ".array"
 	}
 
-	return v.options.Language.Get(langEntry, append([]string{":field", translateFieldName(v.options.Language, fieldName)}, validator.MessagePlaceholders(v.options.Language)...)...)
+	return v.options.Language.Get(langEntry, append([]string{":field", translateFieldName(v.options.Language, fieldName)}, validator.MessagePlaceholders(ctx)...)...)
 }
 
-// findTypeRule find the expected type of a field for a given array dimension.
-func (v *validator) findTypeRule(rules []Validator) string {
-	for _, rule := range rules {
-		if rule.IsType() {
-			return rule.Name()
+// findTypeValidator find the expected type of a field for a given array dimension.
+func (v *validator) findTypeValidator(validators []Validator) Validator {
+	for _, validator := range validators {
+		if validator.IsType() {
+			return validator
 		}
 	}
 
-	return FieldTypeUnsupported
+	return nil
 }

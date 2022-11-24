@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"golang.org/x/exp/slices"
-	"goyave.dev/goyave/v4/lang"
 	"goyave.dev/goyave/v4/util/walk"
 )
 
@@ -41,7 +40,7 @@ type Validator interface {
 	IsType() bool
 
 	// TODO document MessagePlaceholders
-	MessagePlaceholders(l *lang.Language) []string
+	MessagePlaceholders(ctx *ContextV5) []string
 }
 
 // BaseValidator composable structure that implements the basic functions required to
@@ -52,8 +51,8 @@ type BaseValidator struct{}
 func (v *BaseValidator) IsTypeDependent() bool { return false }
 
 // IsType returns false.
-func (v *BaseValidator) IsType() bool                                  { return false }
-func (v *BaseValidator) MessagePlaceholders(l *lang.Language) []string { return []string{} }
+func (v *BaseValidator) IsType() bool                                { return false }
+func (v *BaseValidator) MessagePlaceholders(ctx *ContextV5) []string { return []string{} }
 
 type FieldRulesApplier interface {
 	apply(rules RulesV5, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) RulesV5

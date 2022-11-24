@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -29,6 +30,8 @@ type Options struct {
 	Language                 *lang.Language
 	DB                       *gorm.DB
 	Config                   *config.Config
+	Logger                   *log.Logger
+	ErrLogger                *log.Logger
 	Extra                    map[string]any
 }
 
@@ -63,6 +66,24 @@ func (c *ContextV5) Config() *config.Config {
 		panic("Config is not set in validation options")
 	}
 	return c.Options.Config
+}
+
+// Logger get the Logger given through the validation Options.
+// Panics if there is none.
+func (c *ContextV5) Logger() *log.Logger {
+	if c.Options.Logger == nil {
+		panic("Logger is not set in validation options")
+	}
+	return c.Options.Logger
+}
+
+// ErrLogger get the Logger given through the validation Options.
+// Panics if there is none.
+func (c *ContextV5) ErrLogger() *log.Logger {
+	if c.Options.ErrLogger == nil {
+		panic("ErrLogger is not set in validation options")
+	}
+	return c.Options.ErrLogger
 }
 
 // AddError adds an error to the validation context. This is NOT supposed

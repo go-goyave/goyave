@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/samber/lo"
 	"goyave.dev/goyave/v4/cors"
 	"goyave.dev/goyave/v4/validation"
 )
@@ -139,6 +140,10 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				Rules:                    m.QueryRules(r),
 				ConvertSingleValueArrays: true,
 				Language:                 r.Lang,
+				DB:                       lo.Ternary(m.Config().GetString("database.connection") != "none", m.DB(), nil),
+				Config:                   m.Config(),
+				Logger:                   m.Logger(),
+				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
 			var err []error
@@ -156,6 +161,10 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				Rules:                    m.BodyRules(r),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
 				Language:                 r.Lang,
+				DB:                       lo.Ternary(m.Config().GetString("database.connection") != "none", m.DB(), nil),
+				Config:                   m.Config(),
+				Logger:                   m.Logger(),
+				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
 			var err []error

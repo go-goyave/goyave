@@ -12,9 +12,85 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
+// IComponent is a partial clone of `goyave.Component`, only
+// including the accessors necessary for validation.
+// Validators must implement this interface so they
+// have access to DB, Config, Language, Logger and ErrLogger.
+type IComponent interface {
+	DB() *gorm.DB
+	Config() *config.Config
+	Lang() *lang.Language
+	Logger() *log.Logger
+	ErrLogger() *log.Logger
+}
+
+type component struct {
+	db        *gorm.DB
+	config    *config.Config
+	lang      *lang.Language
+	logger    *log.Logger
+	errLogger *log.Logger
+}
+
+// DB get the database instance given through the validation Options.
+// Panics if there is none.
+func (c *component) DB() *gorm.DB {
+	if c.db == nil {
+		panic("DB is not set in validation options")
+	}
+	return c.db
+}
+
+// Config get the configuration given through the validation Options.
+// Panics if there is none.
+func (c *component) Config() *config.Config {
+	if c.config == nil {
+		panic("Config is not set in validation options")
+	}
+	return c.config
+}
+
+// Lang get the language given through the validation Options.
+// Panics if there is none.
+func (c *component) Lang() *lang.Language {
+	if c.lang == nil {
+		panic("Language is not set in validation options")
+	}
+	return c.lang
+}
+
+// Logger get the Logger given through the validation Options.
+// Panics if there is none.
+func (c *component) Logger() *log.Logger {
+	if c.logger == nil {
+		panic("Logger is not set in validation options")
+	}
+	return c.logger
+}
+
+// ErrLogger get the Logger given through the validation Options.
+// Panics if there is none.
+func (c *component) ErrLogger() *log.Logger {
+	if c.errLogger == nil {
+		panic("ErrLogger is not set in validation options")
+	}
+	return c.errLogger
+}
+
+// Options all the parameters required by `Validate()`.
+//
+// Only `Data`, `Rules` and `Language` are mandatory. However, it is recommended
+// to provide values for all the options in case a `Validator` requires them to function.
 type Options struct {
 	Data  any
 	Rules RulerV5
+
+	Extra     map[string]any
+	Language  *lang.Language
+	DB        *gorm.DB
+	Config    *config.Config
+	Logger    *log.Logger
+	ErrLogger *log.Logger
 
 	// ConvertSingleValueArrays set to true to convert fields that are expected
 	// to be an array into an array with a single value.
@@ -27,63 +103,27 @@ type Options struct {
 	//  field=A         --> map[string]any{"field": []string{"A"}}
 	//  field=A&field=B --> map[string]any{"field": []string{"A", "B"}}
 	ConvertSingleValueArrays bool
-	Language                 *lang.Language
-	DB                       *gorm.DB
-	Config                   *config.Config
-	Logger                   *log.Logger
-	ErrLogger                *log.Logger
-	Extra                    map[string]any
 }
 
+// Context is a structure unique per `Validator.Validate()` execution containing
+// all the data required by a validator.
 type ContextV5 struct {
-	Options *Options
-	Data    any
-	Extra   map[string]any
-	Value   any
-	Parent  any
-	Field   *FieldV5
-	Now     time.Time
+	Data any
+
+	// Extra a map that can store extra information for this validation.
+	// The map is scoped to the current `Validator` and its validation error
+	// message generation only. It cannot be used to pass data from one validator
+	// to the other for example.
+	Extra  map[string]any
+	Value  any
+	Parent any
+	Field  *FieldV5
+	Now    time.Time
 
 	// The name of the field under validation
 	Name string
 
 	errors []error
-}
-
-// DB get the database instance given through the validation Options.
-// Panics if there is none.
-func (c *ContextV5) DB() *gorm.DB {
-	if c.Options.DB == nil {
-		panic("DB is not set in validation options")
-	}
-	return c.Options.DB
-}
-
-// Config get the configuration given through the validation Options.
-// Panics if there is none.
-func (c *ContextV5) Config() *config.Config {
-	if c.Options.Config == nil {
-		panic("Config is not set in validation options")
-	}
-	return c.Options.Config
-}
-
-// Logger get the Logger given through the validation Options.
-// Panics if there is none.
-func (c *ContextV5) Logger() *log.Logger {
-	if c.Options.Logger == nil {
-		panic("Logger is not set in validation options")
-	}
-	return c.Options.Logger
-}
-
-// ErrLogger get the Logger given through the validation Options.
-// Panics if there is none.
-func (c *ContextV5) ErrLogger() *log.Logger {
-	if c.Options.ErrLogger == nil {
-		panic("ErrLogger is not set in validation options")
-	}
-	return c.Options.ErrLogger
 }
 
 // AddError adds an error to the validation context. This is NOT supposed
@@ -107,6 +147,12 @@ type validator struct {
 	errors           []error
 }
 
+// Validate the given data using the given `Options`.
+// If all validation rules pass and no error occurred, the first returned value will be `nil`.
+//
+// The second returned value is a slice of error that occurred during validation. These
+// errors are not validation errors but error raised when a validator could not be executed correctly.
+// For example if a validator using the database generated a DB error.
 func ValidateV5(options *Options) (*ErrorsV5, []error) {
 	validator := &validator{
 		options:          options,
@@ -196,15 +242,15 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 			}
 
 			ctx := &ContextV5{
-				Options: v.options,
-				Data:    data,
-				Extra:   make(map[string]any),
-				Value:   value,
-				Parent:  c.Parent,
-				Field:   field,
-				Now:     v.now,
-				Name:    c.Name,
+				Data:   data,
+				Extra:  make(map[string]any),
+				Value:  value,
+				Parent: c.Parent,
+				Field:  field,
+				Now:    v.now,
+				Name:   c.Name,
 			}
+			validator.init(v.options) // TODO document a Rules or RuleSet is not meant to be re-used or used concurrently
 			ok := validator.Validate(ctx)
 			if len(ctx.errors) > 0 {
 				v.errors = append(v.errors, ctx.errors...)
@@ -246,13 +292,12 @@ func (v *validator) convertSingleValueArray(field *FieldV5, value any, data map[
 
 func (v *validator) isAbsent(field *FieldV5, c *walk.Context, data any) bool {
 	requiredCtx := &ContextV5{
-		Options: v.options,
-		Data:    data,
-		Extra:   v.options.Extra,
-		Value:   c.Value,
-		Parent:  c.Parent,
-		Field:   field,
-		Name:    c.Name,
+		Data:   data,
+		Extra:  v.options.Extra,
+		Value:  c.Value,
+		Parent: c.Parent,
+		Field:  field,
+		Name:   c.Name,
 	}
 	return !field.IsRequired(requiredCtx) && !(&RequiredValidator{}).Validate(requiredCtx)
 }

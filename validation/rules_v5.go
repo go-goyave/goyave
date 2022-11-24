@@ -111,7 +111,7 @@ func (v *GreaterThanValidator) Name() string          { return "greater_than" }
 func (v *GreaterThanValidator) IsTypeDependent() bool { return true }
 func (v *GreaterThanValidator) MessagePlaceholders(ctx *ContextV5) []string {
 	return []string{
-		":other", GetFieldName(ctx.Options.Language, v.Path),
+		":other", GetFieldName(v.Lang(), v.Path),
 	}
 }
 

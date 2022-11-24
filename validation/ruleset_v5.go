@@ -8,16 +8,19 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
-// Ruler adapter interface for method dispatching between RuleSet and Rules
-// at route registration time. Allows to input both of these types as parameters
-// of the Route.Validate method.
+// Ruler adapter interface to make allow both RuleSet and Rules to
+// be used when calling `Validate()`.
 type RulerV5 interface {
 	AsRules() RulesV5
 }
 
+// Validator is a Component validating a field value.
 type Validator interface {
+	IComponent
+	init(*Options)
 
 	// Validate checks the field under validation satisfies this validator's criteria.
+	// If necessary, replaces the `Context.Value` with a converted value (see `IsType()`).
 	Validate(*ContextV5) bool
 
 	// Name returns the string name of the validator.
@@ -39,19 +42,35 @@ type Validator interface {
 	// valid UUID and converts it to a `uuid.UUID`.
 	IsType() bool
 
-	// TODO document MessagePlaceholders
+	// MessagePlaceholders returns an associative slice of placeholders and their replacement.
+	// This is use to generate the validation error message. An empty slice can be returned.
+	// See `lang.Language.Get()` for more details.
 	MessagePlaceholders(ctx *ContextV5) []string
 }
 
 // BaseValidator composable structure that implements the basic functions required to
 // satisfy the `Validator` interface.
-type BaseValidator struct{}
+type BaseValidator struct {
+	component
+}
+
+func (v *BaseValidator) init(options *Options) {
+	v.component = component{
+		db:        options.DB,
+		config:    options.Config,
+		lang:      options.Language,
+		logger:    options.Logger,
+		errLogger: options.ErrLogger,
+	}
+}
 
 // IsTypeDependent returns false.
 func (v *BaseValidator) IsTypeDependent() bool { return false }
 
 // IsType returns false.
-func (v *BaseValidator) IsType() bool                                { return false }
+func (v *BaseValidator) IsType() bool { return false }
+
+// MessagePlaceholders returns an empty slice (no placeholders)
 func (v *BaseValidator) MessagePlaceholders(ctx *ContextV5) []string { return []string{} }
 
 type FieldRulesApplier interface {

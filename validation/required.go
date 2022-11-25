@@ -31,6 +31,8 @@ func Required() *RequiredValidator {
 	return &RequiredValidator{}
 }
 
+//------------------------------
+
 // RequiredIfValidator is the same as `RequiredValidator` but only applies the behavior
 // described if the specified `Condition` function returns true.
 type RequiredIfValidator struct {

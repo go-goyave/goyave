@@ -34,6 +34,13 @@ func (v *ExtensionValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *ExtensionValidator) Name() string { return "extension" }
 
+// MessagePlaceholders returns the ":values" placeholder.
+func (v *ExtensionValidator) MessagePlaceholders(ctx *ContextV5) []string {
+	return []string{
+		":values", strings.Join(v.Extensions, ", "),
+	}
+}
+
 // Extension the field under validation must be a file whose
 // filename has one of the specified extensions as suffix.
 // Don't include the dot in the extension.

@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"strconv"
+
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
@@ -42,6 +44,13 @@ func (v *FileCountValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *FileCountValidator) Name() string { return "file_count" }
 
+// MessagePlaceholders returns the ":value" placeholder.
+func (v *FileCountValidator) MessagePlaceholders(ctx *ContextV5) []string {
+	return []string{
+		":value", strconv.FormatUint(uint64(v.Count), 10),
+	}
+}
+
 // FileCount the field under validation must be a multi-files
 // with exactly the specified number of files.
 func FileCount(count uint) *FileCountValidator {
@@ -65,6 +74,13 @@ func (v *MinFileCountValidator) Validate(ctx *ContextV5) bool {
 
 // Name returns the string name of the validator.
 func (v *MinFileCountValidator) Name() string { return "min_file_count" }
+
+// MessagePlaceholders returns the ":min" placeholder.
+func (v *MinFileCountValidator) MessagePlaceholders(ctx *ContextV5) []string {
+	return []string{
+		":min", strconv.FormatUint(uint64(v.Min), 10),
+	}
+}
 
 // MinFileCount the field under validation must be a multi-files
 // with at least the specified number of files.
@@ -90,6 +106,13 @@ func (v *MaxFileCountValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *MaxFileCountValidator) Name() string { return "max_file_count" }
 
+// MessagePlaceholders returns the ":max" placeholder.
+func (v *MaxFileCountValidator) MessagePlaceholders(ctx *ContextV5) []string {
+	return []string{
+		":max", strconv.FormatUint(uint64(v.Max), 10),
+	}
+}
+
 // MaxFileCount the field under validation must be a multi-files
 // with at most the specified number of files.
 func MaxFileCount(max uint) *MaxFileCountValidator {
@@ -114,6 +137,14 @@ func (v *FileCountBetweenValidator) Validate(ctx *ContextV5) bool {
 
 // Name returns the string name of the validator.
 func (v *FileCountBetweenValidator) Name() string { return "file_count_between" }
+
+// MessagePlaceholders returns the ":min" and ":max" placeholders.
+func (v *FileCountBetweenValidator) MessagePlaceholders(ctx *ContextV5) []string {
+	return []string{
+		":min", strconv.FormatUint(uint64(v.Min), 10),
+		":max", strconv.FormatUint(uint64(v.Max), 10),
+	}
+}
 
 // FileCountBetween the field under validation must be a multi-files
 // with a number of files between the specified min and max.

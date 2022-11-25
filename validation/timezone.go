@@ -18,6 +18,9 @@ type TimezoneValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *TimezoneValidator) Validate(ctx *ContextV5) bool {
+	if _, ok := ctx.Value.(time.Time); ok {
+		return true
+	}
 	tz, ok := ctx.Value.(string)
 	if !ok || tz == "Local" {
 		return false

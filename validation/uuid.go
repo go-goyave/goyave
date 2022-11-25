@@ -10,6 +10,8 @@ import (
 // If one or more `accepterVersions` are provided, the parsed UUID must
 // be a UUID of one of these versions. If none are given, all versions are
 // accepted.
+//
+// If validation passes, the value is converted to `uuid.UUID`.
 type UUIDValidator struct {
 	BaseValidator
 	AcceptedVersions []uuid.Version
@@ -17,6 +19,9 @@ type UUIDValidator struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *UUIDValidator) Validate(ctx *ContextV5) bool {
+	if _, ok := ctx.Value.(uuid.UUID); ok {
+		return true
+	}
 	val, ok := ctx.Value.(string)
 	if !ok {
 		return false
@@ -44,6 +49,8 @@ func (v *UUIDValidator) IsType() bool { return true }
 // If one or more `accepterVersions` are provided, the parsed UUID must
 // be a UUID of one of these versions. If none are given, all versions are
 // accepted.
+//
+// If validation passes, the value is converted to `uuid.UUID`.
 func UUID(acceptedVersions ...uuid.Version) *UUIDValidator {
 	return &UUIDValidator{AcceptedVersions: acceptedVersions}
 }

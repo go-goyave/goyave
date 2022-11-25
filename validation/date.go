@@ -14,6 +14,9 @@ type DateValidator struct {
 }
 
 func (v *DateValidator) parseDate(date any) (time.Time, bool) {
+	if d, ok := date.(time.Time); ok {
+		return d, true
+	}
 	str, ok := date.(string)
 	if ok {
 		for _, format := range v.Formats {

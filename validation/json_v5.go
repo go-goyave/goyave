@@ -2,7 +2,7 @@ package validation
 
 import "encoding/json"
 
-// JSONValidator the field under validation must be a valid JSON string.
+// JSONValidator validates the field under validation must be a valid JSON string.
 type JSONValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.

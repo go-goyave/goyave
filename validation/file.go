@@ -21,6 +21,9 @@ func (v *FileValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *FileValidator) Name() string { return "file" }
 
+// IsType returns true.
+func (v *FileValidator) IsType() bool { return true }
+
 // File the field under validation must be a file. Multi-files are supported.
 func File() *FileValidator {
 	return &FileValidator{}

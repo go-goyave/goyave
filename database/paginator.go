@@ -63,7 +63,7 @@ func (p *Paginator) Raw(query string, vars []interface{}, countQuery string, cou
 	p.rawQuery = query
 	p.rawQueryVars = vars
 	p.rawCountQuery = countQuery
-	p.rawCountQueryVars = vars
+	p.rawCountQueryVars = countVars
 	return p
 }
 

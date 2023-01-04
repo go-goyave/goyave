@@ -44,9 +44,9 @@ func registerKeyConfigEntry(name string) {
 // the `auth.jwt.expiry` config entry.
 //
 // The generated token will contain the following claims:
-// - `sub`: has the value of the `id` parameter
-// - `nbf`: "Not before", the current timestamp is used
-// - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
+//   - `sub`: has the value of the `id` parameter
+//   - `nbf`: "Not before", the current timestamp is used
+//   - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
 func GenerateTokenV5(cfg *config.Config, username any) (string, error) {
 	return GenerateTokenWithClaimsV5(cfg, jwt.MapClaims{"sub": username}, jwt.SigningMethodHS256)
 }

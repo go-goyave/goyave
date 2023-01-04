@@ -119,9 +119,9 @@ func Register(key string, entry Entry) {
 
 // Load loads the config.json file in the current working directory.
 // If the "GOYAVE_ENV" env variable is set, the config file will be picked like so:
-// - "production": "config.production.json"
-// - "test": "config.test.json"
-// - By default: "config.json"
+//   - "production": "config.production.json"
+//   - "test": "config.test.json"
+//   - By default: "config.json"
 func Load() error {
 	return LoadFrom(getConfigFilePath())
 }

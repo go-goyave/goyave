@@ -20,9 +20,9 @@ import (
 // the `auth.jwt.expiry` config entry.
 //
 // The generated token will contain the following claims:
-// - `sub`: has the value of the `id` parameter
-// - `nbf`: "Not before", the current timestamp is used
-// - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
+//   - `sub`: has the value of the `id` parameter
+//   - `nbf`: "Not before", the current timestamp is used
+//   - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
 func GenerateToken(username any) (string, error) {
 	return GenerateTokenWithClaims(jwt.MapClaims{"sub": username}, jwt.SigningMethodHS256)
 }

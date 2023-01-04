@@ -85,8 +85,9 @@ func load(lang string, path string) {
 // Get a language line.
 //
 // For validation rules messages and field names, use a dot-separated path:
-// - "validation.rules.<rule_name>"
-// - "validation.fields.<field_name>"
+//   - "validation.rules.<rule_name>"
+//   - "validation.fields.<field_name>"
+//
 // For normal lines, just use the name of the line. Note that if you have
 // a line called "validation", it won't conflict with the dot-separated paths.
 //

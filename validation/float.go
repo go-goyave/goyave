@@ -84,7 +84,7 @@ func (v *floatValidator[T]) max() float64 {
 }
 
 func (v *floatValidator[T]) checkFloatRange(ctx *ContextV5, val float64) bool {
-	ok := val < v.min() || val > v.max()
+	ok := val >= v.min() && val <= v.max()
 	if ok {
 		ctx.Value = T(val)
 	}
@@ -101,9 +101,9 @@ func (v *floatValidator[T]) checkUintRange(ctx *ContextV5, val uint) bool {
 	var t T
 	switch any(t).(type) {
 	case float32:
-		ok = val > math.MaxInt32
+		ok = val < math.MaxInt32
 	default:
-		ok = val > math.MaxInt64
+		ok = val < math.MaxInt64
 	}
 	if ok {
 		ctx.Value = T(val)

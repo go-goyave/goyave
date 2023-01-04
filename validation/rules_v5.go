@@ -3,7 +3,6 @@ package validation
 import (
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"github.com/Code-Hex/uniseg"
 	"goyave.dev/goyave/v4/util/fsutil"
@@ -11,58 +10,12 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
-type BetweenValidator struct {
-	BaseValidator
-	Min int
-	Max int
-}
-
-func (v *BetweenValidator) Validate(ctx *ContextV5) bool {
-	switch GetFieldType(ctx.Value) {
-	case FieldTypeNumeric:
-		floatValue, _ := typeutil.ToFloat64(ctx.Value)
-		return floatValue >= float64(v.Min) && floatValue <= float64(v.Max)
-	case FieldTypeString:
-		length := uniseg.GraphemeClusterCount(ctx.Value.(string))
-		return length >= v.Min && length <= v.Max
-	case FieldTypeArray, FieldTypeObject: // TODO test for object (validates the number of keys)
-		list := reflect.ValueOf(ctx.Value)
-		length := list.Len()
-		return length >= v.Min && length <= v.Max
-	case FieldTypeFile:
-		files, _ := ctx.Value.([]fsutil.File)
-		for _, file := range files {
-			minSize := int64(v.Min) * 1024
-			maxSize := int64(v.Max) * 1024
-			if file.Header.Size < minSize || file.Header.Size > maxSize {
-				return false
-			}
-		}
-		return true
-	}
-
-	return true // Pass if field type cannot be checked (bool, dates, ...)
-}
-
-func (v *BetweenValidator) Name() string          { return "between" }
-func (v *BetweenValidator) IsTypeDependent() bool { return true }
-func (v *BetweenValidator) MessagePlaceholders(ctx *ContextV5) []string {
-	return []string{
-		":min", strconv.Itoa(v.Min),
-		":max", strconv.Itoa(v.Max),
-	}
-}
-
-func Between(min, max int) *BetweenValidator {
-	return &BetweenValidator{Min: min, Max: max}
-}
-
-type GreaterThanValidator struct {
+type GreaterThanValidatorProto struct {
 	BaseValidator
 	Path *walk.Path
 }
 
-func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
+func (v *GreaterThanValidatorProto) Validate(ctx *ContextV5) bool {
 	valueType := GetFieldType(ctx.Value)
 
 	ok := true
@@ -107,20 +60,20 @@ func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
 	return ok
 }
 
-func (v *GreaterThanValidator) Name() string          { return "greater_than" }
-func (v *GreaterThanValidator) IsTypeDependent() bool { return true }
-func (v *GreaterThanValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *GreaterThanValidatorProto) Name() string          { return "greater_than" }
+func (v *GreaterThanValidatorProto) IsTypeDependent() bool { return true }
+func (v *GreaterThanValidatorProto) MessagePlaceholders(ctx *ContextV5) []string {
 	return []string{
 		":other", GetFieldName(v.Lang(), v.Path),
 	}
 }
 
-func GreaterThan(path string) *GreaterThanValidator {
+func GreaterThanProto(path string) *GreaterThanValidatorProto {
 	p, err := walk.Parse(path)
 	if err != nil {
 		panic(fmt.Errorf("validation.GreaterThan: path parse error: %w", err))
 	}
-	return &GreaterThanValidator{Path: p}
+	return &GreaterThanValidatorProto{Path: p}
 }
 
 // TODO implement more rules

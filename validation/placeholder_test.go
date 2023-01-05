@@ -47,6 +47,10 @@ func (suite *PlaceholderTestSuite) TestProcessPlaceholders() {
 	suite.Equal("The image must have exactly 2 file(s).", processPlaceholders("image", "The :field must have exactly :value file(s).", "en-US", &Context{Rule: &Rule{Name: "count", Params: []string{"2"}}}))
 }
 
+func (suite *PlaceholderTestSuite) TestPlaceholdersInjectionPrevention() {
+	suite.Equal("The :date is required.", processPlaceholders(":date", "The :field is required.", "en-US", &Context{Rule: &Rule{Name: "required", Params: []string{}}}))
+}
+
 func TestPlaceholderTestSuite(t *testing.T) {
 	suite.Run(t, new(PlaceholderTestSuite))
 }

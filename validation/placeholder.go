@@ -31,13 +31,14 @@ func SetPlaceholder(placeholderName string, replacer Placeholder) {
 	sort.Sort(sort.Reverse(sort.StringSlice(sortedKeys)))
 }
 
-func processPlaceholders(fieldName string, message string, language string, ctx *Context) string {
+func processPlaceholders(fieldName string, originalMessage string, language string, ctx *Context) string {
 	if i := strings.LastIndex(fieldName, "."); i != -1 {
 		fieldName = fieldName[i+1:]
 	}
 	fieldName = strings.TrimSuffix(fieldName, "[]")
+	message := originalMessage
 	for _, placeholder := range sortedKeys {
-		if strings.Contains(message, placeholder) {
+		if strings.Contains(originalMessage, placeholder) {
 			replacer := placeholders[placeholder]
 			message = strings.ReplaceAll(message, placeholder, replacer(fieldName, language, ctx))
 		}

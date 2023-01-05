@@ -8,6 +8,42 @@ import (
 
 // TODO test float validator
 
+func numberAsFloat64(n any) (float64, bool) {
+	switch val := n.(type) {
+	case float32:
+		return float64(val), true
+	case float64:
+		return val, true
+	case int:
+		return float64(val), true
+	case int8:
+		return float64(val), true
+	case int16:
+		return float64(val), true
+	case int32:
+		return float64(val), true
+	case int64:
+		return float64(val), true
+	case uint:
+		if val >= math.MaxInt64 {
+			return float64(val), false
+		}
+		return float64(val), true
+	case uint8:
+		return float64(val), true
+	case uint16:
+		return float64(val), true
+	case uint32:
+		return float64(val), true
+	case uint64:
+		if val >= math.MaxInt64 {
+			return float64(val), false
+		}
+		return float64(val), true
+	}
+	return 0, false
+}
+
 type float interface {
 	float32 | float64
 }

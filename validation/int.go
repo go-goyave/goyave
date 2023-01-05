@@ -152,6 +152,8 @@ func (v *intValidator[T]) Name() string {
 	}
 	return fmt.Sprintf(format, v.getBitSize())
 }
+
+// IsType returns true
 func (v *intValidator[T]) IsType() bool { return true }
 
 // IntValidator validator for the "int" rule.

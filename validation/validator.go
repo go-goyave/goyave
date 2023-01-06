@@ -28,6 +28,7 @@ const (
 const (
 	FieldTypeNumeric     = "numeric"
 	FieldTypeString      = "string"
+	FieldTypeBool        = "bool"
 	FieldTypeFile        = "file"
 	FieldTypeArray       = "array"
 	FieldTypeObject      = "object"
@@ -669,6 +670,8 @@ func getFieldType(value reflect.Value) string {
 		return FieldTypeNumeric
 	case kind == "string":
 		return FieldTypeString
+	case kind == "bool":
+		return FieldTypeBool
 	case kind == "slice":
 		if value.Type().String() == "[]fsutil.File" {
 			return FieldTypeFile

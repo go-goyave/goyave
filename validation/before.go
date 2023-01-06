@@ -69,7 +69,8 @@ func (v *BeforeFieldValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *BeforeFieldValidator) Name() string { return "before" }
 
-// BeforeField the field under validation must be a date (`time.Time`) before the given date.
+// BeforeField the field under validation must be a date (`time.Time`) before the date field identified
+// by the given path.
 func BeforeField(path string) *BeforeFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
@@ -96,7 +97,8 @@ func (v *BeforeEqualFieldValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *BeforeEqualFieldValidator) Name() string { return "before_equal" }
 
-// BeforeEqualField the field under validation must be a date (`time.Time`) before or equal to the given date.
+// BeforeEqualField the field under validation must be a date (`time.Time`) before or equal to the date field identified
+// by the given path.
 func BeforeEqualField(path string) *BeforeEqualFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {

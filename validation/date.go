@@ -160,7 +160,8 @@ func (v *DateEqualsFieldValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *DateEqualsFieldValidator) Name() string { return "date_equals" }
 
-// DateEqualsField the field under validation must be a date (`time.Time`) equal to the given date.
+// DateEqualsField the field under validation must be a date (`time.Time`) equal to the date field identified
+// by the given path.
 func DateEqualsField(path string) *DateEqualsFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {

@@ -9,16 +9,15 @@ import (
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
-func validateSizeV5(ctx *ContextV5, v func(size int) bool) bool {
-	val := reflect.ValueOf(ctx.Value)
+func validateSizeV5(value any, v func(size int) bool) bool {
+	val := reflect.ValueOf(value)
 	switch getFieldType(val) {
-	// TODO document it doesn't support numbers (because it wouldn't make a lot of sense)
 	case FieldTypeString:
-		return v(uniseg.GraphemeClusterCount(ctx.Value.(string)))
+		return v(uniseg.GraphemeClusterCount(value.(string)))
 	case FieldTypeArray, FieldTypeObject: // TODO document it also works for objects (number of keys)
 		return v(val.Len())
 	case FieldTypeFile:
-		files, _ := ctx.Value.([]fsutil.File)
+		files, _ := value.([]fsutil.File)
 		for _, file := range files {
 			if !v(int(math.Ceil(float64(file.Header.Size) / 1024.0))) {
 				return false
@@ -40,7 +39,7 @@ type SizeValidator struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *SizeValidator) Validate(ctx *ContextV5) bool {
-	return validateSizeV5(ctx, func(size int) bool {
+	return validateSizeV5(ctx.Value, func(size int) bool {
 		return size == v.Size
 	})
 }

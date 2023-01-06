@@ -20,7 +20,7 @@ func (v *MaxValidator) Validate(ctx *ContextV5) bool {
 	if fl, ok := numberAsFloat64(ctx.Value); ok {
 		return fl <= v.Max
 	}
-	return validateSizeV5(ctx, func(size int) bool {
+	return validateSizeV5(ctx.Value, func(size int) bool {
 		return float64(size) <= v.Max
 	})
 }

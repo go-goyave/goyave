@@ -23,6 +23,9 @@ func (v *UniqueValidator) Validate(ctx *ContextV5) bool {
 // Name returns the string name of the validator.
 func (v *UniqueValidator) Name() string { return "unique" }
 
+// IsTypeDependent returns true.
+func (v *UniqueValidator) IsTypeDependent() bool { return true }
+
 // Unique validates the field under validation must have a unique value in database
 // according to the provided database scope. Uniqueness is checked using a COUNT query.
 //

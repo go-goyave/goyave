@@ -12,7 +12,7 @@ var enUS = &Language{
 		"auth.jwt-expired":             "Your authentication token is expired.",
 	},
 	validation: validationLines{
-		rules: map[string]string{ // TODO update default lang
+		rules: map[string]string{
 			"required":                         "The :field is required.",
 			"required.array":                   "The :field values are required.",
 			"float32":                          "The :field must be numeric.",

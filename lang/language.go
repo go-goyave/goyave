@@ -74,8 +74,11 @@ func convertEmptyLine(entry, line string, placeholders []string) string {
 
 func processPlaceholders(message string, values []string) string {
 	length := len(values) - 1
+	result := message
 	for i := 0; i < length; i += 2 {
-		message = strings.ReplaceAll(message, values[i], values[i+1])
+		if strings.Contains(message, values[i]) {
+			result = strings.ReplaceAll(result, values[i], values[i+1])
+		}
 	}
-	return message
+	return result
 }

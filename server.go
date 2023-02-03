@@ -239,6 +239,11 @@ func (s *Server) closeDB() error {
 	return db.Close()
 }
 
+// Router returns the root router.
+func (s *Server) Router() *RouterV5 {
+	return s.router
+}
+
 // Start the server.
 //
 // The routeRegistrer parameter is a function aimed at registering all your routes and middleware.

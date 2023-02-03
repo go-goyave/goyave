@@ -237,6 +237,8 @@ func (r *RouterV5) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.requestHandler(&match, w, req)
 }
 
+// TODO export RouteMatch and add Match with string param function
+
 func (r *RouterV5) match(req *http.Request, match *routeMatchV5) bool {
 	// Check if router itself matches
 	var params []string

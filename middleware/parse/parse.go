@@ -1,4 +1,4 @@
-package middleware
+package parse
 
 import (
 	"bytes"
@@ -12,12 +12,13 @@ import (
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
-type ParseRequest struct {
-	// FIXME import path is not convenient because it clashes with custom middleware package in convention (move it to "goyave" package?)
+// TODO document and test parse middleware
+
+type Middleware struct {
 	goyave.Component
 }
 
-func (m *ParseRequest) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
+func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, r *goyave.RequestV5) {
 
 		if err := parseQuery(r); err != nil {

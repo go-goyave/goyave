@@ -32,16 +32,16 @@ type RequestV5 struct {
 	Query       map[string]any
 	Lang        *lang.Language
 	Extra       map[string]any
-	route       *RouteV5
+	Route       *RouteV5
 	RouteParams map[string]string
 	cookies     []*http.Cookie
 }
 
-func newRequest(httpRequest *http.Request, route *RouteV5) *RequestV5 {
+func NewRequest(httpRequest *http.Request) *RequestV5 {
 	return &RequestV5{
 		httpRequest: httpRequest,
-		route:       route,
 		Extra:       map[string]any{},
+		// Route is set by the router
 		// Lang is set inside the language middleware
 		// Query is set inside the parse request middleware
 	}
@@ -137,9 +137,4 @@ func (r *RequestV5) BearerToken() (string, bool) {
 		return "", false
 	}
 	return strings.TrimSpace(header[len(schema):]), true
-}
-
-// Route returns the current route.
-func (r *RequestV5) Route() *RouteV5 {
-	return r.route
 }

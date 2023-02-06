@@ -251,7 +251,7 @@ func (s *Server) Router() *RouterV5 {
 // Auto-migrations are run first if they are enabled in the configuration.
 //
 // Errors returned can be safely type-asserted to `*goyave.Error`.
-func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error { // Give the routeRegister in New ? (would be before automigrations :/ )
+func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
 	state := atomic.LoadUint32(&s.state)
 	if state == 1 || state == 2 {
 		return &Error{

@@ -198,7 +198,7 @@ type corsMiddlewareV5 struct {
 
 func (m *corsMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	return func(response *ResponseV5, request *RequestV5) {
-		o, ok := request.Route().LookupMeta(MetaCORS)
+		o, ok := request.Route.LookupMeta(MetaCORS)
 		if !ok || o == nil {
 			next(response, request)
 			return

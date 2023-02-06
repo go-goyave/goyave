@@ -3,10 +3,10 @@ package goyave
 import (
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"goyave.dev/goyave/v4/cors"
 )
 
@@ -320,56 +320,51 @@ func (r *RouterV5) Group() *RouterV5 {
 
 // Route register a new route.
 //
-// Multiple methods can be passed using a pipe-separated string.
-//
-//	"PUT|PATCH"
-//
-// The validation rules set is optional. If you don't want your route
-// to be validated, pass "nil".
+// Multiple methods can be passed.
 //
 // If the route matches the "GET" method, the "HEAD" method is automatically added
 // to the matcher if it's missing.
 //
-// If the router has CORS options set, the "OPTIONS" method is automatically added
+// If the router has the CORS middleware, the "OPTIONS" method is automatically added
 // to the matcher if it's missing, so it allows preflight requests.
 //
 // Returns the generated route.
-func (r *RouterV5) Route(methods string, uri string, handler HandlerV5) *RouteV5 {
+func (r *RouterV5) Route(methods []string, uri string, handler HandlerV5) *RouteV5 {
 	return r.registerRoute(methods, uri, handler)
 }
 
 // Get registers a new route with the GET and HEAD methods.
 func (r *RouterV5) Get(uri string, handler HandlerV5) *RouteV5 {
-	return r.registerRoute(http.MethodGet, uri, handler)
+	return r.registerRoute([]string{http.MethodGet}, uri, handler)
 }
 
 // Post registers a new route with the POST method.
 func (r *RouterV5) Post(uri string, handler HandlerV5) *RouteV5 {
-	return r.registerRoute(http.MethodPost, uri, handler)
+	return r.registerRoute([]string{http.MethodPost}, uri, handler)
 }
 
 // Put registers a new route with the PUT method.
 func (r *RouterV5) Put(uri string, handler HandlerV5) *RouteV5 {
-	return r.registerRoute(http.MethodPut, uri, handler)
+	return r.registerRoute([]string{http.MethodPut}, uri, handler)
 }
 
 // Patch registers a new route with the PATCH method.
 func (r *RouterV5) Patch(uri string, handler HandlerV5) *RouteV5 {
-	return r.registerRoute(http.MethodPatch, uri, handler)
+	return r.registerRoute([]string{http.MethodPatch}, uri, handler)
 }
 
 // Delete registers a new route with the DELETE method.
 func (r *RouterV5) Delete(uri string, handler HandlerV5) *RouteV5 {
-	return r.registerRoute(http.MethodDelete, uri, handler)
+	return r.registerRoute([]string{http.MethodDelete}, uri, handler)
 }
 
 // Options registers a new route wit the OPTIONS method.
 func (r *RouterV5) Options(uri string, handler HandlerV5) *RouteV5 {
-	return r.registerRoute(http.MethodOptions, uri, handler)
+	return r.registerRoute([]string{http.MethodOptions}, uri, handler)
 }
 
-func (r *RouterV5) registerRoute(methods string, uri string, handler HandlerV5) *RouteV5 {
-	methodsSlice := strings.Split(methods, "|")
+func (r *RouterV5) registerRoute(methods []string, uri string, handler HandlerV5) *RouteV5 {
+	methodsSlice := slices.Clone(methods)
 
 	if !routerHasMiddleware[*corsMiddlewareV5](r) && !lo.Contains(methodsSlice, http.MethodOptions) {
 		methodsSlice = append(methodsSlice, http.MethodOptions)

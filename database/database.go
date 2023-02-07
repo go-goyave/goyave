@@ -125,6 +125,7 @@ func ClearInitializers() {
 //			database.RegisterModel(&MyModel{})
 //	 }
 func RegisterModel(model any) {
+	// TODO remove registered models
 	models = append(models, model)
 }
 

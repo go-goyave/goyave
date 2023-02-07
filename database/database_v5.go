@@ -80,15 +80,3 @@ func initSQLDBV5(cfg *config.Config, db *gorm.DB) {
 	sqlDB.SetMaxIdleConns(cfg.GetInt("database.maxIdleConnections"))
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.GetInt("database.maxLifetime")) * time.Second)
 }
-
-// Migrate migrates all registered models.
-func MigrateV5(db *gorm.DB) error {
-	return db.Transaction(func(tx *gorm.DB) error {
-		for _, model := range models {
-			if err := db.AutoMigrate(model); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}

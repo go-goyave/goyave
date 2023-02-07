@@ -71,7 +71,7 @@ var configDefaults = object{
 		"maxOpenConnections": &Entry{20, []any{}, reflect.Int, false},
 		"maxIdleConnections": &Entry{20, []any{}, reflect.Int, false},
 		"maxLifetime":        &Entry{300, []any{}, reflect.Int, false},
-		"autoMigrate":        &Entry{false, []any{}, reflect.Bool, false},
+		"autoMigrate":        &Entry{false, []any{}, reflect.Bool, false}, // TODO remove this
 		"config": object{
 			"skipDefaultTransaction":                   &Entry{false, []any{}, reflect.Bool, false},
 			"dryRun":                                   &Entry{false, []any{}, reflect.Bool, false},

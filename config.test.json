@@ -25,7 +25,6 @@
         "maxOpenConnections": 20,
         "maxIdleConnections": 20,
         "maxLifetime": 300,
-        "autoMigrate": false,
         "config": {
             "skipDefaultTransaction": false,
             "dryRun": false,

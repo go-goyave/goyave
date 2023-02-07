@@ -67,8 +67,7 @@ const (
 	ExitHTTPError = 5
 
 	// ExitDatabaseError the exit code returned when the
-	// connection to the database could not be established
-	// or if an auto-migration failed
+	// connection to the database could not be established.
 	ExitDatabaseError = 6
 
 	// ExitStateError the exit code returned when

@@ -246,9 +246,7 @@ func (s *Server) Router() *RouterV5 {
 
 // Start the server.
 //
-// The routeRegistrer parameter is a function aimed at registering all your routes and middleware.
-//
-// Auto-migrations are run first if they are enabled in the configuration.
+// The `routeRegistrer` parameter is a function aimed at registering all your routes and middleware.
 //
 // Errors returned can be safely type-asserted to `*goyave.Error`.
 func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
@@ -273,9 +271,7 @@ func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
 		close(s.stopChannel)
 	}()
 
-	if err := s.prepare(routeRegistrer); err != nil {
-		return err
-	}
+	s.RegisterRoutes(routeRegistrer)
 
 	ln, err := net.Listen("tcp", s.server.Addr)
 	if err != nil {
@@ -306,18 +302,15 @@ func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
 	return nil
 }
 
-func (s *Server) prepare(routeRegistrer func(*Server, *RouterV5)) error { // TODO rename routeRegistrer to "initServer"?
+// RegisterRoutes creates a new Router for this Server and runs the given `routeRegistrer`.
+//
+// This method is primarily used in tests so routes can be registered without starting the server.
+// Starting the server will overwrite the previously registered routes.
+func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *RouterV5)) {
 	s.router = NewRouterV5(s)
 	routeRegistrer(s, s.router)
 	s.router.ClearRegexCache()
 	s.server.Handler = s.router
-
-	if s.config.GetBool("database.autoMigrate") && s.db != nil {
-		if err := database.MigrateV5(s.DB().Session(&gorm.Session{NewDB: true})); err != nil {
-			return &Error{err, ExitDatabaseError}
-		}
-	}
-	return nil
 }
 
 // Stop gracefully shuts down the server without interrupting any

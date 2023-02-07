@@ -9,7 +9,6 @@ import (
 
 // File represents a file received from client.
 type File struct {
-	Data     multipart.File
 	Header   *multipart.FileHeader
 	MIMEType string
 }
@@ -22,52 +21,66 @@ type File struct {
 // Creates directories if needed.
 //
 // Returns the actual file name.
-func (file *File) Save(path string, name string) string { // TODO handle io.FS
-	name = timestampFileName(name)
-	if err := os.MkdirAll(path, os.ModePerm); err != nil {
-		panic(err)
+func (file *File) Save(path string, name string) (filename string, err error) { // TODO handle io.FS
+	filename = timestampFileName(name)
+
+	if err = os.MkdirAll(path, os.ModePerm); err != nil {
+		return
 	}
-	writer, err := os.OpenFile(path+string(os.PathSeparator)+name, os.O_WRONLY|os.O_CREATE, 0660)
+
+	var f multipart.File
+	f, err = file.Header.Open()
 	if err != nil {
-		panic(err)
+		return
 	}
-	defer writer.Close()
-	_, errCopy := io.Copy(writer, file.Data)
-	if errCopy != nil {
-		panic(errCopy)
+	defer func() {
+		closeError := f.Close()
+		if err == nil {
+			err = closeError
+		}
+	}()
+
+	var writer *os.File
+	writer, err = os.OpenFile(path+string(os.PathSeparator)+filename, os.O_WRONLY|os.O_CREATE, 0660)
+	if err != nil {
+		return
 	}
-	file.Data.Close()
-	return name
+	defer func() {
+		closeError := writer.Close()
+		if err == nil {
+			err = closeError
+		}
+	}()
+	_, err = io.Copy(writer, f)
+	return
 }
 
 // ParseMultipartFiles parse a single file field in a request.
-func ParseMultipartFiles(request *http.Request, field string) []File {
+func ParseMultipartFiles(headers []*multipart.FileHeader) ([]File, error) {
 	files := []File{}
-	for _, fh := range request.MultipartForm.File[field] {
+	for _, fh := range headers {
 		f, err := fh.Open()
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		defer f.Close()
 
 		fileHeader := make([]byte, 512)
 
 		if fh.Size != 0 {
 			if _, err := f.Read(fileHeader); err != nil {
-				panic(err)
+				return nil, err
 			}
 
 			if _, err := f.Seek(0, 0); err != nil {
-				panic(err)
+				return nil, err
 			}
 		}
 
 		file := File{
 			Header:   fh,
 			MIMEType: http.DetectContentType(fileHeader),
-			Data:     f,
 		}
 		files = append(files, file)
 	}
-	return files
+	return files, nil
 }

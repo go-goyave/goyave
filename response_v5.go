@@ -20,7 +20,6 @@ import (
 type ResponseV5 struct {
 	writer         io.Writer
 	responseWriter http.ResponseWriter
-	httpRequest    *http.Request
 	status         int
 	server         *Server
 	request        *RequestV5
@@ -34,13 +33,12 @@ type ResponseV5 struct {
 }
 
 // newResponse create a new Response using the given http.ResponseWriter and raw request.
-func newResponseV5(server *Server, request *RequestV5, writer http.ResponseWriter, rawRequest *http.Request) *ResponseV5 {
+func newResponseV5(server *Server, request *RequestV5, writer http.ResponseWriter) *ResponseV5 {
 	return &ResponseV5{
 		server:         server,
 		request:        request,
 		responseWriter: writer,
 		writer:         writer,
-		httpRequest:    rawRequest,
 		empty:          true,
 		status:         0,
 		wroteHeader:    false,
@@ -208,7 +206,11 @@ func (r *ResponseV5) writeFile(file string, disposition string) { // TODO handle
 	}
 	r.empty = false
 	r.status = http.StatusOK
-	mime, size := fsutil.GetMIMEType(file)
+	mime, size, err := fsutil.GetMIMEType(file)
+	if err != nil {
+		r.Error(err)
+		return
+	}
 	header := r.responseWriter.Header()
 	header.Set("Content-Disposition", disposition)
 

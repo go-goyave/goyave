@@ -27,30 +27,16 @@ func GetFileExtension(file string) string {
 }
 
 // GetMIMEType get the mime type and size of the given file.
-//
-// This function calls `http.DetectContentType`. If the detected content type
-// could not be determined or if it's a text file, `GetMIMEType` will attempt to
-// detect the MIME type based on the file extension. The following extensions are
-// supported:
-//   - `.jsonld`: "application/ld+json"
-//   - `.json`: "application/json"
-//   - `.js` / `.mjs`: "text/javascript"
-//   - `.css`: "text/css"
-//
-// If a specific MIME type cannot be determined, returns "application/octet-stream" as a fallback.
-//
-// If the file cannot be opened, panics. You should check if the
-// file exists, using "fsutil.FileExists()"", before calling this function.
-func GetMIMEType(file string) (string, int64) {
+func GetMIMEType(file string) (string, int64, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		panic(err)
+		return "", 0, err
 	}
 	defer f.Close()
 
 	stat, errStat := f.Stat()
 	if errStat != nil {
-		panic(errStat)
+		return "", 0, err
 	}
 
 	size := stat.Size()
@@ -80,7 +66,7 @@ func GetMIMEType(file string) (string, int64) {
 		}
 	}
 
-	return contentType, size
+	return contentType, size, nil
 }
 
 // FileExists returns true if the file at the given path exists and is readable.
@@ -121,5 +107,5 @@ func timestampFileName(name string) string {
 		prefix = name[:index]
 		extension = name[index:]
 	}
-	return prefix + "-" + strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10) + extension
+	return prefix + "-" + strconv.FormatInt(time.Now().UnixNano()/int64(time.Microsecond), 10) + extension
 }

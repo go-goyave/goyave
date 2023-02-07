@@ -97,8 +97,12 @@ func generateFlatMap(request *http.Request, maxSize int64) (map[string]any, erro
 	if request.MultipartForm != nil {
 		flatten(flatMap, request.MultipartForm.Value)
 
-		for field := range request.MultipartForm.File {
-			flatMap[field] = fsutil.ParseMultipartFiles(request, field)
+		for field, headers := range request.MultipartForm.File {
+			files, err := fsutil.ParseMultipartFiles(headers)
+			if err != nil {
+				return nil, err
+			}
+			flatMap[field] = files
 		}
 	}
 

@@ -3,8 +3,8 @@ package validation
 import (
 	"bytes"
 	"io"
+	"math"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -43,6 +43,8 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 func createTestFiles(files ...string) []fsutil.File {
 	_, filename, _, _ := runtime.Caller(1)
 
+	// TODO use testutil
+
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, p := range files {
@@ -54,19 +56,22 @@ func createTestFiles(files ...string) []fsutil.File {
 		panic(err)
 	}
 
-	req, err := http.NewRequest("POST", "/test-route", body)
+	reader := multipart.NewReader(body, writer.Boundary())
+	form, err := reader.ReadForm(math.MaxInt64 - 1)
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	if err := req.ParseMultipartForm(10 << 20); err != nil {
+	f, err := fsutil.ParseMultipartFiles(form.File["file"])
+	if err != nil {
 		panic(err)
 	}
-	return fsutil.ParseMultipartFiles(req, "file")
+	return f
 }
 
 func createTestFileWithNoExtension() []fsutil.File {
 	_, filename, _, _ := runtime.Caller(1)
+
+	// TODO use testutil
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -76,15 +81,16 @@ func createTestFileWithNoExtension() []fsutil.File {
 		panic(err)
 	}
 
-	req, err := http.NewRequest("POST", "/test-route", body)
+	reader := multipart.NewReader(body, writer.Boundary())
+	form, err := reader.ReadForm(math.MaxInt64 - 1)
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	if err := req.ParseMultipartForm(10 << 20); err != nil {
+	files, err := fsutil.ParseMultipartFiles(form.File["file"])
+	if err != nil {
 		panic(err)
 	}
-	return fsutil.ParseMultipartFiles(req, "file")
+	return files
 }
 
 func TestValidateFile(t *testing.T) {

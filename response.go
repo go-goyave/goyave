@@ -233,7 +233,10 @@ func (r *Response) writeFile(file string, disposition string) (int64, error) {
 	}
 	r.empty = false
 	r.status = http.StatusOK
-	mime, size := fsutil.GetMIMEType(file)
+	mime, size, err := fsutil.GetMIMEType(file)
+	if err != nil {
+		return 0, err
+	}
 	header := r.responseWriter.Header()
 	header.Set("Content-Disposition", disposition)
 

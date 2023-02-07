@@ -319,7 +319,13 @@ func (suite *CustomTestSuite) TestCreateTestFiles() {
 	files := suite.CreateTestFiles("test-file.txt")
 	suite.Equal(1, len(files))
 	suite.Equal("test-file.txt", files[0].Header.Filename)
-	body, err := io.ReadAll(files[0].Data)
+
+	f, err := files[0].Header.Open()
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	body, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}
@@ -343,7 +349,12 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 
 	suite.RunServer(func(router *Router) {
 		router.Route("POST", "/post", func(response *Response, request *Request) {
-			content, err := io.ReadAll(request.File("file")[0].Data)
+			f, err := request.File("file")[0].Header.Open()
+			if err != nil {
+				panic(err)
+			}
+			defer f.Close()
+			content, err := io.ReadAll(f)
 			if err != nil {
 				panic(err)
 			}

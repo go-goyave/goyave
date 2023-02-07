@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"io"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -257,25 +258,28 @@ func (s *TestSuite) GetJSONBody(response *http.Response, data interface{}) error
 }
 
 // CreateTestFiles create a slice of "fsutil.File" from the given paths.
-// Files are passed to a temporary http request and parsed as Multipart form,
-// to reproduce the way files are obtained in real scenarios.
 func (s *TestSuite) CreateTestFiles(paths ...string) []fsutil.File {
+	fieldName := "file"
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, p := range paths {
-		s.WriteFile(writer, p, "file", filepath.Base(p))
+		s.WriteFile(writer, p, fieldName, filepath.Base(p))
 	}
 	err := writer.Close()
 	if err != nil {
 		panic(err)
 	}
 
-	req, _ := http.NewRequest("POST", "/test-route", body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	if err := req.ParseMultipartForm(10 << 20); err != nil {
+	reader := multipart.NewReader(body, writer.Boundary())
+	form, err := reader.ReadForm(math.MaxInt64 - 1)
+	if err != nil {
 		panic(err)
 	}
-	return fsutil.ParseMultipartFiles(req, "file")
+	files, err := fsutil.ParseMultipartFiles(form.File[fieldName])
+	if err != nil {
+		panic(err)
+	}
+	return files
 }
 
 // WriteFile write a file to the given writer.

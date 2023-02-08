@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net"
@@ -28,7 +29,7 @@ type Server struct {
 	router *RouterV5
 	db     *gorm.DB
 
-	// TODO use a logging library?
+	// TODO use a logging library? (or an interface)
 
 	// Logger the logger for default output
 	// Writes to stdout by default.
@@ -81,7 +82,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 
 	errLogger := log.New(os.Stderr, "", log.LstdFlags)
 
-	languages := lang.New()
+	languages := lang.New() // TODO using embed FS
 	languages.Default = cfg.GetString("app.defaultLanguage")
 	if err := languages.LoadAllAvailableLanguages(); err != nil {
 		return nil, &Error{err, ExitLanguageError}
@@ -207,6 +208,28 @@ func (s *Server) DB() *gorm.DB {
 		s.ErrLogger.Panicf("No database connection. Database is set to \"none\" in the config")
 	}
 	return s.db
+}
+
+// Transaction makes it so all DB requests are run inside a transaction.
+//
+// Returns the rollback function. When you are done, call this function to
+// complete the transaction and roll it back. This will also restore the original
+// DB so it can be used again out of the transaction.
+//
+// This is used for tests. This operation is not concurrently safe.
+func (s *Server) Transaction(opts ...*sql.TxOptions) func() {
+	if s.db == nil {
+		s.ErrLogger.Panicf("No database connection. Database is set to \"none\" in the config")
+	}
+	ogDB := s.db
+	s.db = s.db.Begin(opts...)
+	return func() {
+		err := s.db.Rollback().Error
+		s.db = ogDB
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 // ReplaceDB manually replace the automatic DB connection.

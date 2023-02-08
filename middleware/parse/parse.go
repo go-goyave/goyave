@@ -16,6 +16,10 @@ import (
 
 type Middleware struct {
 	goyave.Component
+
+	// MaxUpoadSize the maximum size of the request (in MiB).
+	// Defaults to the value provided in the config "server.maxUploadSize".
+	MaxUploadSize float64
 }
 
 func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
@@ -29,7 +33,7 @@ func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 		r.Data = nil
 		contentType := r.Header().Get("Content-Type")
 		if contentType != "" {
-			maxSize := int64(m.Config().GetFloat("server.maxUploadSize") * 1024 * 1024)
+			maxSize := int64(m.getMaxUploadSize() * 1024 * 1024)
 			maxValueBytes := maxSize
 			var bodyBuf bytes.Buffer
 			n, err := io.CopyN(&bodyBuf, r.Request().Body, maxValueBytes+1)
@@ -65,6 +69,14 @@ func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 			next(response, r)
 		}
 	}
+}
+
+func (m *Middleware) getMaxUploadSize() float64 {
+	if m.MaxUploadSize == 0 {
+		return m.Config().GetFloat("server.maxUploadSize")
+	}
+
+	return m.MaxUploadSize
 }
 
 func parseQuery(request *goyave.RequestV5) error {

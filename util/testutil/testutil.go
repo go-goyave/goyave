@@ -51,13 +51,20 @@ func NewTestServer(configFileName string, routeRegistrer func(*goyave.Server, *g
 		return nil, err
 	}
 
+	return NewTestServerWithConfig(cfg, routeRegistrer)
+}
+
+// NewTestServerWithConfig creates a new server using the given config.
+// If not nil, the given `routeRegistrer` function is called to register
+// routes without starting the server.
+func NewTestServerWithConfig(cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) (*TestServer, error) {
 	srv, err := goyave.NewWithConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	sep := string(os.PathSeparator)
-	langDirectory := rootDirectory + sep + "resources" + sep + "lang" + sep
+	langDirectory := FindRootDirectory() + sep + "resources" + sep + "lang" + sep
 	if err := srv.Lang.LoadDirectory(langDirectory); err != nil {
 		return nil, err
 	}

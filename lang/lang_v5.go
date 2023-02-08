@@ -38,21 +38,28 @@ func New() *Languages {
 // LoadAllAvailableLanguages loads every language directory
 // in the "resources/lang" directory if it exists.
 func (l *Languages) LoadAllAvailableLanguages() error {
-	sep := string(os.PathSeparator)
 	workingDir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+	sep := string(os.PathSeparator)
 	langDirectory := workingDir + sep + "resources" + sep + "lang" + sep
-	if fsutil.IsDirectory(langDirectory) {
-		files, err := os.ReadDir(langDirectory)
+	return l.LoadDirectory(langDirectory)
+}
+
+// LoadDirectory loads every language directory
+// in the given directory if it exists.
+func (l *Languages) LoadDirectory(directory string) error {
+	sep := string(os.PathSeparator)
+	if fsutil.IsDirectory(directory) {
+		files, err := os.ReadDir(directory)
 		if err != nil {
 			return err
 		}
 
 		for _, f := range files {
 			if f.IsDir() {
-				if err := l.load(f.Name(), langDirectory+sep+f.Name()); err != nil {
+				if err := l.load(f.Name(), directory+sep+f.Name()); err != nil {
 					return err
 				}
 			}

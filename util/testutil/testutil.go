@@ -44,16 +44,21 @@ type TestServer struct {
 // the project's directory. If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
 func NewTestServer(configFileName string, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) (*TestServer, error) {
-	cfgPath := FindRootDirectory() + configFileName
+	rootDirectory := FindRootDirectory()
+	cfgPath := rootDirectory + configFileName
 	cfg, err := config.LoadFromV5(cfgPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// FIXME lang files are not loaded because we are not in root directory
-	// Developers can still load languages themselves if they want/need to
 	srv, err := goyave.NewWithConfig(cfg)
 	if err != nil {
+		return nil, err
+	}
+
+	sep := string(os.PathSeparator)
+	langDirectory := rootDirectory + sep + "resources" + sep + "lang" + sep
+	if err := srv.Lang.LoadDirectory(langDirectory); err != nil {
 		return nil, err
 	}
 
@@ -124,7 +129,9 @@ func WriteMultipartFile(writer *multipart.Writer, path, fieldName, fileName stri
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 	part, err := writer.CreateFormFile(fieldName, fileName)
 	if err != nil {
 		return err
@@ -137,6 +144,8 @@ func WriteMultipartFile(writer *multipart.Writer, path, fieldName, fileName stri
 // To reproduce the way the files are obtained in real scenarios,
 // files are first encoded in a multipart form, then decoded with
 // a multipart form reader.
+//
+// Paths are relative to the caller, not relative to the project's root directory.
 func CreateTestFiles(paths ...string) ([]fsutil.File, error) {
 	fieldName := "file"
 	body := &bytes.Buffer{}

@@ -579,7 +579,7 @@ func (e *Entry) validate(key string) error {
 		kind = t.Elem().Kind()
 	}
 	if kind != e.Type {
-		if !e.tryIntConversion(kind) {
+		if !e.tryConversion(kind) {
 			var message string
 			if e.IsSlice {
 				message = "%q must be a slice of %s"
@@ -625,7 +625,7 @@ func (e *Entry) authorizedValuesContains(list reflect.Value, value any) bool {
 	return false
 }
 
-func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
+func (e *Entry) tryConversion(kind reflect.Kind) bool {
 	if kind == reflect.Float64 && e.Type == reflect.Int {
 		if e.IsSlice {
 			return e.convertIntSlice()
@@ -636,9 +636,35 @@ func (e *Entry) tryIntConversion(kind reflect.Kind) bool {
 			e.Value = intVal
 			return true
 		}
+	} else if e.IsSlice && kind == reflect.Interface {
+		original := e.Value.([]any)
+		switch e.Type {
+		case reflect.String:
+			if slice := convertSlice[string](original); slice != nil {
+				e.Value = slice
+				return true
+			}
+		case reflect.Bool:
+			if slice := convertSlice[bool](original); slice != nil {
+				e.Value = slice
+				return true
+			}
+		}
 	}
 
 	return false
+}
+
+func convertSlice[T any](slice []any) []T {
+	result := make([]T, len(slice))
+	for k, v := range slice {
+		str, ok := v.(T)
+		if !ok {
+			return nil
+		}
+		result[k] = str
+	}
+	return result
 }
 
 func (e *Entry) convertInt(value float64) (int, bool) {

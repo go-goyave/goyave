@@ -772,12 +772,12 @@ func (suite *ConfigTestSuite) TestGetEnv() {
 	os.Setenv("GOYAVE_ENV", "test")
 }
 
-func (suite *ConfigTestSuite) TestTryIntConversion() {
+func (suite *ConfigTestSuite) TestTryConversion() {
 	e := &Entry{1.42, []interface{}{}, reflect.Int, false}
-	suite.False(e.tryIntConversion(reflect.Float64))
+	suite.False(e.tryConversion(reflect.Float64))
 
 	e.Value = float64(2)
-	suite.True(e.tryIntConversion(reflect.Float64))
+	suite.True(e.tryConversion(reflect.Float64))
 	suite.Equal(2, e.Value)
 }
 
@@ -824,6 +824,8 @@ func (suite *ConfigTestSuite) TestValidateEntry() {
 	if err != nil {
 		suite.Equal("\"entry\" type must be int", err.Error())
 	}
+
+	// String slice conversion
 
 	// Authorized values
 	e = &Entry{1.42, []interface{}{1.2, 1.3, 2.4, 42.1, 1.4200000001}, reflect.Float64, false}
@@ -1038,7 +1040,18 @@ func (suite *ConfigTestSuite) TestSlice() {
 	entry = Entry{[]string{"val1", "val2"}, []interface{}{}, reflect.String, true}
 	suite.Nil(entry.validate("slice"))
 
-	entry.Value = []int{4, 5}
+	entry = Entry{[]interface{}{"val1", "val2"}, []interface{}{}, reflect.String, true}
+	suite.Nil(entry.validate("slice"))
+	suite.Equal([]string{"val1", "val2"}, entry.Value)
+
+	entry = Entry{[]interface{}{"val1", true}, []interface{}{}, reflect.String, true}
+	suite.NotNil(entry.validate("slice"))
+
+	entry = Entry{[]interface{}{true, false}, []interface{}{}, reflect.Bool, true}
+	suite.Nil(entry.validate("slice"))
+	suite.Equal([]bool{true, false}, entry.Value)
+
+	entry = Entry{[]int{4, 5}, []interface{}{}, reflect.String, true}
 	err := entry.validate("slice")
 	suite.NotNil(err)
 	if err != nil {

@@ -12,12 +12,12 @@ import (
 type Paginator struct {
 	DB *gorm.DB `json:"-"`
 
-	Records interface{} `json:"records"`
+	Records any `json:"records"`
 
 	rawQuery          string
-	rawQueryVars      []interface{}
+	rawQueryVars      []any
 	rawCountQuery     string
-	rawCountQueryVars []interface{}
+	rawCountQueryVars []any
 
 	MaxPage     int64 `json:"maxPage"`
 	Total       int64 `json:"total"`
@@ -46,7 +46,7 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 //	if response.HandleDatabaseError(result) {
 //	    response.JSON(http.StatusOK, paginator)
 //	}
-func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator {
+func NewPaginator(db *gorm.DB, page, pageSize int, dest any) *Paginator {
 	return &Paginator{
 		DB:          db,
 		CurrentPage: page,
@@ -59,7 +59,7 @@ func NewPaginator(db *gorm.DB, page, pageSize int, dest interface{}) *Paginator 
 // The Paginator will execute the raw queries instead of automatically creating them.
 // The raw query should not contain the "LIMIT" and "OFFSET" clauses, they will be added automatically.
 // The count query should return a single number (`COUNT(*)` for example).
-func (p *Paginator) Raw(query string, vars []interface{}, countQuery string, countVars []interface{}) *Paginator {
+func (p *Paginator) Raw(query string, vars []any, countQuery string, countVars []any) *Paginator {
 	p.rawQuery = query
 	p.rawQueryVars = vars
 	p.rawCountQuery = countQuery
@@ -73,7 +73,7 @@ func (p *Paginator) UpdatePageInfo() {
 	db := p.DB.Session(&gorm.Session{})
 	prevPreloads := db.Statement.Preloads
 	if len(prevPreloads) > 0 {
-		db.Statement.Preloads = map[string][]interface{}{}
+		db.Statement.Preloads = map[string][]any{}
 		defer func() {
 			db.Statement.Preloads = prevPreloads
 		}()

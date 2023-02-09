@@ -146,6 +146,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
+			r.Extra[ExtraQueryValidationRules] = opt.Rules.AsRules()
 			var err []error
 			queryErrsBag, err = validation.ValidateV5(opt)
 			if queryErrsBag != nil {
@@ -167,6 +168,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
+			r.Extra[ExtraBodyValidationRules] = opt.Rules.AsRules()
 			var err []error
 			errsBag, err = validation.ValidateV5(opt)
 			if errsBag != nil {

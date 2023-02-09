@@ -17,6 +17,8 @@ const (
 	// stacktrace if debug is enabled and an error is reported.
 	ExtraStacktrace = "goyave.stacktrace"
 
+	ExtraBodyValidationRules  = "goyave.bodyValidationRules"
+	ExtraQueryValidationRules = "goyave.queryValidationRules"
 	ExtraValidationError      = "goyave.validationError"
 	ExtraQueryValidationError = "goyave.queryValidationError"
 

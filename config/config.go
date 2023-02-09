@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"goyave.dev/goyave/v4/util/sliceutil"
+	"github.com/samber/lo"
 )
 
 type object map[string]any
@@ -578,18 +578,15 @@ func (e *Entry) validate(key string) error {
 	if e.IsSlice && kind == reflect.Slice {
 		kind = t.Elem().Kind()
 	}
-	if kind != e.Type {
-		if !e.tryConversion(kind) {
-			var message string
-			if e.IsSlice {
-				message = "%q must be a slice of %s"
-			} else {
-				message = "%q type must be %s"
-			}
-
-			return fmt.Errorf(message, key, e.Type)
+	if kind != e.Type && !e.tryConversion(kind) {
+		var message string
+		if e.IsSlice {
+			message = "%q must be a slice of %s"
+		} else {
+			message = "%q type must be %s"
 		}
-		return nil
+
+		return fmt.Errorf(message, key, e.Type)
 	}
 
 	if len(e.AuthorizedValues) > 0 {
@@ -598,15 +595,12 @@ func (e *Entry) validate(key string) error {
 			// It doesn't represent the value of the slice itself (content and order)
 			list := reflect.ValueOf(e.Value)
 			length := list.Len()
-			authorizedValuesList := reflect.ValueOf(e.AuthorizedValues)
 			for i := 0; i < length; i++ {
-				if !e.authorizedValuesContains(authorizedValuesList, list.Index(i).Interface()) {
+				if !lo.Contains(e.AuthorizedValues, list.Index(i).Interface()) {
 					return fmt.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
 				}
 			}
-		} else if !sliceutil.Contains(e.AuthorizedValues, e.Value) {
-			// TODO cannot use slices.Contains because []any doesn't implement type constraint "comparable"
-			// See issue: https://github.com/golang/go/issues/51257
+		} else if !lo.Contains(e.AuthorizedValues, e.Value) {
 			return fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
 		}
 	}
@@ -614,79 +608,71 @@ func (e *Entry) validate(key string) error {
 	return nil
 }
 
-// authorizedValuesContains avoids to recreate the reflect.Value of the list for every check
-func (e *Entry) authorizedValuesContains(list reflect.Value, value any) bool {
-	length := list.Len()
-	for i := 0; i < length; i++ {
-		if list.Index(i).Interface() == value {
-			return true
-		}
-	}
-	return false
-}
-
 func (e *Entry) tryConversion(kind reflect.Kind) bool {
-	if kind == reflect.Float64 && e.Type == reflect.Int {
-		if e.IsSlice {
-			return e.convertIntSlice()
-		}
-
-		intVal, ok := e.convertInt(e.Value.(float64))
+	if !e.IsSlice && kind == reflect.Float64 && e.Type == reflect.Int {
+		intVal, ok := convertInt(e.Value.(float64))
 		if ok {
 			e.Value = intVal
 			return true
 		}
 	} else if e.IsSlice && kind == reflect.Interface {
 		original := e.Value.([]any)
+		var newValue any
+		var ok bool
 		switch e.Type {
+		case reflect.Int:
+			newValue, ok = convertIntSlice(original)
+		case reflect.Float64:
+			newValue, ok = convertSlice[float64](original)
 		case reflect.String:
-			if slice := convertSlice[string](original); slice != nil {
-				e.Value = slice
-				return true
-			}
+			newValue, ok = convertSlice[string](original)
 		case reflect.Bool:
-			if slice := convertSlice[bool](original); slice != nil {
-				e.Value = slice
-				return true
-			}
+			newValue, ok = convertSlice[bool](original)
+		}
+		if ok {
+			e.Value = newValue
+			return true
 		}
 	}
 
 	return false
 }
 
-func convertSlice[T any](slice []any) []T {
+func convertSlice[T any](slice []any) ([]T, bool) {
 	result := make([]T, len(slice))
 	for k, v := range slice {
-		str, ok := v.(T)
+		value, ok := v.(T)
 		if !ok {
-			return nil
+			return nil, false
 		}
-		result[k] = str
+		result[k] = value
 	}
-	return result
+	return result, true
 }
 
-func (e *Entry) convertInt(value float64) (int, bool) {
-	intVal := int(value)
-	if value == float64(intVal) {
-		return intVal, true
+func convertInt(value any) (int, bool) {
+	switch val := value.(type) {
+	case int:
+		return val, true
+	case float64:
+		intVal := int(val)
+		if val == float64(intVal) {
+			return intVal, true
+		}
 	}
 	return 0, false
 }
 
-func (e *Entry) convertIntSlice() bool {
-	original := e.Value.([]float64)
+func convertIntSlice(original []any) ([]int, bool) {
 	slice := make([]int, len(original))
 	for k, v := range original {
-		intVal, ok := e.convertInt(v)
+		intVal, ok := convertInt(v)
 		if !ok {
-			return false
+			return nil, false
 		}
 		slice[k] = intVal
 	}
-	e.Value = slice
-	return true
+	return slice, true
 }
 
 func (e *Entry) tryEnvVarConversion(key string) error {

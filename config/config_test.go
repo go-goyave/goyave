@@ -37,7 +37,7 @@ func (suite *ConfigTestSuite) TestReadConfigFile() {
 	suite.Equal("root level content", obj["rootLevel"])
 	cat, ok := obj["app"]
 	suite.True(ok)
-	catObj, ok := cat.(map[string]interface{})
+	catObj, ok := cat.(map[string]any)
 	suite.True(ok)
 	suite.Equal("test", catObj["environment"])
 
@@ -62,14 +62,14 @@ func (suite *ConfigTestSuite) TestReadConfigFile() {
 
 func (suite *ConfigTestSuite) TestLoadDefaults() {
 	src := object{
-		"rootLevel": &Entry{"root level content", []interface{}{}, reflect.String, false},
+		"rootLevel": &Entry{"root level content", []any{}, reflect.String, false},
 		"app": object{
-			"environment": &Entry{"test", []interface{}{}, reflect.String, false},
+			"environment": &Entry{"test", []any{}, reflect.String, false},
 		},
 		"auth": object{
 			"basic": object{
-				"username": &Entry{"test username", []interface{}{}, reflect.String, false},
-				"password": &Entry{"test password", []interface{}{}, reflect.String, false},
+				"username": &Entry{"test username", []any{}, reflect.String, false},
+				"password": &Entry{"test password", []any{}, reflect.String, false},
 			},
 		},
 	}
@@ -82,7 +82,7 @@ func (suite *ConfigTestSuite) TestLoadDefaults() {
 	suite.True(ok)
 	suite.Equal("root level content", entry.Value)
 	suite.Equal(reflect.String, entry.Type)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 	suite.NotSame(src["rootLevel"], dst["rootLevel"])
 
 	e, ok = dst["app"]
@@ -110,7 +110,7 @@ func (suite *ConfigTestSuite) TestLoadDefaults() {
 	suite.True(ok)
 	suite.Equal("test username", entry.Value)
 	suite.Equal(reflect.String, entry.Type)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 
 	e, ok = basic["password"]
 	suite.True(ok)
@@ -118,13 +118,13 @@ func (suite *ConfigTestSuite) TestLoadDefaults() {
 	suite.True(ok)
 	suite.Equal("test password", entry.Value)
 	suite.Equal(reflect.String, entry.Type)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 }
 
 func (suite *ConfigTestSuite) TestLoadDefaultsWithSlice() {
 	slice := []string{"val1", "val2"}
 	src := object{
-		"rootLevel": &Entry{slice, []interface{}{}, reflect.String, true},
+		"rootLevel": &Entry{slice, []any{}, reflect.String, true},
 	}
 	dst := object{}
 	loadDefaults(src, dst)
@@ -143,14 +143,14 @@ func (suite *ConfigTestSuite) TestLoadDefaultsWithSlice() {
 func (suite *ConfigTestSuite) TestOverride() {
 	src := object{
 		"rootLevel": "root level content",
-		"app": map[string]interface{}{
+		"app": map[string]any{
 			"environment": "test",
 		},
-		"auth": map[string]interface{}{
-			"basic": map[string]interface{}{
+		"auth": map[string]any{
+			"basic": map[string]any{
 				"username": "test username",
 				"password": "test password",
-				"deepcategory": map[string]interface{}{
+				"deepcategory": map[string]any{
 					"deepentry": 1,
 				},
 			},
@@ -158,8 +158,8 @@ func (suite *ConfigTestSuite) TestOverride() {
 	}
 	dst := object{
 		"app": object{
-			"name":        &Entry{"default name", []interface{}{}, reflect.String, false},
-			"environment": &Entry{"default env", []interface{}{}, reflect.String, false},
+			"name":        &Entry{"default name", []any{}, reflect.String, false},
+			"environment": &Entry{"default env", []any{}, reflect.String, false},
 		},
 	}
 	suite.Nil(override(src, dst))
@@ -170,7 +170,7 @@ func (suite *ConfigTestSuite) TestOverride() {
 	suite.True(ok)
 	suite.Equal("root level content", entry.Value)
 	suite.Equal(reflect.String, entry.Type)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 
 	e, ok = dst["app"]
 	suite.True(ok)
@@ -201,7 +201,7 @@ func (suite *ConfigTestSuite) TestOverride() {
 	suite.True(ok)
 	suite.Equal("test username", entry.Value)
 	suite.Equal(reflect.String, entry.Type)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 
 	e, ok = basic["password"]
 	suite.True(ok)
@@ -209,7 +209,7 @@ func (suite *ConfigTestSuite) TestOverride() {
 	suite.True(ok)
 	suite.Equal("test password", entry.Value)
 	suite.Equal(reflect.String, entry.Type)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 
 	e, ok = basic["deepcategory"]
 	suite.True(ok)
@@ -222,18 +222,18 @@ func (suite *ConfigTestSuite) TestOverride() {
 	suite.True(ok)
 	suite.Equal(1, entry.Value)
 	suite.Equal(reflect.Int, entry.Type)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 }
 
 func (suite *ConfigTestSuite) TestOverrideConflict() {
 	// conflict override entry with category (depth == 0)
 	src := object{
-		"rootLevel": map[string]interface{}{
+		"rootLevel": map[string]any{
 			"environment": "test",
 		},
 	}
 	dst := object{
-		"rootLevel": &Entry{"root level content", []interface{}{}, reflect.String, false},
+		"rootLevel": &Entry{"root level content", []any{}, reflect.String, false},
 	}
 	err := override(src, dst)
 	suite.NotNil(err)
@@ -243,15 +243,15 @@ func (suite *ConfigTestSuite) TestOverrideConflict() {
 
 	// conflict override entry with category (depth > 0)
 	src = object{
-		"app": map[string]interface{}{
-			"environment": map[string]interface{}{
+		"app": map[string]any{
+			"environment": map[string]any{
 				"prod": false,
 			},
 		},
 	}
 	dst = object{
 		"app": object{
-			"environment": &Entry{"default env", []interface{}{}, reflect.String, false},
+			"environment": &Entry{"default env", []any{}, reflect.String, false},
 		},
 	}
 	err = override(src, dst)
@@ -266,8 +266,8 @@ func (suite *ConfigTestSuite) TestOverrideConflict() {
 	}
 	dst = object{
 		"app": object{
-			"name":        &Entry{"default name", []interface{}{}, reflect.String, false},
-			"environment": &Entry{"default env", []interface{}{}, reflect.String, false},
+			"name":        &Entry{"default name", []any{}, reflect.String, false},
+			"environment": &Entry{"default env", []any{}, reflect.String, false},
 		},
 	}
 	err = override(src, dst)
@@ -278,15 +278,15 @@ func (suite *ConfigTestSuite) TestOverrideConflict() {
 
 	// conflict override category with entry (depth > 0)
 	src = object{
-		"app": map[string]interface{}{
+		"app": map[string]any{
 			"environments": "test",
 		},
 	}
 	dst = object{
 		"app": object{
-			"name": &Entry{"default name", []interface{}{}, reflect.String, false},
+			"name": &Entry{"default name", []any{}, reflect.String, false},
 			"environments": object{
-				"prod": &Entry{false, []interface{}{}, reflect.Bool, false},
+				"prod": &Entry{false, []any{}, reflect.Bool, false},
 			},
 		},
 	}
@@ -347,7 +347,7 @@ func (suite *ConfigTestSuite) TestLoad() {
 
 	// validation error
 	Clear()
-	configDefaults["rootLevel"] = &Entry{42, []interface{}{}, reflect.Int, false}
+	configDefaults["rootLevel"] = &Entry{42, []any{}, reflect.Int, false}
 	err = Load()
 	delete(configDefaults, "rootLevel")
 	suite.NotNil(err)
@@ -447,7 +447,7 @@ func (suite *ConfigTestSuite) TestSet() {
 		suite.Equal("test_new_entry", entry.Value)
 		suite.Equal(entry.Type, reflect.String)
 		suite.False(entry.IsSlice)
-		suite.Equal([]interface{}{}, entry.AuthorizedValues)
+		suite.Equal([]any{}, entry.AuthorizedValues)
 	}
 
 	suite.Panics(func() { // empty key not allowed
@@ -455,12 +455,12 @@ func (suite *ConfigTestSuite) TestSet() {
 	})
 
 	// Slice
-	config["stringslice"] = &Entry{nil, []interface{}{}, reflect.String, true}
+	config["stringslice"] = &Entry{nil, []any{}, reflect.String, true}
 	Set("stringslice", []string{"val1", "val2"})
 	suite.Equal([]string{"val1", "val2"}, config["stringslice"].(*Entry).Value)
 
 	// Trying to convert an entry to a category
-	config["app"].(object)["category"] = object{"entry": &Entry{"value", []interface{}{}, reflect.String, false}}
+	config["app"].(object)["category"] = object{"entry": &Entry{"value", []any{}, reflect.String, false}}
 	suite.Panics(func() {
 		Set("app.category.entry.error", "override")
 	})
@@ -470,7 +470,7 @@ func (suite *ConfigTestSuite) TestSet() {
 	})
 
 	// Trying to replace a category
-	config["app"].(object)["category"] = object{"entry": &Entry{"value", []interface{}{}, reflect.String, false}}
+	config["app"].(object)["category"] = object{"entry": &Entry{"value", []any{}, reflect.String, false}}
 	suite.Panics(func() {
 		Set("app.category", "not a category")
 	})
@@ -487,9 +487,9 @@ func (suite *ConfigTestSuite) TestSet() {
 
 func (suite *ConfigTestSuite) TestWalk() {
 	config := object{
-		"rootLevel": &Entry{"root level content", []interface{}{}, reflect.String, false},
+		"rootLevel": &Entry{"root level content", []any{}, reflect.String, false},
 		"app": object{
-			"environment": &Entry{"test", []interface{}{}, reflect.String, false},
+			"environment": &Entry{"test", []any{}, reflect.String, false},
 		},
 	}
 	category, entryKey, exists := walk(config, "app.environment")
@@ -732,7 +732,7 @@ func (suite *ConfigTestSuite) TestLowLevelGet() {
 	suite.Nil(val)
 
 	// Ensure getting a category is not possible
-	config["app"].(object)["test"] = object{"this": &Entry{"that", []interface{}{}, reflect.String, false}}
+	config["app"].(object)["test"] = object{"this": &Entry{"that", []any{}, reflect.String, false}}
 	val, ok = get("app.test")
 	suite.False(ok)
 	suite.Nil(val)
@@ -773,7 +773,7 @@ func (suite *ConfigTestSuite) TestGetEnv() {
 }
 
 func (suite *ConfigTestSuite) TestTryConversion() {
-	e := &Entry{1.42, []interface{}{}, reflect.Int, false}
+	e := &Entry{1.42, []any{}, reflect.Int, false}
 	suite.False(e.tryConversion(reflect.Float64))
 
 	e.Value = float64(2)
@@ -782,7 +782,7 @@ func (suite *ConfigTestSuite) TestTryConversion() {
 }
 
 func (suite *ConfigTestSuite) TestValidateEntryWithConversion() {
-	e := &Entry{1.42, []interface{}{}, reflect.Int, false}
+	e := &Entry{1.42, []any{}, reflect.Int, false}
 	category := object{"number": e}
 	err := category.validate("")
 	suite.NotNil(err)
@@ -796,16 +796,16 @@ func (suite *ConfigTestSuite) TestValidateEntryWithConversion() {
 
 func (suite *ConfigTestSuite) TestValidateEntry() {
 	// Unset (no validation needed)
-	e := &Entry{nil, []interface{}{}, reflect.String, false}
+	e := &Entry{nil, []any{}, reflect.String, false}
 	err := e.validate("entry")
 	suite.Nil(err)
 
-	e = &Entry{nil, []interface{}{"val1", "val2"}, reflect.String, false}
+	e = &Entry{nil, []any{"val1", "val2"}, reflect.String, false}
 	err = e.validate("entry")
 	suite.Nil(err)
 
 	// Wrong type
-	e = &Entry{1, []interface{}{}, reflect.String, false}
+	e = &Entry{1, []any{}, reflect.String, false}
 	err = e.validate("entry")
 	suite.NotNil(err)
 	if err != nil {
@@ -813,12 +813,12 @@ func (suite *ConfigTestSuite) TestValidateEntry() {
 	}
 
 	// Int conversion
-	e = &Entry{1.0, []interface{}{}, reflect.Int, false}
+	e = &Entry{1.0, []any{}, reflect.Int, false}
 	err = e.validate("entry")
 	suite.Nil(err)
 	suite.Equal(1, e.Value)
 
-	e = &Entry{1.42, []interface{}{}, reflect.Int, false}
+	e = &Entry{1.42, []any{}, reflect.Int, false}
 	err = e.validate("entry")
 	suite.NotNil(err)
 	if err != nil {
@@ -828,14 +828,14 @@ func (suite *ConfigTestSuite) TestValidateEntry() {
 	// String slice conversion
 
 	// Authorized values
-	e = &Entry{1.42, []interface{}{1.2, 1.3, 2.4, 42.1, 1.4200000001}, reflect.Float64, false}
+	e = &Entry{1.42, []any{1.2, 1.3, 2.4, 42.1, 1.4200000001}, reflect.Float64, false}
 	err = e.validate("entry")
 	suite.NotNil(err)
 	if err != nil {
 		suite.Equal("\"entry\" must have one of the following values: [1.2 1.3 2.4 42.1 1.4200000001]", err.Error())
 	}
 
-	e = &Entry{"test", []interface{}{"val1", "val2"}, reflect.String, false}
+	e = &Entry{"test", []any{"val1", "val2"}, reflect.String, false}
 	err = e.validate("entry")
 	suite.NotNil(err)
 	if err != nil {
@@ -843,16 +843,16 @@ func (suite *ConfigTestSuite) TestValidateEntry() {
 	}
 
 	// Everything's fine
-	e = &Entry{"val1", []interface{}{"val1", "val2"}, reflect.String, false}
+	e = &Entry{"val1", []any{"val1", "val2"}, reflect.String, false}
 	err = e.validate("entry")
 	suite.Nil(err)
 
-	e = &Entry{1.42, []interface{}{1.2, 1.3, 2.4, 42.1, 1.4200000001, 1.42}, reflect.Float64, false}
+	e = &Entry{1.42, []any{1.2, 1.3, 2.4, 42.1, 1.4200000001, 1.42}, reflect.Float64, false}
 	err = e.validate("entry")
 	suite.Nil(err)
 
 	// From environment variable
-	e = &Entry{"${TEST_VAR}", []interface{}{}, reflect.Float64, false}
+	e = &Entry{"${TEST_VAR}", []any{}, reflect.Float64, false}
 	os.Setenv("TEST_VAR", "2..")
 	defer os.Unsetenv("TEST_VAR")
 	err = e.validate("entry")
@@ -865,11 +865,11 @@ func (suite *ConfigTestSuite) TestValidateEntry() {
 
 func (suite *ConfigTestSuite) TestValidateObject() {
 	config := object{
-		"rootLevel": &Entry{"root level content", []interface{}{}, reflect.Bool, false},
+		"rootLevel": &Entry{"root level content", []any{}, reflect.Bool, false},
 		"app": object{
-			"environment": &Entry{true, []interface{}{}, reflect.String, false},
+			"environment": &Entry{true, []any{}, reflect.String, false},
 			"subcategory": object{
-				"entry": &Entry{666, []interface{}{1, 2, 3}, reflect.Int, false},
+				"entry": &Entry{666, []any{1, 2, 3}, reflect.Int, false},
 			},
 		},
 	}
@@ -887,11 +887,11 @@ func (suite *ConfigTestSuite) TestValidateObject() {
 	}
 
 	config = object{
-		"rootLevel": &Entry{"root level content", []interface{}{}, reflect.String, false},
+		"rootLevel": &Entry{"root level content", []any{}, reflect.String, false},
 		"app": object{
-			"environment": &Entry{"local", []interface{}{}, reflect.String, false},
+			"environment": &Entry{"local", []any{}, reflect.String, false},
 			"subcategory": object{
-				"entry": &Entry{2, []interface{}{1, 2, 3}, reflect.Int, false},
+				"entry": &Entry{2, []any{1, 2, 3}, reflect.Int, false},
 			},
 		},
 	}
@@ -900,7 +900,7 @@ func (suite *ConfigTestSuite) TestValidateObject() {
 }
 
 func (suite *ConfigTestSuite) TestRegister() {
-	entry := Entry{"value", []interface{}{"value", "other value"}, reflect.String, false}
+	entry := Entry{"value", []any{"value", "other value"}, reflect.String, false}
 	Register("rootLevel", entry)
 	newEntry, ok := configDefaults["rootLevel"]
 	suite.True(ok)
@@ -910,7 +910,7 @@ func (suite *ConfigTestSuite) TestRegister() {
 
 	// Entry already exists and matches -> do nothing
 	appCategory := configDefaults["app"].(object)
-	entry = Entry{"goyave", []interface{}{}, reflect.String, false}
+	entry = Entry{"goyave", []any{}, reflect.String, false}
 	current := appCategory["name"]
 	Register("app.name", entry)
 	newEntry, ok = appCategory["name"]
@@ -921,7 +921,7 @@ func (suite *ConfigTestSuite) TestRegister() {
 	// Entry already exists but doesn't match -> panic
 
 	// Value doesn't match
-	entry = Entry{"not goyave", []interface{}{}, reflect.String, false}
+	entry = Entry{"not goyave", []any{}, reflect.String, false}
 	current = appCategory["name"]
 	suite.Panics(func() {
 		Register("app.name", entry)
@@ -932,7 +932,7 @@ func (suite *ConfigTestSuite) TestRegister() {
 	suite.Equal("goyave", newEntry.(*Entry).Value)
 
 	// Type doesn't match
-	entry = Entry{"goyave", []interface{}{}, reflect.Int, false}
+	entry = Entry{"goyave", []any{}, reflect.Int, false}
 	current = appCategory["name"]
 	suite.Panics(func() {
 		Register("app.name", entry)
@@ -943,7 +943,7 @@ func (suite *ConfigTestSuite) TestRegister() {
 	suite.Equal(reflect.String, newEntry.(*Entry).Type)
 
 	// Required values don't match
-	entry = Entry{"goyave", []interface{}{"app", "thing"}, reflect.String, false}
+	entry = Entry{"goyave", []any{"app", "thing"}, reflect.String, false}
 	current = appCategory["name"]
 	suite.Panics(func() {
 		Register("app.name", entry)
@@ -951,11 +951,11 @@ func (suite *ConfigTestSuite) TestRegister() {
 	newEntry, ok = appCategory["name"]
 	suite.True(ok)
 	suite.Same(current, newEntry)
-	suite.Equal([]interface{}{}, newEntry.(*Entry).AuthorizedValues)
+	suite.Equal([]any{}, newEntry.(*Entry).AuthorizedValues)
 }
 
 func (suite *ConfigTestSuite) TestTryEnvVarConversion() {
-	entry := &Entry{"${TEST_VAR}", []interface{}{}, reflect.String, false}
+	entry := &Entry{"${TEST_VAR}", []any{}, reflect.String, false}
 	err := entry.tryEnvVarConversion("entry")
 	suite.NotNil(err)
 	if err != nil {
@@ -976,7 +976,7 @@ func (suite *ConfigTestSuite) TestTryEnvVarConversion() {
 	suite.Equal("env var value", entry.Value)
 
 	// Int conversion
-	entry = &Entry{"${TEST_VAR}", []interface{}{}, reflect.Int, false}
+	entry = &Entry{"${TEST_VAR}", []any{}, reflect.Int, false}
 	os.Setenv("TEST_VAR", "29")
 	err = entry.tryEnvVarConversion("entry")
 	suite.Nil(err)
@@ -992,7 +992,7 @@ func (suite *ConfigTestSuite) TestTryEnvVarConversion() {
 	suite.Equal("${TEST_VAR}", entry.Value)
 
 	// Float conversion
-	entry = &Entry{"${TEST_VAR}", []interface{}{}, reflect.Float64, false}
+	entry = &Entry{"${TEST_VAR}", []any{}, reflect.Float64, false}
 	os.Setenv("TEST_VAR", "2.9")
 	err = entry.tryEnvVarConversion("entry")
 	suite.Nil(err)
@@ -1008,7 +1008,7 @@ func (suite *ConfigTestSuite) TestTryEnvVarConversion() {
 	suite.Equal("${TEST_VAR}", entry.Value)
 
 	// Bool conversion
-	entry = &Entry{"${TEST_VAR}", []interface{}{}, reflect.Bool, false}
+	entry = &Entry{"${TEST_VAR}", []any{}, reflect.Bool, false}
 	os.Setenv("TEST_VAR", "true")
 	err = entry.tryEnvVarConversion("entry")
 	suite.Nil(err)
@@ -1024,7 +1024,7 @@ func (suite *ConfigTestSuite) TestTryEnvVarConversion() {
 	suite.Equal("${TEST_VAR}", entry.Value)
 
 	// Empty name edge case
-	entry = &Entry{"${}", []interface{}{}, reflect.Bool, false}
+	entry = &Entry{"${}", []any{}, reflect.Bool, false}
 	err = entry.tryEnvVarConversion("entry")
 	suite.NotNil(err)
 	if err != nil {
@@ -1034,54 +1034,52 @@ func (suite *ConfigTestSuite) TestTryEnvVarConversion() {
 }
 
 func (suite *ConfigTestSuite) TestSlice() {
-	entry := Entry{[]string{"val1", "val2"}, []interface{}{}, reflect.String, false}
-	suite.NotNil(entry.validate("slice"))
+	entry := Entry{[]string{"val1", "val2"}, []any{}, reflect.String, false}
+	suite.Error(entry.validate("slice"))
 
-	entry = Entry{[]string{"val1", "val2"}, []interface{}{}, reflect.String, true}
-	suite.Nil(entry.validate("slice"))
+	entry = Entry{[]string{"val1", "val2"}, []any{}, reflect.String, true}
+	suite.NoError(entry.validate("slice"))
 
-	entry = Entry{[]interface{}{"val1", "val2"}, []interface{}{}, reflect.String, true}
-	suite.Nil(entry.validate("slice"))
+	entry = Entry{[]any{"val1", "val2"}, []any{}, reflect.String, true}
+	suite.NoError(entry.validate("slice"))
 	suite.Equal([]string{"val1", "val2"}, entry.Value)
 
-	entry = Entry{[]interface{}{"val1", true}, []interface{}{}, reflect.String, true}
-	suite.NotNil(entry.validate("slice"))
+	entry = Entry{[]any{"val1", true}, []any{}, reflect.String, true}
+	suite.Error(entry.validate("slice"))
 
-	entry = Entry{[]interface{}{true, false}, []interface{}{}, reflect.Bool, true}
-	suite.Nil(entry.validate("slice"))
+	entry = Entry{[]any{true, false}, []any{}, reflect.Bool, true}
+	suite.NoError(entry.validate("slice"))
 	suite.Equal([]bool{true, false}, entry.Value)
 
-	entry = Entry{[]int{4, 5}, []interface{}{}, reflect.String, true}
+	entry = Entry{[]int{4, 5}, []any{}, reflect.String, true}
 	err := entry.validate("slice")
-	suite.NotNil(err)
+	suite.Error(err)
 	if err != nil {
 		suite.Equal("\"slice\" must be a slice of string", err.Error())
 	}
 
-	entry = Entry{[]interface{}{"val1", 1, 2.3}, []interface{}{}, reflect.Interface, true}
+	entry = Entry{[]any{"val1", 1, 2.3}, []any{}, reflect.Interface, true}
 	suite.Nil(entry.validate("slice"))
 
-	entry = Entry{[]interface{}{"val1", 1, 2.3}, []interface{}{"val1", 1, 2.3, true}, reflect.Interface, true}
+	entry = Entry{[]any{"val1", 1, 2.3}, []any{"val1", 1, 2.3, true}, reflect.Interface, true}
 	suite.Nil(entry.validate("slice"))
 
-	entry = Entry{[]interface{}{"val1", 1, 'c'}, []interface{}{"val1", 1, 2.3, true}, reflect.Interface, true}
+	entry = Entry{[]any{"val1", 1, 'c'}, []any{"val1", 1, 2.3, true}, reflect.Interface, true}
 	err = entry.validate("slice")
-	suite.NotNil(err)
+	suite.Error(err)
 	if err != nil {
 		suite.Equal("\"slice\" elements must have one of the following values: [val1 1 2.3 true]", err.Error())
 	}
 }
 
 func (suite *ConfigTestSuite) TestSliceIntConversion() {
-	entry := Entry{[]float64{1, 2}, []interface{}{}, reflect.Int, true}
+	entry := Entry{[]any{1, 2}, []any{}, reflect.Int, true}
 	suite.Nil(entry.validate("slice"))
 
 	suite.Equal([]int{1, 2}, entry.Value)
 
-	entry = Entry{[]float64{1, 2.5}, []interface{}{}, reflect.Int, true}
+	entry = Entry{[]any{1, 2.5}, []any{}, reflect.Int, true}
 	suite.NotNil(entry.validate("slice"))
-
-	suite.Equal([]float64{1, 2.5}, entry.Value)
 }
 
 func (suite *ConfigTestSuite) TestMakeEntryFromValue() {
@@ -1089,13 +1087,13 @@ func (suite *ConfigTestSuite) TestMakeEntryFromValue() {
 	suite.Equal(1, entry.Value)
 	suite.Equal(entry.Type, reflect.Int)
 	suite.False(entry.IsSlice)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 
 	entry = makeEntryFromValue([]string{"1", "2"})
 	suite.Equal([]string{"1", "2"}, entry.Value)
 	suite.Equal(entry.Type, reflect.String)
 	suite.True(entry.IsSlice)
-	suite.Equal([]interface{}{}, entry.AuthorizedValues)
+	suite.Equal([]any{}, entry.AuthorizedValues)
 }
 
 func (suite *ConfigTestSuite) TestLoadJSON() {
@@ -1130,7 +1128,7 @@ func (suite *ConfigTestSuite) TestLoadJSON() {
 }
 
 func (suite *ConfigTestSuite) TearDownAllSuite() {
-	config = map[string]interface{}{}
+	config = map[string]any{}
 	os.Setenv("GOYAVE_ENV", suite.previousEnv)
 }
 

@@ -1,10 +1,10 @@
 package typeutil
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 // Map is an alias to map[string]any
@@ -21,11 +21,24 @@ func ToString(value any) string {
 	return fmt.Sprintf("%v", value)
 }
 
-// Convert anything into the desired type.
+// Convert anything into the desired type using JSON marshaling and unmarshaling.
 func Convert[T any](data any) (T, error) {
+	if v, ok := data.(T); ok {
+		return v, nil
+	}
+
 	var result T
-	if err := mapstructure.Decode(data, &result); err != nil {
+	buffer := &bytes.Buffer{}
+	decoder := json.NewDecoder(buffer)
+	writer := json.NewEncoder(buffer)
+
+	// TODO it doesn't work well with null values (null.String)
+	// for example: *null.String (want: if field is absent, have: if field is absent or if value is null)
+	// but if using null.String, can't differentiate between absent and null
+
+	if err := writer.Encode(data); err != nil {
 		return result, err
 	}
-	return result, nil
+	err := decoder.Decode(&result)
+	return result, err
 }

@@ -400,6 +400,7 @@ func (r *RouterV5) Controller(controller Registrer) *RouterV5 {
 func (r *RouterV5) requestHandler(match *routeMatchV5, w http.ResponseWriter, rawRequest *http.Request) {
 	request := NewRequest(rawRequest)
 	request.Route = match.route
+	request.RouteParams = match.parameters
 	response := newResponseV5(r.server, request, w)
 	handler := match.route.handler
 

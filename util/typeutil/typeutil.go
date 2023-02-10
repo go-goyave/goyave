@@ -12,12 +12,12 @@ import (
 type Map map[string]any
 
 // ToFloat64 convert a numeric value to float64.
-func ToFloat64(value any) (float64, error) {
+func ToFloat64(value any) (float64, error) { // TODO remove this
 	return strconv.ParseFloat(ToString(value), 64)
 }
 
 // ToString convert a value to string.
-func ToString(value any) string {
+func ToString(value any) string { // TODO remove this
 	return fmt.Sprintf("%v", value)
 }
 
@@ -31,10 +31,6 @@ func Convert[T any](data any) (T, error) {
 	buffer := &bytes.Buffer{}
 	decoder := json.NewDecoder(buffer)
 	writer := json.NewEncoder(buffer)
-
-	// TODO it doesn't work well with null values (null.String)
-	// for example: *null.String (want: if field is absent, have: if field is absent or if value is null)
-	// but if using null.String, can't differentiate between absent and null
 
 	if err := writer.Encode(data); err != nil {
 		return result, err

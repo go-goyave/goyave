@@ -224,12 +224,9 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 
 		data := v.options.Data
 		if rootPath := c.Path.Truncate(field.prefixDepth); rootPath != nil {
-			rootPath.Walk(walkData, func(ctx *walk.Context) {
-				// TODO use First function
-				// This function will be called only once because
-				// the path contains indexes.
-				data = ctx.Value
-			})
+			// We can use `First` here because the path contains array indexes
+			// so we are sure there will be only one match.
+			data = rootPath.First(walkData)
 		}
 
 		value := c.Value

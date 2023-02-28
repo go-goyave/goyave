@@ -90,7 +90,7 @@ func parseQuery(request *goyave.RequestV5) error {
 
 func generateFlatMap(request *http.Request, maxSize int64) (map[string]any, error) {
 	flatMap := make(map[string]any)
-	request.Form = url.Values{} // Prevent Form from being parse because it would be redundant with our parsing
+	request.Form = url.Values{} // Prevent Form from being parsed because it would be redundant with our parsing
 	err := request.ParseMultipartForm(maxSize)
 
 	if err != nil {

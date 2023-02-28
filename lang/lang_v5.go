@@ -173,6 +173,7 @@ func (l *Languages) DetectLanguage(lang string) *Language {
 			if strings.HasPrefix(key, lang.Value) {
 				// TODO priority for languages? The "first available variant" is random because keys are not ordered.
 				// Ordering alphabetically won't always produce the desired result (e.g. en-UK < en-US)
+				// Can create a slice of language names (so the order will be the order in which the languages have been added)
 				return v
 			}
 		}

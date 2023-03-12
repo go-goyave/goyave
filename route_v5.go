@@ -158,6 +158,13 @@ func (r *RouteV5) BuildURL(parameters ...string) string {
 	return r.parent.server.BaseURL() + r.BuildURI(parameters...)
 }
 
+// BuildProxyURL build a full URL pointing to this route using the proxy base URL.
+// Panics if the amount of parameters doesn't match the amount of
+// actual parameters for this route.
+func (r *RouteV5) BuildProxyURL(parameters ...string) string {
+	return r.parent.server.ProxyBaseURL() + r.BuildURI(parameters...)
+}
+
 // BuildURI build a full URI pointing to this route. The returned
 // string doesn't include the protocol and domain. (e.g. "/user/login")
 // Panics if the amount of parameters doesn't match the amount of

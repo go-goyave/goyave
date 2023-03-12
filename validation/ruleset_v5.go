@@ -16,7 +16,7 @@ type RulerV5 interface {
 
 // Validator is a Component validating a field value.
 type Validator interface {
-	IComponent
+	Composable
 	init(*Options)
 
 	// Validate checks the field under validation satisfies this validator's criteria.

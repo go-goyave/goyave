@@ -12,11 +12,11 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
-// IComponent is a partial clone of `goyave.Component`, only
+// Composable is a partial clone of `goyave.Component`, only
 // including the accessors necessary for validation.
 // Validators must implement this interface so they
 // have access to DB, Config, Language, Logger and ErrLogger.
-type IComponent interface {
+type Composable interface {
 	DB() *gorm.DB
 	Config() *config.Config
 	Lang() *lang.Language

@@ -8,7 +8,7 @@ import (
 	"goyave.dev/goyave/v4/lang"
 )
 
-type IComponent interface {
+type Composable interface {
 	Init(*Server)
 	Server() *Server
 	DB() *gorm.DB
@@ -23,7 +23,7 @@ type IComponent interface {
 }
 
 type Registrer interface {
-	IComponent
+	Composable
 	RegisterRoutes(*RouterV5)
 }
 
@@ -31,7 +31,7 @@ type Component struct {
 	server *Server
 }
 
-var _ IComponent = (*Component)(nil)
+var _ Composable = (*Component)(nil)
 
 func (c *Component) Init(server *Server) {
 	c.server = server

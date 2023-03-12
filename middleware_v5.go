@@ -11,7 +11,7 @@ import (
 )
 
 type MiddlewareV5 interface {
-	IComponent
+	Composable
 	Handle(HandlerV5) HandlerV5
 }
 

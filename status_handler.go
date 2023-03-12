@@ -7,7 +7,7 @@ import (
 )
 
 type StatusHandler interface {
-	IComponent
+	Composable
 	Handle(response *ResponseV5, request *RequestV5)
 }
 

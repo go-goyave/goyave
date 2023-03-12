@@ -38,3 +38,13 @@ func Convert[T any](data any) (T, error) {
 	err := decoder.Decode(&result)
 	return result, err
 }
+
+// MustConvert anything into the desired type using JSON marshaling and unmarshaling.
+// Panics if it fails.
+func MustConvert[T any](data any) T {
+	res, err := Convert[T](data)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}

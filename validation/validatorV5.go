@@ -124,6 +124,7 @@ type ContextV5 struct {
 	Name string
 
 	errors []error
+	valid  bool // Set to false if there was at least one validation error on the field
 }
 
 // AddError adds an error to the validation context. This is NOT supposed
@@ -138,6 +139,12 @@ func (c *ContextV5) AddError(err ...error) {
 // current field and the current rule.
 func (c *ContextV5) Errors() []error {
 	return c.errors
+}
+
+// Valid returns false if at least one validator prior to the current one didn't pass
+// on the field under validation.
+func (c *ContextV5) Valid() bool {
+	return c.valid
 }
 
 type validator struct {
@@ -230,6 +237,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 		}
 
 		value := c.Value
+		valid := true
 		for _, validator := range field.Validators {
 			if _, ok := validator.(*NullableValidator); ok {
 				if value == nil {
@@ -246,14 +254,17 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 				Field:  field,
 				Now:    v.now,
 				Name:   c.Name,
+				valid:  valid,
 			}
 			validator.init(v.options) // TODO document a Rules or RuleSet is not meant to be re-used or used concurrently
 			ok := validator.Validate(ctx)
 			if len(ctx.errors) > 0 {
+				valid = false
 				v.errors = append(v.errors, ctx.errors...)
 				continue
 			}
 			if !ok {
+				valid = false
 				errorPath := field.getErrorPath(parentPath, c)
 				message := v.getMessage(fieldName, ctx, validator)
 				if fieldName == CurrentElement {

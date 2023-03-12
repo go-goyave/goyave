@@ -11,6 +11,9 @@ type UniqueValidator struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *UniqueValidator) Validate(ctx *ContextV5) bool {
+	if !ctx.Valid() {
+		return true
+	}
 	count := int64(0)
 
 	if err := v.Scope(v.DB(), ctx.Value).Count(&count).Error; err != nil {

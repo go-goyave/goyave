@@ -44,6 +44,7 @@ type Server struct {
 	// Writes to stderr by default.
 	ErrLogger *log.Logger
 
+	host         string
 	baseURL      string
 	proxyBaseURL string
 
@@ -88,9 +89,10 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		return nil, &Error{err, ExitLanguageError}
 	}
 
+	host := cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port"))
 	return &Server{
 		server: &http.Server{
-			Addr:         cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port")),
+			Addr:         host,
 			WriteTimeout: time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
 			ReadTimeout:  time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
 			IdleTimeout:  time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
@@ -103,6 +105,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		stopChannel:   make(chan struct{}, 1),
 		startupHooks:  []func(*Server){},
 		shutdownHooks: []func(*Server){},
+		host:          host,
 		baseURL:       getAddressV5(cfg),
 		proxyBaseURL:  getProxyAddress(cfg),
 		Logger:        log.New(os.Stdout, "", log.LstdFlags),
@@ -148,6 +151,11 @@ func getProxyAddress(cfg *config.Config) string {
 	}
 
 	return proto + "://" + host + cfg.GetString("server.proxy.base")
+}
+
+// Host returns the hostname and port the server is running on.
+func (s *Server) Host() string {
+	return s.host
 }
 
 // BaseURL returns the base URL of your application.

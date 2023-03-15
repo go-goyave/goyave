@@ -9,6 +9,7 @@ import (
 
 // Map is an alias to map[string]any
 // Useful and a cleaner way to create a JSON response object
+// TODO remove this
 type Map map[string]any
 
 // ToFloat64 convert a numeric value to float64.
@@ -47,4 +48,15 @@ func MustConvert[T any](data any) T {
 		panic(err)
 	}
 	return res
+}
+
+// Must takes any return values of a function that can also return an error.
+// Panics if the error is not nil, otherwise returns the value.
+//
+//	typeutil.Must(time.Parse(time.RFC3339, "2023-03-15 11:07:42"))
+func Must[V any](value V, err error) V {
+	if err != nil {
+		panic(err)
+	}
+	return value
 }

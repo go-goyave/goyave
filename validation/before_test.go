@@ -10,12 +10,12 @@ import (
 	"goyave.dev/goyave/v4/util/typeutil"
 )
 
-func TestAfterValidator(t *testing.T) {
+func TestBeforeValidator(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
 		now := time.Now()
-		v := After(now)
+		v := Before(now)
 		assert.NotNil(t, v)
-		assert.Equal(t, "after", v.Name())
+		assert.Equal(t, "before", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
 		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&ContextV5{}))
@@ -27,8 +27,8 @@ func TestAfterValidator(t *testing.T) {
 		value any
 		want  bool
 	}{
-		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T11:07:42Z")), want: true},
-		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
+		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: true},
+		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
 		{ref: ref, value: ref, want: false},
 		{ref: ref, value: "string", want: false},
 		{ref: ref, value: 'a', want: false},
@@ -42,7 +42,7 @@ func TestAfterValidator(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
-			v := After(c.ref)
+			v := Before(c.ref)
 			assert.Equal(t, c.want, v.Validate(&ContextV5{
 				Value: c.value,
 			}))
@@ -50,12 +50,12 @@ func TestAfterValidator(t *testing.T) {
 	}
 }
 
-func TestAfterEqualValidator(t *testing.T) {
+func TestBeforeEqualValidator(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
 		now := time.Now()
-		v := AfterEqual(now)
+		v := BeforeEqual(now)
 		assert.NotNil(t, v)
-		assert.Equal(t, "after_equal", v.Name())
+		assert.Equal(t, "before_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
 		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&ContextV5{}))
@@ -67,8 +67,8 @@ func TestAfterEqualValidator(t *testing.T) {
 		value any
 		want  bool
 	}{
-		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T11:07:42Z")), want: true},
-		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
+		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: true},
+		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
 		{ref: ref, value: ref, want: true},
 		{ref: ref, value: "string", want: false},
 		{ref: ref, value: 'a', want: false},
@@ -82,7 +82,7 @@ func TestAfterEqualValidator(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
-			v := AfterEqual(c.ref)
+			v := BeforeEqual(c.ref)
 			assert.Equal(t, c.want, v.Validate(&ContextV5{
 				Value: c.value,
 			}))
@@ -90,39 +90,39 @@ func TestAfterEqualValidator(t *testing.T) {
 	}
 }
 
-func TestAfterFieldValidator(t *testing.T) {
+func TestBeforeFieldValidator(t *testing.T) {
 	path := "object.field[]"
 	t.Run("Constructor", func(t *testing.T) {
-		v := AfterField(path)
+		v := BeforeField(path)
 		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
-		assert.Equal(t, "after", v.Name())
+		assert.Equal(t, "before", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
 		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&ContextV5{}))
 
 		assert.Panics(t, func() {
-			AfterField("invalid[path.")
+			BeforeField("invalid[path.")
 		})
 	})
 
 	ref1 := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
 	ref2 := typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T10:07:42Z"))
 
-	dataSingle := makeAfterFieldData(ref1)
-	dataTwo := makeAfterFieldData(ref1, ref2)
+	dataSingle := makeBeforeFieldData(ref1)
+	dataTwo := makeBeforeFieldData(ref1, ref2)
 
 	cases := []struct {
 		data  map[string]any
 		value any
 		want  bool
 	}{
-		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T11:07:42Z")), want: true},
-		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
+		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: true},
+		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
 		{data: dataSingle, value: ref1, want: false},
 		{data: dataTwo, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T10:06:42Z")), want: false},
-		{data: dataTwo, value: ref2, want: false},
-		{data: dataTwo, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T11:06:42Z")), want: true},
+		{data: dataTwo, value: ref1, want: false},
+		{data: dataTwo, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: true},
 		{data: dataSingle, value: "string", want: false},
 		{data: dataSingle, value: 'a', want: false},
 		{data: dataSingle, value: 2, want: false},
@@ -135,7 +135,7 @@ func TestAfterFieldValidator(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
-			v := AfterField(path)
+			v := BeforeField(path)
 			assert.Equal(t, c.want, v.Validate(&ContextV5{
 				Value: c.value,
 				Data:  c.data,
@@ -144,41 +144,41 @@ func TestAfterFieldValidator(t *testing.T) {
 	}
 }
 
-func TestAfterEqualFieldValidator(t *testing.T) {
+func TestBeforeEqualFieldValidator(t *testing.T) {
 	path := "object.field[]"
 	t.Run("Constructor", func(t *testing.T) {
-		v := AfterEqualField(path)
+		v := BeforeEqualField(path)
 		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
-		assert.Equal(t, "after_equal", v.Name())
+		assert.Equal(t, "before_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
 		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&ContextV5{}))
 
 		assert.Panics(t, func() {
-			AfterEqualField("invalid[path.")
+			BeforeEqualField("invalid[path.")
 		})
 	})
 
 	ref1 := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
 	ref2 := typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T10:07:42Z"))
 
-	dataSingle := makeAfterFieldData(ref1)
-	dataTwo := makeAfterFieldData(ref1, ref2)
+	dataSingle := makeBeforeFieldData(ref1)
+	dataTwo := makeBeforeFieldData(ref1, ref2)
 
 	cases := []struct {
 		data  map[string]any
 		value any
 		want  bool
 	}{
-		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T11:07:42Z")), want: true},
-		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
+		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: true},
+		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
 		{data: dataTwo, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T10:06:42Z")), want: false},
-		{data: dataTwo, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T11:06:42Z")), want: true},
+		{data: dataTwo, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: true},
 
 		{data: dataSingle, value: ref1, want: true},
-		{data: dataTwo, value: ref1, want: false},
-		{data: dataTwo, value: ref2, want: true},
+		{data: dataTwo, value: ref2, want: false},
+		{data: dataTwo, value: ref1, want: true},
 
 		{data: dataSingle, value: "string", want: false},
 		{data: dataSingle, value: 'a', want: false},
@@ -192,7 +192,7 @@ func TestAfterEqualFieldValidator(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
-			v := AfterEqualField(path)
+			v := BeforeEqualField(path)
 			assert.Equal(t, c.want, v.Validate(&ContextV5{
 				Value: c.value,
 				Data:  c.data,
@@ -201,7 +201,7 @@ func TestAfterEqualFieldValidator(t *testing.T) {
 	}
 }
 
-func makeAfterFieldData(ref ...time.Time) map[string]any {
+func makeBeforeFieldData(ref ...time.Time) map[string]any {
 	return map[string]any{
 		"object": map[string]any{
 			"field": ref,

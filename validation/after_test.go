@@ -35,6 +35,7 @@ func TestAfterValidator(t *testing.T) {
 		{ref: ref, value: 2, want: false},
 		{ref: ref, value: 2.5, want: false},
 		{ref: ref, value: []string{"string"}, want: false},
+		{ref: ref, value: map[string]any{"a": 1}, want: false},
 		{ref: ref, value: true, want: false},
 		{ref: ref, value: nil, want: false},
 	}
@@ -75,6 +76,7 @@ func TestAfterEqualValidator(t *testing.T) {
 		{ref: ref, value: 2, want: false},
 		{ref: ref, value: 2.5, want: false},
 		{ref: ref, value: []string{"string"}, want: false},
+		{ref: ref, value: map[string]any{"a": 1}, want: false},
 		{ref: ref, value: true, want: false},
 		{ref: ref, value: nil, want: false},
 	}
@@ -128,6 +130,7 @@ func TestAfterFieldValidator(t *testing.T) {
 		{data: dataSingle, value: 2, want: false},
 		{data: dataSingle, value: 2.5, want: false},
 		{data: dataSingle, value: []string{"string"}, want: false},
+		{data: dataSingle, value: map[string]any{"a": 1}, want: false},
 		{data: dataSingle, value: true, want: false},
 		{data: dataSingle, value: nil, want: false},
 	}
@@ -185,6 +188,7 @@ func TestAfterEqualFieldValidator(t *testing.T) {
 		{data: dataSingle, value: 2, want: false},
 		{data: dataSingle, value: 2.5, want: false},
 		{data: dataSingle, value: []string{"string"}, want: false},
+		{data: dataSingle, value: map[string]any{"a": 1}, want: false},
 		{data: dataSingle, value: true, want: false},
 		{data: dataSingle, value: nil, want: false},
 	}

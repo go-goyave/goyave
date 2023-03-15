@@ -27,6 +27,7 @@ func TestStringValidator(t *testing.T) {
 		{value: 2, want: false},
 		{value: 2.5, want: false},
 		{value: []string{"string"}, want: false},
+		{value: map[string]any{"a": 1}, want: false},
 		{value: true, want: false},
 		{value: nil, want: false},
 	}
@@ -65,6 +66,7 @@ func TestStartsWithValidator(t *testing.T) {
 		{value: 'a', want: false},
 		{value: 2, want: false},
 		{value: 2.5, want: false},
+		{value: map[string]any{"a": 1}, want: false},
 		{value: []string{"string"}, want: false},
 		{value: []string{"pre-string"}, want: false},
 		{value: []string{"fix-string"}, want: false},
@@ -106,6 +108,7 @@ func TestEndsWithValidator(t *testing.T) {
 		{value: 'a', want: false},
 		{value: 2, want: false},
 		{value: 2.5, want: false},
+		{value: map[string]any{"a": 1}, want: false},
 		{value: []string{"string"}, want: false},
 		{value: []string{"string-suf"}, want: false},
 		{value: []string{"string-fix"}, want: false},

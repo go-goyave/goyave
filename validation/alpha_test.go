@@ -34,6 +34,7 @@ func TestAlphaValidator(t *testing.T) {
 		{value: 2, want: false},
 		{value: 2.5, want: false},
 		{value: []string{"string"}, want: false},
+		{value: map[string]any{"a": 1}, want: false},
 		{value: true, want: false},
 		{value: nil, want: false},
 	}
@@ -76,6 +77,7 @@ func TestAlphaNumValidator(t *testing.T) {
 		{value: 2, want: false},
 		{value: 2.5, want: false},
 		{value: []string{"string"}, want: false},
+		{value: map[string]any{"a": 1}, want: false},
 		{value: true, want: false},
 		{value: nil, want: false},
 	}
@@ -116,6 +118,7 @@ func TestAlphaDashValidator(t *testing.T) {
 		{value: 2, want: false},
 		{value: 2.5, want: false},
 		{value: []string{"string"}, want: false},
+		{value: map[string]any{"a": 1}, want: false},
 		{value: true, want: false},
 		{value: nil, want: false},
 	}

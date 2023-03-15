@@ -32,8 +32,8 @@ type AlphaNumValidator struct {
 func (v *AlphaNumValidator) Name() string { return "alpha_num" }
 
 // AlphaNum the field under validation must an alphabetic-numeric string.
-func AlphaNum() *AlphaDashValidator {
-	return &AlphaDashValidator{RegexValidator: RegexValidator{Regexp: alphaNumRegex}}
+func AlphaNum() *AlphaNumValidator {
+	return &AlphaNumValidator{RegexValidator: RegexValidator{Regexp: alphaNumRegex}}
 }
 
 //------------------------------

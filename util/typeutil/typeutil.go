@@ -60,3 +60,8 @@ func Must[V any](value V, err error) V {
 	}
 	return value
 }
+
+// Ptr returns a pointer to the given value.
+func Ptr[V any](value V) *V {
+	return &value
+}

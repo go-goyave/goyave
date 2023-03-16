@@ -11,7 +11,7 @@ require (
 	github.com/samber/lo v1.37.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.9.0
-	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
+	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
 	gorm.io/driver/mysql v1.5.0
 	gorm.io/driver/postgres v1.5.0
 	gorm.io/driver/sqlite v1.5.0

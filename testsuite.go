@@ -23,7 +23,6 @@ import (
 	"goyave.dev/goyave/v4/util/fsutil"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	testify "github.com/stretchr/testify/suite"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/lang"
@@ -46,7 +45,7 @@ type ITestSuite interface {
 
 	T() *testing.T
 	SetT(*testing.T)
-	SetS(suite suite.TestingSuite)
+	SetS(testify.TestingSuite)
 
 	GetBody(*http.Response) []byte
 	GetJSONBody(*http.Response, interface{}) error

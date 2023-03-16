@@ -71,6 +71,7 @@ var configDefaults = object{
 		"maxOpenConnections": &Entry{20, []any{}, reflect.Int, false},
 		"maxIdleConnections": &Entry{20, []any{}, reflect.Int, false},
 		"maxLifetime":        &Entry{300, []any{}, reflect.Int, false},
+		"queryTimeout":       &Entry{60, []any{}, reflect.Int, false},     // TODO document this (the timeout set by database.TimeoutPlugin)
 		"autoMigrate":        &Entry{false, []any{}, reflect.Bool, false}, // TODO remove this
 		"config": object{
 			"skipDefaultTransaction":                   &Entry{false, []any{}, reflect.Bool, false},

@@ -61,18 +61,18 @@ var configDefaults = object{
 		},
 	},
 	"database": object{
-		"connection":         &Entry{"none", []any{}, reflect.String, false},
-		"host":               &Entry{"127.0.0.1", []any{}, reflect.String, false},
-		"port":               &Entry{3306, []any{}, reflect.Int, false},
-		"name":               &Entry{"goyave", []any{}, reflect.String, false},
-		"username":           &Entry{"root", []any{}, reflect.String, false},
-		"password":           &Entry{"root", []any{}, reflect.String, false},
-		"options":            &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", []any{}, reflect.String, false},
-		"maxOpenConnections": &Entry{20, []any{}, reflect.Int, false},
-		"maxIdleConnections": &Entry{20, []any{}, reflect.Int, false},
-		"maxLifetime":        &Entry{300, []any{}, reflect.Int, false},
-		"queryTimeout":       &Entry{60, []any{}, reflect.Int, false},     // TODO document this (the timeout set by database.TimeoutPlugin)
-		"autoMigrate":        &Entry{false, []any{}, reflect.Bool, false}, // TODO remove this
+		"connection":          &Entry{"none", []any{}, reflect.String, false},
+		"host":                &Entry{"127.0.0.1", []any{}, reflect.String, false},
+		"port":                &Entry{3306, []any{}, reflect.Int, false},
+		"name":                &Entry{"goyave", []any{}, reflect.String, false},
+		"username":            &Entry{"root", []any{}, reflect.String, false},
+		"password":            &Entry{"root", []any{}, reflect.String, false},
+		"options":             &Entry{"charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=true&loc=Local", []any{}, reflect.String, false},
+		"maxOpenConnections":  &Entry{20, []any{}, reflect.Int, false},
+		"maxIdleConnections":  &Entry{20, []any{}, reflect.Int, false},
+		"maxLifetime":         &Entry{300, []any{}, reflect.Int, false},
+		"defaultQueryTimeout": &Entry{60000, []any{}, reflect.Int, false},  // TODO document this (the timeout set by database.TimeoutPlugin), in ms
+		"autoMigrate":         &Entry{false, []any{}, reflect.Bool, false}, // TODO remove this
 		"config": object{
 			"skipDefaultTransaction":                   &Entry{false, []any{}, reflect.Bool, false},
 			"dryRun":                                   &Entry{false, []any{}, reflect.Bool, false},

@@ -39,7 +39,7 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 	initSQLDBV5(cfg, db)
 
 	timeoutPlugin := &TimeoutPlugin{
-		Timeout: time.Duration(cfg.GetInt("database.queryTimeout")) * time.Second,
+		Timeout: time.Duration(cfg.GetInt("database.defaultQueryTimeout")) * time.Millisecond,
 	}
 	if err := db.Use(timeoutPlugin); err != nil {
 		return nil, err

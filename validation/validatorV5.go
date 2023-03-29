@@ -110,10 +110,7 @@ type Options struct {
 type ContextV5 struct {
 	Data any
 
-	// Extra a map that can store extra information for this validation.
-	// The map is scoped to the current `Validator` and its validation error
-	// message generation only. It cannot be used to pass data from one validator
-	// to the other for example.
+	// Extra the map of Extra from the validation Options.
 	Extra  map[string]any
 	Value  any
 	Parent any
@@ -248,7 +245,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 
 			ctx := &ContextV5{
 				Data:   data,
-				Extra:  make(map[string]any),
+				Extra:  v.options.Extra,
 				Value:  value,
 				Parent: c.Parent,
 				Field:  field,

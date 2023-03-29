@@ -133,6 +133,10 @@ func (r *RouteV5) ValidateQuery(validationRules RuleSetFunc) *RouteV5 {
 // If the options are not `nil`, the CORS middleware is automatically added.
 // To disable CORS, give `nil` options.
 func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
+	if options == nil {
+		delete(r.Meta, MetaCORS)
+		return r
+	}
 	r.Meta[MetaCORS] = options
 	if !routeHasMiddleware[*corsMiddlewareV5](r) {
 		r.Middleware(&corsMiddlewareV5{})

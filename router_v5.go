@@ -193,6 +193,10 @@ func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
 // If the options are not `nil`, the CORS middleware is automatically added.
 // To disable CORS, give `nil` options.
 func (r *RouterV5) CORS(options *cors.Options) *RouterV5 {
+	if options == nil {
+		delete(r.Meta, MetaCORS)
+		return r
+	}
 	r.Meta[MetaCORS] = options
 	if !routerHasMiddleware[*corsMiddlewareV5](r) {
 		r.Middleware(&corsMiddlewareV5{})

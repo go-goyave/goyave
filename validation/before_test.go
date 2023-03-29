@@ -113,6 +113,7 @@ func TestBeforeFieldValidator(t *testing.T) {
 
 	dataSingle := makeBeforeFieldData(ref1)
 	dataTwo := makeBeforeFieldData(ref1, ref2)
+	dataNotTime := makeBeforeFieldData(ref1, "string")
 
 	cases := []struct {
 		data  map[string]any
@@ -133,6 +134,7 @@ func TestBeforeFieldValidator(t *testing.T) {
 		{data: dataSingle, value: map[string]any{"a": 1}, want: false},
 		{data: dataSingle, value: true, want: false},
 		{data: dataSingle, value: nil, want: false},
+		{data: dataNotTime, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: false},
 	}
 
 	for _, c := range cases {
@@ -168,6 +170,7 @@ func TestBeforeEqualFieldValidator(t *testing.T) {
 
 	dataSingle := makeBeforeFieldData(ref1)
 	dataTwo := makeBeforeFieldData(ref1, ref2)
+	dataNotTime := makeBeforeFieldData(ref1, "string")
 
 	cases := []struct {
 		data  map[string]any
@@ -191,6 +194,7 @@ func TestBeforeEqualFieldValidator(t *testing.T) {
 		{data: dataSingle, value: map[string]any{"a": 1}, want: false},
 		{data: dataSingle, value: true, want: false},
 		{data: dataSingle, value: nil, want: false},
+		{data: dataNotTime, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: false},
 	}
 
 	for _, c := range cases {
@@ -205,7 +209,7 @@ func TestBeforeEqualFieldValidator(t *testing.T) {
 	}
 }
 
-func makeBeforeFieldData(ref ...time.Time) map[string]any {
+func makeBeforeFieldData(ref ...any) map[string]any {
 	return map[string]any{
 		"object": map[string]any{
 			"field": ref,

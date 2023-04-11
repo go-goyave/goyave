@@ -190,13 +190,13 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 	field.Path.Walk(walkData, func(c *walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]any)
 		if c.Found == walk.Found {
-			if parentIsObject && !field.IsNullable() && c.Value == nil {
+			if v.shouldDeleteFromParent(field, parentIsObject, c.Value) {
 				delete(parentObject, c.Name)
 			}
 			// TODO if the parent is an array, should be removed too!
 
 			if v.shouldConvertSingleValueArray(fieldName) {
-				c.Value = v.convertSingleValueArray(field, c.Value, parentObject)
+				c.Value = v.convertSingleValueArray(field, c.Value)
 				parentObject[c.Name] = c.Value
 			}
 		}
@@ -279,11 +279,15 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 	})
 }
 
+func (v *validator) shouldDeleteFromParent(field *FieldV5, parentIsObject bool, value any) bool {
+	return parentIsObject && !field.IsNullable() && value == nil
+}
+
 func (v *validator) shouldConvertSingleValueArray(fieldName string) bool {
 	return v.options.ConvertSingleValueArrays && fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
-func (v *validator) convertSingleValueArray(field *FieldV5, value any, data map[string]any) any {
+func (v *validator) convertSingleValueArray(field *FieldV5, value any) any {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	if field.IsArray() && kind != "slice" {
@@ -296,7 +300,7 @@ func (v *validator) convertSingleValueArray(field *FieldV5, value any, data map[
 }
 
 func (v *validator) isAbsent(field *FieldV5, c *walk.Context, data any) bool {
-	if c.Found == walk.ParentNotFound {
+	if c.Found == walk.ParentNotFound { // TODO document field is skipped if parent not found (make sure to also define rules for parents)
 		return true
 	}
 	requiredCtx := &ContextV5{

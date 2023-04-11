@@ -171,6 +171,7 @@ func TestBeforeEqualFieldValidator(t *testing.T) {
 	dataSingle := makeBeforeFieldData(ref1)
 	dataTwo := makeBeforeFieldData(ref1, ref2)
 	dataNotTime := makeBeforeFieldData(ref1, "string")
+	dataEmpty := makeBeforeFieldData()
 
 	cases := []struct {
 		data  map[string]any
@@ -195,6 +196,7 @@ func TestBeforeEqualFieldValidator(t *testing.T) {
 		{data: dataSingle, value: true, want: false},
 		{data: dataSingle, value: nil, want: false},
 		{data: dataNotTime, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: false},
+		{data: dataEmpty, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z")), want: true},
 	}
 
 	for _, c := range cases {

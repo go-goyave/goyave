@@ -19,7 +19,7 @@ func (v *RegexValidator) Validate(ctx *ContextV5) bool {
 func (v *RegexValidator) Name() string { return "regex" }
 
 // MessagePlaceholders returns the ":regexp" placeholder.
-func (v *RegexValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *RegexValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":regexp", v.Regexp.String(),
 	}

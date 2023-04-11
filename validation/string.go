@@ -47,7 +47,7 @@ func (v *StartsWithValidator) Validate(ctx *ContextV5) bool {
 func (v *StartsWithValidator) Name() string { return "starts_with" }
 
 // MessagePlaceholders returns the ":values" placeholder.
-func (v *StartsWithValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *StartsWithValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":values", strings.Join(v.Prefix, ", "),
 	}
@@ -80,7 +80,7 @@ func (v *EndsWithValidator) Validate(ctx *ContextV5) bool {
 func (v *EndsWithValidator) Name() string { return "ends_with" }
 
 // MessagePlaceholders returns the ":values" placeholder.
-func (v *EndsWithValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *EndsWithValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":values", strings.Join(v.Suffix, ", "),
 	}

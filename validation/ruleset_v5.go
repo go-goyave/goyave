@@ -71,7 +71,7 @@ func (v *BaseValidator) IsTypeDependent() bool { return false }
 func (v *BaseValidator) IsType() bool { return false }
 
 // MessagePlaceholders returns an empty slice (no placeholders)
-func (v *BaseValidator) MessagePlaceholders(ctx *ContextV5) []string { return []string{} }
+func (v *BaseValidator) MessagePlaceholders(_ *ContextV5) []string { return []string{} }
 
 type FieldRulesApplier interface {
 	apply(rules RulesV5, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) RulesV5
@@ -118,7 +118,7 @@ type FieldRules struct {
 
 type RuleSetV5 []*FieldRules
 
-func (r RuleSetV5) apply(rules RulesV5, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) RulesV5 {
+func (r RuleSetV5) apply(rules RulesV5, path string, field *FieldRules, _ uint, pendingArrays map[string]any) RulesV5 {
 	if strings.HasSuffix(field.Path, "[]") {
 		pendingArrays[field.Path[:len(field.Path)-2]] = field.Rules.(RuleSetV5).asRulesWithPrefix(path)
 		return rules

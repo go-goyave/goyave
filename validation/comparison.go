@@ -25,7 +25,8 @@ func (v *ComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(size1
 
 	ok := true
 	v.Path.Walk(ctx.Data, func(c *walk.Context) {
-		if c.Path.Type == walk.PathTypeArray && c.Found == walk.ElementNotFound {
+		lastParent := c.Path.LastParent()
+		if lastParent != nil && lastParent.Type == walk.PathTypeArray && c.Found == walk.ElementNotFound {
 			return
 		}
 
@@ -69,7 +70,7 @@ func (v *ComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(size1
 func (v *ComparisonValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *ComparisonValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *ComparisonValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":other", GetFieldName(v.Lang(), v.Path),
 	}

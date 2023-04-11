@@ -51,7 +51,7 @@ func (v *SizeValidator) Name() string { return "size" }
 func (v *SizeValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":value" placeholder.
-func (v *SizeValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *SizeValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":value", strconv.Itoa(v.Size),
 	}

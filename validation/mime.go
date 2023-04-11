@@ -37,7 +37,7 @@ func (v *MIMEValidator) Validate(ctx *ContextV5) bool {
 func (v *MIMEValidator) Name() string { return "mime" }
 
 // MessagePlaceholders returns the ":values" placeholder.
-func (v *MIMEValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *MIMEValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":values", strings.Join(v.MIMETypes, ", "),
 	}

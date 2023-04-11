@@ -51,6 +51,9 @@ func (v *DateValidator) IsType() bool { return true }
 // The format uses the same syntax as Go's standard datetime format.
 // If no format is given the "2006-01-02" format is used.
 func Date(acceptedFormats ...string) *DateValidator {
+	if len(acceptedFormats) == 0 {
+		acceptedFormats = []string{time.DateOnly}
+	}
 	return &DateValidator{Formats: acceptedFormats}
 }
 
@@ -71,7 +74,7 @@ func (v *DateComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(t
 }
 
 // MessagePlaceholders returns the ":date" placeholder.
-func (v *DateComparisonValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *DateComparisonValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":date", v.Date.Format(time.RFC3339),
 	}
@@ -93,7 +96,8 @@ func (v *DateFieldComparisonValidator) validate(ctx *ContextV5, comparisonFunc f
 
 	ok = true
 	v.Path.Walk(ctx.Data, func(c *walk.Context) {
-		if c.Path.Type == walk.PathTypeArray && c.Found == walk.ElementNotFound {
+		lastParent := c.Path.LastParent()
+		if lastParent != nil && lastParent.Type == walk.PathTypeArray && c.Found == walk.ElementNotFound {
 			return
 		}
 
@@ -113,7 +117,7 @@ func (v *DateFieldComparisonValidator) validate(ctx *ContextV5, comparisonFunc f
 }
 
 // MessagePlaceholders returns the ":date" placeholder.
-func (v *DateFieldComparisonValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *DateFieldComparisonValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":date", GetFieldName(v.Lang(), v.Path),
 	}

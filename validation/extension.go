@@ -35,7 +35,7 @@ func (v *ExtensionValidator) Validate(ctx *ContextV5) bool {
 func (v *ExtensionValidator) Name() string { return "extension" }
 
 // MessagePlaceholders returns the ":values" placeholder.
-func (v *ExtensionValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *ExtensionValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":values", strings.Join(v.Extensions, ", "),
 	}

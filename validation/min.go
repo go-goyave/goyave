@@ -32,7 +32,7 @@ func (v *MinValidator) Name() string { return "min" }
 func (v *MinValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":min" placeholder.
-func (v *MinValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *MinValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":min", fmt.Sprintf("%v", v.Min),
 	}

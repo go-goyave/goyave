@@ -48,7 +48,7 @@ func (v *FileCountValidator) Validate(ctx *ContextV5) bool {
 func (v *FileCountValidator) Name() string { return "file_count" }
 
 // MessagePlaceholders returns the ":value" placeholder.
-func (v *FileCountValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *FileCountValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":value", strconv.FormatUint(uint64(v.Count), 10),
 	}
@@ -79,7 +79,7 @@ func (v *MinFileCountValidator) Validate(ctx *ContextV5) bool {
 func (v *MinFileCountValidator) Name() string { return "min_file_count" }
 
 // MessagePlaceholders returns the ":min" placeholder.
-func (v *MinFileCountValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *MinFileCountValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":min", strconv.FormatUint(uint64(v.Min), 10),
 	}
@@ -110,7 +110,7 @@ func (v *MaxFileCountValidator) Validate(ctx *ContextV5) bool {
 func (v *MaxFileCountValidator) Name() string { return "max_file_count" }
 
 // MessagePlaceholders returns the ":max" placeholder.
-func (v *MaxFileCountValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *MaxFileCountValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":max", strconv.FormatUint(uint64(v.Max), 10),
 	}
@@ -142,7 +142,7 @@ func (v *FileCountBetweenValidator) Validate(ctx *ContextV5) bool {
 func (v *FileCountBetweenValidator) Name() string { return "file_count_between" }
 
 // MessagePlaceholders returns the ":min" and ":max" placeholders.
-func (v *FileCountBetweenValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *FileCountBetweenValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":min", strconv.FormatUint(uint64(v.Min), 10),
 		":max", strconv.FormatUint(uint64(v.Max), 10),

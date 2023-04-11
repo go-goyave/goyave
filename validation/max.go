@@ -32,7 +32,7 @@ func (v *MaxValidator) Name() string { return "max" }
 func (v *MaxValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":max" placeholder.
-func (v *MaxValidator) MessagePlaceholders(ctx *ContextV5) []string {
+func (v *MaxValidator) MessagePlaceholders(_ *ContextV5) []string {
 	return []string{
 		":max", fmt.Sprintf("%v", v.Max),
 	}

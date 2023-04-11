@@ -296,6 +296,9 @@ func (v *validator) convertSingleValueArray(field *FieldV5, value any, data map[
 }
 
 func (v *validator) isAbsent(field *FieldV5, c *walk.Context, data any) bool {
+	if c.Found == walk.ParentNotFound {
+		return true
+	}
 	requiredCtx := &ContextV5{
 		Data:   data,
 		Extra:  v.options.Extra,

@@ -13,7 +13,7 @@ import (
 //   - Compare a numeric field with the length of a string or a string length with a numeric field
 //   - Compare a numeric field with the number of elements in an array
 //   - Compare the number of keys in an object with a numeric field
-//   - Compare a file (or multifile) size with a numeric field
+//   - Compare a file (or multifile) size with a numeric field. The number of KiB of each file is rounded up (ceil).
 type ComparisonValidator struct {
 	BaseValidator
 	Path *walk.Path
@@ -21,7 +21,10 @@ type ComparisonValidator struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *ComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(size1, size2 float64) bool) bool {
-	floatValue, isNumber := numberAsFloat64(ctx.Value)
+	floatValue, isNumber, overflowErr := numberAsFloat64(ctx.Value)
+	if overflowErr != nil {
+		return false
+	}
 
 	ok := true
 	v.Path.Walk(ctx.Data, func(c *walk.Context) {
@@ -36,10 +39,16 @@ func (v *ComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(size1
 			return
 		}
 
-		comparedFloatValue, isComparedNumber := numberAsFloat64(c.Value)
+		comparedFloatValue, isComparedNumber, comparedOverflowErr := numberAsFloat64(c.Value)
+		if comparedOverflowErr != nil {
+			ok = false
+			c.Break()
+			return
+		}
+
 		if isNumber {
 			if isComparedNumber {
-				ok = floatValue > comparedFloatValue
+				ok = comparisonFunc(floatValue, comparedFloatValue)
 			} else {
 				ok = validateSizeV5(c.Value, func(size int) bool {
 					return comparisonFunc(floatValue, float64(size))
@@ -101,7 +110,7 @@ func (v *GreaterThanValidator) Name() string { return "greater_than" }
 //   - Compare a numeric field with the length of a string or a string length with a numeric field
 //   - Compare a numeric field with the number of elements in an array
 //   - Compare the number of keys in an object with a numeric field
-//   - Compare a file (or multifile) size with a numeric field
+//   - Compare a file (or multifile) size with a numeric field. The number of KiB of each file is rounded up (ceil).
 func GreaterThan(path string) *GreaterThanValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
@@ -135,7 +144,7 @@ func (v *GreaterThanEqualValidator) Name() string { return "greater_than_equal" 
 //   - Compare a numeric field with the length of a string or a string length with a numeric field
 //   - Compare a numeric field with the number of elements in an array
 //   - Compare the number of keys in an object with a numeric field
-//   - Compare a file (or multifile) size with a numeric field
+//   - Compare a file (or multifile) size with a numeric field. The number of KiB of each file is rounded up (ceil).
 func GreaterThanEqual(path string) *GreaterThanEqualValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
@@ -169,7 +178,7 @@ func (v *LowerThanValidator) Name() string { return "lower_than" }
 //   - Compare a numeric field with the length of a string or a string length with a numeric field
 //   - Compare a numeric field with the number of elements in an array
 //   - Compare the number of keys in an object with a numeric field
-//   - Compare a file (or multifile) size with a numeric field
+//   - Compare a file (or multifile) size with a numeric field. The number of KiB of each file is rounded up (ceil).
 func LowerThan(path string) *LowerThanValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
@@ -203,7 +212,7 @@ func (v *LowerThanEqualValidator) Name() string { return "lower_than_equal" }
 //   - Compare a numeric field with the length of a string or a string length with a numeric field
 //   - Compare a numeric field with the number of elements in an array
 //   - Compare the number of keys in an object with a numeric field
-//   - Compare a file (or multifile) size with a numeric field
+//   - Compare a file (or multifile) size with a numeric field. The number of KiB of each file is rounded up (ceil).
 func LowerThanEqual(path string) *LowerThanEqualValidator {
 	p, err := walk.Parse(path)
 	if err != nil {

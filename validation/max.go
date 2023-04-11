@@ -17,8 +17,12 @@ type MaxValidator struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *MaxValidator) Validate(ctx *ContextV5) bool {
-	if fl, ok := numberAsFloat64(ctx.Value); ok {
+	fl, ok, err := numberAsFloat64(ctx.Value)
+	if ok {
 		return fl <= v.Max
+	}
+	if err != nil {
+		return false
 	}
 	return validateSizeV5(ctx.Value, func(size int) bool {
 		return float64(size) <= v.Max

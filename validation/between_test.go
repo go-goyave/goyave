@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"math"
 	"mime/multipart"
 	"testing"
 	"time"
@@ -39,6 +40,8 @@ func TestBetweenValidator(t *testing.T) {
 	cases := []struct {
 		value any
 		want  bool
+		min   float64
+		max   float64
 	}{
 		{value: "a", want: false},
 		{value: "abc", want: true},
@@ -51,6 +54,8 @@ func TestBetweenValidator(t *testing.T) {
 		{value: 3.5, want: true},
 		{value: 4, want: false},
 		{value: 4.5, want: false},
+		{value: uint64(math.MaxInt64), max: math.MaxInt64, want: false}, // overflow
+		{value: uint(math.MaxInt64), max: math.MaxInt64, want: false},   // overflow
 		{value: []string{"string"}, want: false},
 		{value: []string{"a", "b", "c"}, want: true},
 		{value: []string{"a", "b", "c", "d"}, want: false},
@@ -74,7 +79,15 @@ func TestBetweenValidator(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
-			v := Between(1.5, 3.5)
+			min := 1.5
+			max := 3.5
+			if c.min != 0 {
+				min = c.min
+			}
+			if c.max != 0 {
+				max = c.max
+			}
+			v := Between(min, max)
 			assert.Equal(t, c.want, v.Validate(&ContextV5{
 				Value: c.value,
 			}))

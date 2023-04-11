@@ -8,40 +8,40 @@ import (
 
 // TODO test float validator
 
-func numberAsFloat64(n any) (float64, bool) {
+func numberAsFloat64(n any) (float64, bool, error) {
 	switch val := n.(type) {
 	case float32:
-		return float64(val), true
+		return float64(val), true, nil
 	case float64:
-		return val, true
+		return val, true, nil
 	case int:
-		return float64(val), true
+		return float64(val), true, nil
 	case int8:
-		return float64(val), true
+		return float64(val), true, nil
 	case int16:
-		return float64(val), true
+		return float64(val), true, nil
 	case int32:
-		return float64(val), true
+		return float64(val), true, nil
 	case int64:
-		return float64(val), true
+		return float64(val), true, nil
 	case uint:
 		if val >= math.MaxInt64 {
-			return float64(val), false
+			return float64(val), false, fmt.Errorf("uint value %d doesn't fit in float64", val)
 		}
-		return float64(val), true
+		return float64(val), true, nil
 	case uint8:
-		return float64(val), true
+		return float64(val), true, nil
 	case uint16:
-		return float64(val), true
+		return float64(val), true, nil
 	case uint32:
-		return float64(val), true
+		return float64(val), true, nil
 	case uint64:
 		if val >= math.MaxInt64 {
-			return float64(val), false
+			return float64(val), false, fmt.Errorf("uint64, value %d doesn't fit in float64", val)
 		}
-		return float64(val), true
+		return float64(val), true, nil
 	}
-	return 0, false
+	return 0, false, nil
 }
 
 type float interface {

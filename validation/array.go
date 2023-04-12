@@ -31,3 +31,37 @@ func (v *ArrayValidator) IsType() bool { return true }
 func Array() *ArrayValidator {
 	return &ArrayValidator{}
 }
+
+// convertArray to its correct type based on its elements' type.
+// If all elements have the same type, the array is converted to
+// a slice of this type, otherwise the array is returned as-is.
+func convertArray(array any, parentType reflect.Type) any {
+	list := reflect.ValueOf(array)
+	length := list.Len()
+	if length <= 0 {
+		return array
+	}
+
+	elemVal := list.Index(0)
+	if elemVal.Kind() != reflect.Interface {
+		return array
+	}
+	elemType := elemVal.Elem().Type()
+	for i := 1; i < length; i++ {
+		if list.Index(i).Elem().Type() != elemType {
+			// Not all elements have the same type, keep it []any
+			return array
+		}
+	}
+
+	if !elemType.AssignableTo(parentType.Elem()) {
+		return array
+	}
+
+	convertedArray := reflect.MakeSlice(reflect.SliceOf(elemType), 0, length)
+	for i := 0; i < length; i++ {
+		convertedArray = reflect.Append(convertedArray, list.Index(i).Elem())
+	}
+
+	return convertedArray.Interface()
+}

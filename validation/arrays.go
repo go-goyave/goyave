@@ -12,7 +12,7 @@ import (
 	"goyave.dev/goyave/v4/util/typeutil"
 )
 
-type ArrayType string
+type ArrayType string // TODO delete this
 
 const (
 	ArrayTypeString   ArrayType = "string"
@@ -31,7 +31,7 @@ const (
 )
 
 // createArray create a slice of the same type as the given type.
-func createArray(dataType ArrayType, length int) reflect.Value {
+func createArray(dataType ArrayType, length int) reflect.Value { // TODO delete this
 
 	var arr reflect.Value
 	switch dataType {
@@ -72,40 +72,6 @@ func createArray(dataType ArrayType, length int) reflect.Value {
 		panic(fmt.Sprintf("Unsupported array type %q", dataType))
 	}
 	return arr
-}
-
-// convertArray to its correct type based on its elements' type.
-// If all elements have the same type, the array is converted to
-// a slice of this type.
-func convertArray(array any, parentType reflect.Type) any {
-	list := reflect.ValueOf(array)
-	length := list.Len()
-	if length <= 0 {
-		return array
-	}
-
-	elemVal := list.Index(0)
-	if elemVal.Kind() != reflect.Interface {
-		return array
-	}
-	elemType := elemVal.Elem().Type()
-	for i := 1; i < length; i++ {
-		if list.Index(i).Elem().Type() != elemType {
-			// Not all elements have the same type, keep it []any
-			return array
-		}
-	}
-
-	if !elemType.AssignableTo(parentType.Elem()) {
-		return array
-	}
-
-	convertedArray := reflect.MakeSlice(reflect.SliceOf(elemType), 0, length)
-	for i := 0; i < length; i++ {
-		convertedArray = reflect.Append(convertedArray, list.Index(i).Elem())
-	}
-
-	return convertedArray.Interface()
 }
 
 func validateArray(ctx *Context) bool {

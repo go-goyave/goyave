@@ -21,7 +21,7 @@ func makeComparisonData(ref ...any) map[string]any {
 
 func TestGreaterThanValidator(t *testing.T) {
 	path := "object.field[]"
-	t.Run("GreaterThan", func(t *testing.T) {
+	t.Run("Constructor", func(t *testing.T) {
 		v := GreaterThan(path)
 		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
@@ -170,7 +170,7 @@ func TestGreaterThanValidator(t *testing.T) {
 
 func TestGreaterThanEqualValidator(t *testing.T) {
 	path := "object.field[]"
-	t.Run("GreaterThanEqual", func(t *testing.T) {
+	t.Run("Constructor", func(t *testing.T) {
 		v := GreaterThanEqual(path)
 		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
@@ -345,7 +345,7 @@ func TestGreaterThanEqualValidator(t *testing.T) {
 
 func TestLowerThanValidator(t *testing.T) {
 	path := "object.field[]"
-	t.Run("LowerThan", func(t *testing.T) {
+	t.Run("Constructor", func(t *testing.T) {
 		v := LowerThan(path)
 		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
@@ -494,7 +494,7 @@ func TestLowerThanValidator(t *testing.T) {
 
 func TestLowerThanEqualValidator(t *testing.T) {
 	path := "object.field[]"
-	t.Run("LowerThanEqual", func(t *testing.T) {
+	t.Run("Constructor", func(t *testing.T) {
 		v := LowerThanEqual(path)
 		v.lang = &lang.Language{}
 		assert.NotNil(t, v)

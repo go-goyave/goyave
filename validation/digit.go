@@ -2,7 +2,7 @@ package validation
 
 import "regexp"
 
-var digitsRegex = regexp.MustCompile(`[^0-9]`)
+var digitsRegex = regexp.MustCompile(`^[0-9]*$`)
 
 // DigitsValidator the field under validation must be a string that
 // only contains digits.

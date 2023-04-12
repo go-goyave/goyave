@@ -10,6 +10,8 @@ import (
 // SameValidator validates the field under validation is strictly equal to the field identified
 // by the given path. Values of different types are never equal. Files are not checked and will never pass this validator.
 // For arrays, objects and numbers, the values are compared using `reflect.DeepEqual()`.
+// For numbers, make sure the two compared numbers have the same type. A `uint` with value `1` will be considered
+// different from an `int` with value `1`.
 type SameValidator struct {
 	BaseValidator
 	Path *walk.Path
@@ -19,8 +21,15 @@ type SameValidator struct {
 func (v *SameValidator) Validate(ctx *ContextV5) bool {
 	fieldType := GetFieldType(ctx.Value)
 	ok := true
+
+	if fieldType == FieldTypeUnsupported {
+		// We cannot validate this field
+		return false
+	}
+
 	v.Path.Walk(ctx.Data, func(c *walk.Context) {
-		if c.Path.Type == walk.PathTypeArray && c.Found == walk.ElementNotFound {
+		lastParent := c.Path.LastParent()
+		if lastParent != nil && lastParent.Type == walk.PathTypeArray && c.Found == walk.ElementNotFound {
 			return
 		}
 
@@ -39,9 +48,6 @@ func (v *SameValidator) Validate(ctx *ContextV5) bool {
 			ok = okBool && ctx.Value.(bool) == b
 		case FieldTypeArray, FieldTypeObject, FieldTypeNumeric:
 			ok = reflect.DeepEqual(ctx.Value, c.Value)
-		default:
-			// We don't check the other types
-			ok = false
 		}
 
 		if !ok {
@@ -65,6 +71,8 @@ func (v *SameValidator) MessagePlaceholders(_ *ContextV5) []string {
 // by the given path. Values of different types are never equal. Files are not checked
 // and will never pass this validator.
 // For arrays, objects and numbers, the values are compared using `reflect.DeepEqual()`.
+// For numbers, make sure the two compared numbers have the same type. A `uint` with value `1` will be considered
+// different from an `int` with value `1`.
 func Same(path string) *SameValidator {
 	p, err := walk.Parse(path)
 	if err != nil {

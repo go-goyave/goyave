@@ -152,6 +152,8 @@ func TestGreaterThanValidator(t *testing.T) {
 		{desc: "cannot validate bool", data: makeComparisonData(false), value: true, want: true},
 		{desc: "cannot validate time", data: makeComparisonData(time.Now()), value: time.Now(), want: true},
 		{desc: "cannot validate nil", data: makeComparisonData(nil), value: nil, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(nil), value: 1, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(1), value: nil, want: true},
 
 		{desc: "not found", data: map[string]any{"object": map[string]any{}}, value: "abc", want: false},
 	}
@@ -327,6 +329,8 @@ func TestGreaterThanEqualValidator(t *testing.T) {
 		{desc: "cannot validate bool", data: makeComparisonData(false), value: true, want: true},
 		{desc: "cannot validate time", data: makeComparisonData(time.Now()), value: time.Now(), want: true},
 		{desc: "cannot validate nil", data: makeComparisonData(nil), value: nil, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(nil), value: 1, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(1), value: nil, want: true},
 
 		{desc: "not found", data: map[string]any{"object": map[string]any{}}, value: "abc", want: false},
 	}
@@ -476,6 +480,8 @@ func TestLowerThanValidator(t *testing.T) {
 		{desc: "cannot validate bool", data: makeComparisonData(false), value: true, want: true},
 		{desc: "cannot validate time", data: makeComparisonData(time.Now()), value: time.Now(), want: true},
 		{desc: "cannot validate nil", data: makeComparisonData(nil), value: nil, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(nil), value: 1, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(1), value: nil, want: true},
 
 		{desc: "not found", data: map[string]any{"object": map[string]any{}}, value: "abc", want: false},
 	}
@@ -651,6 +657,8 @@ func TestLowerThanEqualValidator(t *testing.T) {
 		{desc: "cannot validate bool", data: makeComparisonData(false), value: true, want: true},
 		{desc: "cannot validate time", data: makeComparisonData(time.Now()), value: time.Now(), want: true},
 		{desc: "cannot validate nil", data: makeComparisonData(nil), value: nil, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(nil), value: 1, want: true},
+		{desc: "cannot validate nil", data: makeComparisonData(1), value: nil, want: true},
 
 		{desc: "not found", data: map[string]any{"object": map[string]any{}}, value: "abc", want: false},
 	}

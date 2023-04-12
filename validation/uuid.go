@@ -30,10 +30,12 @@ func (v *UUIDValidator) Validate(ctx *ContextV5) bool {
 	if err != nil {
 		return false
 	}
-	if len(v.AcceptedVersions) == 0 {
-		return true
+
+	ok = len(v.AcceptedVersions) == 0 || lo.Contains(v.AcceptedVersions, id.Version())
+	if ok {
+		ctx.Value = id
 	}
-	return lo.Contains(v.AcceptedVersions, id.Version())
+	return ok
 }
 
 // Name returns the string name of the validator.

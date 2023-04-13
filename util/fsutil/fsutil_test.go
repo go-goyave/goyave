@@ -20,7 +20,9 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 	part, err := writer.CreateFormFile(name, fileName)
 	if err != nil {
 		panic(err)
@@ -163,7 +165,7 @@ func TestSaveDelete(t *testing.T) {
 	assert.True(t, FileExists(actualPath))
 	assert.NoError(t, err)
 
-	os.RemoveAll(path)
+	assert.NoError(t, os.RemoveAll(path))
 	assert.False(t, FileExists(actualPath))
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
@@ -173,10 +175,12 @@ func TestSaveDelete(t *testing.T) {
 
 func TestOpenFileError(t *testing.T) {
 	dir := "./forbidden_directory"
-	assert.Panics(t, func() {
-		os.Mkdir(dir, 0500)
-		defer os.RemoveAll(dir)
-		file := createTestFiles("resources/img/logo/goyave_16.png")[0]
-		file.Save(dir, "saved.png")
-	})
+	assert.NoError(t, os.Mkdir(dir, 0500))
+	defer func() {
+		assert.NoError(t, os.RemoveAll(dir))
+	}()
+	file := createTestFiles("resources/img/logo/goyave_16.png")[0]
+	filename, err := file.Save(dir, "saved.png")
+	assert.Error(t, err)
+	assert.NotEmpty(t, filename)
 }

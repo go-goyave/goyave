@@ -1,6 +1,7 @@
 package fsutil
 
 import (
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
@@ -27,27 +28,34 @@ func GetFileExtension(file string) string {
 }
 
 // GetMIMEType get the mime type and size of the given file.
-func GetMIMEType(file string) (string, int64, error) {
-	f, err := os.Open(file)
+func GetMIMEType(file string) (contentType string, size int64, err error) {
+	var f *os.File
+	f, err = os.Open(file)
 	if err != nil {
-		return "", 0, err
+		return
 	}
-	defer f.Close()
+	defer func() {
+		errClose := f.Close()
+		if err == nil {
+			err = errClose
+		}
+	}()
 
-	stat, errStat := f.Stat()
-	if errStat != nil {
-		return "", 0, err
+	var stat fs.FileInfo
+	stat, err = f.Stat()
+	if err != nil {
+		return
 	}
 
-	size := stat.Size()
+	size = stat.Size()
 
 	buffer := make([]byte, 512)
-	contentType := "application/octet-stream"
+	contentType = "application/octet-stream"
 
 	if size != 0 {
 		_, err = f.Read(buffer)
 		if err != nil {
-			panic(err)
+			return
 		}
 
 		contentType = http.DetectContentType(buffer)
@@ -66,7 +74,7 @@ func GetMIMEType(file string) (string, int64, error) {
 		}
 	}
 
-	return contentType, size, nil
+	return
 }
 
 // FileExists returns true if the file at the given path exists and is readable.

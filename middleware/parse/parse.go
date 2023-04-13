@@ -12,8 +12,21 @@ import (
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
-// TODO document and test parse middleware
-
+// Middleware reading the raw request query and body.
+//
+// First, the query is parsed using Go's standard `url.ParseQuery()`. After being flattened
+// (single value arrays converted to non-array), the result is put in the request's `Query`.
+// If the parsing fails, returns "400 Bad request".
+//
+// The body is read only if the "Content-Type" header is set. If
+// the body exceeds the configured max upload size (in MiB), "413 Request Entity Too Large"
+// is returned.
+// If the content type is "application/json", the middleware will attempt
+// to unmarshal the body and put the result in the request's `Data`. If it fails, returns "400 Bad request".
+// If the content-type has another value, Go's standard `ParseMultipartForm` is called. The result
+// is put inside the request's `Data` after being flattened.
+// If the form is not a multipart form, attempts `ParseForm`. If `ParseMultipartForm` or `ParseForm` return
+// an error, returns "400 Bad request".
 type Middleware struct {
 	goyave.Component
 
@@ -22,6 +35,7 @@ type Middleware struct {
 	MaxUploadSize float64
 }
 
+// Handle reads the request query and body and parses it if necessary.
 func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, r *goyave.RequestV5) {
 

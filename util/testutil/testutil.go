@@ -91,7 +91,7 @@ func (s *TestServer) TestMiddleware(middleware goyave.MiddlewareV5, request *goy
 	recorder := httptest.NewRecorder()
 	router := goyave.NewRouterV5(s.Server)
 	router.GlobalMiddleware(&copyRequestMiddleware{request: request})
-	router.Route([]string{request.Method()}, request.Request().RequestURI, procedure).Middleware(middleware)
+	router.Route([]string{request.Method()}, request.Request().URL.Path, procedure).Middleware(middleware)
 	router.ServeHTTP(recorder, request.Request())
 	return recorder.Result()
 }
@@ -129,22 +129,25 @@ func ReadJSONBody[T any](body io.Reader) (T, error) {
 	return data, nil
 }
 
-// WriteMultipartFile reads the file at the given path and writes it to the
-// given multipart writer.
-func WriteMultipartFile(writer *multipart.Writer, path, fieldName, fileName string) error {
-	file, err := os.Open(path)
+// WriteMultipartFile reads a file from the given path and writes it to the given multipart writer.
+func WriteMultipartFile(writer *multipart.Writer, path, fieldName, fileName string) (err error) {
+	var file *os.File
+	file, err = os.Open(path)
 	if err != nil {
-		return err
+		return
 	}
 	defer func() {
-		_ = file.Close()
+		e := file.Close()
+		if err == nil {
+			err = e
+		}
 	}()
 	part, err := writer.CreateFormFile(fieldName, fileName)
 	if err != nil {
-		return err
+		return
 	}
 	_, err = io.Copy(part, file)
-	return err
+	return
 }
 
 // CreateTestFiles create a slice of "fsutil.File" from the given paths.
@@ -173,4 +176,14 @@ func CreateTestFiles(paths ...string) ([]fsutil.File, error) {
 		return nil, err
 	}
 	return fsutil.ParseMultipartFiles(form.File[fieldName])
+}
+
+// ToJSON marshals the given data and creates a bytes reader from the result.
+// Panics on error.
+func ToJSON(data any) *bytes.Reader {
+	res, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.NewReader(res)
 }

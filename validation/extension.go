@@ -24,7 +24,7 @@ func (v *ExtensionValidator) Validate(ctx *ContextV5) bool {
 
 	for _, file := range files {
 		i := strings.Index(file.Header.Filename, ".")
-		if i == -1 || !lo.ContainsBy(v.Extensions, func(ext string) bool { return strings.HasSuffix(file.Header.Filename[i+1:], ext) }) {
+		if i == -1 || !lo.ContainsBy(v.Extensions, func(ext string) bool { return strings.HasSuffix(file.Header.Filename[i:], "."+ext) }) {
 			return false
 		}
 	}
@@ -47,6 +47,6 @@ func (v *ExtensionValidator) MessagePlaceholders(_ *ContextV5) []string {
 // Composite extensions (e.g. "tar.gz") are supported.
 //
 // Multi-files are supported (all files must satisfy the criteria).
-func Extension(extensions []string) *ExtensionValidator {
+func Extension(extensions ...string) *ExtensionValidator {
 	return &ExtensionValidator{Extensions: extensions}
 }

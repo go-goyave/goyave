@@ -10,8 +10,6 @@ import (
 	"goyave.dev/goyave/v4/util/httputil"
 )
 
-// TODO test compress middleware and gzip encoder
-
 // Encoder is an interface that wraps the methods returning the information
 // necessary for the compress middleware to work.
 //

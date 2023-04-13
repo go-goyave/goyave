@@ -23,7 +23,6 @@ linters:
     - revive
     - gocyclo
     - misspell
-    - bodyclose
     - govet
     - unused
     - errcheck

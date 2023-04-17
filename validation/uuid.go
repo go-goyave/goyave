@@ -19,23 +19,27 @@ type UUIDValidator struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *UUIDValidator) Validate(ctx *ContextV5) bool {
-	if _, ok := ctx.Value.(uuid.UUID); ok {
-		return true
+	if uid, ok := ctx.Value.(uuid.UUID); ok {
+		return v.checkVersion(uid)
 	}
 	val, ok := ctx.Value.(string)
 	if !ok {
 		return false
 	}
-	id, err := uuid.Parse(val)
+	uid, err := uuid.Parse(val)
 	if err != nil {
 		return false
 	}
 
-	ok = len(v.AcceptedVersions) == 0 || lo.Contains(v.AcceptedVersions, id.Version())
+	ok = v.checkVersion(uid)
 	if ok {
-		ctx.Value = id
+		ctx.Value = uid
 	}
 	return ok
+}
+
+func (v *UUIDValidator) checkVersion(uid uuid.UUID) bool {
+	return len(v.AcceptedVersions) == 0 || lo.Contains(v.AcceptedVersions, uid.Version())
 }
 
 // Name returns the string name of the validator.

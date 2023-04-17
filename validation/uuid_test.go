@@ -40,6 +40,8 @@ func TestUUIDValidator(t *testing.T) {
 		{value: "3bbcee75cecc5b568031b6641c1ed1f1", want: true, wantValue: uuid.MustParse("3bbcee75cecc5b568031b6641c1ed1f1")},                                              // v5 no hyphen
 		{value: "fdda765f-fc57-5604-a269-52a7df8164ec", want: true, wantValue: uuid.MustParse("fdda765f-fc57-5604-a269-52a7df8164ec"), acceptedVersions: []uuid.Version{5}}, // v5 only
 		{value: "9125a8dc-52ee-365b-a5aa-81b0b3681cf6", want: false, acceptedVersions: []uuid.Version{5}},                                                                   // v5 only
+		{value: uuid.MustParse("fdda765f-fc57-5604-a269-52a7df8164ec"), want: true, wantValue: uuid.MustParse("fdda765f-fc57-5604-a269-52a7df8164ec"), acceptedVersions: []uuid.Version{5}},
+		{value: uuid.MustParse("9125a8dc-52ee-365b-a5aa-81b0b3681cf6"), want: false, wantValue: uuid.MustParse("9125a8dc-52ee-365b-a5aa-81b0b3681cf6"), acceptedVersions: []uuid.Version{5}}, // Already UUID but not v5
 		{value: "string", want: false},
 		{value: "", want: false},
 		{value: 'a', want: false},

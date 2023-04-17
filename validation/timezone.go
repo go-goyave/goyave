@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var timezoneCache = sync.Map{} // TODO May cause trouble testing?
+var timezoneCache = sync.Map{}
 
 // TimezoneValidator the field under validation must be a valid string
 // reprensentation of a timezone.
@@ -18,11 +18,11 @@ type TimezoneValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *TimezoneValidator) Validate(ctx *ContextV5) bool {
-	if _, ok := ctx.Value.(time.Time); ok {
+	if _, ok := ctx.Value.(*time.Location); ok {
 		return true
 	}
 	tz, ok := ctx.Value.(string)
-	if !ok || tz == "Local" {
+	if !ok || tz == "Local" || tz == "" {
 		return false
 	}
 

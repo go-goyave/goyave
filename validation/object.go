@@ -8,12 +8,23 @@ type ObjectValidator struct{ BaseValidator }
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *ObjectValidator) Validate(ctx *ContextV5) bool {
 	_, ok := ctx.Value.(map[string]any)
-	if !ok {
-		if (&JSONValidator{}).Validate(ctx) {
-			_, ok = ctx.Value.(map[string]any)
-		}
+	if ok {
+		return true
 	}
-	return ok
+
+	subCtx := &ContextV5{
+		Value: ctx.Value,
+	}
+	if !(&JSONValidator{}).Validate(subCtx) {
+		return false
+	}
+
+	value, ok := subCtx.Value.(map[string]any)
+	if !ok {
+		return false
+	}
+	ctx.Value = value
+	return true
 }
 
 // Name returns the string name of the validator.

@@ -78,6 +78,13 @@ func (p *Paginator) UpdatePageInfo() {
 			db.Statement.Preloads = prevPreloads
 		}()
 	}
+	prevSelects := db.Statement.Selects
+	if len(prevSelects) > 0 {
+		db.Statement.Selects = []string{}
+		defer func() {
+			db.Statement.Selects = prevSelects
+		}()
+	}
 	var err error
 	if p.rawCountQuery != "" {
 		err = db.Raw(p.rawCountQuery, p.rawCountQueryVars...).Scan(&count).Error

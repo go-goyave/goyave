@@ -11,6 +11,8 @@ import (
 	"goyave.dev/goyave/v4/config"
 )
 
+// TODO re-write paginator tests
+
 type PaginatorTestSuite struct {
 	suite.Suite
 	previousEnv string

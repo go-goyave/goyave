@@ -78,11 +78,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	if err := rawCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
 		return err
 	}
-	if err := rawCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return err
-	}
-
-	return nil
+	return rawCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter)
 }
 
 func (p *TimeoutPlugin) timeoutBefore(db *gorm.DB) {

@@ -30,6 +30,8 @@ type timeoutContext struct {
 // on the statement already. It works by replacing the statement's context with a child
 // context having the configured timeout. The context is replaced in a "before" callback
 // on all GORM operations. In a "after" callback, the new context is canceled.
+//
+// Supports all GORM operations except `Raw()`.
 type TimeoutPlugin struct {
 	Timeout time.Duration
 }
@@ -75,13 +77,14 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 		return err
 	}
 
-	rowCallback := db.Callback().Row()
-	if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
-		return err
-	}
-	if err := rowCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return err
-	}
+	// Cannot use it with `Row()` because context is canceled before the call of `rows.Next()`, causing an error.
+	// rowCallback := db.Callback().Row()
+	// if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
+	// 	return err
+	// }
+	// if err := rowCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
+	// 	return err
+	// }
 
 	rawCallback := db.Callback().Raw()
 	if err := rawCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {

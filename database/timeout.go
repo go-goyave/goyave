@@ -14,6 +14,15 @@ const (
 
 type timeoutContext struct {
 	context.Context
+
+	// We store the pointer to the original statement
+	// so we can cancel the context only if the original
+	// statement is completely finished. This prevents
+	// sub-statements (such as preloads) to cancel the context
+	// when they are done, despite the parent statement not being
+	// executed yet.
+	statement *gorm.Statement
+
 	cancel context.CancelFunc
 }
 
@@ -90,14 +99,15 @@ func (p *TimeoutPlugin) timeoutBefore(db *gorm.DB) {
 	}
 	ctx, cancel := context.WithTimeout(db.Statement.Context, p.Timeout)
 	db.Statement.Context = &timeoutContext{
-		Context: ctx,
-		cancel:  cancel,
+		Context:   ctx,
+		statement: db.Statement,
+		cancel:    cancel,
 	}
 }
 
 func (p *TimeoutPlugin) timeoutAfter(db *gorm.DB) {
 	ctx, ok := db.Statement.Context.(*timeoutContext)
-	if !ok || ctx.cancel == nil {
+	if !ok || ctx.cancel == nil || db.Statement != ctx.statement {
 		return
 	}
 	ctx.cancel()

@@ -32,6 +32,8 @@ type timeoutContext struct {
 // on all GORM operations. In a "after" callback, the new context is canceled.
 //
 // Supports all GORM operations except `Raw()`.
+//
+// A timeout duration inferior or equal to 0 disables the plugin.
 type TimeoutPlugin struct {
 	Timeout time.Duration
 }
@@ -94,7 +96,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 }
 
 func (p *TimeoutPlugin) timeoutBefore(db *gorm.DB) {
-	if db.Statement.Context == nil {
+	if p.Timeout <= 0 || db.Statement.Context == nil {
 		return
 	}
 	if _, hasDeadline := db.Statement.Context.Deadline(); hasDeadline {

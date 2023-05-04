@@ -362,6 +362,8 @@ func (p *Path) setAllMissingIndexes() {
 //	object.*
 //	object.array[]
 //	object.arrayOfObjects[].field
+//	[]
+//	[].field
 func Parse(p string) (*Path, error) {
 	// TODO add escape system so '*', '[]' can be escaped
 	rootPath := &Path{}

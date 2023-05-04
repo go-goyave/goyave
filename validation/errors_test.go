@@ -10,7 +10,7 @@ import (
 
 func TestErrors(t *testing.T) {
 
-	t.Run("error_on_root_element", func(t *testing.T) {
+	t.Run("Error_on_root_element", func(t *testing.T) {
 		errs := &ErrorsV5{}
 
 		p := walk.MustParse("root")
@@ -30,7 +30,7 @@ func TestErrors(t *testing.T) {
 		assert.Equal(t, expected, errs)
 	})
 
-	t.Run("create_or_append_object", func(t *testing.T) {
+	t.Run("Create_or_append_object", func(t *testing.T) {
 		errs := &ErrorsV5{}
 
 		p := walk.MustParse("root.object.property")
@@ -69,7 +69,7 @@ func TestErrors(t *testing.T) {
 		assert.Equal(t, expected, errs)
 	})
 
-	t.Run("create_or_append_array", func(t *testing.T) {
+	t.Run("Create_or_append_array", func(t *testing.T) {
 		errs := &ErrorsV5{}
 
 		p := walk.MustParse("root.array[]")
@@ -130,7 +130,7 @@ func TestErrors(t *testing.T) {
 		assert.Equal(t, expected, errs)
 	})
 
-	t.Run("create_or_append_root_array", func(t *testing.T) {
+	t.Run("Create_or_append_root_array", func(t *testing.T) {
 		errs := &ErrorsV5{}
 
 		p := walk.MustParse("root[]")

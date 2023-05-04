@@ -4,7 +4,11 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
+// Field representation of a single field in the data being validated.
+// Provides useful information based on its validators (if required, nullable, etc).
 type FieldV5 struct {
+	isRequired func(*ContextV5) bool
+
 	Path       *walk.Path
 	Elements   *FieldV5
 	Validators []Validator
@@ -16,16 +20,11 @@ type FieldV5 struct {
 
 	isArray    bool
 	isObject   bool
-	isRequired func(*ContextV5) bool
 	isNullable bool
 }
 
 func newField(path string, validators []Validator, prefixDepth uint) *FieldV5 {
-	p, err := walk.Parse(path)
-	if err != nil {
-		panic(err)
-	}
-
+	p := walk.MustParse(path)
 	f := &FieldV5{
 		Path:        p,
 		Validators:  validators,
@@ -50,6 +49,12 @@ func newField(path string, validators []Validator, prefixDepth uint) *FieldV5 {
 	return f
 }
 
+// getErrorPath returns the path to use when appending the error message to the
+// final validation errors.
+//
+// The given `parentPath` corresponds to the path to the parent array
+// if the parent is an array, otherwise `nil`. If `nil`, returns the unmodified
+// path from the `walk.Context`.
 func (f *FieldV5) getErrorPath(parentPath *walk.Path, c *walk.Context) *walk.Path {
 	if parentPath != nil {
 		clone := parentPath.Clone()

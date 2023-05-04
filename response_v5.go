@@ -306,17 +306,17 @@ func (r *ResponseV5) error(err any) {
 //	func (ctrl *ProductController) Show(response *goyave.Response, request *goyave.Request) {
 //	    product := model.Product{}
 //	    result := ctrl.DB().First(&product, request.Params["id"])
-//	    if response.WriteDBError(result) {
+//	    if response.WriteDBError(result.Error) {
 //	        return
 //	    }
 //	    response.JSON(http.StatusOK, product)
 //	}
-func (r *ResponseV5) WriteDBError(db *gorm.DB) bool {
-	if db.Error != nil {
-		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
+func (r *ResponseV5) WriteDBError(err error) bool {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			r.Status(http.StatusNotFound)
 		} else {
-			r.Error(db.Error)
+			r.Error(err)
 		}
 		return true
 	}

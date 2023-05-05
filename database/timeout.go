@@ -31,11 +31,15 @@ type timeoutContext struct {
 // context having the configured timeout. The context is replaced in a "before" callback
 // on all GORM operations. In a "after" callback, the new context is canceled.
 //
-// Supports all GORM operations except `Raw()`.
+// The `ReadTimeout` is applied on the `Query` and `Raw` GORM callbacks. The `WriteTimeout`
+// is applied on the rest of the callbacks.
 //
-// A timeout duration inferior or equal to 0 disables the plugin.
+// Supports all GORM operations except `Scan()`.
+//
+// A timeout duration inferior or equal to 0 disables the plugin for the relevant operations.
 type TimeoutPlugin struct {
-	Timeout time.Duration
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
 }
 
 // Name returns the name of the plugin
@@ -45,10 +49,8 @@ func (p *TimeoutPlugin) Name() string {
 
 // Initialize registers the callbacks for all operations.
 func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
-	// TODO test it works well if hooks
-
 	createCallback := db.Callback().Create()
-	if err := createCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
+	if err := createCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
 		return err
 	}
 	if err := createCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
@@ -56,7 +58,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	}
 
 	queryCallback := db.Callback().Query()
-	if err := queryCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
+	if err := queryCallback.Before("*").Register(timeoutCallbackBeforeName, p.readTimeoutBefore); err != nil {
 		return err
 	}
 	if err := queryCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
@@ -64,7 +66,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	}
 
 	deleteCallback := db.Callback().Delete()
-	if err := deleteCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
+	if err := deleteCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
 		return err
 	}
 	if err := deleteCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
@@ -72,7 +74,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	}
 
 	updateCallback := db.Callback().Update()
-	if err := updateCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
+	if err := updateCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
 		return err
 	}
 	if err := updateCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
@@ -81,7 +83,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 
 	// Cannot use it with `Row()` because context is canceled before the call of `rows.Next()`, causing an error.
 	// rowCallback := db.Callback().Row()
-	// if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
+	// if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.readTimeoutBefore); err != nil {
 	// 	return err
 	// }
 	// if err := rowCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
@@ -89,20 +91,28 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	// }
 
 	rawCallback := db.Callback().Raw()
-	if err := rawCallback.Before("*").Register(timeoutCallbackBeforeName, p.timeoutBefore); err != nil {
+	if err := rawCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
 		return err
 	}
 	return rawCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter)
 }
 
-func (p *TimeoutPlugin) timeoutBefore(db *gorm.DB) {
-	if p.Timeout <= 0 || db.Statement.Context == nil {
+func (p *TimeoutPlugin) readTimeoutBefore(db *gorm.DB) {
+	p.timeoutBefore(db, p.ReadTimeout)
+}
+
+func (p *TimeoutPlugin) writeTimeoutBefore(db *gorm.DB) {
+	p.timeoutBefore(db, p.WriteTimeout)
+}
+
+func (p *TimeoutPlugin) timeoutBefore(db *gorm.DB, timeout time.Duration) {
+	if timeout <= 0 || db.Statement.Context == nil {
 		return
 	}
 	if _, hasDeadline := db.Statement.Context.Deadline(); hasDeadline {
 		return
 	}
-	ctx, cancel := context.WithTimeout(db.Statement.Context, p.Timeout)
+	ctx, cancel := context.WithTimeout(db.Statement.Context, timeout)
 	db.Statement.Context = &timeoutContext{
 		Context:   ctx,
 		statement: db.Statement,

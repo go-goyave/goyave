@@ -198,17 +198,17 @@ func Get(lang string, line string, placeholders ...string) string {
 				}
 				return convertEmptyLine(line, languages[lang].validation.rules[strings.Join(path[2:], ".")], placeholders)
 			case "fields":
-				len := len(path)
-				if len < 3 {
+				length := len(path)
+				if length < 3 {
 					return line
 				}
 				attr := languages[lang].validation.fields[path[2]]
-				if len == 4 {
+				if length == 4 {
 					if attr.Rules == nil {
 						return line
 					}
 					return convertEmptyLine(line, attr.Rules[path[3]], placeholders)
-				} else if len == 3 {
+				} else if length == 3 {
 					return convertEmptyLine(line, attr.Name, placeholders)
 				} else {
 					return line

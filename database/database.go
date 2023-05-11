@@ -72,7 +72,7 @@ func SetConnection(dialector gorm.Dialector) (*gorm.DB, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if dbConnection != nil {
-		if err := close(); err != nil {
+		if err := closeDB(); err != nil {
 			return nil, err
 		}
 	}
@@ -86,7 +86,7 @@ func SetConnection(dialector gorm.Dialector) (*gorm.DB, error) {
 	return dbConnection, nil
 }
 
-func close() error {
+func closeDB() error {
 	var err error
 	if dbConnection != nil {
 		db, _ := dbConnection.DB()
@@ -100,7 +100,7 @@ func close() error {
 func Close() error {
 	mu.Lock()
 	defer mu.Unlock()
-	return close()
+	return closeDB()
 }
 
 // AddInitializer adds a database connection initializer function.

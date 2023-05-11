@@ -207,29 +207,33 @@ func (suite *CustomTestSuite) TestRequests() {
 		if err == nil {
 			suite.Equal("post", string(suite.GetBody(resp)))
 		}
+		resp.Body.Close()
 		resp, err = suite.Put("/put", nil, strings.NewReader("field=value"))
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal("put", string(suite.GetBody(resp)))
 		}
+		resp.Body.Close()
 		resp, err = suite.Patch("/patch", nil, strings.NewReader("field=value"))
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal("patch", string(suite.GetBody(resp)))
 		}
+		resp.Body.Close()
 		resp, err = suite.Delete("/delete", nil, strings.NewReader("field=value"))
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal("delete", string(suite.GetBody(resp)))
 		}
+		resp.Body.Close()
 
 		// Headers
 		resp, err = suite.Get("/headers", map[string]string{"Accept-Language": "en-US"})
 		suite.Nil(err)
 		if err == nil {
 			suite.Equal("en-US", string(suite.GetBody(resp)))
-			resp.Body.Close()
 		}
+		resp.Body.Close()
 
 		// Errors
 		resp, err = suite.Get("invalid", nil)
@@ -368,6 +372,7 @@ func (suite *CustomTestSuite) TestMultipartForm() {
 				suite.Equal("hello world", json["field"])
 			}
 		}
+		resp.Body.Close()
 	})
 }
 

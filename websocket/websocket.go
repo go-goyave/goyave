@@ -85,7 +85,7 @@ type Handler func(*Conn, *goyave.Request) error
 // These handlers are called when an error occurs while the protocol switching.
 type UpgradeErrorHandler func(response *goyave.Response, request *goyave.Request, status int, reason error)
 
-func defaultUpgradeErrorHandler(response *goyave.Response, request *goyave.Request, status int, reason error) {
+func defaultUpgradeErrorHandler(response *goyave.Response, _ *goyave.Request, status int, reason error) {
 	text := http.StatusText(status)
 	if config.GetBool("app.debug") && reason != nil {
 		text = reason.Error()
@@ -243,7 +243,7 @@ type adapter struct {
 	request             *goyave.Request
 }
 
-func (a *adapter) onError(w http.ResponseWriter, r *http.Request, status int, reason error) {
+func (a *adapter) onError(w http.ResponseWriter, _ *http.Request, status int, reason error) {
 	if status == http.StatusInternalServerError {
 		panic(reason)
 	}

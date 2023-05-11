@@ -42,7 +42,7 @@ func (c *Conn) GetCloseHandshakeTimeout() time.Duration {
 	return c.timeout
 }
 
-func (c *Conn) closeHandler(code int, text string) error {
+func (c *Conn) closeHandler(_ int, _ string) error {
 	c.waitClose <- struct{}{}
 	return nil
 }

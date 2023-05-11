@@ -55,7 +55,7 @@ func replaceField(field, language string) string {
 	return attr
 }
 
-func simpleParameterPlaceholder(field string, language string, ctx *Context) string {
+func simpleParameterPlaceholder(_ string, _ string, ctx *Context) string {
 	return ctx.Rule.Params[0]
 }
 

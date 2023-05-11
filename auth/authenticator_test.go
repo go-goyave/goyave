@@ -47,7 +47,7 @@ type TestBasicUnauthorizer struct {
 	BasicAuthenticator
 }
 
-func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.Response, request *goyave.Request, err error) {
+func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.Response, _ *goyave.Request, err error) {
 	response.JSON(http.StatusUnauthorized, map[string]string{"custom error key": err.Error()})
 }
 

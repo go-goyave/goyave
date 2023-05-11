@@ -22,7 +22,7 @@ type GoyaveTestSuite struct {
 	TestSuite
 }
 
-func helloHandler(response *Response, request *Request) {
+func helloHandler(response *Response, _ *Request) {
 	response.String(http.StatusOK, "Hi!")
 }
 

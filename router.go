@@ -68,7 +68,7 @@ var (
 // print stacktrace in the console.
 // If debugging is not enabled, writes `{"error": "Internal Server Error"}`
 // to the response.
-func PanicStatusHandler(response *Response, request *Request) {
+func PanicStatusHandler(response *Response, _ *Request) {
 	response.error(response.GetError())
 	if response.empty {
 		message := map[string]string{
@@ -80,7 +80,7 @@ func PanicStatusHandler(response *Response, request *Request) {
 
 // ErrorStatusHandler a generic status handler for non-success codes.
 // Writes the corresponding status message to the response.
-func ErrorStatusHandler(response *Response, request *Request) {
+func ErrorStatusHandler(response *Response, _ *Request) {
 	message := map[string]string{
 		"error": http.StatusText(response.GetStatus()),
 	}
@@ -89,7 +89,7 @@ func ErrorStatusHandler(response *Response, request *Request) {
 
 // ValidationStatusHandler for HTTP 400 and HTTP 422 errors.
 // Writes the validation errors to the response.
-func ValidationStatusHandler(response *Response, request *Request) {
+func ValidationStatusHandler(response *Response, _ *Request) {
 	message := map[string]interface{}{"validationError": response.GetError()}
 	response.JSON(response.GetStatus(), message)
 }

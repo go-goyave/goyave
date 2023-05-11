@@ -1,6 +1,6 @@
 module goyave.dev/goyave/v4
 
-go 1.17
+go 1.18
 
 require (
 	github.com/Code-Hex/uniseg v0.2.0

@@ -15,6 +15,7 @@ func newTestContext(field string, value interface{}, parameters []string, form m
 		Rule: &Rule{
 			Params: parameters,
 		},
+		valid: true,
 	}
 }
 

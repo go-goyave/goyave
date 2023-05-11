@@ -43,6 +43,13 @@ type Context struct {
 	valid bool // Set to false if there was at least one validation error on the field
 }
 
+// NewContext returns a new valid context. Used for testing.
+func NewContext() *Context {
+	return &Context{
+		valid: true,
+	}
+}
+
 // Valid returns false if at least one validator prior to the current one didn't pass
 // on the field under validation.
 func (c *Context) Valid() bool {

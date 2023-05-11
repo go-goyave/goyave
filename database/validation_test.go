@@ -16,14 +16,14 @@ type ValidationTestSuite struct {
 }
 
 func newTestContext(field string, value interface{}, parameters []string, form map[string]interface{}) *validation.Context {
-	return &validation.Context{
-		Data:  form,
-		Value: value,
-		Name:  field,
-		Rule: &validation.Rule{
-			Params: parameters,
-		},
+	ctx := validation.NewContext()
+	ctx.Data = form
+	ctx.Value = value
+	ctx.Name = field
+	ctx.Rule = &validation.Rule{
+		Params: parameters,
 	}
+	return ctx
 }
 
 func (suite *ValidationTestSuite) SetupSuite() {

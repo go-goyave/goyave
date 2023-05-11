@@ -18,6 +18,9 @@ func init() {
 }
 
 func validateUnique(ctx *validation.Context) bool {
+	if !ctx.Valid() {
+		return true
+	}
 	column := ctx.Name
 	if len(ctx.Rule.Params) >= 2 {
 		column = ctx.Rule.Params[1]

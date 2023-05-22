@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v4/util/walk"
@@ -27,6 +28,13 @@ func (v *InValidator[T]) Validate(ctx *ContextV5) bool {
 
 // Name returns the string name of the validator.
 func (v *InValidator[T]) Name() string { return "in" }
+
+// MessagePlaceholders returns the ":values placeholder.
+func (v *InValidator[T]) MessagePlaceholders(_ *ContextV5) []string {
+	return []string{
+		":values", strings.Join(lo.Map(v.Values, func(v T, _ int) string { return fmt.Sprintf("%v", v) }), ", "),
+	}
+}
 
 // In the field under validation must be a one of the given values.
 func In[T comparable](values []T) *InValidator[T] {
@@ -56,6 +64,13 @@ func (v *NotInValidator[T]) Validate(ctx *ContextV5) bool {
 
 // Name returns the string name of the validator.
 func (v *NotInValidator[T]) Name() string { return "not_in" }
+
+// MessagePlaceholders returns the ":values placeholder.
+func (v *NotInValidator[T]) MessagePlaceholders(_ *ContextV5) []string {
+	return []string{
+		":values", strings.Join(lo.Map(v.Values, func(v T, _ int) string { return fmt.Sprintf("%v", v) }), ", "),
+	}
+}
 
 // NotIn the field under validation must not be a one of the given values.
 func NotIn[T comparable](values []T) *NotInValidator[T] {

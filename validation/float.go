@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-// TODO test float validator
-
 func numberAsFloat64(n any) (float64, bool, error) {
 	switch val := n.(type) {
 	case float32:
@@ -90,9 +88,9 @@ func (v *floatValidator[T]) Validate(ctx *ContextV5) bool {
 func (v *floatValidator[T]) parseString(ctx *ContextV5, val string) bool {
 	floatVal, err := strconv.ParseFloat(val, v.getBitSize())
 	if err == nil {
-		ctx.Value = T(floatVal)
+		return v.checkFloatRange(ctx, floatVal)
 	}
-	return err == nil
+	return false
 }
 
 func (v *floatValidator[T]) getBitSize() int {
@@ -137,9 +135,9 @@ func (v *floatValidator[T]) checkUintRange(ctx *ContextV5, val uint) bool {
 	var t T
 	switch any(t).(type) {
 	case float32:
-		ok = val < math.MaxInt32
+		ok = val <= math.MaxInt32
 	default:
-		ok = val < math.MaxInt64
+		ok = val <= math.MaxInt64
 	}
 	if ok {
 		ctx.Value = T(val)

@@ -6,6 +6,11 @@ import (
 	"strconv"
 )
 
+const (
+	maxIntFloat32 = 16777216
+	maxIntFloat64 = 9007199254740992
+)
+
 func numberAsFloat64(n any) (float64, bool, error) {
 	switch val := n.(type) {
 	case float32:
@@ -126,8 +131,19 @@ func (v *floatValidator[T]) checkFloatRange(ctx *ContextV5, val float64) bool {
 }
 
 func (v *floatValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
-	// This is OK because the first number that float64 skips over is MaxInt64
-	return v.checkFloatRange(ctx, float64(val))
+
+	var t T
+	ok := false
+	switch any(t).(type) {
+	case float32:
+		ok = val <= maxIntFloat32 && val >= -maxIntFloat32
+	default:
+		ok = val <= maxIntFloat64 && val >= -maxIntFloat64
+	}
+	if ok {
+		ctx.Value = T(val)
+	}
+	return ok
 }
 
 func (v *floatValidator[T]) checkUintRange(ctx *ContextV5, val uint) bool {
@@ -135,9 +151,9 @@ func (v *floatValidator[T]) checkUintRange(ctx *ContextV5, val uint) bool {
 	var t T
 	switch any(t).(type) {
 	case float32:
-		ok = val <= math.MaxInt32
+		ok = val <= maxIntFloat32
 	default:
-		ok = val <= math.MaxInt64
+		ok = val <= maxIntFloat64
 	}
 	if ok {
 		ctx.Value = T(val)
@@ -155,7 +171,10 @@ func (v *floatValidator[T]) IsType() bool { return true }
 type Float64Validator struct{ floatValidator[float64] }
 
 // Float64 the field under validation must be a number
-// and fit into Go's `float64` type.
+// and fit into Go's `float64` type. If the source number
+// is an integer, the validator makes sure `float64` is
+// capable of representing it without loss or rounding.
+//
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `float64` if it passes.
 func Float64() *Float64Validator {
@@ -166,7 +185,10 @@ func Float64() *Float64Validator {
 type Float32Validator struct{ floatValidator[float32] }
 
 // Float32 the field under validation must be a number
-// and fit into Go's `float32` type.
+// and fit into Go's `float32` type. If the source number
+// is an integer, the validator makes sure `float32` is
+// capable of representing it without loss or rounding.
+//
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `float32` if it passes.
 func Float32() *Float32Validator {

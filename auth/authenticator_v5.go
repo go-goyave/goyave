@@ -102,7 +102,7 @@ func findColumnsV5(db *gorm.DB, t reflect.Type, fields []string) []*Column {
 		}
 		if fieldType.Kind() == reflect.Struct && strctType.Anonymous {
 			// Check promoted fields recursively
-			for i, v := range findColumns(fieldType, fields) {
+			for i, v := range findColumnsV5(db, fieldType, fields) {
 				if v != nil {
 					result[i] = v
 				}

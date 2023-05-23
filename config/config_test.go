@@ -75,6 +75,11 @@ func TestLoad(t *testing.T) {
 		assert.Error(t, err)
 	})
 
+	t.Run("Load Default", func(t *testing.T) {
+		cfg := LoadDefault()
+		assert.Equal(t, defaultLoader.defaults, cfg.config)
+	})
+
 	t.Run("Load Non Existing", func(t *testing.T) {
 		t.Setenv("GOYAVE_ENV", "nonexisting")
 		cfg, err := LoadV5()

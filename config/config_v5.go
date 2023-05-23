@@ -96,13 +96,15 @@ func (l *loader) load(readFunc readFunc, source string) (*Config, error) {
 	config := make(object, len(l.defaults))
 	loadDefaults(l.defaults, config)
 
-	conf, err := readFunc(source)
-	if err != nil {
-		return nil, &Error{err}
-	}
+	if readFunc != nil {
+		conf, err := readFunc(source)
+		if err != nil {
+			return nil, &Error{err}
+		}
 
-	if err := override(conf, config); err != nil {
-		return nil, &Error{err}
+		if err := override(conf, config); err != nil {
+			return nil, &Error{err}
+		}
 	}
 
 	if err := config.validate(""); err != nil {
@@ -121,6 +123,12 @@ func (l *loader) load(readFunc readFunc, source string) (*Config, error) {
 //   - By default: "config.json"
 func LoadV5() (*Config, error) {
 	return defaultLoader.loadFrom(getConfigFilePath())
+}
+
+// LoadDefault loads default config.
+func LoadDefault() *Config {
+	cfg, _ := defaultLoader.load(nil, "")
+	return cfg
 }
 
 // LoadFromV5 loads a config file from the given path.

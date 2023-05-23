@@ -6,42 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/database"
 
 	_ "goyave.dev/goyave/v4/database/dialect/mysql"
 )
-
-type TestUser struct {
-	gorm.Model
-	Name     string `gorm:"type:varchar(100)"`
-	Password string `gorm:"type:varchar(100)" auth:"password"`
-	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
-}
-
-type TestUserPromoted struct {
-	TestUser
-}
-
-type TestUserPromotedPtr struct {
-	*TestUser
-}
-
-type TestUserOverride struct {
-	gorm.Model
-	Name     string `gorm:"type:varchar(100)"`
-	Password string `gorm:"type:varchar(100);column:password_override" auth:"password"`
-	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
-}
-
-type TestUserInvalidOverride struct {
-	gorm.Model
-	Name     string `gorm:"type:varchar(100)"`
-	Password string `gorm:"type:varchar(100);column:" auth:"password"`
-	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
-}
 
 type TestBasicUnauthorizer struct {
 	BasicAuthenticator

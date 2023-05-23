@@ -103,7 +103,6 @@ func (s *TestSuite) CreateTestRequest(rawRequest *http.Request) *Request {
 		httpRequest: rawRequest,
 		route:       nil,
 		Data:        nil,
-		Rules:       nil,
 		Lang:        "en-US",
 		Params:      map[string]string{},
 		Extra:       map[string]interface{}{},

@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	"goyave.dev/goyave/v4/validation"
 )
 
 // Route stores information for matching and serving.
 type Route struct {
-	name            string
-	uri             string
-	methods         []string
-	parent          *Router
-	handler         Handler
-	validationRules *validation.Rules
+	name    string
+	uri     string
+	methods []string
+	parent  *Router
+	handler Handler
 	middlewareHolder
 	parameterizable
 }
@@ -85,16 +82,6 @@ func (r *Route) Name(name string) *Route {
 
 	r.name = name
 	r.parent.namedRoutes[name] = r
-	return r
-}
-
-// Validate adds validation rules to this route. If the user-submitted data
-// doesn't pass validation, the user will receive an error and messages explaining
-// what is wrong.
-//
-// Returns itself.
-func (r *Route) Validate(validationRules validation.Ruler) *Route {
-	r.validationRules = validationRules.AsRules()
 	return r
 }
 
@@ -192,11 +179,6 @@ func (r *Route) GetMethods() []string {
 // GetHandler returns the Handler associated with this route.
 func (r *Route) GetHandler() Handler {
 	return r.handler
-}
-
-// GetValidationRules returns the validation rules associated with this route.
-func (r *Route) GetValidationRules() *validation.Rules {
-	return r.validationRules
 }
 
 // GetFullURIAndParameters get the full uri and parameters for this route and all its parent routers.

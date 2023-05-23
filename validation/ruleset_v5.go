@@ -186,6 +186,7 @@ func (r RuleSetV5) injectArrayParents() RuleSetV5 {
 }
 
 func (r RuleSetV5) sort() {
+	// Make sure the array elements are before their parent in the list
 	sort.SliceStable(r, func(i, j int) bool {
 		field1 := r[i]
 		field2 := r[j]

@@ -10,6 +10,7 @@ import (
 	"goyave.dev/goyave/v4/cors"
 )
 
+// Common route meta keys.
 const (
 	MetaCORS = "goyave.cors"
 )
@@ -23,6 +24,11 @@ var (
 	})
 )
 
+// Handler responds to an HTTP request.
+//
+// The given `Response` and `Request` value should not
+// be used outside of the context of an HTTP request. e.g.: passed to
+// a goroutine or used after the finalization step in the request lifecycle.
 type HandlerV5 func(*ResponseV5, *RequestV5)
 
 type routeMatcherV5 interface {

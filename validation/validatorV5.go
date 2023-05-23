@@ -12,6 +12,29 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
+const (
+	// CurrentElement special key for field name in composite rule sets.
+	// Use it if you want to apply rules to the current object element.
+	// You cannot apply rules on the root element, these rules will only
+	// apply if the rule set is used with composition.
+	CurrentElement = ""
+
+	// ExtraRequest extra key used when validating a request so the
+	// request's information is accessible to validation rules
+	ExtraRequest = "request"
+)
+
+// FieldType returned by the GetFieldType function.
+const (
+	FieldTypeNumeric     = "numeric"
+	FieldTypeString      = "string"
+	FieldTypeBool        = "bool"
+	FieldTypeFile        = "file"
+	FieldTypeArray       = "array"
+	FieldTypeObject      = "object"
+	FieldTypeUnsupported = "unsupported"
+)
+
 // Composable is a partial clone of `goyave.Component`, only
 // including the accessors necessary for validation.
 // Validators must implement this interface so they
@@ -350,6 +373,90 @@ func (v *validator) findTypeValidator(validators []Validator) Validator {
 	}
 
 	return nil
+}
+
+func replaceValue(value any, c *walk.Context) {
+	if c.Found != walk.Found {
+		return
+	}
+
+	if parentObject, ok := c.Parent.(map[string]any); ok {
+		parentObject[c.Name] = value
+	} else {
+		// Parent is slice
+		reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
+	}
+}
+
+func makeGenericSlice(original any) ([]any, bool) {
+	list := reflect.ValueOf(original)
+	if list.Kind() != reflect.Slice {
+		return nil, false
+	}
+	if o, ok := original.([]any); ok {
+		return o, false
+	}
+	length := list.Len()
+	newSlice := make([]any, 0, length)
+	for i := 0; i < length; i++ {
+		newSlice = append(newSlice, list.Index(i).Interface())
+	}
+	return newSlice, true
+}
+
+// GetFieldType returns the non-technical type of the given "value" interface.
+// This is used by validation rules to know if the input data is a candidate
+// for validation or not and is especially useful for type-dependent rules.
+//   - "numeric" (`lang.FieldTypeNumeric`) if the value is an int, uint or a float
+//   - "string" (`lang.FieldTypeString`) if the value is a string
+//   - "array" (`lang.FieldTypeArray`) if the value is a slice
+//   - "file" (`lang.FieldTypeFile`) if the value is a slice of "fsutil.File"
+//   - "unsupported" (`lang.FieldTypeUnsupported`) otherwise
+func GetFieldType(value any) string {
+	return getFieldType(reflect.ValueOf(value))
+}
+
+func getFieldType(value reflect.Value) string {
+	kind := value.Kind().String()
+	switch {
+	case strings.HasPrefix(kind, "int"), strings.HasPrefix(kind, "uint") && kind != "uintptr", strings.HasPrefix(kind, "float"):
+		return FieldTypeNumeric
+	case kind == "string":
+		return FieldTypeString
+	case kind == "bool":
+		return FieldTypeBool
+	case kind == "slice":
+		if value.Type().String() == "[]fsutil.File" {
+			return FieldTypeFile
+		}
+		return FieldTypeArray
+	default:
+		if value.IsValid() {
+			if _, ok := value.Interface().(map[string]any); ok {
+				return FieldTypeObject
+			}
+		}
+		return FieldTypeUnsupported
+	}
+}
+
+// GetFieldName returns the localized name of the field identified
+// by the given path.
+func GetFieldName(lang *lang.Language, path *walk.Path) string { // TODO test this
+	return translateFieldName(lang, path.String())
+}
+
+func translateFieldName(lang *lang.Language, fieldName string) string {
+	if i := strings.LastIndex(fieldName, "."); i != -1 {
+		fieldName = fieldName[i+1:]
+	}
+	fieldName = strings.TrimSuffix(fieldName, "[]")
+	entry := "validation.fields." + fieldName
+	name := lang.Get(entry)
+	if name == entry {
+		return fieldName
+	}
+	return name
 }
 
 // TODO "Default" rule? (sets a value for the field if it's not provided)

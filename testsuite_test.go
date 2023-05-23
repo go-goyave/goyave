@@ -80,7 +80,6 @@ func (suite *CustomTestSuite) TestCreateTestRequest() {
 	request := suite.CreateTestRequest(nil)
 	suite.Nil(request.route)
 	suite.Nil(request.Data)
-	suite.Nil(request.Rules)
 	suite.Equal("en-US", request.Lang)
 	suite.NotNil(request.Params)
 	suite.NotNil(request.Extra)

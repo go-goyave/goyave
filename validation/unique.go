@@ -2,6 +2,8 @@ package validation
 
 import "gorm.io/gorm"
 
+// TODO test unique/exists
+
 // UniqueValidator validates the field under validation must have a unique value in database
 // according to the provided database scope. Uniqueness is checked using a COUNT query.
 type UniqueValidator struct {

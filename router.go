@@ -436,17 +436,11 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 		httpRequest: rawRequest,
 		route:       match.route,
 		corsOptions: match.corsOptions,
-		Rules:       match.route.validationRules,
 		Params:      match.parameters,
 		Extra:       map[string]interface{}{},
 	}
 	response := newResponse(w, rawRequest)
 	handler := match.route.handler
-
-	// Validate last.
-	// Allows custom middleware to be executed after core
-	// middleware and before validation.
-	handler = validateRequestMiddleware(handler)
 
 	// Route-specific middleware is executed after router middleware
 	handler = match.route.applyMiddleware(handler)

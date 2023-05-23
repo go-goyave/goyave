@@ -32,6 +32,8 @@ func TestArrayValidator(t *testing.T) {
 		{value: []any{[]any{"a", "b"}}, want: true, wantValue: [][]any{{"a", "b"}}},
 		{value: []any{"a", "b"}, want: true, wantValue: []string{"a", "b"}, parent: []any{[]any{"a", "b"}}},
 		{value: []string{"a", "b"}, want: true, wantValue: []string{"a", "b"}, parent: []any{[]any{"a", "b"}}},
+		{value: []string{}, want: true, wantValue: []string{}, parent: []any{[]string{}}},
+		{value: []any{1, 2, 3}, want: true, wantValue: []any{1, 2, 3}, parent: []string{}}, // Child element not assignable to parent
 		{value: "a", want: false, wantValue: "a"},
 		{value: 'a', want: false, wantValue: 'a'},
 		{value: 2, want: false, wantValue: 2},

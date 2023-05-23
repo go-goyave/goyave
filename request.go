@@ -13,7 +13,6 @@ import (
 	"goyave.dev/goyave/v4/util/fsutil"
 
 	"github.com/google/uuid"
-	"goyave.dev/goyave/v4/validation"
 )
 
 // Request struct represents an http request.
@@ -22,7 +21,6 @@ type Request struct {
 	httpRequest *http.Request
 	corsOptions *cors.Options
 	route       *Route
-	Rules       *validation.Rules
 	Params      map[string]string
 	Data        map[string]interface{}
 	Extra       map[string]interface{}
@@ -271,16 +269,4 @@ func (r *Request) Object(field string) map[string]interface{} {
 //	 }
 func (r *Request) ToStruct(dst interface{}) error {
 	return mergo.Map(dst, r.Data)
-}
-
-func (r *Request) validate() validation.Errors {
-	if r.Rules == nil {
-		return nil
-	}
-
-	extra := map[string]interface{}{
-		validation.ExtraRequest: r,
-	}
-	contentType := r.httpRequest.Header.Get("Content-Type")
-	return validation.ValidateWithExtra(r.Data, r.Rules, strings.HasPrefix(contentType, "application/json"), r.Lang, extra)
 }

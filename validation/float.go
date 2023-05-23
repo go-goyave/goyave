@@ -28,7 +28,7 @@ func numberAsFloat64(n any) (float64, bool, error) {
 	case int64:
 		return float64(val), true, nil
 	case uint:
-		if val >= math.MaxInt64 {
+		if val > maxIntFloat64 {
 			return float64(val), false, fmt.Errorf("uint value %d doesn't fit in float64", val)
 		}
 		return float64(val), true, nil
@@ -39,7 +39,7 @@ func numberAsFloat64(n any) (float64, bool, error) {
 	case uint32:
 		return float64(val), true, nil
 	case uint64:
-		if val >= math.MaxInt64 {
+		if val > maxIntFloat64 {
 			return float64(val), false, fmt.Errorf("uint64, value %d doesn't fit in float64", val)
 		}
 		return float64(val), true, nil

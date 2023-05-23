@@ -15,6 +15,8 @@ type RulerV5 interface {
 }
 
 // Validator is a Component validating a field value.
+// A validator should not be re-usable or usable concurrently. They are meant to be
+// scoped to a single field validation in a single request.
 type Validator interface {
 	Composable
 	init(*Options)

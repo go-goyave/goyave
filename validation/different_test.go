@@ -41,7 +41,7 @@ func TestDifferentValidator(t *testing.T) {
 		{desc: "equal numbers different type", data: makeComparisonData(1), value: 1.0, want: true},
 		{desc: "different numbers", data: makeComparisonData(1), value: 2, want: true},
 		{desc: "different numbers different types", data: makeComparisonData(1), value: 1.1, want: true},
-		{desc: "many different numbers", data: makeComparisonData(0.3, 2.1), value: 0.3, want: true},
+		{desc: "many different numbers", data: makeComparisonData(0.3, 2.1), value: 0.4, want: true},
 		{desc: "many equal numbers", data: makeComparisonData(1, 2.1, 3, 0.3), value: 0.3, want: false},
 		{desc: "equal arrays", data: makeComparisonData([]string{"a", "b"}), value: []string{"a", "b"}, want: false},
 		{desc: "different arrays", data: makeComparisonData([]string{"a", "b"}), value: []string{"b", "a"}, want: true},

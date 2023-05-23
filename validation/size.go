@@ -19,6 +19,9 @@ func validateSizeV5(value any, v func(size int) bool) bool {
 	case FieldTypeFile:
 		files, _ := value.([]fsutil.File)
 		for _, file := range files {
+			if file.Header.Size > maxIntFloat64 || file.Header.Size < 0 {
+				return false
+			}
 			if !v(int(math.Ceil(float64(file.Header.Size) / 1024.0))) {
 				return false
 			}

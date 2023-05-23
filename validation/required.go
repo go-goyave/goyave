@@ -10,7 +10,7 @@ package validation
 type RequiredValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *RequiredValidator) Validate(ctx *ContextV5) bool {
+func (v *RequiredValidator) Validate(ctx *Context) bool {
 	if !ctx.Field.IsNullable() && ctx.Value == nil {
 		return false
 	}
@@ -37,11 +37,11 @@ func Required() *RequiredValidator {
 // described if the specified `Condition` function returns true.
 type RequiredIfValidator struct {
 	RequiredValidator
-	Condition func(*ContextV5) bool
+	Condition func(*Context) bool
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *RequiredIfValidator) Validate(ctx *ContextV5) bool {
+func (v *RequiredIfValidator) Validate(ctx *Context) bool {
 	if !v.Condition(ctx) {
 		return true
 	}
@@ -50,6 +50,6 @@ func (v *RequiredIfValidator) Validate(ctx *ContextV5) bool {
 
 // RequiredIf is the same as `Required` but only applies the behavior
 // described if the specified condition function returns true.
-func RequiredIf(condition func(*ContextV5) bool) *RequiredIfValidator {
+func RequiredIf(condition func(*Context) bool) *RequiredIfValidator {
 	return &RequiredIfValidator{Condition: condition}
 }

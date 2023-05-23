@@ -56,7 +56,7 @@ type float interface {
 
 type floatValidator[T float] struct{ BaseValidator }
 
-func (v *floatValidator[T]) Validate(ctx *ContextV5) bool {
+func (v *floatValidator[T]) Validate(ctx *Context) bool {
 	switch val := ctx.Value.(type) {
 	case T:
 		return true
@@ -93,7 +93,7 @@ func (v *floatValidator[T]) Validate(ctx *ContextV5) bool {
 	return false
 }
 
-func (v *floatValidator[T]) parseString(ctx *ContextV5, val string) bool {
+func (v *floatValidator[T]) parseString(ctx *Context, val string) bool {
 	floatVal, err := strconv.ParseFloat(val, v.getBitSize())
 	if err == nil {
 		return v.checkFloatRange(ctx, floatVal)
@@ -125,7 +125,7 @@ func (v *floatValidator[T]) max() float64 {
 	}
 }
 
-func (v *floatValidator[T]) checkFloatRange(ctx *ContextV5, val float64) bool {
+func (v *floatValidator[T]) checkFloatRange(ctx *Context, val float64) bool {
 	ok := val >= v.min() && val <= v.max()
 	if ok {
 		ctx.Value = T(val)
@@ -133,7 +133,7 @@ func (v *floatValidator[T]) checkFloatRange(ctx *ContextV5, val float64) bool {
 	return ok
 }
 
-func (v *floatValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
+func (v *floatValidator[T]) checkIntRange(ctx *Context, val int) bool {
 
 	var t T
 	ok := false
@@ -149,7 +149,7 @@ func (v *floatValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
 	return ok
 }
 
-func (v *floatValidator[T]) checkUintRange(ctx *ContextV5, val uint) bool {
+func (v *floatValidator[T]) checkUintRange(ctx *Context, val uint) bool {
 	ok := false
 	var t T
 	switch any(t).(type) {

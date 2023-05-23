@@ -30,7 +30,7 @@ func (v *DateValidator) parseDate(date any) (time.Time, bool) {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *DateValidator) Validate(ctx *ContextV5) bool {
+func (v *DateValidator) Validate(ctx *Context) bool {
 	date, ok := v.parseDate(ctx.Value)
 	if ok {
 		ctx.Value = date
@@ -65,7 +65,7 @@ type DateComparisonValidator struct {
 	Date time.Time
 }
 
-func (v *DateComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(time.Time, time.Time) bool) bool {
+func (v *DateComparisonValidator) validate(ctx *Context, comparisonFunc func(time.Time, time.Time) bool) bool {
 	date, ok := ctx.Value.(time.Time)
 	if !ok {
 		return false
@@ -74,7 +74,7 @@ func (v *DateComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(t
 }
 
 // MessagePlaceholders returns the ":date" placeholder.
-func (v *DateComparisonValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *DateComparisonValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":date", v.Date.Format(time.RFC3339),
 	}
@@ -88,7 +88,7 @@ type DateFieldComparisonValidator struct {
 	Path *walk.Path
 }
 
-func (v *DateFieldComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(time.Time, time.Time) bool) bool {
+func (v *DateFieldComparisonValidator) validate(ctx *Context, comparisonFunc func(time.Time, time.Time) bool) bool {
 	date, ok := ctx.Value.(time.Time)
 	if !ok {
 		return false
@@ -117,7 +117,7 @@ func (v *DateFieldComparisonValidator) validate(ctx *ContextV5, comparisonFunc f
 }
 
 // MessagePlaceholders returns the ":date" placeholder.
-func (v *DateFieldComparisonValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *DateFieldComparisonValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":date", GetFieldName(v.Lang(), v.Path),
 	}
@@ -132,7 +132,7 @@ type DateEqualsValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *DateEqualsValidator) Validate(ctx *ContextV5) bool {
+func (v *DateEqualsValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.Equal(t2)
 	})
@@ -155,7 +155,7 @@ type DateEqualsFieldValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *DateEqualsFieldValidator) Validate(ctx *ContextV5) bool {
+func (v *DateEqualsFieldValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.Equal(t2)
 	})

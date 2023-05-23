@@ -6,13 +6,13 @@ package validation
 type ObjectValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *ObjectValidator) Validate(ctx *ContextV5) bool {
+func (v *ObjectValidator) Validate(ctx *Context) bool {
 	_, ok := ctx.Value.(map[string]any)
 	if ok {
 		return true
 	}
 
-	subCtx := &ContextV5{
+	subCtx := &Context{
 		Value: ctx.Value,
 	}
 	if !(&JSONValidator{}).Validate(subCtx) {

@@ -10,7 +10,7 @@ type RegexValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *RegexValidator) Validate(ctx *ContextV5) bool {
+func (v *RegexValidator) Validate(ctx *Context) bool {
 	val, ok := ctx.Value.(string)
 	return ok && v.Regexp.MatchString(val)
 }
@@ -19,7 +19,7 @@ func (v *RegexValidator) Validate(ctx *ContextV5) bool {
 func (v *RegexValidator) Name() string { return "regex" }
 
 // MessagePlaceholders returns the ":regexp" placeholder.
-func (v *RegexValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *RegexValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":regexp", v.Regexp.String(),
 	}

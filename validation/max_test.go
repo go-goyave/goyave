@@ -17,7 +17,7 @@ func TestMaxValidator(t *testing.T) {
 		assert.Equal(t, "max", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":max", "123.456"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":max", "123.456"}, v.MessagePlaceholders(&Context{}))
 	})
 
 	file := fsutil.File{Header: &multipart.FileHeader{Size: 2048}}
@@ -58,7 +58,7 @@ func TestMaxValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%f_%t", c.value, c.max, c.want), func(t *testing.T) {
 			v := Max(c.max)
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)

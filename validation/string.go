@@ -10,7 +10,7 @@ import (
 type StringValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *StringValidator) Validate(ctx *ContextV5) bool {
+func (v *StringValidator) Validate(ctx *Context) bool {
 	_, ok := ctx.Value.(string)
 	return ok
 }
@@ -36,7 +36,7 @@ type StartsWithValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *StartsWithValidator) Validate(ctx *ContextV5) bool {
+func (v *StartsWithValidator) Validate(ctx *Context) bool {
 	val, ok := ctx.Value.(string)
 	return ok && lo.ContainsBy(v.Prefix, func(prefix string) bool {
 		return strings.HasPrefix(val, prefix)
@@ -47,7 +47,7 @@ func (v *StartsWithValidator) Validate(ctx *ContextV5) bool {
 func (v *StartsWithValidator) Name() string { return "starts_with" }
 
 // MessagePlaceholders returns the ":values" placeholder.
-func (v *StartsWithValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *StartsWithValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":values", strings.Join(v.Prefix, ", "),
 	}
@@ -69,7 +69,7 @@ type EndsWithValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *EndsWithValidator) Validate(ctx *ContextV5) bool {
+func (v *EndsWithValidator) Validate(ctx *Context) bool {
 	val, ok := ctx.Value.(string)
 	return ok && lo.ContainsBy(v.Suffix, func(prefix string) bool {
 		return strings.HasSuffix(val, prefix)
@@ -80,7 +80,7 @@ func (v *EndsWithValidator) Validate(ctx *ContextV5) bool {
 func (v *EndsWithValidator) Name() string { return "ends_with" }
 
 // MessagePlaceholders returns the ":values" placeholder.
-func (v *EndsWithValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *EndsWithValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":values", strings.Join(v.Suffix, ", "),
 	}

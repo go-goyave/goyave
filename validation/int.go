@@ -13,7 +13,7 @@ type integer interface {
 
 type intValidator[T integer] struct{ BaseValidator }
 
-func (v *intValidator[T]) Validate(ctx *ContextV5) bool {
+func (v *intValidator[T]) Validate(ctx *Context) bool {
 	switch val := ctx.Value.(type) {
 	case T:
 		return true
@@ -72,7 +72,7 @@ func (v *intValidator[T]) getBitSize() int {
 	return strconv.IntSize
 }
 
-func (v *intValidator[T]) checkFloat64Range(ctx *ContextV5, val float64) bool {
+func (v *intValidator[T]) checkFloat64Range(ctx *Context, val float64) bool {
 	if val > maxIntFloat64 || val < -maxIntFloat64 {
 		return false
 	}
@@ -83,7 +83,7 @@ func (v *intValidator[T]) checkFloat64Range(ctx *ContextV5, val float64) bool {
 	return ok
 }
 
-func (v *intValidator[T]) checkFloat32Range(ctx *ContextV5, val float32) bool {
+func (v *intValidator[T]) checkFloat32Range(ctx *Context, val float32) bool {
 	if val > maxIntFloat32 || val < -maxIntFloat32 {
 		return false
 	}
@@ -94,7 +94,7 @@ func (v *intValidator[T]) checkFloat32Range(ctx *ContextV5, val float32) bool {
 	return ok
 }
 
-func (v *intValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
+func (v *intValidator[T]) checkIntRange(ctx *Context, val int) bool {
 	ok := false
 	if v.isUnsigned() {
 		ok = val >= v.min() && uint(val) <= v.max()
@@ -107,7 +107,7 @@ func (v *intValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
 	return ok
 }
 
-func (v *intValidator[T]) checkUintRange(ctx *ContextV5, val uint) bool {
+func (v *intValidator[T]) checkUintRange(ctx *Context, val uint) bool {
 	ok := val <= v.max()
 	if ok {
 		ctx.Value = T(val)
@@ -131,7 +131,7 @@ func (v *intValidator[T]) max() uint {
 	return 1<<bitSize - 1
 }
 
-func (v *intValidator[T]) parseString(ctx *ContextV5, val string) bool {
+func (v *intValidator[T]) parseString(ctx *Context, val string) bool {
 	if v.isUnsigned() {
 		intVal, err := strconv.ParseUint(val, 10, v.getBitSize())
 		if err == nil {

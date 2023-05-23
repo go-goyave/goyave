@@ -14,7 +14,7 @@ func TestDistinctValidator(t *testing.T) {
 		assert.Equal(t, "distinct", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -42,7 +42,7 @@ func TestDistinctValidator(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
-			assert.Equal(t, c.want, c.validator.Validate(&ContextV5{
+			assert.Equal(t, c.want, c.validator.Validate(&Context{
 				Value: c.value,
 			}))
 		})

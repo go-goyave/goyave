@@ -10,7 +10,7 @@ type ArrayValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *ArrayValidator) Validate(ctx *ContextV5) bool {
+func (v *ArrayValidator) Validate(ctx *Context) bool {
 	if GetFieldType(ctx.Value) != FieldTypeArray {
 		return false
 	}

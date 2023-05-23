@@ -16,7 +16,7 @@ type MIMEValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *MIMEValidator) Validate(ctx *ContextV5) bool {
+func (v *MIMEValidator) Validate(ctx *Context) bool {
 	files, ok := ctx.Value.([]fsutil.File)
 	if ok {
 		for _, file := range files {
@@ -37,7 +37,7 @@ func (v *MIMEValidator) Validate(ctx *ContextV5) bool {
 func (v *MIMEValidator) Name() string { return "mime" }
 
 // MessagePlaceholders returns the ":values" placeholder.
-func (v *MIMEValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *MIMEValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":values", strings.Join(v.MIMETypes, ", "),
 	}

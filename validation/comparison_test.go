@@ -28,7 +28,7 @@ func TestGreaterThanValidator(t *testing.T) {
 		assert.Equal(t, "greater_than", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			GreaterThan("invalid[path.")
@@ -162,7 +162,7 @@ func TestGreaterThanValidator(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := GreaterThan(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))
@@ -179,7 +179,7 @@ func TestGreaterThanEqualValidator(t *testing.T) {
 		assert.Equal(t, "greater_than_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			GreaterThanEqual("invalid[path.")
@@ -339,7 +339,7 @@ func TestGreaterThanEqualValidator(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := GreaterThanEqual(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))
@@ -356,7 +356,7 @@ func TestLowerThanValidator(t *testing.T) {
 		assert.Equal(t, "lower_than", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			LowerThan("invalid[path.")
@@ -490,7 +490,7 @@ func TestLowerThanValidator(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := LowerThan(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))
@@ -507,7 +507,7 @@ func TestLowerThanEqualValidator(t *testing.T) {
 		assert.Equal(t, "lower_than_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			LowerThanEqual("invalid[path.")
@@ -667,7 +667,7 @@ func TestLowerThanEqualValidator(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := LowerThanEqual(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))

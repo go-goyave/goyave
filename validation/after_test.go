@@ -18,7 +18,7 @@ func TestAfterValidator(t *testing.T) {
 		assert.Equal(t, "after", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&Context{}))
 	})
 
 	ref := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
@@ -44,7 +44,7 @@ func TestAfterValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := After(c.ref)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -59,7 +59,7 @@ func TestAfterEqualValidator(t *testing.T) {
 		assert.Equal(t, "after_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&Context{}))
 	})
 
 	ref := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
@@ -85,7 +85,7 @@ func TestAfterEqualValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AfterEqual(c.ref)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -101,7 +101,7 @@ func TestAfterFieldValidator(t *testing.T) {
 		assert.Equal(t, "after", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			AfterField("invalid[path.")
@@ -141,7 +141,7 @@ func TestAfterFieldValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AfterField(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))
@@ -158,7 +158,7 @@ func TestAfterEqualFieldValidator(t *testing.T) {
 		assert.Equal(t, "after_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			AfterEqualField("invalid[path.")
@@ -203,7 +203,7 @@ func TestAfterEqualFieldValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AfterEqualField(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))

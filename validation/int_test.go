@@ -15,7 +15,7 @@ func TestIntValidator(t *testing.T) {
 		assert.Equal(t, "int", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -66,7 +66,7 @@ func TestIntValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -85,7 +85,7 @@ func TestInt8Validator(t *testing.T) {
 		assert.Equal(t, "int8", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -141,7 +141,7 @@ func TestInt8Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int8()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -160,7 +160,7 @@ func TestInt16Validator(t *testing.T) {
 		assert.Equal(t, "int16", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -217,7 +217,7 @@ func TestInt16Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int16()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -236,7 +236,7 @@ func TestInt32Validator(t *testing.T) {
 		assert.Equal(t, "int32", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -290,7 +290,7 @@ func TestInt32Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int32()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -309,7 +309,7 @@ func TestInt64Validator(t *testing.T) {
 		assert.Equal(t, "int64", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -360,7 +360,7 @@ func TestInt64Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int64()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -379,7 +379,7 @@ func TestUintValidator(t *testing.T) {
 		assert.Equal(t, "uint", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -430,7 +430,7 @@ func TestUintValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -449,7 +449,7 @@ func TestUint8Validator(t *testing.T) {
 		assert.Equal(t, "uint8", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -508,7 +508,7 @@ func TestUint8Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint8()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -527,7 +527,7 @@ func TestUint16Validator(t *testing.T) {
 		assert.Equal(t, "uint16", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -584,7 +584,7 @@ func TestUint16Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint16()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -603,7 +603,7 @@ func TestUint32Validator(t *testing.T) {
 		assert.Equal(t, "uint32", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -658,7 +658,7 @@ func TestUint32Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint32()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -677,7 +677,7 @@ func TestUint64Validator(t *testing.T) {
 		assert.Equal(t, "uint64", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -728,7 +728,7 @@ func TestUint64Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint64()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)

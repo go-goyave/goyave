@@ -15,7 +15,7 @@ func TestArrayValidator(t *testing.T) {
 		assert.Equal(t, "array", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -52,7 +52,7 @@ func TestArrayValidator(t *testing.T) {
 			if c.parent != nil {
 				parent = c.parent
 			}
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value:  c.value,
 				Parent: parent,
 			}

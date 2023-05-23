@@ -8,7 +8,7 @@ import "net"
 type IPValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *IPValidator) Validate(ctx *ContextV5) bool {
+func (v *IPValidator) Validate(ctx *Context) bool {
 	if _, ok := ctx.Value.(net.IP); ok {
 		return true
 	}
@@ -48,7 +48,7 @@ func IP() *IPValidator {
 type IPv4Validator struct{ IPValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *IPv4Validator) Validate(ctx *ContextV5) bool {
+func (v *IPv4Validator) Validate(ctx *Context) bool {
 	if !v.IPValidator.Validate(ctx) {
 		return false
 	}
@@ -72,7 +72,7 @@ func IPv4() *IPv4Validator {
 type IPv6Validator struct{ IPValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *IPv6Validator) Validate(ctx *ContextV5) bool {
+func (v *IPv6Validator) Validate(ctx *Context) bool {
 	if !v.IPValidator.Validate(ctx) {
 		return false
 	}

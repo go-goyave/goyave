@@ -18,7 +18,7 @@ type DifferentValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *DifferentValidator) Validate(ctx *ContextV5) bool {
+func (v *DifferentValidator) Validate(ctx *Context) bool {
 	fieldType := GetFieldType(ctx.Value)
 	ok := true
 
@@ -61,7 +61,7 @@ func (v *DifferentValidator) Validate(ctx *ContextV5) bool {
 func (v *DifferentValidator) Name() string { return "different" }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *DifferentValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *DifferentValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":other", GetFieldName(v.Lang(), v.Path),
 	}

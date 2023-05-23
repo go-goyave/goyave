@@ -14,7 +14,7 @@ func TestDigitValidator(t *testing.T) {
 		assert.Equal(t, "digits", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":regexp", digitsRegex.String()}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":regexp", digitsRegex.String()}, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -38,7 +38,7 @@ func TestDigitValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Digits()
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})

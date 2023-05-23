@@ -18,7 +18,7 @@ func TestBeforeValidator(t *testing.T) {
 		assert.Equal(t, "before", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&Context{}))
 	})
 
 	ref := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
@@ -44,7 +44,7 @@ func TestBeforeValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Before(c.ref)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -59,7 +59,7 @@ func TestBeforeEqualValidator(t *testing.T) {
 		assert.Equal(t, "before_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&Context{}))
 	})
 
 	ref := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
@@ -85,7 +85,7 @@ func TestBeforeEqualValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := BeforeEqual(c.ref)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -101,7 +101,7 @@ func TestBeforeFieldValidator(t *testing.T) {
 		assert.Equal(t, "before", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			BeforeField("invalid[path.")
@@ -141,7 +141,7 @@ func TestBeforeFieldValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := BeforeField(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))
@@ -158,7 +158,7 @@ func TestBeforeEqualFieldValidator(t *testing.T) {
 		assert.Equal(t, "before_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":date", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			BeforeEqualField("invalid[path.")
@@ -203,7 +203,7 @@ func TestBeforeEqualFieldValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := BeforeEqualField(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))

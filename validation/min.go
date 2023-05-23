@@ -16,7 +16,7 @@ type MinValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *MinValidator) Validate(ctx *ContextV5) bool {
+func (v *MinValidator) Validate(ctx *Context) bool {
 	fl, ok, err := numberAsFloat64(ctx.Value)
 	if ok {
 		return fl >= v.Min
@@ -24,7 +24,7 @@ func (v *MinValidator) Validate(ctx *ContextV5) bool {
 	if err != nil {
 		return false
 	}
-	return validateSizeV5(ctx.Value, func(size int) bool {
+	return validateSize(ctx.Value, func(size int) bool {
 		return float64(size) >= v.Min
 	})
 }
@@ -36,7 +36,7 @@ func (v *MinValidator) Name() string { return "min" }
 func (v *MinValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":min" placeholder.
-func (v *MinValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *MinValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":min", fmt.Sprintf("%v", v.Min),
 	}

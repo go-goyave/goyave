@@ -18,7 +18,7 @@ type EmailValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *EmailValidator) Validate(ctx *ContextV5) bool {
+func (v *EmailValidator) Validate(ctx *Context) bool {
 	if _, ok := ctx.Value.(*mail.Address); ok {
 		return true
 	}

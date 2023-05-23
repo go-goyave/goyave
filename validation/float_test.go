@@ -18,7 +18,7 @@ func TestFloat32Validator(t *testing.T) {
 		assert.Equal(t, "float32", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -69,7 +69,7 @@ func TestFloat32Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Float32()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)
@@ -88,7 +88,7 @@ func TestFloat64Validator(t *testing.T) {
 		assert.Equal(t, "float64", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -136,7 +136,7 @@ func TestFloat64Validator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Float64()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)

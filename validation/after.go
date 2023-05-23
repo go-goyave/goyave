@@ -14,7 +14,7 @@ type AfterValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *AfterValidator) Validate(ctx *ContextV5) bool {
+func (v *AfterValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.After(t2)
 	})
@@ -37,7 +37,7 @@ type AfterEqualValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *AfterEqualValidator) Validate(ctx *ContextV5) bool {
+func (v *AfterEqualValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.After(t2) || t1.Equal(t2)
 	})
@@ -60,7 +60,7 @@ type AfterFieldValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *AfterFieldValidator) Validate(ctx *ContextV5) bool {
+func (v *AfterFieldValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.After(t2)
 	})
@@ -88,7 +88,7 @@ type AfterEqualFieldValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *AfterEqualFieldValidator) Validate(ctx *ContextV5) bool {
+func (v *AfterEqualFieldValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.After(t2) || t1.Equal(t2)
 	})

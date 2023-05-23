@@ -14,7 +14,7 @@ func TestAlphaValidator(t *testing.T) {
 		assert.Equal(t, "alpha", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":regexp", alphaRegex.String()}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":regexp", alphaRegex.String()}, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -43,7 +43,7 @@ func TestAlphaValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Alpha()
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -57,7 +57,7 @@ func TestAlphaNumValidator(t *testing.T) {
 		assert.Equal(t, "alpha_num", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":regexp", alphaNumRegex.String()}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":regexp", alphaNumRegex.String()}, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -86,7 +86,7 @@ func TestAlphaNumValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AlphaNum()
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -100,7 +100,7 @@ func TestAlphaDashValidator(t *testing.T) {
 		assert.Equal(t, "alpha_dash", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":regexp", alphaDashRegex.String()}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":regexp", alphaDashRegex.String()}, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -127,7 +127,7 @@ func TestAlphaDashValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AlphaDash()
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})

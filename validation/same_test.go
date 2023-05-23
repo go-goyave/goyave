@@ -16,7 +16,7 @@ func TestSameValidator(t *testing.T) {
 		assert.Equal(t, "same", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
 
 		assert.Panics(t, func() {
 			Same("invalid[path.")
@@ -64,7 +64,7 @@ func TestSameValidator(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := Same(path)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 				Data:  c.data,
 			}))

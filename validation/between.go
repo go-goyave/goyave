@@ -19,7 +19,7 @@ type BetweenValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *BetweenValidator) Validate(ctx *ContextV5) bool {
+func (v *BetweenValidator) Validate(ctx *Context) bool {
 	fl, ok, err := numberAsFloat64(ctx.Value)
 	if ok {
 		return fl >= v.Min && fl <= v.Max
@@ -27,7 +27,7 @@ func (v *BetweenValidator) Validate(ctx *ContextV5) bool {
 	if err != nil {
 		return false
 	}
-	return validateSizeV5(ctx.Value, func(size int) bool {
+	return validateSize(ctx.Value, func(size int) bool {
 		s := float64(size)
 		return s >= v.Min && s <= v.Max
 	})
@@ -40,7 +40,7 @@ func (v *BetweenValidator) Name() string { return "between" }
 func (v *BetweenValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":min" and ":max" placeholder.
-func (v *BetweenValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *BetweenValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":min", fmt.Sprintf("%v", v.Min),
 		":max", fmt.Sprintf("%v", v.Max),

@@ -136,8 +136,8 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		}
 		contentType := r.Header().Get("Content-Type")
 
-		var errsBag *validation.ErrorsV5
-		var queryErrsBag *validation.ErrorsV5
+		var errsBag *validation.Errors
+		var queryErrsBag *validation.Errors
 		var errors []error
 		if m.QueryRules != nil {
 			opt := &validation.Options{
@@ -153,7 +153,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			}
 			r.Extra[ExtraQueryValidationRules] = opt.Rules.AsRules()
 			var err []error
-			queryErrsBag, err = validation.ValidateV5(opt)
+			queryErrsBag, err = validation.Validate(opt)
 			if queryErrsBag != nil {
 				r.Extra[ExtraQueryValidationError] = queryErrsBag
 			}
@@ -175,7 +175,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			}
 			r.Extra[ExtraBodyValidationRules] = opt.Rules.AsRules()
 			var err []error
-			errsBag, err = validation.ValidateV5(opt)
+			errsBag, err = validation.Validate(opt)
 			if errsBag != nil {
 				r.Extra[ExtraValidationError] = errsBag
 			}

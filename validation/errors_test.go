@@ -11,12 +11,12 @@ import (
 func TestErrors(t *testing.T) {
 
 	t.Run("Error_on_root_element", func(t *testing.T) {
-		errs := &ErrorsV5{}
+		errs := &Errors{}
 
 		p := walk.MustParse("root")
 		errs.Add(p, "message")
 
-		expected := &ErrorsV5{
+		expected := &Errors{
 			Errors: []string{"message"},
 		}
 		assert.Equal(t, expected, errs)
@@ -24,23 +24,23 @@ func TestErrors(t *testing.T) {
 		p = walk.MustParse("root")
 		errs.Add(p, "second message")
 
-		expected = &ErrorsV5{
+		expected = &Errors{
 			Errors: []string{"message", "second message"},
 		}
 		assert.Equal(t, expected, errs)
 	})
 
 	t.Run("Create_or_append_object", func(t *testing.T) {
-		errs := &ErrorsV5{}
+		errs := &Errors{}
 
 		p := walk.MustParse("root.object.property")
 		errs.Add(p, "message")
 
-		expected := &ErrorsV5{
+		expected := &Errors{
 			Fields: FieldsErrors{
-				"object": &ErrorsV5{
+				"object": &Errors{
 					Fields: FieldsErrors{
-						"property": &ErrorsV5{
+						"property": &Errors{
 							Errors: []string{"message"},
 						},
 					},
@@ -52,14 +52,14 @@ func TestErrors(t *testing.T) {
 		p = walk.MustParse("root.object.secondProperty")
 		errs.Add(p, "second message")
 
-		expected = &ErrorsV5{
+		expected = &Errors{
 			Fields: FieldsErrors{
-				"object": &ErrorsV5{
+				"object": &Errors{
 					Fields: FieldsErrors{
-						"property": &ErrorsV5{
+						"property": &Errors{
 							Errors: []string{"message"},
 						},
-						"secondProperty": &ErrorsV5{
+						"secondProperty": &Errors{
 							Errors: []string{"second message"},
 						},
 					},
@@ -70,17 +70,17 @@ func TestErrors(t *testing.T) {
 	})
 
 	t.Run("Create_or_append_array", func(t *testing.T) {
-		errs := &ErrorsV5{}
+		errs := &Errors{}
 
 		p := walk.MustParse("root.array[]")
 		p.Next.Index = typeutil.Ptr(3)
 		errs.Add(p, "message")
 
-		expected := &ErrorsV5{
+		expected := &Errors{
 			Fields: FieldsErrors{
-				"array": &ErrorsV5{
-					Elements: ArrayErrorsV5{
-						3: &ErrorsV5{
+				"array": &Errors{
+					Elements: ArrayErrors{
+						3: &Errors{
 							Errors: []string{"message"},
 						},
 					},
@@ -91,11 +91,11 @@ func TestErrors(t *testing.T) {
 
 		errs.Add(p, "second message")
 
-		expected = &ErrorsV5{
+		expected = &Errors{
 			Fields: FieldsErrors{
-				"array": &ErrorsV5{
-					Elements: ArrayErrorsV5{
-						3: &ErrorsV5{
+				"array": &Errors{
+					Elements: ArrayErrors{
+						3: &Errors{
 							Errors: []string{"message", "second message"},
 						},
 					},
@@ -109,16 +109,16 @@ func TestErrors(t *testing.T) {
 		p.Next.Next.Index = typeutil.Ptr(5)
 		errs.Add(p, "third message")
 
-		expected = &ErrorsV5{
+		expected = &Errors{
 			Fields: FieldsErrors{
-				"array": &ErrorsV5{
-					Elements: ArrayErrorsV5{
-						3: &ErrorsV5{
+				"array": &Errors{
+					Elements: ArrayErrors{
+						3: &Errors{
 							Errors: []string{"message", "second message"},
 						},
-						4: &ErrorsV5{
-							Elements: ArrayErrorsV5{
-								5: &ErrorsV5{
+						4: &Errors{
+							Elements: ArrayErrors{
+								5: &Errors{
 									Errors: []string{"third message"},
 								},
 							},
@@ -131,16 +131,16 @@ func TestErrors(t *testing.T) {
 	})
 
 	t.Run("Create_or_append_root_array", func(t *testing.T) {
-		errs := &ErrorsV5{}
+		errs := &Errors{}
 
 		p := walk.MustParse("root[]")
 		p.Index = typeutil.Ptr(3)
 		errs.Add(p, "message")
 		errs.Add(p, "second message")
 
-		expected := &ErrorsV5{
-			Elements: ArrayErrorsV5{
-				3: &ErrorsV5{
+		expected := &Errors{
+			Elements: ArrayErrors{
+				3: &Errors{
 					Errors: []string{"message", "second message"},
 				},
 			},

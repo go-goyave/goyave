@@ -45,7 +45,7 @@ func TestEmailValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Email()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)

@@ -8,7 +8,7 @@ import "net/url"
 type URLValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *URLValidator) Validate(ctx *ContextV5) bool {
+func (v *URLValidator) Validate(ctx *Context) bool {
 	if _, ok := ctx.Value.(*url.URL); ok {
 		return true
 	}

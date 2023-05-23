@@ -9,7 +9,7 @@ import (
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
-func validateSizeV5(value any, v func(size int) bool) bool {
+func validateSize(value any, v func(size int) bool) bool {
 	val := reflect.ValueOf(value)
 	switch getFieldType(val) {
 	case FieldTypeString:
@@ -41,8 +41,8 @@ type SizeValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *SizeValidator) Validate(ctx *ContextV5) bool {
-	return validateSizeV5(ctx.Value, func(size int) bool {
+func (v *SizeValidator) Validate(ctx *Context) bool {
+	return validateSize(ctx.Value, func(size int) bool {
 		return size == v.Size
 	})
 }
@@ -54,7 +54,7 @@ func (v *SizeValidator) Name() string { return "size" }
 func (v *SizeValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":value" placeholder.
-func (v *SizeValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *SizeValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":value", strconv.Itoa(v.Size),
 	}

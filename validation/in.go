@@ -16,7 +16,7 @@ type InValidator[T comparable] struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 // Always return false if the validated value is not of type `T`.
-func (v *InValidator[T]) Validate(ctx *ContextV5) bool {
+func (v *InValidator[T]) Validate(ctx *Context) bool {
 	val, ok := ctx.Value.(T)
 	if !ok {
 		return false
@@ -30,7 +30,7 @@ func (v *InValidator[T]) Validate(ctx *ContextV5) bool {
 func (v *InValidator[T]) Name() string { return "in" }
 
 // MessagePlaceholders returns the ":values placeholder.
-func (v *InValidator[T]) MessagePlaceholders(_ *ContextV5) []string {
+func (v *InValidator[T]) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":values", strings.Join(lo.Map(v.Values, func(v T, _ int) string { return fmt.Sprintf("%v", v) }), ", "),
 	}
@@ -52,7 +52,7 @@ type NotInValidator[T comparable] struct {
 // Validate checks the field under validation satisfies this validator's criteria.
 // Always return false if the validated value is not of type `T`or the matched arrays
 // are not of type `[]T`.
-func (v *NotInValidator[T]) Validate(ctx *ContextV5) bool {
+func (v *NotInValidator[T]) Validate(ctx *Context) bool {
 	val, ok := ctx.Value.(T)
 	if !ok {
 		return false
@@ -66,7 +66,7 @@ func (v *NotInValidator[T]) Validate(ctx *ContextV5) bool {
 func (v *NotInValidator[T]) Name() string { return "not_in" }
 
 // MessagePlaceholders returns the ":values placeholder.
-func (v *NotInValidator[T]) MessagePlaceholders(_ *ContextV5) []string {
+func (v *NotInValidator[T]) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":values", strings.Join(lo.Map(v.Values, func(v T, _ int) string { return fmt.Sprintf("%v", v) }), ", "),
 	}
@@ -89,7 +89,7 @@ type InFieldValidator[T comparable] struct {
 // Validate checks the field under validation satisfies this validator's criteria.
 // Always return false if the validated value is not of type `T` or the matched arrays
 // are not of type `[]T`.
-func (v *InFieldValidator[T]) Validate(ctx *ContextV5) bool {
+func (v *InFieldValidator[T]) Validate(ctx *Context) bool {
 
 	val, ok := ctx.Value.(T)
 	if !ok {
@@ -119,7 +119,7 @@ func (v *InFieldValidator[T]) Validate(ctx *ContextV5) bool {
 func (v *InFieldValidator[T]) Name() string { return "in_field" }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *InFieldValidator[T]) MessagePlaceholders(_ *ContextV5) []string {
+func (v *InFieldValidator[T]) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":other", GetFieldName(v.Lang(), v.Path),
 	}
@@ -145,7 +145,7 @@ type NotInFieldValidator[T comparable] struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 // Always return false if the validated value is not of type `T`.
-func (v *NotInFieldValidator[T]) Validate(ctx *ContextV5) bool {
+func (v *NotInFieldValidator[T]) Validate(ctx *Context) bool {
 	_, ok := ctx.Value.(T)
 	if !ok {
 		return false

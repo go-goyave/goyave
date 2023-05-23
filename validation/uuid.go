@@ -18,7 +18,7 @@ type UUIDValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *UUIDValidator) Validate(ctx *ContextV5) bool {
+func (v *UUIDValidator) Validate(ctx *Context) bool {
 	if uid, ok := ctx.Value.(uuid.UUID); ok {
 		return v.checkVersion(uid)
 	}

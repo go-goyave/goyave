@@ -18,7 +18,7 @@ func TestBetweenValidator(t *testing.T) {
 		assert.Equal(t, "between", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":min", "1.5", ":max", "3.5"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":min", "1.5", ":max", "3.5"}, v.MessagePlaceholders(&Context{}))
 	})
 
 	smallFile := fsutil.File{
@@ -88,7 +88,7 @@ func TestBetweenValidator(t *testing.T) {
 				max = c.max
 			}
 			v := Between(min, max)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})

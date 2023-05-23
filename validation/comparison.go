@@ -20,7 +20,7 @@ type ComparisonValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *ComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(size1, size2 float64) bool) bool {
+func (v *ComparisonValidator) validate(ctx *Context, comparisonFunc func(size1, size2 float64) bool) bool {
 	floatValue, isNumber, overflowErr := numberAsFloat64(ctx.Value)
 	if overflowErr != nil {
 		return false
@@ -50,18 +50,18 @@ func (v *ComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(size1
 			if isComparedNumber {
 				ok = comparisonFunc(floatValue, comparedFloatValue)
 			} else {
-				ok = validateSizeV5(c.Value, func(size int) bool {
+				ok = validateSize(c.Value, func(size int) bool {
 					return comparisonFunc(floatValue, float64(size))
 				})
 			}
 		} else {
 			if isComparedNumber {
-				ok = validateSizeV5(ctx.Value, func(size int) bool {
+				ok = validateSize(ctx.Value, func(size int) bool {
 					return comparisonFunc(float64(size), comparedFloatValue)
 				})
 			} else {
-				ok = validateSizeV5(ctx.Value, func(size1 int) bool {
-					return validateSizeV5(c.Value, func(size2 int) bool {
+				ok = validateSize(ctx.Value, func(size1 int) bool {
+					return validateSize(c.Value, func(size2 int) bool {
 						return comparisonFunc(float64(size1), float64(size2))
 					})
 				})
@@ -79,7 +79,7 @@ func (v *ComparisonValidator) validate(ctx *ContextV5, comparisonFunc func(size1
 func (v *ComparisonValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *ComparisonValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *ComparisonValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":other", GetFieldName(v.Lang(), v.Path),
 	}
@@ -94,7 +94,7 @@ type GreaterThanValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *GreaterThanValidator) Validate(ctx *ContextV5) bool {
+func (v *GreaterThanValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(size1, size2 float64) bool {
 		return size1 > size2
 	})
@@ -128,7 +128,7 @@ type GreaterThanEqualValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *GreaterThanEqualValidator) Validate(ctx *ContextV5) bool {
+func (v *GreaterThanEqualValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(size1, size2 float64) bool {
 		return size1 >= size2
 	})
@@ -162,7 +162,7 @@ type LowerThanValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *LowerThanValidator) Validate(ctx *ContextV5) bool {
+func (v *LowerThanValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(size1, size2 float64) bool {
 		return size1 < size2
 	})
@@ -196,7 +196,7 @@ type LowerThanEqualValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *LowerThanEqualValidator) Validate(ctx *ContextV5) bool {
+func (v *LowerThanEqualValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(size1, size2 float64) bool {
 		return size1 <= size2
 	})

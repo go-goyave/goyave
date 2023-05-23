@@ -17,7 +17,7 @@ var timezoneCache = sync.Map{}
 type TimezoneValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *TimezoneValidator) Validate(ctx *ContextV5) bool {
+func (v *TimezoneValidator) Validate(ctx *Context) bool {
 	if _, ok := ctx.Value.(*time.Location); ok {
 		return true
 	}

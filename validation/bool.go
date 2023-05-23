@@ -13,7 +13,7 @@ type BoolValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *BoolValidator) Validate(ctx *ContextV5) bool {
+func (v *BoolValidator) Validate(ctx *Context) bool {
 	switch val := ctx.Value.(type) {
 	case bool:
 		return true

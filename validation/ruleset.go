@@ -10,8 +10,8 @@ import (
 
 // Ruler adapter interface to make allow both RuleSet and Rules to
 // be used when calling `Validate()`.
-type RulerV5 interface {
-	AsRules() RulesV5
+type Ruler interface {
+	AsRules() Rules
 }
 
 // Validator is a Component validating a field value.
@@ -23,7 +23,7 @@ type Validator interface {
 
 	// Validate checks the field under validation satisfies this validator's criteria.
 	// If necessary, replaces the `Context.Value` with a converted value (see `IsType()`).
-	Validate(*ContextV5) bool
+	Validate(*Context) bool
 
 	// Name returns the string name of the validator.
 	// This is used to generate the language entry for the
@@ -47,7 +47,7 @@ type Validator interface {
 	// MessagePlaceholders returns an associative slice of placeholders and their replacement.
 	// This is use to generate the validation error message. An empty slice can be returned.
 	// See `lang.Language.Get()` for more details.
-	MessagePlaceholders(ctx *ContextV5) []string
+	MessagePlaceholders(ctx *Context) []string
 }
 
 // BaseValidator composable structure that implements the basic functions required to
@@ -73,22 +73,24 @@ func (v *BaseValidator) IsTypeDependent() bool { return false }
 func (v *BaseValidator) IsType() bool { return false }
 
 // MessagePlaceholders returns an empty slice (no placeholders)
-func (v *BaseValidator) MessagePlaceholders(_ *ContextV5) []string { return []string{} }
+func (v *BaseValidator) MessagePlaceholders(_ *Context) []string { return []string{} }
 
+// FieldRulesApplier types implementing this interface define their behavior
+// when applying a `FieldRules` to `Rules`. This enables rule sets composition.
 type FieldRulesApplier interface {
-	apply(rules RulesV5, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) RulesV5
+	apply(rules Rules, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) Rules
 }
 
 // List of validators which will be applied on the field. The validators are executed in the
 // order of the slice.
-type ListV5 []Validator
+type List []Validator
 
-func (l ListV5) apply(rules RulesV5, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) RulesV5 {
+func (l List) apply(rules Rules, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) Rules {
 	isArrayElement := strings.HasSuffix(field.Path, "[]")
 	if isArrayElement {
 		path = "[]"
 	}
-	f := newField(path, field.Rules.(ListV5), pDepth)
+	f := newField(path, field.Rules.(List), pDepth)
 	if !isArrayElement {
 		rules = append(rules, f)
 	} else {
@@ -97,9 +99,9 @@ func (l ListV5) apply(rules RulesV5, path string, field *FieldRules, pDepth uint
 
 	if arrayElements, ok := pendingArrays[field.Path]; ok {
 		switch applier := arrayElements.(type) {
-		case *FieldV5:
+		case *Field:
 			f.Elements = applier
-		case RulesV5:
+		case Rules:
 			i := 0
 			if len(applier) > 0 && applier[1].Path.Type == walk.PathTypeElement && applier[1].Path.Name != nil && *applier[1].Path.Name == CurrentElement {
 				i = 1
@@ -112,28 +114,32 @@ func (l ListV5) apply(rules RulesV5, path string, field *FieldRules, pDepth uint
 	return rules
 }
 
+// FieldRules structure associating a path (see `walk.Path`) identifying a field
+// with a `FieldRulesApplier` (a `List` of rules or another `RuleSet` via composition).
 type FieldRules struct {
 	// TODO what behavior if there are duplicates? If it ever becomes a problem, can probably merge the Lists. But it's unnecessary for now.
-	Path  string
 	Rules FieldRulesApplier
+	Path  string
 }
 
-type RuleSetV5 []*FieldRules
+// RuleSet definition of the validation rules applied on each field in the request.
+// RuleSets are not meant to be re-used across multiple requests nor used concurrently.
+type RuleSet []*FieldRules
 
-func (r RuleSetV5) apply(rules RulesV5, path string, field *FieldRules, _ uint, pendingArrays map[string]any) RulesV5 {
+func (r RuleSet) apply(rules Rules, path string, field *FieldRules, _ uint, pendingArrays map[string]any) Rules {
 	if strings.HasSuffix(field.Path, "[]") {
-		pendingArrays[field.Path[:len(field.Path)-2]] = field.Rules.(RuleSetV5).asRulesWithPrefix(path)
+		pendingArrays[field.Path[:len(field.Path)-2]] = field.Rules.(RuleSet).asRulesWithPrefix(path)
 		return rules
 	}
-	return append(rules, field.Rules.(RuleSetV5).asRulesWithPrefix(path)...)
+	return append(rules, field.Rules.(RuleSet).asRulesWithPrefix(path)...)
 }
 
 // AsRules converts this RuleSet to a Rules structure.
-func (r RuleSetV5) AsRules() RulesV5 {
+func (r RuleSet) AsRules() Rules {
 	return r.asRulesWithPrefix("")
 }
 
-func (r RuleSetV5) asRulesWithPrefix(prefix string) RulesV5 {
+func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 	pDepth := uint(0)
 	if prefix != "" {
 		prefixPath, err := walk.Parse(prefix)
@@ -148,7 +154,7 @@ func (r RuleSetV5) asRulesWithPrefix(prefix string) RulesV5 {
 	sortedRuleSet = sortedRuleSet.injectArrayParents()
 	sortedRuleSet.sort()
 
-	rules := make(RulesV5, 0, len(r))
+	rules := make(Rules, 0, len(r))
 	for _, field := range sortedRuleSet {
 		p := prefix
 		if field.Path != CurrentElement && !strings.HasPrefix("[]", field.Path) { // TODO test the use of composition on CurrentElement and arrays
@@ -165,7 +171,7 @@ func (r RuleSetV5) asRulesWithPrefix(prefix string) RulesV5 {
 }
 
 // injectArrayParents makes sure all array elements in the RuleSet have a parent field.
-func (r RuleSetV5) injectArrayParents() RuleSetV5 {
+func (r RuleSet) injectArrayParents() RuleSet {
 	keys := make(map[string]struct{}, len(r))
 	for _, f := range r {
 		keys[f.Path] = struct{}{}
@@ -176,8 +182,11 @@ func (r RuleSetV5) injectArrayParents() RuleSetV5 {
 			parentPath := f.Path[:len(f.Path)-2]
 			if _, ok := keys[parentPath]; !ok {
 				// No parent array found, inject it
-				parent := &FieldRules{parentPath, ListV5{Array()}}
-				r = append(r[:i+1], append(RuleSetV5{parent}, r[i+1:]...)...)
+				parent := &FieldRules{
+					Path:  parentPath,
+					Rules: List{Array()},
+				}
+				r = append(r[:i+1], append(RuleSet{parent}, r[i+1:]...)...)
 			}
 		}
 	}
@@ -185,7 +194,7 @@ func (r RuleSetV5) injectArrayParents() RuleSetV5 {
 	return r
 }
 
-func (r RuleSetV5) sort() {
+func (r RuleSet) sort() {
 	// Make sure the array elements are before their parent in the list
 	sort.SliceStable(r, func(i, j int) bool {
 		field1 := r[i]
@@ -208,9 +217,9 @@ func (r RuleSetV5) sort() {
 
 // Rules is the result of the transformation of RuleSet using `AsRules()`.
 // It is a format that is more easily machine-readable than RuleSet.
-type RulesV5 []*FieldV5
+type Rules []*Field
 
 // AsRules returns itself.
-func (r RulesV5) AsRules() RulesV5 {
+func (r Rules) AsRules() Rules {
 	return r
 }

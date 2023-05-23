@@ -6,7 +6,7 @@ import "encoding/json"
 type JSONValidator struct{ BaseValidator }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *JSONValidator) Validate(ctx *ContextV5) bool {
+func (v *JSONValidator) Validate(ctx *Context) bool {
 	str, ok := ctx.Value.(string)
 	if ok {
 		var data any

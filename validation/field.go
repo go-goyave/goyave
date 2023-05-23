@@ -6,11 +6,11 @@ import (
 
 // Field representation of a single field in the data being validated.
 // Provides useful information based on its validators (if required, nullable, etc).
-type FieldV5 struct {
-	isRequired func(*ContextV5) bool
+type Field struct {
+	isRequired func(*Context) bool
 
 	Path       *walk.Path
-	Elements   *FieldV5
+	Elements   *Field
 	Validators []Validator
 
 	// prefixDepth When using composition, `prefixDepth` allows to truncate the path to the
@@ -23,9 +23,9 @@ type FieldV5 struct {
 	isNullable bool
 }
 
-func newField(path string, validators []Validator, prefixDepth uint) *FieldV5 {
+func newField(path string, validators []Validator, prefixDepth uint) *Field {
 	p := walk.MustParse(path)
-	f := &FieldV5{
+	f := &Field{
 		Path:        p,
 		Validators:  validators,
 		prefixDepth: prefixDepth,
@@ -34,7 +34,7 @@ func newField(path string, validators []Validator, prefixDepth uint) *FieldV5 {
 	for _, v := range validators {
 		switch v.(type) {
 		case *RequiredValidator:
-			f.isRequired = func(ctx *ContextV5) bool { return true }
+			f.isRequired = func(ctx *Context) bool { return true }
 		case *RequiredIfValidator:
 			f.isRequired = v.(*RequiredIfValidator).Condition
 		case *NullableValidator:
@@ -55,7 +55,7 @@ func newField(path string, validators []Validator, prefixDepth uint) *FieldV5 {
 // The given `parentPath` corresponds to the path to the parent array
 // if the parent is an array, otherwise `nil`. If `nil`, returns the unmodified
 // path from the `walk.Context`.
-func (f *FieldV5) getErrorPath(parentPath *walk.Path, c *walk.Context) *walk.Path {
+func (f *Field) getErrorPath(parentPath *walk.Path, c *walk.Context) *walk.Path {
 	if parentPath != nil {
 		clone := parentPath.Clone()
 		tail := clone.Tail()
@@ -69,28 +69,28 @@ func (f *FieldV5) getErrorPath(parentPath *walk.Path, c *walk.Context) *walk.Pat
 }
 
 // IsRequired check if a field has the "required" rule
-func (f *FieldV5) IsRequired(ctx *ContextV5) bool {
+func (f *Field) IsRequired(ctx *Context) bool {
 	return f.isRequired != nil && f.isRequired(ctx)
 }
 
 // IsNullable check if a field has the "nullable" rule
-func (f *FieldV5) IsNullable() bool {
+func (f *Field) IsNullable() bool {
 	return f.isNullable
 }
 
 // IsArray check if a field has the "array" rule
-func (f *FieldV5) IsArray() bool {
+func (f *Field) IsArray() bool {
 	return f.isArray
 }
 
 // IsObject check if a field has the "object" rule
-func (f *FieldV5) IsObject() bool {
+func (f *Field) IsObject() bool {
 	return f.isObject
 }
 
 // PrefixDepth When using composition, `prefixDepth` allows to truncate the path to the
 // validated element in order to retrieve the root object or array relative to
 // the composed RuleSet.
-func (f *FieldV5) PrefixDepth() uint {
+func (f *Field) PrefixDepth() uint {
 	return f.prefixDepth
 }

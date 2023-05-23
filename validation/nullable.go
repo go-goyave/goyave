@@ -7,7 +7,7 @@ package validation
 type NullableValidator struct{ BaseValidator }
 
 // Validate returns true.
-func (v *NullableValidator) Validate(_ *ContextV5) bool {
+func (v *NullableValidator) Validate(_ *Context) bool {
 	return true
 }
 

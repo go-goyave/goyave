@@ -16,7 +16,7 @@ type MaxValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *MaxValidator) Validate(ctx *ContextV5) bool {
+func (v *MaxValidator) Validate(ctx *Context) bool {
 	fl, ok, err := numberAsFloat64(ctx.Value)
 	if ok {
 		return fl <= v.Max
@@ -24,7 +24,7 @@ func (v *MaxValidator) Validate(ctx *ContextV5) bool {
 	if err != nil {
 		return false
 	}
-	return validateSizeV5(ctx.Value, func(size int) bool {
+	return validateSize(ctx.Value, func(size int) bool {
 		return float64(size) <= v.Max
 	})
 }
@@ -36,7 +36,7 @@ func (v *MaxValidator) Name() string { return "max" }
 func (v *MaxValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":max" placeholder.
-func (v *MaxValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *MaxValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":max", fmt.Sprintf("%v", v.Max),
 	}

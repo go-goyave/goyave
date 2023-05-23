@@ -57,18 +57,18 @@ type ValidationStatusHandlerV5 struct {
 // Handle validation error responses.
 func (*ValidationStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
 	type ValidationErrorResponse struct {
-		Body  *validation.ErrorsV5 `json:"body,omitempty"`
-		Query *validation.ErrorsV5 `json:"query,omitempty"`
+		Body  *validation.Errors `json:"body,omitempty"`
+		Query *validation.Errors `json:"query,omitempty"`
 	}
 
 	errs := &ValidationErrorResponse{}
 
 	if e, ok := request.Extra[ExtraValidationError]; ok {
-		errs.Body = e.(*validation.ErrorsV5)
+		errs.Body = e.(*validation.Errors)
 	}
 
 	if e, ok := request.Extra[ExtraQueryValidationError]; ok {
-		errs.Query = e.(*validation.ErrorsV5)
+		errs.Query = e.(*validation.Errors)
 	}
 
 	message := map[string]*ValidationErrorResponse{"error": errs}

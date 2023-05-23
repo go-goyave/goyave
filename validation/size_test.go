@@ -17,7 +17,7 @@ func TestSizeValidator(t *testing.T) {
 		assert.Equal(t, "size", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":value", "123"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":value", "123"}, v.MessagePlaceholders(&Context{}))
 	})
 
 	file := fsutil.File{Header: &multipart.FileHeader{Size: 2048}}
@@ -49,7 +49,7 @@ func TestSizeValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%d_%t", c.value, c.size, c.want), func(t *testing.T) {
 			v := Size(c.size)
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			ok := v.Validate(ctx)

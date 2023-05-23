@@ -14,7 +14,7 @@ func TestRequiredValidator(t *testing.T) {
 		assert.Equal(t, "required", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -38,9 +38,9 @@ func TestRequiredValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Required()
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
-				Field: &FieldV5{
+				Field: &Field{
 					isNullable: c.nullable,
 				},
 			}
@@ -51,19 +51,19 @@ func TestRequiredValidator(t *testing.T) {
 }
 
 func TestRequiredIfValidator(t *testing.T) {
-	alwaysRequired := func(c *ContextV5) bool { return true }
+	alwaysRequired := func(c *Context) bool { return true }
 	t.Run("Constructor", func(t *testing.T) {
 		v := RequiredIf(alwaysRequired)
 		assert.NotNil(t, v)
 		assert.Equal(t, "required", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
 		value     any
-		condition func(*ContextV5) bool
+		condition func(*Context) bool
 		nullable  bool
 		want      bool
 	}{
@@ -77,7 +77,7 @@ func TestRequiredIfValidator(t *testing.T) {
 		{value: true, want: true, condition: alwaysRequired},
 		{value: nil, want: false, condition: alwaysRequired},
 		{value: nil, want: true, nullable: true, condition: alwaysRequired},
-		{value: nil, want: true, condition: func(c *ContextV5) bool {
+		{value: nil, want: true, condition: func(c *Context) bool {
 			return false
 		}},
 	}
@@ -86,9 +86,9 @@ func TestRequiredIfValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := RequiredIf(c.condition)
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
-				Field: &FieldV5{
+				Field: &Field{
 					isNullable: c.nullable,
 				},
 			}

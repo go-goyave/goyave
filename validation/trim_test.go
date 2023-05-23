@@ -15,7 +15,7 @@ func TestTrimValidator(t *testing.T) {
 		assert.Equal(t, "trim", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -52,7 +52,7 @@ func TestTrimValidator(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			v := Trim()
 
-			ctx := &ContextV5{
+			ctx := &Context{
 				Value: c.value,
 			}
 			assert.True(t, v.Validate(ctx))

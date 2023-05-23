@@ -18,7 +18,7 @@ func TestExtensionValidator(t *testing.T) {
 		assert.Equal(t, "extension", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":values", "pdf, png, jpeg"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":values", "pdf, png, jpeg"}, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -49,7 +49,7 @@ func TestExtensionValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%s_%t", extTestFilesNames(c.value), c.want), func(t *testing.T) {
 			v := Extension(c.allowed...)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})

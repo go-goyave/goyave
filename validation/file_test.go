@@ -15,7 +15,7 @@ func TestFileValidator(t *testing.T) {
 		assert.Equal(t, "file", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -39,7 +39,7 @@ func TestFileValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := File()
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -53,7 +53,7 @@ func TestFileCountValidator(t *testing.T) {
 		assert.Equal(t, "file_count", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":value", "5"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":value", "5"}, v.MessagePlaceholders(&Context{}))
 		assert.Equal(t, uint(5), v.Count)
 	})
 
@@ -82,7 +82,7 @@ func TestFileCountValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := FileCount(3)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -96,7 +96,7 @@ func TestMinFileCountValidator(t *testing.T) {
 		assert.Equal(t, "min_file_count", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":min", "5"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":min", "5"}, v.MessagePlaceholders(&Context{}))
 		assert.Equal(t, uint(5), v.Min)
 	})
 
@@ -125,7 +125,7 @@ func TestMinFileCountValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := MinFileCount(3)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -139,7 +139,7 @@ func TestMaxFileCountValidator(t *testing.T) {
 		assert.Equal(t, "max_file_count", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":max", "5"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":max", "5"}, v.MessagePlaceholders(&Context{}))
 		assert.Equal(t, uint(5), v.Max)
 	})
 
@@ -168,7 +168,7 @@ func TestMaxFileCountValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := MaxFileCount(3)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -182,7 +182,7 @@ func TestFileCountBetweenValidator(t *testing.T) {
 		assert.Equal(t, "file_count_between", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":min", "2", ":max", "3"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":min", "2", ":max", "3"}, v.MessagePlaceholders(&Context{}))
 		assert.Equal(t, uint(2), v.Min)
 		assert.Equal(t, uint(3), v.Max)
 	})
@@ -212,7 +212,7 @@ func TestFileCountBetweenValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := FileCountBetween(2, 3)
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})

@@ -8,7 +8,7 @@ type TrimValidator struct{ BaseValidator }
 
 // Validate always returns true. If the field under validation is a string,
 // trims it using `strings.TrimSpace()`.
-func (v *TrimValidator) Validate(ctx *ContextV5) bool {
+func (v *TrimValidator) Validate(ctx *Context) bool {
 	str, ok := ctx.Value.(string)
 	if ok {
 		ctx.Value = strings.TrimSpace(str)

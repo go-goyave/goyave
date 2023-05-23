@@ -26,7 +26,7 @@ var _ routeMatcherV5 = (*RouteV5)(nil) // implements routeMatcher
 // This function is called for every validated request.
 // The returned value is expected to be fresh, not re-used across
 // multiple requests nor concurrently.
-type RuleSetFunc func(*RequestV5) validation.RuleSetV5
+type RuleSetFunc func(*RequestV5) validation.RuleSet
 
 // newRoute create a new route without any settings except its handler.
 // This is used to generate a fake route for the Method Not Allowed and Not Found handlers.

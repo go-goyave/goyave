@@ -12,7 +12,7 @@ type UniqueValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *UniqueValidator) Validate(ctx *ContextV5) bool {
+func (v *UniqueValidator) Validate(ctx *Context) bool {
 	if !ctx.Valid() {
 		return true
 	}
@@ -55,7 +55,7 @@ type ExistsValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *ExistsValidator) Validate(ctx *ContextV5) bool {
+func (v *ExistsValidator) Validate(ctx *Context) bool {
 	return !v.UniqueValidator.Validate(ctx)
 }
 

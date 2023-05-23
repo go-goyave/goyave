@@ -7,7 +7,7 @@ type DistinctValidator[T comparable] struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *DistinctValidator[T]) Validate(ctx *ContextV5) bool {
+func (v *DistinctValidator[T]) Validate(ctx *Context) bool {
 	list, ok := ctx.Value.([]T)
 	if !ok {
 		return false

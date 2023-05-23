@@ -14,7 +14,7 @@ func TestStringValidator(t *testing.T) {
 		assert.Equal(t, "string", v.Name())
 		assert.True(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Empty(t, v.MessagePlaceholders(&ContextV5{}))
+		assert.Empty(t, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -36,7 +36,7 @@ func TestStringValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := String()
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -50,7 +50,7 @@ func TestStartsWithValidator(t *testing.T) {
 		assert.Equal(t, "starts_with", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":values", "pre, fix"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":values", "pre, fix"}, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -78,7 +78,7 @@ func TestStartsWithValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := StartsWith("pre", "fix")
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -92,7 +92,7 @@ func TestEndsWithValidator(t *testing.T) {
 		assert.Equal(t, "ends_with", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":values", "suf, fix"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":values", "suf, fix"}, v.MessagePlaceholders(&Context{}))
 	})
 
 	cases := []struct {
@@ -120,7 +120,7 @@ func TestEndsWithValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := EndsWith("suf", "fix")
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})

@@ -106,7 +106,7 @@ func (c *component) ErrLogger() *log.Logger {
 // to provide values for all the options in case a `Validator` requires them to function.
 type Options struct {
 	Data  any
-	Rules RulerV5
+	Rules Ruler
 
 	Extra     map[string]any
 	Language  *lang.Language
@@ -130,14 +130,14 @@ type Options struct {
 
 // Context is a structure unique per `Validator.Validate()` execution containing
 // all the data required by a validator.
-type ContextV5 struct {
+type Context struct {
 	Data any
 
 	// Extra the map of Extra from the validation Options.
 	Extra  map[string]any
 	Value  any
 	Parent any
-	Field  *FieldV5
+	Field  *Field
 	Now    time.Time
 
 	// The name of the field under validation
@@ -150,25 +150,25 @@ type ContextV5 struct {
 // AddError adds an error to the validation context. This is NOT supposed
 // to be used when the field under validation doesn't match the rule, but rather
 // when there has been an operation error (such as a database error).
-func (c *ContextV5) AddError(err ...error) {
+func (c *Context) AddError(err ...error) {
 	c.errors = append(c.errors, err...)
 }
 
 // Errors returns this validation context's errors. Because each rule on each field
 // has its own Context, the returned array will only contain errors related to the
 // current field and the current rule.
-func (c *ContextV5) Errors() []error {
+func (c *Context) Errors() []error {
 	return c.errors
 }
 
 // Valid returns false if at least one validator prior to the current one didn't pass
 // on the field under validation.
-func (c *ContextV5) Valid() bool {
+func (c *Context) Valid() bool {
 	return c.valid
 }
 
 type validator struct {
-	validationErrors *ErrorsV5
+	validationErrors *Errors
 	options          *Options
 	now              time.Time
 	errors           []error
@@ -180,12 +180,12 @@ type validator struct {
 // The second returned value is a slice of error that occurred during validation. These
 // errors are not validation errors but error raised when a validator could not be executed correctly.
 // For example if a validator using the database generated a DB error.
-func ValidateV5(options *Options) (*ErrorsV5, []error) {
+func Validate(options *Options) (*Errors, []error) {
 	validator := &validator{
 		options:          options,
 		now:              time.Now(),
 		errors:           []error{},
-		validationErrors: &ErrorsV5{},
+		validationErrors: &Errors{},
 	}
 
 	rules := options.Rules.AsRules()
@@ -209,7 +209,7 @@ func ValidateV5(options *Options) (*ErrorsV5, []error) {
 	return nil, nil
 }
 
-func (v *validator) validateField(fieldName string, field *FieldV5, walkData any, parentPath *walk.Path) {
+func (v *validator) validateField(fieldName string, field *Field, walkData any, parentPath *walk.Path) {
 	field.Path.Walk(walkData, func(c *walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]any)
 		if c.Found == walk.Found {
@@ -266,7 +266,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 				continue
 			}
 
-			ctx := &ContextV5{
+			ctx := &Context{
 				Data:   data,
 				Extra:  v.options.Extra,
 				Value:  value,
@@ -302,7 +302,7 @@ func (v *validator) validateField(fieldName string, field *FieldV5, walkData any
 	})
 }
 
-func (v *validator) shouldDeleteFromParent(field *FieldV5, parentIsObject bool, value any) bool {
+func (v *validator) shouldDeleteFromParent(field *Field, parentIsObject bool, value any) bool {
 	return parentIsObject && !field.IsNullable() && value == nil
 }
 
@@ -310,7 +310,7 @@ func (v *validator) shouldConvertSingleValueArray(fieldName string) bool {
 	return v.options.ConvertSingleValueArrays && fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
 }
 
-func (v *validator) convertSingleValueArray(field *FieldV5, value any) any {
+func (v *validator) convertSingleValueArray(field *Field, value any) any {
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	if field.IsArray() && kind != "slice" {
@@ -322,11 +322,11 @@ func (v *validator) convertSingleValueArray(field *FieldV5, value any) any {
 	return value
 }
 
-func (v *validator) isAbsent(field *FieldV5, c *walk.Context, data any) bool {
+func (v *validator) isAbsent(field *Field, c *walk.Context, data any) bool {
 	if c.Found == walk.ParentNotFound { // TODO document field is skipped if parent not found (make sure to also define rules for parents)
 		return true
 	}
-	requiredCtx := &ContextV5{
+	requiredCtx := &Context{
 		Data:   data,
 		Extra:  v.options.Extra,
 		Value:  c.Value,
@@ -337,7 +337,7 @@ func (v *validator) isAbsent(field *FieldV5, c *walk.Context, data any) bool {
 	return !field.IsRequired(requiredCtx) && !(&RequiredValidator{}).Validate(requiredCtx)
 }
 
-func (v *validator) getMessage(fieldName string, ctx *ContextV5, validator Validator) string {
+func (v *validator) getMessage(fieldName string, ctx *Context, validator Validator) string {
 	value := reflect.ValueOf(ctx.Value)
 	langEntry := "validation.rules." + validator.Name()
 	if validator.IsTypeDependent() {

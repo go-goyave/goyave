@@ -15,7 +15,7 @@ func TestMIMEValidator(t *testing.T) {
 		assert.Equal(t, "mime", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":values", "application/json, image/png"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":values", "application/json, image/png"}, v.MessagePlaceholders(&Context{}))
 		assert.Equal(t, []string{"application/json", "image/png"}, v.MIMETypes)
 	})
 
@@ -43,7 +43,7 @@ func TestMIMEValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := MIME("image/jpeg", "image/png")
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})
@@ -57,7 +57,7 @@ func TestImageValidator(t *testing.T) {
 		assert.Equal(t, "image", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":values", "image/jpeg, image/png, image/gif, image/bmp, image/svg+xml, image/webp"}, v.MessagePlaceholders(&ContextV5{}))
+		assert.Equal(t, []string{":values", "image/jpeg, image/png, image/gif, image/bmp, image/svg+xml, image/webp"}, v.MessagePlaceholders(&Context{}))
 		assert.Equal(t, []string{"image/jpeg", "image/png", "image/gif", "image/bmp", "image/svg+xml", "image/webp"}, v.MIMETypes)
 	})
 
@@ -85,7 +85,7 @@ func TestImageValidator(t *testing.T) {
 		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Image()
-			assert.Equal(t, c.want, v.Validate(&ContextV5{
+			assert.Equal(t, c.want, v.Validate(&Context{
 				Value: c.value,
 			}))
 		})

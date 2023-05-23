@@ -14,7 +14,7 @@ type BeforeValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *BeforeValidator) Validate(ctx *ContextV5) bool {
+func (v *BeforeValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.Before(t2)
 	})
@@ -37,7 +37,7 @@ type BeforeEqualValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *BeforeEqualValidator) Validate(ctx *ContextV5) bool {
+func (v *BeforeEqualValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.Before(t2) || t1.Equal(t2)
 	})
@@ -60,7 +60,7 @@ type BeforeFieldValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *BeforeFieldValidator) Validate(ctx *ContextV5) bool {
+func (v *BeforeFieldValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.Before(t2)
 	})
@@ -88,7 +88,7 @@ type BeforeEqualFieldValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *BeforeEqualFieldValidator) Validate(ctx *ContextV5) bool {
+func (v *BeforeEqualFieldValidator) Validate(ctx *Context) bool {
 	return v.validate(ctx, func(t1, t2 time.Time) bool {
 		return t1.Before(t2) || t1.Equal(t2)
 	})

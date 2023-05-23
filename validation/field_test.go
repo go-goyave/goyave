@@ -40,14 +40,14 @@ func TestField(t *testing.T) {
 
 	t.Run("New_required_if", func(t *testing.T) {
 		validators := []Validator{
-			RequiredIf(func(c *ContextV5) bool {
+			RequiredIf(func(c *Context) bool {
 				return c.Extra["is_required"].(bool)
 			}),
 			String(),
 		}
 		f := newField("object.array[].property", validators, 0)
-		assert.False(t, f.isRequired(&ContextV5{Extra: map[string]any{"is_required": false}}))
-		assert.True(t, f.isRequired(&ContextV5{Extra: map[string]any{"is_required": true}}))
+		assert.False(t, f.isRequired(&Context{Extra: map[string]any{"is_required": false}}))
+		assert.True(t, f.isRequired(&Context{Extra: map[string]any{"is_required": true}}))
 	})
 
 	t.Run("Get_error_path", func(t *testing.T) {

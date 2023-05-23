@@ -18,7 +18,7 @@ type SameValidator struct {
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
-func (v *SameValidator) Validate(ctx *ContextV5) bool {
+func (v *SameValidator) Validate(ctx *Context) bool {
 	fieldType := GetFieldType(ctx.Value)
 	ok := true
 
@@ -61,7 +61,7 @@ func (v *SameValidator) Validate(ctx *ContextV5) bool {
 func (v *SameValidator) Name() string { return "same" }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *SameValidator) MessagePlaceholders(_ *ContextV5) []string {
+func (v *SameValidator) MessagePlaceholders(_ *Context) []string {
 	return []string{
 		":other", GetFieldName(v.Lang(), v.Path),
 	}

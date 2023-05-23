@@ -29,6 +29,8 @@ type Server struct {
 	router *RouterV5
 	db     *gorm.DB
 
+	services map[string]Service
+
 	// TODO use a logging library? (or an interface)
 
 	// Logger the logger for default output
@@ -55,9 +57,6 @@ type Server struct {
 	shutdownHooks []func(*Server)
 
 	state uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
-
-	// TODO plugin storage
-	// plugins map[string]any (interface Plugin maybe?)
 }
 
 // New create a new `Server` using automatically loaded configuration.
@@ -101,6 +100,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		},
 		config:        cfg,
 		db:            db,
+		services:      make(map[string]Service),
 		Lang:          languages,
 		stopChannel:   make(chan struct{}, 1),
 		startupHooks:  []func(*Server){},
@@ -151,6 +151,31 @@ func getProxyAddress(cfg *config.Config) string {
 	}
 
 	return proto + "://" + host + cfg.GetString("server.proxy.base")
+}
+
+// Service returns the service identified by the given name.
+// Panics if no service could be found with the given name.
+func (s *Server) Service(name string) Service {
+	if s, ok := s.services[name]; ok {
+		return s
+	}
+	panic(fmt.Errorf("Service %q does not exist", name))
+}
+
+// LookupService search for a service by its name. If the service
+// identified by the given name exists, it is returned with the `true` boolean.
+// Otherwise returns `nil` and `false`.
+func (s *Server) LookupService(name string) (Service, bool) {
+	service, ok := s.services[name]
+	return service, ok
+}
+
+// RegisterService on thise server using its name (returned by `Service.Name()`).
+// A service's name should be unique.
+// `Service.Init(server)` is called on the given service upon registration.
+func (s *Server) RegisterService(service Service) {
+	service.Init(s)
+	s.services[service.Name()] = service
 }
 
 // Host returns the hostname and port the server is running on.
@@ -210,7 +235,8 @@ func (s *Server) Config() *config.Config {
 	return s.config
 }
 
-// DB returns a new gorm session.
+// DB returns the root database instance. Panics if no
+// database connection is set up.
 func (s *Server) DB() *gorm.DB {
 	if s.db == nil {
 		s.ErrLogger.Panicf("No database connection. Database is set to \"none\" in the config")

@@ -22,6 +22,10 @@ type RouteV5 struct {
 
 var _ routeMatcherV5 = (*RouteV5)(nil) // implements routeMatcher
 
+// RuleSetFunc function generating a new validation rule set.
+// This function is called for every validated request.
+// The returned value is expected to be fresh, not re-used across
+// multiple requests nor concurrently.
 type RuleSetFunc func(*RequestV5) validation.RuleSetV5
 
 // newRoute create a new route without any settings except its handler.
@@ -91,16 +95,26 @@ func (r *RouteV5) Name(name string) *RouteV5 {
 	return r
 }
 
+// SetMeta attach a value to this route identified by the given key.
+//
+// This value can override a value inherited by the parent routers for this route only.
 func (r *RouteV5) SetMeta(key string, value any) *RouteV5 {
 	r.Meta[key] = value
 	return r
 }
 
+// RemoveMeta detach the meta value identified by the given key from this route.
+// This doesn't remove meta using the same key from the parent routers.
 func (r *RouteV5) RemoveMeta(key string) *RouteV5 {
 	delete(r.Meta, key)
 	return r
 }
 
+// LookupMeta value identified by the given key. If not found in this route,
+// the value is recursively fetched in the parent routers.
+//
+// Returns the value and `true` if found in the current route or one of the
+// parent routers, `nil` and `false` otherwise.
 func (r *RouteV5) LookupMeta(key string) (any, bool) {
 	val, ok := r.Meta[key]
 	if ok {
@@ -109,6 +123,7 @@ func (r *RouteV5) LookupMeta(key string) (any, bool) {
 	return r.parent.LookupMeta(key)
 }
 
+// ValidateBody adds (or replace) validation rules for the request body.
 func (r *RouteV5) ValidateBody(validationRules RuleSetFunc) *RouteV5 {
 	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
 	if validationMiddleware == nil {
@@ -119,6 +134,7 @@ func (r *RouteV5) ValidateBody(validationRules RuleSetFunc) *RouteV5 {
 	return r
 }
 
+// ValidateQuery adds (or replace) validation rules for the request query.
 func (r *RouteV5) ValidateQuery(validationRules RuleSetFunc) *RouteV5 {
 	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
 	if validationMiddleware == nil {

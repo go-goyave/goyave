@@ -145,22 +145,36 @@ func (r *RouterV5) GetRoute(name string) *RouteV5 {
 	return r.namedRoutes[name]
 }
 
+// SetMeta attach a value to this router identified by the given key.
+//
+// This value is inherited by all subrouters and routes, unless they override
+// it at their level.
 func (r *RouterV5) SetMeta(key string, value any) *RouterV5 {
 	r.Meta[key] = value
 	return r
 }
 
+// RemoveMeta detach the meta value identified by the given key from this router.
+// This doesn't remove meta using the same key from the parent routers.
 func (r *RouterV5) RemoveMeta(key string) *RouterV5 {
 	delete(r.Meta, key)
 	return r
 }
 
+// LookupMeta value identified by the given key. If not found in this router,
+// the value is recursively fetched in the parent routers.
+//
+// Returns the value and `true` if found in the current router or one of the
+// parent routers, `nil` and `false` otherwise.
 func (r *RouterV5) LookupMeta(key string) (any, bool) {
 	val, ok := r.Meta[key]
 	if ok {
 		return val, ok
 	}
-	return r.parent.LookupMeta(key)
+	if r.parent != nil {
+		return r.parent.LookupMeta(key)
+	}
+	return nil, false
 }
 
 // GlobalMiddleware apply one or more global middleware. Global middleware are
@@ -395,6 +409,8 @@ func (r *RouterV5) registerRoute(methods []string, uri string, handler HandlerV5
 	return route
 }
 
+// Controller register all routes for a controller implementing the `Registrer` interface.
+// Automatically calls `Init()` and `RegisterRoutes()` on the given controller.
 func (r *RouterV5) Controller(controller Registrer) *RouterV5 {
 	controller.Init(r.server)
 	controller.RegisterRoutes(r)

@@ -10,6 +10,11 @@ import (
 	"goyave.dev/goyave/v4/validation"
 )
 
+// Middleware are special handlers executed in a stack above the controller handler.
+// They allow to inspect and filter requests, transform responses or provide additional
+// information to the next handlers in the stack.
+// Example uses are authentication, authorization, logging, panic recovery, CORS,
+// validation, gzip compression.
 type MiddlewareV5 interface {
 	Composable
 	Handle(HandlerV5) HandlerV5

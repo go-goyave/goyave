@@ -6,6 +6,9 @@ import (
 	"goyave.dev/goyave/v4/validation"
 )
 
+// StatusHandler is a regular handler executed during the finalization step of the request's lifecycle
+// if the response body is empty but a status code has been set.
+// Status handlers are mainly used to implement a custom behavior for user or server errors (400 and 500 status codes).
 type StatusHandler interface {
 	Composable
 	Handle(response *ResponseV5, request *RequestV5)
@@ -20,6 +23,7 @@ type PanicStatusHandlerV5 struct {
 	Component
 }
 
+// Handle internal server error responses.
 func (*PanicStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
 	response.error(request.Extra[ExtraError])
 	if response.IsEmpty() {
@@ -36,7 +40,8 @@ type ErrorStatusHandlerV5 struct {
 	Component
 }
 
-func (*ErrorStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
+// Handle generic error reponses.
+func (*ErrorStatusHandlerV5) Handle(response *ResponseV5, _ *RequestV5) {
 	message := map[string]string{
 		"error": http.StatusText(response.GetStatus()),
 	}
@@ -49,6 +54,7 @@ type ValidationStatusHandlerV5 struct {
 	Component
 }
 
+// Handle validation error responses.
 func (*ValidationStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
 	type ValidationErrorResponse struct {
 		Body  *validation.ErrorsV5 `json:"body,omitempty"`

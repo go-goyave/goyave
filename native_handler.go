@@ -18,7 +18,7 @@ type NativeMiddlewareFunc func(http.Handler) http.Handler
 //
 // This feature is a compatibility layer with the rest of the Golang web ecosystem.
 // Prefer using Goyave handlers if possible.
-func NativeHandler(handler http.Handler) Handler {
+func NativeHandler(handler http.Handler) Handler { // TODO native handler for v5?
 	return func(response *Response, request *Request) {
 		handler.ServeHTTP(response, request.httpRequest)
 	}

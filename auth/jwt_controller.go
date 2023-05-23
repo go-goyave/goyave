@@ -11,7 +11,6 @@ import (
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/database"
 	"goyave.dev/goyave/v4/lang"
-	"goyave.dev/goyave/v4/validation"
 )
 
 // TokenFunc is the function used by JWTController to generate tokens
@@ -105,21 +104,6 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 // instantiating an authenticated request's user.
 func JWTRoutes(router *goyave.Router, model interface{}) *goyave.Router {
 	jwtRouter := router.Subrouter("/auth")
-	jwtRouter.Route("POST", "/login", NewJWTController(model).Login).Validate(&validation.Rules{
-		Fields: validation.FieldMap{
-			"username": &validation.Field{
-				Rules: []*validation.Rule{
-					{Name: "required"},
-					{Name: "string"},
-				},
-			},
-			"password": &validation.Field{
-				Rules: []*validation.Rule{
-					{Name: "required"},
-					{Name: "string"},
-				},
-			},
-		},
-	})
+	jwtRouter.Route("POST", "/login", NewJWTController(model).Login)
 	return jwtRouter
 }

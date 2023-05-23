@@ -17,11 +17,13 @@ import (
 // during login process.
 type TokenFuncV5 func(request *goyave.RequestV5, user any) (string, error)
 
-// JWTController controller adding a login route returning a JWT.
+// JWTController controller adding a login route returning a JWT for quick prototyping.
 type JWTControllerV5 struct { // TODO refresh token
 	goyave.Component
 
 	model any
+
+	jwtService *JWTService
 
 	// SigningMethod used to generate the token using the default
 	// TokenFunc. By default, uses `jwt.SigningMethodHS256`.
@@ -42,14 +44,16 @@ type JWTControllerV5 struct { // TODO refresh token
 	PasswordField string
 }
 
-func (c *JWTControllerV5) defaultTokenFunc(r *goyave.RequestV5, user any) (string, error) {
-	signingMethod := c.SigningMethod
-	if signingMethod == nil {
-		signingMethod = jwt.SigningMethodHS256
+// Init the controller. Automatically registers the `JWTService` if not already registered.
+func (c *JWTControllerV5) Init(server *goyave.Server) {
+	c.Component.Init(server)
+
+	service, ok := server.LookupService(JWTServiceName)
+	if !ok {
+		service = &JWTService{}
+		server.RegisterService(service)
 	}
-	body := r.Data.(map[string]any)
-	usernameField := lo.Ternary(c.UsernameField == "", "username", c.UsernameField)
-	return GenerateTokenWithClaimsV5(c.Config(), jwt.MapClaims{"sub": body[usernameField]}, signingMethod)
+	c.jwtService = service.(*JWTService)
 }
 
 // RegisterRoutes register the "/login" route (with validation) on the given router.
@@ -57,17 +61,17 @@ func (c *JWTControllerV5) RegisterRoutes(router *goyave.RouterV5) {
 	router.Post("/login", c.Login).ValidateBody(c.validationRules)
 }
 
-func (c *JWTControllerV5) validationRules(r *goyave.RequestV5) validation.RuleSetV5 {
-	return validation.RuleSetV5{
-		{Path: validation.CurrentElement, Rules: validation.ListV5{
+func (c *JWTControllerV5) validationRules(_ *goyave.RequestV5) validation.RuleSet {
+	return validation.RuleSet{
+		{Path: validation.CurrentElement, Rules: validation.List{
 			validation.Required(),
 			validation.Object(),
 		}},
-		{Path: lo.Ternary(c.UsernameField == "", "username", c.UsernameField), Rules: validation.ListV5{
+		{Path: lo.Ternary(c.UsernameField == "", "username", c.UsernameField), Rules: validation.List{
 			validation.Required(),
 			validation.String(),
 		}},
-		{Path: lo.Ternary(c.PasswordField == "", "password", c.PasswordField), Rules: validation.ListV5{
+		{Path: lo.Ternary(c.PasswordField == "", "password", c.PasswordField), Rules: validation.List{
 			validation.Required(),
 			validation.String(),
 		}},
@@ -109,4 +113,14 @@ func (c *JWTControllerV5) Login(response *goyave.ResponseV5, request *goyave.Req
 	}
 
 	response.JSON(http.StatusUnauthorized, map[string]string{"error": request.Lang.Get("auth.invalid-credentials")})
+}
+
+func (c *JWTControllerV5) defaultTokenFunc(r *goyave.RequestV5, _ any) (string, error) {
+	signingMethod := c.SigningMethod
+	if signingMethod == nil {
+		signingMethod = jwt.SigningMethodHS256
+	}
+	body := r.Data.(map[string]any)
+	usernameField := lo.Ternary(c.UsernameField == "", "username", c.UsernameField)
+	return c.jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": body[usernameField]}, signingMethod)
 }

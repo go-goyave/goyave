@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/database"
-	"goyave.dev/goyave/v4/validation"
 )
 
 const testUserPassword = "secret"
@@ -202,28 +200,6 @@ func (suite *JWTControllerTestSuite) TestLoginWithFieldOverride() {
 	result := writer.Result()
 	suite.Equal(http.StatusOK, result.StatusCode)
 	result.Body.Close()
-}
-
-func (suite *JWTControllerTestSuite) TestValidation() {
-	suite.RunServer(func(router *goyave.Router) {
-		JWTRoutes(router, &TestUser{})
-	}, func() {
-		headers := map[string]string{"Content-Type": "application/json"}
-		data := map[string]interface{}{}
-		body, _ := json.Marshal(data)
-		resp, err := suite.Post("/auth/login", headers, bytes.NewReader(body))
-		suite.Nil(err)
-		if err == nil {
-			defer resp.Body.Close()
-			json := map[string]validation.Errors{}
-			err := suite.GetJSONBody(resp, &json)
-			suite.Nil(err)
-			if err == nil {
-				suite.Len(json["validationError"]["username"].Errors, 2)
-				suite.Len(json["validationError"]["password"].Errors, 2)
-			}
-		}
-	})
 }
 
 func (suite *JWTControllerTestSuite) TestLoginPanic() {

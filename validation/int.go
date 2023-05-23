@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-// TODO test intValidator
-
 type integer interface {
 	int | int8 | int16 | int32 | int64 |
 		uint | uint8 | uint16 | uint32 | uint64
@@ -75,6 +73,9 @@ func (v *intValidator[T]) getBitSize() int {
 }
 
 func (v *intValidator[T]) checkFloat64Range(ctx *ContextV5, val float64) bool {
+	if val > maxIntFloat64 || val < -maxIntFloat64 {
+		return false
+	}
 	ok := !((v.isUnsigned() && val < 0) || math.Abs(val-float64(T(val))) > 0 || (val < 0 && int(val) < v.min()) || (val > 0 && uint(val) > v.max()))
 	if ok {
 		ctx.Value = T(val)
@@ -83,6 +84,9 @@ func (v *intValidator[T]) checkFloat64Range(ctx *ContextV5, val float64) bool {
 }
 
 func (v *intValidator[T]) checkFloat32Range(ctx *ContextV5, val float32) bool {
+	if val > maxIntFloat32 || val < -maxIntFloat32 {
+		return false
+	}
 	ok := !((v.isUnsigned() && val < 0) || math.Abs(float64(val-float32(T(val)))) > 0 || (val < 0 && int(val) < v.min()) || (val > 0 && uint(val) > v.max()))
 	if ok {
 		ctx.Value = T(val)
@@ -91,7 +95,12 @@ func (v *intValidator[T]) checkFloat32Range(ctx *ContextV5, val float32) bool {
 }
 
 func (v *intValidator[T]) checkIntRange(ctx *ContextV5, val int) bool {
-	ok := val >= v.min() && val <= int(v.max())
+	ok := false
+	if v.isUnsigned() {
+		ok = val >= v.min() && uint(val) <= v.max()
+	} else {
+		ok = val >= v.min() && val <= int(v.max())
+	}
 	if ok {
 		ctx.Value = T(val)
 	}
@@ -160,7 +169,10 @@ func (v *intValidator[T]) IsType() bool { return true }
 type IntValidator struct{ intValidator[int] }
 
 // Int the field under validation must be an integer
-// and fit into Go's `int` type.
+// and fit into Go's `int` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `int` if it passes.
@@ -172,7 +184,10 @@ func Int() *IntValidator {
 type Int8Validator struct{ intValidator[int8] }
 
 // Int8 the field under validation must be an integer
-// and fit into Go's `int8` type.
+// and fit into Go's `int8` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `int8` if it passes.
@@ -184,7 +199,10 @@ func Int8() *Int8Validator {
 type Int16Validator struct{ intValidator[int16] }
 
 // Int16 the field under validation must be an integer
-// and fit into Go's `int16` type.
+// and fit into Go's `int16` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `int16` if it passes.
@@ -196,7 +214,10 @@ func Int16() *Int16Validator {
 type Int32Validator struct{ intValidator[int32] }
 
 // Int32 the field under validation must be an integer
-// and fit into Go's `int32` type.
+// and fit into Go's `int32` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `int32` if it passes.
@@ -208,7 +229,10 @@ func Int32() *Int32Validator {
 type Int64Validator struct{ intValidator[int64] }
 
 // Int64 the field under validation must be an integer
-// and fit into Go's `int64` type.
+// and fit into Go's `int64` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `int64` if it passes.
@@ -220,7 +244,10 @@ func Int64() *Int64Validator {
 type UintValidator struct{ intValidator[uint] }
 
 // Uint the field under validation must be a positive integer
-// and fit into Go's `uint` type.
+// and fit into Go's `uint` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `uint` if it passes.
@@ -232,7 +259,10 @@ func Uint() *UintValidator {
 type Uint8Validator struct{ intValidator[uint8] }
 
 // Uint8 the field under validation must be a positive integer
-// and fit into Go's `uint8` type.
+// and fit into Go's `uint8` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `uint8` if it passes.
@@ -244,7 +274,10 @@ func Uint8() *Uint8Validator {
 type Uint16Validator struct{ intValidator[uint16] }
 
 // Uint16 the field under validation must be a positive integer
-// and fit into Go's `uint16` type.
+// and fit into Go's `uint16` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `uint16` if it passes.
@@ -256,7 +289,10 @@ func Uint16() *Uint16Validator {
 type Uint32Validator struct{ intValidator[uint32] }
 
 // Uint32 the field under validation must be a positive integer
-// and fit into Go's `uint32` type.
+// and fit into Go's `uint32` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `uint32` if it passes.
@@ -268,7 +304,10 @@ func Uint32() *Uint32Validator {
 type Uint64Validator struct{ intValidator[uint64] }
 
 // Uint64 the field under validation must be a positive integer
-// and fit into Go's `uint64` type.
+// and fit into Go's `uint64` type. If the source number is
+// a float, the validator makes sure the value is within
+// the range of integers that the float can accurately represent.
+//
 // Floats are only accepted if they don't have a decimal.
 // Strings that can be converted to the target type are accepted.
 // This rule converts the field to `uint64` if it passes.

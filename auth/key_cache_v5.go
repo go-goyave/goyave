@@ -3,19 +3,23 @@ package auth
 import (
 	"errors"
 	"os"
+	"sync"
 
 	"github.com/golang-jwt/jwt"
 	"goyave.dev/goyave/v4/config"
 )
 
-type keyCacheV5 map[string]any
+type keyCacheV5 struct { // TODO move this to a service?
+	config *config.Config
+	cache  sync.Map
+}
 
-func (c keyCacheV5) loadKey(cfg *config.Config, entry string) (any, error) {
-	if k, ok := keyCache[entry]; ok {
+func (c *keyCacheV5) loadKey(entry string) (any, error) {
+	if k, ok := c.cache.Load(entry); ok {
 		return k, nil
 	}
 
-	data, err := os.ReadFile(cfg.GetString(entry)) // TODO support embeds?
+	data, err := os.ReadFile(c.config.GetString(entry)) // TODO support embeds?
 	if err != nil {
 		return nil, err
 	}
@@ -23,8 +27,8 @@ func (c keyCacheV5) loadKey(cfg *config.Config, entry string) (any, error) {
 	var key interface{}
 	switch entry {
 	case "auth.jwt.rsa.private":
-		if cfg.Has("auth.jwt.rsa.password") {
-			key, err = jwt.ParseRSAPrivateKeyFromPEMWithPassword(data, cfg.GetString("auth.jwt.rsa.password"))
+		if c.config.Has("auth.jwt.rsa.password") {
+			key, err = jwt.ParseRSAPrivateKeyFromPEMWithPassword(data, c.config.GetString("auth.jwt.rsa.password"))
 		} else {
 			key, err = jwt.ParseRSAPrivateKeyFromPEM(data)
 		}
@@ -37,22 +41,20 @@ func (c keyCacheV5) loadKey(cfg *config.Config, entry string) (any, error) {
 	}
 
 	if err == nil {
-		keyCache[entry] = key
+		c.cache.Store(entry, key)
 	}
 	return key, err
 }
 
-func (c keyCacheV5) getPrivateKey(cfg *config.Config, signingMethod jwt.SigningMethod) (any, error) {
+func (c *keyCacheV5) getPrivateKey(signingMethod jwt.SigningMethod) (any, error) {
 	switch signingMethod.(type) {
 	case *jwt.SigningMethodRSA:
-		return c.loadKey(cfg, "auth.jwt.rsa.private")
+		return c.loadKey("auth.jwt.rsa.private")
 	case *jwt.SigningMethodECDSA:
-		return c.loadKey(cfg, "auth.jwt.ecdsa.private")
+		return c.loadKey("auth.jwt.ecdsa.private")
 	case *jwt.SigningMethodHMAC:
-		return []byte(cfg.GetString("auth.jwt.secret")), nil
+		return []byte(c.config.GetString("auth.jwt.secret")), nil
 	default:
 		return nil, errors.New("Unsupported JWT signing method: " + signingMethod.Alg())
 	}
 }
-
-var globalKeyCache = keyCacheV5{}

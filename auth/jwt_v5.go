@@ -67,8 +67,8 @@ func GenerateTokenV5(cfg *config.Config, username any) (string, error) {
 //   - `exp`: "Expiry", the current timestamp plus the `auth.jwt.expiry` config entry.
 //
 // `nbf` and `exp` can be overridden if they are set in the `claims` parameter.
-func GenerateTokenWithClaimsV5(cfg *config.Config, claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) {
-	exp := time.Duration(config.GetInt("auth.jwt.expiry")) * time.Second
+func GenerateTokenWithClaimsV5(cfg *config.Config, claims jwt.MapClaims, signingMethod jwt.SigningMethod) (string, error) { // TODO move this to a service
+	exp := time.Duration(cfg.GetInt("auth.jwt.expiry")) * time.Second
 	now := time.Now()
 	customClaims := jwt.MapClaims{
 		"nbf": now.Unix(),          // Not Before
@@ -79,7 +79,7 @@ func GenerateTokenWithClaimsV5(cfg *config.Config, claims jwt.MapClaims, signing
 	}
 	token := jwt.NewWithClaims(signingMethod, customClaims)
 
-	key, err := globalKeyCache.getPrivateKey(cfg, signingMethod)
+	key, err := (&keyCacheV5{config: cfg}).getPrivateKey(signingMethod)
 	if err != nil {
 		panic(err)
 	}
@@ -102,9 +102,19 @@ type JWTAuthenticatorV5 struct {
 	// don't provide credentials. Handlers should therefore check
 	// if request.User is not nil before accessing it.
 	Optional bool
+
+	keyCache *keyCacheV5
 }
 
 var _ AuthenticatorV5 = (*JWTAuthenticatorV5)(nil) // implements Authenticator
+
+// Init the authenticator and its internal key cache.
+func (a *JWTAuthenticatorV5) Init(server *goyave.Server) {
+	a.Component.Init(server)
+	a.keyCache = &keyCacheV5{
+		config: server.Config(),
+	}
+}
 
 // Authenticate fetch the user corresponding to the token
 // found in the given request and puts the result in the given user pointer.
@@ -157,7 +167,7 @@ func (a *JWTAuthenticatorV5) keyFunc(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		key, err := globalKeyCache.loadKey(a.Config(), "auth.jwt.rsa.public")
+		key, err := a.keyCache.loadKey("auth.jwt.rsa.public")
 		if err != nil {
 			panic(err)
 		}
@@ -166,7 +176,7 @@ func (a *JWTAuthenticatorV5) keyFunc(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		key, err := globalKeyCache.loadKey(a.Config(), "auth.jwt.ecdsa.public")
+		key, err := a.keyCache.loadKey("auth.jwt.ecdsa.public")
 		if err != nil {
 			panic(err)
 		}

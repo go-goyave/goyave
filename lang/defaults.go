@@ -181,6 +181,7 @@ var enUS = &Language{
 			"exists.numeric.array":             "The :field value does not exist.",
 		},
 		fields: map[string]string{
+			"":      "body",
 			"email": "email address",
 			"*":     "object property",
 		},

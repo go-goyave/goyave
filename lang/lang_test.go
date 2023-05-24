@@ -59,7 +59,7 @@ func (suite *LangTestSuite) TestLoadOverride() {
 	err := l.Load("en-US", "resources/lang/en-US")
 	suite.Nil(err)
 	suite.Len(l.languages, 1)
-	suite.Equal("rule override", l.languages["en-US"].validation.rules["required"])
+	suite.Equal("rule override", l.languages["en-US"].validation.rules["override"])
 	suite.Equal("Custom line", l.languages["en-US"].lines["custom-line"])
 }
 
@@ -95,7 +95,7 @@ func (suite *LangTestSuite) TestLoad() {
 		},
 		validation: validationLines{
 			rules: map[string]string{
-				"required":       "rule override",
+				"override":       "rule override",
 				"required.array": "The :field values are required.",
 			},
 			fields: map[string]string{

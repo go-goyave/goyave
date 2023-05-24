@@ -1,4 +1,4 @@
 {
-    "required": "rule override",
+    "override": "rule override",
     "required.array": "The :field values are required."
 }

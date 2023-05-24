@@ -114,11 +114,18 @@ func FindRootDirectory() string {
 
 // NewTestRequest create a new `goyave.Request` with an underlying HTTP request created
 // usin the `httptest` package.
-func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.RequestV5 {
+func NewTestRequest(method, uri string, body io.Reader) *goyave.RequestV5 {
 	req := httptest.NewRequest(method, uri, body)
-	gReq := goyave.NewRequest(req)
-	gReq.Lang = s.Lang.GetDefault()
-	return gReq
+	return goyave.NewRequest(req)
+}
+
+// NewTestRequest create a new `goyave.Request` with an underlying HTTP request created
+// usin the `httptest` package. This function sets the request language using the default
+// language of the server.
+func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.RequestV5 {
+	req := NewTestRequest(method, uri, body)
+	req.Lang = s.Lang.GetDefault()
+	return req
 }
 
 // ReadJSONBody decodes the given body reader into a new variable of type `*T`.

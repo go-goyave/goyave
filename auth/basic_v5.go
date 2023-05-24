@@ -52,7 +52,11 @@ func (a *BasicAuthenticatorV5) Authenticate(request *goyave.RequestV5, user any)
 		panic(result.Error)
 	}
 
-	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
+	t := reflect.Indirect(reflect.ValueOf(user))
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	pass := t.FieldByName(columns[1].Field.Name)
 
 	if notFound || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
 		return fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
@@ -96,11 +100,26 @@ var _ AuthenticatorV5 = (*ConfigBasicAuthenticator)(nil) // implements Authentic
 func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.RequestV5, user any) error {
 	username, password, ok := request.BasicAuth()
 
-	if !ok ||
-		subtle.ConstantTimeCompare([]byte(config.GetString("auth.basic.username")), []byte(username)) != 1 ||
-		subtle.ConstantTimeCompare([]byte(config.GetString("auth.basic.password")), []byte(password)) != 1 {
+	if !ok {
+		return fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
+	}
+
+	if subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.username")), []byte(username)) != 1 ||
+		subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.password")), []byte(password)) != 1 {
 		return fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
 	}
-	user.(*BasicUser).Name = username
+
+	(*user.(**BasicUser)) = &BasicUser{
+		Name: username,
+	}
 	return nil
+}
+
+// ConfigBasicAuth create a new authenticator middleware for
+// config-based Basic authentication. On auth success, the request
+// user is set to a `*BasicUser`.
+// The user is authenticated if the "auth.basic.username" and "auth.basic.password" config entries
+// match the request's Authorization header.
+func ConfigBasicAuthV5() *Handler[*BasicUser] {
+	return MiddlewareV5[*BasicUser](&ConfigBasicAuthenticator{})
 }

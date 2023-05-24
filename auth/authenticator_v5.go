@@ -11,8 +11,6 @@ import (
 	"goyave.dev/goyave/v4"
 )
 
-// TODO test the v5 auth package
-
 // Authenticator is an object in charge of authenticating a model.
 type AuthenticatorV5 interface {
 	goyave.Composable
@@ -21,6 +19,9 @@ type AuthenticatorV5 interface {
 	// found in the given request and puts the result in the given user pointer.
 	// If no user can be authenticated, returns the error detailing why the
 	// authentication failed. The error message is already localized.
+	//
+	// The `user` is a double pointer to a `nil` structure defined by the generic
+	// parameter of the middleware.
 	Authenticate(request *goyave.RequestV5, user any) error
 }
 
@@ -32,21 +33,20 @@ type UnauthorizerV5 interface {
 
 // Handler a middleware that automatically sets the request's User before
 // executing the authenticator. Supports the `Unauthorizer` interface.
-type Handler struct {
+//
+// The T parameter represents the user model and should be a pointer.
+type Handler[T any] struct {
 	AuthenticatorV5
-	model any
 }
 
 // Handle set the request's user to a new instance of the model before
 // executing the authenticator. Blocks if the authentication is not successful.
 // If the authenticator implements `Unauthorizer`, `OnUnauthorized` is called,
 // otherwise returns a default `401 Unauthorized` error.
-func (m *Handler) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
+func (m *Handler[T]) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
-		userType := reflect.Indirect(reflect.ValueOf(m.model)).Type()
-		user := reflect.New(userType).Interface()
-		request.User = user
-		if err := m.AuthenticatorV5.Authenticate(request, request.User); err != nil {
+		user := new(T)
+		if err := m.AuthenticatorV5.Authenticate(request, user); err != nil {
 			if unauthorizer, ok := m.AuthenticatorV5.(UnauthorizerV5); ok {
 				unauthorizer.OnUnauthorized(response, request, err)
 				return
@@ -54,16 +54,18 @@ func (m *Handler) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 			response.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 			return
 		}
+		if user != nil {
+			request.User = *user
+		}
 		next(response, request)
 	}
 }
 
 // Middleware returns an authentication middleware which will use the given
 // authenticator and set the request's user according to the given model.
-func MiddlewareV5(model any, authenticator AuthenticatorV5) *Handler {
-	return &Handler{
+func MiddlewareV5[T any](authenticator AuthenticatorV5) *Handler[T] {
+	return &Handler[T]{
 		AuthenticatorV5: authenticator,
-		model:           model,
 	}
 }
 
@@ -91,7 +93,7 @@ func findColumnsV5(db *gorm.DB, t reflect.Type, fields []string) []*Column {
 	length := len(fields)
 	result := make([]*Column, length)
 
-	if t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
 	for i := 0; i < t.NumField(); i++ {

@@ -57,7 +57,7 @@ func (a *TestBasicUnauthorizerV5) OnUnauthorized(response *goyave.ResponseV5, _ 
 func prepareAuthenticatorTest() (*testutil.TestServer, *TestUser) {
 	cfg := config.LoadDefault()
 	cfg.Set("database.connection", "sqlite3")
-	cfg.Set("database.name", "testauthenticator_middleware.db")
+	cfg.Set("database.name", "testauthenticator.db")
 	cfg.Set("database.options", "mode=memory")
 	cfg.Set("app.debug", false)
 	server, err := testutil.NewTestServerWithConfig(cfg, nil)
@@ -86,7 +86,7 @@ func TestAuthenticator(t *testing.T) {
 	t.Run("Middleware", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
 
-		authenticator := MiddlewareV5(&TestUser{}, &BasicAuthenticatorV5{})
+		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
@@ -105,13 +105,18 @@ func TestAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
 		_ = resp.Body.Close()
+		if !assert.NoError(t, err) {
+			return
+		}
+		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
 	})
 
 	t.Run("MiddlewareUnauthorizer", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
 
-		authenticator := MiddlewareV5(&TestUser{}, &TestBasicUnauthorizerV5{})
+		authenticator := MiddlewareV5[*TestUser](&TestBasicUnauthorizerV5{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")

@@ -107,13 +107,14 @@ func TestBasicAuthenticator(t *testing.T) {
 				assert.Fail(t, err.Error())
 				return
 			}
-			authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{})
+			authenticator := MiddlewareV5[*TestUserPromoted](&BasicAuthenticatorV5{})
 			authenticator.Init(server.Server)
 			request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 			request.Request().SetBasicAuth("johndoe", "secret")
 
 			// Panic here because table doesn't exist
-			_ = authenticator.Authenticate(request, &TestUserPromoted{})
+			user := &TestUserPromoted{}
+			_ = authenticator.Authenticate(request, &user)
 		})
 	})
 

@@ -9,9 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"path/filepath"
-	"runtime"
 
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
@@ -97,12 +95,15 @@ func (s *TestServer) TestMiddleware(middleware goyave.MiddlewareV5, request *goy
 }
 
 // FindRootDirectory find relative path to the project's root directory based on the
-// existence of a `go.mod` file. The returned path is relative to the source file of the caller.
+// existence of a `go.mod` file. The returned path is relative to the working directory
 // Returns an empty string if not found.
 func FindRootDirectory() string {
 	sep := string(os.PathSeparator)
-	_, filename, _, _ := runtime.Caller(2)
-	directory := path.Dir(filename) + sep
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	directory := wd + sep
 	for !fsutil.FileExists(directory + sep + "go.mod") {
 		directory += ".." + sep
 		if !fsutil.IsDirectory(directory) {

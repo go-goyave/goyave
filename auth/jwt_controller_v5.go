@@ -15,13 +15,14 @@ import (
 
 // TokenFunc is the function used by JWTController to generate tokens
 // during login process.
-type TokenFuncV5 func(request *goyave.RequestV5, user any) (string, error)
+// The T parameter represents the user model and should be a pointer.
+type TokenFuncV5[T any] func(request *goyave.RequestV5, user T) (string, error)
 
 // JWTController controller adding a login route returning a JWT for quick prototyping.
-type JWTControllerV5 struct { // TODO refresh token
+//
+// The T parameter represents the user model and should be a pointer.
+type JWTControllerV5[T any] struct { // TODO refresh token
 	goyave.Component
-
-	model any
 
 	jwtService *JWTService
 
@@ -32,7 +33,7 @@ type JWTControllerV5 struct { // TODO refresh token
 	// The function generating the token on a successful authentication.
 	// Defaults to a JWT signed with HS256 and containing the username as the
 	// "sub" claim.
-	TokenFunc TokenFuncV5
+	TokenFunc TokenFuncV5[T]
 
 	// UsernameField the name of the request's body field
 	// used as username in the authentication process.
@@ -45,7 +46,7 @@ type JWTControllerV5 struct { // TODO refresh token
 }
 
 // Init the controller. Automatically registers the `JWTService` if not already registered.
-func (c *JWTControllerV5) Init(server *goyave.Server) {
+func (c *JWTControllerV5[T]) Init(server *goyave.Server) {
 	c.Component.Init(server)
 
 	service, ok := server.LookupService(JWTServiceName)
@@ -57,11 +58,11 @@ func (c *JWTControllerV5) Init(server *goyave.Server) {
 }
 
 // RegisterRoutes register the "/login" route (with validation) on the given router.
-func (c *JWTControllerV5) RegisterRoutes(router *goyave.RouterV5) {
+func (c *JWTControllerV5[T]) RegisterRoutes(router *goyave.RouterV5) {
 	router.Post("/login", c.Login).ValidateBody(c.validationRules)
 }
 
-func (c *JWTControllerV5) validationRules(_ *goyave.RequestV5) validation.RuleSet {
+func (c *JWTControllerV5[T]) validationRules(_ *goyave.RequestV5) validation.RuleSet {
 	return validation.RuleSet{
 		{Path: validation.CurrentElement, Rules: validation.List{
 			validation.Required(),
@@ -86,9 +87,8 @@ func (c *JWTControllerV5) validationRules(_ *goyave.RequestV5) validation.RuleSe
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.
 // The password is checked using bcrypt. The username field should unique.
-func (c *JWTControllerV5) Login(response *goyave.ResponseV5, request *goyave.RequestV5) {
-	userType := reflect.Indirect(reflect.ValueOf(c.model)).Type()
-	user := reflect.New(userType).Interface()
+func (c *JWTControllerV5[T]) Login(response *goyave.ResponseV5, request *goyave.RequestV5) {
+	user := *new(T)
 	body := request.Data.(map[string]any)
 	username := body[lo.Ternary(c.UsernameField == "", "username", c.UsernameField)].(string)
 	password := body[lo.Ternary(c.PasswordField == "", "password", c.PasswordField)].(string)
@@ -115,7 +115,7 @@ func (c *JWTControllerV5) Login(response *goyave.ResponseV5, request *goyave.Req
 	response.JSON(http.StatusUnauthorized, map[string]string{"error": request.Lang.Get("auth.invalid-credentials")})
 }
 
-func (c *JWTControllerV5) defaultTokenFunc(r *goyave.RequestV5, _ any) (string, error) {
+func (c *JWTControllerV5[T]) defaultTokenFunc(r *goyave.RequestV5, _ T) (string, error) {
 	signingMethod := c.SigningMethod
 	if signingMethod == nil {
 		signingMethod = jwt.SigningMethodHS256

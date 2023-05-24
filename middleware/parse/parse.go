@@ -36,9 +36,13 @@ type Middleware struct {
 }
 
 // Handle reads the request query and body and parses it if necessary.
+// The middleware is skipped if the request `Data` or `Query` is not `nil`.
 func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, r *goyave.RequestV5) {
-
+		if r.Data != nil || r.Query != nil {
+			next(response, r)
+			return
+		}
 		if err := parseQuery(r); err != nil {
 			response.Status(http.StatusBadRequest)
 			return

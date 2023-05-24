@@ -10,17 +10,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/middleware/parse"
 	"goyave.dev/goyave/v4/validation"
 )
 
 // TokenFunc is the function used by JWTController to generate tokens
 // during login process.
-// The T parameter represents the user model and should be a pointer.
-type TokenFunc[T any] func(request *goyave.RequestV5, user T) (string, error)
+type TokenFunc[T any] func(request *goyave.RequestV5, user *T) (string, error)
 
 // JWTController controller adding a login route returning a JWT for quick prototyping.
 //
-// The T parameter represents the user model and should be a pointer.
+// The T parameter represents the user model and should NOT be a pointer.
 type JWTController[T any] struct { // TODO refresh token
 	goyave.Component
 
@@ -59,7 +59,7 @@ func (c *JWTController[T]) Init(server *goyave.Server) {
 
 // RegisterRoutes register the "/login" route (with validation) on the given router.
 func (c *JWTController[T]) RegisterRoutes(router *goyave.RouterV5) {
-	router.Post("/login", c.Login).ValidateBody(c.validationRules)
+	router.Post("/login", c.Login).Middleware(&parse.Middleware{}).ValidateBody(c.validationRules)
 }
 
 func (c *JWTController[T]) validationRules(_ *goyave.RequestV5) validation.RuleSet {
@@ -88,7 +88,7 @@ func (c *JWTController[T]) validationRules(_ *goyave.RequestV5) validation.RuleS
 // struct tags `auth:"username"` and `auth:"password"`.
 // The password is checked using bcrypt. The username field should unique.
 func (c *JWTController[T]) Login(response *goyave.ResponseV5, request *goyave.RequestV5) {
-	user := *new(T)
+	user := new(T)
 	body := request.Data.(map[string]any)
 	username := body[lo.Ternary(c.UsernameField == "", "username", c.UsernameField)].(string)
 	password := body[lo.Ternary(c.PasswordField == "", "password", c.PasswordField)].(string)
@@ -101,7 +101,11 @@ func (c *JWTController[T]) Login(response *goyave.ResponseV5, request *goyave.Re
 		panic(result.Error)
 	}
 
-	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
+	t := reflect.Indirect(reflect.ValueOf(user))
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	pass := t.FieldByName(columns[1].Field.Name)
 	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) == nil {
 		tokenFunc := lo.Ternary(c.TokenFunc == nil, c.defaultTokenFunc, c.TokenFunc)
 		token, err := tokenFunc(request, user)
@@ -115,7 +119,7 @@ func (c *JWTController[T]) Login(response *goyave.ResponseV5, request *goyave.Re
 	response.JSON(http.StatusUnauthorized, map[string]string{"error": request.Lang.Get("auth.invalid-credentials")})
 }
 
-func (c *JWTController[T]) defaultTokenFunc(r *goyave.RequestV5, _ T) (string, error) {
+func (c *JWTController[T]) defaultTokenFunc(r *goyave.RequestV5, _ *T) (string, error) {
 	signingMethod := c.SigningMethod
 	if signingMethod == nil {
 		signingMethod = jwt.SigningMethodHS256

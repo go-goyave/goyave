@@ -35,6 +35,12 @@ const (
 	FieldTypeUnsupported = "unsupported"
 )
 
+// ErrorResponse HTTP response format for validation errors.
+type ErrorResponse struct {
+	Body  *Errors `json:"body,omitempty"`
+	Query *Errors `json:"query,omitempty"`
+}
+
 // Composable is a partial clone of `goyave.Component`, only
 // including the accessors necessary for validation.
 // Validators must implement this interface so they

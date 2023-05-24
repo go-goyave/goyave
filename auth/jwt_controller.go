@@ -6,52 +6,77 @@ import (
 	"reflect"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/samber/lo"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/database"
-	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v4/validation"
 )
 
 // TokenFunc is the function used by JWTController to generate tokens
 // during login process.
-type TokenFunc func(request *goyave.Request, user interface{}) (string, error)
+// The T parameter represents the user model and should be a pointer.
+type TokenFunc[T any] func(request *goyave.RequestV5, user T) (string, error)
 
-// JWTController a controller for JWT-based authentication, using HMAC SHA256.
-// Its model fields are used for username and password retrieval.
-type JWTController struct {
-	model interface{}
+// JWTController controller adding a login route returning a JWT for quick prototyping.
+//
+// The T parameter represents the user model and should be a pointer.
+type JWTController[T any] struct { // TODO refresh token
+	goyave.Component
+
+	jwtService *JWTService
 
 	// SigningMethod used to generate the token using the default
 	// TokenFunc. By default, uses `jwt.SigningMethodHS256`.
 	SigningMethod jwt.SigningMethod
 
-	TokenFunc TokenFunc
+	// The function generating the token on a successful authentication.
+	// Defaults to a JWT signed with HS256 and containing the username as the
+	// "sub" claim.
+	TokenFunc TokenFunc[T]
 
 	// UsernameField the name of the request's body field
-	// used as username in the authentication process
+	// used as username in the authentication process.
+	// Defaults to "username"
 	UsernameField string
 	// PasswordField the name of the request's body field
-	// used as password in the authentication process
+	// used as password in the authentication process.
+	// Defaults to "password"
 	PasswordField string
 }
 
-// NewJWTController create a new JWTController that will
-// be using the given model for login and token generation.
-func NewJWTController(model interface{}) *JWTController {
-	controller := &JWTController{
-		model:         model,
-		UsernameField: "username",
-		PasswordField: "password",
+// Init the controller. Automatically registers the `JWTService` if not already registered.
+func (c *JWTController[T]) Init(server *goyave.Server) {
+	c.Component.Init(server)
+
+	service, ok := server.LookupService(JWTServiceName)
+	if !ok {
+		service = &JWTService{}
+		server.RegisterService(service)
 	}
-	controller.TokenFunc = func(r *goyave.Request, user interface{}) (string, error) {
-		signingMethod := controller.SigningMethod
-		if signingMethod == nil {
-			signingMethod = jwt.SigningMethodHS256
-		}
-		return GenerateTokenWithClaims(jwt.MapClaims{"sub": r.String(controller.UsernameField)}, signingMethod)
+	c.jwtService = service.(*JWTService)
+}
+
+// RegisterRoutes register the "/login" route (with validation) on the given router.
+func (c *JWTController[T]) RegisterRoutes(router *goyave.RouterV5) {
+	router.Post("/login", c.Login).ValidateBody(c.validationRules)
+}
+
+func (c *JWTController[T]) validationRules(_ *goyave.RequestV5) validation.RuleSet {
+	return validation.RuleSet{
+		{Path: validation.CurrentElement, Rules: validation.List{
+			validation.Required(),
+			validation.Object(),
+		}},
+		{Path: lo.Ternary(c.UsernameField == "", "username", c.UsernameField), Rules: validation.List{
+			validation.Required(),
+			validation.String(),
+		}},
+		{Path: lo.Ternary(c.PasswordField == "", "password", c.PasswordField), Rules: validation.List{
+			validation.Required(),
+			validation.String(),
+		}},
 	}
-	return controller
 }
 
 // Login POST handler for token-based authentication.
@@ -62,13 +87,14 @@ func NewJWTController(model interface{}) *JWTController {
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.
 // The password is checked using bcrypt. The username field should unique.
-func (c *JWTController) Login(response *goyave.Response, request *goyave.Request) {
-	userType := reflect.Indirect(reflect.ValueOf(c.model)).Type()
-	user := reflect.New(userType).Interface()
-	username := request.String(c.UsernameField)
-	columns := FindColumns(user, "username", "password")
+func (c *JWTController[T]) Login(response *goyave.ResponseV5, request *goyave.RequestV5) {
+	user := *new(T)
+	body := request.Data.(map[string]any)
+	username := body[lo.Ternary(c.UsernameField == "", "username", c.UsernameField)].(string)
+	password := body[lo.Ternary(c.PasswordField == "", "password", c.PasswordField)].(string)
+	columns := FindColumns(c.DB(), user, "username", "password")
 
-	result := database.GetConnection().Where(columns[0].Name+" = ?", username).First(user)
+	result := c.DB().Where(columns[0].Name, username).First(user)
 	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 
 	if result.Error != nil && !notFound {
@@ -76,8 +102,9 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 	}
 
 	pass := reflect.Indirect(reflect.ValueOf(user)).FieldByName(columns[1].Field.Name)
-	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(request.String(c.PasswordField))) == nil {
-		token, err := c.TokenFunc(request, user)
+	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) == nil {
+		tokenFunc := lo.Ternary(c.TokenFunc == nil, c.defaultTokenFunc, c.TokenFunc)
+		token, err := tokenFunc(request, user)
 		if err != nil {
 			panic(err)
 		}
@@ -85,25 +112,15 @@ func (c *JWTController) Login(response *goyave.Response, request *goyave.Request
 		return
 	}
 
-	response.JSON(http.StatusUnauthorized, map[string]string{"validationError": lang.Get(request.Lang, "auth.invalid-credentials")})
+	response.JSON(http.StatusUnauthorized, map[string]string{"error": request.Lang.Get("auth.invalid-credentials")})
 }
 
-// Refresh refresh the current token.
-// func (c *TokenAuthController) Refresh(response *goyave.Response, request *goyave.Request) {
-// TODO refresh token
-// }
-
-// JWTRoutes create a "/auth" route group and registers the "POST /auth/login"
-// validated route. Returns the new route group.
-//
-// Validation rules are as follows:
-//   - "username": required string
-//   - "password": required string
-//
-// The given model is used for username and password retrieval and for
-// instantiating an authenticated request's user.
-func JWTRoutes(router *goyave.Router, model interface{}) *goyave.Router {
-	jwtRouter := router.Subrouter("/auth")
-	jwtRouter.Route("POST", "/login", NewJWTController(model).Login)
-	return jwtRouter
+func (c *JWTController[T]) defaultTokenFunc(r *goyave.RequestV5, _ T) (string, error) {
+	signingMethod := c.SigningMethod
+	if signingMethod == nil {
+		signingMethod = jwt.SigningMethodHS256
+	}
+	body := r.Data.(map[string]any)
+	usernameField := lo.Ternary(c.UsernameField == "", "username", c.UsernameField)
+	return c.jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": body[usernameField]}, signingMethod)
 }

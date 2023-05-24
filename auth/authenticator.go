@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/database"
 )
 
 // Column matches a column name with a struct field.
@@ -18,42 +19,59 @@ type Column struct {
 
 // Authenticator is an object in charge of authenticating a model.
 type Authenticator interface {
+	goyave.Composable
 
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and puts the result in the given user pointer.
 	// If no user can be authenticated, returns the error detailing why the
 	// authentication failed. The error message is already localized.
-	Authenticate(request *goyave.Request, user any) error
+	//
+	// The `user` is a double pointer to a `nil` structure defined by the generic
+	// parameter of the middleware.
+	Authenticate(request *goyave.RequestV5, user any) error
 }
-
-// TODO MutliAuthenticator, an authenticator that contains multiple authenticators
-// so the route can accept multiple authentication mechanisms. If all of them fail
-// then return Unauthorized. Otherwise use the first that succeeded.
 
 // Unauthorizer can be implemented by Authenticators to define custom behavior
 // when authentication fails.
 type Unauthorizer interface {
-	OnUnauthorized(*goyave.Response, *goyave.Request, error)
+	OnUnauthorized(*goyave.ResponseV5, *goyave.RequestV5, error)
 }
 
-// Middleware create a new authenticator middleware to authenticate
-// the given model using the given authenticator.
-func Middleware(model any, authenticator Authenticator) goyave.Middleware {
-	return func(next goyave.Handler) goyave.Handler {
-		return func(response *goyave.Response, r *goyave.Request) {
-			userType := reflect.Indirect(reflect.ValueOf(model)).Type()
-			user := reflect.New(userType).Interface()
-			r.User = user
-			if err := authenticator.Authenticate(r, r.User); err != nil {
-				if unauthorizer, ok := authenticator.(Unauthorizer); ok {
-					unauthorizer.OnUnauthorized(response, r, err)
-					return
-				}
-				response.JSON(http.StatusUnauthorized, map[string]string{"authError": err.Error()})
+// Handler a middleware that automatically sets the request's User before
+// executing the authenticator. Supports the `Unauthorizer` interface.
+//
+// The T parameter represents the user model and should be a pointer.
+type Handler[T any] struct {
+	Authenticator
+}
+
+// Handle set the request's user to a new instance of the model before
+// executing the authenticator. Blocks if the authentication is not successful.
+// If the authenticator implements `Unauthorizer`, `OnUnauthorized` is called,
+// otherwise returns a default `401 Unauthorized` error.
+func (m *Handler[T]) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
+	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		user := new(T)
+		if err := m.Authenticator.Authenticate(request, user); err != nil {
+			if unauthorizer, ok := m.Authenticator.(Unauthorizer); ok {
+				unauthorizer.OnUnauthorized(response, request, err)
 				return
 			}
-			next(response, r)
+			response.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+			return
 		}
+		if user != nil {
+			request.User = *user
+		}
+		next(response, request)
+	}
+}
+
+// Middleware returns an authentication middleware which will use the given
+// authenticator and set the request's user according to the given model.
+func Middleware[T any](authenticator Authenticator) *Handler[T] {
+	return &Handler[T]{
+		Authenticator: authenticator,
 	}
 }
 
@@ -73,15 +91,15 @@ func Middleware(model any, authenticator Authenticator) goyave.Middleware {
 //	 }
 //
 // The result will be the "Email" field, "nil" and the "Password" field.
-func FindColumns(strct any, fields ...string) []*Column {
-	return findColumns(reflect.TypeOf(strct), fields)
+func FindColumns(db *gorm.DB, strct any, fields ...string) []*Column {
+	return findColumns(db, reflect.TypeOf(strct), fields)
 }
 
-func findColumns(t reflect.Type, fields []string) []*Column {
+func findColumns(db *gorm.DB, t reflect.Type, fields []string) []*Column {
 	length := len(fields)
 	result := make([]*Column, length)
 
-	if t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
 	for i := 0; i < t.NumField(); i++ {
@@ -92,7 +110,7 @@ func findColumns(t reflect.Type, fields []string) []*Column {
 		}
 		if fieldType.Kind() == reflect.Struct && strctType.Anonymous {
 			// Check promoted fields recursively
-			for i, v := range findColumns(fieldType, fields) {
+			for i, v := range findColumns(db, fieldType, fields) {
 				if v != nil {
 					result[i] = v
 				}
@@ -103,7 +121,7 @@ func findColumns(t reflect.Type, fields []string) []*Column {
 		tag := strctType.Tag.Get("auth")
 		if index := slices.Index(fields, tag); index != -1 {
 			result[index] = &Column{
-				Name:  columnName(strctType),
+				Name:  columnName(strctType, db.NamingStrategy),
 				Field: &strctType,
 			}
 		}
@@ -112,7 +130,7 @@ func findColumns(t reflect.Type, fields []string) []*Column {
 	return result
 }
 
-func columnName(field reflect.StructField) string {
+func columnName(field reflect.StructField, namer schema.Namer) string {
 	for _, t := range strings.Split(field.Tag.Get("gorm"), ";") { // Check for gorm column name override
 		if strings.HasPrefix(t, "column") {
 			i := strings.Index(t, ":")
@@ -124,5 +142,5 @@ func columnName(field reflect.StructField) string {
 		}
 	}
 
-	return database.Conn().Config.NamingStrategy.ColumnName("", field.Name)
+	return namer.ColumnName("", field.Name)
 }

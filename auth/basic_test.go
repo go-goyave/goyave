@@ -14,7 +14,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
-		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{})
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
@@ -30,7 +30,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("wrong_password", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
-		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{})
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
@@ -49,7 +49,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("optional_success", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
-		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{Optional: true})
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
@@ -65,7 +65,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("optional_wrong_password", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
-		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{Optional: true})
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
@@ -84,7 +84,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("optional_no_auth", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest()
-		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{Optional: true})
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
@@ -107,7 +107,7 @@ func TestBasicAuthenticator(t *testing.T) {
 				assert.Fail(t, err.Error())
 				return
 			}
-			authenticator := MiddlewareV5[*TestUserPromoted](&BasicAuthenticatorV5{})
+			authenticator := Middleware[*TestUserPromoted](&BasicAuthenticator{})
 			authenticator.Init(server.Server)
 			request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 			request.Request().SetBasicAuth("johndoe", "secret")
@@ -129,7 +129,7 @@ func TestBasicAuthenticator(t *testing.T) {
 			assert.Fail(t, err.Error())
 			return
 		}
-		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{})
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 		authenticator.Init(server.Server)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 
@@ -152,7 +152,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		}
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "secret")
-		resp := server.TestMiddleware(ConfigBasicAuthV5(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
 			assert.Equal(t, "johndoe", request.User.(*BasicUser).Name)
 			response.Status(http.StatusOK)
 		})
@@ -171,7 +171,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		}
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "wrong_password")
-		resp := server.TestMiddleware(ConfigBasicAuthV5(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})
@@ -194,7 +194,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 			return
 		}
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
-		resp := server.TestMiddleware(ConfigBasicAuthV5(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})

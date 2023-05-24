@@ -46,11 +46,11 @@ type TestUserInvalidOverride struct {
 	Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
 }
 
-type TestBasicUnauthorizerV5 struct {
-	BasicAuthenticatorV5
+type TestBasicUnauthorizer struct {
+	BasicAuthenticator
 }
 
-func (a *TestBasicUnauthorizerV5) OnUnauthorized(response *goyave.ResponseV5, _ *goyave.RequestV5, err error) {
+func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.ResponseV5, _ *goyave.RequestV5, err error) {
 	response.JSON(http.StatusUnauthorized, map[string]string{"custom error key": err.Error()})
 }
 
@@ -86,7 +86,7 @@ func TestAuthenticator(t *testing.T) {
 	t.Run("Middleware", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
 
-		authenticator := MiddlewareV5[*TestUser](&BasicAuthenticatorV5{})
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
@@ -116,7 +116,7 @@ func TestAuthenticator(t *testing.T) {
 	t.Run("MiddlewareUnauthorizer", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest()
 
-		authenticator := MiddlewareV5[*TestUser](&TestBasicUnauthorizerV5{})
+		authenticator := Middleware[*TestUser](&TestBasicUnauthorizer{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")
@@ -153,7 +153,7 @@ func TestFindColumns(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
-			fields := FindColumnsV5(db, c.model, c.input...)
+			fields := FindColumns(db, c.model, c.input...)
 			if assert.Len(t, fields, len(c.input)) {
 				for i, f := range fields {
 					expected := c.expected[i]

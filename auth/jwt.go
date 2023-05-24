@@ -162,7 +162,7 @@ func (s *JWTService) GetPrivateKey(signingMethod jwt.SigningMethod) (any, error)
 }
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
-type JWTAuthenticatorV5 struct {
+type JWTAuthenticator struct {
 	goyave.Component
 
 	service *JWTService
@@ -181,10 +181,10 @@ type JWTAuthenticatorV5 struct {
 	Optional bool
 }
 
-var _ Authenticator = (*JWTAuthenticatorV5)(nil) // implements Authenticator
+var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
 
 // Init the authenticator. Automatically registers the `JWTService` if not already registered.
-func (a *JWTAuthenticatorV5) Init(server *goyave.Server) {
+func (a *JWTAuthenticator) Init(server *goyave.Server) {
 	a.Component.Init(server)
 
 	service, ok := server.LookupService(JWTServiceName)
@@ -205,7 +205,7 @@ func (a *JWTAuthenticatorV5) Init(server *goyave.Server) {
 // If the token is valid and has claims, those claims will be added to `request.Extra` with the key "jwt_claims".
 //
 // This implementation is a JWT-based authentication using HMAC SHA256, supporting only one active token.
-func (a *JWTAuthenticatorV5) Authenticate(request *goyave.RequestV5, user any) error {
+func (a *JWTAuthenticator) Authenticate(request *goyave.RequestV5, user any) error {
 	tokenString, ok := request.BearerToken()
 	if tokenString == "" || !ok {
 		if a.Optional {
@@ -240,7 +240,7 @@ func (a *JWTAuthenticatorV5) Authenticate(request *goyave.RequestV5, user any) e
 	return a.makeError(request.Lang, err.(*jwt.ValidationError).Errors)
 }
 
-func (a *JWTAuthenticatorV5) keyFunc(token *jwt.Token) (any, error) {
+func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (any, error) {
 	switch a.SigningMethod.(type) {
 	case *jwt.SigningMethodRSA:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
@@ -270,7 +270,7 @@ func (a *JWTAuthenticatorV5) keyFunc(token *jwt.Token) (any, error) {
 	}
 }
 
-func (a *JWTAuthenticatorV5) makeError(language *lang.Language, bitfield uint32) error {
+func (a *JWTAuthenticator) makeError(language *lang.Language, bitfield uint32) error {
 	if bitfield&jwt.ValidationErrorNotValidYet != 0 {
 		return fmt.Errorf(language.Get("auth.jwt-not-valid-yet"))
 	} else if bitfield&jwt.ValidationErrorExpired != 0 {

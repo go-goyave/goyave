@@ -30,7 +30,6 @@ func init() {
 	registerKeyConfigEntry("auth.jwt.secret")
 	registerKeyConfigEntry("auth.jwt.rsa.public")
 	registerKeyConfigEntry("auth.jwt.rsa.private")
-	registerKeyConfigEntry("auth.jwt.rsa.password")
 	registerKeyConfigEntry("auth.jwt.ecdsa.public")
 	registerKeyConfigEntry("auth.jwt.ecdsa.private")
 }
@@ -81,9 +80,7 @@ func (s *JWTService) GenerateToken(username any) (string, error) {
 // the `auth.jwt.expiry` config entry.
 // Depending on the given signing method, the following configuration entries
 // will be used:
-//   - RSA:
-//     `auth.jwt.rsa.private`: path to the private PEM-encoded RSA key.
-//     `auth.jwt.rsa.password`: optional password for the private RSA key.
+//   - RSA: `auth.jwt.rsa.private`: path to the private PEM-encoded RSA key.
 //   - ECDSA: `auth.jwt.ecdsa.private`: path to the private PEM-encoded ECDSA key.
 //   - HMAC: `auth.jwt.secret`: HMAC secret
 //
@@ -106,7 +103,7 @@ func (s *JWTService) GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod
 
 	key, err := s.GetPrivateKey(signingMethod)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	return token.SignedString(key)
 }
@@ -135,19 +132,13 @@ func (s *JWTService) GetKey(entry string) (any, error) {
 	var key any
 	switch entry {
 	case "auth.jwt.rsa.private":
-		if s.config.Has("auth.jwt.rsa.password") {
-			key, err = jwt.ParseRSAPrivateKeyFromPEMWithPassword(data, s.config.GetString("auth.jwt.rsa.password"))
-		} else {
-			key, err = jwt.ParseRSAPrivateKeyFromPEM(data)
-		}
+		key, err = jwt.ParseRSAPrivateKeyFromPEM(data)
 	case "auth.jwt.rsa.public":
 		key, err = jwt.ParseRSAPublicKeyFromPEM(data)
 	case "auth.jwt.ecdsa.private":
 		key, err = jwt.ParseECPrivateKeyFromPEM(data)
 	case "auth.jwt.ecdsa.public":
 		key, err = jwt.ParseECPublicKeyFromPEM(data)
-	default:
-		panic(fmt.Errorf("Unsupported key entry %q", entry))
 	}
 
 	if err == nil {
@@ -273,7 +264,7 @@ func (a *JWTAuthenticatorV5) keyFunc(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(config.GetString("auth.jwt.secret")), nil
+		return []byte(a.Config().GetString("auth.jwt.secret")), nil
 	default:
 		panic(errors.New("Unsupported JWT Signing method: " + a.SigningMethod.Alg()))
 	}

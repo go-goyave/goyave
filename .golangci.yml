@@ -35,3 +35,7 @@ issues:
   max-same-issues: 0
   exclude:
     - should have a package comment
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gocyclo

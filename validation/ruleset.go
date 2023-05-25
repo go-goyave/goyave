@@ -8,6 +8,8 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
+// TODO test ruleset
+
 // Ruler adapter interface to make allow both RuleSet and Rules to
 // be used when calling `Validate()`.
 type Ruler interface {
@@ -32,7 +34,7 @@ type Validator interface {
 
 	// IsTypeDependent returns true if the validator is type-dependent.
 	// Type-dependent validators can be used with different field types
-	// (numeric, string, arrays and files) and have a different validation messages
+	// (numeric, string, arrays, objects and files) and have a different validation messages
 	// depending on the type.
 	// The language entry used will be "validation.rules.rulename.type"
 	IsTypeDependent() bool
@@ -208,10 +210,6 @@ func (r RuleSet) sort() {
 		count1 := strings.Count(field1.Path, "[]")
 		count2 := strings.Count(field2.Path, "[]")
 		return count1 > count2
-	})
-	sort.SliceStable(r, func(i, j int) bool {
-		// CurrentElement must always be first
-		return r[i].Path == CurrentElement
 	})
 }
 

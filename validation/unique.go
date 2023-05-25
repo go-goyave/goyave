@@ -3,6 +3,7 @@ package validation
 import "gorm.io/gorm"
 
 // TODO test unique/exists
+// TODO support arrays (ideally set error on array elements precisely)
 
 // UniqueValidator validates the field under validation must have a unique value in database
 // according to the provided database scope. Uniqueness is checked using a COUNT query.

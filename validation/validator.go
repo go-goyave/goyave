@@ -364,7 +364,7 @@ func (v *validator) getMessage(fieldName string, ctx *Context, validator Validat
 
 	lastParent := ctx.Field.Path.LastParent()
 	if lastParent != nil && lastParent.Type == walk.PathTypeArray {
-		langEntry += ".array"
+		langEntry += ".element"
 	}
 
 	return v.options.Language.Get(langEntry, append([]string{":field", translateFieldName(v.options.Language, fieldName)}, validator.MessagePlaceholders(ctx)...)...)

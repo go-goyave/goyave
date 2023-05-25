@@ -47,7 +47,7 @@ func TestWriter(t *testing.T) {
 		buffer := bytes.NewBufferString("")
 		server.AccessLogger.SetOutput(buffer)
 
-		writer := NewWriterV5(server.Server, resp, req, CommonLogFormatterV5)
+		writer := NewWriter(server.Server, resp, req, CommonLogFormatter)
 		resp.SetWriter(writer)
 
 		i, err := resp.Write([]byte("body response"))
@@ -81,7 +81,7 @@ func TestWriter(t *testing.T) {
 			Writer:     resp.Writer(),
 		}
 		resp.SetWriter(child)
-		writer := NewWriterV5(server.Server, resp, req, CommonLogFormatterV5)
+		writer := NewWriter(server.Server, resp, req, CommonLogFormatter)
 		resp.SetWriter(writer)
 
 		i, err := resp.Write([]byte("body response"))
@@ -112,7 +112,7 @@ func TestMiddleware(t *testing.T) {
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
-		httpResponse := server.TestMiddleware(CommonLogMiddlewareV5(), req, func(r *goyave.ResponseV5, _ *goyave.RequestV5) {
+		httpResponse := server.TestMiddleware(CommonLogMiddleware(), req, func(r *goyave.ResponseV5, _ *goyave.RequestV5) {
 			r.String(http.StatusOK, "hello world")
 		})
 		_ = httpResponse.Body.Close()
@@ -137,7 +137,7 @@ func TestMiddleware(t *testing.T) {
 		req.Header().Set("Referer", referrer)
 		req.Header().Set("User-Agent", userAgent)
 
-		httpResponse := server.TestMiddleware(CombinedLogMiddlewareV5(), req, func(r *goyave.ResponseV5, _ *goyave.RequestV5) {
+		httpResponse := server.TestMiddleware(CombinedLogMiddleware(), req, func(r *goyave.ResponseV5, _ *goyave.RequestV5) {
 			r.String(http.StatusOK, "hello world")
 		})
 		_ = httpResponse.Body.Close()

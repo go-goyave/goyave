@@ -6,8 +6,8 @@ import (
 	"goyave.dev/goyave/v4"
 )
 
-// LogContext contains all information needed for a `Formatter`.
-type LogContext struct {
+// Context contains all information needed for a `Formatter`.
+type Context struct {
 	goyave.Component
 	Request *goyave.RequestV5
 	Status  int
@@ -18,27 +18,27 @@ type LogContext struct {
 // As logs are written at the end of the request's lifecycle, all the
 // data is available to formatters at the time they are called, and all
 // modifications will have no effect.
-type FormatterV5 func(ctx *LogContext) string
+type Formatter func(ctx *Context) string
 
 // Writer chained writer keeping response body in memory.
 // Used for loggin in common format.
-type WriterV5 struct {
+type Writer struct {
 	goyave.Component
-	formatter FormatterV5
+	formatter Formatter
 	writer    io.Writer
 	request   *goyave.RequestV5
 	response  *goyave.ResponseV5
 	length    int
 }
 
-var _ io.Closer = (*WriterV5)(nil)
-var _ goyave.PreWriter = (*WriterV5)(nil)
+var _ io.Closer = (*Writer)(nil)
+var _ goyave.PreWriter = (*Writer)(nil)
 
 // NewWriter create a new log writer.
 // The given Request and Response will be used and passed to the given
 // formatter.
-func NewWriterV5(server *goyave.Server, response *goyave.ResponseV5, request *goyave.RequestV5, formatter FormatterV5) *WriterV5 {
-	writer := &WriterV5{
+func NewWriter(server *goyave.Server, response *goyave.ResponseV5, request *goyave.RequestV5, formatter Formatter) *Writer {
+	writer := &Writer{
 		request:   request,
 		writer:    response.Writer(),
 		response:  response,
@@ -50,7 +50,7 @@ func NewWriterV5(server *goyave.Server, response *goyave.ResponseV5, request *go
 
 // PreWrite calls PreWrite on the
 // child writer if it implements PreWriter.
-func (w *WriterV5) PreWrite(b []byte) {
+func (w *Writer) PreWrite(b []byte) {
 	if pr, ok := w.writer.(goyave.PreWriter); ok {
 		pr.PreWrite(b)
 	}
@@ -58,15 +58,15 @@ func (w *WriterV5) PreWrite(b []byte) {
 
 // Write writes the data as a response and keeps its length in memory
 // for later logging.
-func (w *WriterV5) Write(b []byte) (int, error) {
+func (w *Writer) Write(b []byte) (int, error) {
 	w.length += len(b)
 	return w.writer.Write(b)
 }
 
 // Close the writer and its child ResponseWriter, flushing response
 // output to the logs.
-func (w *WriterV5) Close() error {
-	ctx := &LogContext{
+func (w *Writer) Close() error {
+	ctx := &Context{
 		Component: w.Component,
 		Request:   w.request,
 		Status:    w.response.GetStatus(),
@@ -82,15 +82,15 @@ func (w *WriterV5) Close() error {
 
 // Middleware captures response data and outputs it to the default logger
 // using the given formatter.
-type MiddlewareV5 struct {
+type Middleware struct {
 	goyave.Component
-	Formatter FormatterV5
+	Formatter Formatter
 }
 
 // Handle adds the log chained writer to the response.
-func (m *MiddlewareV5) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
+func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
-		logWriter := NewWriterV5(m.Server(), response, request, m.Formatter)
+		logWriter := NewWriter(m.Server(), response, request, m.Formatter)
 		response.SetWriter(logWriter)
 
 		next(response, request)
@@ -99,12 +99,12 @@ func (m *MiddlewareV5) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 
 // CommonLogMiddleware captures response data and outputs it to the default logger
 // using the common log format.
-func CommonLogMiddlewareV5() goyave.MiddlewareV5 {
-	return &MiddlewareV5{Formatter: CommonLogFormatterV5}
+func CommonLogMiddleware() goyave.MiddlewareV5 {
+	return &Middleware{Formatter: CommonLogFormatter}
 }
 
 // CombinedLogMiddleware captures response data and outputs it to the default logger
 // using the combined log format.
-func CombinedLogMiddlewareV5() goyave.MiddlewareV5 {
-	return &MiddlewareV5{Formatter: CombinedLogFormatterV5}
+func CombinedLogMiddleware() goyave.MiddlewareV5 {
+	return &Middleware{Formatter: CombinedLogFormatter}
 }

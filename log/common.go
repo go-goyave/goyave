@@ -15,7 +15,7 @@ const (
 )
 
 // CommonLogFormatter build a log entry using the Common Log Format.
-func CommonLogFormatterV5(ctx *LogContext) string {
+func CommonLogFormatter(ctx *Context) string {
 	req := ctx.Request.Request()
 	url := ctx.Request.URL()
 
@@ -58,6 +58,6 @@ func CommonLogFormatterV5(ctx *LogContext) string {
 }
 
 // CombinedLogFormatter build a log entry using the Combined Log Format.
-func CombinedLogFormatterV5(ctx *LogContext) string {
-	return fmt.Sprintf("%s \"%s\" \"%s\"", CommonLogFormatterV5(ctx), ctx.Request.Referrer(), ctx.Request.UserAgent())
+func CombinedLogFormatter(ctx *Context) string {
+	return fmt.Sprintf("%s \"%s\" \"%s\"", CommonLogFormatter(ctx), ctx.Request.Referrer(), ctx.Request.UserAgent())
 }

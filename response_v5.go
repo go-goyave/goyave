@@ -32,8 +32,8 @@ type ResponseV5 struct {
 	hijacked    bool
 }
 
-// newResponse create a new Response using the given http.ResponseWriter and raw request.
-func newResponseV5(server *Server, request *RequestV5, writer http.ResponseWriter) *ResponseV5 {
+// NewResponse create a new Response using the given `http.ResponseWriter` and request.
+func NewResponse(server *Server, request *RequestV5, writer http.ResponseWriter) *ResponseV5 {
 	return &ResponseV5{
 		server:         server,
 		request:        request,

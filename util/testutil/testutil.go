@@ -14,6 +14,7 @@ import (
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 type copyRequestMiddleware struct {
@@ -127,6 +128,21 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 	req := NewTestRequest(method, uri, body)
 	req.Lang = s.Lang.GetDefault()
 	return req
+}
+
+// NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created
+// using the `httptest` package. This function uses a temporary `goyave.Server` with all defaults values loaded
+// so all functions of `*goyave.Response` can be used safely.
+func NewTestResponse(request *goyave.RequestV5) (*goyave.ResponseV5, *httptest.ResponseRecorder) {
+	recorder := httptest.NewRecorder()
+	return goyave.NewResponse(typeutil.Must(NewTestServerWithConfig(config.LoadDefault(), nil)).Server, request, recorder), recorder
+}
+
+// NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created
+// using the `httptest` package.
+func (s *TestServer) NewTestResponse(request *goyave.RequestV5) (*goyave.ResponseV5, *httptest.ResponseRecorder) {
+	recorder := httptest.NewRecorder()
+	return goyave.NewResponse(s.Server, request, recorder), recorder
 }
 
 // ReadJSONBody decodes the given body reader into a new variable of type `*T`.

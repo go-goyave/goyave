@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"goyave.dev/goyave/v4/lang"
 )
@@ -29,6 +30,7 @@ const (
 
 type RequestV5 struct {
 	httpRequest *http.Request
+	Now         time.Time
 	Data        any
 	User        any
 	Query       map[string]any
@@ -42,6 +44,7 @@ type RequestV5 struct {
 func NewRequest(httpRequest *http.Request) *RequestV5 {
 	return &RequestV5{
 		httpRequest: httpRequest,
+		Now:         time.Now(),
 		Extra:       map[string]any{},
 		// Route is set by the router
 		// Lang is set inside the language middleware

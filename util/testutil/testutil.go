@@ -24,6 +24,7 @@ type copyRequestMiddleware struct {
 
 func (m *copyRequestMiddleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		request.Now = m.request.Now
 		request.Data = m.request.Data
 		request.Extra = m.request.Extra
 		request.Lang = m.request.Lang

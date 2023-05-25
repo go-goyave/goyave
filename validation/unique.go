@@ -1,9 +1,15 @@
 package validation
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/samber/lo"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
 
 // TODO test unique/exists
-// TODO support arrays (ideally set error on array elements precisely)
 
 // UniqueValidator validates the field under validation must have a unique value in database
 // according to the provided database scope. Uniqueness is checked using a COUNT query.
@@ -28,9 +34,6 @@ func (v *UniqueValidator) Validate(ctx *Context) bool {
 
 // Name returns the string name of the validator.
 func (v *UniqueValidator) Name() string { return "unique" }
-
-// IsTypeDependent returns true.
-func (v *UniqueValidator) IsTypeDependent() bool { return true }
 
 // Unique validates the field under validation must have a unique value in database
 // according to the provided database scope. Uniqueness is checked using a COUNT query.
@@ -71,4 +74,153 @@ func (v *ExistsValidator) Name() string { return "exists" }
 //	 })
 func Exists(scope func(db *gorm.DB, val any) *gorm.DB) *ExistsValidator {
 	return &ExistsValidator{UniqueValidator: UniqueValidator{Scope: scope}}
+}
+
+//------------------------------
+
+// ExistsArrayValidator validates the field under validation must be an array and all
+// of its elements must exist. The type `T` is the type of the elements of the array
+// under validation.
+//
+// This is preferable to use this validation rule on the array instead of `Exists` on
+// each array element because this rule will only execute a single SQL query instead of
+// as many as there are elements in the array.
+//
+// If provided, the `Transform` function is called on every array element to transform
+// them into a raw expression. For example to transform a number into `(123::int)` for
+// Postgres to prevent some type errors.
+type ExistsArrayValidator[T any] struct {
+	BaseValidator
+	Transform func(val T) clause.Expr
+	Table     string
+	Column    string
+}
+
+// Validate checks the field under validation satisfies this validator's criteria.
+func (v *ExistsArrayValidator[T]) Validate(ctx *Context) bool {
+	return v.validate(ctx, true)
+}
+
+func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
+	values, ok := ctx.Value.([]T)
+	if !ctx.Valid() || !ok {
+		return true
+	}
+
+	questionMarks := []string{}
+	params := []any{}
+
+	dbType := v.Config().GetString("database.connection")
+	isMySQL := dbType == "mysql"
+	isPostgres := dbType == "postgres"
+
+	for i, val := range values {
+		questionMarks = append(questionMarks, "?")
+		var transformedValue any = val
+		if v.Transform != nil {
+			transformedValue = v.Transform(val)
+		}
+		if isMySQL {
+			params = append(params, gorm.Expr("ROW(?,?)", transformedValue, i))
+		} else {
+
+			params = append(params, gorm.Expr(
+				"(?,?)",
+				transformedValue,
+				lo.Ternary[any](isPostgres, gorm.Expr("?::int", i), i),
+			))
+		}
+	}
+
+	db := v.DB()
+	table := db.Statement.Quote(v.Table)
+	column := db.Statement.Quote(v.Column)
+
+	sql := fmt.Sprintf(
+		"WITH ctx_values(id, i) AS (SELECT * FROM (VALUES %s) t%s) SELECT i FROM ctx_values LEFT JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
+		strings.Join(questionMarks, ","),
+		lo.Ternary(dbType == "mssql", "(id,i)", ""),
+		table,
+		table, column,
+		table, column,
+		lo.Ternary(condition, "", "NOT"),
+	)
+	db = db.Raw(sql, params...)
+
+	results := []int{}
+	if err := db.Find(&results).Error; err != nil {
+		ctx.AddError(err)
+		return false
+	}
+
+	ctx.AddArrayElementValidationErrors(results...)
+	return true
+}
+
+// Name returns the string name of the validator.
+func (v *ExistsArrayValidator[T]) Name() string { return "exists" }
+
+// ExistsArray validates the field under validation must be an array and all
+// of its elements must exist. The type `T` is the type of the elements of the array
+// under validation.
+//
+// This is preferable to use this validation rule on the array instead of `Exists` on
+// each array element because this rule will only execute a single SQL query instead of
+// as many as there are elements in the array.
+//
+// If provided, the `Transform` function is called on every array element to transform
+// them into a raw expression. For example to transform a number into `(123::int)` for
+// Postgres to prevent some type errors.
+func ExistsArray[T any](table, column string, transform func(val T) clause.Expr) *ExistsArrayValidator[T] {
+	return &ExistsArrayValidator[T]{
+		Table:     table,
+		Column:    column,
+		Transform: transform,
+	}
+}
+
+//------------------------------
+
+// UniqueArrayValidator validates the field under validation must be an array and all
+// of its elements must not already exist. The type `T` is the type of the elements of the array
+// under validation.
+//
+// This is preferable to use this validation rule on the array instead of `Unique` on
+// each array element because this rule will only execute a single SQL query instead of
+// as many as there are elements in the array.
+//
+// If provided, the `Transform` function is called on every array element to transform
+// them into a raw expression. For example to transform a number into `(123::int)` for
+// Postgres to prevent some type errors.
+type UniqueArrayValidator[T any] struct {
+	ExistsArrayValidator[T]
+}
+
+// Validate checks the field under validation satisfies this validator's criteria.
+func (v *UniqueArrayValidator[T]) Validate(ctx *Context) bool {
+	return v.validate(ctx, false)
+}
+
+// Name returns the string name of the validator.
+func (v *UniqueArrayValidator[T]) Name() string { return "unique" }
+
+// UniqueArray validates the field under validation must be an array and all
+// of its elements must not already exist. The type `T` is the type of the elements of the array
+// under validation.
+//
+// This is preferable to use this validation rule on the array instead of `Unique` on
+// each array element because this rule will only execute a single SQL query instead of
+// as many as there are elements in the array.
+//
+// If provided, the `Transform` function is called on every array element to transform
+// them into a raw expression. For example to transform a number into `(123::int)` for
+// Postgres to prevent some type errors.
+func UniqueArray[T any](table, column string, transform func(val T) clause.Expr) *UniqueArrayValidator[T] {
+	return &UniqueArrayValidator[T]{
+		ExistsArrayValidator: ExistsArrayValidator[T]{
+			Table:     table,
+			Column:    column,
+			Transform: transform,
+		},
+	}
 }

@@ -140,11 +140,13 @@ type Context struct {
 	Data any
 
 	// Extra the map of Extra from the validation Options.
-	Extra  map[string]any
-	Value  any
-	Parent any
-	Field  *Field
-	Now    time.Time
+	Extra              map[string]any
+	Value              any
+	Parent             any
+	Field              *Field
+	arrayElementErrors []int
+	fieldName          string
+	Now                time.Time
 
 	// The name of the field under validation
 	Name string
@@ -158,6 +160,13 @@ type Context struct {
 // when there has been an operation error (such as a database error).
 func (c *Context) AddError(err ...error) {
 	c.errors = append(c.errors, err...)
+}
+
+// AddArrayElementValidationErrors marks a child element to the field currently under validation
+// as invalid. This is useful when a validation rule validates an array and wants to
+// precisely mark which element in the array is invalid.
+func (c *Context) AddArrayElementValidationErrors(index ...int) {
+	c.arrayElementErrors = append(c.arrayElementErrors, index...)
 }
 
 // Errors returns this validation context's errors. Because each rule on each field
@@ -273,14 +282,15 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			}
 
 			ctx := &Context{
-				Data:   data,
-				Extra:  v.options.Extra,
-				Value:  value,
-				Parent: c.Parent,
-				Field:  field,
-				Now:    v.now,
-				Name:   c.Name,
-				valid:  valid,
+				Data:      data,
+				Extra:     v.options.Extra,
+				Value:     value,
+				Parent:    c.Parent,
+				Field:     field,
+				fieldName: fieldName,
+				Now:       v.now,
+				Name:      c.Name,
+				valid:     valid,
 			}
 			validator.init(v.options) // TODO document a Rules or RuleSet is not meant to be re-used or used concurrently
 			ok := validator.Validate(ctx)
@@ -292,7 +302,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			if !ok {
 				valid = false
 				errorPath := field.getErrorPath(parentPath, c)
-				message := v.getMessage(fieldName, ctx, validator)
+				message := v.getMessage(ctx, validator)
 				if fieldName == CurrentElement {
 					v.validationErrors.Add(errorPath, message)
 				} else {
@@ -300,6 +310,8 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				}
 				continue
 			}
+
+			v.processArrayElementErrors(ctx, parentPath, c, validator)
 
 			value = ctx.Value
 		}
@@ -343,13 +355,31 @@ func (v *validator) isAbsent(field *Field, c *walk.Context, data any) bool {
 	return !field.IsRequired(requiredCtx) && !(&RequiredValidator{}).Validate(requiredCtx)
 }
 
-func (v *validator) getMessage(fieldName string, ctx *Context, validator Validator) string {
-	value := reflect.ValueOf(ctx.Value)
+func (v *validator) processArrayElementErrors(ctx *Context, parentPath *walk.Path, c *walk.Context, validator Validator) {
+	if len(ctx.arrayElementErrors) > 0 {
+		errorPath := ctx.Field.getErrorPath(parentPath, c)
+		message := v.options.Language.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, validator)...)
+		for _, index := range ctx.arrayElementErrors {
+			i := index
+			elementPath := errorPath.Clone()
+			elementPath.Type = walk.PathTypeArray
+			elementPath.Index = &i
+			elementPath.Next = &walk.Path{Type: walk.PathTypeElement}
+			if ctx.fieldName == CurrentElement {
+				v.validationErrors.Add(elementPath, message)
+			} else {
+				v.validationErrors.Add(&walk.Path{Type: walk.PathTypeObject, Next: elementPath}, message)
+			}
+		}
+	}
+}
+
+func (v *validator) getLangEntry(ctx *Context, validator Validator) string {
 	langEntry := "validation.rules." + validator.Name()
 	if validator.IsTypeDependent() {
 		typeValidator := v.findTypeValidator(ctx.Field.Validators)
 		if typeValidator == nil {
-			langEntry += "." + getFieldType(value)
+			langEntry += "." + GetFieldType(ctx.Value)
 		} else {
 			typeName := typeValidator.Name()
 			switch typeValidator.(type) {
@@ -366,8 +396,16 @@ func (v *validator) getMessage(fieldName string, ctx *Context, validator Validat
 	if lastParent != nil && lastParent.Type == walk.PathTypeArray {
 		langEntry += ".element"
 	}
+	return langEntry
+}
 
-	return v.options.Language.Get(langEntry, append([]string{":field", translateFieldName(v.options.Language, fieldName)}, validator.MessagePlaceholders(ctx)...)...)
+func (v *validator) processPlaceholders(ctx *Context, validator Validator) []string {
+	return append([]string{":field", translateFieldName(v.options.Language, ctx.fieldName)}, validator.MessagePlaceholders(ctx)...)
+}
+
+func (v *validator) getMessage(ctx *Context, validator Validator) string {
+	langEntry := v.getLangEntry(ctx, validator)
+	return v.options.Language.Get(langEntry, v.processPlaceholders(ctx, validator)...)
 }
 
 // findTypeValidator find the expected type of a field for a given array dimension.

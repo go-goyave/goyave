@@ -48,11 +48,11 @@ func CommonLogFormatterV5(ctx *LogContext) string {
 		host,
 		"-",
 		username,
-		ctx.Now.Format(TimestampFormat),
+		ctx.Request.Now.Format(TimestampFormat),
 		req.Method,
 		strconv.QuoteToASCII(uri),
 		req.Proto,
-		ctx.Response.GetStatus(),
+		ctx.Status,
 		ctx.Length,
 	)
 }

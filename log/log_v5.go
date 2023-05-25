@@ -2,7 +2,6 @@ package log
 
 import (
 	"io"
-	"time"
 
 	"goyave.dev/goyave/v4"
 )
@@ -10,10 +9,9 @@ import (
 // LogContext contains all information needed for a `Formatter`.
 type LogContext struct {
 	goyave.Component
-	Now      time.Time
-	Response *goyave.ResponseV5
-	Request  *goyave.RequestV5
-	Length   int
+	Request *goyave.RequestV5
+	Status  int
+	Length  int
 }
 
 // Formatter is a function that builds a log entry.
@@ -28,7 +26,6 @@ type WriterV5 struct {
 	goyave.Component
 	formatter FormatterV5
 	writer    io.Writer
-	now       time.Time
 	request   *goyave.RequestV5
 	response  *goyave.ResponseV5
 	length    int
@@ -40,15 +37,15 @@ var _ goyave.PreWriter = (*WriterV5)(nil)
 // NewWriter create a new log writer.
 // The given Request and Response will be used and passed to the given
 // formatter.
-func NewWriterV5(component goyave.Component, response *goyave.ResponseV5, request *goyave.RequestV5, formatter FormatterV5) *WriterV5 {
-	return &WriterV5{
-		Component: component,
-		now:       time.Now(),
+func NewWriterV5(server *goyave.Server, response *goyave.ResponseV5, request *goyave.RequestV5, formatter FormatterV5) *WriterV5 {
+	writer := &WriterV5{
 		request:   request,
 		writer:    response.Writer(),
 		response:  response,
 		formatter: formatter,
 	}
+	writer.Init(server)
+	return writer
 }
 
 // PreWrite calls PreWrite on the
@@ -71,9 +68,8 @@ func (w *WriterV5) Write(b []byte) (int, error) {
 func (w *WriterV5) Close() error {
 	ctx := &LogContext{
 		Component: w.Component,
-		Now:       w.now,
-		Response:  w.response,
 		Request:   w.request,
+		Status:    w.response.GetStatus(),
 		Length:    w.length,
 	}
 	w.AccessLogger().Println(w.formatter(ctx))
@@ -91,9 +87,10 @@ type MiddlewareV5 struct {
 	Formatter FormatterV5
 }
 
+// Handle adds the log chained writer to the response.
 func (m *MiddlewareV5) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
-		logWriter := NewWriterV5(m.Component, response, request, m.Formatter)
+		logWriter := NewWriterV5(m.Server(), response, request, m.Formatter)
 		response.SetWriter(logWriter)
 
 		next(response, request)

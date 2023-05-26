@@ -34,7 +34,7 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	dsn := dialect.buildDSN(cfg)
-	db, err := gorm.Open(dialect.initializer(dsn), newConfigV5(cfg))
+	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 		return db, err
 	}
 
-	initSQLDBV5(cfg, db)
+	initSQLDB(cfg, db)
 
 	return db, err
 }
@@ -53,7 +53,7 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 //
 // This can be used in tests to create a mock connection pool.
 func NewFromDialector(cfg *config.Config, dialector gorm.Dialector) (*gorm.DB, error) {
-	db, err := gorm.Open(dialector, newConfigV5(cfg))
+	db, err := gorm.Open(dialector, newConfig(cfg))
 	if err != nil {
 		return nil, err
 	}
@@ -62,11 +62,11 @@ func NewFromDialector(cfg *config.Config, dialector gorm.Dialector) (*gorm.DB, e
 		return db, err
 	}
 
-	initSQLDBV5(cfg, db)
+	initSQLDB(cfg, db)
 	return db, nil
 }
 
-func newConfigV5(cfg *config.Config) *gorm.Config {
+func newConfig(cfg *config.Config) *gorm.Config {
 	logLevel := logger.Silent
 	if cfg.GetBool("app.debug") {
 		logLevel = logger.Info
@@ -91,7 +91,7 @@ func initTimeoutPlugin(cfg *config.Config, db *gorm.DB) error {
 	return db.Use(timeoutPlugin)
 }
 
-func initSQLDBV5(cfg *config.Config, db *gorm.DB) {
+func initSQLDB(cfg *config.Config, db *gorm.DB) {
 	sqlDB, err := db.DB()
 	if err != nil {
 		if errors.Is(err, gorm.ErrInvalidDB) {

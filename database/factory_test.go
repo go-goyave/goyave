@@ -24,7 +24,7 @@ func userGenerator() *TestUser {
 func TestFactory(t *testing.T) {
 
 	t.Run("New", func(t *testing.T) {
-		factory := NewFactoryV5(userGenerator)
+		factory := NewFactory(userGenerator)
 
 		if !assert.NotNil(t, factory) {
 			return
@@ -34,7 +34,7 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("Generate", func(t *testing.T) {
-		factory := NewFactoryV5(userGenerator)
+		factory := NewFactory(userGenerator)
 
 		records := factory.Generate(3)
 		expected := []*TestUser{
@@ -49,7 +49,7 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("Override", func(t *testing.T) {
-		factory := NewFactoryV5(userGenerator)
+		factory := NewFactory(userGenerator)
 		factory.Override(&TestUser{Name: "name override"})
 
 		records := factory.Generate(1)
@@ -81,7 +81,7 @@ func TestFactory(t *testing.T) {
 			return
 		}
 
-		factory := NewFactoryV5(userGenerator)
+		factory := NewFactory(userGenerator)
 		records := factory.Save(db, 3)
 
 		results := []*TestUser{}

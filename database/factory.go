@@ -6,7 +6,7 @@ import (
 )
 
 // Factory an object used to generate records or seed the database.
-type FactoryV5[T any] struct {
+type Factory[T any] struct {
 	generator func() *T
 	override  *T
 	BatchSize int
@@ -14,8 +14,8 @@ type FactoryV5[T any] struct {
 
 // NewFactory create a new Factory.
 // The given generator function will be used to generate records.
-func NewFactoryV5[T any](generator func() *T) *FactoryV5[T] {
-	return &FactoryV5[T]{
+func NewFactory[T any](generator func() *T) *Factory[T] {
+	return &Factory[T]{
 		generator: generator,
 		override:  nil,
 		BatchSize: 100,
@@ -27,13 +27,13 @@ func NewFactoryV5[T any](generator func() *T) *FactoryV5[T] {
 // in the generated records.
 // This function expects a struct pointer as parameter.
 // Returns the same instance of `Factory` so this method can be chained.
-func (f *FactoryV5[T]) Override(override *T) *FactoryV5[T] {
+func (f *Factory[T]) Override(override *T) *Factory[T] {
 	f.override = override
 	return f
 }
 
 // Generate a number of records using the given factory.
-func (f *FactoryV5[T]) Generate(count int) []*T {
+func (f *Factory[T]) Generate(count int) []*T {
 	if count <= 0 {
 		return []*T{}
 	}
@@ -54,7 +54,7 @@ func (f *FactoryV5[T]) Generate(count int) []*T {
 
 // Save generate a number of records using the given factory,
 // insert them in the database and return the inserted records.
-func (f *FactoryV5[T]) Save(db *gorm.DB, count int) []*T {
+func (f *Factory[T]) Save(db *gorm.DB, count int) []*T {
 	records := f.Generate(count)
 
 	if err := db.CreateInBatches(records, f.BatchSize).Error; err != nil {

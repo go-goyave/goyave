@@ -45,7 +45,7 @@ func preparePaginatorTestDB() (*gorm.DB, []*TestArticle) {
 		panic(err)
 	}
 
-	factory := NewFactoryV5(articleGenerator)
+	factory := NewFactory(articleGenerator)
 	factory.Override(&TestArticle{AuthorID: author.ID})
 
 	articles := factory.Save(db, 11)

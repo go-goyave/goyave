@@ -1,117 +1,94 @@
 package database
 
 import (
-	"os"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/sqlite"
 	"goyave.dev/goyave/v4/config"
 )
 
-func userGenerator() interface{} {
-	return &User{
+type TestUser struct {
+	Name  string `gorm:"type:varchar(100)"`
+	Email string `gorm:"type:varchar(100)"`
+	ID    uint   `gorm:"primaryKey"`
+}
+
+func userGenerator() *TestUser {
+	return &TestUser{
 		Name:  "John Doe",
 		Email: "johndoe@example.org",
 	}
 }
 
-type NoTable struct {
-	Name string
-}
+func TestFactory(t *testing.T) {
 
-func noTableGenerator() interface{} {
-	return &NoTable{
-		Name: "John Doe",
-	}
-}
+	t.Run("New", func(t *testing.T) {
+		factory := NewFactoryV5(userGenerator)
 
-type FactoryTestSuite struct {
-	suite.Suite
-	previousEnv string
-}
-
-func (suite *FactoryTestSuite) SetupSuite() {
-	suite.previousEnv = os.Getenv("GOYAVE_ENV")
-	os.Setenv("GOYAVE_ENV", "test")
-	if err := config.Load(); err != nil {
-		suite.FailNow(err.Error())
-	}
-}
-
-func (suite *FactoryTestSuite) TestGenerate() {
-	factory := NewFactory(userGenerator)
-	records := factory.Generate(2).([]*User)
-	suite.Equal(2, len(records))
-	for _, user := range records {
-		suite.Equal("John Doe", user.Name)
-		suite.Equal("johndoe@example.org", user.Email)
-	}
-
-	override := &User{
-		Name:  "name override",
-		Email: "email override",
-	}
-	records = factory.Override(override).Generate(2).([]*User)
-	suite.Equal(2, len(records))
-	for _, user := range records {
-		suite.Equal("name override", user.Name)
-		suite.Equal("email override", user.Email)
-	}
-
-	override = &User{
-		Name: "name override",
-	}
-	records = factory.Override(override).Generate(2).([]*User)
-	suite.Equal(2, len(records))
-	for _, user := range records {
-		suite.Equal("name override", user.Name)
-		suite.Equal("johndoe@example.org", user.Email)
-	}
-
-	suite.Panics(func() {
-		override := &struct{ NotThere int }{
-			NotThere: 2,
+		if !assert.NotNil(t, factory) {
+			return
 		}
-		factory.Override(override).Generate(2)
+		assert.Equal(t, 100, factory.BatchSize)
+		assert.Nil(t, factory.override)
 	})
 
-	empty := factory.Generate(0)
-	emptySlice, ok := empty.([]interface{})
-	suite.True(ok)
-	suite.Empty(emptySlice)
-}
+	t.Run("Generate", func(t *testing.T) {
+		factory := NewFactoryV5(userGenerator)
 
-func (suite *FactoryTestSuite) TestSave() {
+		records := factory.Generate(3)
+		expected := []*TestUser{
+			userGenerator(),
+			userGenerator(),
+			userGenerator(),
+		}
+		assert.Equal(t, expected, records)
 
-	db := GetConnection()
-	db.AutoMigrate(&User{})
-	defer db.Migrator().DropTable(&User{})
-
-	records := NewFactory(userGenerator).Save(2).([]*User)
-	suite.Equal(2, len(records))
-	for i := uint(0); i < 2; i++ {
-		suite.Equal(i+1, records[i].ID)
-	}
-
-	users := make([]*User, 0, 2)
-	db.Find(&users)
-
-	for _, user := range users {
-		suite.Equal("John Doe", user.Name)
-		suite.Equal("johndoe@example.org", user.Email)
-	}
-
-	suite.Panics(func() {
-		NewFactory(noTableGenerator).Save(2)
+		records = factory.Generate(0)
+		assert.Equal(t, []*TestUser{}, records)
 	})
-}
 
-func (suite *FactoryTestSuite) TearDownAllSuite() {
-	os.Setenv("GOYAVE_ENV", suite.previousEnv)
-}
+	t.Run("Override", func(t *testing.T) {
+		factory := NewFactoryV5(userGenerator)
+		factory.Override(&TestUser{Name: "name override"})
 
-func TestFactoryTestSuite(t *testing.T) {
-	// Ensure this test is running with a working database service running
-	// in the background. Running "run_test.sh" runs a mariadb container.
-	suite.Run(t, new(FactoryTestSuite))
+		records := factory.Generate(1)
+		expected := []*TestUser{{
+			Name:  "name override",
+			Email: "johndoe@example.org",
+		}}
+		assert.Equal(t, expected, records)
+	})
+
+	t.Run("Save", func(t *testing.T) {
+		RegisterDialect("sqlite3_factory_test", "file:{name}?{options}", sqlite.Open)
+		t.Cleanup(func() {
+			mu.Lock()
+			delete(dialects, "sqlite3_factory_test")
+			mu.Unlock()
+		})
+
+		cfg := config.LoadDefault()
+		cfg.Set("app.debug", false)
+		cfg.Set("database.connection", "sqlite3_factory_test")
+		cfg.Set("database.name", "factory_test.db")
+		cfg.Set("database.options", "mode=memory")
+		db, err := New(cfg)
+		if !assert.NoError(t, err) {
+			return
+		}
+		if !assert.NoError(t, db.AutoMigrate(&TestUser{})) {
+			return
+		}
+
+		factory := NewFactoryV5(userGenerator)
+		records := factory.Save(db, 3)
+
+		results := []*TestUser{}
+		res := db.Find(&results)
+		if !assert.NoError(t, res.Error) {
+			return
+		}
+		assert.Equal(t, records, results)
+	})
 }

@@ -1,215 +1,184 @@
 package database
 
 import (
-	"os"
-	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/mysql"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/config"
 )
 
-// TODO re-write paginator tests
+type TestArticle struct {
+	Author *TestUser `gorm:"foreignKey:AuthorID"`
 
-type PaginatorTestSuite struct {
-	suite.Suite
-	previousEnv string
+	Title    string `gorm:"type:varchar(255)"`
+	Content  string `gorm:"type:text"`
+	ID       uint   `gorm:"primaryKey"`
+	AuthorID uint
 }
 
-func (suite *PaginatorTestSuite) SetupSuite() {
-	if _, ok := dialects["mysql"]; !ok {
-		RegisterDialect("mysql", "{username}:{password}@({host}:{port})/{name}?{options}", mysql.Open)
-	}
-	suite.previousEnv = os.Getenv("GOYAVE_ENV")
-	os.Setenv("GOYAVE_ENV", "test")
-	if err := config.Load(); err != nil {
-		suite.FailNow(err.Error())
-	}
-
-	db := GetConnection()
-	if err := db.AutoMigrate(&User{}); err != nil {
-		panic(err)
+func articleGenerator() *TestArticle {
+	return &TestArticle{
+		Title:   "lorem ipsum",
+		Content: "lorem ipsum sit dolor amet",
 	}
 }
 
-func (suite *PaginatorTestSuite) TestPaginator() {
-	// Generate records
-	const userCount = 21
-	users := make([]User, 0, userCount)
-	for i := 0; i < userCount; i++ {
-		users = append(users, User{"John Doe", "johndoe@example.org", 0})
-	}
-
-	db := GetConnection()
-	if err := db.Create(users).Error; err != nil {
+func preparePaginatorTestDB() (*gorm.DB, []*TestArticle) {
+	cfg := config.LoadDefault()
+	cfg.Set("app.debug", false)
+	cfg.Set("database.connection", "sqlite3_paginator_test")
+	cfg.Set("database.name", "paginator_test.db")
+	cfg.Set("database.options", "mode=memory")
+	db, err := New(cfg)
+	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
-			panic(err)
-		}
-	}()
 
-	results := []User{}
-	paginator := NewPaginator(db, 1, 10, &results)
-	suite.Equal(1, paginator.CurrentPage)
-	suite.Equal(10, paginator.PageSize)
-	suite.Equal(db, paginator.DB)
-	res := paginator.Find()
-	suite.Nil(res.Error)
-	if res.Error == nil {
-		suite.Len(results, 10)
-		suite.Equal(int64(userCount), paginator.Total)
-		suite.Equal(int64(3), paginator.MaxPage)
-	}
-
-	results = []User{}
-	paginator = NewPaginator(db, 3, 10, &results)
-	res = paginator.Find()
-	suite.Nil(res.Error)
-	if res.Error == nil {
-		suite.Len(results, 1)
-	}
-
-	results = []User{}
-	paginator = NewPaginator(db, 4, 10, &results)
-	res = paginator.Find()
-	suite.Nil(res.Error)
-	if res.Error == nil {
-		suite.Empty(results)
-	}
-
-	// MaxPage = 1 is there is no record
-	if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
+	if err := db.AutoMigrate(&TestUser{}, &TestArticle{}); err != nil {
 		panic(err)
 	}
-	results = []User{}
-	paginator = NewPaginator(db, 1, 10, &results)
-	res = paginator.Find()
-	suite.Nil(res.Error)
-	if res.Error == nil {
-		suite.Empty(results)
-		suite.Equal(int64(1), paginator.MaxPage)
+
+	author := userGenerator()
+	if err := db.Create(author).Error; err != nil {
+		panic(err)
 	}
+
+	factory := NewFactoryV5(articleGenerator)
+	factory.Override(&TestArticle{AuthorID: author.ID})
+
+	articles := factory.Save(db, 11)
+	return db, articles
 }
 
-func (suite *PaginatorTestSuite) TestPaginatorNoRecord() {
-	results := []User{}
-	db := GetConnection()
-	paginator := NewPaginator(db, 1, 10, &results)
-	res := paginator.Find()
-	suite.Nil(res.Error)
-	if res.Error == nil {
-		suite.Empty(results)
-		suite.Equal(int64(1), paginator.MaxPage)
-	}
-}
-
-func (suite *PaginatorTestSuite) TestPaginatorWithWhereClause() {
-	// Generate records
-	const userCount = 10
-	users := make([]User, 0, userCount)
-	for i := 0; i < userCount; i++ {
-		users = append(users, User{strconv.Itoa(i), "johndoe@example.org", 0})
-	}
-
-	db := GetConnection()
-	if err := db.Create(users).Error; err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
-			panic(err)
-		}
-	}()
-
-	results := []User{}
-	db = db.Where("name = ?", "1")
-	paginator := NewPaginator(db, 1, 10, &results)
-	res := paginator.Find()
-	if suite.Nil(res.Error) {
-		suite.Len(results, 1)
-		suite.Equal(int64(1), paginator.Total)
-		suite.Equal(int64(1), paginator.MaxPage)
-	}
-}
-
-func (suite *PaginatorTestSuite) TestPaginatorRawQuery() {
-	// Generate records
-	const userCount = 10
-	users := make([]User, 0, userCount)
-	for i := 0; i < userCount; i++ {
-		users = append(users, User{strconv.Itoa(i), "johndoe@example.org", 0})
-	}
-
-	db := GetConnection()
-	if err := db.Create(users).Error; err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
-			panic(err)
-		}
-	}()
-
-	results := []User{}
-	vars := []interface{}{0}
-	paginator := NewPaginator(db, 1, 5, &results).Raw("SELECT * FROM users WHERE id > ?", vars, "SELECT COUNT(*) FROM users WHERE id > ?", vars)
-	res := paginator.Find()
-	if suite.Nil(res.Error) {
-		suite.Len(results, 5)
-		suite.Equal(int64(10), paginator.Total)
-		suite.Equal(int64(2), paginator.MaxPage)
-	}
-}
-
-func (suite *PaginatorTestSuite) TestPaginatorRemovePreloads() {
-	// Preloads should be removed for the count query.
-	// Generate records
-	const userCount = 10
-	users := make([]User, 0, userCount)
-	for i := 0; i < userCount; i++ {
-		users = append(users, User{strconv.Itoa(i), "johndoe@example.org", 0})
-	}
-
-	db := GetConnection()
-	if err := db.Create(users).Error; err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err := db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{}).Error; err != nil {
-			panic(err)
-		}
-	}()
-
-	results := []User{}
-	db = db.Preload("relation")
-	paginator := NewPaginator(db, 1, 5, &results)
-	suite.NotPanics(func() {
-		paginator.UpdatePageInfo()
-		suite.Equal(int64(10), paginator.Total)
-		suite.Equal(int64(2), paginator.MaxPage)
+func TestPaginator(t *testing.T) {
+	RegisterDialect("sqlite3_paginator_test", "file:{name}?{options}", sqlite.Open)
+	t.Cleanup(func() {
+		mu.Lock()
+		delete(dialects, "sqlite3_paginator_test")
+		mu.Unlock()
 	})
-}
 
-func (suite *PaginatorTestSuite) TestCountError() {
-	db := GetConnection().Table("not a table")
-	paginator := NewPaginator(db, 1, 10, []interface{}{})
-	suite.Panics(func() {
-		paginator.UpdatePageInfo()
+	t.Run("UpdatePageInfo", func(t *testing.T) {
+		db, _ := preparePaginatorTestDB()
+		articles := []*TestArticle{}
+		p := NewPaginator(db, 2, 5, &articles)
+
+		assert.Equal(t, db, p.DB)
+		assert.Equal(t, 2, p.CurrentPage)
+		assert.Equal(t, 5, p.PageSize)
+		assert.Equal(t, &articles, p.Records)
+
+		res := p.UpdatePageInfo()
+		assert.NoError(t, res.Error)
+
+		assert.Equal(t, int64(11), p.Total)
+		assert.Equal(t, int64(3), p.MaxPage)
+		assert.True(t, p.loadedPageInfo)
 	})
-}
 
-func (suite *PaginatorTestSuite) TearDownAllSuite() {
-	defer os.Setenv("GOYAVE_ENV", suite.previousEnv)
-	db := GetConnection()
-	if err := db.Migrator().DropTable(&User{}); err != nil {
-		panic(err)
-	}
-}
+	t.Run("Find", func(t *testing.T) {
+		db, srcArticles := preparePaginatorTestDB()
+		articles := []*TestArticle{}
+		p := NewPaginator(db, 2, 5, &articles)
 
-func TestPaginatorTestSuite(t *testing.T) {
-	suite.Run(t, new(PaginatorTestSuite))
+		assert.Equal(t, db, p.DB)
+		assert.Equal(t, 2, p.CurrentPage)
+		assert.Equal(t, 5, p.PageSize)
+		assert.Equal(t, &articles, p.Records)
+
+		res := p.Find()
+		assert.NoError(t, res.Error)
+
+		assert.Equal(t, int64(11), p.Total)
+		assert.Equal(t, int64(3), p.MaxPage)
+		assert.True(t, p.loadedPageInfo)
+		assert.Equal(t, srcArticles[5:10], *p.Records)
+	})
+
+	t.Run("Find_no_record", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("app.debug", true)
+		cfg.Set("database.connection", "sqlite3_paginator_test")
+		cfg.Set("database.name", "paginator_test.db")
+		cfg.Set("database.options", "mode=memory")
+		db, err := New(cfg)
+		if err != nil {
+			panic(err)
+		}
+
+		if err := db.AutoMigrate(&TestUser{}, &TestArticle{}); err != nil {
+			panic(err)
+		}
+
+		articles := []*TestArticle{}
+		p := NewPaginator(db, 2, 5, &articles)
+
+		res := p.Find()
+		assert.NoError(t, res.Error)
+
+		assert.Equal(t, int64(0), p.Total)
+		assert.Equal(t, int64(1), p.MaxPage)
+		assert.True(t, p.loadedPageInfo)
+		assert.Empty(t, *p.Records)
+	})
+
+	t.Run("select_where_preload", func(t *testing.T) {
+		db, _ := preparePaginatorTestDB()
+		articles := []*TestArticle{}
+
+		db = db.Select("id", "title", "author_id").Where("id > ?", 9).Preload("Author")
+		p := NewPaginator(db, 1, 5, &articles)
+
+		res := p.Find()
+		assert.NoError(t, res.Error)
+
+		assert.Equal(t, int64(2), p.Total)
+		assert.Equal(t, int64(1), p.MaxPage)
+		assert.True(t, p.loadedPageInfo)
+
+		author := userGenerator()
+		author.ID = 1
+		expected := []*TestArticle{
+			{ID: 10, Title: "lorem ipsum", AuthorID: 1, Author: author},
+			{ID: 11, Title: "lorem ipsum", AuthorID: 1, Author: author},
+		}
+		assert.Equal(t, expected, *p.Records)
+	})
+
+	t.Run("Raw", func(t *testing.T) {
+		db, _ := preparePaginatorTestDB()
+		articles := []*TestArticle{}
+		p := NewPaginator(db, 1, 5, &articles)
+
+		query := `SELECT id, title FROM test_articles WHERE id > ?`
+		queryVars := []any{9}
+		countQuery := `SELECT COUNT(*) FROM test_articles WHERE id > ?`
+		assert.Equal(t, p, p.Raw(query, queryVars, countQuery, queryVars))
+
+		res := p.Find()
+		assert.NoError(t, res.Error)
+
+		assert.Equal(t, int64(2), p.Total)
+		assert.Equal(t, int64(1), p.MaxPage)
+		assert.True(t, p.loadedPageInfo)
+
+		expected := []*TestArticle{
+			{ID: 10, Title: "lorem ipsum"},
+			{ID: 11, Title: "lorem ipsum"},
+		}
+		assert.Equal(t, expected, *p.Records)
+
+		// Get page 2 (no results expected)
+		articles = []*TestArticle{}
+		p = NewPaginator(db, 2, 5, &articles)
+		p.Raw(query, queryVars, countQuery, queryVars)
+		res = p.Find()
+		assert.NoError(t, res.Error)
+		assert.Equal(t, int64(2), p.Total)
+		assert.Equal(t, int64(1), p.MaxPage)
+		assert.True(t, p.loadedPageInfo)
+		assert.Empty(t, *p.Records)
+	})
 }

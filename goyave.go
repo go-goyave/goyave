@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/database"
 	"goyave.dev/goyave/v4/lang"
 )
 
@@ -168,9 +167,9 @@ func Start(routeRegistrer func(*Router)) error {
 	lang.LoadDefault()
 	lang.LoadAllAvailableLanguages()
 
-	if config.GetBool("database.autoMigrate") && config.GetString("database.connection") != "none" {
-		database.Migrate()
-	}
+	// if config.GetBool("database.autoMigrate") && config.GetString("database.connection") != "none" {
+	// 	database.Migrate()
+	// }
 
 	router = NewRouter()
 	routeRegistrer(router)
@@ -250,7 +249,7 @@ func stop(ctx context.Context) error {
 	var err error
 	if server != nil {
 		err = server.Shutdown(ctx)
-		database.Close()
+		// database.Close()
 		server = nil
 		router = nil
 		ready = false

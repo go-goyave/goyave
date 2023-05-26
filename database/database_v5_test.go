@@ -1,0 +1,181 @@
+package database
+
+import (
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/utils/tests"
+	"goyave.dev/goyave/v4/config"
+)
+
+type DummyDialector struct {
+	tests.DummyDialector
+	DSN string
+}
+
+func openDummy(dsn string) gorm.Dialector {
+	return &DummyDialector{
+		DSN: dsn,
+	}
+}
+
+func TestNewDatabase(t *testing.T) {
+	RegisterDialect("dummy", "host={host} port={port} user={username} dbname={name} password={password} {options}", openDummy)
+	RegisterDialect("sqlite3_test", "file:{name}?{options}", sqlite.Open)
+	t.Cleanup(func() {
+		mu.Lock()
+		delete(dialects, "dummy")
+		delete(dialects, "sqlite3_test")
+		mu.Unlock()
+	})
+
+	t.Run("RegisterDialect_already_exists", func(t *testing.T) {
+		assert.Panics(t, func() {
+			RegisterDialect("dummy", "", openDummy)
+		})
+	})
+
+	t.Run("New", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("app.debug", true)
+		cfg.Set("database.connection", "dummy")
+		cfg.Set("database.host", "localhost")
+		cfg.Set("database.port", 5432)
+		cfg.Set("database.name", "dbname")
+		cfg.Set("database.username", "user")
+		cfg.Set("database.password", "secret")
+		cfg.Set("database.options", "option=value")
+		cfg.Set("database.maxOpenConnections", 123)
+		cfg.Set("database.maxIdleConnections", 123)
+		cfg.Set("database.maxLifetime", 123)
+		cfg.Set("database.defaultReadQueryTimeout", 123)
+		cfg.Set("database.defaultWriteQueryTimeout", 123)
+		cfg.Set("database.config.skipDefaultTransaction", true)
+		cfg.Set("database.config.dryRun", true)
+		cfg.Set("database.config.prepareStmt", false)
+		cfg.Set("database.config.disableNestedTransaction", true)
+		cfg.Set("database.config.allowGlobalUpdate", true)
+		cfg.Set("database.config.disableAutomaticPing", true)
+		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
+
+		db, err := New(cfg)
+		assert.NoError(t, err)
+		if !assert.NotNil(t, db) {
+			return
+		}
+
+		dbConfig := db.Config
+		// Can't check log level (gorm logger unexported)
+		assert.True(t, dbConfig.SkipDefaultTransaction)
+		assert.True(t, dbConfig.DryRun)
+		assert.False(t, dbConfig.PrepareStmt)
+		assert.True(t, dbConfig.DisableNestedTransaction)
+		assert.True(t, dbConfig.AllowGlobalUpdate)
+		assert.True(t, dbConfig.DisableAutomaticPing)
+		assert.True(t, dbConfig.DisableAutomaticPing)
+
+		// Cannot check the max open conns, idle conns and lifetime
+
+		plugin, ok := db.Plugins[(&TimeoutPlugin{}).Name()]
+		if assert.True(t, ok) {
+			timeoutPlugin, ok := plugin.(*TimeoutPlugin)
+			if assert.True(t, ok) {
+				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.ReadTimeout)
+				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.WriteTimeout)
+			}
+		}
+
+	})
+
+	t.Run("NewFromDialector", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("app.debug", true)
+		cfg.Set("database.connection", "dummy")
+		cfg.Set("database.host", "localhost")
+		cfg.Set("database.port", 5432)
+		cfg.Set("database.name", "dbname")
+		cfg.Set("database.username", "user")
+		cfg.Set("database.password", "secret")
+		cfg.Set("database.options", "option=value")
+		cfg.Set("database.maxOpenConnections", 123)
+		cfg.Set("database.maxIdleConnections", 123)
+		cfg.Set("database.maxLifetime", 123)
+		cfg.Set("database.defaultReadQueryTimeout", 123)
+		cfg.Set("database.defaultWriteQueryTimeout", 123)
+		cfg.Set("database.config.skipDefaultTransaction", true)
+		cfg.Set("database.config.dryRun", true)
+		cfg.Set("database.config.prepareStmt", false)
+		cfg.Set("database.config.disableNestedTransaction", true)
+		cfg.Set("database.config.allowGlobalUpdate", true)
+		cfg.Set("database.config.disableAutomaticPing", true)
+		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
+
+		dialector := &DummyDialector{}
+		db, err := NewFromDialector(cfg, dialector)
+		assert.NoError(t, err)
+		if !assert.NotNil(t, db) {
+			return
+		}
+
+		dbConfig := db.Config
+		// Can't check log level (gorm logger unexported)
+		assert.True(t, dbConfig.SkipDefaultTransaction)
+		assert.True(t, dbConfig.DryRun)
+		assert.False(t, dbConfig.PrepareStmt)
+		assert.True(t, dbConfig.DisableNestedTransaction)
+		assert.True(t, dbConfig.AllowGlobalUpdate)
+		assert.True(t, dbConfig.DisableAutomaticPing)
+		assert.True(t, dbConfig.DisableAutomaticPing)
+
+		// Cannot check the max open conns, idle conns and lifetime
+
+		plugin, ok := db.Plugins[(&TimeoutPlugin{}).Name()]
+		if assert.True(t, ok) {
+			timeoutPlugin, ok := plugin.(*TimeoutPlugin)
+			if assert.True(t, ok) {
+				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.ReadTimeout)
+				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.WriteTimeout)
+			}
+		}
+
+	})
+
+	t.Run("New_connection_none", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("database.connection", "none")
+		db, err := New(cfg)
+		assert.Nil(t, db)
+		assert.Error(t, err)
+		assert.Equal(t, "Cannot create DB connection. Database is set to \"none\" in the config", err.Error())
+	})
+
+	t.Run("New_unknown_driver", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("database.connection", "notadriver")
+		db, err := New(cfg)
+		assert.Nil(t, db)
+		assert.Error(t, err)
+		assert.Equal(t, "DB Connection \"notadriver\" not supported, forgotten import?", err.Error())
+	})
+
+	t.Run("SQLite_query", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("database.connection", "sqlite3_test")
+		cfg.Set("database.name", "database_test.db")
+		cfg.Set("database.options", "mode=memory")
+
+		db, err := New(cfg)
+		assert.NoError(t, err)
+		if !assert.NotNil(t, db) {
+			return
+		}
+
+		dbNames := []string{}
+		res := db.Table("pragma_database_list").Select("name").Find(&dbNames)
+		assert.NoError(t, res.Error)
+		assert.Equal(t, []string{"main"}, dbNames)
+	})
+}

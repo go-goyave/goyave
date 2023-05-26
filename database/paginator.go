@@ -9,10 +9,10 @@ import (
 
 // Paginator structure containing pagination information and result records.
 // Can be sent to the client directly.
-type Paginator struct {
+type Paginator[T any] struct {
 	DB *gorm.DB `json:"-"`
 
-	Records any `json:"records"`
+	Records *[]T `json:"records"`
 
 	rawQuery          string
 	rawQueryVars      []any
@@ -40,14 +40,15 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 // filter results.
 //
 //	articles := []model.Article{}
-//	tx := database.Conn().Where("title LIKE ?", "%"+sqlutil.EscapeLike(search)+"%")
+//	tx := db.Where("title LIKE ?", "%"+sqlutil.EscapeLike(search)+"%")
 //	paginator := database.NewPaginator(tx, page, pageSize, &articles)
 //	result := paginator.Find()
-//	if response.HandleDatabaseError(result) {
-//	    response.JSON(http.StatusOK, paginator)
+//	if response.WriteDBError(result.Error) {
+//		return
 //	}
-func NewPaginator(db *gorm.DB, page, pageSize int, dest any) *Paginator {
-	return &Paginator{
+//	response.JSON(http.StatusOK, paginator)
+func NewPaginator[T any](db *gorm.DB, page, pageSize int, dest *[]T) *Paginator[T] {
+	return &Paginator[T]{
 		DB:          db,
 		CurrentPage: page,
 		PageSize:    pageSize,
@@ -59,7 +60,7 @@ func NewPaginator(db *gorm.DB, page, pageSize int, dest any) *Paginator {
 // The Paginator will execute the raw queries instead of automatically creating them.
 // The raw query should not contain the "LIMIT" and "OFFSET" clauses, they will be added automatically.
 // The count query should return a single number (`COUNT(*)` for example).
-func (p *Paginator) Raw(query string, vars []any, countQuery string, countVars []any) *Paginator {
+func (p *Paginator[T]) Raw(query string, vars []any, countQuery string, countVars []any) *Paginator[T] {
 	p.rawQuery = query
 	p.rawQueryVars = vars
 	p.rawCountQuery = countQuery
@@ -68,7 +69,8 @@ func (p *Paginator) Raw(query string, vars []any, countQuery string, countVars [
 }
 
 // UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
-func (p *Paginator) UpdatePageInfo() {
+// Returns the executed statement, which may contain an error.
+func (p *Paginator[T]) UpdatePageInfo() *gorm.DB {
 	count := int64(0)
 	db := p.DB.Session(&gorm.Session{})
 	prevPreloads := db.Statement.Preloads
@@ -85,14 +87,15 @@ func (p *Paginator) UpdatePageInfo() {
 			db.Statement.Selects = prevSelects
 		}()
 	}
-	var err error
+
+	var res *gorm.DB
 	if p.rawCountQuery != "" {
-		err = db.Raw(p.rawCountQuery, p.rawCountQueryVars...).Scan(&count).Error
+		res = db.Raw(p.rawCountQuery, p.rawCountQueryVars...).Scan(&count)
 	} else {
-		err = db.Model(p.Records).Count(&count).Error
+		res = db.Model(p.Records).Count(&count)
 	}
-	if err != nil {
-		panic(err)
+	if res.Error != nil {
+		return res
 	}
 	p.Total = count
 	p.MaxPage = int64(math.Ceil(float64(count) / float64(p.PageSize)))
@@ -100,14 +103,20 @@ func (p *Paginator) UpdatePageInfo() {
 		p.MaxPage = 1
 	}
 	p.loadedPageInfo = true
+	return res
 }
 
 // Find requests page information (total records and max page) and
 // executes the transaction. The Paginate struct is updated automatically, as
-// well as the destination slice given in NewPaginator().
-func (p *Paginator) Find() *gorm.DB {
+// well as the destination slice given in `NewPaginator()`.
+//
+// Returns the executed statement, which may contain an error.
+func (p *Paginator[T]) Find() *gorm.DB {
 	if !p.loadedPageInfo {
-		p.UpdatePageInfo()
+		res := p.UpdatePageInfo()
+		if res.Error != nil {
+			return res
+		}
 	}
 	if p.rawQuery != "" {
 		return p.rawStatement().Scan(p.Records)
@@ -115,11 +124,11 @@ func (p *Paginator) Find() *gorm.DB {
 	return p.DB.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records)
 }
 
-func (p *Paginator) rawStatement() *gorm.DB {
+func (p *Paginator[T]) rawStatement() *gorm.DB {
 	offset := (p.CurrentPage - 1) * p.PageSize
 	db := p.DB.Raw(p.rawQuery, p.rawQueryVars...)
-	db.Statement.SQL.WriteString(" ")
 	pageSize := p.PageSize
+	db.Statement.SQL.WriteString(" ")
 	clause.Limit{Limit: &pageSize, Offset: offset}.Build(db.Statement)
 	return db
 }

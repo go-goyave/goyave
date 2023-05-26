@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -8,6 +9,8 @@ import (
 	"gorm.io/gorm/logger"
 	"goyave.dev/goyave/v4/config"
 )
+
+// TODO document there is no initializer and registered models anymore, the view interface has been removed
 
 // New create a new connection pool using the settings defined in the given configuration.
 //
@@ -30,21 +33,17 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("DB Connection %q not supported, forgotten import?", driver)
 	}
 
-	dsn := dialect.buildDSNV5(cfg)
+	dsn := dialect.buildDSN(cfg)
 	db, err := gorm.Open(dialect.initializer(dsn), newConfigV5(cfg))
 	if err != nil {
 		return nil, err
 	}
 
-	initSQLDBV5(cfg, db)
+	if err := initTimeoutPlugin(cfg, db); err != nil {
+		return db, err
+	}
 
-	timeoutPlugin := &TimeoutPlugin{
-		ReadTimeout:  time.Duration(config.GetInt("database.defaultReadQueryTimeout")) * time.Millisecond,
-		WriteTimeout: time.Duration(config.GetInt("database.defaultWriteQueryTimeout")) * time.Millisecond,
-	}
-	if err := db.Use(timeoutPlugin); err != nil {
-		return nil, err
-	}
+	initSQLDBV5(cfg, db)
 
 	return db, err
 }
@@ -57,6 +56,10 @@ func NewFromDialector(cfg *config.Config, dialector gorm.Dialector) (*gorm.DB, e
 	db, err := gorm.Open(dialector, newConfigV5(cfg))
 	if err != nil {
 		return nil, err
+	}
+
+	if err := initTimeoutPlugin(cfg, db); err != nil {
+		return db, err
 	}
 
 	initSQLDBV5(cfg, db)
@@ -80,9 +83,20 @@ func newConfigV5(cfg *config.Config) *gorm.Config {
 	}
 }
 
+func initTimeoutPlugin(cfg *config.Config, db *gorm.DB) error {
+	timeoutPlugin := &TimeoutPlugin{
+		ReadTimeout:  time.Duration(cfg.GetInt("database.defaultReadQueryTimeout")) * time.Millisecond,
+		WriteTimeout: time.Duration(cfg.GetInt("database.defaultWriteQueryTimeout")) * time.Millisecond,
+	}
+	return db.Use(timeoutPlugin)
+}
+
 func initSQLDBV5(cfg *config.Config, db *gorm.DB) {
 	sqlDB, err := db.DB()
 	if err != nil {
+		if errors.Is(err, gorm.ErrInvalidDB) {
+			return
+		}
 		panic(err)
 	}
 	sqlDB.SetMaxOpenConns(cfg.GetInt("database.maxOpenConnections"))

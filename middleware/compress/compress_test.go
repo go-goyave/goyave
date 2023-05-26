@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/util/testutil"
 )
 
@@ -36,10 +37,7 @@ func (w *closeableChildWriter) Close() error {
 
 func TestCompressMiddleware(t *testing.T) {
 
-	server, err := testutil.NewTestServer("config.test.json", nil)
-	if !assert.NoError(t, err) {
-		return
-	}
+	server := testutil.NewTestServerWithConfig(config.LoadDefault(), nil)
 
 	handler := func(resp *goyave.ResponseV5, req *goyave.RequestV5) {
 		resp.Header().Set("Content-Length", "1234")

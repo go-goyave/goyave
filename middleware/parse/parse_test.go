@@ -9,22 +9,26 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/util/fsutil"
 	"goyave.dev/goyave/v4/util/testutil"
 )
 
 func TestParseMiddleware(t *testing.T) {
 
-	server, err := testutil.NewTestServer("config.test.json", nil)
-	if !assert.NoError(t, err) {
-		return
-	}
+	server := testutil.NewTestServerWithConfig(config.LoadDefault(), nil)
 
 	t.Run("Max Upload Size", func(t *testing.T) {
 		m := &Middleware{}
 		m.Init(server.Server)
 		assert.Equal(t, 10.0, m.getMaxUploadSize()) // Default
 		m.MaxUploadSize = 2.3
+		assert.Equal(t, 2.3, m.getMaxUploadSize())
+
+		m = &Middleware{
+			MaxUploadSize: 2.3,
+		}
+		m.Init(server.Server)
 		assert.Equal(t, 2.3, m.getMaxUploadSize())
 	})
 

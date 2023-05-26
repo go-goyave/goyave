@@ -14,7 +14,6 @@ import (
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/util/fsutil"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 type copyRequestMiddleware struct {
@@ -43,12 +42,12 @@ type TestServer struct {
 // NewTestServer creates a new server using the given config file. The config path is relative to
 // the project's directory. If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
-func NewTestServer(configFileName string, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) (*TestServer, error) {
+func NewTestServer(configFileName string, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
 	rootDirectory := FindRootDirectory()
 	cfgPath := rootDirectory + configFileName
 	cfg, err := config.LoadFromV5(cfgPath)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	return NewTestServerWithConfig(cfg, routeRegistrer)
@@ -57,22 +56,22 @@ func NewTestServer(configFileName string, routeRegistrer func(*goyave.Server, *g
 // NewTestServerWithConfig creates a new server using the given config.
 // If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
-func NewTestServerWithConfig(cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) (*TestServer, error) {
+func NewTestServerWithConfig(cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
 	srv, err := goyave.NewWithConfig(cfg)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	sep := string(os.PathSeparator)
 	langDirectory := FindRootDirectory() + sep + "resources" + sep + "lang" + sep
 	if err := srv.Lang.LoadDirectory(langDirectory); err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	if routeRegistrer != nil {
 		srv.RegisterRoutes(routeRegistrer)
 	}
-	return &TestServer{srv}, nil
+	return &TestServer{srv}
 }
 
 // TestRequest execute a request by calling the root Router's `ServeHTTP()` implementation.
@@ -136,7 +135,7 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // so all functions of `*goyave.Response` can be used safely.
 func NewTestResponse(request *goyave.RequestV5) (*goyave.ResponseV5, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
-	return goyave.NewResponse(typeutil.Must(NewTestServerWithConfig(config.LoadDefault(), nil)).Server, request, recorder), recorder
+	return goyave.NewResponse(NewTestServerWithConfig(config.LoadDefault(), nil).Server, request, recorder), recorder
 }
 
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created

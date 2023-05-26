@@ -13,10 +13,7 @@ import (
 )
 
 func prepareJWTServiceTest() (*testutil.TestServer, *JWTService) {
-	server, err := testutil.NewTestServerWithConfig(config.LoadDefault(), nil)
-	if err != nil {
-		panic(err)
-	}
+	server := testutil.NewTestServerWithConfig(config.LoadDefault(), nil)
 	service := &JWTService{}
 	server.RegisterService(service)
 	return server, service
@@ -384,10 +381,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("auth.jwt.secret", "secret")
 		cfg.Set("app.debug", false)
-		server, err := testutil.NewTestServerWithConfig(cfg, nil)
-		if err != nil {
-			panic(err)
-		}
+		server := testutil.NewTestServerWithConfig(cfg, nil)
 
 		// No need to register the JWTService, it should be done automatically
 		service := &JWTService{}

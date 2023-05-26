@@ -81,10 +81,7 @@ func TestJWTController(t *testing.T) {
 		cfg.Set("database.name", "testauthenticator.db")
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("app.debug", false)
-		server, err := testutil.NewTestServerWithConfig(cfg, nil)
-		if err != nil {
-			panic(err)
-		}
+		server := testutil.NewTestServerWithConfig(cfg, nil)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}

@@ -60,10 +60,7 @@ func prepareAuthenticatorTest() (*testutil.TestServer, *TestUser) {
 	cfg.Set("database.name", "testauthenticator.db")
 	cfg.Set("database.options", "mode=memory")
 	cfg.Set("app.debug", false)
-	server, err := testutil.NewTestServerWithConfig(cfg, nil)
-	if err != nil {
-		panic(err)
-	}
+	server := testutil.NewTestServerWithConfig(cfg, nil)
 	db := server.DB()
 	if err := db.AutoMigrate(&TestUser{}); err != nil {
 		panic(err)

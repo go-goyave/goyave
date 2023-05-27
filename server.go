@@ -389,6 +389,7 @@ func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *RouterV5)) {
 func (s *Server) Stop() {
 	if s.sigChannel != nil {
 		signal.Stop(s.sigChannel)
+		close(s.sigChannel)
 	}
 	state := atomic.LoadUint32(&s.state)
 	atomic.StoreUint32(&s.state, 3)

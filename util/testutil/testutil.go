@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
@@ -42,7 +43,9 @@ type TestServer struct {
 // NewTestServer creates a new server using the given config file. The config path is relative to
 // the project's directory. If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
-func NewTestServer(configFileName string, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
+//
+// Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
+func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
 	rootDirectory := FindRootDirectory()
 	cfgPath := rootDirectory + configFileName
 	cfg, err := config.LoadFromV5(cfgPath)
@@ -50,13 +53,15 @@ func NewTestServer(configFileName string, routeRegistrer func(*goyave.Server, *g
 		panic(err)
 	}
 
-	return NewTestServerWithConfig(cfg, routeRegistrer)
+	return NewTestServerWithConfig(t, cfg, routeRegistrer)
 }
 
 // NewTestServerWithConfig creates a new server using the given config.
 // If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
-func NewTestServerWithConfig(cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
+//
+// Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
+func NewTestServerWithConfig(t *testing.T, cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
 	srv, err := goyave.NewWithConfig(cfg)
 	if err != nil {
 		panic(err)
@@ -71,7 +76,12 @@ func NewTestServerWithConfig(cfg *config.Config, routeRegistrer func(*goyave.Ser
 	if routeRegistrer != nil {
 		srv.RegisterRoutes(routeRegistrer)
 	}
-	return &TestServer{srv}
+
+	s := &TestServer{srv}
+	if t != nil {
+		t.Cleanup(func() { s.CloseDB() })
+	}
+	return s
 }
 
 // TestRequest execute a request by calling the root Router's `ServeHTTP()` implementation.
@@ -93,6 +103,14 @@ func (s *TestServer) TestMiddleware(middleware goyave.MiddlewareV5, request *goy
 	router.Route([]string{request.Method()}, request.Request().URL.Path, procedure).Middleware(middleware)
 	router.ServeHTTP(recorder, request.Request())
 	return recorder.Result()
+}
+
+// CloseDB close the server DB if one is open. It is a good practice to always
+// call this in a test `Cleanup` function when using a database.
+func (s *TestServer) CloseDB() {
+	if err := s.Server.CloseDB(); err != nil {
+		s.ErrLogger.Println(err)
+	}
 }
 
 // FindRootDirectory find relative path to the project's root directory based on the
@@ -135,7 +153,7 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // so all functions of `*goyave.Response` can be used safely.
 func NewTestResponse(request *goyave.RequestV5) (*goyave.ResponseV5, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
-	return goyave.NewResponse(NewTestServerWithConfig(config.LoadDefault(), nil).Server, request, recorder), recorder
+	return goyave.NewResponse(NewTestServerWithConfig(nil, config.LoadDefault(), nil).Server, request, recorder), recorder
 }
 
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created

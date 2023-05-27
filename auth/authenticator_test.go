@@ -54,13 +54,13 @@ func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.ResponseV5, _ *g
 	response.JSON(http.StatusUnauthorized, map[string]string{"custom error key": err.Error()})
 }
 
-func prepareAuthenticatorTest() (*testutil.TestServer, *TestUser) {
+func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser) {
 	cfg := config.LoadDefault()
 	cfg.Set("database.connection", "sqlite3")
 	cfg.Set("database.name", "testauthenticator.db")
 	cfg.Set("database.options", "mode=memory")
 	cfg.Set("app.debug", false)
-	server := testutil.NewTestServerWithConfig(cfg, nil)
+	server := testutil.NewTestServerWithConfig(t, cfg, nil)
 	db := server.DB()
 	if err := db.AutoMigrate(&TestUser{}); err != nil {
 		panic(err)
@@ -81,7 +81,8 @@ func prepareAuthenticatorTest() (*testutil.TestServer, *TestUser) {
 func TestAuthenticator(t *testing.T) {
 
 	t.Run("Middleware", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
+		t.Cleanup(func() { server.CloseDB() })
 
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 
@@ -111,7 +112,8 @@ func TestAuthenticator(t *testing.T) {
 	})
 
 	t.Run("MiddlewareUnauthorizer", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
+		t.Cleanup(func() { server.CloseDB() })
 
 		authenticator := Middleware[*TestUser](&TestBasicUnauthorizer{})
 

@@ -18,7 +18,7 @@ import (
 func TestJWTController(t *testing.T) {
 
 	t.Run("Login", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
@@ -47,7 +47,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_invalid", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
@@ -81,7 +81,7 @@ func TestJWTController(t *testing.T) {
 		cfg.Set("database.name", "testauthenticator.db")
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("app.debug", false)
-		server := testutil.NewTestServerWithConfig(cfg, nil)
+		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
@@ -105,7 +105,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_token_func_error", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{
@@ -133,7 +133,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_with_field_override", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{
@@ -165,7 +165,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_validation", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}

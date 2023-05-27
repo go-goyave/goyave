@@ -272,7 +272,7 @@ func (s *Server) Transaction(opts ...*sql.TxOptions) func() {
 // is not recommended outside of tests. Prefer using a custom dialect.
 // This operation is not concurrently safe.
 func (s *Server) ReplaceDB(dialector gorm.Dialector) error {
-	if err := s.closeDB(); err != nil {
+	if err := s.CloseDB(); err != nil {
 		return err
 	}
 
@@ -285,7 +285,9 @@ func (s *Server) ReplaceDB(dialector gorm.Dialector) error {
 	return nil
 }
 
-func (s *Server) closeDB() error {
+// CloseDB close the database connection if there is one.
+// Does nothing and returns `nil` if there is no connection.
+func (s *Server) CloseDB() error {
 	if s.db == nil {
 		return nil
 	}
@@ -338,7 +340,7 @@ func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
 		for _, hook := range s.shutdownHooks {
 			hook(s)
 		}
-		if err := s.closeDB(); err != nil {
+		if err := s.CloseDB(); err != nil {
 			s.ErrLogger.Println(err)
 		}
 	}()

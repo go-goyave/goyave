@@ -16,7 +16,7 @@ import (
 
 func TestParseMiddleware(t *testing.T) {
 
-	server := testutil.NewTestServerWithConfig(config.LoadDefault(), nil)
+	server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 
 	t.Run("Max Upload Size", func(t *testing.T) {
 		m := &Middleware{}

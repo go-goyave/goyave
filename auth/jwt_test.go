@@ -12,8 +12,8 @@ import (
 	"goyave.dev/goyave/v4/util/testutil"
 )
 
-func prepareJWTServiceTest() (*testutil.TestServer, *JWTService) {
-	server := testutil.NewTestServerWithConfig(config.LoadDefault(), nil)
+func prepareJWTServiceTest(t *testing.T) (*testutil.TestServer, *JWTService) {
+	server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 	service := &JWTService{}
 	server.RegisterService(service)
 	return server, service
@@ -22,7 +22,7 @@ func prepareJWTServiceTest() (*testutil.TestServer, *JWTService) {
 func TestJWTService(t *testing.T) {
 
 	t.Run("GenerateToken", func(t *testing.T) {
-		server, service := prepareJWTServiceTest()
+		server, service := prepareJWTServiceTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		server.Config().Set("auth.jwt.expiry", 20)
 
@@ -52,7 +52,7 @@ func TestJWTService(t *testing.T) {
 	})
 
 	t.Run("GenerateTokenWithClaims_HS256", func(t *testing.T) {
-		server, service := prepareJWTServiceTest()
+		server, service := prepareJWTServiceTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		server.Config().Set("auth.jwt.expiry", 20)
 
@@ -88,7 +88,7 @@ func TestJWTService(t *testing.T) {
 
 	t.Run("GenerateTokenWithClaims_RSA", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, service := prepareJWTServiceTest()
+		server, service := prepareJWTServiceTest(t)
 		server.Config().Set("auth.jwt.rsa.public", rootDir+"resources/rsa/public.pem")
 		server.Config().Set("auth.jwt.rsa.private", rootDir+"resources/rsa/private.pem")
 		server.Config().Set("auth.jwt.expiry", 20)
@@ -125,7 +125,7 @@ func TestJWTService(t *testing.T) {
 
 	t.Run("GenerateTokenWithClaims_ECDSA", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, service := prepareJWTServiceTest()
+		server, service := prepareJWTServiceTest(t)
 		server.Config().Set("auth.jwt.ecdsa.public", rootDir+"resources/ecdsa/public.pem")
 		server.Config().Set("auth.jwt.ecdsa.private", rootDir+"resources/ecdsa/private.pem")
 		server.Config().Set("auth.jwt.expiry", 20)
@@ -161,7 +161,7 @@ func TestJWTService(t *testing.T) {
 	})
 
 	t.Run("GenerateTokenWithClaims_Unsupported", func(t *testing.T) {
-		server, service := prepareJWTServiceTest()
+		server, service := prepareJWTServiceTest(t)
 		server.Config().Set("auth.jwt.expiry", 20)
 
 		_, err := service.GenerateTokenWithClaims(nil, jwt.SigningMethodPS256)
@@ -176,7 +176,7 @@ func TestJWTService(t *testing.T) {
 func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("success_hs256", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
@@ -203,7 +203,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("success_rsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.rsa.public", rootDir+"resources/rsa/public.pem")
 		server.Config().Set("auth.jwt.rsa.private", rootDir+"resources/rsa/private.pem")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodRS256})
@@ -231,7 +231,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("success_ecdsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.ecdsa.public", rootDir+"resources/ecdsa/public.pem")
 		server.Config().Set("auth.jwt.ecdsa.private", rootDir+"resources/ecdsa/private.pem")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodES256})
@@ -258,7 +258,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("invalid_token", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
@@ -279,7 +279,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("token_not_valid_yet", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
@@ -312,7 +312,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("token_expired", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
@@ -345,7 +345,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unknown_user", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
@@ -381,7 +381,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("auth.jwt.secret", "secret")
 		cfg.Set("app.debug", false)
-		server := testutil.NewTestServerWithConfig(cfg, nil)
+		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 
 		// No need to register the JWTService, it should be done automatically
 		service := &JWTService{}
@@ -404,7 +404,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("unexpected_method_hmac", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.rsa.public", rootDir+"resources/rsa/public.pem")
 		server.Config().Set("auth.jwt.rsa.private", rootDir+"resources/rsa/private.pem")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodHS256})
@@ -434,7 +434,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unexpected_method_rsa", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodRS256})
 
@@ -463,7 +463,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unexpected_method_ecdsa", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodES256})
 
@@ -492,7 +492,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unsupported_method", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodPS256})
 
@@ -513,7 +513,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
@@ -533,7 +533,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_success", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{Optional: true})
 
@@ -559,7 +559,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_invalid_token", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{Optional: true})
 
@@ -580,7 +580,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_no_auth", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{Optional: true})
 

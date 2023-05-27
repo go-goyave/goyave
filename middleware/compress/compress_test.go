@@ -37,7 +37,7 @@ func (w *closeableChildWriter) Close() error {
 
 func TestCompressMiddleware(t *testing.T) {
 
-	server := testutil.NewTestServerWithConfig(config.LoadDefault(), nil)
+	server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 
 	handler := func(resp *goyave.ResponseV5, req *goyave.RequestV5) {
 		resp.Header().Set("Content-Length", "1234")

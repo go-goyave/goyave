@@ -10,7 +10,7 @@ import (
 	"goyave.dev/goyave/v4/config"
 )
 
-// TODO document there is no initializer and registered models anymore, the view interface has been removed
+// TODO document there is no initializer and registered models anymore, the view interface has been removed, no auto migrations
 
 // New create a new connection pool using the settings defined in the given configuration.
 //

@@ -13,7 +13,7 @@ import (
 func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -29,7 +29,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -48,7 +48,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_success", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -64,7 +64,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_wrong_password", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest()
+		server, user := prepareAuthenticatorTest(t)
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -83,7 +83,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_no_auth", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest()
+		server, _ := prepareAuthenticatorTest(t)
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -102,7 +102,7 @@ func TestBasicAuthenticator(t *testing.T) {
 			cfg.Set("database.name", "testbasicauthenticator_no_table.db")
 			cfg.Set("database.options", "mode=memory")
 			cfg.Set("app.debug", false)
-			server := testutil.NewTestServerWithConfig(cfg, nil)
+			server := testutil.NewTestServerWithConfig(t, cfg, nil)
 			authenticator := Middleware[*TestUserPromoted](&BasicAuthenticator{})
 			authenticator.Init(server.Server)
 			request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -120,7 +120,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		cfg.Set("database.name", "testbasicauthenticator_no_table.db")
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("app.debug", false)
-		server := testutil.NewTestServerWithConfig(cfg, nil)
+		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
 		authenticator.Init(server.Server)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -137,7 +137,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("auth.basic.username", "johndoe")
 		cfg.Set("auth.basic.password", "secret")
-		server := testutil.NewTestServerWithConfig(cfg, nil)
+		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "secret")
 		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
@@ -152,7 +152,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("auth.basic.username", "johndoe")
 		cfg.Set("auth.basic.password", "secret")
-		server := testutil.NewTestServerWithConfig(cfg, nil)
+		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "wrong_password")
 		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
@@ -172,7 +172,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("auth.basic.username", "johndoe")
 		cfg.Set("auth.basic.password", "secret")
-		server := testutil.NewTestServerWithConfig(cfg, nil)
+		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
 			assert.Fail(t, "middleware passed despite failed authentication")

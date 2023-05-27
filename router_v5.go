@@ -10,6 +10,8 @@ import (
 	"goyave.dev/goyave/v4/cors"
 )
 
+// TODO document there is no more static handler
+
 // Common route meta keys.
 const (
 	MetaCORS = "goyave.cors"

@@ -17,6 +17,8 @@ import (
 	"goyave.dev/goyave/v4/util/fsutil"
 )
 
+// TODO document Render, RenderHTML, Redirect, (more?) are not available
+
 type ResponseV5 struct {
 	writer         io.Writer
 	responseWriter http.ResponseWriter

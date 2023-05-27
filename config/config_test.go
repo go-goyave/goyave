@@ -225,18 +225,21 @@ func TestLoad(t *testing.T) {
 		t.Setenv("TEST_ENV_INT", "hello")
 		cfg, err = loader.loadJSON(json)
 		assert.Error(t, err)
+		assert.Nil(t, cfg)
 		t.Setenv("TEST_ENV_INT", "123")
 
 		// Invalid float
 		t.Setenv("TEST_ENV_FLOAT", "hello")
 		cfg, err = loader.loadJSON(json)
 		assert.Error(t, err)
+		assert.Nil(t, cfg)
 		t.Setenv("TEST_ENV_FLOAT", "123.456")
 
 		// Invalid bool
 		t.Setenv("TEST_ENV_BOOL", "hello")
 		cfg, err = loader.loadJSON(json)
 		assert.Error(t, err)
+		assert.Nil(t, cfg)
 		t.Setenv("TEST_ENV_BOOL", "TRUE")
 	})
 

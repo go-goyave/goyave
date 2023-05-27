@@ -60,9 +60,7 @@ func (m *Handler[T]) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 			response.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 			return
 		}
-		if user != nil {
-			request.User = *user
-		}
+		request.User = *user
 		next(response, request)
 	}
 }

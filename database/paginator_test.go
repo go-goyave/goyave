@@ -99,7 +99,7 @@ func TestPaginator(t *testing.T) {
 
 	t.Run("Find_no_record", func(t *testing.T) {
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", true)
+		cfg.Set("app.debug", false)
 		cfg.Set("database.connection", "sqlite3_paginator_test")
 		cfg.Set("database.name", "paginator_test.db")
 		cfg.Set("database.options", "mode=memory")

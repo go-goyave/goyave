@@ -163,6 +163,7 @@ func TestNewDatabase(t *testing.T) {
 
 	t.Run("SQLite_query", func(t *testing.T) {
 		cfg := config.LoadDefault()
+		cfg.Set("app.debug", false)
 		cfg.Set("database.connection", "sqlite3_test")
 		cfg.Set("database.name", "database_test.db")
 		cfg.Set("database.options", "mode=memory")

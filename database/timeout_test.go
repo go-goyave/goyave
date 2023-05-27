@@ -146,9 +146,11 @@ func TestTimeoutPlugin(t *testing.T) {
 			panic(err)
 		}
 
-		if err := db.AutoMigrate(&TestUser{}); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+		if err := db.WithContext(ctx).AutoMigrate(&TestUser{}); err != nil {
 			panic(err)
 		}
+		defer cancel()
 
 		author := userGenerator()
 		if err := db.Create(author).Error; err != nil {

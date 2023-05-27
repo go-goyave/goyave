@@ -89,13 +89,13 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 	}
 
 	host := cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port"))
-	return &Server{
+
+	server := &Server{
 		server: &http.Server{
 			Addr:         host,
 			WriteTimeout: time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
 			ReadTimeout:  time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
 			IdleTimeout:  time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
-			Handler:      router,
 			ErrorLog:     errLogger, // TODO what if it is replaced in the goyave.Server struct?
 		},
 		config:        cfg,
@@ -111,7 +111,10 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		Logger:        log.New(os.Stdout, "", log.LstdFlags),
 		AccessLogger:  log.New(os.Stdout, "", 0),
 		ErrLogger:     errLogger,
-	}, nil
+	}
+	server.router = NewRouterV5(server)
+	server.server.Handler = server.router
+	return server, nil
 }
 
 func getAddressV5(cfg *config.Config) string {
@@ -206,7 +209,7 @@ func (s *Server) IsReady() bool {
 }
 
 // RegisterStartupHook to execute some code once the server is ready and running.
-// Startup hooks are executed in their own goroutine.
+// All startup hooks are executed in a single goroutine and in order of registration.
 func (s *Server) RegisterStartupHook(hook func(*Server)) {
 	s.startupHooks = append(s.startupHooks, hook)
 }
@@ -303,12 +306,12 @@ func (s *Server) Router() *RouterV5 {
 	return s.router
 }
 
-// Start the server.
+// Start the server. This operation is blocking and returns when the server is closed.
 //
 // The `routeRegistrer` parameter is a function aimed at registering all your routes and middleware.
 //
 // Errors returned can be safely type-asserted to `*goyave.Error`.
-func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
+func (s *Server) Start() error {
 	state := atomic.LoadUint32(&s.state)
 	if state == 1 || state == 2 {
 		return &Error{
@@ -330,8 +333,6 @@ func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
 		close(s.stopChannel)
 	}()
 
-	s.RegisterRoutes(routeRegistrer)
-
 	ln, err := net.Listen("tcp", s.server.Addr)
 	if err != nil {
 		return &Error{err, ExitNetworkError}
@@ -347,13 +348,15 @@ func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
 
 	atomic.StoreUint32(&s.state, 2)
 
-	for _, hook := range s.startupHooks {
-		go func(f func(*Server)) {
-			if s.IsReady() {
-				f(s)
+	go func(s *Server) { // TODO document startup hooks share the same goroutine
+		if s.IsReady() {
+			// We check if the server is ready to prevent startup hook execution
+			// if `Serve` returned an error before the goroutine started
+			for _, hook := range s.startupHooks {
+				hook(s)
 			}
-		}(hook)
-	}
+		}
+	}(s)
 	if err := s.server.Serve(ln); err != nil && err != http.ErrServerClosed {
 		atomic.StoreUint32(&s.state, 3)
 		return &Error{err, ExitHTTPError}
@@ -366,17 +369,15 @@ func (s *Server) Start(routeRegistrer func(*Server, *RouterV5)) error {
 // This method is primarily used in tests so routes can be registered without starting the server.
 // Starting the server will overwrite the previously registered routes.
 func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *RouterV5)) {
-	s.router = NewRouterV5(s)
 	routeRegistrer(s, s.router)
 	s.router.ClearRegexCache()
-	s.server.Handler = s.router
 }
 
 // Stop gracefully shuts down the server without interrupting any
 // active connections.
 //
 // `Stop()` does not attempt to close nor wait for hijacked
-// connections such as WebSockets. The caller of Stop should
+// connections such as WebSockets. The caller of `Stop` should
 // separately notify such long-lived connections of shutdown and wait
 // for them to close, if desired. This can be done using shutdown hooks.
 //

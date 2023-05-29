@@ -32,11 +32,11 @@ func newField(path string, validators []Validator, prefixDepth uint) *Field {
 	}
 
 	for _, v := range validators {
-		switch v.(type) {
+		switch v := v.(type) {
 		case *RequiredValidator:
 			f.isRequired = func(ctx *Context) bool { return true }
 		case *RequiredIfValidator:
-			f.isRequired = v.(*RequiredIfValidator).Condition
+			f.isRequired = v.Condition
 		case *NullableValidator:
 			f.isNullable = true
 		case *ArrayValidator:

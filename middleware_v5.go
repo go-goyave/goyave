@@ -185,7 +185,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 			r.Data = opt.Data
 		}
 
-		if errors != nil && len(errors) != 0 {
+		if len(errors) != 0 {
 			response.Error(errors)
 			return
 		}

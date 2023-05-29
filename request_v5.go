@@ -10,17 +10,28 @@ import (
 )
 
 const (
-	// ExtraError the key used in Context.Extra to store an error
+	// ExtraError the key used in `Context.Extra` to store an error
 	// reported with the Error function or via the recovery middleware.
 	ExtraError = "goyave.error"
 
-	// ExtraStacktrace the key used in Context.Extra to store the
+	// ExtraStacktrace the key used in `Context.Extra` to store the
 	// stacktrace if debug is enabled and an error is reported.
 	ExtraStacktrace = "goyave.stacktrace"
 
-	ExtraBodyValidationRules  = "goyave.bodyValidationRules"
+	// ExtraBodyValidationRules the key used in `Context.Extra` to
+	// store the body validation rules.
+	ExtraBodyValidationRules = "goyave.bodyValidationRules"
+
+	// ExtraQueryValidationRules the key used in `Context.Extra` to
+	// store the query validation rules.
 	ExtraQueryValidationRules = "goyave.queryValidationRules"
-	ExtraValidationError      = "goyave.validationError"
+
+	// ExtraValidationError the key used in `Context.Extra` to
+	// store the body validation errors.
+	ExtraValidationError = "goyave.validationError"
+
+	// ExtraQueryValidationError the key used in `Context.Extra` to
+	// store the query validation errors.
 	ExtraQueryValidationError = "goyave.queryValidationError"
 
 	// ExtraJWTClaims when using the built-in `JWTAuthenticator`, this

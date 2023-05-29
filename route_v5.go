@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/samber/lo"
 	"goyave.dev/goyave/v4/cors"
 	"goyave.dev/goyave/v4/validation"
 )
@@ -146,16 +147,26 @@ func (r *RouteV5) ValidateQuery(validationRules RuleSetFunc) *RouteV5 {
 }
 
 // CORS set the CORS options for this route only.
+// The "OPTIONS" method is added if this route doesn't already support it.
+//
 // If the options are not `nil`, the CORS middleware is automatically added.
-// To disable CORS, give `nil` options.
+// To disable CORS, give `nil` options. The "OPTIONS" method will be removed
+// if it isn't the only method for this route.
 func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
+	i := lo.IndexOf(r.methods, http.MethodOptions)
 	if options == nil {
 		delete(r.Meta, MetaCORS)
+		if len(r.methods) > 1 && i != -1 {
+			r.methods = append(r.methods[:i], r.methods[i+1:]...)
+		}
 		return r
 	}
 	r.Meta[MetaCORS] = options
-	if !routeHasMiddleware[*corsMiddlewareV5](r) {
+	if !routeHasMiddleware[*corsMiddlewareV5](r) && !routerHasMiddleware[*corsMiddlewareV5](r.parent) {
 		r.Middleware(&corsMiddlewareV5{})
+	}
+	if i == -1 {
+		r.methods = append(r.methods, http.MethodOptions)
 	}
 	return r
 }

@@ -206,7 +206,7 @@ type corsMiddlewareV5 struct {
 func (m *corsMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	return func(response *ResponseV5, request *RequestV5) {
 		o, ok := request.Route.LookupMeta(MetaCORS)
-		if !ok || o == nil {
+		if !ok || o == nil || o == (*cors.Options)(nil) {
 			next(response, request)
 			return
 		}
@@ -215,9 +215,14 @@ func (m *corsMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		headers := response.Header()
 		requestHeaders := request.Header()
 
+		if request.Method() == http.MethodOptions && requestHeaders.Get("Access-Control-Request-Method") == "" {
+			response.Status(http.StatusBadRequest)
+			return
+		}
+
 		options.ConfigureCommon(headers, requestHeaders)
 
-		if request.Method() == http.MethodOptions && requestHeaders.Get("Access-Control-Request-Method") != "" {
+		if request.Method() == http.MethodOptions {
 			options.HandlePreflight(headers, requestHeaders)
 			if options.OptionsPassthrough {
 				next(response, request)

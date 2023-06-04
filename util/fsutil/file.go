@@ -59,19 +59,24 @@ func (file *File) Save(path string, name string) (filename string, err error) { 
 func ParseMultipartFiles(headers []*multipart.FileHeader) ([]File, error) {
 	files := []File{}
 	for _, fh := range headers {
-		f, err := fh.Open()
-		if err != nil {
-			return nil, err
-		}
 
 		fileHeader := make([]byte, 512)
 
 		if fh.Size != 0 {
+			f, err := fh.Open()
+			if err != nil {
+				return nil, err
+			}
 			if _, err := f.Read(fileHeader); err != nil {
+				_ = f.Close()
 				return nil, err
 			}
 
 			if _, err := f.Seek(0, 0); err != nil {
+				_ = f.Close()
+				return nil, err
+			}
+			if err := f.Close(); err != nil {
 				return nil, err
 			}
 		}

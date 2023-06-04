@@ -5,6 +5,7 @@ import (
 	"io"
 	"math"
 	"mime/multipart"
+	"net/textproto"
 	"os"
 	"path"
 	"path/filepath"
@@ -33,7 +34,7 @@ func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 	}
 }
 
-func createTestFiles(files ...string) []File {
+func createTestForm(files ...string) *multipart.Form {
 	_, filename, _, _ := runtime.Caller(1)
 
 	body := &bytes.Buffer{}
@@ -52,6 +53,11 @@ func createTestFiles(files ...string) []File {
 	if err != nil {
 		panic(err)
 	}
+	return form
+}
+
+func createTestFiles(files ...string) []File {
+	form := createTestForm(files...)
 	f, err := ParseMultipartFiles(form.File["file"])
 	if err != nil {
 		panic(err)
@@ -183,4 +189,41 @@ func TestOpenFileError(t *testing.T) {
 	filename, err := file.Save(dir, "saved.png")
 	assert.Error(t, err)
 	assert.NotEmpty(t, filename)
+}
+
+func TestParseMultipartFiles(t *testing.T) {
+
+	t.Run("png", func(t *testing.T) {
+		form := createTestForm("resources/img/logo/goyave_16.png")
+		files, err := ParseMultipartFiles(form.File["file"])
+
+		expected := []File{
+			{
+				Header:   form.File["file"][0],
+				MIMEType: "image/png",
+			},
+		}
+		assert.Equal(t, expected, files)
+		assert.NoError(t, err)
+	})
+
+	t.Run("empty_file", func(t *testing.T) {
+		headers := []*multipart.FileHeader{
+			{
+				Filename: "empty_ParseMultipartFiles.json",
+				Size:     0,
+				Header:   textproto.MIMEHeader{},
+			},
+		}
+		files, err := ParseMultipartFiles(headers)
+
+		expected := []File{
+			{
+				Header:   headers[0],
+				MIMEType: "application/octet-stream",
+			},
+		}
+		assert.Equal(t, expected, files)
+		assert.NoError(t, err)
+	})
 }

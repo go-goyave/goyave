@@ -28,6 +28,16 @@ func GetFileExtension(file string) string {
 }
 
 // GetMIMEType get the mime type and size of the given file.
+// This function calls `http.DetectContentType`. If the detected content type
+// could not be determined or if it's a text file, `GetMIMEType` will attempt to
+// detect the MIME type based on the file extension. The following extensions are
+// supported:
+//   - `.jsonld`: "application/ld+json"
+//   - `.json`: "application/json"
+//   - `.js` / `.mjs`: "text/javascript"
+//   - `.css`: "text/css"
+//
+// If a specific MIME type cannot be determined, returns "application/octet-stream" as a fallback.
 func GetMIMEType(file string) (contentType string, size int64, err error) {
 	var f *os.File
 	f, err = os.Open(file)

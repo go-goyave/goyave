@@ -49,19 +49,3 @@ func MustConvert[T any](data any) T {
 	}
 	return res
 }
-
-// Must takes any return values of a function that can also return an error.
-// Panics if the error is not nil, otherwise returns the value.
-//
-//	typeutil.Must(time.Parse(time.RFC3339, "2023-03-15 11:07:42"))
-func Must[V any](value V, err error) V {
-	if err != nil {
-		panic(err)
-	}
-	return value
-}
-
-// Ptr returns a pointer to the given value.
-func Ptr[V any](value V) *V {
-	return &value
-}

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func TestFloat32Validator(t *testing.T) {
@@ -57,7 +57,7 @@ func TestFloat32Validator(t *testing.T) {
 		{value: math.MaxFloat64, want: false},
 		{value: math.MaxFloat32, want: true, wantValue: float32(math.MaxFloat32)},
 		{value: -math.MaxFloat32, want: true, wantValue: float32(-math.MaxFloat32)},
-		{value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
+		{value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
 		{value: "string", want: false},
 		{value: []string{"string"}, want: false},
 		{value: map[string]any{"a": 1}, want: false},
@@ -124,7 +124,7 @@ func TestFloat64Validator(t *testing.T) {
 		{value: int(math.MinInt), want: false},
 		{value: math.MaxFloat64, want: true, wantValue: math.MaxFloat64},
 		{value: -math.MaxFloat64, want: true, wantValue: -math.MaxFloat64},
-		{value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
+		{value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false},
 		{value: "string", want: false},
 		{value: []string{"string"}, want: false},
 		{value: map[string]any{"a": 1}, want: false},

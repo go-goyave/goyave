@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -12,7 +13,6 @@ import (
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/util/testutil"
-	"goyave.dev/goyave/v4/util/typeutil"
 
 	_ "goyave.dev/goyave/v4/database/dialect/sqlite"
 )
@@ -141,12 +141,12 @@ func TestFindColumns(t *testing.T) {
 		input    []string
 		expected []*string
 	}{
-		{desc: "TestUser", model: &TestUser{}, input: []string{"username", "password"}, expected: []*string{typeutil.Ptr("email"), typeutil.Ptr("password")}},
-		{desc: "TestUser_invalid_tag", model: &TestUser{}, input: []string{"username", "notatag", "password"}, expected: []*string{typeutil.Ptr("email"), nil, typeutil.Ptr("password")}},
-		{desc: "TestUserOverride", model: &TestUserOverride{}, input: []string{"password"}, expected: []*string{typeutil.Ptr("password_override")}},
-		{desc: "TestUserInvalidOverride", model: &TestUserInvalidOverride{}, input: []string{"password"}, expected: []*string{typeutil.Ptr("password")}},
-		{desc: "TestUserPromoted", model: &TestUserPromoted{}, input: []string{"username", "password"}, expected: []*string{typeutil.Ptr("email"), typeutil.Ptr("password")}},
-		{desc: "TestUserPromotedPtr", model: &TestUserPromotedPtr{}, input: []string{"username", "password"}, expected: []*string{typeutil.Ptr("email"), typeutil.Ptr("password")}},
+		{desc: "TestUser", model: &TestUser{}, input: []string{"username", "password"}, expected: []*string{lo.ToPtr("email"), lo.ToPtr("password")}},
+		{desc: "TestUser_invalid_tag", model: &TestUser{}, input: []string{"username", "notatag", "password"}, expected: []*string{lo.ToPtr("email"), nil, lo.ToPtr("password")}},
+		{desc: "TestUserOverride", model: &TestUserOverride{}, input: []string{"password"}, expected: []*string{lo.ToPtr("password_override")}},
+		{desc: "TestUserInvalidOverride", model: &TestUserInvalidOverride{}, input: []string{"password"}, expected: []*string{lo.ToPtr("password")}},
+		{desc: "TestUserPromoted", model: &TestUserPromoted{}, input: []string{"username", "password"}, expected: []*string{lo.ToPtr("email"), lo.ToPtr("password")}},
+		{desc: "TestUserPromotedPtr", model: &TestUserPromotedPtr{}, input: []string{"username", "password"}, expected: []*string{lo.ToPtr("email"), lo.ToPtr("password")}},
 	}
 
 	for _, c := range cases {

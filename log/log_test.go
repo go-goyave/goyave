@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/util/testutil"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 type testWriter struct {
@@ -35,7 +35,7 @@ func (w *testWriter) Close() error {
 func TestWriter(t *testing.T) {
 
 	t.Run("Write", func(t *testing.T) {
-		ts := typeutil.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
+		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -60,7 +60,7 @@ func TestWriter(t *testing.T) {
 	})
 
 	t.Run("child_writer_prewrite_and_close", func(t *testing.T) {
-		ts := typeutil.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
+		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -96,7 +96,7 @@ func TestWriter(t *testing.T) {
 func TestMiddleware(t *testing.T) {
 
 	t.Run("Common", func(t *testing.T) {
-		ts := typeutil.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
+		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 		buffer := bytes.NewBufferString("")
 		server.AccessLogger.SetOutput(buffer)
@@ -112,7 +112,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("Combined", func(t *testing.T) {
-		ts := typeutil.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
+		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 		buffer := bytes.NewBufferString("")
 		server.AccessLogger.SetOutput(buffer)

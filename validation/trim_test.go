@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func TestTrimValidator(t *testing.T) {
@@ -22,11 +22,11 @@ func TestTrimValidator(t *testing.T) {
 		value any
 		want  *string
 	}{
-		{value: "string", want: typeutil.Ptr("string")},
-		{value: "", want: typeutil.Ptr("")},
-		{value: "\t\n\v\f\r ", want: typeutil.Ptr("")},
-		{value: "\t\n\v\f\r hello\t\n\v\f\r ", want: typeutil.Ptr("hello")},
-		{value: "hello\t\n\v\f\r ", want: typeutil.Ptr("hello")},
+		{value: "string", want: lo.ToPtr("string")},
+		{value: "", want: lo.ToPtr("")},
+		{value: "\t\n\v\f\r ", want: lo.ToPtr("")},
+		{value: "\t\n\v\f\r hello\t\n\v\f\r ", want: lo.ToPtr("hello")},
+		{value: "hello\t\n\v\f\r ", want: lo.ToPtr("hello")},
 		{value: 'a'},
 		{value: 2},
 		{value: 2.5},

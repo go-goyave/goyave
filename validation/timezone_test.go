@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func TestTimezoneValidator(t *testing.T) {
@@ -25,11 +25,11 @@ func TestTimezoneValidator(t *testing.T) {
 		want      bool
 	}{
 		{value: "UTC", want: true, wantValue: time.UTC},
-		{value: "Europe/Paris", want: true, wantValue: typeutil.Must(time.LoadLocation("Europe/Paris"))},
-		{value: "Europe/Paris", want: true, wantValue: typeutil.Must(time.LoadLocation("Europe/Paris"))}, // Second time to check cache
-		{value: "America/St_Thomas", want: true, wantValue: typeutil.Must(time.LoadLocation("America/St_Thomas"))},
-		{value: "GMT", want: true, wantValue: typeutil.Must(time.LoadLocation("GMT"))},
-		{value: typeutil.Must(time.LoadLocation("Europe/Paris")), want: true, wantValue: typeutil.Must(time.LoadLocation("Europe/Paris"))},
+		{value: "Europe/Paris", want: true, wantValue: lo.Must(time.LoadLocation("Europe/Paris"))},
+		{value: "Europe/Paris", want: true, wantValue: lo.Must(time.LoadLocation("Europe/Paris"))}, // Second time to check cache
+		{value: "America/St_Thomas", want: true, wantValue: lo.Must(time.LoadLocation("America/St_Thomas"))},
+		{value: "GMT", want: true, wantValue: lo.Must(time.LoadLocation("GMT"))},
+		{value: lo.Must(time.LoadLocation("Europe/Paris")), want: true, wantValue: lo.Must(time.LoadLocation("Europe/Paris"))},
 		{value: "GMT+2", want: false},
 		{value: "UTC+2", want: false},
 		{value: "Local", want: false},

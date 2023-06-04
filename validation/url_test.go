@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func TestURLValidator(t *testing.T) {
@@ -24,12 +24,12 @@ func TestURLValidator(t *testing.T) {
 		wantValue *url.URL
 		want      bool
 	}{
-		{value: "http://www.google.com", want: true, wantValue: typeutil.Must(url.ParseRequestURI("http://www.google.com"))},
-		{value: typeutil.Must(url.ParseRequestURI("http://www.google.com")), want: true, wantValue: typeutil.Must(url.ParseRequestURI("http://www.google.com"))},
-		{value: "https://www.google.com", want: true, wantValue: typeutil.Must(url.ParseRequestURI("https://www.google.com"))},
-		{value: "https://www.google.com?q=a%20surprise%20to%20be%20sure", want: true, wantValue: typeutil.Must(url.ParseRequestURI("https://www.google.com?q=a%20surprise%20to%20be%20sure"))},
-		{value: "https://www.google.com/#anchor", want: true, wantValue: typeutil.Must(url.ParseRequestURI("https://www.google.com/#anchor"))},
-		{value: "https://www.google.com?q=hmm#anchor", want: true, wantValue: typeutil.Must(url.ParseRequestURI("https://www.google.com?q=hmm#anchor"))},
+		{value: "http://www.google.com", want: true, wantValue: lo.Must(url.ParseRequestURI("http://www.google.com"))},
+		{value: lo.Must(url.ParseRequestURI("http://www.google.com")), want: true, wantValue: lo.Must(url.ParseRequestURI("http://www.google.com"))},
+		{value: "https://www.google.com", want: true, wantValue: lo.Must(url.ParseRequestURI("https://www.google.com"))},
+		{value: "https://www.google.com?q=a%20surprise%20to%20be%20sure", want: true, wantValue: lo.Must(url.ParseRequestURI("https://www.google.com?q=a%20surprise%20to%20be%20sure"))},
+		{value: "https://www.google.com/#anchor", want: true, wantValue: lo.Must(url.ParseRequestURI("https://www.google.com/#anchor"))},
+		{value: "https://www.google.com?q=hmm#anchor", want: true, wantValue: lo.Must(url.ParseRequestURI("https://www.google.com?q=hmm#anchor"))},
 		{value: "https://www.google.com#anchor", want: false},
 		{value: "www.google.com", want: false},
 		{value: "w-w.google.com", want: false},

@@ -1,7 +1,6 @@
 package typeutil
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -45,44 +44,6 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, "-12.5", ToString(-12.5))
 	assert.Equal(t, "true", ToString(true))
 	assert.Equal(t, "[test]", ToString([]string{"test"}))
-}
-
-func TestPtr(t *testing.T) {
-
-	str := "string"
-	cases := []struct {
-		value any
-	}{
-		{value: "string"},
-		{value: 'a'},
-		{value: 2},
-		{value: 2.5},
-		{value: []string{"string"}},
-		{value: map[string]any{"a": 1}},
-		{value: true},
-		{value: struct{}{}},
-		{value: &struct{}{}},
-		{value: &str},
-		{value: nil},
-	}
-
-	for _, c := range cases {
-		t.Run(fmt.Sprintf("%v", c.value), func(t *testing.T) {
-			assert.Equal(t, &c.value, Ptr(c.value))
-		})
-	}
-}
-
-func TestMust(t *testing.T) {
-	assert.Equal(t, "hello", Must(func() (string, error) { return "hello", nil }()))
-	assert.Equal(t, "hello", Must("hello", nil))
-
-	assert.Panics(t, func() {
-		Must(func() (string, error) { return "hello", fmt.Errorf("test error") }())
-	})
-	assert.Panics(t, func() {
-		Must("hello", fmt.Errorf("test error"))
-	})
 }
 
 func TestConvert(t *testing.T) {

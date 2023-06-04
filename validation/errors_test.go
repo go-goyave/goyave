@@ -3,8 +3,8 @@ package validation
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/typeutil"
 	"goyave.dev/goyave/v4/util/walk"
 )
 
@@ -73,7 +73,7 @@ func TestErrors(t *testing.T) {
 		errs := &Errors{}
 
 		p := walk.MustParse("root.array[]")
-		p.Next.Index = typeutil.Ptr(3)
+		p.Next.Index = lo.ToPtr(3)
 		errs.Add(p, "message")
 
 		expected := &Errors{
@@ -105,8 +105,8 @@ func TestErrors(t *testing.T) {
 		assert.Equal(t, expected, errs)
 
 		p = walk.MustParse("root.array[][]")
-		p.Next.Index = typeutil.Ptr(4)
-		p.Next.Next.Index = typeutil.Ptr(5)
+		p.Next.Index = lo.ToPtr(4)
+		p.Next.Next.Index = lo.ToPtr(5)
 		errs.Add(p, "third message")
 
 		expected = &Errors{
@@ -134,7 +134,7 @@ func TestErrors(t *testing.T) {
 		errs := &Errors{}
 
 		p := walk.MustParse("root[]")
-		p.Index = typeutil.Ptr(3)
+		p.Index = lo.ToPtr(3)
 		errs.Add(p, "message")
 		errs.Add(p, "second message")
 

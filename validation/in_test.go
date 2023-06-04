@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4/lang"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 type inTestCase[T comparable] struct {
@@ -33,7 +33,7 @@ func TestInValidator(t *testing.T) {
 		{value: "d", want: false, values: []string{"a", "b", "c"}},
 		{value: 1, want: false, values: []string{"a", "b", "c"}},
 		{value: 1.2, want: false, values: []string{"a", "b", "c"}},
-		{value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, values: []string{"a", "b", "c"}},
+		{value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, values: []string{"a", "b", "c"}},
 		{value: "string", want: false, values: []string{"a", "b", "c"}},
 		{value: []string{"string"}, want: false, values: []string{"a", "b", "c"}},
 		{value: map[string]any{"a": 1}, want: false, values: []string{"a", "b", "c"}},
@@ -70,7 +70,7 @@ func TestNotInValidator(t *testing.T) {
 		{value: "d", want: true, values: []string{"a", "b", "c"}},
 		{value: 1, want: false, values: []string{"a", "b", "c"}},
 		{value: 1.2, want: false, values: []string{"a", "b", "c"}},
-		{value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, values: []string{"a", "b", "c"}},
+		{value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, values: []string{"a", "b", "c"}},
 		{value: []string{"string"}, want: false, values: []string{"a", "b", "c"}},
 		{value: map[string]any{"a": 1}, want: false, values: []string{"a", "b", "c"}},
 		{value: true, want: false, values: []string{"a", "b", "c"}},
@@ -117,7 +117,7 @@ func TestInFieldValidator(t *testing.T) {
 		{value: "d", want: false, field: []string{"a", "b", "c"}},
 		{value: 1, want: false, field: []string{"a", "b", "c"}},
 		{value: 1.2, want: false, field: []string{"a", "b", "c"}},
-		{value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, field: []string{"a", "b", "c"}},
+		{value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, field: []string{"a", "b", "c"}},
 		{value: "string", want: false, field: []string{"a", "b", "c"}},
 		{value: []string{"string"}, want: false, field: []string{"a", "b", "c"}},
 		{value: map[string]any{"a": 1}, want: false, field: []string{"a", "b", "c"}},
@@ -180,7 +180,7 @@ func TestNotInFieldValidator(t *testing.T) {
 		{value: "d", want: true, field: []string{"a", "b", "c"}},
 		{value: 1, want: false, field: []string{"a", "b", "c"}},
 		{value: 1.2, want: false, field: []string{"a", "b", "c"}},
-		{value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, field: []string{"a", "b", "c"}},
+		{value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:06:42Z")), want: false, field: []string{"a", "b", "c"}},
 		{value: []string{"string"}, want: false, field: []string{"a", "b", "c"}},
 		{value: map[string]any{"a": 1}, want: false, field: []string{"a", "b", "c"}},
 		{value: true, want: false, field: []string{"a", "b", "c"}},

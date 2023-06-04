@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4/util/testutil"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func TestCommonFormatter(t *testing.T) {
 
-	ts := typeutil.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
+	ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 
 	t.Run("no_user", func(t *testing.T) {
 		req := testutil.NewTestRequest(http.MethodGet, "/log", nil)
@@ -74,7 +74,7 @@ func TestCommonFormatter(t *testing.T) {
 	})
 }
 func TestCombinedFormatter(t *testing.T) {
-	ts := typeutil.Must(time.Parse("2006-01-02T15:04:05.000Z", "2020-03-23T13:58:26.371Z"))
+	ts := lo.Must(time.Parse("2006-01-02T15:04:05.000Z", "2020-03-23T13:58:26.371Z"))
 
 	req := testutil.NewTestRequest(http.MethodGet, "/log", nil)
 	req.Now = ts

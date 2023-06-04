@@ -139,8 +139,8 @@ func TestTimeoutPlugin(t *testing.T) {
 		cfg.Set("app.debug", false)
 		cfg.Set("database.connection", "sqlite3_timeout_test")
 		cfg.Set("database.name", "timeout_many_queries_test.db")
-		cfg.Set("database.defaultReadQueryTimeout", 10)
-		cfg.Set("database.defaultWriteQueryTimeout", 10)
+		cfg.Set("database.defaultReadQueryTimeout", 200)
+		cfg.Set("database.defaultWriteQueryTimeout", 200)
 		db, err := New(cfg)
 		if err != nil {
 			panic(err)
@@ -166,7 +166,7 @@ func TestTimeoutPlugin(t *testing.T) {
 			return fmt.Sprintf("foobar_%d@example.org", index)
 		})
 		err = db.Transaction(func(tx *gorm.DB) error {
-			for i := 0; i < 100; i++ {
+			for i := 0; i < 5000; i++ {
 				users := []*TestUser{}
 				res := db.Select("*").Where("email IN (?)", args).Find(&users)
 				if res.Error != nil {

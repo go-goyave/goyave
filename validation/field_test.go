@@ -3,8 +3,8 @@ package validation
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/typeutil"
 	"goyave.dev/goyave/v4/util/walk"
 )
 
@@ -57,7 +57,7 @@ func TestField(t *testing.T) {
 		assert.Equal(t, expected, f.getErrorPath(nil, &walk.Context{Path: expected}))
 
 		expected = walk.MustParse("object.array[][]")
-		expected.Next.Next.Index = typeutil.Ptr(5)
+		expected.Next.Next.Index = lo.ToPtr(5)
 		assert.Equal(t, expected, f.getErrorPath(walk.MustParse("object.array[]"), &walk.Context{Index: 5}))
 	})
 }

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4/lang"
-	"goyave.dev/goyave/v4/util/typeutil"
 )
 
 func TestDateValidator(t *testing.T) {
@@ -26,8 +26,8 @@ func TestDateValidator(t *testing.T) {
 		assert.Equal(t, []string{time.RFC3339, time.RFC3339Nano}, v.Formats)
 	})
 
-	ref3339 := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
-	ref3339Nano := typeutil.Must(time.Parse(time.RFC3339Nano, "2023-03-15T10:07:42.123456789Z"))
+	ref3339 := lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
+	ref3339Nano := lo.Must(time.Parse(time.RFC3339Nano, "2023-03-15T10:07:42.123456789Z"))
 	formats := []string{time.RFC3339, time.RFC3339Nano}
 	cases := []struct {
 		value     any
@@ -35,13 +35,13 @@ func TestDateValidator(t *testing.T) {
 		formats   []string
 		want      bool
 	}{
-		{formats: formats, value: "2023-03-15T09:07:42Z", want: true, wantValue: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z"))},
-		{formats: formats, value: "2023-03-15T09:07:42.123456789Z", want: true, wantValue: typeutil.Must(time.Parse(time.RFC3339Nano, "2023-03-15T09:07:42.123456789Z"))},
+		{formats: formats, value: "2023-03-15T09:07:42Z", want: true, wantValue: lo.Must(time.Parse(time.RFC3339, "2023-03-15T09:07:42Z"))},
+		{formats: formats, value: "2023-03-15T09:07:42.123456789Z", want: true, wantValue: lo.Must(time.Parse(time.RFC3339Nano, "2023-03-15T09:07:42.123456789Z"))},
 		{formats: formats, value: ref3339, want: true, wantValue: ref3339},
 		{formats: formats, value: ref3339Nano, want: true, wantValue: ref3339Nano},
 		{formats: formats, value: "string", want: false},
 		{formats: formats, value: "2023-03-15", want: false},
-		{formats: []string{}, value: "2023-03-15", want: true, wantValue: typeutil.Must(time.Parse(time.DateOnly, "2023-03-15"))},
+		{formats: []string{}, value: "2023-03-15", want: true, wantValue: lo.Must(time.Parse(time.DateOnly, "2023-03-15"))},
 		{formats: formats, value: 'a', want: false},
 		{formats: formats, value: 2, want: false},
 		{formats: formats, value: 2.5, want: false},
@@ -77,15 +77,15 @@ func TestDateEqualsValidator(t *testing.T) {
 		assert.Equal(t, []string{":date", now.Format(time.RFC3339)}, v.MessagePlaceholders(&Context{}))
 	})
 
-	ref := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
+	ref := lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
 	cases := []struct {
 		ref   time.Time
 		value any
 		want  bool
 	}{
-		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
+		{ref: ref, value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
 		{ref: ref, value: ref, want: true},
-		{ref: ref, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
+		{ref: ref, value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
 		{ref: ref, value: "string", want: false},
 		{ref: ref, value: 'a', want: false},
 		{ref: ref, value: 2, want: false},
@@ -123,8 +123,8 @@ func TestEqualsFieldValidator(t *testing.T) {
 		})
 	})
 
-	ref1 := typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
-	ref2 := typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T10:07:42Z"))
+	ref1 := lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z"))
+	ref2 := lo.Must(time.Parse(time.RFC3339, "2023-03-16T10:07:42Z"))
 
 	dataSingle := makeEqualsFieldData(ref1)
 	dataTwo := makeEqualsFieldData(ref1, ref2)
@@ -137,13 +137,13 @@ func TestEqualsFieldValidator(t *testing.T) {
 		value any
 		want  bool
 	}{
-		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
+		{data: dataSingle, value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
 		{data: dataSingle, value: ref1, want: true},
-		{data: dataSingle, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
-		{data: dataTwo, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-16T10:07:42Z")), want: false},
+		{data: dataSingle, value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:08:42Z")), want: false},
+		{data: dataTwo, value: lo.Must(time.Parse(time.RFC3339, "2023-03-16T10:07:42Z")), want: false},
 		{data: dataTwo, value: ref2, want: false},
 		{data: dataTwo, value: ref1, want: false},
-		{data: dataTwoSame, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
+		{data: dataTwoSame, value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
 		{data: dataSingle, value: "string", want: false},
 		{data: dataSingle, value: 'a', want: false},
 		{data: dataSingle, value: 2, want: false},
@@ -152,8 +152,8 @@ func TestEqualsFieldValidator(t *testing.T) {
 		{data: dataSingle, value: map[string]any{"a": 1}, want: false},
 		{data: dataSingle, value: true, want: false},
 		{data: dataSingle, value: nil, want: false},
-		{data: dataNotTime, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: false},
-		{data: dataEmpty, value: typeutil.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
+		{data: dataNotTime, value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: false},
+		{data: dataEmpty, value: lo.Must(time.Parse(time.RFC3339, "2023-03-15T10:07:42Z")), want: true},
 	}
 
 	for _, c := range cases {

@@ -86,6 +86,18 @@ func TestTimeoutPlugin(t *testing.T) {
 		}
 	})
 
+	t.Run("re-use_statement", func(t *testing.T) {
+		db := prepareTimeoutTest()
+
+		users := []*TestUser{}
+		db = db.Select("*").Where("email", "johndoe@example.org").Find(&users)
+		if !assert.NoError(t, db.Error) {
+			return
+		}
+		db = db.Select("*").Where("email", "johndoe@example.org").Find(&users)
+		assert.NoError(t, db.Error)
+	})
+
 	t.Run("dont_override_predefined_context", func(t *testing.T) {
 		db := prepareTimeoutTest()
 

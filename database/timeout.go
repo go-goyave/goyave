@@ -15,6 +15,8 @@ const (
 type timeoutContext struct {
 	context.Context
 
+	parentContext context.Context
+
 	// We store the pointer to the original statement
 	// so we can cancel the context only if the original
 	// statement is completely finished. This prevents
@@ -109,14 +111,26 @@ func (p *TimeoutPlugin) timeoutBefore(db *gorm.DB, timeout time.Duration) {
 	if timeout <= 0 || db.Statement.Context == nil {
 		return
 	}
+	if tc, ok := db.Statement.Context.(*timeoutContext); ok {
+		// The statement is re-used, replace the context with a new one
+		ctx, cancel := context.WithTimeout(tc.parentContext, timeout)
+		db.Statement.Context = &timeoutContext{
+			Context:       ctx,
+			parentContext: tc.parentContext,
+			statement:     db.Statement,
+			cancel:        cancel,
+		}
+		return
+	}
 	if _, hasDeadline := db.Statement.Context.Deadline(); hasDeadline {
 		return
 	}
 	ctx, cancel := context.WithTimeout(db.Statement.Context, timeout)
 	db.Statement.Context = &timeoutContext{
-		Context:   ctx,
-		statement: db.Statement,
-		cancel:    cancel,
+		Context:       ctx,
+		parentContext: db.Statement.Context,
+		statement:     db.Statement,
+		cancel:        cancel,
 	}
 }
 

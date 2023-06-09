@@ -711,6 +711,7 @@ I'm very grateful to my patrons, sponsors and donators:
 - ethicnology
 - Yariya
 - sebastien-d-me
+- Nebojša Koturović
 
 ### Contributors
 

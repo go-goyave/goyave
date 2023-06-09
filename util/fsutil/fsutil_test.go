@@ -96,6 +96,22 @@ func TestGetMIMEType(t *testing.T) {
 	assert.Panics(t, func() {
 		GetMIMEType(toAbsolutePath("doesn't exist"))
 	})
+
+	t.Run("empty_file", func(t *testing.T) {
+		filename := "empty_GetMIMEType.json"
+		if err := os.WriteFile(filename, []byte{}, 0644); err != nil {
+			panic(err)
+		}
+
+		t.Cleanup(func() {
+			Delete(filename)
+		})
+
+		mime, size = GetMIMEType(filename)
+
+		assert.Equal(t, "application/json", mime)
+		assert.Equal(t, int64(0), size)
+	})
 }
 
 func TestFileExists(t *testing.T) {

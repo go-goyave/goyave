@@ -52,12 +52,14 @@ func ParseMultipartFiles(request *http.Request, field string) []File {
 
 		fileHeader := make([]byte, 512)
 
-		if _, err := f.Read(fileHeader); err != nil {
-			panic(err)
-		}
+		if fh.Size != 0 {
+			if _, err := f.Read(fileHeader); err != nil {
+				panic(err)
+			}
 
-		if _, err := f.Seek(0, 0); err != nil {
-			panic(err)
+			if _, err := f.Seek(0, 0); err != nil {
+				panic(err)
+			}
 		}
 
 		file := File{

@@ -28,6 +28,17 @@ func GetFileExtension(file string) string {
 
 // GetMIMEType get the mime type and size of the given file.
 //
+// This function calls `http.DetectContentType`. If the detected content type
+// could not be determined or if it's a text file, `GetMIMEType` will attempt to
+// detect the MIME type based on the file extension. The following extensions are
+// supported:
+//   - `.jsonld`: "application/ld+json"
+//   - `.json`: "application/json"
+//   - `.js` / `.mjs`: "text/javascript"
+//   - `.css`: "text/css"
+//
+// If a specific MIME type cannot be determined, returns "application/octet-stream" as a fallback.
+//
 // If the file cannot be opened, panics. You should check if the
 // file exists, using "fsutil.FileExists()"", before calling this function.
 func GetMIMEType(file string) (string, int64) {
@@ -36,19 +47,25 @@ func GetMIMEType(file string) (string, int64) {
 		panic(err)
 	}
 	defer f.Close()
-	buffer := make([]byte, 512)
-
-	_, errRead := f.Read(buffer)
-	if errRead != nil {
-		panic(errRead)
-	}
 
 	stat, errStat := f.Stat()
 	if errStat != nil {
 		panic(errStat)
 	}
 
-	contentType := http.DetectContentType(buffer)
+	size := stat.Size()
+
+	buffer := make([]byte, 512)
+	contentType := "application/octet-stream"
+
+	if size != 0 {
+		_, err = f.Read(buffer)
+		if err != nil {
+			panic(err)
+		}
+
+		contentType = http.DetectContentType(buffer)
+	}
 
 	if strings.HasPrefix(contentType, "application/octet-stream") || strings.HasPrefix(contentType, "text/plain") {
 		for ext, t := range contentTypeByExtension {
@@ -63,7 +80,7 @@ func GetMIMEType(file string) (string, int64) {
 		}
 	}
 
-	return contentType, stat.Size()
+	return contentType, size
 }
 
 // FileExists returns true if the file at the given path exists and is readable.

@@ -24,13 +24,6 @@ jobs:
         run: |
           echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-          sudo /etc/init.d/mysql start
-          while ! mysqladmin ping --silent; do
-            sleep 1
-          done
-          sudo mysql -proot -e 'CREATE DATABASE goyave CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
-          sudo mysql -proot -e 'CREATE USER "goyave"@"%" IDENTIFIED BY "secret"'
-          sudo mysql -proot -e 'GRANT ALL PRIVILEGES ON goyave.* TO "goyave"@"%"'
           go test -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
       - if: ${{ matrix.go == '1.20' }}
         uses: shogo82148/actions-goveralls@v1
@@ -45,5 +38,5 @@ jobs:
       - name: Run lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.52
+          version: v1.53
           args: --timeout 5m

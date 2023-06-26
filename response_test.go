@@ -41,8 +41,8 @@ func (r *hijackableRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 type testChainedWriter struct {
 	*httptest.ResponseRecorder
-	closed     bool
 	prewritten []byte
+	closed     bool
 }
 
 func (r *testChainedWriter) PreWrite(b []byte) {

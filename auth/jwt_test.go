@@ -167,10 +167,6 @@ func TestJWTService(t *testing.T) {
 		_, err := service.GenerateTokenWithClaims(nil, jwt.SigningMethodPS256)
 		assert.Error(t, err)
 	})
-
-	t.Run("GetPrivateKey", func(t *testing.T) {
-		// TODO
-	})
 }
 
 func TestJWTAuthenticator(t *testing.T) {

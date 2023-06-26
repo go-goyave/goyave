@@ -19,12 +19,15 @@ import (
 
 // TODO document Render, RenderHTML, Redirect, (more?) are not available
 
+// Response implementation wrapping `http.ResponseWriter`. Writing an HTTP response without
+// using it is incorrect. This acts as a proxy to one or many `io.Writer` chained, with the original
+// `http.ResponseWriter` always last.
 type ResponseV5 struct {
 	writer         io.Writer
 	responseWriter http.ResponseWriter
-	status         int
 	server         *Server
 	request        *RequestV5
+	status         int
 
 	// Used to check if controller didn't write anything so
 	// core can write default 204 No Content.
@@ -90,6 +93,13 @@ func (r *ResponseV5) WriteHeader(status int) {
 // Header returns the header map that will be sent.
 func (r *ResponseV5) Header() http.Header {
 	return r.responseWriter.Header()
+}
+
+// Cookie add a Set-Cookie header to the response.
+// The provided cookie must have a valid Name. Invalid cookies may be
+// silently dropped.
+func (r *ResponseV5) Cookie(cookie *http.Cookie) {
+	http.SetCookie(r.responseWriter, cookie)
 }
 
 // --------------------------------------

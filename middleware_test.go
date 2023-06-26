@@ -69,6 +69,81 @@ func TestHasMiddleware(t *testing.T) {
 
 func TestRecoveryMiddleware(t *testing.T) {
 	// TODO TestRecoveryMiddleware (after the error handling rework)
+
+	t.Run("panic", func(t *testing.T) {
+		server, err := NewWithConfig(config.LoadDefault())
+		if err != nil {
+			panic(err)
+		}
+		logBuffer := &bytes.Buffer{}
+		server.ErrLogger = log.New(logBuffer, "", 0)
+		middleware := &recoveryMiddlewareV5{}
+		middleware.Init(server)
+
+		panicErr := fmt.Errorf("test error")
+		handler := middleware.Handle(func(_ *ResponseV5, _ *RequestV5) {
+			panic(panicErr)
+		})
+
+		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		response := NewResponse(server, request, httptest.NewRecorder())
+
+		handler(response, request)
+
+		assert.Equal(t, panicErr, request.Extra[ExtraError])
+		assert.Equal(t, panicErr.Error()+"\n", logBuffer.String())
+		assert.NotEmpty(t, request.Extra[ExtraStacktrace])
+		assert.Equal(t, http.StatusInternalServerError, response.status)
+	})
+
+	t.Run("no_panic", func(t *testing.T) {
+		server, err := NewWithConfig(config.LoadDefault())
+		if err != nil {
+			panic(err)
+		}
+		logBuffer := &bytes.Buffer{}
+		server.ErrLogger = log.New(logBuffer, "", 0)
+		middleware := &recoveryMiddlewareV5{}
+		middleware.Init(server)
+
+		handler := middleware.Handle(func(_ *ResponseV5, _ *RequestV5) {})
+
+		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		response := NewResponse(server, request, httptest.NewRecorder())
+
+		handler(response, request)
+
+		assert.Empty(t, logBuffer.String())
+		assert.NotContains(t, request.Extra, ExtraError)
+		assert.NotContains(t, request.Extra, ExtraStacktrace)
+		assert.Equal(t, 0, response.status)
+	})
+
+	t.Run("nil_panic", func(t *testing.T) {
+		server, err := NewWithConfig(config.LoadDefault())
+		if err != nil {
+			panic(err)
+		}
+		logBuffer := &bytes.Buffer{}
+		server.ErrLogger = log.New(logBuffer, "", 0)
+		middleware := &recoveryMiddlewareV5{}
+		middleware.Init(server)
+
+		handler := middleware.Handle(func(_ *ResponseV5, _ *RequestV5) {
+			panic(nil)
+		})
+
+		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		response := NewResponse(server, request, httptest.NewRecorder())
+
+		handler(response, request)
+
+		assert.Nil(t, request.Extra[ExtraError])
+		assert.Contains(t, request.Extra, ExtraError)
+		assert.Equal(t, "<nil>\n", logBuffer.String())
+		assert.NotEmpty(t, request.Extra[ExtraStacktrace])
+		assert.Equal(t, http.StatusInternalServerError, response.status)
+	})
 }
 
 func TestLanguageMiddleware(t *testing.T) {

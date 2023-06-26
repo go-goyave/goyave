@@ -10,6 +10,10 @@ import (
 	"goyave.dev/goyave/v4/validation"
 )
 
+// Route stores information for route matching and serving and can be
+// used to generate dynamic URLs/URIs. Routes can, just like routers,
+// hold Meta information that can be used by generic middleware to
+// alter their behavior depending on the route being served.
 type RouteV5 struct {
 	name    string
 	uri     string
@@ -43,11 +47,13 @@ func newRouteV5(handler HandlerV5) *RouteV5 {
 	}
 }
 
-func (r *RouteV5) match(req *http.Request, match *routeMatchV5) bool {
+func (r *RouteV5) match(method string, match *routeMatchV5) bool {
 	if params := r.parameterizable.regex.FindStringSubmatch(match.currentPath); params != nil {
-		if r.checkMethod(req.Method) {
+		if r.checkMethod(method) {
 			if len(params) > 1 {
 				match.mergeParams(r.makeParameters(params))
+			} else {
+				match.parameters = map[string]string{}
 			}
 			match.route = r
 			return true
@@ -155,7 +161,7 @@ func (r *RouteV5) ValidateQuery(validationRules RuleSetFunc) *RouteV5 {
 func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
 	i := lo.IndexOf(r.methods, http.MethodOptions)
 	if options == nil {
-		delete(r.Meta, MetaCORS)
+		r.Meta[MetaCORS] = nil
 		if len(r.methods) > 1 && i != -1 {
 			r.methods = append(r.methods[:i], r.methods[i+1:]...)
 		}

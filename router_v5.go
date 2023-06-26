@@ -34,7 +34,7 @@ var (
 type HandlerV5 func(*ResponseV5, *RequestV5)
 
 type routeMatcherV5 interface {
-	match(req *http.Request, match *routeMatchV5) bool
+	match(method string, match *routeMatchV5) bool
 }
 
 type routeMatchV5 struct {
@@ -47,6 +47,7 @@ type routeMatchV5 struct {
 func (rm *routeMatchV5) mergeParams(params map[string]string) {
 	if rm.parameters == nil {
 		rm.parameters = params
+		return
 	}
 	for k, v := range params {
 		rm.parameters[k] = v
@@ -259,13 +260,13 @@ func (r *RouterV5) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	match := routeMatchV5{currentPath: req.URL.Path}
-	r.match(req, &match)
+	r.match(req.Method, &match)
 	r.requestHandler(&match, w, req)
 }
 
 // TODO export RouteMatch and add Match with string param function
 
-func (r *RouterV5) match(req *http.Request, match *routeMatchV5) bool {
+func (r *RouterV5) match(method string, match *routeMatchV5) bool {
 	// Check if router itself matches
 	var params []string
 	if r.parameterizable.regex != nil {
@@ -282,7 +283,7 @@ func (r *RouterV5) match(req *http.Request, match *routeMatchV5) bool {
 
 		// Check in subrouters first
 		for _, router := range r.subrouters {
-			if router.match(req, match) {
+			if router.match(method, match) {
 				if router.prefix == "" && match.route == methodNotAllowedRouteV5 {
 					// This allows route groups with subrouters having empty prefix.
 					break
@@ -293,7 +294,7 @@ func (r *RouterV5) match(req *http.Request, match *routeMatchV5) bool {
 
 		// Check if any route matches
 		for _, route := range r.routes {
-			if route.match(req, match) {
+			if route.match(method, match) {
 				return true
 			}
 		}
@@ -392,7 +393,7 @@ func (r *RouterV5) Options(uri string, handler HandlerV5) *RouteV5 {
 func (r *RouterV5) registerRoute(methods []string, uri string, handler HandlerV5) *RouteV5 {
 	methodsSlice := slices.Clone(methods)
 
-	if !routerHasMiddleware[*corsMiddlewareV5](r) && !lo.Contains(methodsSlice, http.MethodOptions) {
+	if routerHasMiddleware[*corsMiddlewareV5](r) && !lo.Contains(methodsSlice, http.MethodOptions) {
 		methodsSlice = append(methodsSlice, http.MethodOptions)
 	}
 

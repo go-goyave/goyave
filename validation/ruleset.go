@@ -92,6 +92,7 @@ func (l List) apply(rules Rules, path string, field *FieldRules, pDepth uint, pe
 	if isArrayElement {
 		path = "[]"
 	}
+
 	f := newField(path, field.Rules.(List), pDepth)
 	if !isArrayElement {
 		rules = append(rules, f)
@@ -105,9 +106,11 @@ func (l List) apply(rules Rules, path string, field *FieldRules, pDepth uint, pe
 			f.Elements = applier
 		case Rules:
 			i := 0
-			if len(applier) > 0 && applier[1].Path.Type == walk.PathTypeElement && applier[1].Path.Name != nil && *applier[1].Path.Name == CurrentElement {
+			// TODO find index of CurrentElement instead of assuming it's the first element
+
+			if len(applier) > 0 && applier[0].Path.Type == walk.PathTypeElement && applier[0].Path.Name != nil && *applier[0].Path.Name == CurrentElement {
 				i = 1
-				f.Elements = applier[1]
+				f.Elements = applier[0]
 			}
 			rules = append(rules, applier[i:]...)
 		}
@@ -128,21 +131,21 @@ type FieldRules struct {
 // RuleSets are not meant to be re-used across multiple requests nor used concurrently.
 type RuleSet []*FieldRules
 
-func (r RuleSet) apply(rules Rules, path string, field *FieldRules, _ uint, pendingArrays map[string]any) Rules {
+func (r RuleSet) apply(rules Rules, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) Rules {
 	if strings.HasSuffix(field.Path, "[]") {
-		pendingArrays[field.Path[:len(field.Path)-2]] = field.Rules.(RuleSet).asRulesWithPrefix(path)
+		pendingArrays[field.Path[:len(field.Path)-2]] = field.Rules.(RuleSet).asRulesWithPrefix("", pDepth+1)
 		return rules
 	}
-	return append(rules, field.Rules.(RuleSet).asRulesWithPrefix(path)...)
+	return append(rules, field.Rules.(RuleSet).asRulesWithPrefix(path, 0)...)
 }
 
 // AsRules converts this RuleSet to a Rules structure.
 func (r RuleSet) AsRules() Rules {
-	return r.asRulesWithPrefix("")
+	return r.asRulesWithPrefix("", 0)
 }
 
-func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
-	pDepth := uint(0)
+func (r RuleSet) asRulesWithPrefix(prefix string, prefixDepth uint) Rules {
+	pDepth := prefixDepth
 	if prefix != "" {
 		prefixPath, err := walk.Parse(prefix)
 		if err != nil {
@@ -159,7 +162,7 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 	rules := make(Rules, 0, len(r))
 	for _, field := range sortedRuleSet {
 		p := prefix
-		if field.Path != CurrentElement && !strings.HasPrefix("[]", field.Path) { // TODO test the use of composition on CurrentElement and arrays
+		if field.Path != CurrentElement && !strings.HasPrefix("[]", field.Path) {
 			if p != "" {
 				p += "." + field.Path
 			} else {

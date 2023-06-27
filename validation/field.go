@@ -23,6 +23,8 @@ type Field struct {
 	isNullable bool
 }
 
+func alwaysRequired(_ *Context) bool { return true }
+
 func newField(path string, validators []Validator, prefixDepth uint) *Field {
 	p := walk.MustParse(path)
 	f := &Field{
@@ -34,7 +36,7 @@ func newField(path string, validators []Validator, prefixDepth uint) *Field {
 	for _, v := range validators {
 		switch v := v.(type) {
 		case *RequiredValidator:
-			f.isRequired = func(ctx *Context) bool { return true }
+			f.isRequired = alwaysRequired
 		case *RequiredIfValidator:
 			f.isRequired = v.Condition
 		case *NullableValidator:

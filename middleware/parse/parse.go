@@ -54,8 +54,7 @@ func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 			maxSize := int64(m.getMaxUploadSize() * 1024 * 1024)
 			maxValueBytes := maxSize
 			var bodyBuf bytes.Buffer
-			n, err := io.CopyN(&bodyBuf, r.Request().Body, maxValueBytes+1)
-			_ = r.Request().Body.Close()
+			n, err := io.CopyN(&bodyBuf, r.Body(), maxValueBytes+1)
 			if err == nil || err == io.EOF {
 				maxValueBytes -= n
 				if maxValueBytes < 0 {

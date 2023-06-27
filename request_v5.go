@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -153,4 +154,11 @@ func (r *RequestV5) BearerToken() (string, bool) {
 		return "", false
 	}
 	return strings.TrimSpace(header[len(schema):]), true
+}
+
+// Body the request body.
+// Always non-nil, but will return EOF immediately when no body is present.
+// The server will close the request body so handlers don't need to.
+func (r *RequestV5) Body() io.ReadCloser {
+	return r.httpRequest.Body
 }

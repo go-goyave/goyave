@@ -50,6 +50,10 @@ func TestRequest(t *testing.T) {
 		assert.Equal(t, "username", username)
 		assert.Equal(t, "password", password)
 		assert.True(t, ok)
+
+		assert.NotNil(t, r.Body())
+		httpReq = httptest.NewRequest(http.MethodGet, "/test", nil)
+		assert.NotNil(t, NewRequest(httpReq).Body())
 	})
 
 	t.Run("BearerToken", func(t *testing.T) {

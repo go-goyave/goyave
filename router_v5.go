@@ -214,13 +214,14 @@ func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
 
 // CORS set the CORS options for this route group.
 // If the options are not `nil`, the CORS middleware is automatically added.
-// To disable CORS, give `nil` options.
+// To disable CORS for this router, subrouters and routes, give `nil` options.
+// CORS can be re-enabled for subrouters and routes on a case-by-case basis
+// using non-nil options.
 func (r *RouterV5) CORS(options *cors.Options) *RouterV5 {
+	r.Meta[MetaCORS] = options
 	if options == nil {
-		delete(r.Meta, MetaCORS)
 		return r
 	}
-	r.Meta[MetaCORS] = options
 	if !routerHasMiddleware[*corsMiddlewareV5](r) {
 		r.Middleware(&corsMiddlewareV5{})
 	}
@@ -249,8 +250,8 @@ func (r *RouterV5) StatusHandler(handler StatusHandler, status int, additionalSt
 
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *RouterV5) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if req.URL.Scheme != "" && req.URL.Scheme != protocol {
-		address := getAddress(protocol) + req.URL.Path
+	if req.URL.Scheme != "" && req.URL.Scheme != "http" {
+		address := getProxyAddress(r.server.config) + req.URL.Path
 		query := req.URL.Query()
 		if len(query) != 0 {
 			address += "?" + query.Encode()
@@ -286,7 +287,7 @@ func (r *RouterV5) match(method string, match *routeMatchV5) bool {
 			if router.match(method, match) {
 				if router.prefix == "" && match.route == methodNotAllowedRouteV5 {
 					// This allows route groups with subrouters having empty prefix.
-					break
+					continue
 				}
 				return true
 			}
@@ -316,6 +317,9 @@ func (r *RouterV5) makeParameters(match []string) map[string]string {
 // Subrouter create a new sub-router from this router.
 // Use subrouters to create route groups and to apply middleware to multiple routes.
 // CORS options are also inherited.
+//
+// Subrouters are matched before routes. For example, if you have a subrouter with a
+// prefix "/{name}" and a route "/route", the "/route" will never match.
 func (r *RouterV5) Subrouter(prefix string) *RouterV5 {
 	if prefix == "/" {
 		prefix = ""
@@ -393,7 +397,8 @@ func (r *RouterV5) Options(uri string, handler HandlerV5) *RouteV5 {
 func (r *RouterV5) registerRoute(methods []string, uri string, handler HandlerV5) *RouteV5 {
 	methodsSlice := slices.Clone(methods)
 
-	if routerHasMiddleware[*corsMiddlewareV5](r) && !lo.Contains(methodsSlice, http.MethodOptions) {
+	corsOptions, hasCORSOptions := r.Meta[MetaCORS]
+	if hasCORSOptions && corsOptions != (*cors.Options)(nil) && !lo.Contains(methodsSlice, http.MethodOptions) {
 		methodsSlice = append(methodsSlice, http.MethodOptions)
 	}
 

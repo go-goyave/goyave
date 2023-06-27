@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// TODO test unique/exists
-
 // UniqueValidator validates the field under validation must have a unique value in database
 // according to the provided database scope. Uniqueness is checked using a COUNT query.
 type UniqueValidator struct {
@@ -101,12 +99,7 @@ func (v *ExistsArrayValidator[T]) Validate(ctx *Context) bool {
 	return v.validate(ctx, true)
 }
 
-func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
-	values, ok := ctx.Value.([]T)
-	if !ctx.Valid() || !ok {
-		return true
-	}
-
+func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) *gorm.DB {
 	questionMarks := []string{}
 	params := []any{}
 
@@ -145,7 +138,16 @@ func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
 		table, column,
 		lo.Ternary(condition, "", "NOT"),
 	)
-	db = db.Raw(sql, params...)
+	return db.Raw(sql, params...)
+}
+
+func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
+	values, ok := ctx.Value.([]T)
+	if !ctx.Valid() || !ok {
+		return true
+	}
+
+	db := v.buildQuery(values, condition)
 
 	results := []int{}
 	if err := db.Find(&results).Error; err != nil {

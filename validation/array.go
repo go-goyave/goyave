@@ -48,7 +48,8 @@ func convertArray(array any, parentType reflect.Type) any {
 	}
 	elemType := elemVal.Elem().Type()
 	for i := 1; i < length; i++ {
-		if list.Index(i).Elem().Type() != elemType {
+		elem := list.Index(i).Elem()
+		if !elem.IsValid() || elem.Type() != elemType {
 			// Not all elements have the same type, keep it []any
 			return array
 		}

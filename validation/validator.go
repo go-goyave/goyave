@@ -250,11 +250,9 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 
 		if field.Elements != nil {
 			// This is an array, validate its elements first so it can be converted to correct type
-			if _, ok := c.Value.([]any); !ok {
-				if newValue, ok := makeGenericSlice(c.Value); ok {
-					replaceValue(c.Value, c)
-					c.Value = newValue
-				}
+			if newValue, ok := makeGenericSlice(c.Value); ok {
+				replaceValue(c.Value, c)
+				c.Value = newValue
 			}
 
 			path := c.Path
@@ -445,13 +443,10 @@ func replaceValue(value any, c *walk.Context) {
 }
 
 func makeGenericSlice(original any) ([]any, bool) {
-	list := reflect.ValueOf(original)
-	if list.Kind() != reflect.Slice {
-		return nil, false
-	}
 	if o, ok := original.([]any); ok {
 		return o, false
 	}
+	list := reflect.ValueOf(original)
 	length := list.Len()
 	newSlice := make([]any, 0, length)
 	for i := 0; i < length; i++ {

@@ -1417,6 +1417,13 @@ func TestPathDepth(t *testing.T) {
 	assert.Equal(t, path.Depth(), uint(4))
 	path, _ = Parse("a")
 	assert.Equal(t, path.Depth(), uint(1))
+	path, _ = Parse("")
+	assert.Equal(t, path.Depth(), uint(1))
+
+	assert.Equal(t, Depth(""), uint(1))
+	assert.Equal(t, Depth("a"), uint(1))
+	assert.Equal(t, Depth("a.b.c"), uint(3))
+	assert.Equal(t, Depth("a[].b.c"), uint(4))
 }
 
 func TestPathTruncate(t *testing.T) {

@@ -429,6 +429,11 @@ func MustParse(p string) *Path {
 	return path
 }
 
+// Depth calculate the path's depth without parsing it.
+func Depth(p string) uint {
+	return uint(strings.Count(p, ".")+strings.Count(p, "[]")) + 1
+}
+
 func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {

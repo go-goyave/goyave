@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/samber/lo"
 	"golang.org/x/exp/slices"
 	"goyave.dev/goyave/v4/util/walk"
 )
@@ -77,53 +78,26 @@ func (v *BaseValidator) IsType() bool { return false }
 // MessagePlaceholders returns an empty slice (no placeholders)
 func (v *BaseValidator) MessagePlaceholders(_ *Context) []string { return []string{} }
 
-// FieldRulesApplier types implementing this interface define their behavior
-// when applying a `FieldRules` to `Rules`. This enables rule sets composition.
-type FieldRulesApplier interface {
-	apply(rules Rules, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) Rules
+// FieldRulesConverter types implementing this interface define their behavior
+// when converting a `FieldRules` to `Rules`. This enables rule sets composition.
+type FieldRulesConverter interface {
+	convert(path string, field *FieldRules, prefixDepth uint) Rules
 }
 
 // List of validators which will be applied on the field. The validators are executed in the
 // order of the slice.
 type List []Validator
 
-func (l List) apply(rules Rules, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) Rules {
-	isArrayElement := strings.HasSuffix(field.Path, "[]")
-	if isArrayElement {
-		path = "[]"
-	}
-
-	f := newField(path, field.Rules.(List), pDepth)
-	if !isArrayElement {
-		rules = append(rules, f)
-	} else {
-		pendingArrays[field.Path[:len(field.Path)-2]] = f
-	}
-
-	if arrayElements, ok := pendingArrays[field.Path]; ok {
-		switch applier := arrayElements.(type) {
-		case *Field:
-			f.Elements = applier
-		case Rules:
-			i := 0
-			// TODO find index of CurrentElement instead of assuming it's the first element
-
-			if len(applier) > 0 && applier[0].Path.Type == walk.PathTypeElement && applier[0].Path.Name != nil && *applier[0].Path.Name == CurrentElement {
-				i = 1
-				f.Elements = applier[0]
-			}
-			rules = append(rules, applier[i:]...)
-		}
-		delete(pendingArrays, field.Path)
-	}
-	return rules
+func (l List) convert(path string, field *FieldRules, prefixDepth uint) Rules {
+	f := newField(path, field.Rules.(List), prefixDepth)
+	return Rules{f}
 }
 
 // FieldRules structure associating a path (see `walk.Path`) identifying a field
 // with a `FieldRulesApplier` (a `List` of rules or another `RuleSet` via composition).
 type FieldRules struct {
 	// TODO what behavior if there are duplicates? If it ever becomes a problem, can probably merge the Lists. But it's unnecessary for now.
-	Rules FieldRulesApplier
+	Rules FieldRulesConverter
 	Path  string
 }
 
@@ -131,46 +105,66 @@ type FieldRules struct {
 // RuleSets are not meant to be re-used across multiple requests nor used concurrently.
 type RuleSet []*FieldRules
 
-func (r RuleSet) apply(rules Rules, path string, field *FieldRules, pDepth uint, pendingArrays map[string]any) Rules {
-	if strings.HasSuffix(field.Path, "[]") {
-		pendingArrays[field.Path[:len(field.Path)-2]] = field.Rules.(RuleSet).asRulesWithPrefix("", pDepth+1)
-		return rules
-	}
-	return append(rules, field.Rules.(RuleSet).asRulesWithPrefix(path, 0)...)
+func (r RuleSet) convert(path string, _ *FieldRules, _ uint) Rules {
+	return r.asRulesWithPrefix2(path)
 }
 
 // AsRules converts this RuleSet to a Rules structure.
 func (r RuleSet) AsRules() Rules {
-	return r.asRulesWithPrefix("", 0)
+	return r.asRulesWithPrefix2("")
 }
 
-func (r RuleSet) asRulesWithPrefix(prefix string, prefixDepth uint) Rules {
-	pDepth := prefixDepth
+func (r RuleSet) asRulesWithPrefix2(prefix string) Rules {
+	pDepth := uint(0)
 	if prefix != "" {
-		prefixPath, err := walk.Parse(prefix)
-		if err != nil {
-			panic(err)
-		}
-		pDepth = prefixPath.Depth()
+		pDepth = walk.Depth(prefix)
 	}
 
-	pendingArrays := map[string]any{}
 	sortedRuleSet := slices.Clone(r)
 	sortedRuleSet = sortedRuleSet.injectArrayParents()
 	sortedRuleSet.sort()
 
 	rules := make(Rules, 0, len(r))
 	for _, field := range sortedRuleSet {
-		p := prefix
-		if field.Path != CurrentElement && !strings.HasPrefix("[]", field.Path) {
-			if p != "" {
-				p += "." + field.Path
+		path := prefix
+		if field.Path != CurrentElement {
+			if strings.HasPrefix("[]", field.Path) || path == "" {
+				path += field.Path
 			} else {
-				p = field.Path
+				path += "." + field.Path
 			}
 		}
 
-		rules = field.Rules.apply(rules, p, field, pDepth, pendingArrays)
+		fields := field.Rules.convert(path, field, pDepth)
+
+		rules = append(rules, fields...)
+	}
+
+	// Assign array elements to their parent field
+	for {
+		arrayElement, index, ok := lo.FindIndexOf(rules, func(f *Field) bool {
+			p := f.Path
+			for i := 0; i < int(pDepth)-1; i++ {
+				p = lo.Ternary(p.Next == nil, p, p.Next)
+			}
+			relativePath := p.String()
+			return strings.HasSuffix(relativePath, "[]")
+		})
+		if !ok {
+			break
+		}
+		parentArrayPath := arrayElement.Path.Clone()
+		lastParent := parentArrayPath.LastParent()
+		lastParent.Type = walk.PathTypeElement
+		lastParent.Next = nil
+
+		arrayElement.Path = &walk.Path{Type: walk.PathTypeArray, Next: &walk.Path{}}
+
+		rules = append(rules[:index], rules[index+1:]...)
+		parentArrayElement, parentFound := lo.Find(rules, func(f *Field) bool { return f.Path.String() == parentArrayPath.String() })
+		if parentFound {
+			parentArrayElement.Elements = arrayElement
+		}
 	}
 	return rules
 }

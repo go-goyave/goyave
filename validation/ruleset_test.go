@@ -9,6 +9,63 @@ import (
 
 func requiredIfTestFunction(_ *Context) bool { return true }
 
+func BenchmarkRuleSet(b *testing.B) {
+	b.ReportAllocs()
+	for n := 0; n < b.N; n++ {
+		ruleset := RuleSet{
+			{Path: CurrentElement, Rules: List{
+				Object(),
+			}},
+			{Path: "property", Rules: List{
+				String(),
+			}},
+			{Path: "nullable", Rules: List{
+				Nullable(),
+			}},
+			{Path: "object", Rules: List{
+				Object(),
+			}},
+			{Path: "object.property", Rules: List{
+				String(),
+			}},
+			{Path: "anonymous.property", Rules: List{
+				String(),
+			}},
+			{Path: "composition", Rules: RuleSet{
+				{Path: "composed_prop", Rules: List{Int()}},
+				{Path: "nested_composition", Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{String()}},
+				}},
+				{Path: "composition_on_current_element", Rules: RuleSet{
+					{Path: CurrentElement, Rules: RuleSet{
+						{Path: "nested_prop", Rules: List{String()}},
+					}},
+				}},
+			}},
+			{Path: "two_dim_array", Rules: List{Array()}},
+			{Path: "two_dim_array[]", Rules: List{Array()}},
+			{Path: "two_dim_array[][]", Rules: List{Int()}},
+
+			// Parent arrays should be injected
+			{Path: "array[]", Rules: List{Int()}},
+			{Path: "deep_array[][][]", Rules: List{Int()}},
+
+			{Path: "array_composition", Rules: RuleSet{
+				{Path: CurrentElement, Rules: List{Array()}},
+				{Path: "[]", Rules: List{Int()}},
+			}},
+
+			{Path: "array_element_composition", Rules: RuleSet{
+				{Path: CurrentElement, Rules: List{Array()}},
+				{Path: "[]", Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Int()}},
+				}},
+			}},
+		}
+		ruleset.AsRules()
+	}
+}
+
 func TestRuleset(t *testing.T) {
 
 	ruleset := RuleSet{
@@ -58,6 +115,14 @@ func TestRuleset(t *testing.T) {
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: RuleSet{
 				{Path: CurrentElement, Rules: List{Int()}},
+			}},
+		}},
+		{Path: "deep_array_element_composition", Rules: RuleSet{
+			{Path: CurrentElement, Rules: List{Array()}},
+			{Path: "[]", Rules: RuleSet{
+				{Path: "[]", Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Int()}},
+				}},
 			}},
 		}},
 	}
@@ -163,10 +228,26 @@ func TestRuleset(t *testing.T) {
 			Path:       walk.MustParse("array_element_composition"),
 			Validators: []Validator{Array()},
 			Elements: &Field{
-				// Path: walk.MustParse(""), // FIXME CURRENTLY
 				Path:        walk.MustParse("[]"),
 				Validators:  []Validator{Int()},
 				prefixDepth: 2, // TODO test this case correctly in the validator test
+			},
+			prefixDepth: 1,
+			isArray:     true,
+		},
+		{
+			Path:       walk.MustParse("deep_array_element_composition"),
+			Validators: []Validator{Array()},
+			Elements: &Field{
+				Path:       walk.MustParse("[]"), // Injected
+				Validators: []Validator{Array()},
+				Elements: &Field{
+					Path:        walk.MustParse("[]"),
+					Validators:  []Validator{Int()},
+					prefixDepth: 3,
+				},
+				prefixDepth: 2,
+				isArray:     true,
 			},
 			prefixDepth: 1,
 			isArray:     true,

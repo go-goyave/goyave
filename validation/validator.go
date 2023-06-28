@@ -171,9 +171,10 @@ func (c *Context) AddArrayElementValidationErrors(index ...int) {
 	c.arrayElementErrors = append(c.arrayElementErrors, index...)
 }
 
-// Errors returns this validation context's errors. Because each rule on each field
-// has its own Context, the returned array will only contain errors related to the
-// current field and the current rule.
+// Errors returns this validation context's errors.
+// The errors returned are NOT validation errors but operation errors (such as database error).
+// Because each rule on each field has its own Context, the returned array will only contain
+// errors related to the current field and the current rule.
 func (c *Context) Errors() []error {
 	return c.errors
 }
@@ -197,6 +198,8 @@ type validator struct {
 // The second returned value is a slice of error that occurred during validation. These
 // errors are not validation errors but error raised when a validator could not be executed correctly.
 // For example if a validator using the database generated a DB error.
+//
+// The `Options.Data` may be modified thanks to type rules.
 func Validate(options *Options) (*Errors, []error) {
 	validator := &validator{
 		options:          options,
@@ -229,8 +232,9 @@ func Validate(options *Options) (*Errors, []error) {
 func (v *validator) validateField(fieldName string, field *Field, walkData any, parentPath *walk.Path) {
 	field.Path.Walk(walkData, func(c *walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]any)
+		shouldDeleteFromParent := v.shouldDeleteFromParent(field, parentIsObject, c.Value)
 		if c.Found == walk.Found {
-			if v.shouldDeleteFromParent(field, parentIsObject, c.Value) {
+			if shouldDeleteFromParent {
 				delete(parentObject, c.Name)
 			}
 			// TODO if the parent is an array, should be removed too!
@@ -318,7 +322,9 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			value = ctx.Value
 		}
 		// Value may be modified (converting rule), replace it in the parent element
-		replaceValue(value, c)
+		if !shouldDeleteFromParent {
+			replaceValue(value, c)
+		}
 	})
 }
 
@@ -488,7 +494,7 @@ func getFieldType(value reflect.Value) string {
 
 // GetFieldName returns the localized name of the field identified
 // by the given path.
-func GetFieldName(lang *lang.Language, path *walk.Path) string { // TODO test this
+func GetFieldName(lang *lang.Language, path *walk.Path) string {
 	return translateFieldName(lang, path.String())
 }
 

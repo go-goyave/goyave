@@ -232,7 +232,6 @@ func Validate(options *Options) (*Errors, []error) {
 func (v *validator) validateField(fieldName string, field *Field, walkData any, parentPath *walk.Path) {
 	field.Path.Walk(walkData, func(c *walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]any)
-		_, parentIsArray := c.Parent.([]any)
 		shouldDeleteFromParent := v.shouldDeleteFromParent(field, parentIsObject, c.Value)
 		if c.Found == walk.Found {
 			if shouldDeleteFromParent {
@@ -271,12 +270,14 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 		}
 
 		data := v.options.Data
-		if parentIsArray {
-			data = c.Parent
-		} else if rootPath := c.Path.Truncate(field.prefixDepth); rootPath != nil {
-			// We can use `First` here because the path contains array indexes
-			// so we are sure there will be only one match.
-			data = rootPath.First(walkData).Value
+
+		if field.prefixDepth > 0 {
+			fullPath := appendPath(parentPath, c.Path, c.Index)
+			if rootPath := fullPath.Truncate(field.prefixDepth); rootPath != nil {
+				// We can use `First` here because the path contains array indexes
+				// so we are sure there will be only one match.
+				data = rootPath.First(data).Value
+			}
 		}
 
 		value := c.Value
@@ -457,6 +458,22 @@ func makeGenericSlice(original any) ([]any, bool) {
 		newSlice = append(newSlice, list.Index(i).Interface())
 	}
 	return newSlice, true
+}
+
+func appendPath(parentPath, childPath *walk.Path, index int) *walk.Path {
+	fullPath := childPath
+	if parentPath != nil {
+		fullPath = parentPath.Clone()
+		tail := fullPath.LastParent()
+		if tail != nil {
+			tail.Next = childPath
+		} else {
+			fullPath.Type = walk.PathTypeArray
+			fullPath.Index = &index
+			fullPath.Next = childPath
+		}
+	}
+	return fullPath
 }
 
 // GetFieldType returns the non-technical type of the given "value" interface.

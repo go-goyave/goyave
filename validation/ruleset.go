@@ -9,8 +9,6 @@ import (
 	"goyave.dev/goyave/v4/util/walk"
 )
 
-// TODO test ruleset
-
 // Ruler adapter interface to make allow both RuleSet and Rules to
 // be used when calling `Validate()`.
 type Ruler interface {

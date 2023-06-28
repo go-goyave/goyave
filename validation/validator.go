@@ -232,12 +232,12 @@ func Validate(options *Options) (*Errors, []error) {
 func (v *validator) validateField(fieldName string, field *Field, walkData any, parentPath *walk.Path) {
 	field.Path.Walk(walkData, func(c *walk.Context) {
 		parentObject, parentIsObject := c.Parent.(map[string]any)
+		_, parentIsArray := c.Parent.([]any)
 		shouldDeleteFromParent := v.shouldDeleteFromParent(field, parentIsObject, c.Value)
 		if c.Found == walk.Found {
 			if shouldDeleteFromParent {
 				delete(parentObject, c.Name)
 			}
-			// TODO if the parent is an array, should be removed too!
 
 			if v.shouldConvertSingleValueArray(fieldName) {
 				c.Value = v.convertSingleValueArray(field, c.Value)
@@ -271,10 +271,12 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 		}
 
 		data := v.options.Data
-		if rootPath := c.Path.Truncate(field.prefixDepth); rootPath != nil {
+		if parentIsArray {
+			data = c.Parent
+		} else if rootPath := c.Path.Truncate(field.prefixDepth); rootPath != nil {
 			// We can use `First` here because the path contains array indexes
 			// so we are sure there will be only one match.
-			data = rootPath.First(walkData)
+			data = rootPath.First(walkData).Value
 		}
 
 		value := c.Value
@@ -436,7 +438,8 @@ func replaceValue(value any, c *walk.Context) {
 		parentObject[c.Name] = value
 	} else {
 		// Parent is slice
-		reflect.ValueOf(c.Parent).Index(c.Index).Set(reflect.ValueOf(value))
+		parent := c.Parent.([]any)
+		parent[c.Index] = value
 	}
 }
 

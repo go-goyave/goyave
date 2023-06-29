@@ -158,7 +158,7 @@ func TestResponse(t *testing.T) {
 		res := recorder.Result()
 
 		assert.Equal(t, http.StatusOK, res.StatusCode)
-		assert.Equal(t, fmt.Sprintf("attachment; filename=\"test_file.txt\""), res.Header.Get("Content-Disposition"))
+		assert.Equal(t, "attachment; filename=\"test_file.txt\"", res.Header.Get("Content-Disposition"))
 		assert.Equal(t, "25", res.Header.Get("Content-Length"))
 		assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
 

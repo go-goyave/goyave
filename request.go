@@ -40,6 +40,7 @@ const (
 	ExtraJWTClaims = "goyave.jwtClaims"
 )
 
+// Request represents an http request received by the server.
 type Request struct {
 	httpRequest *http.Request
 	Now         time.Time
@@ -53,6 +54,8 @@ type Request struct {
 	cookies     []*http.Cookie
 }
 
+// NewRequest create a new Request from the given raw http request.
+// Initializes Now with the current time and Extra with a non-nil map.
 func NewRequest(httpRequest *http.Request) *Request {
 	return &Request{
 		httpRequest: httpRequest,

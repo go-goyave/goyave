@@ -87,3 +87,11 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 	}
 	return u.Val, nil
 }
+
+// Default return the value if present, otherwise returns the given default value.
+func (u Undefined[T]) Default(defaultValue T) T {
+	if u.Present {
+		return u.Val
+	}
+	return defaultValue
+}

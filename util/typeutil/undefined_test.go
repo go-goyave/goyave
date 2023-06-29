@@ -95,4 +95,11 @@ func TestUndefined(t *testing.T) {
 		}
 
 	})
+
+	t.Run("Default", func(t *testing.T) {
+		u := NewUndefined("hello")
+		assert.Equal(t, "hello", u.Default("world"))
+		u.Present = false
+		assert.Equal(t, "world", u.Default("world"))
+	})
 }

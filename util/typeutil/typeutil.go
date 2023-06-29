@@ -3,24 +3,7 @@ package typeutil
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"strconv"
 )
-
-// Map is an alias to map[string]any
-// Useful and a cleaner way to create a JSON response object
-// TODO remove this
-type Map map[string]any
-
-// ToFloat64 convert a numeric value to float64.
-func ToFloat64(value any) (float64, error) { // TODO remove this
-	return strconv.ParseFloat(ToString(value), 64)
-}
-
-// ToString convert a value to string.
-func ToString(value any) string { // TODO remove this
-	return fmt.Sprintf("%v", value)
-}
 
 // Convert anything into the desired type using JSON marshaling and unmarshaling.
 func Convert[T any](data any) (T, error) {

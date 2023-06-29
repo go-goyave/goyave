@@ -166,4 +166,28 @@ func TestParseMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
+
+	t.Run("Body already parsed", func(t *testing.T) {
+		data := map[string]any{
+			"a": "b",
+			"c": "d",
+			"e": map[string]any{
+				"f": "g",
+			},
+			"h": []string{"i", "j"},
+		}
+		request := testutil.NewTestRequest(http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request.Data = map[string]any{"a": "b"}
+
+		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
+			expectedQuery := map[string]any{
+				"a":     "b",
+				"c":     "d",
+				"array": []string{"1", "2"},
+			}
+			assert.Equal(t, expectedQuery, req.Query) // Query parsed but not body
+			assert.Equal(t, map[string]any{"a": "b"}, req.Data)
+		})
+		assert.NoError(t, result.Body.Close())
+	})
 }

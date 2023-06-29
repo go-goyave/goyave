@@ -8,9 +8,9 @@ import (
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/lang"
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 const (

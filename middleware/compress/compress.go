@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/util/httputil"
+	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/util/httputil"
 )
 
 // Encoder is an interface that wraps the methods returning the information

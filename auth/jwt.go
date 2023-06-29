@@ -10,9 +10,9 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/lang"
 )
 
 const (

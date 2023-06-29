@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 func prepareTimeoutTest() *gorm.DB {

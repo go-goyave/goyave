@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
-	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v5/config"
 )
 
 type TestUser struct {

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 // MIMEValidator validates the field under validation must be a file

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v4/cors"
-	"goyave.dev/goyave/v4/validation"
+	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/validation"
 )
 
 // Route stores information for route matching and serving and can be

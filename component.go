@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/lang"
 )
 
 // Composable defines all the functions every component of the presentation

@@ -10,10 +10,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/lang"
-	"goyave.dev/goyave/v4/util/fsutil"
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 type testValidator struct {

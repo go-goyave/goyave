@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v5/lang"
 )
 
 func TestSameValidator(t *testing.T) {

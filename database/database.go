@@ -7,7 +7,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v5/config"
 )
 
 // TODO document there is no initializer and registered models anymore, the view interface has been removed, no auto migrations

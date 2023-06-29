@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v5/config"
 
-	_ "goyave.dev/goyave/v4/database/dialect/sqlite"
+	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
 )
 
 func TestComponent(t *testing.T) {

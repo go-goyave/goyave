@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4/cors"
-	"goyave.dev/goyave/v4/validation"
+	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/validation"
 )
 
 // Middleware are special handlers executed in a stack above the controller handler.

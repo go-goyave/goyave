@@ -2,7 +2,7 @@ package mysql
 
 import (
 	"gorm.io/driver/mysql"
-	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v5/database"
 )
 
 func init() {

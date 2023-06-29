@@ -1,4 +1,4 @@
-module goyave.dev/goyave/v4
+module goyave.dev/goyave/v5
 
 go 1.20
 

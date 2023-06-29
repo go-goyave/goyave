@@ -6,7 +6,7 @@ import (
 
 	"github.com/samber/lo"
 	"golang.org/x/exp/slices"
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 // Ruler adapter interface to make allow both RuleSet and Rules to

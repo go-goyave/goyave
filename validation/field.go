@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 // Field representation of a single field in the data being validated.

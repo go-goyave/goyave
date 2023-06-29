@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"golang.org/x/exp/maps"
-	"goyave.dev/goyave/v4/util/fsutil"
-	"goyave.dev/goyave/v4/util/httputil"
+	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/httputil"
 )
 
 // Languages container for all loaded languages.

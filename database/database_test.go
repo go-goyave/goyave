@@ -8,7 +8,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
-	"goyave.dev/goyave/v4/config"
+	"goyave.dev/goyave/v5/config"
 )
 
 type DummyDialector struct {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 type LangTestSuite struct {

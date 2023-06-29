@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/database"
-	"goyave.dev/goyave/v4/lang"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v5/lang"
 )
 
 // Server the central component of a Goyave application.

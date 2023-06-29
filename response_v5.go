@@ -14,7 +14,7 @@ import (
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 // TODO document Render, RenderHTML, Redirect, (more?) are not available

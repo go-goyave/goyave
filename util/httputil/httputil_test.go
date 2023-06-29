@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/sliceutil"
+	"goyave.dev/goyave/v5/util/sliceutil"
 )
 
 func TestParseMultiValuesHeader(t *testing.T) {

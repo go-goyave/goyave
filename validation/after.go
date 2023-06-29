@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 // AfterValidator validates the field under validation must be a date (`time.Time`) before

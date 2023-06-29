@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 func requiredIfTestFunction(_ *Context) bool { return true }

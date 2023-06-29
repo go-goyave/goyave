@@ -10,11 +10,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/cors"
-	"goyave.dev/goyave/v4/validation"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/validation"
 
-	_ "goyave.dev/goyave/v4/database/dialect/sqlite"
+	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
 )
 
 func TestMiddlewareHolder(t *testing.T) {

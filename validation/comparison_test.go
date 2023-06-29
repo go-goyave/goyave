@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/lang"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 func makeComparisonData(ref ...any) map[string]any {

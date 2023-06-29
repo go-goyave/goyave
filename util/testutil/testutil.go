@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 type copyRequestMiddleware struct {

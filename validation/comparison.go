@@ -3,7 +3,7 @@ package validation
 import (
 	"fmt"
 
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 // ComparisonValidator validates the field under validation is greater than field identified

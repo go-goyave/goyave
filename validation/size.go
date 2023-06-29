@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Code-Hex/uniseg"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 func validateSize(value any, v func(size int) bool) bool {

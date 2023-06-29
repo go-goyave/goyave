@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"gorm.io/driver/postgres"
-	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v5/database"
 )
 
 func init() {

@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/cors"
 )
 
 type testStatusHandler struct {

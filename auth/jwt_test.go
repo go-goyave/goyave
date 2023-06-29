@@ -7,9 +7,9 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/util/testutil"
+	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/testutil"
 )
 
 func prepareJWTServiceTest(t *testing.T) (*testutil.TestServer, *JWTService) {

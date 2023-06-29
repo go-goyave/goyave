@@ -3,7 +3,7 @@ package goyave
 import (
 	"net/http"
 
-	"goyave.dev/goyave/v4/validation"
+	"goyave.dev/goyave/v5/validation"
 )
 
 // StatusHandler is a regular handler executed during the finalization step of the request's lifecycle

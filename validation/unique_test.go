@@ -9,8 +9,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/database"
 )
 
 type uniqueTestModel struct {

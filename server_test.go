@@ -16,9 +16,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm/utils/tests"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/database"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 type DummyService struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 // SameValidator validates the field under validation is strictly equal to the field identified

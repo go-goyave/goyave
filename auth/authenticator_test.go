@@ -10,11 +10,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
-	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/util/testutil"
+	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/testutil"
 
-	_ "goyave.dev/goyave/v4/database/dialect/sqlite"
+	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
 )
 
 type TestUser struct {

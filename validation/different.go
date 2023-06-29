@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"goyave.dev/goyave/v4/util/walk"
+	"goyave.dev/goyave/v5/util/walk"
 )
 
 // DifferentValidator validates the field under validation is not equal to the field identified

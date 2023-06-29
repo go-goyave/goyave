@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 func TestMaxValidator(t *testing.T) {

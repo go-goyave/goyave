@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
-	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v5"
 )
 
 // Column matches a column name with a struct field.

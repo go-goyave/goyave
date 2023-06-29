@@ -3,7 +3,7 @@ package log
 import (
 	"io"
 
-	"goyave.dev/goyave/v4"
+	"goyave.dev/goyave/v5"
 )
 
 // Context contains all information needed for a `Formatter`.

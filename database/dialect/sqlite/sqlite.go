@@ -2,7 +2,7 @@ package sqlite
 
 import (
 	"gorm.io/driver/sqlite"
-	"goyave.dev/goyave/v4/database"
+	"goyave.dev/goyave/v5/database"
 )
 
 func init() {

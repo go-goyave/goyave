@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v4"
-	"goyave.dev/goyave/v4/config"
-	"goyave.dev/goyave/v4/util/fsutil"
-	"goyave.dev/goyave/v4/util/testutil"
+	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/testutil"
 )
 
 func TestParseMiddleware(t *testing.T) {

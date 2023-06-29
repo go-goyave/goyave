@@ -14,17 +14,11 @@ var configDefaults = object{
 		"domain":           &Entry{"", []any{}, reflect.String, false},
 		"protocol":         &Entry{"http", []any{"http", "https"}, reflect.String, false},
 		"port":             &Entry{8080, []any{}, reflect.Int, false},
-		"httpsPort":        &Entry{8081, []any{}, reflect.Int, false},
 		"writeTimeout":     &Entry{10, []any{}, reflect.Int, false},
 		"readTimeout":      &Entry{10, []any{}, reflect.Int, false},
 		"idleTimeout":      &Entry{20, []any{}, reflect.Int, false},
 		"websocketTimeout": &Entry{10, []any{}, reflect.Int, false},
 		"maxUploadSize":    &Entry{10.0, []any{}, reflect.Float64, false},
-		"maintenance":      &Entry{false, []any{}, reflect.Bool, false},
-		"tls": object{
-			"cert": &Entry{nil, []any{}, reflect.String, false},
-			"key":  &Entry{nil, []any{}, reflect.String, false},
-		},
 		"proxy": object{
 			"protocol": &Entry{"http", []any{"http", "https"}, reflect.String, false},
 			"host":     &Entry{nil, []any{}, reflect.String, false},

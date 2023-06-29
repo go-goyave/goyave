@@ -413,7 +413,7 @@ func TestServer(t *testing.T) {
 		server.RegisterStartupHook(func(s *Server) {
 			if runtime.GOOS == "windows" {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
-				Stop()
+				server.Stop()
 			} else {
 				time.Sleep(10 * time.Millisecond)
 				if err := proc.Signal(syscall.SIGTERM); err != nil {

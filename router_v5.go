@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
 
@@ -18,6 +19,9 @@ const (
 )
 
 var (
+	errMatchMethodNotAllowed = errors.New("Method not allowed for this route")
+	errMatchNotFound         = errors.New("No match for this URI")
+
 	methodNotAllowedRouteV5 = newRouteV5(func(response *ResponseV5, request *RequestV5) {
 		response.Status(http.StatusMethodNotAllowed)
 	})

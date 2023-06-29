@@ -10,26 +10,12 @@ about: Report a bug, improperly working feature or code
 **Environment:** [Operating system, Go version]  
 **Reproduces:** [always|sometimes|once|every second time|...]  
 
-Describe your issue.
+<!-- 
+    Please describe your issue and add as many details as possible.
+    The following is a non-exhaustive list of details that could help the resolution of your issue:
+    - Logs
+    - Description of the steps before the occurrence
+    - Expected result
+    - How to reproduce
 
-**Relevant logs:** *(if needed)*
-```
-Insert logs here
-```
-
-### How it occurred
-
-1. [First step]
-2. [Second step]
-3. [...]
-
-**Expected result:**  
-Describe the expected result and how it differs from the actual result.
-
-### How to reproduce
-
-If you managed to reproduce the bug, fill this section, else keep this section and write only `Couldn't reproduce`.
-
-## Additional information
-
-If anything you need to say doesn't fit in any of the above sections, write them here. You can remove this section if it's not needed.
+-->

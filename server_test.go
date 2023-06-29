@@ -101,6 +101,9 @@ func TestServer(t *testing.T) {
 		if !assert.NoError(t, err) {
 			return
 		}
+		defer func() {
+			assert.NoError(t, server.CloseDB())
+		}()
 
 		assert.Equal(t, "test_with_config", server.Config().GetString("app.name"))
 		assert.NotNil(t, server.DB())
@@ -233,6 +236,9 @@ func TestServer(t *testing.T) {
 		if !assert.NoError(t, err) {
 			return
 		}
+		defer func() {
+			assert.NoError(t, server.CloseDB())
+		}()
 
 		ogDB := server.db
 

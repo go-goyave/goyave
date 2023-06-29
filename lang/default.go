@@ -189,9 +189,10 @@ var enUS = &Language{
 			"exists.element":                     "The :field element value does not exist.",
 		},
 		fields: map[string]string{
-			"":      "body",
-			"email": "email address",
-			"*":     "object property",
+			"":        "body",
+			"email":   "email address",
+			"perPage": "number of records per page",
+			"*":       "object property",
 		},
 	},
 }

@@ -230,7 +230,7 @@ func TestRuleset(t *testing.T) {
 			Elements: &Field{
 				Path:        walk.MustParse("[]"),
 				Validators:  []Validator{Int()},
-				prefixDepth: 2, // TODO test this case correctly in the validator test
+				prefixDepth: 2,
 			},
 			prefixDepth: 1,
 			isArray:     true,

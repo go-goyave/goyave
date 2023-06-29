@@ -8,7 +8,6 @@ import (
 )
 
 // Paginator structure containing pagination information and result records.
-// Can be sent to the client directly.
 type Paginator[T any] struct {
 	DB *gorm.DB `json:"-"`
 
@@ -25,6 +24,15 @@ type Paginator[T any] struct {
 	CurrentPage int   `json:"currentPage"`
 
 	loadedPageInfo bool
+}
+
+// PaginatorDTO structure sent to clients as a response.
+type PaginatorDTO[T any] struct {
+	Records     []T   `json:"records"`
+	MaxPage     int64 `json:"maxPage"`
+	Total       int64 `json:"total"`
+	PageSize    int   `json:"pageSize"`
+	CurrentPage int   `json:"currentPage"`
 }
 
 func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {

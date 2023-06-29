@@ -113,8 +113,8 @@ type Middleware struct {
 }
 
 // Handle implementation of `goyave.Middleware`.
-func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
-	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
 		encoder := m.getEncoder(response, request)
 		if encoder == nil {
 			next(response, request)
@@ -136,7 +136,7 @@ func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 	}
 }
 
-func (m *Middleware) getEncoder(response *goyave.ResponseV5, request *goyave.RequestV5) Encoder {
+func (m *Middleware) getEncoder(response *goyave.Response, request *goyave.Request) Encoder {
 	if response.Hijacked() || request.Header().Get("Upgrade") != "" {
 		return nil
 	}

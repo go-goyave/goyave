@@ -40,7 +40,7 @@ const (
 	ExtraJWTClaims = "goyave.jwtClaims"
 )
 
-type RequestV5 struct {
+type Request struct {
 	httpRequest *http.Request
 	Now         time.Time
 	Data        any
@@ -48,13 +48,13 @@ type RequestV5 struct {
 	Query       map[string]any
 	Lang        *lang.Language
 	Extra       map[string]any
-	Route       *RouteV5
+	Route       *Route
 	RouteParams map[string]string
 	cookies     []*http.Cookie
 }
 
-func NewRequest(httpRequest *http.Request) *RequestV5 {
-	return &RequestV5{
+func NewRequest(httpRequest *http.Request) *Request {
+	return &Request{
 		httpRequest: httpRequest,
 		Now:         time.Now(),
 		Extra:       map[string]any{},
@@ -66,22 +66,22 @@ func NewRequest(httpRequest *http.Request) *RequestV5 {
 
 // Request return the raw http request.
 // Prefer using the "goyave.Request" accessors.
-func (r *RequestV5) Request() *http.Request {
+func (r *Request) Request() *http.Request {
 	return r.httpRequest
 }
 
 // Method specifies the HTTP method (GET, POST, PUT, etc.).
-func (r *RequestV5) Method() string {
+func (r *Request) Method() string {
 	return r.httpRequest.Method
 }
 
 // Protocol the protocol used by this request, "HTTP/1.1" for example.
-func (r *RequestV5) Protocol() string {
+func (r *Request) Protocol() string {
 	return r.httpRequest.Proto
 }
 
 // URL specifies the URL being requested.
-func (r *RequestV5) URL() *url.URL {
+func (r *Request) URL() *url.URL {
 	return r.httpRequest.URL
 }
 
@@ -104,24 +104,24 @@ func (r *RequestV5) URL() *url.URL {
 //		"Accept-Language": {"en-us"},
 //		"Foo": {"Bar", "two"},
 //	}
-func (r *RequestV5) Header() http.Header {
+func (r *Request) Header() http.Header {
 	return r.httpRequest.Header
 }
 
 // ContentLength records the length of the associated content.
 // The value -1 indicates that the length is unknown.
-func (r *RequestV5) ContentLength() int64 {
+func (r *Request) ContentLength() int64 {
 	return r.httpRequest.ContentLength
 }
 
 // RemoteAddress allows to record the network address that
 // sent the request, usually for logging.
-func (r *RequestV5) RemoteAddress() string {
+func (r *Request) RemoteAddress() string {
 	return r.httpRequest.RemoteAddr
 }
 
 // Cookies returns the HTTP cookies sent with the request.
-func (r *RequestV5) Cookies() []*http.Cookie {
+func (r *Request) Cookies() []*http.Cookie {
 	if r.cookies == nil {
 		r.cookies = r.httpRequest.Cookies()
 	}
@@ -129,25 +129,25 @@ func (r *RequestV5) Cookies() []*http.Cookie {
 }
 
 // Referrer returns the referring URL, if sent in the request.
-func (r *RequestV5) Referrer() string {
+func (r *Request) Referrer() string {
 	return r.httpRequest.Referer()
 }
 
 // UserAgent returns the client's User-Agent, if sent in the request.
-func (r *RequestV5) UserAgent() string {
+func (r *Request) UserAgent() string {
 	return r.httpRequest.UserAgent()
 }
 
 // BasicAuth returns the username and password provided in the request's
 // Authorization header, if the request uses HTTP Basic Authentication.
-func (r *RequestV5) BasicAuth() (username, password string, ok bool) {
+func (r *Request) BasicAuth() (username, password string, ok bool) {
 	return r.httpRequest.BasicAuth()
 }
 
 // BearerToken extract the auth token from the "Authorization" header.
 // Only takes tokens of type "Bearer".
 // Returns empty string if no token found or the header is invalid.
-func (r *RequestV5) BearerToken() (string, bool) {
+func (r *Request) BearerToken() (string, bool) {
 	const schema = "Bearer "
 	header := r.Header().Get("Authorization")
 	if !strings.HasPrefix(header, schema) {
@@ -159,6 +159,6 @@ func (r *RequestV5) BearerToken() (string, bool) {
 // Body the request body.
 // Always non-nil, but will return EOF immediately when no body is present.
 // The server will close the request body so handlers don't need to.
-func (r *RequestV5) Body() io.ReadCloser {
+func (r *Request) Body() io.ReadCloser {
 	return r.httpRequest.Body
 }

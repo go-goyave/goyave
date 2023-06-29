@@ -19,12 +19,12 @@ import (
 
 func TestMiddlewareHolder(t *testing.T) {
 
-	m1 := &recoveryMiddlewareV5{}
-	m2 := &languageMiddlewareV5{}
-	holder := middlewareHolderV5{
-		middleware: []MiddlewareV5{m1, m2},
+	m1 := &recoveryMiddleware{}
+	m2 := &languageMiddleware{}
+	holder := middlewareHolder{
+		middleware: []Middleware{m1, m2},
 	}
-	expected := []MiddlewareV5{m1, m2}
+	expected := []Middleware{m1, m2}
 
 	assert.Equal(t, expected, holder.GetMiddleware())
 }
@@ -32,44 +32,44 @@ func TestMiddlewareHolder(t *testing.T) {
 func TestHasMiddleware(t *testing.T) {
 
 	t.Run("findMiddleware", func(t *testing.T) {
-		m := &recoveryMiddlewareV5{}
-		holder := []MiddlewareV5{m}
+		m := &recoveryMiddleware{}
+		holder := []Middleware{m}
 
-		assert.Equal(t, m, findMiddleware[*recoveryMiddlewareV5](holder))
-		assert.Nil(t, findMiddleware[*languageMiddlewareV5](holder))
+		assert.Equal(t, m, findMiddleware[*recoveryMiddleware](holder))
+		assert.Nil(t, findMiddleware[*languageMiddleware](holder))
 	})
 
 	t.Run("routeHasMiddleware", func(t *testing.T) {
-		route := &RouteV5{
-			parent: &RouterV5{
-				middlewareHolderV5: middlewareHolderV5{
-					middleware: []MiddlewareV5{&languageMiddlewareV5{}},
+		route := &Route{
+			parent: &Router{
+				middlewareHolder: middlewareHolder{
+					middleware: []Middleware{&languageMiddleware{}},
 				},
 			},
-			middlewareHolderV5: middlewareHolderV5{
-				middleware: []MiddlewareV5{&recoveryMiddlewareV5{}},
+			middlewareHolder: middlewareHolder{
+				middleware: []Middleware{&recoveryMiddleware{}},
 			},
 		}
 
-		assert.True(t, routeHasMiddleware[*recoveryMiddlewareV5](route))
-		assert.False(t, routeHasMiddleware[*languageMiddlewareV5](route))
+		assert.True(t, routeHasMiddleware[*recoveryMiddleware](route))
+		assert.False(t, routeHasMiddleware[*languageMiddleware](route))
 	})
 
 	t.Run("routerHasMiddleware", func(t *testing.T) {
-		router := &RouterV5{
-			parent: &RouterV5{
-				middlewareHolderV5: middlewareHolderV5{
-					middleware: []MiddlewareV5{&languageMiddlewareV5{}},
+		router := &Router{
+			parent: &Router{
+				middlewareHolder: middlewareHolder{
+					middleware: []Middleware{&languageMiddleware{}},
 				},
 			},
-			middlewareHolderV5: middlewareHolderV5{
-				middleware: []MiddlewareV5{&recoveryMiddlewareV5{}},
+			middlewareHolder: middlewareHolder{
+				middleware: []Middleware{&recoveryMiddleware{}},
 			},
 		}
 
-		assert.True(t, routerHasMiddleware[*recoveryMiddlewareV5](router))
-		assert.True(t, routerHasMiddleware[*languageMiddlewareV5](router))
-		assert.False(t, routerHasMiddleware[*corsMiddlewareV5](router))
+		assert.True(t, routerHasMiddleware[*recoveryMiddleware](router))
+		assert.True(t, routerHasMiddleware[*languageMiddleware](router))
+		assert.False(t, routerHasMiddleware[*corsMiddleware](router))
 	})
 }
 
@@ -83,11 +83,11 @@ func TestRecoveryMiddleware(t *testing.T) {
 		}
 		logBuffer := &bytes.Buffer{}
 		server.ErrLogger = log.New(logBuffer, "", 0)
-		middleware := &recoveryMiddlewareV5{}
+		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
 		panicErr := fmt.Errorf("test error")
-		handler := middleware.Handle(func(_ *ResponseV5, _ *RequestV5) {
+		handler := middleware.Handle(func(_ *Response, _ *Request) {
 			panic(panicErr)
 		})
 
@@ -109,10 +109,10 @@ func TestRecoveryMiddleware(t *testing.T) {
 		}
 		logBuffer := &bytes.Buffer{}
 		server.ErrLogger = log.New(logBuffer, "", 0)
-		middleware := &recoveryMiddlewareV5{}
+		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
-		handler := middleware.Handle(func(_ *ResponseV5, _ *RequestV5) {})
+		handler := middleware.Handle(func(_ *Response, _ *Request) {})
 
 		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
 		response := NewResponse(server, request, httptest.NewRecorder())
@@ -132,10 +132,10 @@ func TestRecoveryMiddleware(t *testing.T) {
 		}
 		logBuffer := &bytes.Buffer{}
 		server.ErrLogger = log.New(logBuffer, "", 0)
-		middleware := &recoveryMiddlewareV5{}
+		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
-		handler := middleware.Handle(func(_ *ResponseV5, _ *RequestV5) {
+		handler := middleware.Handle(func(_ *Response, _ *Request) {
 			panic(nil)
 		})
 
@@ -157,7 +157,7 @@ func TestLanguageMiddleware(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	middleware := &languageMiddlewareV5{}
+	middleware := &languageMiddleware{}
 	middleware.Init(server)
 
 	cases := []struct {
@@ -175,7 +175,7 @@ func TestLanguageMiddleware(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			executed := false
-			handler := middleware.Handle(func(resp *ResponseV5, req *RequestV5) {
+			handler := middleware.Handle(func(resp *Response, req *Request) {
 				assert.Equal(t, c.expected, req.Lang.Name())
 				executed = true
 			})
@@ -208,9 +208,9 @@ func (v *testValidator) Name() string {
 func TestValidateMiddleware(t *testing.T) {
 
 	cases := []struct {
-		next              func(*ResponseV5, *RequestV5)
-		queryRules        func(*RequestV5) validation.RuleSet
-		bodyRules         func(*RequestV5) validation.RuleSet
+		next              func(*Response, *Request)
+		queryRules        func(*Request) validation.RuleSet
+		bodyRules         func(*Request) validation.RuleSet
 		headers           map[string]string
 		query             map[string]any
 		data              any
@@ -224,20 +224,20 @@ func TestValidateMiddleware(t *testing.T) {
 	}{
 		{
 			desc: "query_ok",
-			queryRules: func(_ *RequestV5) validation.RuleSet {
+			queryRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
 			query:        map[string]any{"param": "6"},
 			expectBody:   "OK",
 			expectPass:   true,
 			expectStatus: http.StatusOK,
-			next: func(_ *ResponseV5, r *RequestV5) {
+			next: func(_ *Response, r *Request) {
 				assert.Equal(t, map[string]any{"param": 6}, r.Query)
 			},
 		},
 		{
 			desc: "query_nok",
-			queryRules: func(_ *RequestV5) validation.RuleSet {
+			queryRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Min(5)}}}
 			},
 			query:        map[string]any{"param": "v"},
@@ -249,7 +249,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_error",
-			queryRules: func(_ *RequestV5) validation.RuleSet {
+			queryRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 1"), fmt.Errorf("test error 2"))
@@ -265,7 +265,7 @@ func TestValidateMiddleware(t *testing.T) {
 		{
 			desc:  "query_validation_options",
 			hasDB: true,
-			queryRules: func(request *RequestV5) validation.RuleSet {
+			queryRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest])
@@ -287,33 +287,33 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_convert_single_value_arrays",
-			queryRules: func(request *RequestV5) validation.RuleSet {
+			queryRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			query:        map[string]any{"param": "v"},
 			expectPass:   true,
 			expectStatus: http.StatusOK,
 			expectBody:   "OK",
-			next: func(_ *ResponseV5, r *RequestV5) {
+			next: func(_ *Response, r *Request) {
 				assert.Equal(t, map[string]any{"param": []string{"v"}}, r.Query)
 			},
 		},
 		{
 			desc: "body_ok",
-			bodyRules: func(_ *RequestV5) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
 			data:         map[string]any{"param": "6"},
 			expectBody:   "OK",
 			expectPass:   true,
 			expectStatus: http.StatusOK,
-			next: func(_ *ResponseV5, r *RequestV5) {
+			next: func(_ *Response, r *Request) {
 				assert.Equal(t, map[string]any{"param": 6}, r.Data)
 			},
 		},
 		{
 			desc: "body_nok",
-			bodyRules: func(_ *RequestV5) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Min(5)}}}
 			},
 			data:         map[string]any{"param": "v"},
@@ -325,7 +325,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_error",
-			bodyRules: func(_ *RequestV5) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 1"), fmt.Errorf("test error 2"))
@@ -341,7 +341,7 @@ func TestValidateMiddleware(t *testing.T) {
 		{
 			desc:  "body_validation_options",
 			hasDB: true,
-			bodyRules: func(request *RequestV5) validation.RuleSet {
+			bodyRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest])
@@ -363,20 +363,20 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_convert_single_value_arrays",
-			bodyRules: func(request *RequestV5) validation.RuleSet {
+			bodyRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			data:         map[string]any{"param": "v"},
 			expectPass:   true,
 			expectStatus: http.StatusOK,
 			expectBody:   "OK",
-			next: func(_ *ResponseV5, r *RequestV5) {
+			next: func(_ *Response, r *Request) {
 				assert.Equal(t, map[string]any{"param": []string{"v"}}, r.Data)
 			},
 		},
 		{
 			desc: "body_dont_convert_single_value_arrays",
-			bodyRules: func(request *RequestV5) validation.RuleSet {
+			bodyRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			headers:      map[string]string{"Content-Type": "application/json; charset=utf-8"},
@@ -389,10 +389,10 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_and_body_ok",
-			queryRules: func(_ *RequestV5) validation.RuleSet {
+			queryRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
-			bodyRules: func(_ *RequestV5) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
 			query:        map[string]any{"param": "6"},
@@ -400,14 +400,14 @@ func TestValidateMiddleware(t *testing.T) {
 			expectBody:   "OK",
 			expectPass:   true,
 			expectStatus: http.StatusOK,
-			next: func(_ *ResponseV5, r *RequestV5) {
+			next: func(_ *Response, r *Request) {
 				assert.Equal(t, map[string]any{"param": 7}, r.Data)
 				assert.Equal(t, map[string]any{"param": 6}, r.Query)
 			},
 		},
 		{
 			desc: "query_and_body_error",
-			queryRules: func(_ *RequestV5) validation.RuleSet {
+			queryRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 1"))
@@ -415,7 +415,7 @@ func TestValidateMiddleware(t *testing.T) {
 					},
 				}}}}
 			},
-			bodyRules: func(_ *RequestV5) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 2"))
@@ -450,7 +450,7 @@ func TestValidateMiddleware(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			server.ErrLogger = log.New(buffer, "", 0)
 
-			m := &validateRequestMiddlewareV5{
+			m := &validateRequestMiddleware{
 				QueryRules: c.queryRules,
 				BodyRules:  c.bodyRules,
 			}
@@ -469,7 +469,7 @@ func TestValidateMiddleware(t *testing.T) {
 			response := NewResponse(server, request, recorder)
 
 			pass := false
-			m.Handle(func(r *ResponseV5, req *RequestV5) {
+			m.Handle(func(r *Response, req *Request) {
 				pass = true
 				if c.next != nil {
 					c.next(r, req)
@@ -506,7 +506,7 @@ func TestValidateMiddleware(t *testing.T) {
 func TestCORSMiddleware(t *testing.T) {
 	cases := []struct {
 		options            func() *cors.Options
-		req                func() *RequestV5
+		req                func() *Request
 		expectedHeaders    http.Header
 		desc               string
 		respBody           string
@@ -517,7 +517,7 @@ func TestCORSMiddleware(t *testing.T) {
 		{
 			desc:    "no_options",
 			options: func() *cors.Options { return nil },
-			req: func() *RequestV5 {
+			req: func() *Request {
 				return NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
 			},
 			respStatus:         http.StatusOK,
@@ -529,7 +529,7 @@ func TestCORSMiddleware(t *testing.T) {
 		{
 			desc:    "preflight",
 			options: cors.Default,
-			req: func() *RequestV5 {
+			req: func() *Request {
 				req := NewRequest(httptest.NewRequest(http.MethodOptions, "/test", nil))
 				req.Header().Set("Origin", "https://google.com")
 				req.Header().Set("Access-Control-Request-Method", http.MethodGet)
@@ -553,7 +553,7 @@ func TestCORSMiddleware(t *testing.T) {
 				o.OptionsPassthrough = true
 				return o
 			},
-			req: func() *RequestV5 {
+			req: func() *Request {
 				req := NewRequest(httptest.NewRequest(http.MethodOptions, "/test", nil))
 				req.Header().Set("Access-Control-Request-Method", http.MethodGet)
 				return req
@@ -572,7 +572,7 @@ func TestCORSMiddleware(t *testing.T) {
 		{
 			desc:    "preflight_without_Access-Control-Request-Method",
 			options: cors.Default,
-			req: func() *RequestV5 {
+			req: func() *Request {
 				return NewRequest(httptest.NewRequest(http.MethodOptions, "/test", nil))
 			},
 			respStatus:         http.StatusOK,
@@ -584,7 +584,7 @@ func TestCORSMiddleware(t *testing.T) {
 		{
 			desc:    "actual_request",
 			options: cors.Default,
-			req: func() *RequestV5 {
+			req: func() *Request {
 				return NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
 			},
 			respStatus:         http.StatusOK,
@@ -600,8 +600,8 @@ func TestCORSMiddleware(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
-			middleware := &corsMiddlewareV5{}
-			handler := middleware.Handle(func(resp *ResponseV5, req *RequestV5) {
+			middleware := &corsMiddleware{}
+			handler := middleware.Handle(func(resp *Response, req *Request) {
 				if c.respBody != "" {
 					resp.String(c.respStatus, c.respBody)
 				} else {
@@ -610,7 +610,7 @@ func TestCORSMiddleware(t *testing.T) {
 			})
 
 			request := c.req()
-			request.Route = &RouteV5{
+			request.Route = &Route{
 				Meta: map[string]any{
 					MetaCORS: c.options(),
 				},
@@ -619,7 +619,7 @@ func TestCORSMiddleware(t *testing.T) {
 			response := NewResponse(nil, request, recorder)
 
 			handler(response, request)
-			assert.NoError(t, (&RouterV5{}).finalize(response, request))
+			assert.NoError(t, (&Router{}).finalize(response, request))
 			resp := recorder.Result()
 			assert.Equal(t, c.expectedStatusCode, resp.StatusCode)
 			assert.Equal(t, c.expectedHeaders, resp.Header)

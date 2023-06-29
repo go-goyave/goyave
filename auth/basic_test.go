@@ -18,7 +18,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
@@ -34,7 +34,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})
@@ -53,7 +53,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
@@ -69,7 +69,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})
@@ -87,7 +87,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			response.Status(http.StatusOK)
 		})
@@ -140,7 +140,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "secret")
-		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, "johndoe", request.User.(*BasicUser).Name)
 			response.Status(http.StatusOK)
 		})
@@ -155,7 +155,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "wrong_password")
-		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})
@@ -174,7 +174,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		cfg.Set("auth.basic.password", "secret")
 		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
-		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})

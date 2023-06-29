@@ -43,7 +43,7 @@ func TestLoad(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		// Should use automatically generated path (based on GOYAVE_ENV)
 		t.Setenv("GOYAVE_ENV", "test")
-		cfg, err := LoadV5()
+		cfg, err := Load()
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -70,7 +70,7 @@ func TestLoad(t *testing.T) {
 
 	t.Run("Load Invalid", func(t *testing.T) {
 		t.Setenv("GOYAVE_ENV", "test_invalid")
-		cfg, err := LoadV5()
+		cfg, err := Load()
 		assert.Nil(t, cfg)
 		assert.Error(t, err)
 	})
@@ -82,13 +82,13 @@ func TestLoad(t *testing.T) {
 
 	t.Run("Load Non Existing", func(t *testing.T) {
 		t.Setenv("GOYAVE_ENV", "nonexisting")
-		cfg, err := LoadV5()
+		cfg, err := Load()
 		assert.Nil(t, cfg)
 		assert.Error(t, err)
 	})
 
 	t.Run("LoadFrom", func(t *testing.T) {
-		cfg, err := LoadFromV5("../resources/custom_config.json")
+		cfg, err := LoadFrom("../resources/custom_config.json")
 		if !assert.NoError(t, err) {
 			return
 		}

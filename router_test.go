@@ -16,7 +16,7 @@ type testStatusHandler struct {
 	Component
 }
 
-func (*testStatusHandler) Handle(response *ResponseV5, _ *RequestV5) {
+func (*testStatusHandler) Handle(response *Response, _ *Request) {
 	message := map[string]string{
 		"status": http.StatusText(response.GetStatus()),
 	}
@@ -30,8 +30,8 @@ type testMiddleware struct {
 	key string
 }
 
-func (m *testMiddleware) Handle(next HandlerV5) HandlerV5 {
-	return func(r *ResponseV5, req *RequestV5) {
+func (m *testMiddleware) Handle(next Handler) Handler {
+	return func(r *Response, req *Request) {
 		var slice []string
 		if s, ok := req.Extra[extraMiddlewareOrder]; !ok {
 			slice = []string{}
@@ -44,12 +44,12 @@ func (m *testMiddleware) Handle(next HandlerV5) HandlerV5 {
 	}
 }
 
-func prepareRouterTest() *RouterV5 {
+func prepareRouterTest() *Router {
 	server, err := NewWithConfig(config.LoadDefault())
 	if err != nil {
 		panic(err)
 	}
-	return NewRouterV5(server)
+	return NewRouter(server)
 }
 
 type testController struct {
@@ -57,7 +57,7 @@ type testController struct {
 	registered bool
 }
 
-func (c *testController) RegisterRoutes(_ *RouterV5) {
+func (c *testController) RegisterRoutes(_ *Router) {
 	c.registered = true
 }
 
@@ -75,8 +75,8 @@ func TestRouter(t *testing.T) {
 		assert.NotNil(t, router.namedRoutes)
 		assert.NotNil(t, router.Meta)
 
-		recoveryMiddleware := findMiddleware[*recoveryMiddlewareV5](router.globalMiddleware.middleware)
-		langMiddleware := findMiddleware[*languageMiddlewareV5](router.globalMiddleware.middleware)
+		recoveryMiddleware := findMiddleware[*recoveryMiddleware](router.globalMiddleware.middleware)
+		langMiddleware := findMiddleware[*languageMiddleware](router.globalMiddleware.middleware)
 		if assert.NotNil(t, recoveryMiddleware) {
 			assert.Equal(t, router.server, recoveryMiddleware.server)
 		}
@@ -99,11 +99,11 @@ func TestRouter(t *testing.T) {
 	t.Run("Accessors", func(t *testing.T) {
 		router := prepareRouterTest()
 		subrouter := router.Subrouter("/subrouter")
-		route := subrouter.Get("/route", func(_ *ResponseV5, _ *RequestV5) {}).Name("route-name")
+		route := subrouter.Get("/route", func(_ *Response, _ *Request) {}).Name("route-name")
 
 		assert.Equal(t, router, subrouter.GetParent())
-		assert.Equal(t, []*RouteV5{route}, subrouter.GetRoutes())
-		assert.Equal(t, []*RouterV5{subrouter}, router.GetSubrouters())
+		assert.Equal(t, []*Route{route}, subrouter.GetRoutes())
+		assert.Equal(t, []*Router{subrouter}, router.GetSubrouters())
 		assert.Equal(t, route, router.GetRoute("route-name"))
 		assert.Equal(t, route, subrouter.GetRoute("route-name"))
 	})
@@ -138,7 +138,7 @@ func TestRouter(t *testing.T) {
 
 	t.Run("GlobalMiddleware", func(t *testing.T) {
 		router := prepareRouterTest()
-		router.GlobalMiddleware(&corsMiddlewareV5{}, &validateRequestMiddlewareV5{})
+		router.GlobalMiddleware(&corsMiddleware{}, &validateRequestMiddleware{})
 		assert.Len(t, router.globalMiddleware.middleware, 4)
 		for _, m := range router.globalMiddleware.middleware {
 			assert.NotNil(t, m.Server())
@@ -147,7 +147,7 @@ func TestRouter(t *testing.T) {
 
 	t.Run("Middleware", func(t *testing.T) {
 		router := prepareRouterTest()
-		router.Middleware(&corsMiddlewareV5{}, &validateRequestMiddlewareV5{})
+		router.Middleware(&corsMiddleware{}, &validateRequestMiddleware{})
 		assert.Len(t, router.middleware, 2)
 		for _, m := range router.middleware {
 			assert.NotNil(t, m.Server())
@@ -161,17 +161,17 @@ func TestRouter(t *testing.T) {
 		router.CORS(opts)
 
 		assert.Equal(t, opts, router.Meta[MetaCORS])
-		assert.True(t, routerHasMiddleware[*corsMiddlewareV5](router))
+		assert.True(t, routerHasMiddleware[*corsMiddleware](router))
 
 		// OPTIONS method is added to routes if the router has CORS
-		route := router.Get("/route", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Get("/route", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodGet, http.MethodOptions, http.MethodHead}, route.methods)
 
 		// Disable
 		router.CORS(nil)
 		assert.Contains(t, router.Meta, MetaCORS)
 		assert.Nil(t, router.Meta[MetaCORS])
-		route = router.Get("/route-2", func(_ *ResponseV5, _ *RequestV5) {})
+		route = router.Get("/route-2", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
 	})
 
@@ -202,7 +202,7 @@ func TestRouter(t *testing.T) {
 		assert.Equal(t, router.regexCache, subrouter.regexCache)
 		assert.NotNil(t, subrouter.Meta)
 		assert.Empty(t, subrouter.Meta)
-		assert.Equal(t, []*RouterV5{subrouter}, router.subrouters)
+		assert.Equal(t, []*Router{subrouter}, router.subrouters)
 		assert.NotNil(t, subrouter.regex)
 
 		slash := router.Subrouter("/")
@@ -214,7 +214,7 @@ func TestRouter(t *testing.T) {
 	t.Run("Route", func(t *testing.T) {
 		router := prepareRouterTest()
 
-		route := router.Route([]string{http.MethodPost, http.MethodPut}, "/uri/{param}", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Route([]string{http.MethodPost, http.MethodPut}, "/uri/{param}", func(_ *Response, _ *Request) {})
 		assert.Empty(t, route.name)
 		assert.Equal(t, "/uri/{param}", route.uri)
 		assert.Equal(t, []string{http.MethodPost, http.MethodPut}, route.methods)
@@ -224,53 +224,53 @@ func TestRouter(t *testing.T) {
 		assert.NotNil(t, route.regex)
 
 		t.Run("HEAD_added_on_GET_routes", func(t *testing.T) {
-			route := router.Route([]string{http.MethodGet}, "/uri", func(_ *ResponseV5, _ *RequestV5) {})
+			route := router.Route([]string{http.MethodGet}, "/uri", func(_ *Response, _ *Request) {})
 			assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
 		})
 
 		t.Run("trim_slash", func(t *testing.T) {
 			// Not trimmed because no parent
-			route := router.Route([]string{http.MethodGet}, "/", func(_ *ResponseV5, _ *RequestV5) {})
+			route := router.Route([]string{http.MethodGet}, "/", func(_ *Response, _ *Request) {})
 			assert.Equal(t, "/", route.uri)
 
-			route = router.Subrouter("/subrouter").Route([]string{http.MethodGet}, "/", func(_ *ResponseV5, _ *RequestV5) {})
+			route = router.Subrouter("/subrouter").Route([]string{http.MethodGet}, "/", func(_ *Response, _ *Request) {})
 			assert.Equal(t, "", route.uri)
 		})
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Get("/uri", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Get("/uri", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
 	})
 
 	t.Run("Post", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Post("/uri", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Post("/uri", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodPost}, route.methods)
 	})
 
 	t.Run("Put", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Put("/uri", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Put("/uri", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodPut}, route.methods)
 	})
 
 	t.Run("Patch", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Patch("/uri", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Patch("/uri", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodPatch}, route.methods)
 	})
 
 	t.Run("Delete", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Delete("/uri", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Delete("/uri", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodDelete}, route.methods)
 	})
 
 	t.Run("Options", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Options("/uri", func(_ *ResponseV5, _ *RequestV5) {})
+		route := router.Options("/uri", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodOptions}, route.methods)
 	})
 
@@ -289,26 +289,26 @@ func TestRouter(t *testing.T) {
 		router.server.config.Set("server.proxy.port", 80)
 		router.server.config.Set("server.proxy.base", "/base")
 
-		var route *RouteV5
-		route = router.Get("/route/{param}", func(r *ResponseV5, req *RequestV5) {
+		var route *Route
+		route = router.Get("/route/{param}", func(r *Response, req *Request) {
 			assert.Equal(t, map[string]string{"param": "value"}, req.RouteParams)
 			assert.Equal(t, route, req.Route)
 			assert.False(t, req.Now.IsZero())
 			r.String(http.StatusOK, "hello world")
 		})
-		router.Put("/empty", func(_ *ResponseV5, _ *RequestV5) {})
-		router.Get("/forbidden", func(r *ResponseV5, _ *RequestV5) {
+		router.Put("/empty", func(_ *Response, _ *Request) {})
+		router.Get("/forbidden", func(r *Response, _ *Request) {
 			r.Status(http.StatusForbidden)
 		})
 
-		router.Subrouter("/subrouter/{param}").Get("/subroute/{name}", func(r *ResponseV5, req *RequestV5) {
+		router.Subrouter("/subrouter/{param}").Get("/subroute/{name}", func(r *Response, req *Request) {
 			assert.Equal(t, map[string]string{"param": "value", "name": "johndoe"}, req.RouteParams)
 			r.Status(http.StatusOK)
 		})
 
 		router.Middleware(&testMiddleware{key: "router"})
 		router.GlobalMiddleware(&testMiddleware{key: "global"})
-		router.Get("/middleware", func(r *ResponseV5, req *RequestV5) {
+		router.Get("/middleware", func(r *Response, req *Request) {
 			assert.Equal(t, []string{"global", "router", "route"}, req.Extra[extraMiddlewareOrder])
 			r.Status(http.StatusOK)
 		}).Middleware(&testMiddleware{key: "route"})
@@ -460,17 +460,17 @@ func TestRouter(t *testing.T) {
 		for _, c := range cases {
 			c := c
 			t.Run(fmt.Sprintf("%s_%s", c.method, c.path), func(t *testing.T) {
-				match := routeMatchV5{currentPath: c.path}
+				match := routeMatch{currentPath: c.path}
 				ok := router.match(c.method, &match)
 				switch c.expectedRoute {
 				case "":
 					assert.False(t, ok)
 				case "not-found":
 					assert.False(t, ok)
-					assert.Equal(t, notFoundRouteV5, match.route)
+					assert.Equal(t, notFoundRoute, match.route)
 				case "method-not-allowed":
 					assert.True(t, ok)
-					assert.Equal(t, methodNotAllowedRouteV5, match.route)
+					assert.Equal(t, methodNotAllowedRoute, match.route)
 				default:
 					assert.True(t, ok)
 					assert.Equal(t, c.expectedRoute, match.route.name)

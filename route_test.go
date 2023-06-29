@@ -11,15 +11,15 @@ import (
 	"goyave.dev/goyave/v4/validation"
 )
 
-func prepareRouteTest() *RouterV5 {
+func prepareRouteTest() *Router {
 	server, err := NewWithConfig(config.LoadDefault())
 	if err != nil {
 		panic(err)
 	}
-	return NewRouterV5(server)
+	return NewRouter(server)
 }
 
-func routeTestValidationRules(_ *RequestV5) validation.RuleSet {
+func routeTestValidationRules(_ *Request) validation.RuleSet {
 	return validation.RuleSet{
 		{Path: "field", Rules: validation.List{
 			validation.Required(),
@@ -31,14 +31,14 @@ func TestRoute(t *testing.T) {
 
 	t.Run("Name", func(t *testing.T) {
 		router := prepareRouteTest()
-		route := &RouteV5{parent: router}
+		route := &Route{parent: router}
 		route.Name("route-name")
 		assert.Equal(t, "route-name", route.name)
 		assert.Equal(t, router.namedRoutes["route-name"], route)
 
 		t.Run("already_set", func(t *testing.T) {
 			router := prepareRouteTest()
-			route := &RouteV5{parent: router, name: "route-name"}
+			route := &Route{parent: router, name: "route-name"}
 			assert.Panics(t, func() {
 				route.Name("route-rename")
 			})
@@ -46,10 +46,10 @@ func TestRoute(t *testing.T) {
 
 		t.Run("already_exists", func(t *testing.T) {
 			router := prepareRouteTest()
-			route := &RouteV5{parent: router}
+			route := &Route{parent: router}
 			route.Name("route-name")
 			assert.Panics(t, func() {
-				anotherRoute := &RouteV5{parent: router}
+				anotherRoute := &Route{parent: router}
 				anotherRoute.Name("route-name")
 			})
 		})
@@ -58,7 +58,7 @@ func TestRoute(t *testing.T) {
 	t.Run("Meta", func(t *testing.T) {
 		router := prepareRouteTest()
 		router.Meta["parent-meta"] = "parent-value"
-		route := &RouteV5{parent: router, Meta: make(map[string]any)}
+		route := &Route{parent: router, Meta: make(map[string]any)}
 		route.SetMeta("meta-key", "meta-value")
 		assert.Equal(t, map[string]any{"meta-key": "meta-value"}, route.Meta)
 
@@ -80,16 +80,16 @@ func TestRoute(t *testing.T) {
 
 	t.Run("ValidateBody", func(t *testing.T) {
 		router := prepareRouteTest()
-		route := &RouteV5{
+		route := &Route{
 			parent: router,
-			middlewareHolderV5: middlewareHolderV5{
-				middleware: []MiddlewareV5{},
+			middlewareHolder: middlewareHolder{
+				middleware: []Middleware{},
 			},
 		}
 
 		route.ValidateBody(routeTestValidationRules)
 
-		validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](route.middleware)
+		validationMiddleware := findMiddleware[*validateRequestMiddleware](route.middleware)
 		if !assert.NotNil(t, validationMiddleware) {
 			return
 		}
@@ -104,16 +104,16 @@ func TestRoute(t *testing.T) {
 
 	t.Run("ValidateQuery", func(t *testing.T) {
 		router := prepareRouteTest()
-		route := &RouteV5{
+		route := &Route{
 			parent: router,
-			middlewareHolderV5: middlewareHolderV5{
-				middleware: []MiddlewareV5{},
+			middlewareHolder: middlewareHolder{
+				middleware: []Middleware{},
 			},
 		}
 
 		route.ValidateQuery(routeTestValidationRules)
 
-		validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](route.middleware)
+		validationMiddleware := findMiddleware[*validateRequestMiddleware](route.middleware)
 		if !assert.NotNil(t, validationMiddleware) {
 			return
 		}
@@ -128,12 +128,12 @@ func TestRoute(t *testing.T) {
 
 	t.Run("CORS", func(t *testing.T) {
 		router := prepareRouteTest()
-		route := &RouteV5{
+		route := &Route{
 			parent:  router,
 			methods: []string{http.MethodGet},
 			Meta:    make(map[string]any),
-			middlewareHolderV5: middlewareHolderV5{
-				middleware: []MiddlewareV5{},
+			middlewareHolder: middlewareHolder{
+				middleware: []Middleware{},
 			},
 		}
 
@@ -141,8 +141,8 @@ func TestRoute(t *testing.T) {
 		route.CORS(opts)
 
 		assert.Equal(t, opts, route.Meta[MetaCORS])
-		corsMiddleware := findMiddleware[*corsMiddlewareV5](route.middleware)
-		if !assert.NotNil(t, corsMiddleware) {
+		middleware := findMiddleware[*corsMiddleware](route.middleware)
+		if !assert.NotNil(t, middleware) {
 			return
 		}
 		assert.Equal(t, []string{http.MethodGet, http.MethodOptions}, route.methods)
@@ -156,30 +156,30 @@ func TestRoute(t *testing.T) {
 		t.Run("don't_add_middleware_if_parent_has_it_already", func(t *testing.T) {
 			router := prepareRouteTest()
 			router.CORS(cors.Default())
-			route := &RouteV5{
+			route := &Route{
 				parent:  router,
 				methods: []string{http.MethodGet},
 				Meta:    make(map[string]any),
-				middlewareHolderV5: middlewareHolderV5{
-					middleware: []MiddlewareV5{},
+				middlewareHolder: middlewareHolder{
+					middleware: []Middleware{},
 				},
 			}
 			route.CORS(opts)
-			corsMiddleware := findMiddleware[*corsMiddlewareV5](route.middleware)
-			assert.Nil(t, corsMiddleware)
+			middleware := findMiddleware[*corsMiddleware](route.middleware)
+			assert.Nil(t, middleware)
 		})
 	})
 
 	t.Run("Middleware", func(t *testing.T) {
 		router := prepareRouteTest()
-		route := &RouteV5{
+		route := &Route{
 			parent: router,
-			middlewareHolderV5: middlewareHolderV5{
-				middleware: []MiddlewareV5{},
+			middlewareHolder: middlewareHolder{
+				middleware: []Middleware{},
 			},
 		}
 
-		route.Middleware(&recoveryMiddlewareV5{}, &languageMiddlewareV5{})
+		route.Middleware(&recoveryMiddleware{}, &languageMiddleware{})
 		assert.Len(t, route.middleware, 2)
 		for _, m := range route.middleware {
 			assert.NotNil(t, m.Server())
@@ -240,7 +240,7 @@ func TestRoute(t *testing.T) {
 
 	t.Run("Accessors", func(t *testing.T) {
 		router := prepareRouteTest()
-		route := router.Route([]string{http.MethodGet}, "/{name}/accessories", func(rv1 *ResponseV5, rv2 *RequestV5) {}).Name("route-name")
+		route := router.Route([]string{http.MethodGet}, "/{name}/accessories", func(_ *Response, _ *Request) {}).Name("route-name")
 		assert.Equal(t, "route-name", route.GetName())
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.GetMethods())
 		assert.NotNil(t, route.GetHandler())
@@ -251,13 +251,13 @@ func TestRoute(t *testing.T) {
 	t.Run("Match", func(t *testing.T) {
 
 		router := prepareRouteTest()
-		route1 := router.Route([]string{http.MethodGet, http.MethodPost}, "/product/{id:[0-9]+}", func(rv1 *ResponseV5, rv2 *RequestV5) {})
-		route2 := router.Route([]string{http.MethodGet}, "/product/{id:[0-9]+}/{name}", func(rv1 *ResponseV5, rv2 *RequestV5) {})
-		route3 := router.Route([]string{http.MethodGet}, "/categories/{category}/{sort:(?:asc|desc|new)}", func(rv1 *ResponseV5, rv2 *RequestV5) {})
-		route4 := router.Route([]string{http.MethodGet}, "/product", func(rv1 *ResponseV5, rv2 *RequestV5) {})
+		route1 := router.Route([]string{http.MethodGet, http.MethodPost}, "/product/{id:[0-9]+}", func(_ *Response, _ *Request) {})
+		route2 := router.Route([]string{http.MethodGet}, "/product/{id:[0-9]+}/{name}", func(_ *Response, _ *Request) {})
+		route3 := router.Route([]string{http.MethodGet}, "/categories/{category}/{sort:(?:asc|desc|new)}", func(_ *Response, _ *Request) {})
+		route4 := router.Route([]string{http.MethodGet}, "/product", func(_ *Response, _ *Request) {})
 
 		cases := []struct {
-			route              *RouteV5
+			route              *Route
 			expectedParameters map[string]string
 			expectedError      error
 			method             string
@@ -277,7 +277,7 @@ func TestRoute(t *testing.T) {
 		for _, c := range cases {
 			c := c
 			t.Run(fmt.Sprintf("%s_%s", c.method, c.uri), func(t *testing.T) {
-				match := routeMatchV5{currentPath: c.uri}
+				match := routeMatch{currentPath: c.uri}
 				assert.Equal(t, c.expectedResult, c.route.match(c.method, &match))
 				assert.Equal(t, c.expectedParameters, match.parameters)
 				assert.Equal(t, c.expectedError, match.err)
@@ -285,7 +285,7 @@ func TestRoute(t *testing.T) {
 		}
 
 		t.Run("err_not_overridden", func(t *testing.T) {
-			match := routeMatchV5{currentPath: "/product/33"}
+			match := routeMatch{currentPath: "/product/33"}
 			route1.match(http.MethodPut, &match)
 			assert.Equal(t, errMatchMethodNotAllowed, match.err)
 

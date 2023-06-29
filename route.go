@@ -14,40 +14,40 @@ import (
 // used to generate dynamic URLs/URIs. Routes can, just like routers,
 // hold Meta information that can be used by generic middleware to
 // alter their behavior depending on the route being served.
-type RouteV5 struct {
+type Route struct {
 	name    string
 	uri     string
 	methods []string
-	parent  *RouterV5
+	parent  *Router
 	Meta    map[string]any
-	handler HandlerV5
-	middlewareHolderV5
+	handler Handler
+	middlewareHolder
 	parameterizable
 }
 
-var _ routeMatcherV5 = (*RouteV5)(nil) // implements routeMatcher
+var _ routeMatcher = (*Route)(nil) // implements routeMatcher
 
 // RuleSetFunc function generating a new validation rule set.
 // This function is called for every validated request.
 // The returned value is expected to be fresh, not re-used across
 // multiple requests nor concurrently.
-type RuleSetFunc func(*RequestV5) validation.RuleSet
+type RuleSetFunc func(*Request) validation.RuleSet
 
 // newRoute create a new route without any settings except its handler.
 // This is used to generate a fake route for the Method Not Allowed and Not Found handlers.
 // This route has the core middleware enabled and can be used without a parent router.
 // Thus, custom status handlers can use language and body.
-func newRouteV5(handler HandlerV5) *RouteV5 {
-	return &RouteV5{
+func newRoute(handler Handler) *Route {
+	return &Route{
 		handler: handler,
 		Meta:    make(map[string]any),
-		middlewareHolderV5: middlewareHolderV5{
+		middlewareHolder: middlewareHolder{
 			middleware: nil,
 		},
 	}
 }
 
-func (r *RouteV5) match(method string, match *routeMatchV5) bool {
+func (r *Route) match(method string, match *routeMatch) bool {
 	if params := r.parameterizable.regex.FindStringSubmatch(match.currentPath); params != nil {
 		if r.checkMethod(method) {
 			if len(params) > 1 {
@@ -72,7 +72,7 @@ func (r *RouteV5) match(method string, match *routeMatchV5) bool {
 	return false
 }
 
-func (r *RouteV5) checkMethod(method string) bool {
+func (r *Route) checkMethod(method string) bool {
 	for _, m := range r.methods {
 		if m == method {
 			return true
@@ -81,14 +81,14 @@ func (r *RouteV5) checkMethod(method string) bool {
 	return false
 }
 
-func (r *RouteV5) makeParameters(match []string) map[string]string {
+func (r *Route) makeParameters(match []string) map[string]string {
 	return r.parameterizable.makeParameters(match, r.parameters)
 }
 
 // Name set the name of the route.
 // Panics if a route with the same name already exists.
 // Returns itself.
-func (r *RouteV5) Name(name string) *RouteV5 {
+func (r *Route) Name(name string) *Route {
 	if r.name != "" {
 		panic(fmt.Errorf("Route name is already set"))
 	}
@@ -105,14 +105,14 @@ func (r *RouteV5) Name(name string) *RouteV5 {
 // SetMeta attach a value to this route identified by the given key.
 //
 // This value can override a value inherited by the parent routers for this route only.
-func (r *RouteV5) SetMeta(key string, value any) *RouteV5 {
+func (r *Route) SetMeta(key string, value any) *Route {
 	r.Meta[key] = value
 	return r
 }
 
 // RemoveMeta detach the meta value identified by the given key from this route.
 // This doesn't remove meta using the same key from the parent routers.
-func (r *RouteV5) RemoveMeta(key string) *RouteV5 {
+func (r *Route) RemoveMeta(key string) *Route {
 	delete(r.Meta, key)
 	return r
 }
@@ -122,7 +122,7 @@ func (r *RouteV5) RemoveMeta(key string) *RouteV5 {
 //
 // Returns the value and `true` if found in the current route or one of the
 // parent routers, `nil` and `false` otherwise.
-func (r *RouteV5) LookupMeta(key string) (any, bool) {
+func (r *Route) LookupMeta(key string) (any, bool) {
 	val, ok := r.Meta[key]
 	if ok {
 		return val, ok
@@ -131,10 +131,10 @@ func (r *RouteV5) LookupMeta(key string) (any, bool) {
 }
 
 // ValidateBody adds (or replace) validation rules for the request body.
-func (r *RouteV5) ValidateBody(validationRules RuleSetFunc) *RouteV5 {
-	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
+func (r *Route) ValidateBody(validationRules RuleSetFunc) *Route {
+	validationMiddleware := findMiddleware[*validateRequestMiddleware](r.middleware)
 	if validationMiddleware == nil {
-		r.Middleware(&validateRequestMiddlewareV5{BodyRules: validationRules})
+		r.Middleware(&validateRequestMiddleware{BodyRules: validationRules})
 	} else {
 		validationMiddleware.BodyRules = validationRules
 	}
@@ -142,10 +142,10 @@ func (r *RouteV5) ValidateBody(validationRules RuleSetFunc) *RouteV5 {
 }
 
 // ValidateQuery adds (or replace) validation rules for the request query.
-func (r *RouteV5) ValidateQuery(validationRules RuleSetFunc) *RouteV5 {
-	validationMiddleware := findMiddleware[*validateRequestMiddlewareV5](r.middleware)
+func (r *Route) ValidateQuery(validationRules RuleSetFunc) *Route {
+	validationMiddleware := findMiddleware[*validateRequestMiddleware](r.middleware)
 	if validationMiddleware == nil {
-		r.Middleware(&validateRequestMiddlewareV5{QueryRules: validationRules})
+		r.Middleware(&validateRequestMiddleware{QueryRules: validationRules})
 	} else {
 		validationMiddleware.QueryRules = validationRules
 	}
@@ -158,7 +158,7 @@ func (r *RouteV5) ValidateQuery(validationRules RuleSetFunc) *RouteV5 {
 // If the options are not `nil`, the CORS middleware is automatically added.
 // To disable CORS, give `nil` options. The "OPTIONS" method will be removed
 // if it isn't the only method for this route.
-func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
+func (r *Route) CORS(options *cors.Options) *Route {
 	i := lo.IndexOf(r.methods, http.MethodOptions)
 	if options == nil {
 		r.Meta[MetaCORS] = nil
@@ -168,8 +168,8 @@ func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
 		return r
 	}
 	r.Meta[MetaCORS] = options
-	if !routeHasMiddleware[*corsMiddlewareV5](r) && !routerHasMiddleware[*corsMiddlewareV5](r.parent) {
-		r.Middleware(&corsMiddlewareV5{})
+	if !routeHasMiddleware[*corsMiddleware](r) && !routerHasMiddleware[*corsMiddleware](r.parent) {
+		r.Middleware(&corsMiddleware{})
 	}
 	if i == -1 {
 		r.methods = append(r.methods, http.MethodOptions)
@@ -180,7 +180,7 @@ func (r *RouteV5) CORS(options *cors.Options) *RouteV5 {
 // Middleware register middleware for this route only.
 //
 // Returns itself.
-func (r *RouteV5) Middleware(middleware ...MiddlewareV5) *RouteV5 {
+func (r *Route) Middleware(middleware ...Middleware) *Route {
 	r.middleware = append(r.middleware, middleware...)
 	for _, m := range middleware {
 		m.Init(r.parent.server)
@@ -191,14 +191,14 @@ func (r *RouteV5) Middleware(middleware ...MiddlewareV5) *RouteV5 {
 // BuildURL build a full URL pointing to this route.
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
-func (r *RouteV5) BuildURL(parameters ...string) string {
+func (r *Route) BuildURL(parameters ...string) string {
 	return r.parent.server.BaseURL() + r.BuildURI(parameters...)
 }
 
 // BuildProxyURL build a full URL pointing to this route using the proxy base URL.
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
-func (r *RouteV5) BuildProxyURL(parameters ...string) string {
+func (r *Route) BuildProxyURL(parameters ...string) string {
 	return r.parent.server.ProxyBaseURL() + r.BuildURI(parameters...)
 }
 
@@ -206,7 +206,7 @@ func (r *RouteV5) BuildProxyURL(parameters ...string) string {
 // string doesn't include the protocol and domain. (e.g. "/user/login")
 // Panics if the amount of parameters doesn't match the amount of
 // actual parameters for this route.
-func (r *RouteV5) BuildURI(parameters ...string) string {
+func (r *Route) BuildURI(parameters ...string) string {
 	fullURI, fullParameters := r.GetFullURIAndParameters()
 
 	if len(parameters) != len(fullParameters) {
@@ -234,7 +234,7 @@ func (r *RouteV5) BuildURI(parameters ...string) string {
 }
 
 // GetName get the name of this route.
-func (r *RouteV5) GetName() string {
+func (r *Route) GetName() string {
 	return r.name
 }
 
@@ -244,7 +244,7 @@ func (r *RouteV5) GetName() string {
 //
 // Note that this URI may contain route parameters in their définition format.
 // Use the request's URI if you want to see the URI as it was requested by the client.
-func (r *RouteV5) GetURI() string {
+func (r *Route) GetURI() string {
 	return r.uri
 }
 
@@ -252,7 +252,7 @@ func (r *RouteV5) GetURI() string {
 //
 // Note that this URI may contain route parameters in their définition format.
 // Use the request's URI if you want to see the URI as it was requested by the client.
-func (r *RouteV5) GetFullURI() string {
+func (r *Route) GetFullURI() string {
 	router := r.parent
 	segments := make([]string, 0, 3)
 	segments = append(segments, r.uri)
@@ -272,24 +272,24 @@ func (r *RouteV5) GetFullURI() string {
 }
 
 // GetMethods returns the methods the route matches against.
-func (r *RouteV5) GetMethods() []string {
+func (r *Route) GetMethods() []string {
 	cpy := make([]string, len(r.methods))
 	copy(cpy, r.methods)
 	return cpy
 }
 
 // GetHandler returns the Handler associated with this route.
-func (r *RouteV5) GetHandler() HandlerV5 {
+func (r *Route) GetHandler() Handler {
 	return r.handler
 }
 
 // GetParent returns the parent Router of this route.
-func (r *RouteV5) GetParent() *RouterV5 {
+func (r *Route) GetParent() *Router {
 	return r.parent
 }
 
 // GetFullURIAndParameters get the full uri and parameters for this route and all its parent routers.
-func (r *RouteV5) GetFullURIAndParameters() (string, []string) {
+func (r *Route) GetFullURIAndParameters() (string, []string) {
 	router := r.parent
 	segments := make([]string, 0, 3)
 	segments = append(segments, r.uri)

@@ -126,17 +126,17 @@ func TestServer(t *testing.T) {
 		t.Run("0.0.0.0", func(t *testing.T) {
 			cfg := config.LoadDefault()
 			cfg.Set("server.host", "0.0.0.0")
-			assert.Equal(t, "http://127.0.0.1:8080", getAddressV5(cfg))
+			assert.Equal(t, "http://127.0.0.1:8080", getAddress(cfg))
 		})
 		t.Run("hide_port", func(t *testing.T) {
 			cfg := config.LoadDefault()
 			cfg.Set("server.port", 80)
-			assert.Equal(t, "http://127.0.0.1", getAddressV5(cfg))
+			assert.Equal(t, "http://127.0.0.1", getAddress(cfg))
 		})
 		t.Run("domain", func(t *testing.T) {
 			cfg := config.LoadDefault()
 			cfg.Set("server.domain", "example.org")
-			assert.Equal(t, "http://example.org:8080", getAddressV5(cfg))
+			assert.Equal(t, "http://example.org:8080", getAddress(cfg))
 		})
 	})
 
@@ -220,8 +220,8 @@ func TestServer(t *testing.T) {
 			return
 		}
 
-		server.RegisterRoutes(func(s *Server, router *RouterV5) {
-			router.Get("/", func(_ *ResponseV5, _ *RequestV5) {}).Name("base")
+		server.RegisterRoutes(func(s *Server, router *Router) {
+			router.Get("/", func(_ *Response, _ *Request) {}).Name("base")
 		})
 		assert.NotNil(t, server.router.GetRoute("base"))
 	})
@@ -306,8 +306,8 @@ func TestServer(t *testing.T) {
 			assert.False(t, server.IsReady())
 		})
 
-		server.RegisterRoutes(func(s *Server, router *RouterV5) {
-			router.Get("/", func(r *ResponseV5, _ *RequestV5) {
+		server.RegisterRoutes(func(s *Server, router *Router) {
+			router.Get("/", func(r *Response, _ *Request) {
 				r.String(http.StatusOK, "hello world")
 			}).Name("base")
 		})

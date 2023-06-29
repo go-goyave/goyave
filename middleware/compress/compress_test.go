@@ -39,7 +39,7 @@ func TestCompressMiddleware(t *testing.T) {
 
 	server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 
-	handler := func(resp *goyave.ResponseV5, req *goyave.RequestV5) {
+	handler := func(resp *goyave.Response, req *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")
 		resp.String(http.StatusOK, "hello world")
 	}
@@ -142,7 +142,7 @@ func TestCompressMiddleware(t *testing.T) {
 	t.Run("Write file", func(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "gzip")
-		result := server.TestMiddleware(compressMiddleware, request, func(r *goyave.ResponseV5, _ *goyave.RequestV5) {
+		result := server.TestMiddleware(compressMiddleware, request, func(r *goyave.Response, _ *goyave.Request) {
 			r.File("../../resources/custom_config.json")
 		})
 

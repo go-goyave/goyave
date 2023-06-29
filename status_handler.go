@@ -11,7 +11,7 @@ import (
 // Status handlers are mainly used to implement a custom behavior for user or server errors (400 and 500 status codes).
 type StatusHandler interface {
 	Composable
-	Handle(response *ResponseV5, request *RequestV5)
+	Handle(response *Response, request *Request)
 }
 
 // PanicStatusHandler for the HTTP 500 error.
@@ -19,12 +19,12 @@ type StatusHandler interface {
 // print stacktrace in the console.
 // If debugging is not enabled, writes `{"error": "Internal Server Error"}`
 // to the response.
-type PanicStatusHandlerV5 struct {
+type PanicStatusHandler struct {
 	Component
 }
 
 // Handle internal server error responses.
-func (*PanicStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
+func (*PanicStatusHandler) Handle(response *Response, request *Request) {
 	response.error(request.Extra[ExtraError])
 	if response.IsEmpty() {
 		message := map[string]string{
@@ -36,12 +36,12 @@ func (*PanicStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
 
 // ErrorStatusHandler a generic status handler for non-success codes.
 // Writes the corresponding status message to the response.
-type ErrorStatusHandlerV5 struct {
+type ErrorStatusHandler struct {
 	Component
 }
 
 // Handle generic error reponses.
-func (*ErrorStatusHandlerV5) Handle(response *ResponseV5, _ *RequestV5) {
+func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
 	message := map[string]string{
 		"error": http.StatusText(response.GetStatus()),
 	}
@@ -50,12 +50,12 @@ func (*ErrorStatusHandlerV5) Handle(response *ResponseV5, _ *RequestV5) {
 
 // ValidationStatusHandler for HTTP 422 errors.
 // Writes the validation errors to the response.
-type ValidationStatusHandlerV5 struct {
+type ValidationStatusHandler struct {
 	Component
 }
 
 // Handle validation error responses.
-func (*ValidationStatusHandlerV5) Handle(response *ResponseV5, request *RequestV5) {
+func (*ValidationStatusHandler) Handle(response *Response, request *Request) {
 	errs := &validation.ErrorResponse{}
 
 	if e, ok := request.Extra[ExtraValidationError]; ok {

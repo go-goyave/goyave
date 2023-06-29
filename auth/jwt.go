@@ -205,7 +205,7 @@ func (a *JWTAuthenticator) Init(server *goyave.Server) {
 // If the token is valid and has claims, those claims will be added to `request.Extra` with the key "jwt_claims".
 //
 // This implementation is a JWT-based authentication using HMAC SHA256, supporting only one active token.
-func (a *JWTAuthenticator) Authenticate(request *goyave.RequestV5, user any) error {
+func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error {
 	tokenString, ok := request.BearerToken()
 	if tokenString == "" || !ok {
 		if a.Optional {

@@ -50,7 +50,7 @@ type TestBasicUnauthorizer struct {
 	BasicAuthenticator
 }
 
-func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.ResponseV5, _ *goyave.RequestV5, err error) {
+func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.Response, _ *goyave.Request, err error) {
 	response.JSON(http.StatusUnauthorized, map[string]string{"custom error key": err.Error()})
 }
 
@@ -88,7 +88,7 @@ func TestAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
@@ -99,7 +99,7 @@ func TestAuthenticator(t *testing.T) {
 
 		request = server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")
-		resp = server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, _ *goyave.RequestV5) {
+		resp = server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -119,7 +119,7 @@ func TestAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)

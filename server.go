@@ -26,7 +26,7 @@ type Server struct {
 	config *config.Config
 	Lang   *lang.Languages
 
-	router *RouterV5
+	router *Router
 	db     *gorm.DB
 
 	services map[string]Service
@@ -62,7 +62,7 @@ type Server struct {
 // New create a new `Server` using automatically loaded configuration.
 // See `config.Load()` for more details.
 func New() (*Server, error) {
-	cfg, err := config.LoadV5()
+	cfg, err := config.Load()
 	if err != nil {
 		return nil, &Error{err, ExitInvalidConfig}
 	}
@@ -106,18 +106,18 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		startupHooks:  []func(*Server){},
 		shutdownHooks: []func(*Server){},
 		host:          host,
-		baseURL:       getAddressV5(cfg),
+		baseURL:       getAddress(cfg),
 		proxyBaseURL:  getProxyAddress(cfg),
 		Logger:        log.New(os.Stdout, "", log.LstdFlags),
 		AccessLogger:  log.New(os.Stdout, "", 0),
 		ErrLogger:     errLogger,
 	}
-	server.router = NewRouterV5(server)
+	server.router = NewRouter(server)
 	server.server.Handler = server.router
 	return server, nil
 }
 
-func getAddressV5(cfg *config.Config) string {
+func getAddress(cfg *config.Config) string {
 	port := cfg.GetInt("server.port")
 	shouldShowPort := port != 80
 	host := cfg.GetString("server.domain")
@@ -137,7 +137,7 @@ func getAddressV5(cfg *config.Config) string {
 
 func getProxyAddress(cfg *config.Config) string {
 	if !cfg.Has("server.proxy.host") {
-		return getAddressV5(cfg)
+		return getAddress(cfg)
 	}
 
 	var shouldShowPort bool
@@ -302,7 +302,7 @@ func (s *Server) CloseDB() error {
 }
 
 // Router returns the root router.
-func (s *Server) Router() *RouterV5 {
+func (s *Server) Router() *Router {
 	return s.router
 }
 
@@ -368,7 +368,7 @@ func (s *Server) Start() error {
 //
 // This method is primarily used in tests so routes can be registered without starting the server.
 // Starting the server will overwrite the previously registered routes.
-func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *RouterV5)) {
+func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *Router)) {
 	routeRegistrer(s, s.router)
 	s.router.ClearRegexCache()
 }

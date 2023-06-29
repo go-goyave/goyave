@@ -32,7 +32,7 @@ var _ Authenticator = (*BasicAuthenticator)(nil) // implements Authenticator
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.
 // The password is checked using bcrypt. The username field should unique.
-func (a *BasicAuthenticator) Authenticate(request *goyave.RequestV5, user any) error {
+func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user any) error {
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
@@ -97,7 +97,7 @@ var _ Authenticator = (*ConfigBasicAuthenticator)(nil) // implements Authenticat
 
 // Authenticate check if the request basic auth header matches the
 // "auth.basic.username" and "auth.basic.password" config entries.
-func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.RequestV5, user any) error {
+func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request, user any) error {
 	username, password, ok := request.BasicAuth()
 
 	if !ok {

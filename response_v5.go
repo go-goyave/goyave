@@ -36,11 +36,11 @@ type PreWriter interface {
 // Response implementation wrapping `http.ResponseWriter`. Writing an HTTP response without
 // using it is incorrect. This acts as a proxy to one or many `io.Writer` chained, with the original
 // `http.ResponseWriter` always last.
-type ResponseV5 struct {
+type Response struct {
 	writer         io.Writer
 	responseWriter http.ResponseWriter
 	server         *Server
-	request        *RequestV5
+	request        *Request
 	status         int
 
 	// Used to check if controller didn't write anything so
@@ -52,8 +52,8 @@ type ResponseV5 struct {
 }
 
 // NewResponse create a new Response using the given `http.ResponseWriter` and request.
-func NewResponse(server *Server, request *RequestV5, writer http.ResponseWriter) *ResponseV5 {
-	return &ResponseV5{
+func NewResponse(server *Server, request *Request, writer http.ResponseWriter) *Response {
+	return &Response{
 		server:         server,
 		request:        request,
 		responseWriter: writer,
@@ -69,7 +69,7 @@ func NewResponse(server *Server, request *RequestV5, writer http.ResponseWriter)
 
 // PreWrite writes the response header after calling PreWrite on the
 // child writer if it implements PreWriter.
-func (r *ResponseV5) PreWrite(b []byte) {
+func (r *Response) PreWrite(b []byte) {
 	r.empty = false
 	if pr, ok := r.writer.(PreWriter); ok {
 		pr.PreWrite(b)
@@ -87,7 +87,7 @@ func (r *ResponseV5) PreWrite(b []byte) {
 
 // Write writes the data as a response.
 // See http.ResponseWriter.Write
-func (r *ResponseV5) Write(data []byte) (int, error) {
+func (r *Response) Write(data []byte) (int, error) {
 	r.PreWrite(data)
 	return r.writer.Write(data)
 }
@@ -96,7 +96,7 @@ func (r *ResponseV5) Write(data []byte) (int, error) {
 // status code.
 // Prefer using "Status()" method instead.
 // Calling this method a second time will have no effect.
-func (r *ResponseV5) WriteHeader(status int) {
+func (r *Response) WriteHeader(status int) {
 	if !r.wroteHeader {
 		r.status = status
 		r.wroteHeader = true
@@ -105,14 +105,14 @@ func (r *ResponseV5) WriteHeader(status int) {
 }
 
 // Header returns the header map that will be sent.
-func (r *ResponseV5) Header() http.Header {
+func (r *Response) Header() http.Header {
 	return r.responseWriter.Header()
 }
 
 // Cookie add a Set-Cookie header to the response.
 // The provided cookie must have a valid Name. Invalid cookies may be
 // silently dropped.
-func (r *ResponseV5) Cookie(cookie *http.Cookie) {
+func (r *Response) Cookie(cookie *http.Cookie) {
 	http.SetCookie(r.responseWriter, cookie)
 }
 
@@ -132,7 +132,7 @@ func (r *ResponseV5) Cookie(cookie *http.Cookie) {
 // set the HTTP status to http.StatusSwitchingProtocols.
 // If no status is set, the regular behavior will be kept and `204 No Content`
 // will be set as the response status.
-func (r *ResponseV5) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	hijacker, ok := r.responseWriter.(http.Hijacker)
 	if !ok {
 		return nil, nil, ErrNotHijackable
@@ -146,7 +146,7 @@ func (r *ResponseV5) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 // Hijacked returns true if the underlying connection has been successfully hijacked
 // via the Hijack method.
-func (r *ResponseV5) Hijacked() bool {
+func (r *Response) Hijacked() bool {
 	return r.hijacked
 }
 
@@ -156,7 +156,7 @@ func (r *ResponseV5) Hijacked() bool {
 // Writer return the current writer used to write the response.
 // Note that the returned writer is not necessarily a http.ResponseWriter, as
 // it can be replaced using SetWriter.
-func (r *ResponseV5) Writer() io.Writer {
+func (r *Response) Writer() io.Writer {
 	return r.writer
 }
 
@@ -165,11 +165,11 @@ func (r *ResponseV5) Writer() io.Writer {
 // gzip compression, or for logging.
 //
 // The original http.ResponseWriter is always kept.
-func (r *ResponseV5) SetWriter(writer io.Writer) {
+func (r *Response) SetWriter(writer io.Writer) {
 	r.writer = writer
 }
 
-func (r *ResponseV5) close() error {
+func (r *Response) close() error {
 	if wr, ok := r.writer.(io.Closer); ok {
 		return wr.Close()
 	}
@@ -180,19 +180,19 @@ func (r *ResponseV5) close() error {
 // Accessors
 
 // GetStatus return the response code for this request or 0 if not yet set.
-func (r *ResponseV5) GetStatus() int {
+func (r *Response) GetStatus() int {
 	return r.status
 }
 
 // IsEmpty return true if nothing has been written to the response body yet.
-func (r *ResponseV5) IsEmpty() bool {
+func (r *Response) IsEmpty() bool {
 	return r.empty
 }
 
 // IsHeaderWritten return true if the response header has been written.
 // Once the response header is written, you cannot change the response status
 // and headers anymore.
-func (r *ResponseV5) IsHeaderWritten() bool {
+func (r *Response) IsHeaderWritten() bool {
 	return r.wroteHeader
 }
 
@@ -201,7 +201,7 @@ func (r *ResponseV5) IsHeaderWritten() bool {
 
 // Status set the response status code.
 // Calling this method a second time will have no effect.
-func (r *ResponseV5) Status(status int) {
+func (r *Response) Status(status int) {
 	if r.status == 0 {
 		r.status = status
 	}
@@ -209,7 +209,7 @@ func (r *ResponseV5) Status(status int) {
 
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically.
-func (r *ResponseV5) JSON(responseCode int, data interface{}) {
+func (r *Response) JSON(responseCode int, data interface{}) {
 	r.responseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 	r.status = responseCode
 	if err := json.NewEncoder(r).Encode(data); err != nil {
@@ -218,14 +218,14 @@ func (r *ResponseV5) JSON(responseCode int, data interface{}) {
 }
 
 // String write a string as a response
-func (r *ResponseV5) String(responseCode int, message string) {
+func (r *Response) String(responseCode int, message string) {
 	r.status = responseCode
 	if _, err := r.Write([]byte(message)); err != nil {
 		panic(err)
 	}
 }
 
-func (r *ResponseV5) writeFile(file string, disposition string) { // TODO handle io.FS
+func (r *Response) writeFile(file string, disposition string) { // TODO handle io.FS
 	if !fsutil.FileExists(file) {
 		r.Status(http.StatusNotFound)
 		return
@@ -263,7 +263,7 @@ func (r *ResponseV5) writeFile(file string, disposition string) { // TODO handle
 // The given path can be relative or absolute.
 //
 // If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
-func (r *ResponseV5) File(file string) {
+func (r *Response) File(file string) {
 	r.writeFile(file, "inline")
 }
 
@@ -276,7 +276,7 @@ func (r *ResponseV5) File(file string) {
 // "attachment; filename="${fileName}""
 //
 // If you want the file to be sent as an inline element ("Content-Disposition: inline"), use the "File" function instead.
-func (r *ResponseV5) Download(file string, fileName string) {
+func (r *Response) Download(file string, fileName string) {
 	r.writeFile(file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }
 
@@ -286,12 +286,12 @@ func (r *ResponseV5) Download(file string, fileName string) {
 // and the stacktrace is printed in the console.
 // If debugging is not enabled, only the status code is set, which means you can still
 // write to the response, or use your error status handler.
-func (r *ResponseV5) Error(err any) {
+func (r *Response) Error(err any) {
 	r.server.ErrLogger.Println(err)
 	r.error(err)
 }
 
-func (r *ResponseV5) error(err any) {
+func (r *Response) error(err any) {
 	r.request.Extra[ExtraError] = err
 	if r.server.Config().GetBool("app.debug") {
 		stacktrace := r.request.Extra[ExtraStacktrace]
@@ -337,7 +337,7 @@ func (r *ResponseV5) error(err any) {
 //	    }
 //	    response.JSON(http.StatusOK, product)
 //	}
-func (r *ResponseV5) WriteDBError(err error) bool {
+func (r *Response) WriteDBError(err error) bool {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			r.Status(http.StatusNotFound)

@@ -18,7 +18,7 @@ import (
 	"goyave.dev/goyave/v4/config"
 )
 
-func newTestReponse() (*ResponseV5, *httptest.ResponseRecorder) {
+func newTestReponse() (*Response, *httptest.ResponseRecorder) {
 	server, err := NewWithConfig(config.LoadDefault())
 	if err != nil {
 		panic(err)

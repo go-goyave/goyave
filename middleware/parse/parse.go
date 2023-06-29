@@ -37,8 +37,8 @@ type Middleware struct {
 
 // Handle reads the request query and body and parses it if necessary.
 // The middleware is skipped if the request `Data` or `Query` is not `nil`.
-func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
-	return func(response *goyave.ResponseV5, r *goyave.RequestV5) {
+func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, r *goyave.Request) {
 		if r.Data != nil || r.Query != nil {
 			next(response, r)
 			return
@@ -96,7 +96,7 @@ func (m *Middleware) getMaxUploadSize() float64 {
 	return m.MaxUploadSize
 }
 
-func parseQuery(request *goyave.RequestV5) error {
+func parseQuery(request *goyave.Request) error {
 	queryParams, err := url.ParseQuery(request.URL().RawQuery)
 	if err == nil {
 		request.Query = make(map[string]any, len(queryParams))

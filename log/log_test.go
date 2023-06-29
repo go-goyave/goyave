@@ -103,7 +103,7 @@ func TestMiddleware(t *testing.T) {
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
-		httpResponse := server.TestMiddleware(CommonLogMiddleware(), req, func(r *goyave.ResponseV5, _ *goyave.RequestV5) {
+		httpResponse := server.TestMiddleware(CommonLogMiddleware(), req, func(r *goyave.Response, _ *goyave.Request) {
 			r.String(http.StatusOK, "hello world")
 		})
 		_ = httpResponse.Body.Close()
@@ -125,7 +125,7 @@ func TestMiddleware(t *testing.T) {
 		req.Header().Set("Referer", referrer)
 		req.Header().Set("User-Agent", userAgent)
 
-		httpResponse := server.TestMiddleware(CombinedLogMiddleware(), req, func(r *goyave.ResponseV5, _ *goyave.RequestV5) {
+		httpResponse := server.TestMiddleware(CombinedLogMiddleware(), req, func(r *goyave.Response, _ *goyave.Request) {
 			r.String(http.StatusOK, "hello world")
 		})
 		_ = httpResponse.Body.Close()

@@ -15,16 +15,16 @@ import (
 // information to the next handlers in the stack.
 // Example uses are authentication, authorization, logging, panic recovery, CORS,
 // validation, gzip compression.
-type MiddlewareV5 interface {
+type Middleware interface {
 	Composable
-	Handle(HandlerV5) HandlerV5
+	Handle(Handler) Handler
 }
 
-type middlewareHolderV5 struct {
-	middleware []MiddlewareV5
+type middlewareHolder struct {
+	middleware []Middleware
 }
 
-func (h *middlewareHolderV5) applyMiddleware(handler HandlerV5) HandlerV5 {
+func (h *middlewareHolder) applyMiddleware(handler Handler) Handler {
 	for i := len(h.middleware) - 1; i >= 0; i-- {
 		handler = h.middleware[i].Handle(handler)
 	}
@@ -32,11 +32,11 @@ func (h *middlewareHolderV5) applyMiddleware(handler HandlerV5) HandlerV5 {
 }
 
 // GetMiddleware returns a copy of the middleware applied on this holder.
-func (h *middlewareHolderV5) GetMiddleware() []MiddlewareV5 {
-	return append(make([]MiddlewareV5, 0, len(h.middleware)), h.middleware...)
+func (h *middlewareHolder) GetMiddleware() []Middleware {
+	return append(make([]Middleware, 0, len(h.middleware)), h.middleware...)
 }
 
-func findMiddleware[T MiddlewareV5](m []MiddlewareV5) T {
+func findMiddleware[T Middleware](m []Middleware) T {
 	for _, middleware := range m {
 		if m, ok := middleware.(T); ok {
 			return m
@@ -46,7 +46,7 @@ func findMiddleware[T MiddlewareV5](m []MiddlewareV5) T {
 	return zero
 }
 
-func hasMiddleware[T MiddlewareV5](m []MiddlewareV5) bool {
+func hasMiddleware[T Middleware](m []Middleware) bool {
 	for _, middleware := range m {
 		if _, ok := middleware.(T); ok {
 			return true
@@ -57,25 +57,25 @@ func hasMiddleware[T MiddlewareV5](m []MiddlewareV5) bool {
 
 // routeHasMiddleware returns true if the given route or any of its
 // parents has a middleware of the T type.
-func routeHasMiddleware[T MiddlewareV5](route *RouteV5) bool {
+func routeHasMiddleware[T Middleware](route *Route) bool {
 	return hasMiddleware[T](route.middleware)
 }
 
 // routerHasMiddleware returns true if the given route or any of its
 // parents has a middleware of the T type.
-func routerHasMiddleware[T MiddlewareV5](router *RouterV5) bool {
+func routerHasMiddleware[T Middleware](router *Router) bool {
 	return hasMiddleware[T](router.middleware) || (router.parent != nil && routerHasMiddleware[T](router.parent))
 }
 
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
 // If debugging is enabled in the config and the default status handler for the 500 status code
 // had not been changed, the error is also written in the response.
-type recoveryMiddlewareV5 struct {
+type recoveryMiddleware struct {
 	Component
 }
 
-func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
-	return func(response *ResponseV5, request *RequestV5) {
+func (m *recoveryMiddleware) Handle(next Handler) Handler {
+	return func(response *Response, request *Request) {
 		panicked := true
 		defer func() {
 			if err := recover(); err != nil || panicked {
@@ -103,12 +103,12 @@ func (m *recoveryMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 // If no variant is given (for example "en"), the first available variant will be used.
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
-type languageMiddlewareV5 struct {
+type languageMiddleware struct {
 	Component
 }
 
-func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
-	return func(response *ResponseV5, request *RequestV5) {
+func (m *languageMiddleware) Handle(next Handler) Handler {
+	return func(response *Response, request *Request) {
 		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
 			request.Lang = m.Lang().DetectLanguage(header)
 		} else {
@@ -124,14 +124,14 @@ func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 // `validation.Errors` returned by the validator.
 // This data can then be used in a status handler.
 // This middleware requires the parse middleware.
-type validateRequestMiddlewareV5 struct {
+type validateRequestMiddleware struct {
 	Component
 	BodyRules  RuleSetFunc
 	QueryRules RuleSetFunc
 }
 
-func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
-	return func(response *ResponseV5, r *RequestV5) {
+func (m *validateRequestMiddleware) Handle(next Handler) Handler {
+	return func(response *Response, r *Request) {
 		extra := map[string]any{
 			validation.ExtraRequest: r,
 		}
@@ -204,12 +204,12 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 	}
 }
 
-type corsMiddlewareV5 struct {
+type corsMiddleware struct {
 	Component
 }
 
-func (m *corsMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
-	return func(response *ResponseV5, request *RequestV5) {
+func (m *corsMiddleware) Handle(next Handler) Handler {
+	return func(response *Response, request *Request) {
 		o, ok := request.Route.LookupMeta(MetaCORS)
 		if !ok || o == nil || o == (*cors.Options)(nil) {
 			next(response, request)

@@ -30,7 +30,7 @@ type Composable interface {
 // to use `router.Controller()`.
 type Registrer interface {
 	Composable
-	RegisterRoutes(*RouterV5)
+	RegisterRoutes(*Router)
 }
 
 // Component base implementation of `Composable` to easily make a

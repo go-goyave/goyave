@@ -22,10 +22,10 @@ var (
 	errMatchMethodNotAllowed = errors.New("Method not allowed for this route")
 	errMatchNotFound         = errors.New("No match for this URI")
 
-	methodNotAllowedRouteV5 = newRouteV5(func(response *ResponseV5, request *RequestV5) {
+	methodNotAllowedRoute = newRoute(func(response *Response, request *Request) {
 		response.Status(http.StatusMethodNotAllowed)
 	})
-	notFoundRouteV5 = newRouteV5(func(response *ResponseV5, request *RequestV5) {
+	notFoundRoute = newRoute(func(response *Response, request *Request) {
 		response.Status(http.StatusNotFound)
 	})
 )
@@ -35,20 +35,20 @@ var (
 // The given `Response` and `Request` value should not
 // be used outside of the context of an HTTP request. e.g.: passed to
 // a goroutine or used after the finalization step in the request lifecycle.
-type HandlerV5 func(*ResponseV5, *RequestV5)
+type Handler func(*Response, *Request)
 
-type routeMatcherV5 interface {
-	match(method string, match *routeMatchV5) bool
+type routeMatcher interface {
+	match(method string, match *routeMatch) bool
 }
 
-type routeMatchV5 struct {
-	route       *RouteV5
+type routeMatch struct {
+	route       *Route
 	parameters  map[string]string
 	err         error
 	currentPath string
 }
 
-func (rm *routeMatchV5) mergeParams(params map[string]string) {
+func (rm *routeMatch) mergeParams(params map[string]string) {
 	if rm.parameters == nil {
 		rm.parameters = params
 		return
@@ -58,30 +58,30 @@ func (rm *routeMatchV5) mergeParams(params map[string]string) {
 	}
 }
 
-func (rm *routeMatchV5) trimCurrentPath(fullMatch string) {
+func (rm *routeMatch) trimCurrentPath(fullMatch string) {
 	rm.currentPath = rm.currentPath[len(fullMatch):]
 }
 
 // Router registers routes to be matched and executes a handler.
-type RouterV5 struct {
+type Router struct {
 	server         *Server
-	parent         *RouterV5
+	parent         *Router
 	statusHandlers map[int]StatusHandler
-	namedRoutes    map[string]*RouteV5
+	namedRoutes    map[string]*Route
 	regexCache     map[string]*regexp.Regexp
 	Meta           map[string]any
 
 	parameterizable
-	middlewareHolderV5
-	globalMiddleware *middlewareHolderV5
+	middlewareHolder
+	globalMiddleware *middlewareHolder
 
 	prefix     string
-	routes     []*RouteV5
-	subrouters []*RouterV5
+	routes     []*Route
+	subrouters []*Router
 }
 
-var _ http.Handler = (*RouterV5)(nil)   // implements http.Handler
-var _ routeMatcherV5 = (*RouterV5)(nil) // implements routeMatcher
+var _ http.Handler = (*Router)(nil) // implements http.Handler
+var _ routeMatcher = (*Router)(nil) // implements routeMatcher
 
 // NewRouter create a new root-level Router that is pre-configured with core
 // middleware (recovery and language), as well as status handlers
@@ -91,33 +91,33 @@ var _ routeMatcherV5 = (*RouterV5)(nil) // implements routeMatcher
 // This method can however be useful for external tooling that build
 // routers without starting the HTTP server. Don't forget to call
 // `router.ClearRegexCache()` when you are done registering routes.
-func NewRouterV5(server *Server) *RouterV5 {
-	router := &RouterV5{
+func NewRouter(server *Server) *Router {
+	router := &Router{
 		server:         server,
 		parent:         nil,
 		prefix:         "",
 		statusHandlers: make(map[int]StatusHandler, 41),
-		namedRoutes:    make(map[string]*RouteV5, 5),
-		middlewareHolderV5: middlewareHolderV5{
+		namedRoutes:    make(map[string]*Route, 5),
+		middlewareHolder: middlewareHolder{
 			middleware: nil,
 		},
-		globalMiddleware: &middlewareHolderV5{
-			middleware: make([]MiddlewareV5, 0, 2),
+		globalMiddleware: &middlewareHolder{
+			middleware: make([]Middleware, 0, 2),
 		},
 		regexCache: make(map[string]*regexp.Regexp, 5),
 		Meta:       make(map[string]any),
 	}
-	router.StatusHandler(&PanicStatusHandlerV5{}, http.StatusInternalServerError)
+	router.StatusHandler(&PanicStatusHandler{}, http.StatusInternalServerError)
 	for i := 400; i <= 418; i++ {
-		router.StatusHandler(&ErrorStatusHandlerV5{}, i)
+		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
-	router.StatusHandler(&ValidationStatusHandlerV5{}, http.StatusUnprocessableEntity)
+	router.StatusHandler(&ValidationStatusHandler{}, http.StatusUnprocessableEntity)
 	for i := 423; i <= 426; i++ {
-		router.StatusHandler(&ErrorStatusHandlerV5{}, i)
+		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
-	router.StatusHandler(&ErrorStatusHandlerV5{}, 421, 428, 429, 431, 444, 451)
-	router.StatusHandler(&ErrorStatusHandlerV5{}, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
-	router.GlobalMiddleware(&recoveryMiddlewareV5{}, &languageMiddlewareV5{})
+	router.StatusHandler(&ErrorStatusHandler{}, 421, 428, 429, 431, 444, 451)
+	router.StatusHandler(&ErrorStatusHandler{}, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
+	router.GlobalMiddleware(&recoveryMiddleware{}, &languageMiddleware{})
 	return router
 }
 
@@ -126,7 +126,7 @@ func NewRouterV5(server *Server) *RouterV5 {
 // You don't need to call this function if you are using `goyave.Server`.
 // However, this method SHOULD be called by external tooling that build routers without starting the HTTP
 // server when they are done registering routes and subrouters.
-func (r *RouterV5) ClearRegexCache() {
+func (r *Router) ClearRegexCache() {
 	r.regexCache = nil
 	for _, subrouter := range r.subrouters {
 		subrouter.ClearRegexCache()
@@ -134,27 +134,27 @@ func (r *RouterV5) ClearRegexCache() {
 }
 
 // GetParent returns the parent Router of this router (can be `nil`).
-func (r *RouterV5) GetParent() *RouterV5 {
+func (r *Router) GetParent() *Router {
 	return r.parent
 }
 
 // GetRoutes returns the list of routes belonging to this router.
-func (r *RouterV5) GetRoutes() []*RouteV5 {
-	cpy := make([]*RouteV5, len(r.routes))
+func (r *Router) GetRoutes() []*Route {
+	cpy := make([]*Route, len(r.routes))
 	copy(cpy, r.routes)
 	return cpy
 }
 
 // GetSubrouters returns the list of subrouters belonging to this router.
-func (r *RouterV5) GetSubrouters() []*RouterV5 {
-	cpy := make([]*RouterV5, len(r.subrouters))
+func (r *Router) GetSubrouters() []*Router {
+	cpy := make([]*Router, len(r.subrouters))
 	copy(cpy, r.subrouters)
 	return cpy
 }
 
 // GetRoute get a named route.
 // Returns nil if the route doesn't exist.
-func (r *RouterV5) GetRoute(name string) *RouteV5 {
+func (r *Router) GetRoute(name string) *Route {
 	return r.namedRoutes[name]
 }
 
@@ -162,14 +162,14 @@ func (r *RouterV5) GetRoute(name string) *RouteV5 {
 //
 // This value is inherited by all subrouters and routes, unless they override
 // it at their level.
-func (r *RouterV5) SetMeta(key string, value any) *RouterV5 {
+func (r *Router) SetMeta(key string, value any) *Router {
 	r.Meta[key] = value
 	return r
 }
 
 // RemoveMeta detach the meta value identified by the given key from this router.
 // This doesn't remove meta using the same key from the parent routers.
-func (r *RouterV5) RemoveMeta(key string) *RouterV5 {
+func (r *Router) RemoveMeta(key string) *Router {
 	delete(r.Meta, key)
 	return r
 }
@@ -179,7 +179,7 @@ func (r *RouterV5) RemoveMeta(key string) *RouterV5 {
 //
 // Returns the value and `true` if found in the current router or one of the
 // parent routers, `nil` and `false` otherwise.
-func (r *RouterV5) LookupMeta(key string) (any, bool) {
+func (r *Router) LookupMeta(key string) (any, bool) {
 	val, ok := r.Meta[key]
 	if ok {
 		return val, ok
@@ -196,7 +196,7 @@ func (r *RouterV5) LookupMeta(key string) (any, bool) {
 // These middleware are global to the main Router: they will also be executed for subrouters.
 // Global Middleware are always executed first.
 // Use global middleware for logging and rate limiting for example.
-func (r *RouterV5) GlobalMiddleware(middleware ...MiddlewareV5) *RouterV5 {
+func (r *Router) GlobalMiddleware(middleware ...Middleware) *Router {
 	for _, m := range middleware {
 		m.Init(r.server)
 	}
@@ -205,9 +205,9 @@ func (r *RouterV5) GlobalMiddleware(middleware ...MiddlewareV5) *RouterV5 {
 }
 
 // Middleware apply one or more middleware to the route group.
-func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
+func (r *Router) Middleware(middleware ...Middleware) *Router {
 	if r.middleware == nil {
-		r.middleware = make([]MiddlewareV5, 0, 3)
+		r.middleware = make([]Middleware, 0, 3)
 	}
 	for _, m := range middleware {
 		m.Init(r.server)
@@ -221,13 +221,13 @@ func (r *RouterV5) Middleware(middleware ...MiddlewareV5) *RouterV5 {
 // To disable CORS for this router, subrouters and routes, give `nil` options.
 // CORS can be re-enabled for subrouters and routes on a case-by-case basis
 // using non-nil options.
-func (r *RouterV5) CORS(options *cors.Options) *RouterV5 {
+func (r *Router) CORS(options *cors.Options) *Router {
 	r.Meta[MetaCORS] = options
 	if options == nil {
 		return r
 	}
-	if !routerHasMiddleware[*corsMiddlewareV5](r) {
-		r.Middleware(&corsMiddlewareV5{})
+	if !routerHasMiddleware[*corsMiddleware](r) {
+		r.Middleware(&corsMiddleware{})
 	}
 	return r
 }
@@ -244,7 +244,7 @@ func (r *RouterV5) CORS(options *cors.Options) *RouterV5 {
 // will not modify its parent's.
 //
 // Codes in the 400 and 500 ranges have a default status handler.
-func (r *RouterV5) StatusHandler(handler StatusHandler, status int, additionalStatuses ...int) {
+func (r *Router) StatusHandler(handler StatusHandler, status int, additionalStatuses ...int) {
 	handler.Init(r.server)
 	r.statusHandlers[status] = handler
 	for _, s := range additionalStatuses {
@@ -253,7 +253,7 @@ func (r *RouterV5) StatusHandler(handler StatusHandler, status int, additionalSt
 }
 
 // ServeHTTP dispatches the handler registered in the matched route.
-func (r *RouterV5) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Scheme != "" && req.URL.Scheme != "http" {
 		address := getProxyAddress(r.server.config) + req.URL.Path
 		query := req.URL.Query()
@@ -264,14 +264,14 @@ func (r *RouterV5) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	match := routeMatchV5{currentPath: req.URL.Path}
+	match := routeMatch{currentPath: req.URL.Path}
 	r.match(req.Method, &match)
 	r.requestHandler(&match, w, req)
 }
 
 // TODO export RouteMatch and add Match with string param function
 
-func (r *RouterV5) match(method string, match *routeMatchV5) bool {
+func (r *Router) match(method string, match *routeMatch) bool {
 	// Check if router itself matches
 	var params []string
 	if r.parameterizable.regex != nil {
@@ -289,7 +289,7 @@ func (r *RouterV5) match(method string, match *routeMatchV5) bool {
 		// Check in subrouters first
 		for _, router := range r.subrouters {
 			if router.match(method, match) {
-				if router.prefix == "" && match.route == methodNotAllowedRouteV5 {
+				if router.prefix == "" && match.route == methodNotAllowedRoute {
 					// This allows route groups with subrouters having empty prefix.
 					continue
 				}
@@ -306,15 +306,15 @@ func (r *RouterV5) match(method string, match *routeMatchV5) bool {
 	}
 
 	if match.err == errMatchMethodNotAllowed {
-		match.route = methodNotAllowedRouteV5
+		match.route = methodNotAllowedRoute
 		return true
 	}
 
-	match.route = notFoundRouteV5
+	match.route = notFoundRoute
 	return false
 }
 
-func (r *RouterV5) makeParameters(match []string) map[string]string {
+func (r *Router) makeParameters(match []string) map[string]string {
 	return r.parameterizable.makeParameters(match, r.parameters)
 }
 
@@ -324,20 +324,20 @@ func (r *RouterV5) makeParameters(match []string) map[string]string {
 //
 // Subrouters are matched before routes. For example, if you have a subrouter with a
 // prefix "/{name}" and a route "/route", the "/route" will never match.
-func (r *RouterV5) Subrouter(prefix string) *RouterV5 {
+func (r *Router) Subrouter(prefix string) *Router {
 	if prefix == "/" {
 		prefix = ""
 	}
 
-	router := &RouterV5{
+	router := &Router{
 		server:         r.server,
 		parent:         r,
 		prefix:         prefix,
 		statusHandlers: maps.Clone(r.statusHandlers),
 		Meta:           make(map[string]any),
 		namedRoutes:    r.namedRoutes,
-		routes:         make([]*RouteV5, 0, 5), // Typical CRUD has 5 routes
-		middlewareHolderV5: middlewareHolderV5{
+		routes:         make([]*Route, 0, 5), // Typical CRUD has 5 routes
+		middlewareHolder: middlewareHolder{
 			middleware: nil,
 		},
 		globalMiddleware: r.globalMiddleware,
@@ -349,7 +349,7 @@ func (r *RouterV5) Subrouter(prefix string) *RouterV5 {
 }
 
 // Group create a new sub-router with an empty prefix.
-func (r *RouterV5) Group() *RouterV5 {
+func (r *Router) Group() *Router {
 	return r.Subrouter("")
 }
 
@@ -364,41 +364,41 @@ func (r *RouterV5) Group() *RouterV5 {
 // to the matcher if it's missing, so it allows preflight requests.
 //
 // Returns the generated route.
-func (r *RouterV5) Route(methods []string, uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) Route(methods []string, uri string, handler Handler) *Route {
 	return r.registerRoute(methods, uri, handler)
 }
 
 // Get registers a new route with the GET and HEAD methods.
-func (r *RouterV5) Get(uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) Get(uri string, handler Handler) *Route {
 	return r.registerRoute([]string{http.MethodGet}, uri, handler)
 }
 
 // Post registers a new route with the POST method.
-func (r *RouterV5) Post(uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) Post(uri string, handler Handler) *Route {
 	return r.registerRoute([]string{http.MethodPost}, uri, handler)
 }
 
 // Put registers a new route with the PUT method.
-func (r *RouterV5) Put(uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) Put(uri string, handler Handler) *Route {
 	return r.registerRoute([]string{http.MethodPut}, uri, handler)
 }
 
 // Patch registers a new route with the PATCH method.
-func (r *RouterV5) Patch(uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) Patch(uri string, handler Handler) *Route {
 	return r.registerRoute([]string{http.MethodPatch}, uri, handler)
 }
 
 // Delete registers a new route with the DELETE method.
-func (r *RouterV5) Delete(uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) Delete(uri string, handler Handler) *Route {
 	return r.registerRoute([]string{http.MethodDelete}, uri, handler)
 }
 
 // Options registers a new route wit the OPTIONS method.
-func (r *RouterV5) Options(uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) Options(uri string, handler Handler) *Route {
 	return r.registerRoute([]string{http.MethodOptions}, uri, handler)
 }
 
-func (r *RouterV5) registerRoute(methods []string, uri string, handler HandlerV5) *RouteV5 {
+func (r *Router) registerRoute(methods []string, uri string, handler Handler) *Route {
 	methodsSlice := slices.Clone(methods)
 
 	corsOptions, hasCORSOptions := r.Meta[MetaCORS]
@@ -414,7 +414,7 @@ func (r *RouterV5) registerRoute(methods []string, uri string, handler HandlerV5
 		uri = ""
 	}
 
-	route := &RouteV5{
+	route := &Route{
 		name:    "",
 		uri:     uri,
 		methods: methodsSlice,
@@ -429,13 +429,13 @@ func (r *RouterV5) registerRoute(methods []string, uri string, handler HandlerV5
 
 // Controller register all routes for a controller implementing the `Registrer` interface.
 // Automatically calls `Init()` and `RegisterRoutes()` on the given controller.
-func (r *RouterV5) Controller(controller Registrer) *RouterV5 {
+func (r *Router) Controller(controller Registrer) *Router {
 	controller.Init(r.server)
 	controller.RegisterRoutes(r)
 	return r
 }
 
-func (r *RouterV5) requestHandler(match *routeMatchV5, w http.ResponseWriter, rawRequest *http.Request) {
+func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
 	request := NewRequest(rawRequest)
 	request.Route = match.route
 	request.RouteParams = match.parameters
@@ -461,7 +461,7 @@ func (r *RouterV5) requestHandler(match *routeMatchV5, w http.ResponseWriter, ra
 }
 
 // finalize the request's life-cycle.
-func (r *RouterV5) finalize(response *ResponseV5, request *RequestV5) error {
+func (r *Router) finalize(response *Response, request *Request) error {
 	if response.empty {
 		if response.status == 0 {
 			// If the response is empty, return status 204 to

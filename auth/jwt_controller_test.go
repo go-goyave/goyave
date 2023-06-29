@@ -22,7 +22,7 @@ func TestJWTController(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
-		server.RegisterRoutes(func(s *goyave.Server, router *goyave.RouterV5) {
+		server.RegisterRoutes(func(s *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
 
@@ -51,7 +51,7 @@ func TestJWTController(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
-		server.RegisterRoutes(func(s *goyave.Server, router *goyave.RouterV5) {
+		server.RegisterRoutes(func(s *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
 
@@ -85,7 +85,7 @@ func TestJWTController(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
-		server.RegisterRoutes(func(s *goyave.Server, router *goyave.RouterV5) {
+		server.RegisterRoutes(func(s *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
 
@@ -109,11 +109,11 @@ func TestJWTController(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{
-			TokenFunc: func(request *goyave.RequestV5, user *TestUser) (string, error) {
+			TokenFunc: func(request *goyave.Request, user *TestUser) (string, error) {
 				return "", fmt.Errorf("test error")
 			},
 		}
-		server.RegisterRoutes(func(s *goyave.Server, router *goyave.RouterV5) {
+		server.RegisterRoutes(func(s *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
 
@@ -140,7 +140,7 @@ func TestJWTController(t *testing.T) {
 			UsernameField: "email",
 			PasswordField: "pass",
 		}
-		server.RegisterRoutes(func(s *goyave.Server, router *goyave.RouterV5) {
+		server.RegisterRoutes(func(s *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
 
@@ -169,7 +169,7 @@ func TestJWTController(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
-		server.RegisterRoutes(func(s *goyave.Server, router *goyave.RouterV5) {
+		server.RegisterRoutes(func(s *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
 

@@ -28,13 +28,13 @@ type Authenticator interface {
 	//
 	// The `user` is a double pointer to a `nil` structure defined by the generic
 	// parameter of the middleware.
-	Authenticate(request *goyave.RequestV5, user any) error
+	Authenticate(request *goyave.Request, user any) error
 }
 
 // Unauthorizer can be implemented by Authenticators to define custom behavior
 // when authentication fails.
 type Unauthorizer interface {
-	OnUnauthorized(*goyave.ResponseV5, *goyave.RequestV5, error)
+	OnUnauthorized(*goyave.Response, *goyave.Request, error)
 }
 
 // Handler a middleware that automatically sets the request's User before
@@ -49,8 +49,8 @@ type Handler[T any] struct {
 // executing the authenticator. Blocks if the authentication is not successful.
 // If the authenticator implements `Unauthorizer`, `OnUnauthorized` is called,
 // otherwise returns a default `401 Unauthorized` error.
-func (m *Handler[T]) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
-	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
 		user := new(T)
 		if err := m.Authenticator.Authenticate(request, user); err != nil {
 			if unauthorizer, ok := m.Authenticator.(Unauthorizer); ok {

@@ -9,7 +9,7 @@ import (
 // Context contains all information needed for a `Formatter`.
 type Context struct {
 	goyave.Component
-	Request *goyave.RequestV5
+	Request *goyave.Request
 	Status  int
 	Length  int
 }
@@ -26,8 +26,8 @@ type Writer struct {
 	goyave.Component
 	formatter Formatter
 	writer    io.Writer
-	request   *goyave.RequestV5
-	response  *goyave.ResponseV5
+	request   *goyave.Request
+	response  *goyave.Response
 	length    int
 }
 
@@ -37,7 +37,7 @@ var _ goyave.PreWriter = (*Writer)(nil)
 // NewWriter create a new log writer.
 // The given Request and Response will be used and passed to the given
 // formatter.
-func NewWriter(server *goyave.Server, response *goyave.ResponseV5, request *goyave.RequestV5, formatter Formatter) *Writer {
+func NewWriter(server *goyave.Server, response *goyave.Response, request *goyave.Request, formatter Formatter) *Writer {
 	writer := &Writer{
 		request:   request,
 		writer:    response.Writer(),
@@ -88,8 +88,8 @@ type Middleware struct {
 }
 
 // Handle adds the log chained writer to the response.
-func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
-	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
 		logWriter := NewWriter(m.Server(), response, request, m.Formatter)
 		response.SetWriter(logWriter)
 
@@ -99,12 +99,12 @@ func (m *Middleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
 
 // CommonLogMiddleware captures response data and outputs it to the default logger
 // using the common log format.
-func CommonLogMiddleware() goyave.MiddlewareV5 {
+func CommonLogMiddleware() goyave.Middleware {
 	return &Middleware{Formatter: CommonLogFormatter}
 }
 
 // CombinedLogMiddleware captures response data and outputs it to the default logger
 // using the combined log format.
-func CombinedLogMiddleware() goyave.MiddlewareV5 {
+func CombinedLogMiddleware() goyave.Middleware {
 	return &Middleware{Formatter: CombinedLogFormatter}
 }

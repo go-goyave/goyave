@@ -19,11 +19,11 @@ import (
 
 type copyRequestMiddleware struct {
 	goyave.Component
-	request *goyave.RequestV5
+	request *goyave.Request
 }
 
-func (m *copyRequestMiddleware) Handle(next goyave.HandlerV5) goyave.HandlerV5 {
-	return func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+func (m *copyRequestMiddleware) Handle(next goyave.Handler) goyave.Handler {
+	return func(response *goyave.Response, request *goyave.Request) {
 		request.Now = m.request.Now
 		request.Data = m.request.Data
 		request.Extra = m.request.Extra
@@ -45,10 +45,10 @@ type TestServer struct {
 // routes without starting the server.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
-func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
+func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goyave.Server, *goyave.Router)) *TestServer {
 	rootDirectory := FindRootDirectory()
 	cfgPath := rootDirectory + configFileName
-	cfg, err := config.LoadFromV5(cfgPath)
+	cfg, err := config.LoadFrom(cfgPath)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +61,7 @@ func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goy
 // routes without starting the server.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
-func NewTestServerWithConfig(t *testing.T, cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.RouterV5)) *TestServer {
+func NewTestServerWithConfig(t *testing.T, cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.Router)) *TestServer {
 	srv, err := goyave.NewWithConfig(cfg)
 	if err != nil {
 		panic(err)
@@ -96,9 +96,9 @@ func (s *TestServer) TestRequest(request *http.Request) *http.Response {
 // make assertions. Keep in mind that this procedure won't be executed if your middleware is blocking.
 //
 // The request will go through the entire lifecycle like a regular request.
-func (s *TestServer) TestMiddleware(middleware goyave.MiddlewareV5, request *goyave.RequestV5, procedure goyave.HandlerV5) *http.Response {
+func (s *TestServer) TestMiddleware(middleware goyave.Middleware, request *goyave.Request, procedure goyave.Handler) *http.Response {
 	recorder := httptest.NewRecorder()
-	router := goyave.NewRouterV5(s.Server)
+	router := goyave.NewRouter(s.Server)
 	router.GlobalMiddleware(&copyRequestMiddleware{request: request})
 	router.Route([]string{request.Method()}, request.Request().URL.Path, procedure).Middleware(middleware)
 	router.ServeHTTP(recorder, request.Request())
@@ -134,7 +134,7 @@ func FindRootDirectory() string {
 
 // NewTestRequest create a new `goyave.Request` with an underlying HTTP request created
 // usin the `httptest` package.
-func NewTestRequest(method, uri string, body io.Reader) *goyave.RequestV5 {
+func NewTestRequest(method, uri string, body io.Reader) *goyave.Request {
 	req := httptest.NewRequest(method, uri, body)
 	return goyave.NewRequest(req)
 }
@@ -142,7 +142,7 @@ func NewTestRequest(method, uri string, body io.Reader) *goyave.RequestV5 {
 // NewTestRequest create a new `goyave.Request` with an underlying HTTP request created
 // usin the `httptest` package. This function sets the request language using the default
 // language of the server.
-func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.RequestV5 {
+func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.Request {
 	req := NewTestRequest(method, uri, body)
 	req.Lang = s.Lang.GetDefault()
 	return req
@@ -151,14 +151,14 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created
 // using the `httptest` package. This function uses a temporary `goyave.Server` with all defaults values loaded
 // so all functions of `*goyave.Response` can be used safely.
-func NewTestResponse(request *goyave.RequestV5) (*goyave.ResponseV5, *httptest.ResponseRecorder) {
+func NewTestResponse(request *goyave.Request) (*goyave.Response, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
 	return goyave.NewResponse(NewTestServerWithConfig(nil, config.LoadDefault(), nil).Server, request, recorder), recorder
 }
 
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created
 // using the `httptest` package.
-func (s *TestServer) NewTestResponse(request *goyave.RequestV5) (*goyave.ResponseV5, *httptest.ResponseRecorder) {
+func (s *TestServer) NewTestResponse(request *goyave.Request) (*goyave.Response, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
 	return goyave.NewResponse(s.Server, request, recorder), recorder
 }

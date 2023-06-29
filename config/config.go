@@ -116,12 +116,12 @@ func (l *loader) load(readFunc readFunc, source string) (*Config, error) {
 	}, nil
 }
 
-// LoadV5 loads the config.json file in the current working directory.
+// Load loads the config.json file in the current working directory.
 // If the "GOYAVE_ENV" env variable is set, the config file will be picked like so:
 //   - "production": "config.production.json"
 //   - "test": "config.test.json"
 //   - By default: "config.json"
-func LoadV5() (*Config, error) {
+func Load() (*Config, error) {
 	return defaultLoader.loadFrom(getConfigFilePath())
 }
 
@@ -131,8 +131,8 @@ func LoadDefault() *Config {
 	return cfg
 }
 
-// LoadFromV5 loads a config file from the given path.
-func LoadFromV5(path string) (*Config, error) {
+// LoadFrom loads a config file from the given path.
+func LoadFrom(path string) (*Config, error) {
 	return defaultLoader.loadFrom(path)
 }
 

@@ -187,7 +187,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
@@ -215,7 +215,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
@@ -243,7 +243,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
@@ -260,7 +260,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer invalidtoken")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -293,7 +293,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -326,7 +326,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -356,7 +356,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -415,7 +415,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -444,7 +444,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -473,7 +473,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -514,7 +514,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -544,7 +544,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
@@ -561,7 +561,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer invalidtoken")
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
@@ -581,7 +581,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{Optional: true})
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.ResponseV5, request *goyave.RequestV5) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
 			response.Status(http.StatusOK)
 		})

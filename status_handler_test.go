@@ -15,7 +15,7 @@ import (
 	"goyave.dev/goyave/v4/validation"
 )
 
-func prepareStatusHandlerTest() (*RequestV5, *ResponseV5, *httptest.ResponseRecorder) {
+func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder) {
 	server, err := NewWithConfig(config.LoadDefault())
 	if err != nil {
 		panic(err)
@@ -31,7 +31,7 @@ func TestPanicStatusHandler(t *testing.T) {
 	t.Run("no_debug", func(t *testing.T) {
 		req, resp, recorder := prepareStatusHandlerTest()
 		resp.server.config.Set("app.debug", false)
-		handler := &PanicStatusHandlerV5{}
+		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
 		req.Extra[ExtraError] = fmt.Errorf("test error")
@@ -51,7 +51,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		resp.server.config.Set("app.debug", true)
 		logBuffer := &bytes.Buffer{}
 		resp.server.ErrLogger = log.New(logBuffer, "", 0)
-		handler := &PanicStatusHandlerV5{}
+		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
 		req.Extra[ExtraError] = fmt.Errorf("test error")
@@ -75,7 +75,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		resp.server.config.Set("app.debug", true)
 		logBuffer := &bytes.Buffer{}
 		resp.server.ErrLogger = log.New(logBuffer, "", 0)
-		handler := &PanicStatusHandlerV5{}
+		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
 		handler.Handle(resp, req)
@@ -96,7 +96,7 @@ func TestPanicStatusHandler(t *testing.T) {
 
 func TestErrorStatusHandler(t *testing.T) {
 	req, resp, recorder := prepareStatusHandlerTest()
-	handler := &ErrorStatusHandlerV5{}
+	handler := &ErrorStatusHandler{}
 	handler.Init(resp.server)
 
 	resp.Status(http.StatusNotFound)
@@ -115,7 +115,7 @@ func TestErrorStatusHandler(t *testing.T) {
 
 func TestValidationStatusHandler(t *testing.T) {
 	req, resp, recorder := prepareStatusHandlerTest()
-	handler := &ValidationStatusHandlerV5{}
+	handler := &ValidationStatusHandler{}
 	handler.Init(resp.server)
 
 	req.Extra[ExtraValidationError] = &validation.Errors{

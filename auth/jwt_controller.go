@@ -16,7 +16,7 @@ import (
 
 // TokenFunc is the function used by JWTController to generate tokens
 // during login process.
-type TokenFunc[T any] func(request *goyave.RequestV5, user *T) (string, error)
+type TokenFunc[T any] func(request *goyave.Request, user *T) (string, error)
 
 // JWTController controller adding a login route returning a JWT for quick prototyping.
 //
@@ -58,11 +58,11 @@ func (c *JWTController[T]) Init(server *goyave.Server) {
 }
 
 // RegisterRoutes register the "/login" route (with validation) on the given router.
-func (c *JWTController[T]) RegisterRoutes(router *goyave.RouterV5) {
+func (c *JWTController[T]) RegisterRoutes(router *goyave.Router) {
 	router.Post("/login", c.Login).Middleware(&parse.Middleware{}).ValidateBody(c.validationRules)
 }
 
-func (c *JWTController[T]) validationRules(_ *goyave.RequestV5) validation.RuleSet {
+func (c *JWTController[T]) validationRules(_ *goyave.Request) validation.RuleSet {
 	return validation.RuleSet{
 		{Path: validation.CurrentElement, Rules: validation.List{
 			validation.Required(),
@@ -87,7 +87,7 @@ func (c *JWTController[T]) validationRules(_ *goyave.RequestV5) validation.RuleS
 // The database request is executed based on the model name and the
 // struct tags `auth:"username"` and `auth:"password"`.
 // The password is checked using bcrypt. The username field should unique.
-func (c *JWTController[T]) Login(response *goyave.ResponseV5, request *goyave.RequestV5) {
+func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Request) {
 	user := new(T)
 	body := request.Data.(map[string]any)
 	username := body[lo.Ternary(c.UsernameField == "", "username", c.UsernameField)].(string)
@@ -119,7 +119,7 @@ func (c *JWTController[T]) Login(response *goyave.ResponseV5, request *goyave.Re
 	response.JSON(http.StatusUnauthorized, map[string]string{"error": request.Lang.Get("auth.invalid-credentials")})
 }
 
-func (c *JWTController[T]) defaultTokenFunc(r *goyave.RequestV5, _ *T) (string, error) {
+func (c *JWTController[T]) defaultTokenFunc(r *goyave.Request, _ *T) (string, error) {
 	signingMethod := c.SigningMethod
 	if signingMethod == nil {
 		signingMethod = jwt.SigningMethodHS256

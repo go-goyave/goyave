@@ -5,7 +5,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/samber/lo"
+	"gorm.io/gorm"
 	"goyave.dev/goyave/v4/cors"
 	"goyave.dev/goyave/v4/validation"
 )
@@ -123,6 +123,7 @@ func (m *languageMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 // or 400 Bad Request and the response error (which can be retrieved with `GetError()`) to the
 // `validation.Errors` returned by the validator.
 // This data can then be used in a status handler.
+// This middleware requires the parse middleware.
 type validateRequestMiddlewareV5 struct {
 	Component
 	BodyRules  RuleSetFunc
@@ -136,6 +137,10 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		}
 		contentType := r.Header().Get("Content-Type")
 
+		var db *gorm.DB
+		if m.Config().GetString("database.connection") != "none" {
+			db = m.DB()
+		}
 		var errsBag *validation.Errors
 		var queryErrsBag *validation.Errors
 		var errors []error
@@ -145,7 +150,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				Rules:                    m.QueryRules(r).AsRules(),
 				ConvertSingleValueArrays: true,
 				Language:                 r.Lang,
-				DB:                       lo.Ternary(m.Config().GetString("database.connection") != "none", m.DB(), nil),
+				DB:                       db,
 				Config:                   m.Config(),
 				Logger:                   m.Logger(),
 				ErrLogger:                m.ErrLogger(),
@@ -167,7 +172,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				Rules:                    m.BodyRules(r).AsRules(),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
 				Language:                 r.Lang,
-				DB:                       lo.Ternary(m.Config().GetString("database.connection") != "none", m.DB(), nil),
+				DB:                       db,
 				Config:                   m.Config(),
 				Logger:                   m.Logger(),
 				ErrLogger:                m.ErrLogger(),

@@ -464,10 +464,11 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "validation_errors",
 			options: &Options{
-				Data:     map[string]any{"property": "a", "object": map[string]any{"property": "c"}, "array": []any{"d"}, "narray": []any{[]any{1, "e", 3}}},
+				Data:     map[string]any{"property": "a", "object": map[string]any{"property": "c"}, "array": []any{"d"}, "narray": []any{[]any{1, "e", 3}}, "number": 0},
 				Language: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required(), Int()}},
+					{Path: "number", Rules: List{Required(), Int(), Between(1, 4)}},
 					{Path: "missing", Rules: List{Required(), String()}},
 					{Path: "object", Rules: List{Required(), Object()}},
 					{Path: "object.property", Rules: List{Required(), Int()}},
@@ -481,6 +482,7 @@ func TestValidate(t *testing.T) {
 			wantValidationErrors: &Errors{
 				Fields: FieldsErrors{
 					"property": &Errors{Errors: []string{"The property must be an integer."}},
+					"number":   &Errors{Errors: []string{"The number must be between 1 and 4."}},
 					"missing":  &Errors{Errors: []string{"The missing is required.", "The missing must be a string."}},
 					"object": &Errors{
 						Fields: FieldsErrors{

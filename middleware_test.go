@@ -1,7 +1,10 @@
 package goyave
 
 import (
+	"bytes"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v4/config"
 	"goyave.dev/goyave/v4/cors"
+	"goyave.dev/goyave/v4/validation"
+
+	_ "goyave.dev/goyave/v4/database/dialect/sqlite"
 )
 
 func TestMiddlewareHolder(t *testing.T) {
@@ -186,8 +192,315 @@ func TestLanguageMiddleware(t *testing.T) {
 	}
 }
 
+type testValidator struct {
+	validation.BaseValidator
+	validateFunc func(c *testValidator, ctx *validation.Context) bool
+}
+
+func (v *testValidator) Validate(ctx *validation.Context) bool {
+	return v.validateFunc(v, ctx)
+}
+
+func (v *testValidator) Name() string {
+	return "test_validator"
+}
+
 func TestValidateMiddleware(t *testing.T) {
-	// TODO TestValidateMiddleware
+
+	cases := []struct {
+		next              func(*ResponseV5, *RequestV5)
+		queryRules        func(*RequestV5) validation.RuleSet
+		bodyRules         func(*RequestV5) validation.RuleSet
+		headers           map[string]string
+		query             map[string]any
+		data              any
+		expectQueryErrors *validation.Errors
+		expectBodyErrors  *validation.Errors
+		desc              string
+		expectBody        string
+		hasDB             bool
+		expectPass        bool
+		expectStatus      int
+	}{
+		{
+			desc: "query_ok",
+			queryRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
+			},
+			query:        map[string]any{"param": "6"},
+			expectBody:   "OK",
+			expectPass:   true,
+			expectStatus: http.StatusOK,
+			next: func(_ *ResponseV5, r *RequestV5) {
+				assert.Equal(t, map[string]any{"param": 6}, r.Query)
+			},
+		},
+		{
+			desc: "query_nok",
+			queryRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Min(5)}}}
+			},
+			query:        map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusUnprocessableEntity,
+			expectQueryErrors: &validation.Errors{Fields: validation.FieldsErrors{
+				"param": &validation.Errors{Errors: []string{"The param must be at least 5 characters."}},
+			}},
+		},
+		{
+			desc: "query_error",
+			queryRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
+					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
+						ctx.AddError(fmt.Errorf("test error 1"), fmt.Errorf("test error 2"))
+						return true
+					},
+				}}}}
+			},
+			query:        map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusInternalServerError,
+			expectBody:   "{\"error\": [\"test error 1\",\"test error 2\"]}",
+		},
+		{
+			desc:  "query_validation_options",
+			hasDB: true,
+			queryRules: func(request *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
+					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
+						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest])
+						assert.NotNil(t, v.DB())
+						assert.NotNil(t, v.Config())
+						assert.NotNil(t, v.Logger())
+						assert.NotNil(t, v.ErrLogger())
+						assert.NotNil(t, v.Lang())
+						return false
+					},
+				}}}}
+			},
+			query:        map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusUnprocessableEntity,
+			expectQueryErrors: &validation.Errors{Fields: validation.FieldsErrors{
+				"param": &validation.Errors{Errors: []string{"validation.rules.test_validator"}},
+			}},
+		},
+		{
+			desc: "query_convert_single_value_arrays",
+			queryRules: func(request *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
+			},
+			query:        map[string]any{"param": "v"},
+			expectPass:   true,
+			expectStatus: http.StatusOK,
+			expectBody:   "OK",
+			next: func(_ *ResponseV5, r *RequestV5) {
+				assert.Equal(t, map[string]any{"param": []string{"v"}}, r.Query)
+			},
+		},
+		{
+			desc: "body_ok",
+			bodyRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
+			},
+			data:         map[string]any{"param": "6"},
+			expectBody:   "OK",
+			expectPass:   true,
+			expectStatus: http.StatusOK,
+			next: func(_ *ResponseV5, r *RequestV5) {
+				assert.Equal(t, map[string]any{"param": 6}, r.Data)
+			},
+		},
+		{
+			desc: "body_nok",
+			bodyRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Min(5)}}}
+			},
+			data:         map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusUnprocessableEntity,
+			expectBodyErrors: &validation.Errors{Fields: validation.FieldsErrors{
+				"param": &validation.Errors{Errors: []string{"The param must be at least 5 characters."}},
+			}},
+		},
+		{
+			desc: "body_error",
+			bodyRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
+					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
+						ctx.AddError(fmt.Errorf("test error 1"), fmt.Errorf("test error 2"))
+						return true
+					},
+				}}}}
+			},
+			data:         map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusInternalServerError,
+			expectBody:   "{\"error\": [\"test error 1\",\"test error 2\"]}",
+		},
+		{
+			desc:  "body_validation_options",
+			hasDB: true,
+			bodyRules: func(request *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
+					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
+						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest])
+						assert.NotNil(t, v.Config())
+						assert.NotNil(t, v.DB())
+						assert.NotNil(t, v.Logger())
+						assert.NotNil(t, v.ErrLogger())
+						assert.NotNil(t, v.Lang())
+						return false
+					},
+				}}}}
+			},
+			data:         map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusUnprocessableEntity,
+			expectBodyErrors: &validation.Errors{Fields: validation.FieldsErrors{
+				"param": &validation.Errors{Errors: []string{"validation.rules.test_validator"}},
+			}},
+		},
+		{
+			desc: "body_convert_single_value_arrays",
+			bodyRules: func(request *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
+			},
+			data:         map[string]any{"param": "v"},
+			expectPass:   true,
+			expectStatus: http.StatusOK,
+			expectBody:   "OK",
+			next: func(_ *ResponseV5, r *RequestV5) {
+				assert.Equal(t, map[string]any{"param": []string{"v"}}, r.Data)
+			},
+		},
+		{
+			desc: "body_dont_convert_single_value_arrays",
+			bodyRules: func(request *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
+			},
+			headers:      map[string]string{"Content-Type": "application/json; charset=utf-8"},
+			data:         map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusUnprocessableEntity,
+			expectBodyErrors: &validation.Errors{Fields: validation.FieldsErrors{
+				"param": &validation.Errors{Errors: []string{"The param must be an array."}},
+			}},
+		},
+		{
+			desc: "query_and_body_ok",
+			queryRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
+			},
+			bodyRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
+			},
+			query:        map[string]any{"param": "6"},
+			data:         map[string]any{"param": "7"},
+			expectBody:   "OK",
+			expectPass:   true,
+			expectStatus: http.StatusOK,
+			next: func(_ *ResponseV5, r *RequestV5) {
+				assert.Equal(t, map[string]any{"param": 7}, r.Data)
+				assert.Equal(t, map[string]any{"param": 6}, r.Query)
+			},
+		},
+		{
+			desc: "query_and_body_error",
+			queryRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
+					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
+						ctx.AddError(fmt.Errorf("test error 1"))
+						return true
+					},
+				}}}}
+			},
+			bodyRules: func(_ *RequestV5) validation.RuleSet {
+				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
+					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
+						ctx.AddError(fmt.Errorf("test error 2"))
+						return true
+					},
+				}}}}
+			},
+			data:         map[string]any{"param": "v"},
+			query:        map[string]any{"param": "v"},
+			expectPass:   false,
+			expectStatus: http.StatusInternalServerError,
+			expectBody:   "{\"error\": [\"test error 1\",\"test error 2\"]}",
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.desc, func(t *testing.T) {
+			cfg := config.LoadDefault()
+			if c.hasDB {
+				cfg.Set("database.connection", "sqlite3")
+				cfg.Set("database.name", fmt.Sprintf("test_validation_middleware_%s.db", c.desc))
+				cfg.Set("database.options", "mode=memory")
+			}
+			server, err := NewWithConfig(cfg)
+			if err != nil {
+				panic(err)
+			}
+			defer func() {
+				assert.NoError(t, server.CloseDB())
+			}()
+			buffer := &bytes.Buffer{}
+			server.ErrLogger = log.New(buffer, "", 0)
+
+			m := &validateRequestMiddlewareV5{
+				QueryRules: c.queryRules,
+				BodyRules:  c.bodyRules,
+			}
+			m.Init(server)
+
+			request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+			request.Lang = server.Lang.GetDefault()
+			request.Query = c.query
+			request.Data = c.data
+			if c.headers != nil {
+				for h, v := range c.headers {
+					request.httpRequest.Header.Set(h, v)
+				}
+			}
+			recorder := httptest.NewRecorder()
+			response := NewResponse(server, request, recorder)
+
+			pass := false
+			m.Handle(func(r *ResponseV5, req *RequestV5) {
+				pass = true
+				if c.next != nil {
+					c.next(r, req)
+				}
+				r.String(http.StatusOK, "OK")
+			})(response, request)
+
+			res := recorder.Result()
+			body, err := io.ReadAll(res.Body)
+			assert.NoError(t, res.Body.Close())
+			if !assert.NoError(t, err) {
+				return
+			}
+			assert.Equal(t, c.expectPass, pass)
+			if c.expectPass {
+				assert.Equal(t, "OK", string(body))
+			}
+			assert.Equal(t, c.expectStatus, response.status)
+
+			if c.expectQueryErrors == nil {
+				assert.NotContains(t, request.Extra, ExtraQueryValidationError)
+			} else {
+				assert.Equal(t, c.expectQueryErrors, request.Extra[ExtraQueryValidationError])
+			}
+			if c.expectBodyErrors == nil {
+				assert.NotContains(t, request.Extra, ExtraValidationError)
+			} else {
+				assert.Equal(t, c.expectBodyErrors, request.Extra[ExtraValidationError])
+			}
+		})
+	}
 }
 
 func TestCORSMiddleware(t *testing.T) {

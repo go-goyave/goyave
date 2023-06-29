@@ -142,7 +142,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		if m.QueryRules != nil {
 			opt := &validation.Options{
 				Data:                     r.Query,
-				Rules:                    m.QueryRules(r),
+				Rules:                    m.QueryRules(r).AsRules(),
 				ConvertSingleValueArrays: true,
 				Language:                 r.Lang,
 				DB:                       lo.Ternary(m.Config().GetString("database.connection") != "none", m.DB(), nil),
@@ -151,7 +151,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
-			r.Extra[ExtraQueryValidationRules] = opt.Rules.AsRules()
+			r.Extra[ExtraQueryValidationRules] = opt.Rules
 			var err []error
 			queryErrsBag, err = validation.Validate(opt)
 			if queryErrsBag != nil {
@@ -164,7 +164,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 		if m.BodyRules != nil {
 			opt := &validation.Options{
 				Data:                     r.Data,
-				Rules:                    m.BodyRules(r),
+				Rules:                    m.BodyRules(r).AsRules(),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
 				Language:                 r.Lang,
 				DB:                       lo.Ternary(m.Config().GetString("database.connection") != "none", m.DB(), nil),
@@ -173,7 +173,7 @@ func (m *validateRequestMiddlewareV5) Handle(next HandlerV5) HandlerV5 {
 				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
-			r.Extra[ExtraBodyValidationRules] = opt.Rules.AsRules()
+			r.Extra[ExtraBodyValidationRules] = opt.Rules
 			var err []error
 			errsBag, err = validation.Validate(opt)
 			if errsBag != nil {

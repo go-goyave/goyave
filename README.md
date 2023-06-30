@@ -7,12 +7,12 @@
     <a href="https://github.com/go-goyave/goyave/releases"><img src="https://img.shields.io/github/v/release/go-goyave/goyave?include_prereleases" alt="Version"/></a>
     <a href="https://github.com/go-goyave/goyave/actions"><img src="https://github.com/go-goyave/goyave/workflows/CI/badge.svg?branch=develop" alt="Build Status"/></a>
     <a href="https://coveralls.io/github/go-goyave/goyave?branch=master"><img src="https://coveralls.io/repos/github/go-goyave/goyave/badge.svg" alt="Coverage Status"/></a>
-    <a href="https://goreportcard.com/report/goyave.dev/goyave"><img src="https://goreportcard.com/badge/goyave.dev/goyave" alt="Go Report"/></a>
+    <a href="https://github.com/avelino/awesome-go"><img src="https://awesome.re/mentioned-badge.svg" alt="Awesome"/></a>
 </p>
 
 <p align="center">
     <a href="https://github.com/go-goyave/goyave/blob/master/LICENSE"><img src="https://img.shields.io/dub/l/vibe-d.svg" alt="License"/></a>
-    <a href="https://github.com/avelino/awesome-go"><img src="https://awesome.re/mentioned-badge.svg" alt="Awesome"/></a>
+    <a href="https://pkg.go.dev/goyave.dev/goyave/v5"><img src="https://pkg.go.dev/badge/goyave.dev/goyave/v5.svg" alt="Go Reference"></a>
     <a href="https://discord.gg/mfemDMc"><img src="https://img.shields.io/discord/744264895209537617?logo=discord" alt="Discord"/></a>
 </p>
 

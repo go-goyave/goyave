@@ -9,11 +9,10 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"runtime/debug"
 	"strconv"
 
-	"github.com/samber/lo"
 	"gorm.io/gorm"
+	errorutil "goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
@@ -287,35 +286,22 @@ func (r *Response) Download(file string, fileName string) {
 // If debugging is not enabled, only the status code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err any) {
-	r.server.ErrLogger.Println(err)
-	r.error(err)
+	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
+	r.server.ErrLogger.Println(e.String())
+	r.error(e)
 }
 
 func (r *Response) error(err any) {
-	r.request.Extra[ExtraError] = err
-	if r.server.Config().GetBool("app.debug") {
-		stacktrace := r.request.Extra[ExtraStacktrace]
-		if stacktrace == nil {
-			stacktrace = string(debug.Stack())
+	e := errorutil.NewSkip(err, 3)  // Skipped: runtime.Callers, NewSkip, this func
+	r.request.Extra[ExtraError] = e // TODO should errors not be in Extras? Should they be guaranteed to be errors.Error?
+
+	if r.server.Config().GetBool("app.debug") && r.IsEmpty() && !r.Hijacked() {
+		status := http.StatusInternalServerError
+		if r.status != 0 {
+			status = r.status
 		}
-		r.server.ErrLogger.Print(stacktrace)
-		if r.IsEmpty() && !r.Hijacked() {
-			var message any
-			switch e := err.(type) {
-			case error:
-				message = e.Error()
-			case []error:
-				message = lo.Map(e, func(x error, _ int) string { return x.Error() })
-			default:
-				message = e
-			}
-			status := http.StatusInternalServerError
-			if r.status != 0 {
-				status = r.status
-			}
-			r.JSON(status, map[string]any{"error": message})
-			return
-		}
+		r.JSON(status, map[string]any{"error": e})
+		return
 	}
 
 	// Don't set r.empty to false to let error status handler process the error

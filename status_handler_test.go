@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,6 +53,8 @@ func TestPanicStatusHandler(t *testing.T) {
 		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
+		// Don't wrap the error into a `*errors.Error` to check the handler
+		// correctly calls `response.error()` and the error is converted to `*errors.Error`.
 		req.Extra[ExtraError] = fmt.Errorf("test error")
 		handler.Handle(resp, req)
 		res := recorder.Result()
@@ -65,9 +66,9 @@ func TestPanicStatusHandler(t *testing.T) {
 
 		assert.Equal(t, "{\"error\":\"test error\"}\n", string(body))
 
-		// Stacktrace printed to ErrLogger without error before
-		// err already printed by the recovery middleware
-		assert.True(t, strings.HasPrefix(logBuffer.String(), "goroutine "))
+		// Error and stacktrace already printed by the recovery middleware or `response.Error`
+		// (those are not executed in this test, thus leaving the log buffer empty)
+		assert.Empty(t, logBuffer.String())
 	})
 
 	t.Run("nil_error", func(t *testing.T) {
@@ -88,9 +89,9 @@ func TestPanicStatusHandler(t *testing.T) {
 
 		assert.Equal(t, "{\"error\":null}\n", string(body))
 
-		// Stacktrace printed to ErrLogger without error before
-		// err already printed by the recovery middleware
-		assert.True(t, strings.HasPrefix(logBuffer.String(), "goroutine "))
+		// Error and stacktrace are not printed to console because recovery middleware
+		// is not executed (no error raised, we just set the response status to 500 for example)
+		assert.Empty(t, logBuffer.String())
 	})
 }
 

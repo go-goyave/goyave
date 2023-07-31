@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/validation"
 
 	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
@@ -96,9 +97,12 @@ func TestRecoveryMiddleware(t *testing.T) {
 
 		handler(response, request)
 
-		assert.Equal(t, panicErr, request.Extra[ExtraError])
-		assert.Equal(t, panicErr.Error()+"\n", logBuffer.String())
-		assert.NotEmpty(t, request.Extra[ExtraStacktrace])
+		returnedErr, ok := request.Extra[ExtraError].(*errors.Error)
+		if !assert.True(t, ok) { // The panic error is wrapped automatically
+			return
+		}
+		assert.Equal(t, []error{panicErr}, returnedErr.Unwrap())
+		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})
 
@@ -121,7 +125,6 @@ func TestRecoveryMiddleware(t *testing.T) {
 
 		assert.Empty(t, logBuffer.String())
 		assert.NotContains(t, request.Extra, ExtraError)
-		assert.NotContains(t, request.Extra, ExtraStacktrace)
 		assert.Equal(t, 0, response.status)
 	})
 
@@ -144,10 +147,13 @@ func TestRecoveryMiddleware(t *testing.T) {
 
 		handler(response, request)
 
-		assert.Nil(t, request.Extra[ExtraError])
+		returnedErr, ok := request.Extra[ExtraError].(*errors.Error)
+		if !assert.True(t, ok) { // The panic error is wrapped automatically
+			return
+		}
+		assert.Equal(t, []error{nil}, returnedErr.Unwrap())
 		assert.Contains(t, request.Extra, ExtraError)
-		assert.Equal(t, "<nil>\n", logBuffer.String())
-		assert.NotEmpty(t, request.Extra[ExtraStacktrace])
+		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})
 }

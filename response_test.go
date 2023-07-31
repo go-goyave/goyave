@@ -10,12 +10,12 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
+	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
 func newTestReponse() (*Response, *httptest.ResponseRecorder) {
@@ -316,20 +316,23 @@ func TestResponse(t *testing.T) {
 		err := fmt.Errorf("custom error")
 		resp.Error(err)
 
-		assert.Equal(t, err, resp.request.Extra[ExtraError])
+		e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
+		if !assert.True(t, ok) {
+			return
+		}
+		assert.Equal(t, []error{err}, e.Unwrap())
 		assert.Equal(t, http.StatusInternalServerError, resp.status)
-		assert.Equal(t, "custom error\n", logBuffer.String())
+		assert.Equal(t, e.String()+"\n", logBuffer.String())
 	})
 
 	t.Run("Error_with_debug", func(t *testing.T) {
 		cases := []struct {
 			err             any
 			expectedMessage string
-			expectedLog     string
 		}{
-			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`, expectedLog: "custom error"},
-			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`, expectedLog: "map[key:value]"},
-			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`, expectedLog: `[custom error 1 custom error 2]`},
+			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`},
+			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`},
+			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`},
 		}
 
 		for _, c := range cases {
@@ -339,7 +342,10 @@ func TestResponse(t *testing.T) {
 			resp.server.config.Set("app.debug", true)
 			resp.Error(c.err)
 
-			assert.Equal(t, c.err, resp.request.Extra[ExtraError])
+			e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
+			if !assert.True(t, ok) {
+				return
+			}
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
 
 			res := recorder.Result()
@@ -352,7 +358,7 @@ func TestResponse(t *testing.T) {
 			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 			assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
 			assert.Equal(t, "{\"error\":"+c.expectedMessage+"}\n", string(body))
-			assert.True(t, strings.HasPrefix(logBuffer.String(), c.expectedLog+"\ngoroutine ")) // Error and stacktrace printed to ErrLogger
+			assert.Equal(t, fmt.Sprintf("%s\n", e.String()), logBuffer.String()) // Error and stacktrace printed to ErrLogger
 		}
 	})
 
@@ -365,7 +371,11 @@ func TestResponse(t *testing.T) {
 		resp.Status(http.StatusForbidden)
 		resp.Error(err)
 
-		assert.Equal(t, err, resp.request.Extra[ExtraError])
+		e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
+		if !assert.True(t, ok) {
+			return
+		}
+		assert.Equal(t, []error{err}, e.Unwrap())
 		assert.Equal(t, http.StatusForbidden, resp.status)
 
 		res := recorder.Result()
@@ -379,7 +389,7 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
 		assert.Equal(t, "{\"error\":\"custom error\"}\n", string(body))
 
-		assert.True(t, strings.HasPrefix(logBuffer.String(), "custom error\ngoroutine ")) // Error and stacktrace printed to ErrLogger
+		assert.Equal(t, fmt.Sprintf("%s\n", e.String()), logBuffer.String()) // Error and stacktrace printed to ErrLogger
 	})
 
 	t.Run("Error_with_debug_and_not_empty", func(t *testing.T) {
@@ -391,7 +401,11 @@ func TestResponse(t *testing.T) {
 		resp.String(http.StatusForbidden, "forbidden")
 		resp.Error(err)
 
-		assert.Equal(t, err, resp.request.Extra[ExtraError])
+		e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
+		if !assert.True(t, ok) {
+			return
+		}
+		assert.Equal(t, []error{err}, e.Unwrap())
 		assert.Equal(t, http.StatusForbidden, resp.status)
 
 		res := recorder.Result()
@@ -404,7 +418,7 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, res.StatusCode)
 		assert.Equal(t, "forbidden", string(body))
 
-		assert.True(t, strings.HasPrefix(logBuffer.String(), "custom error\ngoroutine ")) // Error and stacktrace printed to ErrLogger
+		assert.Equal(t, fmt.Sprintf("%s\n", e.String()), logBuffer.String()) // Error and stacktrace printed to ErrLogger
 	})
 
 	t.Run("WriteDBError", func(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/walk"
 )
@@ -76,7 +77,13 @@ func TestContext(t *testing.T) {
 	t.Run("Errors", func(t *testing.T) {
 		c := &Context{}
 		c.AddError(fmt.Errorf("err1"), fmt.Errorf("err2"), fmt.Errorf("err3"))
-		assert.Equal(t, []error{fmt.Errorf("err1"), fmt.Errorf("err2"), fmt.Errorf("err3")}, c.Errors())
+		assert.Len(t, c.errors, 3)
+		for i, e := range c.Errors() {
+			err, ok := e.(*errors.Error)
+			if assert.True(t, ok) {
+				assert.Equal(t, []error{fmt.Errorf("err%d", i+1)}, err.Unwrap())
+			}
+		}
 	})
 
 	t.Run("AddArrayElementValidationErrors", func(t *testing.T) {
@@ -641,7 +648,13 @@ func TestValidate(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			validationErrors, errs := Validate(c.options)
 			assert.Equal(t, c.wantValidationErrors, validationErrors)
-			assert.Equal(t, c.wantErrors, errs)
+			assert.Len(t, errs, len(c.wantErrors))
+			for i, e := range errs {
+				err, ok := e.(*errors.Error)
+				if assert.True(t, ok) {
+					assert.Equal(t, []error{c.wantErrors[i]}, err.Unwrap())
+				}
+			}
 
 			if c.wantData != nil {
 				assert.Equal(t, c.wantData, c.options.Data)

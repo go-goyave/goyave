@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -161,7 +162,9 @@ type Context struct {
 // to be used when the field under validation doesn't match the rule, but rather
 // when there has been an operation error (such as a database error).
 func (c *Context) AddError(err ...error) {
-	c.errors = append(c.errors, err...)
+	for _, e := range err {
+		c.errors = append(c.errors, errors.NewSkip(e, 3)) // Skipped: runtime.Callers, NewSkip, this func
+	}
 }
 
 // AddArrayElementValidationErrors marks a child element to the field currently under validation

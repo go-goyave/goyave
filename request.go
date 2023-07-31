@@ -15,10 +15,6 @@ const (
 	// reported with the Error function or via the recovery middleware.
 	ExtraError = "goyave.error"
 
-	// ExtraStacktrace the key used in `Context.Extra` to store the
-	// stacktrace if debug is enabled and an error is reported.
-	ExtraStacktrace = "goyave.stacktrace"
-
 	// ExtraBodyValidationRules the key used in `Context.Extra` to
 	// store the body validation rules.
 	ExtraBodyValidationRules = "goyave.bodyValidationRules"

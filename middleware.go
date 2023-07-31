@@ -2,11 +2,11 @@ package goyave
 
 import (
 	"net/http"
-	"runtime/debug"
 	"strings"
 
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -79,9 +79,9 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 		panicked := true
 		defer func() {
 			if err := recover(); err != nil || panicked {
-				m.ErrLogger().Println(err)
-				request.Extra[ExtraError] = err
-				request.Extra[ExtraStacktrace] = string(debug.Stack())
+				e := errors.NewSkip(err, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
+				m.ErrLogger().Println(e.String())
+				request.Extra[ExtraError] = e
 				response.Status(http.StatusInternalServerError)
 			}
 		}()

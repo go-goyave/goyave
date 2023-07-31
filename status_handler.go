@@ -26,7 +26,7 @@ type PanicStatusHandler struct {
 // Handle internal server error responses.
 func (*PanicStatusHandler) Handle(response *Response, request *Request) {
 	response.error(request.Extra[ExtraError])
-	if response.IsEmpty() {
+	if response.IsEmpty() && !response.Hijacked() {
 		message := map[string]string{
 			"error": http.StatusText(response.GetStatus()),
 		}

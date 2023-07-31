@@ -18,6 +18,7 @@ import (
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // Server the central component of a Goyave application.
@@ -64,7 +65,7 @@ type Server struct {
 func New() (*Server, error) {
 	cfg, err := config.Load()
 	if err != nil {
-		return nil, &Error{err, ExitInvalidConfig}
+		return nil, errors.New(err)
 	}
 	return NewWithConfig(cfg)
 }
@@ -76,7 +77,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 	if cfg.GetString("database.connection") != "none" {
 		db, err = database.New(cfg)
 		if err != nil {
-			return nil, &Error{err, ExitDatabaseError}
+			return nil, errors.New(err)
 		}
 	}
 
@@ -85,7 +86,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 	languages := lang.New() // TODO using embed FS
 	languages.Default = cfg.GetString("app.defaultLanguage")
 	if err := languages.LoadAllAvailableLanguages(); err != nil {
-		return nil, &Error{err, ExitLanguageError}
+		return nil, errors.New(err)
 	}
 
 	host := cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port"))
@@ -314,15 +315,9 @@ func (s *Server) Router() *Router {
 func (s *Server) Start() error {
 	state := atomic.LoadUint32(&s.state)
 	if state == 1 || state == 2 {
-		return &Error{
-			err:      fmt.Errorf("Server is already running"),
-			ExitCode: ExitStateError,
-		}
+		return errors.New("server is already running")
 	} else if state == 3 {
-		return &Error{
-			err:      fmt.Errorf("Cannot restart a stopped server"),
-			ExitCode: ExitStateError,
-		}
+		return errors.New("cannot restart a stopped server")
 	}
 	atomic.StoreUint32(&s.state, 1)
 
@@ -335,7 +330,7 @@ func (s *Server) Start() error {
 
 	ln, err := net.Listen("tcp", s.server.Addr)
 	if err != nil {
-		return &Error{err, ExitNetworkError}
+		return errors.New(err)
 	}
 	defer func() {
 		for _, hook := range s.shutdownHooks {
@@ -359,7 +354,7 @@ func (s *Server) Start() error {
 	}(s)
 	if err := s.server.Serve(ln); err != nil && err != http.ErrServerClosed {
 		atomic.StoreUint32(&s.state, 3)
-		return &Error{err, ExitHTTPError}
+		return errors.New(err)
 	}
 	return nil
 }

@@ -10,12 +10,8 @@ import (
 )
 
 // TODO test Error
-// TODO move exit codes to here?
-// New exit code Fatal?
-// May be confusing with goyave.Error
 
 // TODO Add an output format for structured logging? Linked to the logging system?
-// TODO test validation returning multiple errors
 
 // MaxStackDepth the maximum number of frames collected when creating a new Error.
 var MaxStackDepth = 50
@@ -226,3 +222,7 @@ func (r *Reason) UnmarshalJSON(data []byte) error {
 func (r Reason) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r.reason)
 }
+
+// TODO document exit codes are removed
+// Exit code doesn't really bring value, the error message in the logs is more important
+// The server now returns *errors.Error

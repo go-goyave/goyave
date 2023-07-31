@@ -18,6 +18,7 @@ import (
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
@@ -81,9 +82,9 @@ func TestServer(t *testing.T) {
 
 		s, err := New()
 		if assert.Error(t, err) {
-			goyaveErr, ok := err.(*Error)
+			goyaveErr, ok := err.(*errors.Error)
 			if assert.True(t, ok) {
-				assert.Equal(t, ExitInvalidConfig, goyaveErr.ExitCode)
+				assert.Equal(t, "Config error: invalid character '}' after object key", goyaveErr.Error())
 			}
 		}
 		assert.Nil(t, s)
@@ -333,11 +334,9 @@ func TestServer(t *testing.T) {
 		atomic.StoreUint32(&server.state, 2) // Simulate the server already running
 		err = server.Start()
 		if assert.Error(t, err) {
-			assert.Equal(t, "Server is already running", err.Error())
-			e, ok := err.(*Error)
-			if assert.True(t, ok) {
-				assert.Equal(t, ExitStateError, e.ExitCode)
-			}
+			assert.Equal(t, "server is already running", err.Error())
+			_, ok := err.(*errors.Error)
+			assert.True(t, ok)
 		}
 	})
 
@@ -349,11 +348,9 @@ func TestServer(t *testing.T) {
 		atomic.StoreUint32(&server.state, 3) // Simulate stopped server
 		err = server.Start()
 		if assert.Error(t, err) {
-			assert.Equal(t, "Cannot restart a stopped server", err.Error())
-			e, ok := err.(*Error)
-			if assert.True(t, ok) {
-				assert.Equal(t, ExitStateError, e.ExitCode)
-			}
+			assert.Equal(t, "cannot restart a stopped server", err.Error())
+			_, ok := err.(*errors.Error)
+			assert.True(t, ok)
 		}
 	})
 

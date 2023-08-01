@@ -193,6 +193,13 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, "{\"hello\":\"world\"}\n", string(body))
 	})
 
+	t.Run("JSON_error", func(t *testing.T) {
+		resp, _ := newTestReponse()
+		assert.Panics(t, func() {
+			resp.JSON(http.StatusOK, make(chan struct{}))
+		})
+	})
+
 	t.Run("String", func(t *testing.T) {
 		resp, recorder := newTestReponse()
 		resp.String(http.StatusOK, "hello world")

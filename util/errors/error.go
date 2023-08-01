@@ -162,7 +162,7 @@ func (e Error) StackFrames() FrameStack {
 // - an array of the marshaled reasons otherwise
 func (e Error) MarshalJSON() ([]byte, error) {
 	if len(e.reasons) == 0 {
-		return []byte(e.Error()), nil
+		return json.Marshal(e.Error())
 	}
 	if len(e.reasons) == 1 {
 		return e.marshalReason(e.reasons[0])
@@ -211,11 +211,6 @@ func (r Reason) Value() any {
 
 func (r Reason) Error() string {
 	return fmt.Sprintf("%v", r.reason)
-}
-
-// UnmarshalJSON unmarshals the JSON input into this `Reason` wrapper.
-func (r *Reason) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.reason)
 }
 
 // MarshalJSON marshals the wrapped reason.

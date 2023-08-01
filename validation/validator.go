@@ -67,7 +67,7 @@ type component struct {
 // Panics if there is none.
 func (c *component) DB() *gorm.DB {
 	if c.db == nil {
-		panic("DB is not set in validation options")
+		panic(errors.NewSkip("DB is not set in validation options", 3))
 	}
 	return c.db
 }
@@ -76,7 +76,7 @@ func (c *component) DB() *gorm.DB {
 // Panics if there is none.
 func (c *component) Config() *config.Config {
 	if c.config == nil {
-		panic("Config is not set in validation options")
+		panic(errors.NewSkip("Config is not set in validation options", 3))
 	}
 	return c.config
 }
@@ -85,7 +85,7 @@ func (c *component) Config() *config.Config {
 // Panics if there is none.
 func (c *component) Lang() *lang.Language {
 	if c.lang == nil {
-		panic("Language is not set in validation options")
+		panic(errors.NewSkip("Language is not set in validation options", 3))
 	}
 	return c.lang
 }
@@ -94,7 +94,7 @@ func (c *component) Lang() *lang.Language {
 // Panics if there is none.
 func (c *component) Logger() *log.Logger {
 	if c.logger == nil {
-		panic("Logger is not set in validation options")
+		panic(errors.NewSkip("Logger is not set in validation options", 3))
 	}
 	return c.logger
 }
@@ -103,7 +103,7 @@ func (c *component) Logger() *log.Logger {
 // Panics if there is none.
 func (c *component) ErrLogger() *log.Logger {
 	if c.errLogger == nil {
-		panic("ErrLogger is not set in validation options")
+		panic(errors.NewSkip("ErrLogger is not set in validation options", 3))
 	}
 	return c.errLogger
 }

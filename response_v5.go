@@ -88,7 +88,11 @@ func (r *Response) PreWrite(b []byte) {
 // See http.ResponseWriter.Write
 func (r *Response) Write(data []byte) (int, error) {
 	r.PreWrite(data)
-	return r.writer.Write(data)
+	n, err := r.writer.Write(data)
+	if err != nil {
+		err = errorutil.New(err)
+	}
+	return n, err
 }
 
 // WriteHeader sends an HTTP response header with the provided
@@ -139,6 +143,8 @@ func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	c, b, e := hijacker.Hijack()
 	if e == nil {
 		r.hijacked = true
+	} else {
+		e = errorutil.New(e)
 	}
 	return c, b, e
 }
@@ -212,7 +218,7 @@ func (r *Response) JSON(responseCode int, data interface{}) {
 	r.responseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 	r.status = responseCode
 	if err := json.NewEncoder(r).Encode(data); err != nil {
-		panic(err)
+		panic(errorutil.NewSkip(err, 3))
 	}
 }
 
@@ -220,7 +226,7 @@ func (r *Response) JSON(responseCode int, data interface{}) {
 func (r *Response) String(responseCode int, message string) {
 	r.status = responseCode
 	if _, err := r.Write([]byte(message)); err != nil {
-		panic(err)
+		panic(errorutil.NewSkip(err, 3))
 	}
 }
 
@@ -233,7 +239,7 @@ func (r *Response) writeFile(file string, disposition string) { // TODO handle i
 	r.status = http.StatusOK
 	mime, size, err := fsutil.GetMIMEType(file)
 	if err != nil {
-		r.Error(err)
+		r.Error(errorutil.NewSkip(err, 4))
 		return
 	}
 	header := r.responseWriter.Header()
@@ -252,7 +258,7 @@ func (r *Response) writeFile(file string, disposition string) { // TODO handle i
 		_ = f.Close()
 	}()
 	if _, err := io.Copy(r, f); err != nil {
-		panic(err)
+		panic(errorutil.NewSkip(err, 4))
 	}
 }
 
@@ -328,7 +334,7 @@ func (r *Response) WriteDBError(err error) bool {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			r.Status(http.StatusNotFound)
 		} else {
-			r.Error(err)
+			r.Error(errorutil.NewSkip(err, 3))
 		}
 		return true
 	}

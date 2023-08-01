@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
 // BasicAuthenticator implementation of Authenticator with the Basic
@@ -49,7 +50,7 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user any) err
 	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 
 	if result.Error != nil && !notFound {
-		panic(result.Error)
+		panic(errorutil.New(result.Error))
 	}
 
 	t := reflect.Indirect(reflect.ValueOf(user))

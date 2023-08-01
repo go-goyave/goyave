@@ -7,6 +7,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// TODO remove this, this is not needed anymore because we encourage the use of DTOs and typeutil.Convert
+
 // Only extracts the requested field from the given map[string] or structure and
 // returns a map[string]any containing only those values.
 //

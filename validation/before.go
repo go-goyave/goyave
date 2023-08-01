@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -74,7 +75,7 @@ func (v *BeforeFieldValidator) Name() string { return "before" }
 func BeforeField(path string) *BeforeFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.BeforeField: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.BeforeField: path parse error: %w", err), 3))
 	}
 	return &BeforeFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
 }
@@ -102,7 +103,7 @@ func (v *BeforeEqualFieldValidator) Name() string { return "before_equal" }
 func BeforeEqualField(path string) *BeforeEqualFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.BeforeEqualField: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.BeforeEqualField: path parse error: %w", err), 3))
 	}
 	return &BeforeEqualFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
 }

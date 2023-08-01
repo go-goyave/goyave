@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"golang.org/x/exp/maps"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/httputil"
 )
@@ -40,7 +41,7 @@ func New() *Languages {
 func (l *Languages) LoadAllAvailableLanguages() error {
 	workingDir, err := os.Getwd()
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 	sep := string(os.PathSeparator)
 	langDirectory := workingDir + sep + "resources" + sep + "lang" + sep
@@ -54,7 +55,7 @@ func (l *Languages) LoadDirectory(directory string) error {
 	if fsutil.IsDirectory(directory) {
 		files, err := os.ReadDir(directory)
 		if err != nil {
-			return err
+			return errors.New(err)
 		}
 
 		for _, f := range files {
@@ -83,7 +84,7 @@ func (l *Languages) Load(language, path string) error {
 		return l.load(language, path)
 	}
 
-	return fmt.Errorf("Failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path)
+	return errors.New(fmt.Errorf("failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path))
 }
 
 func (l *Languages) load(lang string, path string) error {
@@ -215,12 +216,15 @@ func readLangFile(path string, dest any) (err error) {
 	langFile, _ := os.Open(path)
 	defer func() {
 		closeErr := langFile.Close()
-		if err == nil {
-			err = closeErr
+		if err == nil && closeErr != nil {
+			err = errors.New(closeErr)
 		}
 	}()
 
 	err = json.NewDecoder(langFile).Decode(&dest)
+	if err != nil {
+		err = errors.New(err)
+	}
 	return
 }
 

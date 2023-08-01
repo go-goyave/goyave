@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -76,7 +77,7 @@ func (v *DifferentValidator) MessagePlaceholders(_ *Context) []string {
 func Different(path string) *DifferentValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.Different: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.Different: path parse error: %w", err), 3))
 	}
 	return &DifferentValidator{Path: p}
 }

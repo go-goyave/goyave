@@ -86,7 +86,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 	languages := lang.New() // TODO using embed FS
 	languages.Default = cfg.GetString("app.defaultLanguage")
 	if err := languages.LoadAllAvailableLanguages(); err != nil {
-		return nil, errors.New(err)
+		return nil, err
 	}
 
 	host := cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port"))
@@ -163,7 +163,7 @@ func (s *Server) Service(name string) Service {
 	if s, ok := s.services[name]; ok {
 		return s
 	}
-	panic(fmt.Errorf("Service %q does not exist", name))
+	panic(errors.New(fmt.Errorf("service %q does not exist", name)))
 }
 
 // LookupService search for a service by its name. If the service
@@ -265,7 +265,7 @@ func (s *Server) Transaction(opts ...*sql.TxOptions) func() {
 		err := s.db.Rollback().Error
 		s.db = ogDB
 		if err != nil {
-			panic(err)
+			panic(errors.New(err))
 		}
 	}
 }
@@ -297,9 +297,13 @@ func (s *Server) CloseDB() error {
 	}
 	db, err := s.db.DB()
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
-	return db.Close()
+	err = db.Close()
+	if err != nil {
+		err = errors.New(err)
+	}
+	return err
 }
 
 // Router returns the root router.
@@ -396,7 +400,7 @@ func (s *Server) Stop() {
 	defer cancel()
 	err := s.server.Shutdown(ctx)
 	if err != nil {
-		s.ErrLogger.Println(err)
+		s.ErrLogger.Println(errors.NewSkip(err, 3).String())
 	}
 
 	<-s.stopChannel // Wait for stop channel before returning

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 var contentTypeByExtension = map[string]string{
@@ -42,18 +44,20 @@ func GetMIMEType(file string) (contentType string, size int64, err error) {
 	var f *os.File
 	f, err = os.Open(file)
 	if err != nil {
+		err = errors.NewSkip(err, 3)
 		return
 	}
 	defer func() {
 		errClose := f.Close()
-		if err == nil {
-			err = errClose
+		if err == nil && errClose != nil {
+			err = errors.New(errClose)
 		}
 	}()
 
 	var stat fs.FileInfo
 	stat, err = f.Stat()
 	if err != nil {
+		err = errors.NewSkip(err, 3)
 		return
 	}
 
@@ -65,6 +69,7 @@ func GetMIMEType(file string) (contentType string, size int64, err error) {
 	if size != 0 {
 		_, err = f.Read(buffer)
 		if err != nil {
+			err = errors.NewSkip(err, 3)
 			return
 		}
 
@@ -110,7 +115,7 @@ func IsDirectory(path string) bool {
 func Delete(path string) {
 	err := os.Remove(path)
 	if err != nil {
-		panic(err)
+		panic(errors.NewSkip(err, 3))
 	}
 }
 

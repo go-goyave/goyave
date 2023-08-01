@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -114,7 +115,7 @@ func (v *GreaterThanValidator) Name() string { return "greater_than" }
 func GreaterThan(path string) *GreaterThanValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.GreaterThan: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.GreaterThan: path parse error: %w", err), 3))
 	}
 	return &GreaterThanValidator{ComparisonValidator: ComparisonValidator{Path: p}}
 }
@@ -148,7 +149,7 @@ func (v *GreaterThanEqualValidator) Name() string { return "greater_than_equal" 
 func GreaterThanEqual(path string) *GreaterThanEqualValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.GreaterThanEqual: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.GreaterThanEqual: path parse error: %w", err), 3))
 	}
 	return &GreaterThanEqualValidator{ComparisonValidator: ComparisonValidator{Path: p}}
 }
@@ -182,7 +183,7 @@ func (v *LowerThanValidator) Name() string { return "lower_than" }
 func LowerThan(path string) *LowerThanValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.LowerThan: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.LowerThan: path parse error: %w", err), 3))
 	}
 	return &LowerThanValidator{ComparisonValidator: ComparisonValidator{Path: p}}
 }
@@ -216,7 +217,7 @@ func (v *LowerThanEqualValidator) Name() string { return "lower_than_equal" }
 func LowerThanEqual(path string) *LowerThanEqualValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.LowerThanEqual: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.LowerThanEqual: path parse error: %w", err), 3))
 	}
 	return &LowerThanEqualValidator{ComparisonValidator: ComparisonValidator{Path: p}}
 }

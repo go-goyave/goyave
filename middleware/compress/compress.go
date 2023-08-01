@@ -7,6 +7,7 @@ import (
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/httputil"
 )
 
@@ -44,7 +45,11 @@ func (w *compressWriter) PreWrite(b []byte) {
 }
 
 func (w *compressWriter) Write(b []byte) (int, error) {
-	return w.WriteCloser.Write(b)
+	n, err := w.WriteCloser.Write(b)
+	if err != nil {
+		err = errors.New(err)
+	}
+	return n, err
 }
 
 func (w *compressWriter) Close() error {
@@ -75,7 +80,7 @@ func (w *Gzip) Encoding() string {
 func (w *Gzip) NewWriter(wr io.Writer) io.WriteCloser {
 	writer, err := gzip.NewWriterLevel(wr, w.Level)
 	if err != nil {
-		panic(err)
+		panic(errors.New(err))
 	}
 	return writer
 }

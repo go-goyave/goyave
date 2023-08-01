@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/middleware/parse"
+	errorutil "goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -98,7 +99,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 
 	if result.Error != nil && !notFound {
-		panic(result.Error)
+		panic(errorutil.New(result.Error))
 	}
 
 	t := reflect.Indirect(reflect.ValueOf(user))
@@ -110,7 +111,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 		tokenFunc := lo.Ternary(c.TokenFunc == nil, c.defaultTokenFunc, c.TokenFunc)
 		token, err := tokenFunc(request, user)
 		if err != nil {
-			panic(err)
+			panic(errorutil.New(err))
 		}
 		response.JSON(http.StatusOK, map[string]string{"token": token})
 		return

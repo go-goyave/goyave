@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // Context contains all information needed for a `Formatter`.
@@ -60,7 +61,11 @@ func (w *Writer) PreWrite(b []byte) {
 // for later logging.
 func (w *Writer) Write(b []byte) (int, error) {
 	w.length += len(b)
-	return w.writer.Write(b)
+	n, err := w.writer.Write(b)
+	if err != nil {
+		err = errors.New(err)
+	}
+	return n, err
 }
 
 // Close the writer and its child ResponseWriter, flushing response

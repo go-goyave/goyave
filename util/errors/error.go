@@ -9,8 +9,6 @@ import (
 	"github.com/samber/lo"
 )
 
-// TODO test Error
-
 // TODO Add an output format for structured logging? Linked to the logging system?
 
 // MaxStackDepth the maximum number of frames collected when creating a new Error.

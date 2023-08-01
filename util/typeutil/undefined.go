@@ -5,6 +5,8 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // Undefined utility type wrapping a generic value used to differentiate
@@ -42,7 +44,7 @@ func NewUndefined[T any](val T) Undefined[T] {
 // On successful unmarshal of the underlying value, sets the `Present` field to `true`.
 func (u *Undefined[T]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &u.Val); err != nil {
-		return fmt.Errorf("typeutil.Undefined: couldn't unmarshal JSON: %w", err)
+		return errors.New(fmt.Errorf("typeutil.Undefined: couldn't unmarshal JSON: %w", err))
 	}
 
 	u.Present = true
@@ -57,13 +59,13 @@ func (u *Undefined[T]) UnmarshalText(text []byte) error {
 	u.Present = len(text) > 0
 	if textUnmarshaler, ok := any(&u.Val).(encoding.TextUnmarshaler); ok {
 		if err := textUnmarshaler.UnmarshalText(text); err != nil {
-			return err
+			return errors.New(err)
 		}
 		u.Present = true
 		return nil
 	}
 
-	return fmt.Errorf("typeutil.Undefined: cannot unmarshal text: underlying value doesn't implement encoding.TextUnmarshaler")
+	return errors.New("typeutil.Undefined: cannot unmarshal text: underlying value doesn't implement encoding.TextUnmarshaler")
 }
 
 // IsZero returns true for non-present values, for potential future omitempty support.

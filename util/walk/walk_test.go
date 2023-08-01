@@ -99,7 +99,7 @@ func testPathScannerError(t *testing.T, path string) {
 
 	err := scanner.Err()
 	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "Illegal syntax: ")
+		assert.Contains(t, err.Error(), "illegal syntax: ")
 	} else {
 		fmt.Printf("%#v\n", result)
 	}

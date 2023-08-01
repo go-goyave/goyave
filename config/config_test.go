@@ -149,14 +149,14 @@ func TestLoad(t *testing.T) {
 		cfg, err := LoadJSON(`{"app": {"name": {}}}`)
 		assert.Nil(t, cfg)
 		assert.Error(t, err)
-		assert.Equal(t, "Config error: \n\t- Cannot override entry \"name\" with a category", err.Error())
+		assert.Equal(t, "Config error: \n\t- cannot override entry \"name\" with a category", err.Error())
 	})
 
 	t.Run("Load Override Category With Entry", func(t *testing.T) {
 		cfg, err := LoadJSON(`{"app": "value"}`)
 		assert.Nil(t, cfg)
 		assert.Error(t, err)
-		assert.Equal(t, "Config error: \n\t- Cannot override category \"app\" with an entry", err.Error())
+		assert.Equal(t, "Config error: \n\t- cannot override category \"app\" with an entry", err.Error())
 	})
 
 	t.Run("Validation", func(t *testing.T) {

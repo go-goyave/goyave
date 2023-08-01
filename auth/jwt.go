@@ -13,6 +13,8 @@ import (
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
+
+	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
 const (
@@ -105,7 +107,11 @@ func (s *JWTService) GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod
 	if err != nil {
 		return "", err
 	}
-	return token.SignedString(key)
+	result, err := token.SignedString(key)
+	if err != nil {
+		err = errorutil.New(err)
+	}
+	return result, err
 }
 
 // GetKey load a JWT signature key from the config.
@@ -126,7 +132,7 @@ func (s *JWTService) GetKey(entry string) (any, error) {
 
 	data, err := os.ReadFile(s.config.GetString(entry)) // TODO support embeds?
 	if err != nil {
-		return nil, err
+		return nil, errorutil.New(err)
 	}
 
 	var key any
@@ -143,6 +149,8 @@ func (s *JWTService) GetKey(entry string) (any, error) {
 
 	if err == nil {
 		s.cache.Store(entry, key)
+	} else {
+		err = errorutil.New(err)
 	}
 	return key, err
 }
@@ -157,7 +165,7 @@ func (s *JWTService) GetPrivateKey(signingMethod jwt.SigningMethod) (any, error)
 	case *jwt.SigningMethodHMAC:
 		return []byte(s.config.GetString("auth.jwt.secret")), nil
 	default:
-		return nil, errors.New("Unsupported JWT signing method: " + signingMethod.Alg())
+		return nil, errorutil.New("unsupported JWT signing method: " + signingMethod.Alg())
 	}
 }
 
@@ -230,7 +238,8 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 					return fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
 				}
-				panic(result.Error)
+				panic(errorutil.New(result.Error))
+
 			}
 
 			return nil
@@ -266,7 +275,7 @@ func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (any, error) {
 		}
 		return []byte(a.Config().GetString("auth.jwt.secret")), nil
 	default:
-		panic(errors.New("Unsupported JWT Signing method: " + a.SigningMethod.Alg()))
+		panic(errorutil.New("unsupported JWT Signing method: " + a.SigningMethod.Alg()))
 	}
 }
 

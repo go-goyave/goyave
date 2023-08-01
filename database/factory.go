@@ -3,6 +3,7 @@ package database
 import (
 	"github.com/imdario/mergo"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // Factory an object used to generate records or seed the database.
@@ -44,7 +45,7 @@ func (f *Factory[T]) Generate(count int) []*T {
 		record := f.generator()
 		if f.override != nil {
 			if err := mergo.Merge(record, f.override, mergo.WithOverride); err != nil {
-				panic(err)
+				panic(errors.New(err))
 			}
 		}
 		slice = append(slice, record)
@@ -58,7 +59,7 @@ func (f *Factory[T]) Save(db *gorm.DB, count int) []*T {
 	records := f.Generate(count)
 
 	if err := db.CreateInBatches(records, f.BatchSize).Error; err != nil {
-		panic(err)
+		panic(errors.New(err))
 	}
 	return records
 }

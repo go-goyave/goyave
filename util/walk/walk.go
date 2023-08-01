@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 	"unicode/utf8"
+
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // PathType type of the element being explored.
@@ -438,7 +440,7 @@ func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
 		if len(path) == 0 || path[0] == '.' {
-			return len(data), data[:], fmt.Errorf("Illegal syntax: %q", path)
+			return len(data), data[:], errors.New(fmt.Errorf("illegal syntax: %q", path))
 		}
 		for width, i := 0, 0; i < len(data); i += width {
 			var r rune
@@ -447,7 +449,7 @@ func createPathScanner(path string) *bufio.Scanner {
 			if i+width < len(data) {
 				next, _ := utf8.DecodeRune(data[i+width:])
 				if isValidSyntax(r, next) {
-					return len(data), data[:], fmt.Errorf("Illegal syntax: %q", path)
+					return len(data), data[:], errors.New(fmt.Errorf("illegal syntax: %q", path))
 				}
 
 				if r == '.' && i == 0 {
@@ -456,7 +458,7 @@ func createPathScanner(path string) *bufio.Scanner {
 					return i + width, data[:i+width], nil
 				}
 			} else if r == '.' || r == '[' {
-				return len(data), data[:], fmt.Errorf("Illegal syntax: %q", path)
+				return len(data), data[:], errors.New(fmt.Errorf("illegal syntax: %q", path))
 			}
 		}
 		if atEOF && len(data) > 0 {

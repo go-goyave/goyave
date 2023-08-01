@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"goyave.dev/goyave/v5/config"
+
+	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
 // TODO document there is no initializer and registered models anymore, the view interface has been removed, no auto migrations
@@ -36,16 +38,16 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 	dsn := dialect.buildDSN(cfg)
 	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg))
 	if err != nil {
-		return nil, err
+		return nil, errorutil.New(err)
 	}
 
 	if err := initTimeoutPlugin(cfg, db); err != nil {
-		return db, err
+		return db, errorutil.New(err)
 	}
 
 	initSQLDB(cfg, db)
 
-	return db, err
+	return db, nil
 }
 
 // NewFromDialector create a new connection pool from a gorm dialector and using the settings
@@ -55,11 +57,11 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 func NewFromDialector(cfg *config.Config, dialector gorm.Dialector) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, newConfig(cfg))
 	if err != nil {
-		return nil, err
+		return nil, errorutil.New(err)
 	}
 
 	if err := initTimeoutPlugin(cfg, db); err != nil {
-		return db, err
+		return db, errorutil.New(err)
 	}
 
 	initSQLDB(cfg, db)
@@ -97,7 +99,7 @@ func initSQLDB(cfg *config.Config, db *gorm.DB) {
 		if errors.Is(err, gorm.ErrInvalidDB) {
 			return
 		}
-		panic(err)
+		panic(errorutil.New(err))
 	}
 	sqlDB.SetMaxOpenConns(cfg.GetInt("database.maxOpenConnections"))
 	sqlDB.SetMaxIdleConns(cfg.GetInt("database.maxIdleConnections"))

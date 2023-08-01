@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -169,7 +170,7 @@ func (v *DateEqualsFieldValidator) Name() string { return "date_equals" }
 func DateEqualsField(path string) *DateEqualsFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(fmt.Errorf("validation.DateEqualsField: path parse error: %w", err))
+		panic(errors.NewSkip(fmt.Errorf("validation.DateEqualsField: path parse error: %w", err), 3))
 	}
 	return &DateEqualsFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
 }

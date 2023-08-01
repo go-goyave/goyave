@@ -75,8 +75,6 @@ func TestHasMiddleware(t *testing.T) {
 }
 
 func TestRecoveryMiddleware(t *testing.T) {
-	// TODO TestRecoveryMiddleware (after the error handling rework)
-
 	t.Run("panic", func(t *testing.T) {
 		server, err := NewWithConfig(config.LoadDefault())
 		if err != nil {
@@ -153,6 +151,36 @@ func TestRecoveryMiddleware(t *testing.T) {
 		}
 		assert.Equal(t, []error{nil}, returnedErr.Unwrap())
 		assert.Contains(t, request.Extra, ExtraError)
+		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
+		assert.Equal(t, http.StatusInternalServerError, response.status)
+	})
+
+	t.Run("panic_status_override", func(t *testing.T) {
+		// Even if the response status is already set, the recovery middleware
+		// should always force it to 500.
+		server, err := NewWithConfig(config.LoadDefault())
+		if err != nil {
+			panic(err)
+		}
+		logBuffer := &bytes.Buffer{}
+		server.ErrLogger = log.New(logBuffer, "", 0)
+		middleware := &recoveryMiddleware{}
+		middleware.Init(server)
+
+		handler := middleware.Handle(func(r *Response, _ *Request) {
+			r.JSON(http.StatusOK, make(chan struct{})) // Unsupported type for JSON encoding, status is set to 200 before writing
+		})
+
+		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		response := NewResponse(server, request, httptest.NewRecorder())
+
+		handler(response, request)
+
+		returnedErr, ok := request.Extra[ExtraError].(*errors.Error)
+		if !assert.True(t, ok) { // The panic error is wrapped automatically
+			return
+		}
+		assert.Len(t, returnedErr.Unwrap(), 1)
 		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})

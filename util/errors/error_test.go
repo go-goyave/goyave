@@ -136,7 +136,7 @@ func TestErrors(t *testing.T) {
 			desc     string
 		}{
 			{desc: "OK", err: New(""), expected: regexp.MustCompile("/goyave/util/errors/error_test.go:138$")},
-			{desc: "unknown", err: NewSkip("", 5), expected: regexp.MustCompile("^\\[unknown file line\\]$")}, // Skip more frames than necessary to have empty callers slice
+			{desc: "unknown", err: NewSkip("", 5), expected: regexp.MustCompile(`^\[unknown file line\]$`)}, // Skip more frames than necessary to have empty callers slice
 		}
 
 		for _, c := range cases {

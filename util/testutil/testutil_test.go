@@ -21,7 +21,7 @@ type testMiddleware struct {
 	procedure goyave.Handler
 }
 
-func (m *testMiddleware) Handle(next goyave.Handler) goyave.Handler {
+func (m *testMiddleware) Handle(_ goyave.Handler) goyave.Handler {
 	return m.procedure
 }
 

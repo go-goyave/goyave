@@ -1,7 +1,7 @@
 package database
 
 import (
-	"dario.cat/mergo"
+	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/util/errors"
 )
@@ -44,8 +44,8 @@ func (f *Factory[T]) Generate(count int) []*T {
 	for i := 0; i < count; i++ {
 		record := f.generator()
 		if f.override != nil {
-			if err := mergo.Merge(record, f.override, mergo.WithOverride); err != nil {
-				panic(errors.New(err))
+			if err := copier.CopyWithOption(record, f.override, copier.Option{IgnoreEmpty: true, DeepCopy: true, CaseSensitive: true}); err != nil {
+				panic(errors.NewSkip(err, 3))
 			}
 		}
 		slice = append(slice, record)

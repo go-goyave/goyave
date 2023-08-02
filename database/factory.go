@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/util/errors"
 )

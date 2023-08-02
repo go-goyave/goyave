@@ -3,10 +3,10 @@ module goyave.dev/goyave/v5
 go 1.20
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/Code-Hex/uniseg v0.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/imdario/mergo v0.3.16
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.10.0

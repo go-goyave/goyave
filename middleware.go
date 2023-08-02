@@ -81,7 +81,7 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 			if err := recover(); err != nil || panicked {
 				e := errors.NewSkip(err, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
 				m.ErrLogger().Println(e.String())
-				request.Extra[ExtraError] = e
+				response.err = e
 				response.status = http.StatusInternalServerError // Force status override
 			}
 		}()

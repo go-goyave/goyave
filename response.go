@@ -40,6 +40,7 @@ type Response struct {
 	responseWriter http.ResponseWriter
 	server         *Server
 	request        *Request
+	err            *errorutil.Error
 	status         int
 
 	// Used to check if controller didn't write anything so
@@ -201,6 +202,15 @@ func (r *Response) IsHeaderWritten() bool {
 	return r.wroteHeader
 }
 
+// GetError return the error that occurred in the process of this response, or `nil`.
+// The error can be set by:
+//   - Calling `Response.Error()`
+//   - The recovery middleware
+//   - The status handler for the 500 status code, if the error is not already set
+func (r *Response) GetError() *errorutil.Error {
+	return r.err
+}
+
 // --------------------------------------
 // Write methods
 
@@ -298,8 +308,8 @@ func (r *Response) Error(err any) {
 }
 
 func (r *Response) error(err any) {
-	e := errorutil.NewSkip(err, 3)  // Skipped: runtime.Callers, NewSkip, this func
-	r.request.Extra[ExtraError] = e // TODO should errors not be in Extras? Should they be guaranteed to be errors.Error?
+	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
+	r.err = e
 
 	if r.server.Config().GetBool("app.debug") && r.IsEmpty() && !r.Hijacked() {
 		status := http.StatusInternalServerError

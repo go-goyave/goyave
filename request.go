@@ -11,10 +11,6 @@ import (
 )
 
 const (
-	// ExtraError the key used in `Context.Extra` to store an error
-	// reported with the Error function or via the recovery middleware.
-	ExtraError = "goyave.error"
-
 	// ExtraBodyValidationRules the key used in `Context.Extra` to
 	// store the body validation rules.
 	ExtraBodyValidationRules = "goyave.bodyValidationRules"

@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
-	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
 func newTestReponse() (*Response, *httptest.ResponseRecorder) {
@@ -323,8 +322,8 @@ func TestResponse(t *testing.T) {
 		err := fmt.Errorf("custom error")
 		resp.Error(err)
 
-		e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
-		if !assert.True(t, ok) {
+		e := resp.GetError()
+		if !assert.NotNil(t, e) {
 			return
 		}
 		assert.Equal(t, []error{err}, e.Unwrap())
@@ -349,8 +348,8 @@ func TestResponse(t *testing.T) {
 			resp.server.config.Set("app.debug", true)
 			resp.Error(c.err)
 
-			e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
-			if !assert.True(t, ok) {
+			e := resp.GetError()
+			if !assert.NotNil(t, e) {
 				return
 			}
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
@@ -378,8 +377,8 @@ func TestResponse(t *testing.T) {
 		resp.Status(http.StatusForbidden)
 		resp.Error(err)
 
-		e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
-		if !assert.True(t, ok) {
+		e := resp.GetError()
+		if !assert.NotNil(t, e) {
 			return
 		}
 		assert.Equal(t, []error{err}, e.Unwrap())
@@ -408,8 +407,8 @@ func TestResponse(t *testing.T) {
 		resp.String(http.StatusForbidden, "forbidden")
 		resp.Error(err)
 
-		e, ok := resp.request.Extra[ExtraError].(*errorutil.Error)
-		if !assert.True(t, ok) {
+		e := resp.GetError()
+		if !assert.NotNil(t, e) {
 			return
 		}
 		assert.Equal(t, []error{err}, e.Unwrap())

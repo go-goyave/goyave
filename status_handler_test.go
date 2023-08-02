@@ -2,7 +2,6 @@ package goyave
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -33,7 +33,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
-		req.Extra[ExtraError] = fmt.Errorf("test error")
+		resp.err = errors.New("test error")
 		handler.Handle(resp, req)
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
@@ -53,9 +53,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
-		// Don't wrap the error into a `*errors.Error` to check the handler
-		// correctly calls `response.error()` and the error is converted to `*errors.Error`.
-		req.Extra[ExtraError] = fmt.Errorf("test error")
+		resp.err = errors.New("test error")
 		handler.Handle(resp, req)
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)

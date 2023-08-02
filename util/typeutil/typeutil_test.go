@@ -107,3 +107,170 @@ func TestMustConvert(t *testing.T) {
 		MustConvert[float64]("0.3")
 	})
 }
+
+func TestMap(t *testing.T) {
+	type Nested struct {
+		C uint `json:"c"`
+	}
+
+	type Promoted struct {
+		P string `json:"p"`
+	}
+
+	type TestStruct struct {
+		Promoted
+		A      string   `json:"a"`
+		D      []string `json:"d"`
+		B      float64  `json:"b"`
+		Nested Nested   `json:"nested"`
+	}
+
+	cases := []struct {
+		model     *TestStruct
+		dto       any
+		want      *TestStruct
+		desc      string
+		wantPanic bool
+	}{
+		{
+			desc: "base",
+			model: &TestStruct{
+				A: "test",
+				D: []string{"test1", "test2"},
+				B: 1,
+			},
+			dto: struct {
+				A string
+				D []string
+			}{A: "override", D: []string{"override1", "override2"}},
+			want: &TestStruct{
+				A: "override",
+				D: []string{"override1", "override2"},
+				B: 1,
+			},
+		},
+		{
+			desc:  "base_at_zero",
+			model: &TestStruct{},
+			dto: struct {
+				B float64
+			}{B: 1.234},
+			want: &TestStruct{
+				B: 1.234,
+			},
+		},
+		{
+			desc: "promoted",
+			model: &TestStruct{
+				A: "test",
+				Promoted: Promoted{
+					P: "promoted",
+				},
+			},
+			dto: struct {
+				A string
+				P string
+			}{A: "override", P: "promoted override"},
+			want: &TestStruct{
+				A: "override",
+				Promoted: Promoted{
+					P: "promoted override",
+				},
+			},
+		},
+		{
+			desc: "promoted_dto",
+			model: &TestStruct{
+				A: "test",
+				Promoted: Promoted{
+					P: "promoted",
+				},
+			},
+			dto: struct {
+				A        string
+				Promoted struct {
+					P string
+				}
+			}{A: "override", Promoted: struct {
+				P string
+			}{
+				P: "promoted override",
+			}},
+			want: &TestStruct{
+				A: "override",
+				Promoted: Promoted{
+					P: "promoted override",
+				},
+			},
+		},
+		{
+			desc: "ignore_empty",
+			model: &TestStruct{
+				A: "test",
+				D: []string{"test1", "test2"},
+				B: 0,
+			},
+			dto: struct {
+				A string
+				B float64
+			}{A: "", B: 0},
+			want: &TestStruct{
+				A: "test",
+				D: []string{"test1", "test2"},
+				B: 0,
+			},
+		},
+		{
+			desc: "deep",
+			model: &TestStruct{
+				Nested: Nested{
+					C: 2,
+				},
+			},
+			dto: struct {
+				C      uint
+				Nested struct {
+					C uint
+				}
+			}{C: 3, Nested: struct{ C uint }{C: 4}},
+			want: &TestStruct{
+				Nested: Nested{
+					C: 4,
+				},
+			},
+		},
+		{
+			desc: "undefined_field_zero_value",
+			model: &TestStruct{
+				B: 1,
+			},
+			dto: struct{ B Undefined[float64] }{B: NewUndefined(0.0)},
+			want: &TestStruct{
+				B: 0,
+			},
+		},
+		{
+			desc: "undefined_field",
+			model: &TestStruct{
+				B: 1,
+			},
+			dto: struct{ B Undefined[float64] }{B: NewUndefined(1.234)},
+			want: &TestStruct{
+				B: 1.234,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			if c.wantPanic {
+				assert.Panics(t, func() {
+					Copy(c.model, c.dto)
+				})
+				return
+			}
+			res := Copy(c.model, c.dto)
+			assert.Equal(t, c.want, res)
+		})
+	}
+}

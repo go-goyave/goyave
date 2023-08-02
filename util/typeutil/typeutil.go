@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"github.com/jinzhu/copier"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
@@ -36,4 +37,17 @@ func MustConvert[T any](data any) T {
 		panic(err)
 	}
 	return res
+}
+
+// Copy deep-copy a DTO's non-zero fields to the given model. The model is updated in-place and returned.
+// Field names are matched in a case sensitive way.
+// If you need to copy a zero-value (empty string, `false`, 0, etc) into the destination model, your DTO
+// can take advantage of `typeutil.Undefined`.
+// Panics if an error occurs.
+func Copy[T, D any](model *T, dto D) *T {
+	err := copier.CopyWithOption(model, dto, copier.Option{IgnoreEmpty: true, DeepCopy: true, CaseSensitive: true})
+	if err != nil {
+		panic(errors.NewSkip(err, 3))
+	}
+	return model
 }

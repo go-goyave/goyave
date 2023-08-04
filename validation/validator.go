@@ -528,5 +528,3 @@ func translateFieldName(lang *lang.Language, fieldName string) string {
 	}
 	return name
 }
-
-// TODO "Default" rule? (sets a value for the field if it's not provided)

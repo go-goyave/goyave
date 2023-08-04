@@ -73,7 +73,7 @@ func TestFactory(t *testing.T) {
 		cfg.Set("database.connection", "sqlite3_factory_test")
 		cfg.Set("database.name", "factory_test.db")
 		cfg.Set("database.options", "mode=memory")
-		db, err := New(cfg)
+		db, err := New(cfg, nil)
 		if !assert.NoError(t, err) {
 			return
 		}

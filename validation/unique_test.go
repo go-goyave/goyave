@@ -32,7 +32,7 @@ func prepareUniqueTest(t *testing.T) *Options {
 	cfg.Set("database.name", dialect+".db")
 	cfg.Set("database.options", "mode=memory")
 
-	db, err := database.New(cfg)
+	db, err := database.New(cfg, nil)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}

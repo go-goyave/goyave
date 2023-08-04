@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/slog"
 )
 
 // Composable defines all the functions every component of the presentation
@@ -19,6 +20,7 @@ type Composable interface {
 	Config() *config.Config
 	Lang() *lang.Languages
 	Logger() *log.Logger
+	Slogger() *slog.Logger
 	ErrLogger() *log.Logger
 	AccessLogger() *log.Logger
 	Service(name string) Service
@@ -67,6 +69,11 @@ func (c *Component) LookupService(name string) (Service, bool) {
 // Logger returns the server's logger.
 func (c *Component) Logger() *log.Logger {
 	return c.server.Logger
+}
+
+// Slogger returns the server's logger.
+func (c *Component) Slogger() *slog.Logger {
+	return c.server.Slogger
 }
 
 // ErrLogger returns the server's error logger.

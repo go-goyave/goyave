@@ -22,7 +22,7 @@ func prepareTimeoutTest() *gorm.DB {
 	cfg.Set("database.options", "mode=memory")
 	cfg.Set("database.defaultReadQueryTimeout", 5)
 	cfg.Set("database.defaultWriteQueryTimeout", 5)
-	db, err := New(cfg)
+	db, err := New(cfg, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -123,7 +123,7 @@ func TestTimeoutPlugin(t *testing.T) {
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("database.defaultReadQueryTimeout", 0)
 		cfg.Set("database.defaultWriteQueryTimeout", 0)
-		db, err := New(cfg)
+		db, err := New(cfg, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -153,7 +153,7 @@ func TestTimeoutPlugin(t *testing.T) {
 		cfg.Set("database.name", "timeout_many_queries_test.db")
 		cfg.Set("database.defaultReadQueryTimeout", 200)
 		cfg.Set("database.defaultWriteQueryTimeout", 200)
-		db, err := New(cfg)
+		db, err := New(cfg, nil)
 		if err != nil {
 			panic(err)
 		}

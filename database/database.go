@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 
 	errorutil "goyave.dev/goyave/v5/util/errors"
 )
@@ -23,7 +23,7 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/postgres"
 //	import _ "goyave.dev/goyave/v5/database/dialect/sqlite"
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
-func New(cfg *config.Config) (*gorm.DB, error) {
+func New(cfg *config.Config, logger *slog.Logger) (*gorm.DB, error) {
 	driver := cfg.GetString("database.connection")
 
 	if driver == "none" {
@@ -36,7 +36,7 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	dsn := dialect.buildDSN(cfg)
-	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg))
+	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg, logger))
 	if err != nil {
 		return nil, errorutil.New(err)
 	}
@@ -54,8 +54,8 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 // defined in the given configuration.
 //
 // This can be used in tests to create a mock connection pool.
-func NewFromDialector(cfg *config.Config, dialector gorm.Dialector) (*gorm.DB, error) {
-	db, err := gorm.Open(dialector, newConfig(cfg))
+func NewFromDialector(cfg *config.Config, logger *slog.Logger, dialector gorm.Dialector) (*gorm.DB, error) {
+	db, err := gorm.Open(dialector, newConfig(cfg, logger))
 	if err != nil {
 		return nil, errorutil.New(err)
 	}
@@ -68,13 +68,13 @@ func NewFromDialector(cfg *config.Config, dialector gorm.Dialector) (*gorm.DB, e
 	return db, nil
 }
 
-func newConfig(cfg *config.Config) *gorm.Config {
-	logLevel := logger.Silent
-	if cfg.GetBool("app.debug") {
-		logLevel = logger.Info
+func newConfig(cfg *config.Config, logger *slog.Logger) *gorm.Config {
+	if !cfg.GetBool("app.debug") {
+		// Stay silent about DB operations when not in debug mode
+		logger = nil
 	}
 	return &gorm.Config{
-		Logger:                                   logger.Default.LogMode(logLevel),
+		Logger:                                   &Logger{slogger: logger, SlowThreshold: 200 * time.Millisecond},
 		SkipDefaultTransaction:                   cfg.GetBool("database.config.skipDefaultTransaction"),
 		DryRun:                                   cfg.GetBool("database.config.dryRun"),
 		PrepareStmt:                              cfg.GetBool("database.config.prepareStmt"),

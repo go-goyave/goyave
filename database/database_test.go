@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 )
 
 type DummyDialector struct {
@@ -61,10 +63,18 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.config.disableAutomaticPing", true)
 		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
 
-		db, err := New(cfg)
+		db, err := New(cfg, slog.New(slog.NewHandler(true, &bytes.Buffer{})))
 		assert.NoError(t, err)
 		if !assert.NotNil(t, db) {
 			return
+		}
+
+		if assert.NotNil(t, db.Config.Logger) {
+			// Logging is enabled when app.debug is true
+			l, ok := db.Config.Logger.(*Logger)
+			if assert.True(t, ok) {
+				assert.NotNil(t, l.slogger)
+			}
 		}
 
 		dbConfig := db.Config
@@ -88,6 +98,44 @@ func TestNewDatabase(t *testing.T) {
 			}
 		}
 
+	})
+
+	t.Run("silent", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("app.debug", false)
+		cfg.Set("database.connection", "dummy")
+		cfg.Set("database.host", "localhost")
+		cfg.Set("database.port", 5432)
+		cfg.Set("database.name", "dbname")
+		cfg.Set("database.username", "user")
+		cfg.Set("database.password", "secret")
+		cfg.Set("database.options", "option=value")
+		cfg.Set("database.maxOpenConnections", 123)
+		cfg.Set("database.maxIdleConnections", 123)
+		cfg.Set("database.maxLifetime", 123)
+		cfg.Set("database.defaultReadQueryTimeout", 123)
+		cfg.Set("database.defaultWriteQueryTimeout", 123)
+		cfg.Set("database.config.skipDefaultTransaction", true)
+		cfg.Set("database.config.dryRun", true)
+		cfg.Set("database.config.prepareStmt", false)
+		cfg.Set("database.config.disableNestedTransaction", true)
+		cfg.Set("database.config.allowGlobalUpdate", true)
+		cfg.Set("database.config.disableAutomaticPing", true)
+		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
+
+		db, err := New(cfg, slog.New(slog.NewHandler(false, &bytes.Buffer{})))
+		assert.NoError(t, err)
+		if !assert.NotNil(t, db) {
+			return
+		}
+
+		if assert.NotNil(t, db.Config.Logger) {
+			// Logging is disable when app.debug is false
+			l, ok := db.Config.Logger.(*Logger)
+			if assert.True(t, ok) {
+				assert.Nil(t, l.slogger)
+			}
+		}
 	})
 
 	t.Run("NewFromDialector", func(t *testing.T) {
@@ -114,7 +162,7 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
 
 		dialector := &DummyDialector{}
-		db, err := NewFromDialector(cfg, dialector)
+		db, err := NewFromDialector(cfg, nil, dialector)
 		assert.NoError(t, err)
 		if !assert.NotNil(t, db) {
 			return
@@ -146,7 +194,7 @@ func TestNewDatabase(t *testing.T) {
 	t.Run("New_connection_none", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("database.connection", "none")
-		db, err := New(cfg)
+		db, err := New(cfg, nil)
 		assert.Nil(t, db)
 		assert.Error(t, err)
 		assert.Equal(t, "Cannot create DB connection. Database is set to \"none\" in the config", err.Error())
@@ -155,7 +203,7 @@ func TestNewDatabase(t *testing.T) {
 	t.Run("New_unknown_driver", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("database.connection", "notadriver")
-		db, err := New(cfg)
+		db, err := New(cfg, nil)
 		assert.Nil(t, db)
 		assert.Error(t, err)
 		assert.Equal(t, "DB Connection \"notadriver\" not supported, forgotten import?", err.Error())
@@ -168,7 +216,7 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.name", "database_test.db")
 		cfg.Set("database.options", "mode=memory")
 
-		db, err := New(cfg)
+		db, err := New(cfg, nil)
 		assert.NoError(t, err)
 		if !assert.NotNil(t, db) {
 			return

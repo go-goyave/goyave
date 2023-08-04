@@ -31,7 +31,7 @@ func preparePaginatorTestDB() (*gorm.DB, []*TestArticle) {
 	cfg.Set("database.connection", "sqlite3_paginator_test")
 	cfg.Set("database.name", "paginator_test.db")
 	cfg.Set("database.options", "mode=memory")
-	db, err := New(cfg)
+	db, err := New(cfg, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +103,7 @@ func TestPaginator(t *testing.T) {
 		cfg.Set("database.connection", "sqlite3_paginator_test")
 		cfg.Set("database.name", "paginator_test.db")
 		cfg.Set("database.options", "mode=memory")
-		db, err := New(cfg)
+		db, err := New(cfg, nil)
 		if err != nil {
 			panic(err)
 		}

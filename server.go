@@ -18,6 +18,7 @@ import (
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
@@ -34,14 +35,16 @@ type Server struct {
 
 	// TODO use a logging library? (or an interface)
 
+	Slogger *slog.Logger
+
 	// Logger the logger for default output
 	// Writes to stdout by default.
-	Logger *log.Logger
+	Logger *log.Logger // TODO remove old loggers, keep Slogger and rename it to Logger
 
 	// AccessLogger the logger for access. This logger
 	// is used by the logging middleware.
 	// Writes to stdout by default.
-	AccessLogger *log.Logger
+	AccessLogger *log.Logger // TODO how will the access logs be handled?
 
 	// ErrLogger the logger in which errors and stacktraces are written.
 	// Writes to stderr by default.
@@ -72,10 +75,14 @@ func New() (*Server, error) {
 
 // NewWithConfig create a new `Server` using the provided configuration.
 func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? (for loggers, lang, etc) Could take a io.FS as input for resources directory
+	// TODO explicitly return *errors.Error?
+
+	slogger := slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stdout))
+
 	var db *gorm.DB
 	var err error
 	if cfg.GetString("database.connection") != "none" {
-		db, err = database.New(cfg)
+		db, err = database.New(cfg, slogger)
 		if err != nil {
 			return nil, errors.New(err)
 		}
@@ -97,7 +104,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 			WriteTimeout: time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
 			ReadTimeout:  time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
 			IdleTimeout:  time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
-			ErrorLog:     errLogger, // TODO what if it is replaced in the goyave.Server struct?
+			ErrorLog:     errLogger, // TODO create a new Logger with destination Slogger
 		},
 		config:        cfg,
 		db:            db,
@@ -112,6 +119,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		Logger:        log.New(os.Stdout, "", log.LstdFlags),
 		AccessLogger:  log.New(os.Stdout, "", 0),
 		ErrLogger:     errLogger,
+		Slogger:       slogger, // TODO customize output ()
 	}
 	server.router = NewRouter(server)
 	server.server.Handler = server.router
@@ -280,7 +288,7 @@ func (s *Server) ReplaceDB(dialector gorm.Dialector) error {
 		return err
 	}
 
-	db, err := database.NewFromDialector(s.config, dialector)
+	db, err := database.NewFromDialector(s.config, s.Slogger, dialector)
 	if err != nil {
 		return err
 	}

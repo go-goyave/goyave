@@ -204,7 +204,7 @@ func SetDefaultLine(key, line string) {
 	enUS.lines[key] = line
 }
 
-// SetDefaultValidationRule set the validation error message  for the rule identified by
+// SetDefaultValidationRule set the validation error message for the rule identified by
 // the given key in the default "en-US" language.
 // Values set this way can be overridden by language files.
 func SetDefaultValidationRule(key, line string) {

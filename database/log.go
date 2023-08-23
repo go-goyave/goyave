@@ -18,6 +18,8 @@ import (
 	"goyave.dev/goyave/v5/slog"
 )
 
+// TODO test database log
+
 var regexGormPath = regexp.MustCompile(`gorm.io/(.*?)@`)
 
 // Logger adapter between `*slog.Logger` and GORM's logger.

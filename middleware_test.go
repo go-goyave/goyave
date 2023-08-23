@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -148,7 +149,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 		if !assert.NotNil(t, returnedErr) {
 			return
 		}
-		assert.Equal(t, []error{nil}, returnedErr.Unwrap())
+		assert.Equal(t, []error{&runtime.PanicNilError{}}, returnedErr.Unwrap())
 		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})

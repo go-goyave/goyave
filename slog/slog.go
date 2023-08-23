@@ -12,6 +12,8 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
+// TODO test slog and handler
+
 type unwrapper interface {
 	Unwrap() []error
 }

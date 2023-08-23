@@ -14,21 +14,17 @@ import (
 
 // Colors
 const (
-	Reset       = "\033[0m"
-	Red         = "\033[31m"
-	Green       = "\033[32m"
-	Yellow      = "\033[33m"
-	Blue        = "\033[34m"
-	Magenta     = "\033[35m"
-	Cyan        = "\033[36m"
-	CyanBold    = "\033[36;1m"
-	White       = "\033[37m"
-	Gray        = "\033[90m"
-	WhiteBold   = "\033[37;1m"
-	BlueBold    = "\033[34;1m"
-	MagentaBold = "\033[35;1m"
-	RedBold     = "\033[31;1m"
-	YellowBold  = "\033[33;1m"
+	Reset     = "\033[0m"
+	Red       = "\033[31m"
+	Yellow    = "\033[33m"
+	Blue      = "\033[34m"
+	Gray      = "\033[90m"
+	WhiteBold = "\033[37;1m"
+	GrayBold  = "\033[90;1m"
+	BGYellow  = "\033[43m"
+	BGRed     = "\033[41m"
+	BGCyan    = "\033[46m"
+	BGGray    = "\033[100m"
 )
 
 var (
@@ -87,12 +83,13 @@ func (h *DevModeHandler) Handle(_ context.Context, r slog.Record) error {
 
 	buf := bytes.NewBuffer(make([]byte, 0, 1024))
 
-	buf.WriteByte('\n')                  // TODO use line separator (lipgloss)
-	buf.WriteByte('[')                   // TODO use lipgloss background and color instead of brackets
+	buf.WriteRune('\n')
 	buf.WriteString(levelColor(r.Level)) // Change color depending on level
+	buf.WriteByte(' ')
 	buf.WriteString(r.Level.String())
+	buf.WriteByte(' ')
 	buf.WriteString(Reset)
-	buf.WriteString("] ")
+	buf.WriteByte(' ')
 
 	buf.WriteString(r.Time.Format("2006/01/02 15:04:05.999999"))
 	fs := runtime.CallersFrames([]uintptr{r.PC})
@@ -136,13 +133,13 @@ func (h *DevModeHandler) Handle(_ context.Context, r slog.Record) error {
 func levelColor(level slog.Level) string {
 	switch level {
 	case slog.LevelDebug:
-		return CyanBold
+		return BGCyan + WhiteBold
 	case slog.LevelInfo:
-		return WhiteBold
+		return BGGray + WhiteBold
 	case slog.LevelWarn:
-		return YellowBold
+		return BGYellow + GrayBold
 	case slog.LevelError:
-		return RedBold
+		return BGRed + WhiteBold
 	}
 	return WhiteBold
 }

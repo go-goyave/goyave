@@ -21,7 +21,6 @@ type unwrapper interface {
 type Logger struct {
 	*slog.Logger
 	// TODO split outputs: errors to stderr, rest to stdout
-	// Can do that by duplicating the handler?
 }
 
 // New creates a new Logger with the given non-nil Handler and a nil context.

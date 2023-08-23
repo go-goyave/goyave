@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
+	xslog "log/slog"
+
 	"github.com/samber/lo"
-	xslog "golang.org/x/exp/slog"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"goyave.dev/goyave/v5/slog"

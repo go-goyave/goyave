@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // Colors

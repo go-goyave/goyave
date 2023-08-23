@@ -1,12 +1,12 @@
 module goyave.dev/goyave/v5
 
-go 1.20
+go 1.21
 
 require (
 	github.com/Code-Hex/uniseg v0.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/jinzhu/copier v0.3.6-0.20230513005645-83982c7a89de
+	github.com/jinzhu/copier v0.3.6-0.20230809063302-70b1d4e41a98
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.10.0

@@ -5,7 +5,8 @@ import (
 	"runtime"
 	"time"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
+
 	"goyave.dev/goyave/v5/util/errors"
 )
 

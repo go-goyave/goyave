@@ -172,10 +172,13 @@ func (h *DevModeHandler) Enabled(_ context.Context, level slog.Level) bool {
 // WithAttrs returns a new `DevModeHandler` whose attributes consists
 // of h's attributes followed by attrs.
 func (h *DevModeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newAttrs := make([]slog.Attr, 0, len(h.attrs)+len(attrs))
+	newAttrs = append(newAttrs, h.attrs...)
+	newAttrs = append(newAttrs, attrs...)
 	return &DevModeHandler{
 		opts:  h.opts,
 		w:     h.w,
-		attrs: append(h.attrs, attrs...),
+		attrs: newAttrs,
 	}
 }
 

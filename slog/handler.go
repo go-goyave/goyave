@@ -32,40 +32,60 @@ const (
 )
 
 var (
+	// Indent the string used to indent attribute groups in the dev mode handler.
 	Indent = "  "
 )
 
-type HandlerOptions struct {
+// DevModeHandlerOptions options for the dev mode handler.
+type DevModeHandlerOptions struct {
+	// Level reports the minimum record level that will be logged.
+	// The handler discards records with lower levels.
+	// If Level is nil, the handler assumes `LevelInfo`.
+	// The handler calls `Level.Level()` for each record processed;
+	// to adjust the minimum level dynamically, use a `slog.LevelVar`.
 	Level slog.Leveler
 }
 
+// DevModeHandler is a `slog.Handler` that writes Records to an io.Writer.
+// The records are formatted to be easily readable by humans.
+// This handler is meant for development use only as it doesn't provide optimal
+// performance and its output is not machine-readable.
 type DevModeHandler struct {
-	opts   *HandlerOptions
-	mu     sync.Mutex
+	opts   *DevModeHandlerOptions
 	w      io.Writer
 	attrs  []slog.Attr
 	groups []string
+	mu     sync.Mutex
 }
 
+// NewHandler creates a new `slog.Handler` with default options.
+// If `devMode` is true, a `*DevModeHandler` is returned, else a `*slog.JSONHandler`.
 func NewHandler(devMode bool, w io.Writer) slog.Handler {
 	if devMode {
-		return NewDevModeHandler(w, &HandlerOptions{Level: slog.LevelDebug})
+		return NewDevModeHandler(w, &DevModeHandlerOptions{Level: slog.LevelDebug})
 	}
 	return slog.NewJSONHandler(w, &slog.HandlerOptions{Level: slog.LevelInfo, AddSource: true})
 }
 
-func NewDevModeHandler(w io.Writer, opts *HandlerOptions) *DevModeHandler {
+// NewDevModeHandler creates a new `DevModeHandler` that writes to w, using the given options.
+// If `opts` is `nil`, the default options are used.
+func NewDevModeHandler(w io.Writer, opts *DevModeHandlerOptions) *DevModeHandler {
 	if opts == nil {
-		opts = &HandlerOptions{}
+		opts = &DevModeHandlerOptions{}
 	}
 	return &DevModeHandler{w: w, opts: opts}
 }
 
-func (h *DevModeHandler) Handle(c context.Context, r slog.Record) error {
+// Handle formats its argument `Record` in an output easily readable by humans.
+// The output contains multiple lines:
+//   - The first one contains the log level, the time and the source
+//   - The second one contains the message
+//   - The next lines contain the attributes and groups, if any
+//
+// Each call to `Handle` results in a single serialized call to `io.Writer.Write()`.
+func (h *DevModeHandler) Handle(_ context.Context, r slog.Record) error {
 
-	buf := bytes.NewBuffer(make([]byte, 0, 1024)) // In the lib they optimized it using sync.Pool
-
-	// TODO Optimize later
+	buf := bytes.NewBuffer(make([]byte, 0, 1024))
 
 	buf.WriteByte('\n')                  // TODO use line separator (lipgloss)
 	buf.WriteByte('[')                   // TODO use lipgloss background and color instead of brackets
@@ -139,6 +159,8 @@ func messageColor(level slog.Level) string {
 	return ""
 }
 
+// Enabled reports whether the handler handles records at the given level.
+// The handler ignores records whose level is lower.
 func (h *DevModeHandler) Enabled(_ context.Context, level slog.Level) bool {
 	minLevel := slog.LevelInfo
 	if h.opts.Level != nil {
@@ -147,6 +169,8 @@ func (h *DevModeHandler) Enabled(_ context.Context, level slog.Level) bool {
 	return level >= minLevel
 }
 
+// WithAttrs returns a new `DevModeHandler` whose attributes consists
+// of h's attributes followed by attrs.
 func (h *DevModeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &DevModeHandler{
 		opts:  h.opts,
@@ -155,6 +179,9 @@ func (h *DevModeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	}
 }
 
+// WithGroup returns a new `DevModeHandler` whose attributes are wrapped
+// into a named group. All the handler's attributes will be printed indented
+// into the added group.
 func (h *DevModeHandler) WithGroup(name string) slog.Handler {
 	return &DevModeHandler{
 		opts:   h.opts,

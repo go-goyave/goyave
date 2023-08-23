@@ -20,7 +20,8 @@ type unwrapper interface {
 // functions so they take an error as parameter and handle `*errors.Error` gracefully.
 type Logger struct {
 	*slog.Logger
-	// TODO ability to chose the output for each log level?
+	// TODO split outputs: errors to stderr, rest to stdout
+	// Can do that by duplicating the handler?
 }
 
 // New creates a new Logger with the given non-nil Handler and a nil context.
@@ -38,26 +39,32 @@ func (l *Logger) With(args ...any) *Logger {
 	return &Logger{Logger: l.Logger.With(args...)}
 }
 
+// DebugWithSource logs at `LevelDebug`. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) DebugWithSource(ctx context.Context, source uintptr, msg string, args ...any) {
 	l.log(ctx, slog.LevelDebug, source, msg, args...)
 }
 
+// InfoWithSource logs at `LevelInfo`. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) InfoWithSource(ctx context.Context, source uintptr, msg string, args ...any) {
 	l.log(ctx, slog.LevelInfo, source, msg, args...)
 }
 
+// WarnWithSource logs at `LevelWarn`. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) WarnWithSource(ctx context.Context, source uintptr, msg string, args ...any) {
 	l.log(ctx, slog.LevelWarn, source, msg, args...)
 }
 
+// Error logs the given error at `LevelError`.
 func (l *Logger) Error(err error, args ...any) {
 	l.logError(nil, 0, err, args...)
 }
 
+// ErrorCtx logs the given error at `LevelError` with the given context.
 func (l *Logger) ErrorCtx(ctx context.Context, err error, args ...any) {
 	l.logError(ctx, 0, err, args...)
 }
 
+// ErrorWithSource logs at `LevelError`. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) ErrorWithSource(ctx context.Context, source uintptr, err error, args ...any) {
 	l.logError(ctx, source, err, args...)
 }

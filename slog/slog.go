@@ -57,7 +57,7 @@ func (l *Logger) WarnWithSource(ctx context.Context, source uintptr, msg string,
 
 // Error logs the given error at `LevelError`.
 func (l *Logger) Error(err error, args ...any) {
-	l.logError(nil, 0, err, args...)
+	l.logError(context.Background(), 0, err, args...)
 }
 
 // ErrorCtx logs the given error at `LevelError` with the given context.

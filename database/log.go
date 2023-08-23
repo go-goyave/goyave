@@ -28,11 +28,14 @@ type Logger struct {
 	SlowThreshold time.Duration
 }
 
-func (l *Logger) LogMode(level logger.LogLevel) logger.Interface {
+// LogMode returns a copy of this logger. The level argument actually has
+// no effect as it is handled by the underlying `*slog.Logger`.
+func (l *Logger) LogMode(_ logger.LogLevel) logger.Interface {
 	newlogger := *l
 	return &newlogger
 }
 
+// Info logs at `LevelInfo`.
 func (l Logger) Info(ctx context.Context, msg string, data ...any) {
 	if l.slogger == nil {
 		return
@@ -40,6 +43,7 @@ func (l Logger) Info(ctx context.Context, msg string, data ...any) {
 	l.slogger.InfoWithSource(ctx, getSourceCaller(), fmt.Sprintf(msg, data...))
 }
 
+// Warn logs at `LevelWarn`.
 func (l Logger) Warn(ctx context.Context, msg string, data ...any) {
 	if l.slogger == nil {
 		return
@@ -47,6 +51,7 @@ func (l Logger) Warn(ctx context.Context, msg string, data ...any) {
 	l.slogger.WarnWithSource(ctx, getSourceCaller(), fmt.Sprintf(msg, data...))
 }
 
+// Error logs at `LevelError`.
 func (l Logger) Error(ctx context.Context, msg string, data ...any) {
 	if l.slogger == nil {
 		return
@@ -54,6 +59,7 @@ func (l Logger) Error(ctx context.Context, msg string, data ...any) {
 	l.slogger.ErrorWithSource(ctx, getSourceCaller(), fmt.Errorf(msg, data...))
 }
 
+// Trace logs at `LevelDebug`.
 func (l Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 	if l.slogger == nil {
 		return

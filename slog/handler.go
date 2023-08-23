@@ -172,7 +172,11 @@ func printAttr(attr slog.Attr, buf *bytes.Buffer, indent int) {
 	buf.WriteString(attr.Key)
 	buf.WriteString(": ")
 
-	// TODO convert structs that don't implement slog.LogValuer to group
+	if attr.Value.Kind() == slog.KindAny {
+		// This may be a struct or map, convert it if needed
+		attr.Value = StructValue(attr.Value.Any())
+	}
+
 	if attr.Value.Kind() == slog.KindGroup {
 		buf.WriteByte('\n')
 		printGroup(attr.Value.Group(), buf, indent+1)

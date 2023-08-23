@@ -2,6 +2,8 @@ package slog
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 	"runtime"
 	"time"
 
@@ -127,4 +129,43 @@ func (l *Logger) handleReason(ctx context.Context, reason error, record slog.Rec
 	default:
 		_ = l.Handler().Handle(ctx, clone)
 	}
+}
+
+// StructValue recursively convert a structure, structure pointer or map to a `slog.GroupValue`.
+// If the given value implements `slog.LogValuer`, this value is returned instead.
+// Returns AnyValue if the type is not supported.
+func StructValue(v any) slog.Value {
+	return structValue(reflect.Indirect(reflect.ValueOf(v)))
+}
+
+func structValue(v reflect.Value) slog.Value {
+	if valuer, ok := v.Interface().(slog.LogValuer); ok {
+		return valuer.LogValue()
+	}
+	var attrs []slog.Attr
+	switch v.Kind() {
+	case reflect.Struct:
+		t := v.Type()
+		numField := t.NumField()
+		attrs = make([]slog.Attr, 0, numField)
+		for i := 0; i < numField; i++ {
+			fieldType := t.Field(i)
+			fieldValue := v.Field(i)
+			if !fieldType.IsExported() {
+				continue
+			}
+			attrs = append(attrs, slog.Any(fieldType.Name, structValue(fieldValue)))
+		}
+	case reflect.Map:
+		iter := v.MapRange()
+		for iter.Next() {
+			key := iter.Key()
+			value := iter.Value()
+
+			attrs = append(attrs, slog.Any(fmt.Sprintf("%s", key.Interface()), structValue(value)))
+		}
+	default:
+		return slog.AnyValue(v.Interface())
+	}
+	return slog.GroupValue(attrs...)
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jinzhu/copier"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
@@ -88,6 +89,18 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 		return valuer.Value()
 	}
 	return u.Val, nil
+}
+
+// CopyValue implements the copier.Valuer interface.
+func (u Undefined[T]) CopyValue() any {
+	if !u.Present {
+		return nil
+	}
+
+	if valuer, ok := any(&u.Val).(copier.Valuer); ok {
+		return valuer.CopyValue()
+	}
+	return u.Val
 }
 
 // Default return the value if present, otherwise returns the given default value.

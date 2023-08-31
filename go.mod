@@ -36,3 +36,5 @@ require (
 	golang.org/x/text v0.10.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/jinzhu/copier v0.3.6-0.20230809063302-70b1d4e41a98 => github.com/System-Glitch/copier v0.0.0-20230810143212-ca7f7fa385a2

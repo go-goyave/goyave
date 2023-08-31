@@ -3,6 +3,7 @@ package typeutil
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,7 +109,7 @@ func TestMustConvert(t *testing.T) {
 	})
 }
 
-func TestMap(t *testing.T) {
+func TestCopy(t *testing.T) {
 	type Nested struct {
 		C uint `json:"c"`
 	}
@@ -120,6 +121,7 @@ func TestMap(t *testing.T) {
 	type TestStruct struct {
 		Promoted
 		A      string   `json:"a"`
+		Ptr    *string  `json:"ptr"`
 		D      []string `json:"d"`
 		B      float64  `json:"b"`
 		Nested Nested   `json:"nested"`
@@ -211,9 +213,11 @@ func TestMap(t *testing.T) {
 				B: 0,
 			},
 			dto: struct {
-				A string
-				B float64
-			}{A: "", B: 0},
+				Ptr Undefined[*string]
+				A   string
+				D   []string
+				B   float64
+			}{A: "", B: 0, D: nil, Ptr: Undefined[*string]{}},
 			want: &TestStruct{
 				A: "test",
 				D: []string{"test1", "test2"},
@@ -257,6 +261,42 @@ func TestMap(t *testing.T) {
 			dto: struct{ B Undefined[float64] }{B: NewUndefined(1.234)},
 			want: &TestStruct{
 				B: 1.234,
+			},
+		},
+		{
+			desc:  "undefined_slice",
+			model: &TestStruct{},
+			dto:   struct{ D Undefined[[]string] }{D: NewUndefined([]string{"a", "b", "c"})},
+			want: &TestStruct{
+				D: []string{"a", "b", "c"},
+			},
+		},
+		{
+			desc:  "undefined_struct",
+			model: &TestStruct{},
+			dto:   struct{ Nested Undefined[struct{ C uint }] }{Nested: NewUndefined(struct{ C uint }{C: 4})},
+			want: &TestStruct{
+				Nested: Nested{
+					C: 4,
+				},
+			},
+		},
+		{
+			desc: "undefined_nil",
+			model: &TestStruct{
+				A:   "not nil",
+				Ptr: lo.ToPtr("not nil"),
+			},
+			dto: struct {
+				A   Undefined[*string]
+				Ptr Undefined[*string]
+			}{
+				A:   NewUndefined[*string](nil),
+				Ptr: NewUndefined[*string](nil),
+			},
+			want: &TestStruct{
+				A:   "not nil",
+				Ptr: nil,
 			},
 		},
 	}

@@ -4,6 +4,8 @@ github.com/Azure/azure-sdk-for-go/sdk/internal v1.3.0/go.mod h1:okt5dMMTOFjX/aov
 github.com/AzureAD/microsoft-authentication-library-for-go v1.0.0/go.mod h1:kgDmCTgBzIEPFElEF+FK0SdjAor06dRq2Go927dnQ6o=
 github.com/Code-Hex/uniseg v0.2.0 h1:QB/2UJFvEuRLSZqe+Sb1XQBTWjqGVbZoC6oSWzQRKws=
 github.com/Code-Hex/uniseg v0.2.0/go.mod h1:/ndS2tP+X1lk2HUOcXWGtVTxVq0lWilwgMa4CbzdRsg=
+github.com/System-Glitch/copier v0.0.0-20230810143212-ca7f7fa385a2 h1:qaU97IJo03X1LjJN9e+yRWzqpCoNwYT54SO7BvV7M6A=
+github.com/System-Glitch/copier v0.0.0-20230810143212-ca7f7fa385a2/go.mod h1:DfbEm0FYsaqBcKcFuvmOZb218JkPGtvSHsKg8S8hyyg=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -39,8 +41,6 @@ github.com/jcmturner/gofork v1.7.6/go.mod h1:1622LH6i/EZqLloHfE7IeZ0uEJwMSUyQ/nD
 github.com/jcmturner/goidentity/v6 v6.0.1/go.mod h1:X1YW3bgtvwAXju7V3LCIMpY0Gbxyjn/mY9zx4tFonSg=
 github.com/jcmturner/gokrb5/v8 v8.4.4/go.mod h1:1btQEpgT6k+unzCwX1KdWMEwPPkkgBtP+F6aCACiMrs=
 github.com/jcmturner/rpc/v2 v2.0.3/go.mod h1:VUJYCIDm3PVOEHw8sgt091/20OJjskO/YJki3ELg/Hc=
-github.com/jinzhu/copier v0.3.6-0.20230809063302-70b1d4e41a98 h1:Hqhqot1uRIoAUl6xb4W5FBlRCIoS+tx2SSCebzgzGD4=
-github.com/jinzhu/copier v0.3.6-0.20230809063302-70b1d4e41a98/go.mod h1:DfbEm0FYsaqBcKcFuvmOZb218JkPGtvSHsKg8S8hyyg=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=

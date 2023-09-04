@@ -12,7 +12,7 @@ import (
 	"log/slog"
 )
 
-// Colors
+// Colors and formats
 const (
 	Reset     = "\033[0m"
 	Red       = "\033[31m"

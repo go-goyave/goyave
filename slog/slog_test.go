@@ -90,7 +90,8 @@ func TestLogger(t *testing.T) {
 			{
 				desc: "ErrorWithSource",
 				f: func() {
-					l.ErrorWithSource(nil, pc, fmt.Errorf("err message"), slog.String("attr", "val"))
+					// Ignore "do not pass a nil Context" so we know passing a nil context doesn't crash
+					l.ErrorWithSource(nil, pc, fmt.Errorf("err message"), slog.String("attr", "val")) //nolint:staticcheck
 				},
 				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%serr message%s\n%sattr: %sval\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), regexp.QuoteMeta(fmt.Sprintf("%s:%d", file, line)), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},
@@ -153,9 +154,9 @@ func TestLogger(t *testing.T) {
 		l := New(slog.NewJSONHandler(buf, &slog.HandlerOptions{AddSource: true}))
 
 		err := errors.New("reason")
-		r := regexp.MustCompile(fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}(\+\d{2}:\d{2})?","level":"ERROR","source":{"function":".+","file":"%s","line":%d},"msg":"reason","trace":".+","reason":"reason"}\n`, regexp.QuoteMeta(file), line))
+		r := regexp.MustCompile(fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":"%s","line":%d},"msg":"reason","trace":".+","reason":"reason"}\n`, regexp.QuoteMeta(file), line))
 
-		l.ErrorWithSource(nil, pc, err)
+		l.ErrorWithSource(context.Background(), pc, err)
 		assert.Regexp(t, r, buf.String())
 	})
 }

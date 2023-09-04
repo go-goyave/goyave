@@ -124,7 +124,7 @@ func TestDevModeHandler(t *testing.T) {
 			t.Run(fmt.Sprintf("%s_%s", c.opts.Level, c.level), func(t *testing.T) {
 				buf := bytes.NewBuffer(make([]byte, 0, 10))
 				handler := NewDevModeHandler(buf, c.opts)
-				assert.Equal(t, c.want, handler.Enabled(nil, c.level))
+				assert.Equal(t, c.want, handler.Enabled(context.Background(), c.level))
 			})
 		}
 	})

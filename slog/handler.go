@@ -130,30 +130,30 @@ func (h *DevModeHandler) Handle(_ context.Context, r slog.Record) error {
 	return err
 }
 
+// levelColor return a color for the tag describing the level in the output.
+// We use ranges so custom levels can be supported.
 func levelColor(level slog.Level) string {
-	switch level {
-	case slog.LevelDebug:
+	switch {
+	case level < slog.LevelInfo: // Debug
 		return BGCyan + WhiteBold
-	case slog.LevelInfo:
+	case level < slog.LevelWarn: // Info
 		return BGGray + WhiteBold
-	case slog.LevelWarn:
+	case level < slog.LevelError: // Warn
 		return BGYellow + GrayBold
-	case slog.LevelError:
+	default: // Error
 		return BGRed + WhiteBold
 	}
-	return WhiteBold
 }
 
 func messageColor(level slog.Level) string {
-	switch level {
-	case slog.LevelDebug, slog.LevelInfo:
+	switch {
+	case level < slog.LevelWarn: // Debug and Info
 		return ""
-	case slog.LevelWarn:
+	case level < slog.LevelError: // Warn
 		return Yellow
-	case slog.LevelError:
+	default: // Error
 		return Red
 	}
-	return ""
 }
 
 // Enabled reports whether the handler handles records at the given level.
@@ -173,9 +173,10 @@ func (h *DevModeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newAttrs = append(newAttrs, h.attrs...)
 	newAttrs = append(newAttrs, attrs...)
 	return &DevModeHandler{
-		opts:  h.opts,
-		w:     h.w,
-		attrs: newAttrs,
+		opts:   h.opts,
+		w:      h.w,
+		attrs:  newAttrs,
+		groups: h.groups,
 	}
 }
 

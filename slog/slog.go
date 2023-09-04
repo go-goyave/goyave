@@ -12,8 +12,6 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
-// TODO test slog and handler
-
 type unwrapper interface {
 	Unwrap() []error
 }
@@ -27,7 +25,7 @@ type Logger struct {
 
 // New creates a new Logger with the given non-nil Handler and a nil context.
 func New(h slog.Handler) *Logger {
-	return &Logger{slog.New(h)}
+	return &Logger{Logger: slog.New(h)}
 }
 
 // With returns a new Logger that includes the given arguments, converted to
@@ -81,6 +79,7 @@ func (l *Logger) logError(ctx context.Context, source uintptr, err error, args .
 	case *errors.Error:
 		l.handleError(ctx, e, r)
 	case unwrapper:
+		l.handleReason(ctx, err, r)
 		for _, e := range e.Unwrap() {
 			l.handleReason(ctx, e, r)
 		}

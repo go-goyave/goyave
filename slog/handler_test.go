@@ -414,16 +414,14 @@ func TestDevModeHandlerFormat(t *testing.T) {
 				r: func() slog.Record {
 					r := slog.NewRecord(time, slog.LevelError, "message", pc)
 					m := map[string]any{
-						"Subgroup": map[string]any{
+						"Subgroup": map[string]any{ // We leave only one key because map iteration order is not guaranteed, making the test randomly fail
 							"Attr3": "val3",
 						},
-						"Attr1": "val1",
-						"Attr2": 123,
 					}
 					r.AddAttrs(slog.Any("map", m))
 					return r
 				},
-				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%smap: \n  %sSubgroup: \n    %sAttr3: %sval3\n  %sAttr1: %sval1\n  %sAttr2: %s123\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, WhiteBold, WhiteBold, Reset, WhiteBold, Reset, WhiteBold, Reset),
+				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%smap: \n  %sSubgroup: \n    %sAttr3: %sval3\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, WhiteBold, WhiteBold, Reset),
 			},
 			{
 				desc: "logvaluer",

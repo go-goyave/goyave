@@ -75,8 +75,6 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		}
 	}
 
-	errLogger := log.New(os.Stderr, "", log.LstdFlags)
-
 	languages := lang.New() // TODO using embed FS
 	languages.Default = cfg.GetString("app.defaultLanguage")
 	if err := languages.LoadAllAvailableLanguages(); err != nil {
@@ -91,7 +89,6 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 			WriteTimeout: time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
 			ReadTimeout:  time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
 			IdleTimeout:  time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
-			ErrorLog:     errLogger, // TODO create a new Logger with destination Slogger
 		},
 		config:        cfg,
 		db:            db,
@@ -105,6 +102,8 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		proxyBaseURL:  getProxyAddress(cfg),
 		Logger:        slogger,
 	}
+	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
+
 	server.router = NewRouter(server)
 	server.server.Handler = server.router
 	return server, nil
@@ -415,4 +414,16 @@ func (s *Server) RegisterSignalHook() {
 			s.Stop()
 		}
 	}()
+}
+
+// errLogWriter is a proxy io.Writer that pipes into the server logger.
+// This is used so the error logger (type `*log.Logger`) of the underlying
+// std HTTP server write to the same logger as the rest of the application.
+type errLogWriter struct {
+	server *Server
+}
+
+func (w errLogWriter) Write(p []byte) (n int, err error) {
+	w.server.Logger.Error(fmt.Errorf("%s", p))
+	return len(p), nil
 }

@@ -1,11 +1,13 @@
 package goyave
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -18,6 +20,7 @@ import (
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
@@ -429,4 +432,31 @@ func TestServer(t *testing.T) {
 		wg.Wait()
 		assert.False(t, server.IsReady())
 	})
+}
+
+func TestErrLogWriter(t *testing.T) {
+
+	s, err := NewWithConfig(config.LoadDefault())
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	buf := bytes.NewBuffer(make([]byte, 0, 1024))
+	s.Logger = slog.New(slog.NewHandler(false, buf))
+
+	w := &errLogWriter{
+		server: s,
+	}
+
+	message := "error message"
+	n, err := w.Write([]byte(message))
+	assert.NoError(t, err)
+	assert.Equal(t, len(message), n)
+
+	assert.Regexp(t, regexp.MustCompile(
+		fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`,
+			regexp.QuoteMeta(message),
+		)),
+		buf.String(),
+	)
 }

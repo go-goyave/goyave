@@ -124,7 +124,11 @@ func (l *Logger) handleError(ctx context.Context, err *errors.Error, record slog
 
 func (l *Logger) handleReason(ctx context.Context, reason error, record slog.Record) {
 	clone := record.Clone()
-	clone.Message = reason.Error()
+	if reason == nil {
+		clone.Message = "<nil>"
+	} else {
+		clone.Message = reason.Error()
+	}
 	switch e := reason.(type) {
 	case *errors.Error:
 		l.handleError(ctx, e, clone)

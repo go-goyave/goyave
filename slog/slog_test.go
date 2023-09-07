@@ -83,6 +83,11 @@ func TestLogger(t *testing.T) {
 				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%serr message%s\n%sattr: %sval\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},
 			{
+				desc: "nil Error",
+				f:    func() { l.Error(errors.New(nil), slog.String("attr", "val")) },
+				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%s<nil>%s\n%sattr: %sval\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
+			},
+			{
 				desc: "ErrorCtx",
 				f:    func() { l.ErrorCtx(context.Background(), fmt.Errorf("err message"), slog.String("attr", "val")) },
 				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%serr message%s\n%sattr: %sval\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),

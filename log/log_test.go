@@ -2,8 +2,10 @@ package log
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"testing"
 	"time"
 
@@ -57,7 +59,13 @@ func TestWriter(t *testing.T) {
 		httpResponse := recorder.Result()
 		_ = httpResponse.Body.Close()
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
-		assert.Equal(t, "192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13\n", buffer.String())
+
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":13}}\n`,
+				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13`),
+			)),
+			buffer.String(),
+		)
 	})
 
 	t.Run("child_writer_prewrite_and_close", func(t *testing.T) {
@@ -89,7 +97,13 @@ func TestWriter(t *testing.T) {
 		httpResponse := recorder.Result()
 		_ = httpResponse.Body.Close()
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
-		assert.Equal(t, "192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13\n", buffer.String())
+
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":13}}\n`,
+				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13`),
+			)),
+			buffer.String(),
+		)
 		assert.True(t, child.closed)
 	})
 }
@@ -109,7 +123,12 @@ func TestMiddleware(t *testing.T) {
 		})
 		_ = httpResponse.Body.Close()
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
-		assert.Equal(t, "192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11\n", buffer.String())
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":11}}\n`,
+				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11`),
+			)),
+			buffer.String(),
+		)
 	})
 
 	t.Run("Combined", func(t *testing.T) {
@@ -131,6 +150,14 @@ func TestMiddleware(t *testing.T) {
 		})
 		_ = httpResponse.Body.Close()
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
-		assert.Equal(t, "192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11 \""+referrer+"\" \""+userAgent+"\"\n", buffer.String())
+
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":11,"referrer":"%s","userAgent":"%s"}}\n`,
+				regexp.QuoteMeta(fmt.Sprintf(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11 \"%s\" \"%s\"`, referrer, userAgent)),
+				regexp.QuoteMeta(referrer),
+				regexp.QuoteMeta(userAgent),
+			)),
+			buffer.String(),
+		)
 	})
 }

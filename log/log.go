@@ -2,7 +2,9 @@ package log
 
 import (
 	"io"
+	"log/slog"
 
+	"github.com/samber/lo"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/util/errors"
 )
@@ -19,7 +21,11 @@ type Context struct {
 // As logs are written at the end of the request's lifecycle, all the
 // data is available to formatters at the time they are called, and all
 // modifications will have no effect.
-type Formatter func(ctx *Context) string
+//
+// The first returned value is the message, usually formatted using a standard
+// like Common Log Format or Combined Log Format.
+// The second returned value is a slice of structured logging attributes.
+type Formatter func(ctx *Context) (message string, attributes []slog.Attr)
 
 // Writer chained writer keeping response body in memory.
 // Used for loggin in common format.
@@ -77,7 +83,8 @@ func (w *Writer) Close() error {
 		Status:    w.response.GetStatus(),
 		Length:    w.length,
 	}
-	w.Logger().Info(w.formatter(ctx))
+	message, attrs := w.formatter(ctx)
+	w.Logger().Info(message, lo.Map(attrs, func(a slog.Attr, _ int) any { return a })...)
 
 	if wr, ok := w.writer.(io.Closer); ok {
 		return wr.Close()
@@ -85,15 +92,15 @@ func (w *Writer) Close() error {
 	return nil
 }
 
-// Middleware captures response data and outputs it to the default logger
-// using the given formatter.
-type Middleware struct {
+// AccessMiddleware captures response data and outputs it to the logger at the
+// INFO level. The message and attributes logged are defined by the `Formatter`.
+type AccessMiddleware struct {
 	goyave.Component
 	Formatter Formatter
 }
 
-// Handle adds the log chained writer to the response.
-func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
+// Handle adds the access logging chained writer to the response.
+func (m *AccessMiddleware) Handle(next goyave.Handler) goyave.Handler {
 	return func(response *goyave.Response, request *goyave.Request) {
 		logWriter := NewWriter(m.Server(), response, request, m.Formatter)
 		response.SetWriter(logWriter)
@@ -105,11 +112,11 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 // CommonLogMiddleware captures response data and outputs it to the default logger
 // using the common log format.
 func CommonLogMiddleware() goyave.Middleware {
-	return &Middleware{Formatter: CommonLogFormatter}
+	return &AccessMiddleware{Formatter: CommonLogFormatter}
 }
 
 // CombinedLogMiddleware captures response data and outputs it to the default logger
 // using the combined log format.
 func CombinedLogMiddleware() goyave.Middleware {
-	return &Middleware{Formatter: CombinedLogFormatter}
+	return &AccessMiddleware{Formatter: CombinedLogFormatter}
 }

@@ -3,7 +3,6 @@ package testutil
 import (
 	"bytes"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 )
 
 type testMiddleware struct {
@@ -120,7 +120,7 @@ func TestTestServer(t *testing.T) {
 
 	t.Run("NewTestResponse", func(t *testing.T) {
 		server := NewTestServerWithConfig(t, config.LoadDefault(), nil)
-		server.ErrLogger = log.New(&bytes.Buffer{}, "", 0)
+		server.Server.Logger = slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 		req := server.NewTestRequest(http.MethodGet, "/uri", nil)
 		resp, recorder := server.NewTestResponse(req)
 

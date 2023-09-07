@@ -43,8 +43,6 @@ func TestComponent(t *testing.T) {
 	})
 
 	assert.Equal(t, server.Logger, c.Logger())
-	assert.Equal(t, server.ErrLogger, c.ErrLogger())
-	assert.Equal(t, server.AccessLogger, c.AccessLogger())
 	assert.Equal(t, server.config, c.Config())
 	assert.Equal(t, server.Lang, c.Lang())
 	assert.Equal(t, server.db, c.DB())

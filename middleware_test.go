@@ -2,17 +2,20 @@ package goyave
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"runtime"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/validation"
 
 	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
@@ -81,7 +84,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		logBuffer := &bytes.Buffer{}
-		server.ErrLogger = log.New(logBuffer, "", 0)
+		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -100,7 +103,12 @@ func TestRecoveryMiddleware(t *testing.T) {
 			return
 		}
 		assert.Equal(t, []error{panicErr}, returnedErr.Unwrap())
-		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+				regexp.QuoteMeta(returnedErr.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(returnedErr.StackFrames().String())))),
+			)),
+			logBuffer.String(),
+		)
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})
 
@@ -110,7 +118,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		logBuffer := &bytes.Buffer{}
-		server.ErrLogger = log.New(logBuffer, "", 0)
+		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -132,7 +140,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		logBuffer := &bytes.Buffer{}
-		server.ErrLogger = log.New(logBuffer, "", 0)
+		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -150,7 +158,12 @@ func TestRecoveryMiddleware(t *testing.T) {
 			return
 		}
 		assert.Equal(t, []error{&runtime.PanicNilError{}}, returnedErr.Unwrap())
-		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+				regexp.QuoteMeta(returnedErr.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(returnedErr.StackFrames().String())))),
+			)),
+			logBuffer.String(),
+		)
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})
 
@@ -162,7 +175,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		logBuffer := &bytes.Buffer{}
-		server.ErrLogger = log.New(logBuffer, "", 0)
+		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -180,7 +193,12 @@ func TestRecoveryMiddleware(t *testing.T) {
 			return
 		}
 		assert.Len(t, returnedErr.Unwrap(), 1)
-		assert.Equal(t, returnedErr.String()+"\n", logBuffer.String())
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+				regexp.QuoteMeta(returnedErr.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(returnedErr.StackFrames().String())))),
+			)),
+			logBuffer.String(),
+		)
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})
 }
@@ -305,7 +323,6 @@ func TestValidateMiddleware(t *testing.T) {
 						assert.NotNil(t, v.DB())
 						assert.NotNil(t, v.Config())
 						assert.NotNil(t, v.Logger())
-						assert.NotNil(t, v.ErrLogger())
 						assert.NotNil(t, v.Lang())
 						return false
 					},
@@ -381,7 +398,6 @@ func TestValidateMiddleware(t *testing.T) {
 						assert.NotNil(t, v.Config())
 						assert.NotNil(t, v.DB())
 						assert.NotNil(t, v.Logger())
-						assert.NotNil(t, v.ErrLogger())
 						assert.NotNil(t, v.Lang())
 						return false
 					},
@@ -481,7 +497,7 @@ func TestValidateMiddleware(t *testing.T) {
 				assert.NoError(t, server.CloseDB())
 			}()
 			buffer := &bytes.Buffer{}
-			server.ErrLogger = log.New(buffer, "", 0)
+			server.Logger = slog.New(slog.NewHandler(false, buffer))
 
 			m := &validateRequestMiddleware{
 				QueryRules: c.queryRules,

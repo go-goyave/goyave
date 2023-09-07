@@ -1,8 +1,6 @@
 package goyave
 
 import (
-	"log"
-
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
@@ -19,10 +17,7 @@ type Composable interface {
 	DB() *gorm.DB
 	Config() *config.Config
 	Lang() *lang.Languages
-	Logger() *log.Logger
-	Slogger() *slog.Logger
-	ErrLogger() *log.Logger
-	AccessLogger() *log.Logger
+	Logger() *slog.Logger
 	Service(name string) Service
 	LookupService(name string) (Service, bool)
 }
@@ -67,24 +62,8 @@ func (c *Component) LookupService(name string) (Service, bool) {
 }
 
 // Logger returns the server's logger.
-func (c *Component) Logger() *log.Logger {
+func (c *Component) Logger() *slog.Logger {
 	return c.server.Logger
-}
-
-// Slogger returns the server's logger.
-func (c *Component) Slogger() *slog.Logger {
-	return c.server.Slogger
-}
-
-// ErrLogger returns the server's error logger.
-func (c *Component) ErrLogger() *log.Logger {
-	return c.server.ErrLogger
-}
-
-// AccessLogger returns the server's access logger. This logger
-// is used to log HTTP requests (usually in the "combined log" format).
-func (c *Component) AccessLogger() *log.Logger {
-	return c.server.AccessLogger
 }
 
 // DB returns the root database instance. Panics if no

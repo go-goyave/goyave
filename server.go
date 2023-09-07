@@ -33,22 +33,9 @@ type Server struct {
 
 	services map[string]Service
 
-	// TODO use a logging library? (or an interface)
-
-	Slogger *slog.Logger
-
 	// Logger the logger for default output
 	// Writes to stdout by default.
-	Logger *log.Logger // TODO remove old loggers, keep Slogger and rename it to Logger
-
-	// AccessLogger the logger for access. This logger
-	// is used by the logging middleware.
-	// Writes to stdout by default.
-	AccessLogger *log.Logger // TODO how will the access logs be handled?
-
-	// ErrLogger the logger in which errors and stacktraces are written.
-	// Writes to stderr by default.
-	ErrLogger *log.Logger
+	Logger *slog.Logger
 
 	host         string
 	baseURL      string
@@ -116,10 +103,7 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		host:          host,
 		baseURL:       getAddress(cfg),
 		proxyBaseURL:  getProxyAddress(cfg),
-		Logger:        log.New(os.Stdout, "", log.LstdFlags),
-		AccessLogger:  log.New(os.Stdout, "", 0),
-		ErrLogger:     errLogger,
-		Slogger:       slogger, // TODO customize output ()
+		Logger:        slogger,
 	}
 	server.router = NewRouter(server)
 	server.server.Handler = server.router
@@ -251,7 +235,7 @@ func (s *Server) Config() *config.Config {
 // database connection is set up.
 func (s *Server) DB() *gorm.DB {
 	if s.db == nil {
-		s.ErrLogger.Panicf("No database connection. Database is set to \"none\" in the config")
+		panic(errors.NewSkip("No database connection. Database is set to \"none\" in the config", 3))
 	}
 	return s.db
 }
@@ -265,7 +249,7 @@ func (s *Server) DB() *gorm.DB {
 // This is used for tests. This operation is not concurrently safe.
 func (s *Server) Transaction(opts ...*sql.TxOptions) func() {
 	if s.db == nil {
-		s.ErrLogger.Panicf("No database connection. Database is set to \"none\" in the config")
+		panic(errors.NewSkip("No database connection. Database is set to \"none\" in the config", 3))
 	}
 	ogDB := s.db
 	s.db = s.db.Begin(opts...)
@@ -288,7 +272,7 @@ func (s *Server) ReplaceDB(dialector gorm.Dialector) error {
 		return err
 	}
 
-	db, err := database.NewFromDialector(s.config, s.Slogger, dialector)
+	db, err := database.NewFromDialector(s.config, s.Logger, dialector)
 	if err != nil {
 		return err
 	}
@@ -349,7 +333,7 @@ func (s *Server) Start() error {
 			hook(s)
 		}
 		if err := s.CloseDB(); err != nil {
-			s.ErrLogger.Println(err)
+			s.Logger.Error(err)
 		}
 	}()
 
@@ -408,7 +392,7 @@ func (s *Server) Stop() {
 	defer cancel()
 	err := s.server.Shutdown(ctx)
 	if err != nil {
-		s.ErrLogger.Println(errors.NewSkip(err, 3).String())
+		s.Logger.Error(errors.NewSkip(err, 3))
 	}
 
 	<-s.stopChannel // Wait for stop channel before returning

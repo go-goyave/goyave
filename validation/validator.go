@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
@@ -46,21 +46,19 @@ type ErrorResponse struct {
 // Composable is a partial clone of `goyave.Component`, only
 // including the accessors necessary for validation.
 // Validators must implement this interface so they
-// have access to DB, Config, Language, Logger and ErrLogger.
+// have access to DB, Config, Language and Logger.
 type Composable interface {
 	DB() *gorm.DB
 	Config() *config.Config
 	Lang() *lang.Language
-	Logger() *log.Logger
-	ErrLogger() *log.Logger
+	Logger() *slog.Logger
 }
 
 type component struct {
-	db        *gorm.DB
-	config    *config.Config
-	lang      *lang.Language
-	logger    *log.Logger
-	errLogger *log.Logger
+	db     *gorm.DB
+	config *config.Config
+	lang   *lang.Language
+	logger *slog.Logger
 }
 
 // DB get the database instance given through the validation Options.
@@ -92,20 +90,11 @@ func (c *component) Lang() *lang.Language {
 
 // Logger get the Logger given through the validation Options.
 // Panics if there is none.
-func (c *component) Logger() *log.Logger {
+func (c *component) Logger() *slog.Logger {
 	if c.logger == nil {
 		panic(errors.NewSkip("Logger is not set in validation options", 3))
 	}
 	return c.logger
-}
-
-// ErrLogger get the Logger given through the validation Options.
-// Panics if there is none.
-func (c *component) ErrLogger() *log.Logger {
-	if c.errLogger == nil {
-		panic(errors.NewSkip("ErrLogger is not set in validation options", 3))
-	}
-	return c.errLogger
 }
 
 // Options all the parameters required by `Validate()`.
@@ -116,13 +105,12 @@ type Options struct {
 	Data  any
 	Rules Ruler
 
-	Now       time.Time
-	Extra     map[string]any
-	Language  *lang.Language
-	DB        *gorm.DB
-	Config    *config.Config
-	Logger    *log.Logger
-	ErrLogger *log.Logger
+	Now      time.Time
+	Extra    map[string]any
+	Language *lang.Language
+	DB       *gorm.DB
+	Config   *config.Config
+	Logger   *slog.Logger
 
 	// ConvertSingleValueArrays set to true to convert fields that are expected
 	// to be an array into an array with a single value.

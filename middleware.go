@@ -80,7 +80,7 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 		defer func() {
 			if err := recover(); err != nil || panicked {
 				e := errors.NewSkip(err, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
-				m.ErrLogger().Println(e.String())
+				m.Logger().Error(e)
 				response.err = e
 				response.status = http.StatusInternalServerError // Force status override
 			}
@@ -153,7 +153,6 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				DB:                       db,
 				Config:                   m.Config(),
 				Logger:                   m.Logger(),
-				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
 			r.Extra[ExtraQueryValidationRules] = opt.Rules
@@ -175,7 +174,6 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				DB:                       db,
 				Config:                   m.Config(),
 				Logger:                   m.Logger(),
-				ErrLogger:                m.ErrLogger(),
 				Extra:                    extra,
 			}
 			r.Extra[ExtraBodyValidationRules] = opt.Rules

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
@@ -42,7 +43,7 @@ func TestWriter(t *testing.T) {
 		resp, recorder := server.NewTestResponse(req)
 
 		buffer := bytes.NewBufferString("")
-		server.AccessLogger.SetOutput(buffer)
+		server.Logger = slog.New(slog.NewHandler(false, buffer))
 
 		writer := NewWriter(server.Server, resp, req, CommonLogFormatter)
 		resp.SetWriter(writer)
@@ -67,7 +68,7 @@ func TestWriter(t *testing.T) {
 		resp, recorder := server.NewTestResponse(req)
 
 		buffer := bytes.NewBufferString("")
-		server.AccessLogger.SetOutput(buffer)
+		server.Logger = slog.New(slog.NewHandler(false, buffer))
 
 		child := &testWriter{
 			preWritten: false,
@@ -99,7 +100,7 @@ func TestMiddleware(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 		buffer := bytes.NewBufferString("")
-		server.AccessLogger.SetOutput(buffer)
+		server.Logger = slog.New(slog.NewHandler(false, buffer))
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -115,7 +116,7 @@ func TestMiddleware(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
 		buffer := bytes.NewBufferString("")
-		server.AccessLogger.SetOutput(buffer)
+		server.Logger = slog.New(slog.NewHandler(false, buffer))
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts

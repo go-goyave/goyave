@@ -3,18 +3,22 @@ package goyave
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
+	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
 func newTestReponse() (*Response, *httptest.ResponseRecorder) {
@@ -274,7 +278,7 @@ func TestResponse(t *testing.T) {
 		t.Run("error_on_hijack", func(t *testing.T) {
 			resp, _ := newTestReponse()
 			resp.server.config.Set("app.debug", true)
-			resp.server.ErrLogger = log.New(&bytes.Buffer{}, "", 0)
+			resp.server.Logger = slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 			recorder := httptest.NewRecorder()
 			resp.responseWriter = &hijackableRecorder{recorder}
 
@@ -317,7 +321,7 @@ func TestResponse(t *testing.T) {
 	t.Run("Error_no_debug", func(t *testing.T) {
 		resp, _ := newTestReponse()
 		logBuffer := &bytes.Buffer{}
-		resp.server.ErrLogger = log.New(logBuffer, "", 0)
+		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		resp.server.config.Set("app.debug", false)
 		err := fmt.Errorf("custom error")
 		resp.Error(err)
@@ -328,23 +332,48 @@ func TestResponse(t *testing.T) {
 		}
 		assert.Equal(t, []error{err}, e.Unwrap())
 		assert.Equal(t, http.StatusInternalServerError, resp.status)
-		assert.Equal(t, e.String()+"\n", logBuffer.String())
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+				regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
+			)),
+			logBuffer.String(),
+		)
 	})
 
 	t.Run("Error_with_debug", func(t *testing.T) {
 		cases := []struct {
+			expectedLog     func(e *errorutil.Error) *regexp.Regexp
 			err             any
 			expectedMessage string
 		}{
-			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`},
-			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`},
-			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`},
+			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+				return regexp.MustCompile(
+					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+						regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
+					))
+			}},
+			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+				return regexp.MustCompile(
+					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s,"reason":{"key":"value"}}\n`,
+						regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
+					))
+			}},
+			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+				reasons := e.Unwrap()
+				stacktrace := regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String()))))
+				return regexp.MustCompile(
+					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+						regexp.QuoteMeta(reasons[0].Error()), stacktrace,
+						regexp.QuoteMeta(reasons[1].Error()), stacktrace,
+					),
+				)
+			}},
 		}
 
 		for _, c := range cases {
 			resp, recorder := newTestReponse()
 			logBuffer := &bytes.Buffer{}
-			resp.server.ErrLogger = log.New(logBuffer, "", 0)
+			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 			resp.server.config.Set("app.debug", true)
 			resp.Error(c.err)
 
@@ -364,14 +393,15 @@ func TestResponse(t *testing.T) {
 			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 			assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
 			assert.Equal(t, "{\"error\":"+c.expectedMessage+"}\n", string(body))
-			assert.Equal(t, fmt.Sprintf("%s\n", e.String()), logBuffer.String()) // Error and stacktrace printed to ErrLogger
+
+			assert.Regexp(t, c.expectedLog(e), logBuffer.String())
 		}
 	})
 
 	t.Run("Error_with_debug_and_custom_status", func(t *testing.T) {
 		resp, recorder := newTestReponse()
 		logBuffer := &bytes.Buffer{}
-		resp.server.ErrLogger = log.New(logBuffer, "", 0)
+		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		resp.server.config.Set("app.debug", true)
 		err := fmt.Errorf("custom error")
 		resp.Status(http.StatusForbidden)
@@ -395,13 +425,18 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
 		assert.Equal(t, "{\"error\":\"custom error\"}\n", string(body))
 
-		assert.Equal(t, fmt.Sprintf("%s\n", e.String()), logBuffer.String()) // Error and stacktrace printed to ErrLogger
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+				regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
+			)),
+			logBuffer.String(),
+		)
 	})
 
 	t.Run("Error_with_debug_and_not_empty", func(t *testing.T) {
 		resp, recorder := newTestReponse()
 		logBuffer := &bytes.Buffer{}
-		resp.server.ErrLogger = log.New(logBuffer, "", 0)
+		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		resp.server.config.Set("app.debug", true)
 		err := fmt.Errorf("custom error")
 		resp.String(http.StatusForbidden, "forbidden")
@@ -424,7 +459,12 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, res.StatusCode)
 		assert.Equal(t, "forbidden", string(body))
 
-		assert.Equal(t, fmt.Sprintf("%s\n", e.String()), logBuffer.String()) // Error and stacktrace printed to ErrLogger
+		assert.Regexp(t, regexp.MustCompile(
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
+				regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
+			)),
+			logBuffer.String(),
+		)
 	})
 
 	t.Run("WriteDBError", func(t *testing.T) {
@@ -438,7 +478,7 @@ func TestResponse(t *testing.T) {
 		t.Run("DBError", func(t *testing.T) {
 			resp, recorder := newTestReponse()
 			logBuffer := &bytes.Buffer{}
-			resp.server.ErrLogger = log.New(logBuffer, "", 0)
+			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 			assert.True(t, resp.WriteDBError(fmt.Errorf("random db error")))
 
 			res := recorder.Result()

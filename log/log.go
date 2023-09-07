@@ -77,7 +77,7 @@ func (w *Writer) Close() error {
 		Status:    w.response.GetStatus(),
 		Length:    w.length,
 	}
-	w.AccessLogger().Println(w.formatter(ctx))
+	w.Logger().Info(w.formatter(ctx))
 
 	if wr, ok := w.writer.(io.Closer); ok {
 		return wr.Close()

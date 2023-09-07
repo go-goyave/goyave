@@ -303,7 +303,7 @@ func (r *Response) Download(file string, fileName string) {
 // write to the response, or use your error status handler.
 func (r *Response) Error(err any) {
 	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
-	r.server.ErrLogger.Println(e.String())
+	r.server.Logger.Error(e)
 	r.error(e)
 }
 

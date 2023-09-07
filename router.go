@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 	"goyave.dev/goyave/v5/cors"
+	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
 // TODO document there is no more static handler
@@ -456,7 +457,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	handler(response, request)
 
 	if err := r.finalize(response, request); err != nil {
-		r.server.ErrLogger.Println(err)
+		r.server.Logger.Error(err)
 	}
 }
 
@@ -478,5 +479,9 @@ func (r *Router) finalize(response *Response, request *Request) error {
 		response.WriteHeader(response.status)
 	}
 
-	return response.close()
+	err := response.close()
+	if err != nil {
+		return errorutil.New(err)
+	}
+	return nil
 }

@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+// TODO remove common formatter (now uses structured logging)
+
 const (
 	// Format is the fmt format code for common logs
 	Format string = "%s %s %s [%s] \"%s %s %s\" %d %d"

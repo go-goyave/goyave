@@ -110,7 +110,7 @@ func (s *TestServer) TestMiddleware(middleware goyave.Middleware, request *goyav
 // call this in a test `Cleanup` function when using a database.
 func (s *TestServer) CloseDB() {
 	if err := s.Server.CloseDB(); err != nil {
-		s.ErrLogger.Println(err.(*errors.Error).String())
+		s.Logger.Error(err)
 	}
 }
 

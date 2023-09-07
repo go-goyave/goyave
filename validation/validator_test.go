@@ -1,9 +1,8 @@
 package validation
 
 import (
+	"bytes"
 	"fmt"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/walk"
@@ -50,18 +50,16 @@ func (v *testValidator) Name() string {
 
 func TestComponent(t *testing.T) {
 	c := &component{
-		db:        &gorm.DB{},
-		config:    config.LoadDefault(),
-		lang:      lang.New().GetDefault(),
-		logger:    log.New(os.Stdout, "", 0),
-		errLogger: log.New(os.Stderr, "", 0),
+		db:     &gorm.DB{},
+		config: config.LoadDefault(),
+		lang:   lang.New().GetDefault(),
+		logger: slog.New(slog.NewDevModeHandler(bytes.NewBuffer(make([]byte, 0, 10)), nil)),
 	}
 
 	assert.Equal(t, c.db, c.DB())
 	assert.Equal(t, c.config, c.Config())
 	assert.Equal(t, c.lang, c.Lang())
 	assert.Equal(t, c.logger, c.Logger())
-	assert.Equal(t, c.errLogger, c.ErrLogger())
 
 	t.Run("unset", func(t *testing.T) {
 		c := &component{}
@@ -69,7 +67,6 @@ func TestComponent(t *testing.T) {
 		assert.Panics(t, func() { c.Config() })
 		assert.Panics(t, func() { c.Lang() })
 		assert.Panics(t, func() { c.Logger() })
-		assert.Panics(t, func() { c.ErrLogger() })
 	})
 }
 
@@ -183,13 +180,12 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "context",
 			options: &Options{
-				Data:      map[string]any{"property": "value"},
-				DB:        &gorm.DB{},
-				Logger:    log.New(os.Stdout, "", 0),
-				ErrLogger: log.New(os.Stderr, "", 0),
-				Extra:     map[string]any{"extra": "value"},
-				Language:  lang.New().GetDefault(),
-				Config:    config.LoadDefault(),
+				Data:     map[string]any{"property": "value"},
+				DB:       &gorm.DB{},
+				Logger:   slog.New(slog.NewDevModeHandler(bytes.NewBuffer(make([]byte, 0, 10)), nil)),
+				Extra:    map[string]any{"extra": "value"},
+				Language: lang.New().GetDefault(),
+				Config:   config.LoadDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{&testValidator{
 						validateFunc: func(c component, ctx *Context) bool {
@@ -198,7 +194,6 @@ func TestValidate(t *testing.T) {
 							assert.NotNil(t, c.config)
 							assert.NotNil(t, c.lang)
 							assert.NotNil(t, c.logger)
-							assert.NotNil(t, c.errLogger)
 
 							// Context content
 							assert.Equal(t, map[string]any{"extra": "value"}, ctx.Extra)

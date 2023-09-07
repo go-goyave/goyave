@@ -3,13 +3,13 @@ package goyave
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/validation"
 )
@@ -49,7 +49,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		req, resp, recorder := prepareStatusHandlerTest()
 		resp.server.config.Set("app.debug", true)
 		logBuffer := &bytes.Buffer{}
-		resp.server.ErrLogger = log.New(logBuffer, "", 0)
+		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
@@ -73,7 +73,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		req, resp, recorder := prepareStatusHandlerTest()
 		resp.server.config.Set("app.debug", true)
 		logBuffer := &bytes.Buffer{}
-		resp.server.ErrLogger = log.New(logBuffer, "", 0)
+		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 

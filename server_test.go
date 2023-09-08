@@ -29,10 +29,6 @@ type DummyService struct {
 	AppName string
 }
 
-func (s *DummyService) Init(server *Server) {
-	s.AppName = server.Config().GetString("app.name")
-}
-
 func (s *DummyService) Name() string {
 	return "dummy"
 }
@@ -181,7 +177,6 @@ func TestServer(t *testing.T) {
 
 		service := &DummyService{}
 		server.RegisterService(service)
-		assert.Equal(t, "test", service.AppName)
 		assert.Equal(t, map[string]Service{"dummy": service}, server.services)
 		assert.Equal(t, service, server.Service("dummy"))
 

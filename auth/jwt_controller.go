@@ -52,7 +52,7 @@ func (c *JWTController[T]) Init(server *goyave.Server) {
 
 	service, ok := server.LookupService(JWTServiceName)
 	if !ok {
-		service = &JWTService{}
+		service = NewJWTService(server.Config())
 		server.RegisterService(service)
 	}
 	c.jwtService = service.(*JWTService)

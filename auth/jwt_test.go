@@ -14,7 +14,7 @@ import (
 
 func prepareJWTServiceTest(t *testing.T) (*testutil.TestServer, *JWTService) {
 	server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
-	service := &JWTService{}
+	service := NewJWTService(server.Config())
 	server.RegisterService(service)
 	return server, service
 }
@@ -177,8 +177,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateToken(user.Email)
 		if !assert.NoError(t, err) {
@@ -205,8 +204,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodRS256})
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodRS256)
 		if !assert.NoError(t, err) {
@@ -233,8 +231,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodES256})
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodES256)
 		if !assert.NoError(t, err) {
@@ -280,8 +277,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{
 			"sub": user.Email,
@@ -313,8 +309,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{
 			"sub": user.Email,
@@ -346,8 +341,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateToken("notjohndoe@example.org")
 		if !assert.NoError(t, err) {
@@ -380,8 +374,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		server := testutil.NewTestServerWithConfig(t, cfg, nil)
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateToken("johndoe@example.org")
 		if !assert.NoError(t, err) {
@@ -405,8 +398,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		server.Config().Set("auth.jwt.rsa.private", rootDir+"resources/rsa/private.pem")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodHS256})
 
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": "johndoe@example.org"}, jwt.SigningMethodRS256)
 		if !assert.NoError(t, err) {
@@ -434,8 +426,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodRS256})
 
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateToken("johndoe@example.org")
 		if !assert.NoError(t, err) {
@@ -463,8 +454,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodES256})
 
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateToken("johndoe@example.org")
 		if !assert.NoError(t, err) {
@@ -492,8 +482,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		server.Config().Set("auth.jwt.secret", "secret")
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{SigningMethod: jwt.SigningMethodPS256})
 
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateToken("johndoe@example.org")
 		if !assert.NoError(t, err) {
@@ -534,8 +523,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{Optional: true})
 
 		// No need to register the JWTService, it should be done automatically
-		service := &JWTService{}
-		service.Init(server.Server)
+		service := NewJWTService(server.Config())
 
 		token, err := service.GenerateToken(user.Email)
 		if !assert.NoError(t, err) {

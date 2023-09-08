@@ -224,7 +224,7 @@ func (r *Response) Status(status int) {
 
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically.
-func (r *Response) JSON(responseCode int, data interface{}) {
+func (r *Response) JSON(responseCode int, data any) {
 	r.responseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 	r.status = responseCode
 	if err := json.NewEncoder(r).Encode(data); err != nil {

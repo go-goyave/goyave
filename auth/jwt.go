@@ -53,9 +53,11 @@ type JWTService struct {
 	cache  sync.Map
 }
 
-// Init the service with the given server.
-func (s *JWTService) Init(server *goyave.Server) {
-	s.config = server.Config()
+// NewJWTService create a new `JWTService` with the given config.
+func NewJWTService(config *config.Config) *JWTService {
+	return &JWTService{
+		config: config,
+	}
 }
 
 // Name returns the name of the service.
@@ -197,7 +199,7 @@ func (a *JWTAuthenticator) Init(server *goyave.Server) {
 
 	service, ok := server.LookupService(JWTServiceName)
 	if !ok {
-		service = &JWTService{}
+		service = NewJWTService(server.Config())
 		server.RegisterService(service)
 	}
 	a.service = service.(*JWTService)

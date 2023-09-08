@@ -169,7 +169,6 @@ func (s *Server) LookupService(name string) (Service, bool) {
 // A service's name should be unique.
 // `Service.Init(server)` is called on the given service upon registration.
 func (s *Server) RegisterService(service Service) {
-	service.Init(s)
 	s.services[service.Name()] = service
 }
 

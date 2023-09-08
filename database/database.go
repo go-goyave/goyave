@@ -23,7 +23,7 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/postgres"
 //	import _ "goyave.dev/goyave/v5/database/dialect/sqlite"
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
-func New(cfg *config.Config, logger *slog.Logger) (*gorm.DB, error) {
+func New(cfg *config.Config, logger func() *slog.Logger) (*gorm.DB, error) {
 	driver := cfg.GetString("database.connection")
 
 	if driver == "none" {
@@ -54,7 +54,7 @@ func New(cfg *config.Config, logger *slog.Logger) (*gorm.DB, error) {
 // defined in the given configuration.
 //
 // This can be used in tests to create a mock connection pool.
-func NewFromDialector(cfg *config.Config, logger *slog.Logger, dialector gorm.Dialector) (*gorm.DB, error) {
+func NewFromDialector(cfg *config.Config, logger func() *slog.Logger, dialector gorm.Dialector) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, newConfig(cfg, logger))
 	if err != nil {
 		return nil, errorutil.New(err)
@@ -68,7 +68,7 @@ func NewFromDialector(cfg *config.Config, logger *slog.Logger, dialector gorm.Di
 	return db, nil
 }
 
-func newConfig(cfg *config.Config, logger *slog.Logger) *gorm.Config {
+func newConfig(cfg *config.Config, logger func() *slog.Logger) *gorm.Config {
 	if !cfg.GetBool("app.debug") {
 		// Stay silent about DB operations when not in debug mode
 		logger = nil

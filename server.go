@@ -66,15 +66,6 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 
 	slogger := slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stdout))
 
-	var db *gorm.DB
-	var err error
-	if cfg.GetString("database.connection") != "none" {
-		db, err = database.New(cfg, slogger)
-		if err != nil {
-			return nil, errors.New(err)
-		}
-	}
-
 	languages := lang.New() // TODO using embed FS
 	languages.Default = cfg.GetString("app.defaultLanguage")
 	if err := languages.LoadAllAvailableLanguages(); err != nil {
@@ -91,7 +82,6 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 			IdleTimeout:  time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
 		},
 		config:        cfg,
-		db:            db,
 		services:      make(map[string]Service),
 		Lang:          languages,
 		stopChannel:   make(chan struct{}, 1),
@@ -103,6 +93,14 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		Logger:        slogger,
 	}
 	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
+
+	if cfg.GetString("database.connection") != "none" {
+		db, err := database.New(cfg, func() *slog.Logger { return server.Logger })
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		server.db = db
+	}
 
 	server.router = NewRouter(server)
 	server.server.Handler = server.router
@@ -270,7 +268,7 @@ func (s *Server) ReplaceDB(dialector gorm.Dialector) error {
 		return err
 	}
 
-	db, err := database.NewFromDialector(s.config, s.Logger, dialector)
+	db, err := database.NewFromDialector(s.config, func() *slog.Logger { return s.Logger }, dialector)
 	if err != nil {
 		return err
 	}

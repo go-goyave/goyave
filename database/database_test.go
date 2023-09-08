@@ -63,7 +63,8 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.config.disableAutomaticPing", true)
 		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
 
-		db, err := New(cfg, slog.New(slog.NewHandler(true, &bytes.Buffer{})))
+		slogger := slog.New(slog.NewHandler(true, &bytes.Buffer{}))
+		db, err := New(cfg, func() *slog.Logger { return slogger })
 		assert.NoError(t, err)
 		if !assert.NotNil(t, db) {
 			return
@@ -123,7 +124,8 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.config.disableAutomaticPing", true)
 		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
 
-		db, err := New(cfg, slog.New(slog.NewHandler(false, &bytes.Buffer{})))
+		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
+		db, err := New(cfg, func() *slog.Logger { return logger })
 		assert.NoError(t, err)
 		if !assert.NotNil(t, db) {
 			return

@@ -19,14 +19,19 @@ func TestLogger(t *testing.T) {
 
 	t.Run("New", func(t *testing.T) {
 		slogger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
-		l := NewLogger(slogger)
+		f := func() *slog.Logger { return slogger }
+		l := NewLogger(f)
 
-		assert.Equal(t, &Logger{slogger: slogger, SlowThreshold: 200 * time.Millisecond}, l)
+		assert.Equal(t, slogger, l.slogger())
+		assert.Equal(t, 200*time.Millisecond, l.SlowThreshold)
 	})
 
 	t.Run("LogMode", func(t *testing.T) {
-		l := NewLogger(slog.New(slog.NewHandler(false, &bytes.Buffer{})))
-		assert.Equal(t, l, l.LogMode(0))
+		slogger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
+		l := NewLogger(func() *slog.Logger { return slogger })
+		l2 := l.LogMode(0).(*Logger)
+		assert.Equal(t, slogger, l2.slogger())
+		assert.Equal(t, 200*time.Millisecond, l.SlowThreshold)
 	})
 
 	t.Run("Info", func(t *testing.T) {
@@ -41,7 +46,7 @@ func TestLogger(t *testing.T) {
 
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
 		slogger := slog.New(slog.NewHandler(false, buf))
-		l := NewLogger(slogger)
+		l := NewLogger(func() *slog.Logger { return slogger })
 
 		l.Info(context.Background(), "message %d", 1)
 
@@ -60,7 +65,7 @@ func TestLogger(t *testing.T) {
 
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
 		slogger := slog.New(slog.NewHandler(false, buf))
-		l := NewLogger(slogger)
+		l := NewLogger(func() *slog.Logger { return slogger })
 
 		l.Warn(context.Background(), "message %d", 1)
 
@@ -79,7 +84,7 @@ func TestLogger(t *testing.T) {
 
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
 		slogger := slog.New(slog.NewHandler(false, buf))
-		l := NewLogger(slogger)
+		l := NewLogger(func() *slog.Logger { return slogger })
 
 		l.Error(context.Background(), "message %d", 1)
 
@@ -196,7 +201,7 @@ func TestLogger(t *testing.T) {
 			t.Run(c.desc, func(t *testing.T) {
 				buf := bytes.NewBuffer(make([]byte, 0, 1024))
 				slogger := slog.New(stdslog.NewJSONHandler(buf, &stdslog.HandlerOptions{Level: c.level}))
-				l := NewLogger(slogger)
+				l := NewLogger(func() *slog.Logger { return slogger })
 
 				if c.slowThreshold > -1 {
 					l.SlowThreshold = c.slowThreshold

@@ -74,7 +74,7 @@ func newConfig(cfg *config.Config, logger *slog.Logger) *gorm.Config {
 		logger = nil
 	}
 	return &gorm.Config{
-		Logger:                                   &Logger{slogger: logger, SlowThreshold: 200 * time.Millisecond},
+		Logger:                                   NewLogger(logger),
 		SkipDefaultTransaction:                   cfg.GetBool("database.config.skipDefaultTransaction"),
 		DryRun:                                   cfg.GetBool("database.config.dryRun"),
 		PrepareStmt:                              cfg.GetBool("database.config.prepareStmt"),

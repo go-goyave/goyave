@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	xslog "log/slog"
+	stdslog "log/slog"
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
@@ -18,14 +18,25 @@ import (
 	"goyave.dev/goyave/v5/slog"
 )
 
-// TODO test database log
-
 var regexGormPath = regexp.MustCompile(`gorm.io/(.*?)@`)
 
 // Logger adapter between `*slog.Logger` and GORM's logger.
 type Logger struct {
-	slogger       *slog.Logger
+	slogger *slog.Logger
+
+	// SlowThreshold defines the minimum query execution time to be considered "slow".
+	// If a query takes more time than `SlowThreshold`, the query will be logged at the WARN level.
+	// If 0, disables query execution time checking.
 	SlowThreshold time.Duration
+}
+
+// NewLogger create a new `Logger` adapter between GORM and `*slog.Logger`.
+// Use a `SlowThreshold` of 200ms.
+func NewLogger(slogger *slog.Logger) *Logger {
+	return &Logger{
+		slogger:       slogger,
+		SlowThreshold: 200 * time.Millisecond,
+	}
 }
 
 // LogMode returns a copy of this logger. The level argument actually has
@@ -68,14 +79,14 @@ func (l Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql strin
 	elapsed := time.Since(begin)
 
 	switch {
-	case err != nil && l.slogger.Enabled(ctx, xslog.LevelError) && !errors.Is(err, gorm.ErrRecordNotFound):
+	case err != nil && l.slogger.Enabled(ctx, stdslog.LevelError) && !errors.Is(err, gorm.ErrRecordNotFound):
 		sql, rows := fc()
 		l.slogger.ErrorWithSource(ctx, getSourceCaller(), fmt.Errorf("%s\n"+slog.Reset+slog.Yellow+"[%.3fms] "+slog.Blue+"[rows:%s]"+slog.Reset+" %s", err.Error(), float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
-	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.slogger.Enabled(ctx, xslog.LevelWarn):
+	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.slogger.Enabled(ctx, stdslog.LevelWarn):
 		sql, rows := fc()
 		slowLog := fmt.Sprintf("SLOW SQL >= %v", l.SlowThreshold)
 		l.slogger.WarnWithSource(ctx, getSourceCaller(), fmt.Sprintf("%s\n"+slog.Reset+slog.Red+"[%.3fms] "+slog.Blue+"[rows:%s]"+slog.Reset+" %s", slowLog, float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
-	case l.slogger.Enabled(ctx, xslog.LevelDebug):
+	case l.slogger.Enabled(ctx, stdslog.LevelDebug):
 		sql, rows := fc()
 		l.slogger.DebugWithSource(ctx, getSourceCaller(), fmt.Sprintf(slog.Yellow+"[%.3fms] "+slog.Blue+"[rows:%s]"+slog.Reset+" %s", float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
 	}

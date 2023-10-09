@@ -34,7 +34,7 @@ type Server struct {
 	services map[string]Service
 
 	// Logger the logger for default output
-	// Writes to stdout by default.
+	// Writes to stderr by default.
 	Logger *slog.Logger
 
 	host         string
@@ -64,7 +64,7 @@ func New() (*Server, error) {
 func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? (for loggers, lang, etc) Could take a io.FS as input for resources directory
 	// TODO explicitly return *errors.Error?
 
-	slogger := slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stdout))
+	slogger := slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stderr))
 
 	languages := lang.New() // TODO using embed FS
 	languages.Default = cfg.GetString("app.defaultLanguage")

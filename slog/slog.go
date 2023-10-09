@@ -20,7 +20,7 @@ type unwrapper interface {
 // functions so they take an error as parameter and handle `*errors.Error` gracefully.
 type Logger struct {
 	*slog.Logger
-	// TODO split outputs: errors to stderr, rest to stdout
+	// TODO split outputs: level >= warning prints to stderr, rest to stdout, make it configurable
 }
 
 // New creates a new Logger with the given non-nil Handler and a nil context.

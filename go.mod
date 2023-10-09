@@ -6,7 +6,6 @@ require (
 	github.com/Code-Hex/uniseg v0.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.1
-	github.com/jinzhu/copier v0.4.0
 	github.com/samber/lo v1.38.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.13.0
@@ -16,6 +15,7 @@ require (
 	gorm.io/driver/sqlite v1.5.3
 	gorm.io/driver/sqlserver v1.5.1
 	gorm.io/gorm v1.25.4
+	goyave.dev/copier v0.4.1
 )
 
 require (
@@ -36,5 +36,3 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/jinzhu/copier v0.4.0 => github.com/System-Glitch/copier v0.0.0-20230810143212-ca7f7fa385a2

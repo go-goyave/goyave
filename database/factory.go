@@ -1,8 +1,8 @@
 package database
 
 import (
-	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
+	"goyave.dev/copier"
 	"goyave.dev/goyave/v5/util/errors"
 )
 

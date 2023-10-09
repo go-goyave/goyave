@@ -299,6 +299,7 @@ func TestCopy(t *testing.T) {
 				Ptr: nil,
 			},
 		},
+		// TODO copy undefined to undefined (copier.Valuer interface problem). Undefined should probably implement Scan
 	}
 
 	for _, c := range cases {

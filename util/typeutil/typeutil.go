@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/jinzhu/copier"
+	"goyave.dev/copier"
 	"goyave.dev/goyave/v5/util/errors"
 )
 

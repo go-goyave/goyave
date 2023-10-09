@@ -5,7 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"golang.org/x/exp/slices"
+	"slices"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"goyave.dev/goyave/v5"

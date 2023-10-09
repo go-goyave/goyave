@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/exp/maps"
+	"github.com/samber/lo"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/httputil"
@@ -151,7 +151,7 @@ func (l *Languages) IsAvailable(lang string) bool {
 //	/fr/produits
 //	...
 func (l *Languages) GetAvailableLanguages() []string {
-	return maps.Keys(l.languages)
+	return lo.Keys(l.languages)
 }
 
 // DetectLanguage detects the language to use based on the given lang string.

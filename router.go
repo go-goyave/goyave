@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"regexp"
 
+	"maps"
+	"slices"
+
 	"github.com/samber/lo"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"goyave.dev/goyave/v5/cors"
 	errorutil "goyave.dev/goyave/v5/util/errors"
 )

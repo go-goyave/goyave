@@ -4,8 +4,9 @@ import (
 	"sort"
 	"strings"
 
+	"slices"
+
 	"github.com/samber/lo"
-	"golang.org/x/exp/slices"
 	"goyave.dev/goyave/v5/util/walk"
 )
 

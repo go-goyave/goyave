@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // Options holds the CORS configuration for a router.

@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,5 +72,23 @@ func TestRequest(t *testing.T) {
 		token, ok = r.BearerToken()
 		assert.Empty(t, token)
 		assert.False(t, ok)
+	})
+
+	t.Run("Context", func(t *testing.T) {
+		httpReq := httptest.NewRequest(http.MethodGet, "/test", nil)
+		r := NewRequest(httpReq)
+
+		ctx := r.Context()
+		if !assert.NotNil(t, ctx) {
+			return
+		}
+		assert.Equal(t, httpReq.Context(), ctx)
+
+		key := struct{}{}
+		r2 := r.WithContext(context.WithValue(ctx, key, "value"))
+		assert.Equal(t, r, r2)
+
+		ctx2 := r.Context()
+		assert.Equal(t, "value", ctx2.Value(key))
 	})
 }

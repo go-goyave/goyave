@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
@@ -156,4 +157,23 @@ func (r *Request) BearerToken() (string, bool) {
 // The server will close the request body so handlers don't need to.
 func (r *Request) Body() io.ReadCloser {
 	return r.httpRequest.Body
+}
+
+// Context returns the request's context. To change the context, use `WithContext`.
+//
+// The returned context is always non-nil; it defaults to the
+// background context.
+//
+// The context is canceled when the client's connection closes, the request is canceled (with HTTP/2),
+// or when the `ServeHTTP` method returns (after the finalization step of the request lifecycle).
+func (r *Request) Context() context.Context {
+	return r.httpRequest.Context()
+}
+
+// WithContext creates a shallow copy of the underlying `*http.Request` with
+// its context changed to `ctx` then returns itself.
+// The provided ctx must be non-nil.
+func (r *Request) WithContext(ctx context.Context) *Request {
+	r.httpRequest = r.httpRequest.WithContext(ctx)
+	return r
 }

@@ -1,6 +1,7 @@
 package typeutil
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding"
 	"encoding/json"
@@ -89,6 +90,31 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 		return valuer.Value()
 	}
 	return u.Val, nil
+}
+
+// Scan implementation of `sql.Scanner` meant to be able to support copying
+// from and to `Undefined` structures with `typeutil.Copy`.
+func (u *Undefined[T]) Scan(src any) error {
+	u.Present = true
+
+	if scanner, ok := any(&u.Val).(sql.Scanner); ok {
+		return scanner.Scan(src)
+	}
+
+	switch val := src.(type) {
+	case T:
+		u.Val = val
+	case *T:
+		u.Val = *val
+	case nil:
+		// Set to zero-value
+		var t T
+		u.Val = t
+	default:
+		var t T
+		return fmt.Errorf("typeutil.Undefined: Scan() incompatible types (src: %T, dst: %T)", src, t)
+	}
+	return nil
 }
 
 // CopyValue implements the copier.Valuer interface.

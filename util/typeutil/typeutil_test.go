@@ -120,11 +120,14 @@ func TestCopy(t *testing.T) {
 
 	type TestStruct struct {
 		Promoted
-		A      string   `json:"a"`
-		Ptr    *string  `json:"ptr"`
-		D      []string `json:"d"`
-		B      float64  `json:"b"`
-		Nested Nested   `json:"nested"`
+		Undefined    Undefined[string]    `json:"undefined"`
+		UndefinedPtr Undefined[*string]   `json:"undefinedPtr"`
+		A            string               `json:"a"`
+		Ptr          *string              `json:"ptr"`
+		D            []string             `json:"d"`
+		B            float64              `json:"b"`
+		Scanner      Undefined[testInt64] `json:"scanner"`
+		Nested       Nested               `json:"nested"`
 	}
 
 	cases := []struct {
@@ -299,7 +302,104 @@ func TestCopy(t *testing.T) {
 				Ptr: nil,
 			},
 		},
-		// TODO copy undefined to undefined (copier.Valuer interface problem). Undefined should probably implement Scan
+		{
+			desc: "undefined_to_undefined",
+			model: &TestStruct{
+				Undefined: NewUndefined("value"),
+			},
+			dto: struct {
+				Undefined Undefined[string]
+			}{
+				Undefined: NewUndefined("override"),
+			},
+			want: &TestStruct{
+				Undefined: NewUndefined("override"),
+			},
+		},
+		{
+			desc: "undefined_ptr_to_undefined",
+			model: &TestStruct{
+				Undefined: NewUndefined("value"),
+			},
+			dto: struct {
+				Undefined Undefined[*string]
+			}{
+				Undefined: NewUndefined(lo.ToPtr("override")),
+			},
+			want: &TestStruct{
+				Undefined: NewUndefined("override"),
+			},
+		},
+		{
+			desc: "ptr_to_undefined",
+			model: &TestStruct{
+				Undefined: NewUndefined("value"),
+			},
+			dto: struct {
+				Undefined *string
+			}{
+				Undefined: lo.ToPtr("override"),
+			},
+			want: &TestStruct{
+				Undefined: NewUndefined("override"),
+			},
+		},
+		{
+			desc: "undefined_ptr_to_undefined",
+			model: &TestStruct{
+				Undefined: NewUndefined("value"),
+			},
+			dto: struct {
+				Undefined Undefined[*string]
+			}{
+				Undefined: NewUndefined(lo.ToPtr("override")),
+			},
+			want: &TestStruct{
+				Undefined: NewUndefined("override"),
+			},
+		},
+		{
+			desc: "undefined_to_undefined_incompatible_types",
+			model: &TestStruct{
+				Undefined: NewUndefined("value"),
+			},
+			dto: struct {
+				Undefined Undefined[int]
+			}{
+				Undefined: NewUndefined(123),
+			},
+			want: &TestStruct{
+				Undefined: NewUndefined("value"), // The value has not been overridden because of incompatible types
+			},
+		},
+		{
+			desc: "scanner_undefined",
+			model: &TestStruct{
+				Scanner: NewUndefined(testInt64{Val: 123}),
+			},
+			dto: struct {
+				Scanner int64
+			}{
+				Scanner: 456,
+			},
+			want: &TestStruct{
+				Scanner: NewUndefined(testInt64{Val: 456}),
+			},
+		},
+		{
+			desc: "undefined_scanner_incompatible",
+			model: &TestStruct{
+				Scanner: NewUndefined(testInt64{Val: 123}),
+			},
+			dto: struct {
+				Scanner string
+			}{
+				Scanner: "456",
+			},
+			want: &TestStruct{
+				Scanner: NewUndefined(testInt64{Val: 123}),
+			},
+		},
 	}
 
 	for _, c := range cases {

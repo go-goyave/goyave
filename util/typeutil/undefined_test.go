@@ -4,10 +4,13 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/copier"
 )
 
 type testInt64 struct {
@@ -18,6 +21,19 @@ func (i *testInt64) UnmarshalText(text []byte) error {
 	val, err := strconv.ParseInt(string(text), 10, 64)
 	if err != nil {
 		return err
+	}
+	i.Val = val
+	return nil
+}
+
+func (i testInt64) CopyValue() any {
+	return i.Val
+}
+
+func (i *testInt64) Scan(src any) error {
+	val, ok := src.(int64)
+	if !ok {
+		return fmt.Errorf("src %#v is not int64", src)
 	}
 	i.Val = val
 	return nil
@@ -94,6 +110,45 @@ func TestUndefined(t *testing.T) {
 
 		}
 
+	})
+
+	t.Run("CopyValue", func(t *testing.T) {
+		cases := []struct {
+			undefined copier.Valuer
+			want      any
+		}{
+			{undefined: NewUndefined("hello"), want: "hello"},
+			{undefined: Undefined[string]{}, want: nil},
+			{undefined: NewUndefined(testInt64{Val: 1234}), want: int64(1234)},
+		}
+
+		for _, c := range cases {
+			assert.Equal(t, c.want, c.undefined.CopyValue())
+		}
+	})
+
+	t.Run("Scan", func(t *testing.T) {
+		cases := []struct {
+			undefined sql.Scanner
+			value     any
+			want      any
+			wantErr   error
+		}{
+			{undefined: &Undefined[string]{}, value: "hello", want: lo.ToPtr(NewUndefined("hello"))},
+			{undefined: &Undefined[string]{}, value: lo.ToPtr("hello"), want: lo.ToPtr(NewUndefined("hello"))},
+			{undefined: &Undefined[testInt64]{}, value: int64(123), want: lo.ToPtr(NewUndefined(testInt64{Val: 123}))},
+			{undefined: &Undefined[testInt64]{}, value: "hello", want: &Undefined[testInt64]{Present: true}, wantErr: fmt.Errorf("src \"hello\" is not int64")},                                      // Error coming from testInt64
+			{undefined: &Undefined[int64]{}, value: "hello", want: &Undefined[int64]{Present: true}, wantErr: fmt.Errorf("typeutil.Undefined: Scan() incompatible types (src: string, dst: int64)")}, // Error coming from Undefined
+			{undefined: &Undefined[int64]{Val: 123}, value: nil, want: &Undefined[int64]{Present: true, Val: 0}},
+			{undefined: &Undefined[*int64]{Val: lo.ToPtr(int64(123))}, value: nil, want: &Undefined[*int64]{Present: true, Val: nil}},
+		}
+
+		for _, c := range cases {
+			err := c.undefined.Scan(c.value)
+			assert.Equal(t, c.wantErr, err)
+
+			assert.Equal(t, c.want, c.undefined)
+		}
 	})
 
 	t.Run("Default", func(t *testing.T) {

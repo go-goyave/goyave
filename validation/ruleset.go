@@ -103,15 +103,15 @@ type FieldRules struct {
 type RuleSet []*FieldRules
 
 func (r RuleSet) convert(path string, _ *FieldRules, _ uint) Rules {
-	return r.asRulesWithPrefix2(path)
+	return r.asRulesWithPrefix(path)
 }
 
 // AsRules converts this RuleSet to a Rules structure.
 func (r RuleSet) AsRules() Rules {
-	return r.asRulesWithPrefix2("")
+	return r.asRulesWithPrefix("")
 }
 
-func (r RuleSet) asRulesWithPrefix2(prefix string) Rules {
+func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 	pDepth := uint(0)
 	if prefix != "" {
 		pDepth = walk.Depth(prefix)

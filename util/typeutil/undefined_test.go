@@ -100,6 +100,7 @@ func TestUndefined(t *testing.T) {
 		}
 
 		for _, c := range cases {
+			c := c
 			v, err := c.undefined.Value()
 			assert.Equal(t, c.want, v)
 			if c.wantErr {
@@ -123,6 +124,7 @@ func TestUndefined(t *testing.T) {
 		}
 
 		for _, c := range cases {
+			c := c
 			assert.Equal(t, c.want, c.undefined.CopyValue())
 		}
 	})
@@ -144,6 +146,7 @@ func TestUndefined(t *testing.T) {
 		}
 
 		for _, c := range cases {
+			c := c
 			err := c.undefined.Scan(c.value)
 			assert.Equal(t, c.wantErr, err)
 

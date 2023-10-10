@@ -64,6 +64,7 @@ func routeHasMiddleware[T Middleware](route *Route) bool {
 // routerHasMiddleware returns true if the given route or any of its
 // parents has a middleware of the T type.
 func routerHasMiddleware[T Middleware](router *Router) bool {
+	// FIXME check in the global middleware as well
 	return hasMiddleware[T](router.middleware) || (router.parent != nil && routerHasMiddleware[T](router.parent))
 }
 

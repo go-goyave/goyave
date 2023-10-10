@@ -12,7 +12,6 @@ var configDefaults = object{
 	"server": object{
 		"host":             &Entry{"127.0.0.1", []any{}, reflect.String, false},
 		"domain":           &Entry{"", []any{}, reflect.String, false},
-		"protocol":         &Entry{"http", []any{"http", "https"}, reflect.String, false},
 		"port":             &Entry{8080, []any{}, reflect.Int, false},
 		"writeTimeout":     &Entry{10, []any{}, reflect.Int, false},
 		"readTimeout":      &Entry{10, []any{}, reflect.Int, false},

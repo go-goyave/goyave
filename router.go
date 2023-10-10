@@ -400,6 +400,16 @@ func (r *Router) Options(uri string, handler Handler) *Route {
 	return r.registerRoute([]string{http.MethodOptions}, uri, handler)
 }
 
+// Static serve a directory and its subdirectories of static resources.
+// Set the "download" parameter to true if you want the files to be sent as an attachment
+// instead of an inline element.
+//
+// If no file is given in the url, or if the given file is a directory, the handler will
+// send the "index.html" file if it exists.
+func (r *Router) Static(uri string, directory string, download bool) *Route {
+	return r.registerRoute([]string{http.MethodGet}, uri+"{resource:.*}", staticHandler(directory, download))
+}
+
 func (r *Router) registerRoute(methods []string, uri string, handler Handler) *Route {
 	methodsSlice := slices.Clone(methods)
 

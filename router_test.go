@@ -274,6 +274,14 @@ func TestRouter(t *testing.T) {
 		assert.Equal(t, []string{http.MethodOptions}, route.methods)
 	})
 
+	t.Run("Static", func(t *testing.T) {
+		router := prepareRouterTest()
+		route := router.Static("/uri", "resources", false)
+		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
+		assert.Equal(t, []string{"resource"}, route.parameters)
+		assert.Equal(t, "/uri{resource:.*}", route.uri)
+	})
+
 	t.Run("Controller", func(t *testing.T) {
 		router := prepareRouterTest()
 		ctrl := &testController{}

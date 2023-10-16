@@ -86,7 +86,7 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 		return nil, nil
 	}
 
-	if valuer, ok := any(&u.Val).(driver.Valuer); ok {
+	if valuer, ok := any(u.Val).(driver.Valuer); ok {
 		return valuer.Value()
 	}
 	return u.Val, nil
@@ -123,7 +123,7 @@ func (u Undefined[T]) CopyValue() any {
 		return nil
 	}
 
-	if valuer, ok := any(&u.Val).(copier.Valuer); ok {
+	if valuer, ok := any(u.Val).(copier.Valuer); ok {
 		return valuer.CopyValue()
 	}
 	return u.Val

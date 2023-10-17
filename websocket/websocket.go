@@ -149,7 +149,7 @@ func (u *Upgrader) Handler() goyave.Handler {
 }
 
 func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler func(*Conn, *goyave.Request) error) {
-	conn := newConn(c, time.Duration(u.Config().GetInt("server.websocketTimeout"))*time.Second)
+	conn := newConn(c, time.Duration(u.Config().GetInt("server.websocketCloseTimeout"))*time.Second)
 	panicked := true
 	var err error
 	defer func() { // Panic recovery

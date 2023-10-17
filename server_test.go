@@ -126,17 +126,21 @@ func TestServer(t *testing.T) {
 		t.Run("0.0.0.0", func(t *testing.T) {
 			cfg := config.LoadDefault()
 			cfg.Set("server.host", "0.0.0.0")
-			assert.Equal(t, "http://127.0.0.1:8080", getAddress(cfg))
+			cfg.Set("server.port", 8080)
+			server := &Server{config: cfg, port: 8080}
+			assert.Equal(t, "http://127.0.0.1:8080", server.getAddress(cfg))
 		})
 		t.Run("hide_port", func(t *testing.T) {
 			cfg := config.LoadDefault()
 			cfg.Set("server.port", 80)
-			assert.Equal(t, "http://127.0.0.1", getAddress(cfg))
+			server := &Server{config: cfg, port: 80}
+			assert.Equal(t, "http://127.0.0.1", server.getAddress(cfg))
 		})
 		t.Run("domain", func(t *testing.T) {
 			cfg := config.LoadDefault()
 			cfg.Set("server.domain", "example.org")
-			assert.Equal(t, "http://example.org:8080", getAddress(cfg))
+			server := &Server{config: cfg, port: 1234}
+			assert.Equal(t, "http://example.org:1234", server.getAddress(cfg))
 		})
 	})
 
@@ -147,7 +151,8 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.proxy.protocol", "https")
 			cfg.Set("server.proxy.port", 1234)
 			cfg.Set("server.proxy.base", "/base")
-			assert.Equal(t, "https://proxy.example.org:1234/base", getProxyAddress(cfg))
+			server := &Server{config: cfg, port: 1234}
+			assert.Equal(t, "https://proxy.example.org:1234/base", server.getProxyAddress(cfg))
 		})
 
 		t.Run("hide_port", func(t *testing.T) {
@@ -156,14 +161,16 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.proxy.protocol", "https")
 			cfg.Set("server.proxy.port", 443)
 			cfg.Set("server.proxy.base", "/base")
-			assert.Equal(t, "https://proxy.example.org/base", getProxyAddress(cfg))
+			server := &Server{config: cfg, port: 443}
+			assert.Equal(t, "https://proxy.example.org/base", server.getProxyAddress(cfg))
 
 			cfg = config.LoadDefault()
 			cfg.Set("server.proxy.host", "proxy.example.org")
 			cfg.Set("server.proxy.protocol", "http")
 			cfg.Set("server.proxy.port", 80)
 			cfg.Set("server.proxy.base", "/base")
-			assert.Equal(t, "http://proxy.example.org/base", getProxyAddress(cfg))
+			server = &Server{config: cfg, port: 80}
+			assert.Equal(t, "http://proxy.example.org/base", server.getProxyAddress(cfg))
 		})
 	})
 
@@ -201,6 +208,7 @@ func TestServer(t *testing.T) {
 		}
 
 		assert.Equal(t, "127.0.0.1:8080", server.Host())
+		assert.Equal(t, 8080, server.Port())
 		assert.Equal(t, "http://127.0.0.1:8080", server.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", server.ProxyBaseURL())
 		assert.False(t, server.IsReady())
@@ -320,6 +328,59 @@ func TestServer(t *testing.T) {
 		wg.Wait()
 		assert.True(t, startupHookExecuted)
 		assert.True(t, shutdownHookExecuted)
+		assert.False(t, server.IsReady())
+		assert.Equal(t, uint32(3), atomic.LoadUint32(&server.state))
+	})
+
+	t.Run("StartWithAutoPort", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		server, err := NewWithConfig(cfg)
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		startupHookExecuted := false
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		server.RegisterStartupHook(func(s *Server) {
+			// Should be executed when the server is ready
+			startupHookExecuted = true
+
+			assert.True(t, server.IsReady())
+			assert.NotEqual(t, 0, s.Port())
+
+			res, err := http.Get(s.BaseURL())
+			if !assert.NoError(t, err) {
+				return
+			}
+			respBody, err := io.ReadAll(res.Body)
+			if !assert.NoError(t, err) {
+				return
+			}
+			_ = res.Body.Close()
+			assert.Equal(t, []byte("hello world"), respBody)
+
+			// Stop the server, goroutine should return
+			server.Stop()
+			wg.Done()
+		})
+
+		server.RegisterRoutes(func(s *Server, router *Router) {
+			router.Get("/", func(r *Response, _ *Request) {
+				r.String(http.StatusOK, "hello world")
+			}).Name("base")
+		})
+
+		go func() {
+			err := server.Start()
+			assert.Nil(t, err)
+			wg.Done()
+		}()
+
+		wg.Wait()
+		assert.True(t, startupHookExecuted)
 		assert.False(t, server.IsReady())
 		assert.Equal(t, uint32(3), atomic.LoadUint32(&server.state))
 	})

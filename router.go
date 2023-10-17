@@ -255,7 +255,7 @@ func (r *Router) StatusHandler(handler StatusHandler, status int, additionalStat
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Scheme != "" && req.URL.Scheme != "http" {
-		address := getProxyAddress(r.server.config) + req.URL.Path
+		address := r.server.getProxyAddress(r.server.config) + req.URL.Path
 		query := req.URL.Query()
 		if len(query) != 0 {
 			address += "?" + query.Encode()

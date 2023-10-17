@@ -274,7 +274,7 @@ func (a *adapter) onError(w http.ResponseWriter, _ *http.Request, status int, re
 
 func (a *adapter) getCheckOriginFunc() func(r *http.Request) bool {
 	if a.checkOrigin != nil {
-		return func(r *http.Request) bool {
+		return func(_ *http.Request) bool {
 			return a.checkOrigin(a.request)
 		}
 	}

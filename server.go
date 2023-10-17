@@ -47,6 +47,8 @@ type Server struct {
 	startupHooks  []func(*Server)
 	shutdownHooks []func(*Server)
 
+	port int
+
 	state uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
 }
 
@@ -72,7 +74,8 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		return nil, err
 	}
 
-	host := cfg.GetString("server.host") + ":" + strconv.Itoa(cfg.GetInt("server.port"))
+	port := cfg.GetInt("server.port")
+	host := cfg.GetString("server.host") + ":" + strconv.Itoa(port)
 
 	server := &Server{
 		server: &http.Server{
@@ -87,11 +90,11 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 		stopChannel:   make(chan struct{}, 1),
 		startupHooks:  []func(*Server){},
 		shutdownHooks: []func(*Server){},
-		host:          host,
-		baseURL:       getAddress(cfg),
-		proxyBaseURL:  getProxyAddress(cfg),
+		host:          cfg.GetString("server.host"),
+		port:          port, // TODO document using 0 as port will auto assign an available port
 		Logger:        slogger,
 	}
+	server.refreshURLs()
 	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
 
 	if cfg.GetString("database.connection") != "none" {
@@ -107,9 +110,8 @@ func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? 
 	return server, nil
 }
 
-func getAddress(cfg *config.Config) string {
-	port := cfg.GetInt("server.port")
-	shouldShowPort := port != 80
+func (s *Server) getAddress(cfg *config.Config) string {
+	shouldShowPort := s.port != 80
 	host := cfg.GetString("server.domain")
 	if len(host) == 0 {
 		host = cfg.GetString("server.host")
@@ -119,15 +121,15 @@ func getAddress(cfg *config.Config) string {
 	}
 
 	if shouldShowPort {
-		host += ":" + strconv.Itoa(port)
+		host += ":" + strconv.Itoa(s.port)
 	}
 
 	return "http://" + host
 }
 
-func getProxyAddress(cfg *config.Config) string {
+func (s *Server) getProxyAddress(cfg *config.Config) string {
 	if !cfg.Has("server.proxy.host") {
-		return getAddress(cfg)
+		return s.getAddress(cfg)
 	}
 
 	var shouldShowPort bool
@@ -144,6 +146,11 @@ func getProxyAddress(cfg *config.Config) string {
 	}
 
 	return proto + "://" + host + cfg.GetString("server.proxy.base")
+}
+
+func (s *Server) refreshURLs() {
+	s.baseURL = s.getAddress(s.config)
+	s.proxyBaseURL = s.getProxyAddress(s.config)
 }
 
 // Service returns the service identified by the given name.
@@ -172,7 +179,12 @@ func (s *Server) RegisterService(service Service) {
 
 // Host returns the hostname and port the server is running on.
 func (s *Server) Host() string {
-	return s.host
+	return s.host + ":" + strconv.Itoa(s.port)
+}
+
+// Port returns the port the server is running on.
+func (s *Server) Port() int {
+	return s.port
 }
 
 // BaseURL returns the base URL of your application.
@@ -324,6 +336,8 @@ func (s *Server) Start() error {
 	if err != nil {
 		return errors.New(err)
 	}
+	s.port = ln.Addr().(*net.TCPAddr).Port
+	s.refreshURLs()
 	defer func() {
 		for _, hook := range s.shutdownHooks {
 			hook(s)

@@ -13,8 +13,6 @@ import (
 	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
-// TODO document there is no more static handler
-
 // Common route meta keys.
 const (
 	MetaCORS = "goyave.cors"

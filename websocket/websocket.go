@@ -10,7 +10,6 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-// TODO document websocket
 // TODO test websocket
 
 const (
@@ -19,31 +18,104 @@ const (
 	NormalClosureMessage = "Server closed connection"
 )
 
+// Controller component for websockets.
 type Controller interface {
 	goyave.Composable
+
+	// Serve is a handler for websocket connections.
+	// The request parameter contains the original upgraded HTTP request.
+	//
+	// To keep the connection alive, these handlers should run an infinite for loop that
+	// can return on error or exit in a predictable manner.
+	//
+	// They also can start goroutines for reads and writes, but shouldn't return before
+	// both of them do. The handler is responsible of synchronizing the goroutines it started,
+	// and ensure no reader nor writer are still active when it returns.
+	//
+	// When the websocket handler returns, the closing handshake is performed (if not already done
+	// using "conn.Close()") and the connection is closed.
+	//
+	// If the websocket handler returns nil, it means that everything went fine and the
+	// connection can be closed normally. On the other hand, the websocket handler
+	// can return an error, such as a write error, to indicate that the connection should not
+	// be closed normally. The behavior used when this happens depend on the implementation
+	// of the HTTP handler that upgraded the connection.
+	//
+	// The following websocket Handler is an example of an "echo" feature using websockets:
+	//
+	//	func (c *EchoController) Serve(c *websocket.Conn, request *goyave.Request) error {
+	//		for {
+	//			mt, message, err := c.ReadMessage()
+	//			if err != nil {
+	//				return errors.New(err)
+	//			}
+	//			c.Logger().Debug("recv", "message", string(message))
+	//			err = c.WriteMessage(mt, message)
+	//			if err != nil {
+	//				return errors.New(fmt.Errorf("write: %w", err))
+	//			}
+	//		}
+	//	}
 	Serve(*Conn, *goyave.Request) error
 }
 
-type Regsitrer interface {
+// Registrer qualifies a `websocket.Controller` that registers its route itself, allowing
+// to define validation rules, middleware, route meta, etc.
+//
+// If the `websocket.Controller` doesn't implement this interface, the route is registered
+// for the GET method and an empty path.
+type Registrer interface {
+	// RegisterRoute registers the route for the websocket upgrade. The route must only match the
+	// GET HTTP method and use the `goyave.Handler` received as a parameter.
 	RegisterRoute(*goyave.Router, goyave.Handler)
 }
 
 type upgradeErrorHandlerFunc func(response *goyave.Response, request *goyave.Request, status int, reason error)
 
+// UpgradeErrorHandler allows a `websocket.Controller` to define a custom behavior when
+// the protocol switching process fails.
+//
+// If the `websocket.Controller` doesn't implement this interface, the default
+// error handler returns a JSON response containing the status text
+// corresponding to the status code returned. If debugging is enabled, the reason error
+// message is returned instead.
+//
+//	{"error": "message"}
 type UpgradeErrorHandler interface {
+	// OnUpgradeError specifies the function for generating HTTP error responses if the
+	// protocol switching process fails. The error can be a user error or server error.
 	OnUpgradeError(response *goyave.Response, request *goyave.Request, status int, reason error)
 }
 
+// ErrorHandler allows a `websocket.Controller` to define a custom behavior in case of error
+// occurring in the controller's `Serve` function. This custom error handler is called for both
+// handled and unhandled errors (panics).
+//
+// If the `websocket.Controller` doesn't implement this interface, the error is logged at the error level.
 type ErrorHandler interface {
+	// ErrorHandler specifies the function handling errors returned by the controller's `Serve` function
+	// or if this function panics.
 	OnError(request *goyave.Request, err error)
 }
 
+// OriginChecker allows a `websocket.Controller` to define custom origin header checking behavior.
+//
+// If the `websocket.Controller` doesn't implement this interface, a safe default is used:
+// return false if the Origin request header is present and the origin host is not equal to
+// request Host header.
 type OriginChecker interface {
+	// CheckOrigin returns true if the request Origin header is acceptable.
+	//
+	// A CheckOrigin function should carefully validate the request origin to
+	// prevent cross-site request forgery.
 	CheckOrigin(r *goyave.Request) bool
 }
 
+// HeaderUpgrader allows a `websocket.Controller` to define custom HTTP headers in the
+// protocol switching response.
 type HeaderUpgrader interface {
-	UpgradeHeaders(request *goyave.Request) http.Header
+	// UpgradeHeaders function generating headers to be sent with the protocol switching response.
+	UpgradeHeaders(r *goyave.Request) http.Header
 }
 
 // Upgrader is responsible for the upgrade of HTTP connections to
@@ -65,8 +137,12 @@ func New(controller Controller) *Upgrader {
 	}
 }
 
+// RegisterRoutes implementation of `goyave.Registrer`.
+//
+// If the `websocket.Controller` implements `websocket.Registrer`, uses its implementation
+// to register the route. Otherwise registers the route for the GET method and an empty path.
 func (u *Upgrader) RegisterRoutes(router *goyave.Router) {
-	if registrer, ok := u.Controller.(Regsitrer); ok {
+	if registrer, ok := u.Controller.(Registrer); ok {
 		registrer.RegisterRoute(router, u.Handler())
 		return
 	}
@@ -207,6 +283,7 @@ func (a *adapter) getCheckOriginFunc() func(r *http.Request) bool {
 // IsCloseError returns true if the error is one of the following close errors:
 // CloseNormalClosure (1000), CloseGoingAway (1001) or CloseNoStatusReceived (1005)
 func IsCloseError(err error) bool {
+	// FIXME doesn't work if the error is wrapped
 	return ws.IsCloseError(err,
 		ws.CloseNormalClosure,
 		ws.CloseGoingAway,

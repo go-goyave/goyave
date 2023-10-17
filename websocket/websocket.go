@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	stderrors "errors"
+
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/util/errors"
 
@@ -283,7 +285,10 @@ func (a *adapter) getCheckOriginFunc() func(r *http.Request) bool {
 // IsCloseError returns true if the error is one of the following close errors:
 // CloseNormalClosure (1000), CloseGoingAway (1001) or CloseNoStatusReceived (1005)
 func IsCloseError(err error) bool {
-	// FIXME doesn't work if the error is wrapped
+	var closeError *ws.CloseError
+	if stderrors.As(err, &closeError) {
+		err = closeError
+	}
 	return ws.IsCloseError(err,
 		ws.CloseNormalClosure,
 		ws.CloseGoingAway,

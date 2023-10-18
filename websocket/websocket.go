@@ -12,8 +12,6 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-// TODO test websocket
-
 const (
 	// NormalClosureMessage the message sent with the close frame
 	// during the close handshake.
@@ -43,7 +41,11 @@ type Controller interface {
 	// be closed normally. The behavior used when this happens depend on the implementation
 	// of the HTTP handler that upgraded the connection.
 	//
-	// The following websocket Handler is an example of an "echo" feature using websockets:
+	// By default, the server shutdown doesn't wait for hijacked connections to be closed gracefully.
+	// It is advised to register a shutdown hook blocking until all the connections are gracefully
+	// closed using `*websocket.Conn.CloseNormal()`.
+	//
+	// The following websocket Handler is a simple example of an "echo" feature using websockets:
 	//
 	//	func (c *EchoController) Serve(c *websocket.Conn, request *goyave.Request) error {
 	//		for {

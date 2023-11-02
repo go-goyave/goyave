@@ -129,8 +129,8 @@ func TestUniqueValidator(t *testing.T) {
 			v.init(opts)
 
 			ctx := &Context{
-				valid: c.valid,
-				Value: c.value,
+				Invalid: !c.valid,
+				Value:   c.value,
 			}
 			assert.Equal(t, c.expected, v.Validate(ctx))
 			assert.Equal(t, c.expectedErrors, lo.Map(ctx.errors, func(e error, _ int) string { return e.Error() }))
@@ -220,8 +220,8 @@ func TestExistsValidator(t *testing.T) {
 			v.init(opts)
 
 			ctx := &Context{
-				valid: c.valid,
-				Value: c.value,
+				Invalid: !c.valid,
+				Value:   c.value,
 			}
 			assert.Equal(t, c.expected, v.Validate(ctx))
 			assert.Equal(t, c.expectedErrors, lo.Map(ctx.errors, func(e error, _ int) string { return e.Error() }))
@@ -353,8 +353,8 @@ func TestUniqueArrayValidator(t *testing.T) {
 			v.init(opts)
 
 			ctx := &Context{
-				valid: c.valid,
-				Value: c.value,
+				Invalid: !c.valid,
+				Value:   c.value,
 			}
 			assert.Equal(t, c.expected, v.Validate(ctx))
 			assert.Equal(t, c.expectedErrors, lo.Map(ctx.errors, func(e error, _ int) string { return e.Error() }))
@@ -517,8 +517,8 @@ func TestExistsArrayValidator(t *testing.T) {
 			v.init(opts)
 
 			ctx := &Context{
-				valid: c.valid,
-				Value: c.value,
+				Invalid: !c.valid,
+				Value:   c.value,
 			}
 			assert.Equal(t, c.expected, v.Validate(ctx))
 			assert.Equal(t, c.expectedErrors, lo.Map(ctx.errors, func(e error, _ int) string { return e.Error() }))

@@ -143,7 +143,10 @@ type Context struct {
 	Name string
 
 	errors []error
-	valid  bool // Set to false if there was at least one validation error on the field
+
+	// Invalid is true if at least one validator prior to the current one didn't pass
+	// on the field under validation. This field is readonly.
+	Invalid bool
 }
 
 // AddError adds an error to the validation context. This is NOT supposed
@@ -168,12 +171,6 @@ func (c *Context) AddArrayElementValidationErrors(index ...int) {
 // errors related to the current field and the current rule.
 func (c *Context) Errors() []error {
 	return c.errors
-}
-
-// Valid returns false if at least one validator prior to the current one didn't pass
-// on the field under validation.
-func (c *Context) Valid() bool {
-	return c.valid
 }
 
 type validator struct {
@@ -288,7 +285,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				fieldName: fieldName,
 				Now:       v.now,
 				Name:      c.Name,
-				valid:     valid,
+				Invalid:   !valid,
 			}
 			validator.init(v.options) // TODO document a Rules or RuleSet is not meant to be re-used or used concurrently
 			ok := validator.Validate(ctx)

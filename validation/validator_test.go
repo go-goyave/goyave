@@ -88,14 +88,6 @@ func TestContext(t *testing.T) {
 		c.AddArrayElementValidationErrors(1, 2, 3)
 		assert.Equal(t, []int{1, 2, 3}, c.arrayElementErrors)
 	})
-
-	t.Run("Valid", func(t *testing.T) {
-		c := &Context{valid: true}
-		assert.True(t, c.valid)
-
-		c = &Context{valid: false}
-		assert.False(t, c.valid)
-	})
 }
 
 func TestGetFieldName(t *testing.T) {
@@ -203,7 +195,7 @@ func TestValidate(t *testing.T) {
 							assert.Equal(t, "property", ctx.Name)
 							assert.NotNil(t, ctx.Field) // Content of the field is tested by RuleSet
 							assert.False(t, ctx.Now.IsZero())
-							assert.True(t, ctx.Valid())
+							assert.False(t, ctx.Invalid)
 							return true
 						},
 					}}},

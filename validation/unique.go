@@ -18,7 +18,7 @@ type UniqueValidator struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *UniqueValidator) Validate(ctx *Context) bool {
-	if !ctx.Valid() {
+	if ctx.Invalid {
 		return true
 	}
 	count := int64(0)
@@ -143,7 +143,7 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) *gorm.D
 
 func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
 	values, ok := ctx.Value.([]T)
-	if !ctx.Valid() || !ok {
+	if ctx.Invalid || !ok {
 		return true
 	}
 

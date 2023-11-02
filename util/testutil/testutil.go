@@ -16,6 +16,7 @@ import (
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 type copyRequestMiddleware struct {
@@ -70,7 +71,7 @@ func NewTestServerWithOptions(t *testing.T, opts goyave.Options, routeRegistrer 
 
 	sep := string(os.PathSeparator)
 	langDirectory := FindRootDirectory() + sep + "resources" + sep + "lang" + sep
-	if err := srv.Lang.LoadDirectory(langDirectory); err != nil {
+	if err := srv.Lang.LoadDirectory(&osfs.FS{}, langDirectory); err != nil {
 		panic(err)
 	}
 
@@ -124,9 +125,10 @@ func FindRootDirectory() string {
 		return ""
 	}
 	directory := wd + sep
-	for !fsutil.FileExists(directory + sep + "go.mod") {
+	fs := &osfs.FS{}
+	for !fs.FileExists(directory + sep + "go.mod") {
 		directory += ".." + sep
-		if !fsutil.IsDirectory(directory) {
+		if !fs.IsDirectory(directory) {
 			return ""
 		}
 	}
@@ -154,7 +156,7 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // so all functions of `*goyave.Response` can be used safely.
 func NewTestResponse(request *goyave.Request) (*goyave.Response, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
-	return goyave.NewResponse(NewTestServerWithConfig(nil, config.LoadDefault(), nil).Server, request, recorder), recorder
+	return goyave.NewResponse(NewTestServerWithOptions(nil, goyave.Options{Config: config.LoadDefault()}, nil).Server, request, recorder), recorder
 }
 
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created

@@ -3,7 +3,6 @@ package lang
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/samber/lo"
@@ -21,8 +20,6 @@ type Languages struct {
 	Default   string
 }
 
-// TODO figure out a way to use embeds?
-
 // New create a `Languages` with preloaded default language "en-US".
 //
 // The default language can be replaced by modifying the `Default` field
@@ -38,31 +35,35 @@ func New() *Languages {
 
 // LoadAllAvailableLanguages loads every language directory
 // in the "resources/lang" directory if it exists.
-func (l *Languages) LoadAllAvailableLanguages() error {
-	workingDir, err := os.Getwd()
-	if err != nil {
-		return errors.New(err)
+func (l *Languages) LoadAllAvailableLanguages(fs fsutil.FS) error {
+	prefix := ""
+	if wd, ok := fs.(fsutil.WorkingDirFS); ok {
+		workingDir, err := wd.Getwd()
+		if err != nil {
+			return errors.New(err)
+		}
+		prefix = workingDir + "/"
 	}
-	sep := string(os.PathSeparator)
-	langDirectory := workingDir + sep + "resources" + sep + "lang" + sep
-	return l.LoadDirectory(langDirectory)
+	langDirectory := prefix + "resources/lang"
+	return l.LoadDirectory(fs, langDirectory)
 }
 
 // LoadDirectory loads every language directory
 // in the given directory if it exists.
-func (l *Languages) LoadDirectory(directory string) error {
-	sep := string(os.PathSeparator)
-	if fsutil.IsDirectory(directory) {
-		files, err := os.ReadDir(directory)
-		if err != nil {
-			return errors.New(err)
-		}
+func (l *Languages) LoadDirectory(fs fsutil.FS, directory string) error {
+	if !fsutil.IsDirectory(fs, directory) {
+		return nil
+	}
 
-		for _, f := range files {
-			if f.IsDir() {
-				if err := l.load(f.Name(), directory+sep+f.Name()); err != nil {
-					return err
-				}
+	files, err := fs.ReadDir(directory)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			if err := l.load(fs, f.Name(), directory+"/"+f.Name()); err != nil {
+				return err
 			}
 		}
 	}
@@ -79,15 +80,15 @@ func (l *Languages) LoadDirectory(directory string) error {
 //	  └─ fields.json     (contains the field names)
 //
 // Each file is optional.
-func (l *Languages) Load(language, path string) error {
-	if fsutil.IsDirectory(path) {
-		return l.load(language, path)
+func (l *Languages) Load(fs fsutil.FS, language, path string) error {
+	if fsutil.IsDirectory(fs, path) {
+		return l.load(fs, language, path)
 	}
 
 	return errors.New(fmt.Errorf("failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path))
 }
 
-func (l *Languages) load(lang string, path string) error {
+func (l *Languages) load(fs fsutil.FS, lang string, path string) error {
 	langStruct := &Language{
 		name:  lang,
 		lines: map[string]string{},
@@ -96,14 +97,13 @@ func (l *Languages) load(lang string, path string) error {
 			fields: map[string]string{},
 		},
 	}
-	sep := string(os.PathSeparator)
-	if err := readLangFile(path+sep+"locale.json", &langStruct.lines); err != nil {
+	if err := readLangFile(fs, path+"/locale.json", &langStruct.lines); err != nil {
 		return err
 	}
-	if err := readLangFile(path+sep+"rules.json", &langStruct.validation.rules); err != nil {
+	if err := readLangFile(fs, path+"/rules.json", &langStruct.validation.rules); err != nil {
 		return err
 	}
-	if err := readLangFile(path+sep+"fields.json", &langStruct.validation.fields); err != nil {
+	if err := readLangFile(fs, path+"/fields.json", &langStruct.validation.fields); err != nil {
 		return err
 	}
 
@@ -208,12 +208,12 @@ func (l *Languages) Get(lang string, line string, placeholders ...string) string
 	return language.Get(line, placeholders...)
 }
 
-func readLangFile(path string, dest any) (err error) {
-	if !fsutil.FileExists(path) {
+func readLangFile(fs fsutil.FS, path string, dest any) (err error) {
+	if !fsutil.FileExists(fs, path) {
 		return nil
 	}
 
-	langFile, _ := os.Open(path)
+	langFile, _ := fs.Open(path)
 	defer func() {
 		closeErr := langFile.Close()
 		if err == nil && closeErr != nil {

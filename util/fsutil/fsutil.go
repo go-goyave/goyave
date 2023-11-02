@@ -1,9 +1,9 @@
 package fsutil
 
 import (
+	"embed"
 	"io/fs"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -21,12 +21,12 @@ var contentTypeByExtension = map[string]string{
 
 // GetFileExtension returns the last part of a file name.
 // If the file doesn't have an extension, returns an empty string.
-func GetFileExtension(file string) string {
-	index := strings.LastIndex(file, ".")
+func GetFileExtension(filename string) string {
+	index := strings.LastIndex(filename, ".")
 	if index == -1 {
 		return ""
 	}
-	return file[index+1:]
+	return filename[index+1:]
 }
 
 // GetMIMEType get the mime type and size of the given file.
@@ -40,9 +40,9 @@ func GetFileExtension(file string) string {
 //   - `.css`: "text/css"
 //
 // If a specific MIME type cannot be determined, returns "application/octet-stream" as a fallback.
-func GetMIMEType(file string) (contentType string, size int64, err error) {
-	var f *os.File
-	f, err = os.Open(file)
+func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64, err error) {
+	var f fs.File
+	f, err = filesystem.Open(file)
 	if err != nil {
 		err = errors.NewSkip(err, 3)
 		return
@@ -94,29 +94,19 @@ func GetMIMEType(file string) (contentType string, size int64, err error) {
 
 // FileExists returns true if the file at the given path exists and is readable.
 // Returns false if the given file is a directory.
-func FileExists(file string) bool {
-	if stats, err := os.Stat(file); err == nil {
+func FileExists(fs fs.StatFS, file string) bool {
+	if stats, err := fs.Stat(file); err == nil {
 		return !stats.IsDir()
 	}
 	return false
 }
 
 // IsDirectory returns true if the file at the given path exists, is a directory and is readable.
-func IsDirectory(path string) bool {
-	if stats, err := os.Stat(path); err == nil {
+func IsDirectory(fs fs.StatFS, path string) bool {
+	if stats, err := fs.Stat(path); err == nil {
 		return stats.IsDir()
 	}
 	return false
-}
-
-// Delete the file at the given path.
-//
-// To avoid panics, you should check if the file exists.
-func Delete(path string) {
-	err := os.Remove(path)
-	if err != nil {
-		panic(errors.NewSkip(err, 3))
-	}
 }
 
 func timestampFileName(name string) string {
@@ -131,4 +121,37 @@ func timestampFileName(name string) string {
 		extension = name[index:]
 	}
 	return prefix + "-" + strconv.FormatInt(time.Now().UnixNano()/int64(time.Microsecond), 10) + extension
+}
+
+// TODO document fs and OSFS
+
+type FS interface {
+	fs.ReadDirFS
+	fs.StatFS
+}
+
+type WorkingDirFS interface {
+	FS
+
+	Getwd() (dir string, err error)
+}
+
+type Embed struct {
+	embed.FS
+}
+
+func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
+	f, err := e.FS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		e := f.Close()
+		if err == nil {
+			err = e
+		}
+	}()
+
+	fileinfo, err = f.Stat()
+	return
 }

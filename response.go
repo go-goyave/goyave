@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -240,14 +241,14 @@ func (r *Response) String(responseCode int, message string) {
 	}
 }
 
-func (r *Response) writeFile(file string, disposition string) { // TODO handle io.FS
-	if !fsutil.FileExists(file) {
+func (r *Response) writeFile(fs fs.StatFS, file string, disposition string) {
+	if !fsutil.FileExists(fs, file) {
 		r.Status(http.StatusNotFound)
 		return
 	}
 	r.empty = false
 	r.status = http.StatusOK
-	mime, size, err := fsutil.GetMIMEType(file)
+	mime, size, err := fsutil.GetMIMEType(fs, file)
 	if err != nil {
 		r.Error(errorutil.NewSkip(err, 4))
 		return
@@ -278,8 +279,8 @@ func (r *Response) writeFile(file string, disposition string) { // TODO handle i
 // The given path can be relative or absolute.
 //
 // If you want the file to be sent as a download ("Content-Disposition: attachment"), use the "Download" function instead.
-func (r *Response) File(file string) {
-	r.writeFile(file, "inline")
+func (r *Response) File(fs fs.StatFS, file string) {
+	r.writeFile(fs, file, "inline")
 }
 
 // Download write a file as an attachment element.
@@ -291,8 +292,8 @@ func (r *Response) File(file string) {
 // "attachment; filename="${fileName}""
 //
 // If you want the file to be sent as an inline element ("Content-Disposition: inline"), use the "File" function instead.
-func (r *Response) Download(file string, fileName string) {
-	r.writeFile(file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+func (r *Response) Download(fs fs.StatFS, file string, fileName string) {
+	r.writeFile(fs, file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }
 
 // Error print the error in the console and return it with an error code 500 (or previously defined

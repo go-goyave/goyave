@@ -20,11 +20,16 @@ import (
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
-type Options struct {
+type Options struct { // TODO document options
 	Config *config.Config
 	Logger *slog.Logger
+	LangFS fsutil.FS
+	// TODO write tests for options
+	// TODO embed config
 }
 
 // Server the central component of a Goyave application.
@@ -61,6 +66,8 @@ type Server struct {
 //   - If no configuration is provided in the options, automatically load the default configuration
 //     using `config.Load()`.
 //   - If no logger is provided in the options, uses the default logger.
+//   - If the `LangFS` file system is not provided in the options, uses `osfs.FS` as a default.
+//     This file system is used to load the language files.
 func New(opts Options) (*Server, error) {
 
 	cfg := opts.Config
@@ -78,9 +85,14 @@ func New(opts Options) (*Server, error) {
 		slogger = slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stderr))
 	}
 
-	languages := lang.New() // TODO using embed FS
+	langFS := opts.LangFS
+	if langFS == nil {
+		langFS = &osfs.FS{}
+	}
+
+	languages := lang.New()
 	languages.Default = cfg.GetString("app.defaultLanguage")
-	if err := languages.LoadAllAvailableLanguages(); err != nil {
+	if err := languages.LoadAllAvailableLanguages(langFS); err != nil {
 		return nil, err
 	}
 

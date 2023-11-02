@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 type LangTestSuite struct {
@@ -18,9 +19,9 @@ func setRootWorkingDirectory() {
 	sep := string(os.PathSeparator)
 	_, filename, _, _ := runtime.Caller(1)
 	directory := path.Dir(filename) + sep
-	for !fsutil.FileExists(directory + sep + "go.mod") {
+	for !fsutil.FileExists(&osfs.FS{}, directory+sep+"go.mod") {
 		directory += ".." + sep
-		if !fsutil.IsDirectory(directory) {
+		if !fsutil.IsDirectory(&osfs.FS{}, directory) {
 			panic("Couldn't find project's root directory.")
 		}
 	}
@@ -44,19 +45,19 @@ func (suite *LangTestSuite) TestNew() {
 
 func (suite *LangTestSuite) TestLoadError() {
 	l := New()
-	err := l.Load("notalanguagedir", "notalanguagepath")
+	err := l.Load(&osfs.FS{}, "notalanguagedir", "notalanguagepath")
 	suite.NotNil(err)
 	suite.Len(l.languages, 1)
 }
 
 func (suite *LangTestSuite) TestLoadInvalid() {
 	dst := map[string]string{}
-	suite.NotNil(readLangFile("resources/lang/invalid.json", &dst))
+	suite.NotNil(readLangFile(&osfs.FS{}, "resources/lang/invalid.json", &dst))
 }
 
 func (suite *LangTestSuite) TestLoadOverride() {
 	l := New()
-	err := l.Load("en-US", "resources/lang/en-US")
+	err := l.Load(&osfs.FS{}, "en-US", "resources/lang/en-US")
 	suite.Nil(err)
 	suite.Len(l.languages, 1)
 	suite.Equal("rule override", l.languages["en-US"].validation.rules["override"])
@@ -65,7 +66,7 @@ func (suite *LangTestSuite) TestLoadOverride() {
 
 func (suite *LangTestSuite) TestLoad() {
 	l := New()
-	err := l.Load("en-UK", "resources/lang/en-UK")
+	err := l.Load(&osfs.FS{}, "en-UK", "resources/lang/en-UK")
 	suite.Nil(err)
 	suite.Len(l.languages, 2)
 	expected := &Language{
@@ -81,7 +82,7 @@ func (suite *LangTestSuite) TestLoad() {
 	}
 	suite.Equal(expected, l.languages["en-UK"])
 
-	err = l.Load("en-UK", "resources/lang/en-US") // Overriding en-UK with the lines in en-US
+	err = l.Load(&osfs.FS{}, "en-UK", "resources/lang/en-US") // Overriding en-UK with the lines in en-US
 	suite.Nil(err)
 	suite.Len(l.languages, 2)
 	expected = &Language{
@@ -108,7 +109,7 @@ func (suite *LangTestSuite) TestLoad() {
 
 func (suite *LangTestSuite) TestLoadAllAvailableLanguages() {
 	l := New()
-	suite.Nil(l.LoadAllAvailableLanguages())
+	suite.Nil(l.LoadAllAvailableLanguages(&osfs.FS{}))
 	suite.Len(l.languages, 2)
 	suite.Contains(l.languages, "en-US")
 	suite.Contains(l.languages, "en-UK")
@@ -116,7 +117,7 @@ func (suite *LangTestSuite) TestLoadAllAvailableLanguages() {
 
 func (suite *LangTestSuite) TestGetLanguage() {
 	l := New()
-	if err := l.LoadAllAvailableLanguages(); err != nil {
+	if err := l.LoadAllAvailableLanguages(&osfs.FS{}); err != nil {
 		suite.Error(err)
 		return
 	}
@@ -145,7 +146,7 @@ func (suite *LangTestSuite) TestIsAvailable() {
 
 func (suite *LangTestSuite) TestGetAvailableLanguages() {
 	l := New()
-	if err := l.LoadAllAvailableLanguages(); err != nil {
+	if err := l.LoadAllAvailableLanguages(&osfs.FS{}); err != nil {
 		suite.Error(err)
 		return
 	}
@@ -155,7 +156,7 @@ func (suite *LangTestSuite) TestGetAvailableLanguages() {
 
 func (suite *LangTestSuite) TestDetectLanguage() {
 	l := New()
-	if err := l.Load("fr-FR", "resources/lang/en-US"); err != nil {
+	if err := l.Load(&osfs.FS{}, "fr-FR", "resources/lang/en-US"); err != nil {
 		panic(err)
 	}
 
@@ -173,7 +174,7 @@ func (suite *LangTestSuite) TestDetectLanguage() {
 
 func (suite *LangTestSuite) TestLanguagesGet() {
 	l := New()
-	if err := l.LoadAllAvailableLanguages(); err != nil {
+	if err := l.LoadAllAvailableLanguages(&osfs.FS{}); err != nil {
 		suite.Error(err)
 		return
 	}
@@ -185,7 +186,7 @@ func (suite *LangTestSuite) TestLanguagesGet() {
 
 func (suite *LangTestSuite) TestGet() {
 	l := New()
-	if err := l.LoadAllAvailableLanguages(); err != nil {
+	if err := l.LoadAllAvailableLanguages(&osfs.FS{}); err != nil {
 		suite.Error(err)
 		return
 	}

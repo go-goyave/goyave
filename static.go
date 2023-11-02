@@ -1,28 +1,29 @@
 package goyave
 
 import (
+	"io/fs"
 	"strings"
 
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
-func staticHandler(directory string, download bool) Handler {
+func staticHandler(fs fs.StatFS, directory string, download bool) Handler {
 	return func(response *Response, r *Request) {
 		file := r.RouteParams["resource"]
-		path := cleanStaticPath(directory, file)
+		path := cleanStaticPath(fs, directory, file)
 
 		if download {
-			response.Download(path, file[strings.LastIndex(file, "/")+1:])
+			response.Download(fs, path, file[strings.LastIndex(file, "/")+1:])
 			return
 		}
-		response.File(path)
+		response.File(fs, path)
 	}
 }
 
-func cleanStaticPath(directory string, file string) string {
+func cleanStaticPath(fs fs.StatFS, directory string, file string) string {
 	file = strings.TrimPrefix(file, "/")
 	path := directory + "/" + file
-	if fsutil.IsDirectory(path) {
+	if fsutil.IsDirectory(fs, strings.TrimSuffix(path, "/")) {
 		if !strings.HasSuffix(path, "/") {
 			path += "/"
 		}

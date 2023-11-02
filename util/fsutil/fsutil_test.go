@@ -14,7 +14,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
+
+func deleteFile(path string) {
+	if err := os.Remove(path); err != nil {
+		panic(err)
+	}
+}
 
 func addFileToRequest(writer *multipart.Writer, path, name, fileName string) {
 	file, err := os.Open(path)
@@ -77,24 +84,24 @@ func TestGetFileExtension(t *testing.T) {
 }
 
 func TestGetMIMEType(t *testing.T) {
-	mime, size, err := GetMIMEType(toAbsolutePath("resources/img/logo/goyave_16.png"))
+	mime, size, err := GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/img/logo/goyave_16.png"))
 	assert.Equal(t, "image/png", mime)
 	assert.Equal(t, int64(716), size)
 	assert.NoError(t, err)
 
-	mime, _, err = GetMIMEType(toAbsolutePath("resources/test_script.sh"))
+	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/test_script.sh"))
 	assert.NoError(t, err)
 	assert.Equal(t, "text/plain; charset=utf-8", mime)
 
-	mime, _, err = GetMIMEType(toAbsolutePath(".gitignore"))
+	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath(".gitignore"))
 	assert.NoError(t, err)
 	assert.Equal(t, "application/octet-stream", mime)
 
-	mime, _, err = GetMIMEType(toAbsolutePath("config/config.test.json"))
+	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("config/config.test.json"))
 	assert.NoError(t, err)
 	assert.Equal(t, "application/json", mime)
 
-	mime, _, err = GetMIMEType(toAbsolutePath("resources/test_script.js"))
+	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/test_script.js"))
 	assert.NoError(t, err)
 	assert.Equal(t, "text/javascript; charset=utf-8", mime)
 
@@ -103,12 +110,12 @@ func TestGetMIMEType(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	mime, _, err = GetMIMEType(cssPath)
+	mime, _, err = GetMIMEType(&osfs.FS{}, cssPath)
 	assert.Equal(t, "text/css", mime)
 	assert.NoError(t, err)
-	Delete(cssPath)
+	deleteFile(cssPath)
 
-	_, _, err = GetMIMEType(toAbsolutePath("doesn't exist"))
+	_, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("doesn't exist"))
 	assert.Error(t, err)
 
 	t.Run("empty_file", func(t *testing.T) {
@@ -118,10 +125,10 @@ func TestGetMIMEType(t *testing.T) {
 		}
 
 		t.Cleanup(func() {
-			Delete(filename)
+			deleteFile(filename)
 		})
 
-		mime, size, err = GetMIMEType(filename)
+		mime, size, err = GetMIMEType(&osfs.FS{}, filename)
 
 		assert.Equal(t, "application/json", mime)
 		assert.Equal(t, int64(0), size)
@@ -130,49 +137,49 @@ func TestGetMIMEType(t *testing.T) {
 }
 
 func TestFileExists(t *testing.T) {
-	assert.True(t, FileExists(toAbsolutePath("resources/img/logo/goyave_16.png")))
-	assert.False(t, FileExists(toAbsolutePath("doesn't exist")))
+	assert.True(t, FileExists(&osfs.FS{}, toAbsolutePath("resources/img/logo/goyave_16.png")))
+	assert.False(t, FileExists(&osfs.FS{}, toAbsolutePath("doesn't exist")))
 }
 
 func TestIsDirectory(t *testing.T) {
-	assert.True(t, IsDirectory(toAbsolutePath("resources/img/logo")))
-	assert.False(t, IsDirectory(toAbsolutePath("resources/img/logo/goyave_16.png")))
-	assert.False(t, IsDirectory(toAbsolutePath("doesn't exist")))
+	assert.True(t, IsDirectory(&osfs.FS{}, toAbsolutePath("resources/img/logo")))
+	assert.False(t, IsDirectory(&osfs.FS{}, toAbsolutePath("resources/img/logo/goyave_16.png")))
+	assert.False(t, IsDirectory(&osfs.FS{}, toAbsolutePath("doesn't exist")))
 }
 
-func TestSaveDelete(t *testing.T) {
+func TestSave(t *testing.T) {
 	file := createTestFiles("resources/img/logo/goyave_16.png")[0]
 	actualName, err := file.Save(toAbsolutePath("."), "saved.png")
 	actualPath := toAbsolutePath(actualName)
-	assert.True(t, FileExists(actualPath))
+	assert.True(t, FileExists(&osfs.FS{}, actualPath))
 	assert.NoError(t, err)
 
-	Delete(actualPath)
-	assert.False(t, FileExists(actualPath))
+	deleteFile(actualPath)
+	assert.False(t, FileExists(&osfs.FS{}, actualPath))
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
 	actualName, err = file.Save(toAbsolutePath("."), "saved")
 	actualPath = toAbsolutePath(actualName)
 	assert.Equal(t, -1, strings.Index(actualName, "."))
-	assert.True(t, FileExists(actualPath))
+	assert.True(t, FileExists(&osfs.FS{}, actualPath))
 	assert.NoError(t, err)
 
-	Delete(actualPath)
-	assert.False(t, FileExists(actualPath))
+	deleteFile(actualPath)
+	assert.False(t, FileExists(&osfs.FS{}, actualPath))
 
 	assert.Panics(t, func() {
-		Delete(actualPath)
+		deleteFile(actualPath)
 	})
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
 	path := toAbsolutePath("./subdir")
 	actualName, err = file.Save(path, "saved")
 	actualPath = toAbsolutePath("./subdir/" + actualName)
-	assert.True(t, FileExists(actualPath))
+	assert.True(t, FileExists(&osfs.FS{}, actualPath))
 	assert.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(path))
-	assert.False(t, FileExists(actualPath))
+	assert.False(t, FileExists(&osfs.FS{}, actualPath))
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
 	_, err = file.Save(toAbsolutePath("./go.mod"), "saved")

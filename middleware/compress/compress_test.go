@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
@@ -143,7 +144,7 @@ func TestCompressMiddleware(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "gzip")
 		result := server.TestMiddleware(compressMiddleware, request, func(r *goyave.Response, _ *goyave.Request) {
-			r.File("../../resources/custom_config.json")
+			r.File(&osfs.FS{}, "../../resources/custom_config.json")
 		})
 
 		reader, err := gzip.NewReader(result.Body)

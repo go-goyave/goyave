@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 func TestCleanStaticPath(t *testing.T) {
@@ -31,7 +32,7 @@ func TestCleanStaticPath(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.want, func(t *testing.T) {
-			assert.Equal(t, c.want, cleanStaticPath(c.directory, c.file))
+			assert.Equal(t, c.want, cleanStaticPath(&osfs.FS{}, c.directory, c.file))
 		})
 	}
 }
@@ -92,7 +93,7 @@ func TestStaticHandler(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			response := NewResponse(srv, request, recorder)
 
-			handler := staticHandler(c.directory, c.download)
+			handler := staticHandler(&osfs.FS{}, c.directory, c.download)
 			handler(response, request)
 
 			result := recorder.Result()

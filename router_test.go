@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 type testStatusHandler struct {
@@ -276,7 +277,7 @@ func TestRouter(t *testing.T) {
 
 	t.Run("Static", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Static("/uri", "resources", false)
+		route := router.Static(&osfs.FS{}, "/uri", "resources", false)
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
 		assert.Equal(t, []string{"resource"}, route.parameters)
 		assert.Equal(t, "/uri{resource:.*}", route.uri)

@@ -19,6 +19,7 @@ import (
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
 	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 func newTestReponse() (*Response, *httptest.ResponseRecorder) {
@@ -130,7 +131,7 @@ func TestResponse(t *testing.T) {
 	t.Run("File", func(t *testing.T) {
 		resp, recorder := newTestReponse()
 
-		resp.File("resources/test_file.txt")
+		resp.File(&osfs.FS{}, "resources/test_file.txt")
 		res := recorder.Result()
 
 		assert.Equal(t, http.StatusOK, res.StatusCode)
@@ -149,7 +150,7 @@ func TestResponse(t *testing.T) {
 
 		t.Run("not_found", func(t *testing.T) {
 			resp, _ := newTestReponse()
-			resp.File("not_a_file")
+			resp.File(&osfs.FS{}, "not_a_file")
 			assert.Equal(t, http.StatusNotFound, resp.status)
 		})
 	})
@@ -157,7 +158,7 @@ func TestResponse(t *testing.T) {
 	t.Run("Download", func(t *testing.T) {
 		resp, recorder := newTestReponse()
 
-		resp.Download("resources/test_file.txt", "test_file.txt")
+		resp.Download(&osfs.FS{}, "resources/test_file.txt", "test_file.txt")
 		res := recorder.Result()
 
 		assert.Equal(t, http.StatusOK, res.StatusCode)
@@ -176,7 +177,7 @@ func TestResponse(t *testing.T) {
 
 		t.Run("not_found", func(t *testing.T) {
 			resp, _ := newTestReponse()
-			resp.Download("not_a_file", "file.txt")
+			resp.Download(&osfs.FS{}, "not_a_file", "file.txt")
 			assert.Equal(t, http.StatusNotFound, resp.status)
 		})
 	})

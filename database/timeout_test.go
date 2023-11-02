@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 func prepareTimeoutTest() *gorm.DB {
@@ -145,7 +145,9 @@ func TestTimeoutPlugin(t *testing.T) {
 	t.Run("transaction_many_queries", func(t *testing.T) {
 		t.Cleanup(func() {
 			// The DB is not in memory here
-			fsutil.Delete("timeout_many_queries_test.db")
+			if err := os.Remove("timeout_many_queries_test.db"); err != nil {
+				panic(err)
+			}
 		})
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", false)

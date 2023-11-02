@@ -92,7 +92,7 @@ func TestServer(t *testing.T) {
 		assert.Nil(t, s)
 	})
 
-	t.Run("NewWithConfig", func(t *testing.T) {
+	t.Run("NewWithOptions", func(t *testing.T) {
 		database.RegisterDialect("sqlite3_server_test", "file:{name}?{options}", sqlite.Open)
 		cfg := config.LoadDefault()
 		cfg.Set("app.name", "test_with_config")

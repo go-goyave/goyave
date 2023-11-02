@@ -153,7 +153,7 @@ func LoadFrom(path string) (*Config, error) {
 //			os.Exit(err.(*goyave.Error).ExitCode)
 //		}
 //
-//		server, err := goyave.NewWithConfig(cfg)
+//		server, err := goyave.New(goyave.Options{Config: cfg})
 //		if err != nil {
 //			fmt.Println(err)
 //			os.Exit(err.(*goyave.Error).ExitCode)

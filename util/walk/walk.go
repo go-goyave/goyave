@@ -281,7 +281,7 @@ func (p *Path) Depth() uint {
 	return depth
 }
 
-// Truncate returns the n first steps of the path so the returned path's depth
+// Truncate returns a clone of the n first steps of the path so the returned path's depth
 // equals the given depth.
 func (p *Path) Truncate(depth uint) *Path {
 	if depth == 0 {

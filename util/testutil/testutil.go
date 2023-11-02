@@ -54,16 +54,16 @@ func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goy
 		panic(errors.New(err))
 	}
 
-	return NewTestServerWithConfig(t, cfg, routeRegistrer)
+	return NewTestServerWithOptions(t, goyave.Options{Config: cfg}, routeRegistrer)
 }
 
-// NewTestServerWithConfig creates a new server using the given config.
+// NewTestServerWithOptions creates a new server using the given options.
 // If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
-func NewTestServerWithConfig(t *testing.T, cfg *config.Config, routeRegistrer func(*goyave.Server, *goyave.Router)) *TestServer {
-	srv, err := goyave.NewWithConfig(cfg)
+func NewTestServerWithOptions(t *testing.T, opts goyave.Options, routeRegistrer func(*goyave.Server, *goyave.Router)) *TestServer {
+	srv, err := goyave.New(opts)
 	if err != nil {
 		panic(err)
 	}

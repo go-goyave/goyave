@@ -14,7 +14,7 @@ func TestComponent(t *testing.T) {
 	cfg.Set("database.connection", "sqlite3")
 	cfg.Set("database.name", "test_component.db")
 	cfg.Set("database.options", "mode=memory")
-	server, err := NewWithConfig(cfg)
+	server, err := New(Options{Config: cfg})
 	if err != nil {
 		panic(err)
 	}

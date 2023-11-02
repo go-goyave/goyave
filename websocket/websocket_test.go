@@ -23,12 +23,12 @@ import (
 	stdslog "log/slog"
 )
 
-func prepareTestConfig() *config.Config {
+func prepareTestConfig() goyave.Options {
 	cfg := config.LoadDefault()
 	cfg.Set("server.port", 0)
 	cfg.Set("server.websocketCloseTimeout", 1)
 	cfg.Set("app.debug", false)
-	return cfg
+	return goyave.Options{Config: cfg}
 }
 
 type testController struct {
@@ -185,14 +185,14 @@ func TestGetCheckOriginFunction(t *testing.T) {
 func TestDefaultUpgradeErrorHandler(t *testing.T) {
 
 	cases := []struct {
-		config    func() *config.Config
+		config    func() goyave.Options
 		expect    func(*testing.T, map[string]string)
 		reasonErr error
 		desc      string
 	}{
 		{
 			desc:      "debug_on",
-			config:    config.LoadDefault,
+			config:    func() goyave.Options { return goyave.Options{Config: config.LoadDefault()} },
 			reasonErr: fmt.Errorf("test upgrade error handler"),
 			expect: func(t *testing.T, body map[string]string) {
 				assert.Equal(t, map[string]string{"error": "test upgrade error handler"}, body)
@@ -211,7 +211,7 @@ func TestDefaultUpgradeErrorHandler(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
-			server := testutil.NewTestServerWithConfig(t, c.config(), nil)
+			server := testutil.NewTestServerWithOptions(t, c.config(), nil)
 			req := server.NewTestRequest(http.MethodGet, "/websocket", nil)
 			resp, recorder := server.NewTestResponse(req)
 
@@ -281,7 +281,7 @@ func TestUpgrade(t *testing.T) {
 	wg.Add(2)
 
 	var routeURL string
-	server := testutil.NewTestServerWithConfig(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
+	server := testutil.NewTestServerWithOptions(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t:  t,
 			wg: &wg,
@@ -337,7 +337,7 @@ func TestUpgrade(t *testing.T) {
 }
 
 func TestUpgradeError(t *testing.T) {
-	server := testutil.NewTestServerWithConfig(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
+	server := testutil.NewTestServerWithOptions(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
 			checkOrigin: func(_ *goyave.Request) bool {
@@ -361,7 +361,7 @@ func TestUpgradeError(t *testing.T) {
 }
 
 func TestRegistrer(t *testing.T) {
-	server := testutil.NewTestServerWithConfig(t, prepareTestConfig(), nil)
+	server := testutil.NewTestServerWithOptions(t, prepareTestConfig(), nil)
 	upgrader := New(&testControllerRegistrer{
 		registerRoute: func(router *goyave.Router, handler goyave.Handler) {
 			router.Get("", handler).SetMeta("key", "value").Name("websocket")
@@ -391,7 +391,7 @@ func TestCloseHandshakeTimeout(t *testing.T) {
 	wg.Add(2)
 
 	var routeURL string
-	server := testutil.NewTestServerWithConfig(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
+	server := testutil.NewTestServerWithOptions(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t:  t,
 			wg: &wg,
@@ -504,7 +504,7 @@ func TestGracefulClose(t *testing.T) {
 			wg.Add(2)
 
 			var routeURL string
-			server := testutil.NewTestServerWithConfig(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
+			server := testutil.NewTestServerWithOptions(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
 				var ctrl Controller = &testController{
 					t:     t,
 					wg:    &wg,
@@ -574,7 +574,7 @@ func TestCloseConnectionClosed(t *testing.T) {
 	wg.Add(3)
 
 	var routeURL string
-	server := testutil.NewTestServerWithConfig(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
+	server := testutil.NewTestServerWithOptions(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
 			checkOrigin: func(r_ *goyave.Request) bool {
@@ -636,7 +636,7 @@ func TestCloseWriteTimeout(t *testing.T) {
 	wg.Add(3)
 
 	var routeURL string
-	server := testutil.NewTestServerWithConfig(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
+	server := testutil.NewTestServerWithOptions(t, prepareTestConfig(), func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
 			checkOrigin: func(r_ *goyave.Request) bool {

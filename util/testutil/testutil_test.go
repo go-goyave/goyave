@@ -41,7 +41,7 @@ func TestTestServer(t *testing.T) {
 		cfg.Set("test-entry", "test-value")
 
 		executed := false
-		server := NewTestServerWithConfig(t, cfg, func(s *goyave.Server, r *goyave.Router) {
+		server := NewTestServerWithOptions(t, goyave.Options{Config: cfg}, func(s *goyave.Server, r *goyave.Router) {
 			executed = true
 		})
 
@@ -52,7 +52,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("TestRequest", func(t *testing.T) {
-		server := NewTestServerWithConfig(t, config.LoadDefault(), func(_ *goyave.Server, r *goyave.Router) {
+		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, func(_ *goyave.Server, r *goyave.Router) {
 			r.Get("/route", func(resp *goyave.Response, _ *goyave.Request) {
 				resp.String(http.StatusOK, "OK")
 			})
@@ -69,7 +69,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("TestMiddleware", func(t *testing.T) {
-		server := NewTestServerWithConfig(t, config.LoadDefault(), nil)
+		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
 
 		request := server.NewTestRequest(http.MethodGet, "/route", nil)
 		request.Data = map[string]any{"key": "value"}
@@ -104,7 +104,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestRequest", func(t *testing.T) {
-		server := NewTestServerWithConfig(t, config.LoadDefault(), nil)
+		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
 		body := bytes.NewBufferString("body")
 		req := server.NewTestRequest(http.MethodPost, "/uri", body)
 
@@ -119,7 +119,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestResponse", func(t *testing.T) {
-		server := NewTestServerWithConfig(t, config.LoadDefault(), nil)
+		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
 		server.Server.Logger = slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 		req := server.NewTestRequest(http.MethodGet, "/uri", nil)
 		resp, recorder := server.NewTestResponse(req)

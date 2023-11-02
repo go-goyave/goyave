@@ -81,7 +81,7 @@ func TestStaticHandler(t *testing.T) {
 		t.Run(c.uri, func(t *testing.T) {
 
 			cfg := config.LoadDefault()
-			srv, err := NewWithConfig(cfg)
+			srv, err := New(Options{Config: cfg})
 			if err != nil {
 				panic(err)
 			}

@@ -22,6 +22,11 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
+type Options struct {
+	Config *config.Config
+	Logger *slog.Logger
+}
+
 // Server the central component of a Goyave application.
 type Server struct {
 	server *http.Server
@@ -52,21 +57,26 @@ type Server struct {
 	state uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
 }
 
-// New create a new `Server` using automatically loaded configuration.
-// See `config.Load()` for more details.
-func New() (*Server, error) {
-	cfg, err := config.Load()
-	if err != nil {
-		return nil, errors.New(err)
+// New create a new `Server`.
+//   - If no configuration is provided in the options, automatically load the default configuration
+//     using `config.Load()`.
+//   - If no logger is provided in the options, uses the default logger.
+func New(opts Options) (*Server, error) {
+
+	cfg := opts.Config
+
+	if opts.Config == nil {
+		var err error
+		cfg, err = config.Load()
+		if err != nil {
+			return nil, errors.New(err)
+		}
 	}
-	return NewWithConfig(cfg)
-}
 
-// NewWithConfig create a new `Server` using the provided configuration.
-func NewWithConfig(cfg *config.Config) (*Server, error) { // TODO with options? (for loggers, lang, etc) Could take a io.FS as input for resources directory
-	// TODO explicitly return *errors.Error?
-
-	slogger := slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stderr))
+	slogger := opts.Logger
+	if slogger == nil {
+		slogger = slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stderr))
+	}
 
 	languages := lang.New() // TODO using embed FS
 	languages.Default = cfg.GetString("app.defaultLanguage")

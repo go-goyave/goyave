@@ -22,7 +22,6 @@ import (
 	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
-	"goyave.dev/goyave/v5/util/fsutil"
 )
 
 type DummyService struct {
@@ -45,10 +44,12 @@ func TestServer(t *testing.T) {
 			panic(err)
 		}
 		t.Cleanup(func() {
-			fsutil.Delete("config.json")
+			if err := os.Remove("config.json"); err != nil {
+				panic(err)
+			}
 		})
 
-		s, err := New()
+		s, err := New(Options{})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -76,10 +77,12 @@ func TestServer(t *testing.T) {
 			panic(err)
 		}
 		t.Cleanup(func() {
-			fsutil.Delete("config.json")
+			if err := os.Remove("config.json"); err != nil {
+				panic(err)
+			}
 		})
 
-		s, err := New()
+		s, err := New(Options{})
 		if assert.Error(t, err) {
 			goyaveErr, ok := err.(*errors.Error)
 			if assert.True(t, ok) {
@@ -97,7 +100,7 @@ func TestServer(t *testing.T) {
 		cfg.Set("database.name", "sqlite3_server_test.db")
 		cfg.Set("database.options", "mode=memory")
 
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -115,7 +118,7 @@ func TestServer(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("database.connection", "not_a_driver")
 
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.Error(t, err) {
 			return
 		}
@@ -177,7 +180,7 @@ func TestServer(t *testing.T) {
 	t.Run("Service", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.name", "test")
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -202,7 +205,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("Accessors", func(t *testing.T) {
 		cfg := config.LoadDefault()
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -222,7 +225,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("RegisterRoutes", func(t *testing.T) {
-		server, err := NewWithConfig(config.LoadDefault())
+		server, err := New(Options{Config: config.LoadDefault()})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -239,7 +242,7 @@ func TestServer(t *testing.T) {
 		cfg.Set("database.connection", "sqlite3_server_transaction_test")
 		cfg.Set("database.name", "sqlite3_server_transaction_test.db")
 		cfg.Set("database.options", "mode=memory")
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -264,7 +267,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("ReplaceDB", func(t *testing.T) {
-		server, err := NewWithConfig(config.LoadDefault())
+		server, err := New(Options{Config: config.LoadDefault()})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -276,7 +279,7 @@ func TestServer(t *testing.T) {
 	t.Run("Start", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 8888)
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -335,7 +338,7 @@ func TestServer(t *testing.T) {
 	t.Run("StartWithAutoPort", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 0)
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -386,7 +389,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("Start_already_running", func(t *testing.T) {
-		server, err := NewWithConfig(config.LoadDefault())
+		server, err := New(Options{Config: config.LoadDefault()})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -400,7 +403,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("Start_stopped", func(t *testing.T) {
-		server, err := NewWithConfig(config.LoadDefault())
+		server, err := New(Options{Config: config.LoadDefault()})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -414,7 +417,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("Stop_not_started", func(t *testing.T) {
-		server, err := NewWithConfig(config.LoadDefault())
+		server, err := New(Options{Config: config.LoadDefault()})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -423,7 +426,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("StartupHooks", func(t *testing.T) {
-		server, err := NewWithConfig(config.LoadDefault())
+		server, err := New(Options{Config: config.LoadDefault()})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -437,7 +440,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("ShutdownHooks", func(t *testing.T) {
-		server, err := NewWithConfig(config.LoadDefault())
+		server, err := New(Options{Config: config.LoadDefault()})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -453,7 +456,7 @@ func TestServer(t *testing.T) {
 	t.Run("SignalHook", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 8889)
-		server, err := NewWithConfig(cfg)
+		server, err := New(Options{Config: cfg})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -492,7 +495,7 @@ func TestServer(t *testing.T) {
 
 func TestErrLogWriter(t *testing.T) {
 
-	s, err := NewWithConfig(config.LoadDefault())
+	s, err := New(Options{Config: config.LoadDefault()})
 	if !assert.NoError(t, err) {
 		return
 	}

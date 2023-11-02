@@ -39,7 +39,7 @@ func TestWriter(t *testing.T) {
 
 	t.Run("Write", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
-		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -70,7 +70,7 @@ func TestWriter(t *testing.T) {
 
 	t.Run("child_writer_prewrite_and_close", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
-		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -112,7 +112,7 @@ func TestMiddleware(t *testing.T) {
 
 	t.Run("Common", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
-		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
 		buffer := bytes.NewBufferString("")
 		server.Logger = slog.New(slog.NewHandler(false, buffer))
 
@@ -133,7 +133,7 @@ func TestMiddleware(t *testing.T) {
 
 	t.Run("Combined", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
-		server := testutil.NewTestServerWithConfig(t, config.LoadDefault(), nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
 		buffer := bytes.NewBufferString("")
 		server.Logger = slog.New(slog.NewHandler(false, buffer))
 

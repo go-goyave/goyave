@@ -15,7 +15,7 @@ import (
 )
 
 func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder) {
-	server, err := NewWithConfig(config.LoadDefault())
+	server, err := New(Options{Config: config.LoadDefault()})
 	if err != nil {
 		panic(err)
 	}

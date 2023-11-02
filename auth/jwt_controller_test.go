@@ -81,7 +81,7 @@ func TestJWTController(t *testing.T) {
 		cfg.Set("database.name", "testauthenticator.db")
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("app.debug", false)
-		server := testutil.NewTestServerWithConfig(t, cfg, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg}, nil)
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}

@@ -12,6 +12,7 @@ import (
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/middleware/parse"
 	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -46,13 +47,14 @@ type JWTController[T any] struct { // TODO refresh token
 	PasswordField string
 }
 
-// Init the controller. Automatically registers the `JWTService` if not already registered.
+// Init the controller. Automatically registers the `JWTService` if not already registered,
+// using `osfs.FS` as file system for the signing keys.
 func (c *JWTController[T]) Init(server *goyave.Server) {
 	c.Component.Init(server)
 
 	service, ok := server.LookupService(JWTServiceName)
 	if !ok {
-		service = NewJWTService(server.Config())
+		service = NewJWTService(server.Config(), &osfs.FS{})
 		server.RegisterService(service)
 	}
 	c.jwtService = service.(*JWTService)

@@ -3,7 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"os"
+	"io/fs"
 	"reflect"
 	"sync"
 	"time"
@@ -15,6 +15,7 @@ import (
 	"goyave.dev/goyave/v5/lang"
 
 	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 const (
@@ -49,14 +50,17 @@ func registerKeyConfigEntry(name string) {
 //
 // This service is identified by `auth.JWTServiceName`.
 type JWTService struct {
+	fs     fs.FS
 	config *config.Config
 	cache  sync.Map
 }
 
-// NewJWTService create a new `JWTService` with the given config.
-func NewJWTService(config *config.Config) *JWTService {
+// NewJWTService create a new `JWTService` with the given config and file system.
+// The file system is used to get the signing keys.
+func NewJWTService(config *config.Config, fs fs.FS) *JWTService {
 	return &JWTService{
 		config: config,
+		fs:     fs,
 	}
 }
 
@@ -132,7 +136,7 @@ func (s *JWTService) GetKey(entry string) (any, error) {
 		return k, nil
 	}
 
-	data, err := os.ReadFile(s.config.GetString(entry)) // TODO support embeds?
+	data, err := fs.ReadFile(s.fs, s.config.GetString(entry))
 	if err != nil {
 		return nil, errorutil.New(err)
 	}
@@ -193,13 +197,14 @@ type JWTAuthenticator struct {
 
 var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
 
-// Init the authenticator. Automatically registers the `JWTService` if not already registered.
+// Init the authenticator. Automatically registers the `JWTService` if not already registered,
+// using `osfs.FS` as file system for the keys.
 func (a *JWTAuthenticator) Init(server *goyave.Server) {
 	a.Component.Init(server)
 
 	service, ok := server.LookupService(JWTServiceName)
 	if !ok {
-		service = NewJWTService(server.Config())
+		service = NewJWTService(server.Config(), &osfs.FS{})
 		server.RegisterService(service)
 	}
 	a.service = service.(*JWTService)

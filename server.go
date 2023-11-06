@@ -24,12 +24,24 @@ import (
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
-type Options struct { // TODO document options
+// Options represent server creation options.
+type Options struct {
+
+	// Config used by the server and propagated to all its components.
+	// If no configuration is provided, automatically load
+	// the default configuration using `config.Load()`.
 	Config *config.Config
+
+	// Logger used by the server and propagated to all its components.
+	// If no logger is provided in the options, uses the default logger.
 	Logger *slog.Logger
+
+	// LangFS the file system from which the language files
+	// will be loaded. This file system is expected to contain
+	// a `resources/lang` directory.
+	// If not provided, uses `osfs.FS` as a default.
 	LangFS fsutil.FS
 	// TODO write tests for options
-	// TODO embed config
 }
 
 // Server the central component of a Goyave application.
@@ -62,12 +74,7 @@ type Server struct {
 	state uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
 }
 
-// New create a new `Server`.
-//   - If no configuration is provided in the options, automatically load the default configuration
-//     using `config.Load()`.
-//   - If no logger is provided in the options, uses the default logger.
-//   - If the `LangFS` file system is not provided in the options, uses `osfs.FS` as a default.
-//     This file system is used to load the language files.
+// New create a new `Server` using the given options.
 func New(opts Options) (*Server, error) {
 
 	cfg := opts.Config

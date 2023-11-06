@@ -123,24 +123,31 @@ func timestampFileName(name string) string {
 	return prefix + "-" + strconv.FormatInt(time.Now().UnixNano()/int64(time.Microsecond), 10) + extension
 }
 
-// TODO document fs and OSFS
-
+// An FS provides access to a hierarchical file system
+// and implements `io/fs`'s `FS`, `ReadDirFS` and `StatFS` interfaces.
 type FS interface {
 	fs.ReadDirFS
 	fs.StatFS
 }
 
+// A WorkingDirFS is a file system with a `Getwd()` method.
 type WorkingDirFS interface {
 	FS
 
+	// Getwd returns a rooted path name corresponding to the
+	// current directory. If the current directory can be
+	// reached via multiple paths (due to symbolic links),
+	// Getwd may return any one of them.
 	Getwd() (dir string, err error)
 }
 
+// Embed is an extension of `embed.FS` implementing `fs.StatFS`.
 type Embed struct {
 	embed.FS
 }
 
-func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
+// Stat returns a FileInfo describing the file.
+func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) { // TODO test Embed
 	f, err := e.FS.Open(name)
 	if err != nil {
 		return nil, err
@@ -148,7 +155,7 @@ func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
 	defer func() {
 		e := f.Close()
 		if err == nil {
-			err = e
+			err = &fs.PathError{Op: "close", Path: name, Err: e}
 		}
 	}()
 

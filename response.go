@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
-	"os"
 	"strconv"
 
 	"gorm.io/gorm"
@@ -262,9 +261,9 @@ func (r *Response) writeFile(fs fs.StatFS, file string, disposition string) {
 
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
-	f, _ := os.Open(file)
-	// No need to check for errors, fsutil.FileExists(file) and
-	// fsutil.GetMIMEType(file) already handled that.
+	f, _ := fs.Open(file)
+	// No need to check for errors, fsutil.FileExists(fs, file) and
+	// fsutil.GetMIMEType(fs, file) already handled that.
 	defer func() {
 		_ = f.Close()
 	}()

@@ -2,7 +2,9 @@ package fsutil
 
 import (
 	"bytes"
+	"embed"
 	"io"
+	"io/fs"
 	"math"
 	"mime/multipart"
 	"net/textproto"
@@ -12,6 +14,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	_ "embed"
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
@@ -234,4 +238,27 @@ func TestParseMultipartFiles(t *testing.T) {
 		assert.Equal(t, expected, files)
 		assert.NoError(t, err)
 	})
+}
+
+//go:embed osfs
+var resources embed.FS
+
+func TestEmbed(t *testing.T) {
+	e := Embed{FS: resources}
+
+	stat, err := e.Stat("osfs/osfs.go")
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.False(t, stat.IsDir())
+	assert.Equal(t, "osfs.go", stat.Name())
+
+	stat, err = e.Stat("notadir/osfs.go")
+	assert.Nil(t, stat)
+	if assert.NotNil(t, err) {
+		e, ok := err.(*fs.PathError)
+		assert.True(t, ok)
+		assert.Equal(t, "open", e.Op)
+		assert.Equal(t, "notadir/osfs.go", e.Path)
+	}
 }

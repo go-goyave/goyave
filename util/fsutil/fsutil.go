@@ -178,14 +178,14 @@ type Embed struct {
 }
 
 // Stat returns a FileInfo describing the file.
-func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) { // TODO test Embed
+func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
 	f, err := e.FS.Open(name)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		e := f.Close()
-		if err == nil {
+		if err == nil && e != nil {
 			err = &fs.PathError{Op: "close", Path: name, Err: e}
 		}
 	}()

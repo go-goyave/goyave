@@ -62,10 +62,14 @@ func TestHasMiddleware(t *testing.T) {
 	t.Run("routerHasMiddleware", func(t *testing.T) {
 		router := &Router{
 			parent: &Router{
+				globalMiddleware: &middlewareHolder{
+					middleware: []Middleware{&testMiddleware{}},
+				},
 				middlewareHolder: middlewareHolder{
 					middleware: []Middleware{&languageMiddleware{}},
 				},
 			},
+			globalMiddleware: &middlewareHolder{},
 			middlewareHolder: middlewareHolder{
 				middleware: []Middleware{&recoveryMiddleware{}},
 			},
@@ -73,6 +77,7 @@ func TestHasMiddleware(t *testing.T) {
 
 		assert.True(t, routerHasMiddleware[*recoveryMiddleware](router))
 		assert.True(t, routerHasMiddleware[*languageMiddleware](router))
+		assert.True(t, routerHasMiddleware[*testMiddleware](router))
 		assert.False(t, routerHasMiddleware[*corsMiddleware](router))
 	})
 }

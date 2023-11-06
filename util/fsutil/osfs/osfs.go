@@ -1,6 +1,7 @@
 package osfs
 
 import (
+	"io"
 	"io/fs"
 	"os"
 )
@@ -56,4 +57,31 @@ func (fs FS) IsDirectory(path string) bool {
 		return stats.IsDir()
 	}
 	return false
+}
+
+// MkdirAll creates a directory named path,
+// along with any necessary parents, and returns `nil`,
+// or else returns an error.
+// The permission bits perm (before umask) are used for all
+// directories that `MkdirAll` creates.
+// If path is already a directory, `MkdirAll` does nothing
+// and returns `nil`.
+func (FS) MkdirAll(path string, perm fs.FileMode) error {
+	return os.MkdirAll(path, perm)
+}
+
+// Mkdir creates a new directory with the specified name and permission
+// bits (before umask).
+// If there is an error, it will be of type `*PathError`.
+func (FS) Mkdir(path string, perm fs.FileMode) error {
+	return os.Mkdir(path, perm)
+}
+
+// OpenFile is the generalized open call. It opens the named file with specified flag
+// (`O_RDONLY` etc.). If the file does not exist, and the `O_CREATE` flag
+// is passed, it is created with mode perm (before umask). If successful,
+// methods on the returned file can be used for I/O.
+// If there is an error, it will be of type `*PathError`.
+func (FS) OpenFile(path string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error) {
+	return os.OpenFile(path, flag, perm)
 }

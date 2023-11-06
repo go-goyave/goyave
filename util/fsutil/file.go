@@ -23,12 +23,14 @@ type File struct {
 // Creates directories if needed.
 //
 // Returns the actual file name.
-func (file *File) Save(path string, name string) (filename string, err error) { // TODO handle io.FS
+func (file *File) Save(fs WritableFS, path string, name string) (filename string, err error) {
 	filename = timestampFileName(name)
 
-	if err = os.MkdirAll(path, os.ModePerm); err != nil {
-		err = errors.NewSkip(err, 3)
-		return
+	if mkdirFS, ok := fs.(MkdirFS); ok {
+		if err = mkdirFS.MkdirAll(path, os.ModePerm); err != nil {
+			err = errors.NewSkip(err, 3)
+			return
+		}
 	}
 
 	var f multipart.File
@@ -44,8 +46,8 @@ func (file *File) Save(path string, name string) (filename string, err error) { 
 		}
 	}()
 
-	var writer *os.File
-	writer, err = os.OpenFile(path+string(os.PathSeparator)+filename, os.O_WRONLY|os.O_CREATE, 0660)
+	var writer io.ReadWriteCloser
+	writer, err = fs.OpenFile(path+string(os.PathSeparator)+filename, os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {
 		err = errors.NewSkip(err, 3)
 		return

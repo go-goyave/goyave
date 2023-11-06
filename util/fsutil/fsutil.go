@@ -2,6 +2,7 @@ package fsutil
 
 import (
 	"embed"
+	"io"
 	"io/fs"
 	"net/http"
 	"strconv"
@@ -139,6 +140,36 @@ type WorkingDirFS interface {
 	// reached via multiple paths (due to symbolic links),
 	// Getwd may return any one of them.
 	Getwd() (dir string, err error)
+}
+
+// A MkdirFS is a file system with a `Mkdir()` and a `MkdirAll()` methods.
+type MkdirFS interface {
+	FS
+
+	// MkdirAll creates a directory named path,
+	// along with any necessary parents, and returns `nil`,
+	// or else returns an error.
+	// The permission bits perm (before umask) are used for all
+	// directories that `MkdirAll` creates.
+	// If path is already a directory, `MkdirAll` does nothing
+	// and returns `nil`.
+	MkdirAll(path string, perm fs.FileMode) error
+
+	// Mkdir creates a new directory with the specified name and permission
+	// bits (before umask).
+	// If there is an error, it will be of type `*PathError`.
+	Mkdir(path string, perm fs.FileMode) error
+}
+
+// A WritableFS is a file system with a `OpenFile()` method.
+type WritableFS interface {
+
+	// OpenFile is the generalized open call. It opens the named file with specified flag
+	// (`O_RDONLY` etc.). If the file does not exist, and the `O_CREATE` flag
+	// is passed, it is created with mode perm (before umask). If successful,
+	// methods on the returned file can be used for I/O.
+	// If there is an error, it will be of type `*PathError`.
+	OpenFile(path string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error)
 }
 
 // Embed is an extension of `embed.FS` implementing `fs.StatFS`.

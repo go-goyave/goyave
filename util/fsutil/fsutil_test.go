@@ -148,24 +148,25 @@ func TestIsDirectory(t *testing.T) {
 }
 
 func TestSave(t *testing.T) {
+	fs := &osfs.FS{}
 	file := createTestFiles("resources/img/logo/goyave_16.png")[0]
-	actualName, err := file.Save(toAbsolutePath("."), "saved.png")
+	actualName, err := file.Save(fs, toAbsolutePath("."), "saved.png")
 	actualPath := toAbsolutePath(actualName)
-	assert.True(t, FileExists(&osfs.FS{}, actualPath))
+	assert.True(t, FileExists(fs, actualPath))
 	assert.NoError(t, err)
 
 	deleteFile(actualPath)
-	assert.False(t, FileExists(&osfs.FS{}, actualPath))
+	assert.False(t, FileExists(fs, actualPath))
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
-	actualName, err = file.Save(toAbsolutePath("."), "saved")
+	actualName, err = file.Save(fs, toAbsolutePath("."), "saved")
 	actualPath = toAbsolutePath(actualName)
 	assert.Equal(t, -1, strings.Index(actualName, "."))
-	assert.True(t, FileExists(&osfs.FS{}, actualPath))
+	assert.True(t, FileExists(fs, actualPath))
 	assert.NoError(t, err)
 
 	deleteFile(actualPath)
-	assert.False(t, FileExists(&osfs.FS{}, actualPath))
+	assert.False(t, FileExists(fs, actualPath))
 
 	assert.Panics(t, func() {
 		deleteFile(actualPath)
@@ -173,16 +174,16 @@ func TestSave(t *testing.T) {
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
 	path := toAbsolutePath("./subdir")
-	actualName, err = file.Save(path, "saved")
+	actualName, err = file.Save(fs, path, "saved")
 	actualPath = toAbsolutePath("./subdir/" + actualName)
-	assert.True(t, FileExists(&osfs.FS{}, actualPath))
+	assert.True(t, FileExists(fs, actualPath))
 	assert.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(path))
-	assert.False(t, FileExists(&osfs.FS{}, actualPath))
+	assert.False(t, FileExists(fs, actualPath))
 
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
-	_, err = file.Save(toAbsolutePath("./go.mod"), "saved")
+	_, err = file.Save(fs, toAbsolutePath("./go.mod"), "saved")
 	assert.Error(t, err)
 }
 
@@ -193,7 +194,7 @@ func TestOpenFileError(t *testing.T) {
 		assert.NoError(t, os.RemoveAll(dir))
 	}()
 	file := createTestFiles("resources/img/logo/goyave_16.png")[0]
-	filename, err := file.Save(dir, "saved.png")
+	filename, err := file.Save(&osfs.FS{}, dir, "saved.png")
 	assert.Error(t, err)
 	assert.NotEmpty(t, filename)
 }

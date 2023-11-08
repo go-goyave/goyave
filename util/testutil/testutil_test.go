@@ -14,6 +14,7 @@ import (
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 type testMiddleware struct {
@@ -182,7 +183,7 @@ func TestReadJSONBody(t *testing.T) {
 func TestWriteMultipartFile(t *testing.T) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	assert.NoError(t, WriteMultipartFile(writer, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
+	assert.NoError(t, WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
 	assert.NoError(t, writer.Close())
 
 	req := NewTestRequest(http.MethodPost, "/uri", body)
@@ -204,7 +205,7 @@ func TestWriteMultipartFile(t *testing.T) {
 }
 
 func TestCreateTestFiles(t *testing.T) {
-	files, err := CreateTestFiles("../../resources/img/logo/goyave_16.png", "../../resources/test_file.txt")
+	files, err := CreateTestFiles(&osfs.FS{}, "../../resources/img/logo/goyave_16.png", "../../resources/test_file.txt")
 	if !assert.NoError(t, err) || !assert.Len(t, files, 2) {
 		return
 	}

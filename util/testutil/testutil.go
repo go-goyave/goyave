@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/fs"
 	"math"
 	"mime/multipart"
 	"net/http"
@@ -176,10 +177,10 @@ func ReadJSONBody[T any](body io.Reader) (T, error) {
 	return data, nil
 }
 
-// WriteMultipartFile reads a file from the given path and writes it to the given multipart writer.
-func WriteMultipartFile(writer *multipart.Writer, path, fieldName, fileName string) (err error) {
-	var file *os.File
-	file, err = os.Open(path)
+// WriteMultipartFile reads a file from the given FS and writes it to the given multipart writer.
+func WriteMultipartFile(writer *multipart.Writer, filesystem fs.FS, path, fieldName, fileName string) (err error) {
+	var file fs.File
+	file, err = filesystem.Open(path)
 	if err != nil {
 		err = errors.New(err)
 		return
@@ -202,18 +203,18 @@ func WriteMultipartFile(writer *multipart.Writer, path, fieldName, fileName stri
 	return
 }
 
-// CreateTestFiles create a slice of "fsutil.File" from the given paths.
+// CreateTestFiles create a slice of "fsutil.File" from the given FS.
 // To reproduce the way the files are obtained in real scenarios,
 // files are first encoded in a multipart form, then decoded with
 // a multipart form reader.
 //
 // Paths are relative to the caller, not relative to the project's root directory.
-func CreateTestFiles(paths ...string) ([]fsutil.File, error) {
+func CreateTestFiles(fs fs.FS, paths ...string) ([]fsutil.File, error) {
 	fieldName := "file"
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, p := range paths {
-		if err := WriteMultipartFile(writer, p, fieldName, filepath.Base(p)); err != nil {
+		if err := WriteMultipartFile(writer, fs, p, fieldName, filepath.Base(p)); err != nil {
 			return nil, errors.New(err)
 		}
 	}

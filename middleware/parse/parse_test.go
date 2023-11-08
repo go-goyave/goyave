@@ -11,6 +11,7 @@ import (
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
@@ -111,7 +112,7 @@ func TestParseMiddleware(t *testing.T) {
 	t.Run("Multipart", func(t *testing.T) {
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
-		assert.NoError(t, testutil.WriteMultipartFile(writer, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
+		assert.NoError(t, testutil.WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
 		assert.NoError(t, writer.WriteField("email", "johndoe@example.org"))
 
 		request := testutil.NewTestRequest(http.MethodPost, "/parse", body)

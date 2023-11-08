@@ -25,6 +25,7 @@ type Context struct {
 // The first returned value is the message, usually formatted using a standard
 // like Common Log Format or Combined Log Format.
 // The second returned value is a slice of structured logging attributes.
+// These attributes are ignored in dev mode (`app.debug = true`) to avoid clutter.
 type Formatter func(ctx *Context) (message string, attributes []slog.Attr)
 
 // Writer chained writer keeping response body in memory.

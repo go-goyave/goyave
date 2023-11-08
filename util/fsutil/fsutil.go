@@ -133,8 +133,6 @@ type FS interface {
 
 // A WorkingDirFS is a file system with a `Getwd()` method.
 type WorkingDirFS interface {
-	FS
-
 	// Getwd returns a rooted path name corresponding to the
 	// current directory. If the current directory can be
 	// reached via multiple paths (due to symbolic links),
@@ -144,8 +142,6 @@ type WorkingDirFS interface {
 
 // A MkdirFS is a file system with a `Mkdir()` and a `MkdirAll()` methods.
 type MkdirFS interface {
-	FS
-
 	// MkdirAll creates a directory named path,
 	// along with any necessary parents, and returns `nil`,
 	// or else returns an error.
@@ -163,7 +159,6 @@ type MkdirFS interface {
 
 // A WritableFS is a file system with a `OpenFile()` method.
 type WritableFS interface {
-
 	// OpenFile is the generalized open call. It opens the named file with specified flag
 	// (`O_RDONLY` etc.). If the file does not exist, and the `O_CREATE` flag
 	// is passed, it is created with mode perm (before umask). If successful,
@@ -174,7 +169,6 @@ type WritableFS interface {
 
 // A RemoveFS is a file system with a `Remove()` and a `RemoveAll()` methods.
 type RemoveFS interface {
-
 	// Remove removes the named file or (empty) directory.
 	// If there is an error, it will be of type `*PathError`.
 	Remove(path string) error

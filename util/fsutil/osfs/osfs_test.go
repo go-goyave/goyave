@@ -124,17 +124,29 @@ func TestOSFS(t *testing.T) {
 	t.Run("Mkdir", func(t *testing.T) {
 		fs := &FS{}
 		path := "resources/testdir"
+
+		t.Cleanup(func() {
+			if err := os.RemoveAll(path); err != nil {
+				panic(err)
+			}
+		})
+
 		assert.NoError(t, fs.Mkdir(path, 0770))
 		assert.True(t, fs.IsDirectory(path))
-		assert.NoError(t, os.RemoveAll(path))
 	})
 
 	t.Run("MkdirAll", func(t *testing.T) {
 		fs := &FS{}
 		path := "resources/testdirall/subdir"
+
+		t.Cleanup(func() {
+			if err := os.RemoveAll("resources/testdirall"); err != nil {
+				panic(err)
+			}
+		})
+
 		assert.NoError(t, fs.MkdirAll(path, 0770))
 		assert.True(t, fs.IsDirectory(path))
-		assert.NoError(t, os.RemoveAll("resources/testdirall"))
 	})
 
 	t.Run("Remove", func(t *testing.T) {

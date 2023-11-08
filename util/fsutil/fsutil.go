@@ -172,6 +172,21 @@ type WritableFS interface {
 	OpenFile(path string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error)
 }
 
+// A RemoveFS is a file system with a `Remove()` and a `RemoveAll()` methods.
+type RemoveFS interface {
+
+	// Remove removes the named file or (empty) directory.
+	// If there is an error, it will be of type `*PathError`.
+	Remove(path string) error
+
+	// RemoveAll removes path and any children it contains.
+	// It removes everything it can but returns the first error
+	// it encounters. If the path does not exist, `RemoveAll`
+	// returns `nil` (no error).
+	// If there is an error, it will be of type `*PathError`.
+	RemoveAll(path string) error
+}
+
 // Embed is an extension of `embed.FS` implementing `fs.StatFS`.
 type Embed struct {
 	embed.FS

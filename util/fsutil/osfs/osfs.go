@@ -84,4 +84,17 @@ func (FS) Mkdir(path string, perm fs.FileMode) error {
 	return os.Mkdir(path, perm)
 }
 
-// TODO Remove
+// Remove removes the named file or (empty) directory.
+// If there is an error, it will be of type `*PathError`.
+func (FS) Remove(path string) error {
+	return os.Remove(path)
+}
+
+// RemoveAll removes path and any children it contains.
+// It removes everything it can but returns the first error
+// it encounters. If the path does not exist, `RemoveAll`
+// returns `nil` (no error).
+// If there is an error, it will be of type `*PathError`.
+func (FS) RemoveAll(path string) error {
+	return os.RemoveAll(path)
+}

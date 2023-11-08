@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"embed"
+
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm/utils/tests"
@@ -22,7 +24,11 @@ import (
 	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/fsutil"
 )
+
+//go:embed resources
+var resources embed.FS
 
 type DummyService struct {
 	AppName string
@@ -100,7 +106,14 @@ func TestServer(t *testing.T) {
 		cfg.Set("database.name", "sqlite3_server_test.db")
 		cfg.Set("database.options", "mode=memory")
 
-		server, err := New(Options{Config: cfg})
+		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
+		opts := Options{
+			Config: cfg,
+			Logger: logger,
+			LangFS: fsutil.Embed{FS: resources},
+		}
+
+		server, err := New(opts)
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -109,6 +122,8 @@ func TestServer(t *testing.T) {
 		}()
 
 		assert.Equal(t, "test_with_config", server.Config().GetString("app.name"))
+		assert.Equal(t, logger, server.Logger)
+		assert.ElementsMatch(t, []string{"en-US", "en-UK"}, server.Lang.GetAvailableLanguages())
 		assert.NotNil(t, server.DB())
 
 		assert.Nil(t, server.CloseDB())

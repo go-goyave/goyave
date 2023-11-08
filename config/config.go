@@ -3,12 +3,14 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"reflect"
 	"strings"
 	"sync"
 
 	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
 type object map[string]any
@@ -84,8 +86,8 @@ func (l *loader) register(key string, entry Entry) {
 	}
 }
 
-func (l *loader) loadFrom(path string) (*Config, error) {
-	return l.load(l.readConfigFile, path)
+func (l *loader) loadFrom(fs fs.FS, path string) (*Config, error) {
+	return l.load(func(s string) (object, error) { return l.readConfigFile(fs, path) }, path)
 }
 
 func (l *loader) loadJSON(cfg string) (*Config, error) {
@@ -124,7 +126,7 @@ func (l *loader) load(readFunc readFunc, source string) (*Config, error) {
 //   - "test": "config.test.json"
 //   - By default: "config.json"
 func Load() (*Config, error) {
-	return defaultLoader.loadFrom(getConfigFilePath())
+	return defaultLoader.loadFrom(&osfs.FS{}, getConfigFilePath())
 }
 
 // LoadDefault loads default config.
@@ -135,7 +137,7 @@ func LoadDefault() *Config {
 
 // LoadFrom loads a config file from the given path.
 func LoadFrom(path string) (*Config, error) {
-	return defaultLoader.loadFrom(path)
+	return defaultLoader.loadFrom(&osfs.FS{}, path)
 }
 
 // LoadJSON load a configuration file from raw JSON. Can be used in combination with
@@ -173,10 +175,10 @@ func getConfigFilePath() string {
 	return "config." + env + ".json"
 }
 
-func (l *loader) readConfigFile(file string) (o object, err error) {
-	var configFile *os.File
+func (l *loader) readConfigFile(filesystem fs.FS, file string) (o object, err error) {
+	var configFile fs.File
 	o = make(object, len(l.defaults))
-	configFile, err = os.Open(file)
+	configFile, err = filesystem.Open(file)
 
 	if err == nil {
 		defer func() {

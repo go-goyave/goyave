@@ -53,8 +53,6 @@ func (r *Route) match(method string, match *routeMatch) bool {
 		if r.checkMethod(method) {
 			if len(params) > 1 {
 				match.mergeParams(r.makeParameters(params))
-			} else {
-				match.parameters = map[string]string{}
 			}
 			match.route = r
 			return true

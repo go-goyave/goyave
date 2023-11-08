@@ -262,6 +262,7 @@ func (r *Response) writeFile(fs fs.StatFS, file string, disposition string) {
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 
 	f, _ := fs.Open(file)
+	// FIXME: the file is opened thrice here, can we optimize this so it's only opened once?
 	// No need to check for errors, fsutil.FileExists(fs, file) and
 	// fsutil.GetMIMEType(fs, file) already handled that.
 	defer func() {

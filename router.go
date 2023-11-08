@@ -449,7 +449,7 @@ func (r *Router) Controller(controller Registrer) *Router {
 func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
 	request := NewRequest(rawRequest)
 	request.Route = match.route
-	request.RouteParams = match.parameters
+	request.RouteParams = lo.Ternary(match.parameters == nil, map[string]string{}, match.parameters)
 	response := NewResponse(r.server, request, w)
 	handler := match.route.handler
 

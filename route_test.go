@@ -271,7 +271,7 @@ func TestRoute(t *testing.T) {
 			{route: route2, method: http.MethodGet, uri: "/product/666/test", expectedResult: true, expectedParameters: map[string]string{"id": "666", "name": "test"}, expectedError: nil},
 			{route: route3, method: http.MethodGet, uri: "/categories/lawn-mower/asc", expectedResult: true, expectedParameters: map[string]string{"category": "lawn-mower", "sort": "asc"}, expectedError: nil},
 			{route: route3, method: http.MethodGet, uri: "/categories/lawn-mower/notasc", expectedResult: false, expectedParameters: nil, expectedError: errMatchNotFound},
-			{route: route4, method: http.MethodGet, uri: "/product", expectedResult: true, expectedParameters: map[string]string{}, expectedError: nil},
+			{route: route4, method: http.MethodGet, uri: "/product", expectedResult: true, expectedParameters: nil, expectedError: nil},
 		}
 
 		for _, c := range cases {

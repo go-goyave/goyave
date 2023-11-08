@@ -84,7 +84,13 @@ func (w *Writer) Close() error {
 		Length:    w.length,
 	}
 	message, attrs := w.formatter(ctx)
-	w.Logger().Info(message, lo.Map(attrs, func(a slog.Attr, _ int) any { return a })...)
+
+	if w.Config().GetBool("app.debug") {
+		// In dev mode, we omit the details to avoid clutter. The message itself is enough.
+		w.Logger().Info(message)
+	} else {
+		w.Logger().Info(message, lo.Map(attrs, func(a slog.Attr, _ int) any { return a })...)
+	}
 
 	if wr, ok := w.writer.(io.Closer); ok {
 		return wr.Close()

@@ -6,8 +6,6 @@ import (
 	"os"
 )
 
-// TODO test OSFS
-
 // FS implementation of `fsutil.FS` for the local OS file system.
 type FS struct{}
 
@@ -17,6 +15,15 @@ type FS struct{}
 // If there is an error, it will be of type `*PathError“.
 func (FS) Open(name string) (fs.File, error) {
 	return os.Open(name)
+}
+
+// OpenFile is the generalized open call. It opens the named file with specified flag
+// (`O_RDONLY` etc.). If the file does not exist, and the `O_CREATE` flag
+// is passed, it is created with mode perm (before umask). If successful,
+// methods on the returned file can be used for I/O.
+// If there is an error, it will be of type `*PathError`.
+func (FS) OpenFile(path string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error) {
+	return os.OpenFile(path, flag, perm)
 }
 
 // ReadDir reads the named directory,
@@ -77,11 +84,4 @@ func (FS) Mkdir(path string, perm fs.FileMode) error {
 	return os.Mkdir(path, perm)
 }
 
-// OpenFile is the generalized open call. It opens the named file with specified flag
-// (`O_RDONLY` etc.). If the file does not exist, and the `O_CREATE` flag
-// is passed, it is created with mode perm (before umask). If successful,
-// methods on the returned file can be used for I/O.
-// If there is an error, it will be of type `*PathError`.
-func (FS) OpenFile(path string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error) {
-	return os.OpenFile(path, flag, perm)
-}
+// TODO Remove

@@ -41,7 +41,6 @@ type Options struct {
 	// a `resources/lang` directory.
 	// If not provided, uses `osfs.FS` as a default.
 	LangFS fsutil.FS
-	// TODO write tests for options
 }
 
 // Server the central component of a Goyave application.

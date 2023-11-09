@@ -310,7 +310,17 @@ func TestRouter(t *testing.T) {
 			r.Status(http.StatusForbidden)
 		})
 
-		router.Subrouter("/subrouter/{param}").Get("/subroute/{name}", func(r *Response, req *Request) {
+		router.Subrouter("/noparam").Get("", func(r *Response, req *Request) {
+			assert.Equal(t, map[string]string{}, req.RouteParams)
+			r.Status(http.StatusOK)
+		})
+
+		subrouter := router.Subrouter("/subrouter/{param}")
+		subrouter.Get("/subroute", func(r *Response, req *Request) {
+			assert.Equal(t, map[string]string{"param": "value"}, req.RouteParams)
+			r.Status(http.StatusOK)
+		})
+		subrouter.Get("/subroute/{name}", func(r *Response, req *Request) {
 			assert.Equal(t, map[string]string{"param": "value", "name": "johndoe"}, req.RouteParams)
 			r.Status(http.StatusOK)
 		})
@@ -340,6 +350,20 @@ func TestRouter(t *testing.T) {
 				desc:           "multiple_param",
 				requestMethod:  http.MethodGet,
 				requestURL:     "/subrouter/value/subroute/johndoe",
+				expectedStatus: http.StatusOK,
+				expectedBody:   "",
+			},
+			{
+				desc:           "no_param_in_leaf",
+				requestMethod:  http.MethodGet,
+				requestURL:     "/subrouter/value/subroute",
+				expectedStatus: http.StatusOK,
+				expectedBody:   "",
+			},
+			{
+				desc:           "no_param",
+				requestMethod:  http.MethodGet,
+				requestURL:     "/noparam",
 				expectedStatus: http.StatusOK,
 				expectedBody:   "",
 			},

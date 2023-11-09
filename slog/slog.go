@@ -78,9 +78,9 @@ func (l *Logger) logError(ctx context.Context, source uintptr, err error, args .
 	case *errors.Error:
 		l.handleError(ctx, e, r)
 	case unwrapper:
-		l.handleReason(ctx, err, r)
+		l.handleReason(ctx, err, nil, r)
 		for _, e := range e.Unwrap() {
-			l.handleReason(ctx, e, r)
+			l.handleReason(ctx, e, nil, r)
 		}
 	default:
 		_ = l.Handler().Handle(ctx, r)
@@ -110,18 +110,18 @@ func (l *Logger) makeRecord(level slog.Level, msg string, pc uintptr, args ...an
 
 func (l *Logger) handleError(ctx context.Context, err *errors.Error, record slog.Record) {
 	trace := slog.String("trace", err.StackFrames().String())
-	record.AddAttrs(trace)
 	if err.Len() == 0 {
+		record.AddAttrs(trace)
 		_ = l.Handler().Handle(ctx, record)
 		return
 	}
 
 	for _, r := range err.Unwrap() {
-		l.handleReason(ctx, r, record)
+		l.handleReason(ctx, r, &trace, record)
 	}
 }
 
-func (l *Logger) handleReason(ctx context.Context, reason error, record slog.Record) {
+func (l *Logger) handleReason(ctx context.Context, reason error, trace *slog.Attr, record slog.Record) {
 	clone := record.Clone()
 	if reason == nil {
 		clone.Message = "<nil>"
@@ -132,11 +132,17 @@ func (l *Logger) handleReason(ctx context.Context, reason error, record slog.Rec
 	case *errors.Error:
 		l.handleError(ctx, e, clone)
 	case errors.Reason:
+		if trace != nil {
+			clone.AddAttrs(*trace)
+		}
 		if _, isDevMode := l.Handler().(*DevModeHandler); !isDevMode {
 			clone.AddAttrs(slog.Any("reason", e.Value()))
 		}
 		_ = l.Handler().Handle(ctx, clone)
 	default:
+		if trace != nil {
+			clone.AddAttrs(*trace)
+		}
 		_ = l.Handler().Handle(ctx, clone)
 	}
 }

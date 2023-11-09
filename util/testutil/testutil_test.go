@@ -120,8 +120,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestResponse", func(t *testing.T) {
-		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()}, nil)
-		server.Server.Logger = slog.New(slog.NewHandler(false, &bytes.Buffer{}))
+		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, &bytes.Buffer{}))}, nil)
 		req := server.NewTestRequest(http.MethodGet, "/uri", nil)
 		resp, recorder := server.NewTestResponse(req)
 

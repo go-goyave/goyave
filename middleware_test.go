@@ -84,12 +84,11 @@ func TestHasMiddleware(t *testing.T) {
 
 func TestRecoveryMiddleware(t *testing.T) {
 	t.Run("panic", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		logBuffer := &bytes.Buffer{}
+		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
 		if err != nil {
 			panic(err)
 		}
-		logBuffer := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -118,12 +117,11 @@ func TestRecoveryMiddleware(t *testing.T) {
 	})
 
 	t.Run("no_panic", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		logBuffer := &bytes.Buffer{}
+		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
 		if err != nil {
 			panic(err)
 		}
-		logBuffer := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -140,12 +138,11 @@ func TestRecoveryMiddleware(t *testing.T) {
 	})
 
 	t.Run("nil_panic", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		logBuffer := &bytes.Buffer{}
+		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
 		if err != nil {
 			panic(err)
 		}
-		logBuffer := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -175,12 +172,11 @@ func TestRecoveryMiddleware(t *testing.T) {
 	t.Run("panic_status_override", func(t *testing.T) {
 		// Even if the response status is already set, the recovery middleware
 		// should always force it to 500.
-		server, err := New(Options{Config: config.LoadDefault()})
+		logBuffer := &bytes.Buffer{}
+		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
 		if err != nil {
 			panic(err)
 		}
-		logBuffer := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		middleware := &recoveryMiddleware{}
 		middleware.Init(server)
 
@@ -494,15 +490,14 @@ func TestValidateMiddleware(t *testing.T) {
 				cfg.Set("database.name", fmt.Sprintf("test_validation_middleware_%s.db", c.desc))
 				cfg.Set("database.options", "mode=memory")
 			}
-			server, err := New(Options{Config: cfg})
+			buffer := &bytes.Buffer{}
+			server, err := New(Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 			if err != nil {
 				panic(err)
 			}
 			defer func() {
 				assert.NoError(t, server.CloseDB())
 			}()
-			buffer := &bytes.Buffer{}
-			server.Logger = slog.New(slog.NewHandler(false, buffer))
 
 			m := &validateRequestMiddleware{
 				QueryRules: c.queryRules,

@@ -58,11 +58,11 @@ type ValidationStatusHandler struct {
 func (*ValidationStatusHandler) Handle(response *Response, request *Request) {
 	errs := &validation.ErrorResponse{}
 
-	if e, ok := request.Extra[ExtraValidationError]; ok {
+	if e, ok := request.Extra[ExtraValidationError{}]; ok {
 		errs.Body = e.(*validation.Errors)
 	}
 
-	if e, ok := request.Extra[ExtraQueryValidationError]; ok {
+	if e, ok := request.Extra[ExtraQueryValidationError{}]; ok {
 		errs.Query = e.(*validation.Errors)
 	}
 

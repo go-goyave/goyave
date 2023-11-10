@@ -8,6 +8,8 @@ import (
 	"goyave.dev/goyave/v5/util/walk"
 )
 
+type isRequiredKey struct{}
+
 func TestField(t *testing.T) {
 
 	t.Run("New", func(t *testing.T) {
@@ -41,13 +43,13 @@ func TestField(t *testing.T) {
 	t.Run("New_required_if", func(t *testing.T) {
 		validators := []Validator{
 			RequiredIf(func(c *Context) bool {
-				return c.Extra["is_required"].(bool)
+				return c.Extra[isRequiredKey{}].(bool)
 			}),
 			String(),
 		}
 		f := newField("object.array[].property", validators, 0)
-		assert.False(t, f.isRequired(&Context{Extra: map[string]any{"is_required": false}}))
-		assert.True(t, f.isRequired(&Context{Extra: map[string]any{"is_required": true}}))
+		assert.False(t, f.isRequired(&Context{Extra: map[any]any{isRequiredKey{}: false}}))
+		assert.True(t, f.isRequired(&Context{Extra: map[any]any{isRequiredKey{}: true}}))
 	})
 
 	t.Run("Get_error_path", func(t *testing.T) {

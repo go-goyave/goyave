@@ -17,6 +17,8 @@ import (
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
+type extraKey struct{}
+
 type testMiddleware struct {
 	goyave.Component
 	procedure goyave.Handler
@@ -74,7 +76,7 @@ func TestTestServer(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/route", nil)
 		request.Data = map[string]any{"key": "value"}
-		request.Extra = map[string]any{"key": "value"}
+		request.Extra = map[any]any{extraKey{}: "value"}
 		request.Query = map[string]any{"key": "value"}
 		request.RouteParams = map[string]string{"key": "value"}
 		request.User = map[string]string{"key": "value"}

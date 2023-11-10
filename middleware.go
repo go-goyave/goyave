@@ -133,8 +133,8 @@ type validateRequestMiddleware struct {
 
 func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 	return func(response *Response, r *Request) {
-		extra := map[string]any{
-			validation.ExtraRequest: r,
+		extra := map[any]any{
+			validation.ExtraRequest{}: r,
 		}
 		contentType := r.Header().Get("Content-Type")
 
@@ -156,11 +156,11 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				Logger:                   m.Logger(),
 				Extra:                    extra,
 			}
-			r.Extra[ExtraQueryValidationRules] = opt.Rules
+			r.Extra[ExtraQueryValidationRules{}] = opt.Rules
 			var err []error
 			queryErrsBag, err = validation.Validate(opt)
 			if queryErrsBag != nil {
-				r.Extra[ExtraQueryValidationError] = queryErrsBag
+				r.Extra[ExtraQueryValidationError{}] = queryErrsBag
 			}
 			if err != nil {
 				errors = append(errors, err...)
@@ -177,11 +177,11 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				Logger:                   m.Logger(),
 				Extra:                    extra,
 			}
-			r.Extra[ExtraBodyValidationRules] = opt.Rules
+			r.Extra[ExtraBodyValidationRules{}] = opt.Rules
 			var err []error
 			errsBag, err = validation.Validate(opt)
 			if errsBag != nil {
-				r.Extra[ExtraValidationError] = errsBag
+				r.Extra[ExtraValidationError{}] = errsBag
 			}
 			if err != nil {
 				errors = append(errors, err...)

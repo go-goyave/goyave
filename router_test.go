@@ -24,7 +24,7 @@ func (*testStatusHandler) Handle(response *Response, _ *Request) {
 	response.JSON(response.GetStatus(), message)
 }
 
-const extraMiddlewareOrder = "middleware_order"
+type extraMiddlewareOrder struct{}
 
 type testMiddleware struct {
 	Component
@@ -34,13 +34,13 @@ type testMiddleware struct {
 func (m *testMiddleware) Handle(next Handler) Handler {
 	return func(r *Response, req *Request) {
 		var slice []string
-		if s, ok := req.Extra[extraMiddlewareOrder]; !ok {
+		if s, ok := req.Extra[extraMiddlewareOrder{}]; !ok {
 			slice = []string{}
 		} else {
 			slice = s.([]string)
 		}
 		slice = append(slice, m.key)
-		req.Extra[extraMiddlewareOrder] = slice
+		req.Extra[extraMiddlewareOrder{}] = slice
 		next(r, req)
 	}
 }
@@ -328,7 +328,7 @@ func TestRouter(t *testing.T) {
 		router.Middleware(&testMiddleware{key: "router"})
 		router.GlobalMiddleware(&testMiddleware{key: "global"})
 		router.Get("/middleware", func(r *Response, req *Request) {
-			assert.Equal(t, []string{"global", "router", "route"}, req.Extra[extraMiddlewareOrder])
+			assert.Equal(t, []string{"global", "router", "route"}, req.Extra[extraMiddlewareOrder{}])
 			r.Status(http.StatusOK)
 		}).Middleware(&testMiddleware{key: "route"})
 

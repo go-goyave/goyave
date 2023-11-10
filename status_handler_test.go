@@ -117,13 +117,13 @@ func TestValidationStatusHandler(t *testing.T) {
 	handler := &ValidationStatusHandler{}
 	handler.Init(resp.server)
 
-	req.Extra[ExtraValidationError] = &validation.Errors{
+	req.Extra[ExtraValidationError{}] = &validation.Errors{
 		Errors: []string{"The body is required"},
 		Fields: validation.FieldsErrors{
 			"field": &validation.Errors{Errors: []string{"The field is required"}},
 		},
 	}
-	req.Extra[ExtraQueryValidationError] = &validation.Errors{
+	req.Extra[ExtraQueryValidationError{}] = &validation.Errors{
 		Fields: validation.FieldsErrors{
 			"query": &validation.Errors{Errors: []string{"The query is required"}},
 		},

@@ -320,7 +320,7 @@ func TestValidateMiddleware(t *testing.T) {
 			queryRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
-						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest])
+						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
 						assert.NotNil(t, v.DB())
 						assert.NotNil(t, v.Config())
 						assert.NotNil(t, v.Logger())
@@ -395,7 +395,7 @@ func TestValidateMiddleware(t *testing.T) {
 			bodyRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
-						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest])
+						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
 						assert.NotNil(t, v.Config())
 						assert.NotNil(t, v.DB())
 						assert.NotNil(t, v.Logger())
@@ -539,14 +539,14 @@ func TestValidateMiddleware(t *testing.T) {
 			assert.Equal(t, c.expectStatus, response.status)
 
 			if c.expectQueryErrors == nil {
-				assert.NotContains(t, request.Extra, ExtraQueryValidationError)
+				assert.NotContains(t, request.Extra, ExtraQueryValidationError{})
 			} else {
-				assert.Equal(t, c.expectQueryErrors, request.Extra[ExtraQueryValidationError])
+				assert.Equal(t, c.expectQueryErrors, request.Extra[ExtraQueryValidationError{}])
 			}
 			if c.expectBodyErrors == nil {
-				assert.NotContains(t, request.Extra, ExtraValidationError)
+				assert.NotContains(t, request.Extra, ExtraValidationError{})
 			} else {
-				assert.Equal(t, c.expectBodyErrors, request.Extra[ExtraValidationError])
+				assert.Equal(t, c.expectBodyErrors, request.Extra[ExtraValidationError{}])
 			}
 		})
 	}

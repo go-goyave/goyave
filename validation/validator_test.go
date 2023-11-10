@@ -17,6 +17,8 @@ import (
 	"goyave.dev/goyave/v5/util/walk"
 )
 
+type extraKey struct{}
+
 type testValidator struct {
 	BaseValidator
 	placeholders    func(ctx *Context) []string
@@ -175,7 +177,7 @@ func TestValidate(t *testing.T) {
 				Data:     map[string]any{"property": "value"},
 				DB:       &gorm.DB{},
 				Logger:   slog.New(slog.NewDevModeHandler(bytes.NewBuffer(make([]byte, 0, 10)), nil)),
-				Extra:    map[string]any{"extra": "value"},
+				Extra:    map[any]any{extraKey{}: "value"},
 				Language: lang.New().GetDefault(),
 				Config:   config.LoadDefault(),
 				Rules: RuleSet{
@@ -188,7 +190,7 @@ func TestValidate(t *testing.T) {
 							assert.NotNil(t, c.logger)
 
 							// Context content
-							assert.Equal(t, map[string]any{"extra": "value"}, ctx.Extra)
+							assert.Equal(t, map[any]any{extraKey{}: "value"}, ctx.Extra)
 							assert.Equal(t, map[string]any{"property": "value"}, ctx.Data)
 							assert.Equal(t, "value", ctx.Value)
 							assert.Equal(t, map[string]any{"property": "value"}, ctx.Parent)

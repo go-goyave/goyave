@@ -11,26 +11,26 @@ import (
 	"goyave.dev/goyave/v5/lang"
 )
 
-const (
+type (
 	// ExtraBodyValidationRules the key used in `Context.Extra` to
 	// store the body validation rules.
-	ExtraBodyValidationRules = "goyave.bodyValidationRules"
+	ExtraBodyValidationRules struct{}
 
 	// ExtraQueryValidationRules the key used in `Context.Extra` to
 	// store the query validation rules.
-	ExtraQueryValidationRules = "goyave.queryValidationRules"
+	ExtraQueryValidationRules struct{}
 
 	// ExtraValidationError the key used in `Context.Extra` to
 	// store the body validation errors.
-	ExtraValidationError = "goyave.validationError"
+	ExtraValidationError struct{}
 
 	// ExtraQueryValidationError the key used in `Context.Extra` to
 	// store the query validation errors.
-	ExtraQueryValidationError = "goyave.queryValidationError"
+	ExtraQueryValidationError struct{}
 
 	// ExtraJWTClaims when using the built-in `JWTAuthenticator`, this
 	// extra key can be used to retrieve the JWT claims.
-	ExtraJWTClaims = "goyave.jwtClaims"
+	ExtraJWTClaims struct{}
 )
 
 // Request represents an http request received by the server.
@@ -41,7 +41,16 @@ type Request struct {
 	User        any
 	Query       map[string]any
 	Lang        *lang.Language
-	Extra       map[string]any
+
+	// Extra can be used to store any extra information related to the request.
+	// For example, the JWT middleware stores the token claim in the extras.
+	//
+	// The keys must be comparable and should not be of type
+	// string or any other built-in type to avoid collisions.
+	// To avoid allocating when assigning to an `interface{}`, context keys often have
+	// concrete type `struct{}`. Alternatively, exported context key variables' static
+	// type should be a pointer or interface.
+	Extra       map[any]any
 	Route       *Route
 	RouteParams map[string]string
 	cookies     []*http.Cookie
@@ -53,7 +62,7 @@ func NewRequest(httpRequest *http.Request) *Request {
 	return &Request{
 		httpRequest: httpRequest,
 		Now:         time.Now(),
-		Extra:       map[string]any{},
+		Extra:       map[any]any{},
 		// Route is set by the router
 		// Lang is set inside the language middleware
 		// Query is set inside the parse request middleware

@@ -233,7 +233,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error
 
 	if err == nil && token.Valid {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			request.Extra[goyave.ExtraJWTClaims] = claims
+			request.Extra[goyave.ExtraJWTClaims{}] = claims
 			column := FindColumns(a.DB(), user, "username")[0]
 			claimName := a.ClaimName
 			if claimName == "" {

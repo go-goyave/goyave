@@ -140,7 +140,7 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 
 		var db *gorm.DB
 		if m.Config().GetString("database.connection") != "none" {
-			db = m.DB()
+			db = m.DB().WithContext(r.Context())
 		}
 		var errsBag *validation.Errors
 		var queryErrsBag *validation.Errors

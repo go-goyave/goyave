@@ -191,6 +191,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
+			assert.Contains(t, request.Extra, extraJWTClaims{})
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -218,6 +219,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
+			assert.Contains(t, request.Extra, extraJWTClaims{})
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -245,6 +247,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
+			assert.Contains(t, request.Extra, extraJWTClaims{})
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -576,5 +579,18 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		_ = resp.Body.Close()
+	})
+
+	t.Run("extra", func(t *testing.T) {
+		request := testutil.NewTestRequest(http.MethodGet, "/", nil)
+		claims := jwt.MapClaims{
+			"nbf": "now",
+		}
+		SetJWTClaims(request, claims)
+		assert.Equal(t, claims, request.Extra[extraJWTClaims{}])
+
+		res, ok := GetJWTClaims(request)
+		assert.Equal(t, claims, res)
+		assert.True(t, ok)
 	})
 }

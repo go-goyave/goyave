@@ -27,10 +27,6 @@ type (
 	// ExtraQueryValidationError the key used in `Context.Extra` to
 	// store the query validation errors.
 	ExtraQueryValidationError struct{}
-
-	// ExtraJWTClaims when using the built-in `JWTAuthenticator`, this
-	// extra key can be used to retrieve the JWT claims.
-	ExtraJWTClaims struct{}
 )
 
 // Request represents an http request received by the server.

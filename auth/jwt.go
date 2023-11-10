@@ -23,9 +23,9 @@ const (
 	JWTServiceName = "goyave.jwt"
 )
 
-// extraJWTClaims when using the built-in `JWTAuthenticator`, this
+// ExtraJWTClaims when using the built-in `JWTAuthenticator`, this
 // key can be used to retrieve the JWT claims in the request's `Extra`.
-type extraJWTClaims struct{}
+type ExtraJWTClaims struct{}
 
 func init() {
 	config.Register("auth.jwt.expiry", config.Entry{
@@ -237,7 +237,7 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error
 
 	if err == nil && token.Valid {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			SetJWTClaims(request, claims)
+			request.Extra[ExtraJWTClaims{}] = claims
 			column := FindColumns(a.DB(), user, "username")[0]
 			claimName := a.ClaimName
 			if claimName == "" {
@@ -297,16 +297,4 @@ func (a *JWTAuthenticator) makeError(language *lang.Language, bitfield uint32) e
 		return fmt.Errorf(language.Get("auth.jwt-expired"))
 	}
 	return fmt.Errorf(language.Get("auth.jwt-invalid"))
-}
-
-// SetJWTClaims set the given JWT claims in the request's `Extra`.
-func SetJWTClaims(request *goyave.Request, claims jwt.MapClaims) {
-	request.Extra[extraJWTClaims{}] = claims
-}
-
-// GetJWTClaims returns the JWT claims attached to this request's `Extra`.
-// Returns false if not present in the extras.
-func GetJWTClaims(request *goyave.Request) (jwt.MapClaims, bool) {
-	claims, ok := request.Extra[extraJWTClaims{}].(jwt.MapClaims)
-	return claims, ok
 }

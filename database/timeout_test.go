@@ -27,9 +27,12 @@ func prepareTimeoutTest() *gorm.DB {
 		panic(err)
 	}
 
-	if err := db.AutoMigrate(&TestUser{}); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	if err := db.Session(&gorm.Session{NewDB: true, Context: ctx}).AutoMigrate(&TestUser{}); err != nil {
+		cancel()
 		panic(err)
 	}
+	cancel()
 
 	author := userGenerator()
 	if err := db.Create(author).Error; err != nil {

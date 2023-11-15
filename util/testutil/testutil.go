@@ -15,6 +15,7 @@ import (
 
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
@@ -47,6 +48,8 @@ type TestServer struct {
 // the project's directory. If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
 //
+// A default logger redirecting the output to `testing.T.Log()` is used.
+//
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
 func NewTestServer(t *testing.T, configFileName string) *TestServer {
 	rootDirectory := FindRootDirectory()
@@ -63,8 +66,23 @@ func NewTestServer(t *testing.T, configFileName string) *TestServer {
 // If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
 //
+// By default, if no `Logger` is given in the options, a default logger redirecting the
+// output to `testing.T.Log()` is used.
+//
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
 func NewTestServerWithOptions(t *testing.T, opts goyave.Options) *TestServer {
+	if opts.Config == nil {
+		cfg, err := config.Load()
+		if err != nil {
+			panic(errors.New(err))
+		}
+		opts.Config = cfg
+	}
+
+	if opts.Logger == nil {
+		opts.Logger = slog.New(slog.NewHandler(opts.Config.GetBool("app.debug"), &LogWriter{t: t}))
+	}
+
 	srv, err := goyave.New(opts)
 	if err != nil {
 		panic(err)

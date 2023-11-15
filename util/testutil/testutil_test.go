@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
+	"os"
 	"strings"
 	"testing"
 
@@ -33,9 +34,10 @@ func TestTestServer(t *testing.T) {
 	t.Run("NewTestServer", func(t *testing.T) {
 		server := NewTestServer(t, "resources/custom_config.json")
 		assert.Equal(t, "value", server.Config().Get("custom-entry"))
+		assert.Equal(t, slog.New(slog.NewHandler(true, &LogWriter{t: t})), server.Logger)
 	})
 
-	t.Run("NewTestServerWithConfig", func(t *testing.T) {
+	t.Run("NewTestServerWithOptions", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("test-entry", "test-value")
 
@@ -43,6 +45,21 @@ func TestTestServer(t *testing.T) {
 
 		assert.NotNil(t, server.Lang)
 		assert.Equal(t, "test-value", server.Config().Get("test-entry"))
+		assert.Equal(t, slog.New(slog.NewHandler(true, &LogWriter{t: t})), server.Logger)
+	})
+
+	t.Run("NewTestServer_AutoConfig", func(t *testing.T) {
+		assert.NoError(t, os.Setenv("GOYAVE_ENV", "test"))
+		server := NewTestServerWithOptions(t, goyave.Options{})
+
+		assert.NotNil(t, server.Lang)
+		assert.Equal(t, "test-value", server.Config().Get("test-entry"))
+
+		assert.Panics(t, func() {
+			// Config file not found
+			assert.NoError(t, os.Setenv("GOYAVE_ENV", ""))
+			NewTestServerWithOptions(t, goyave.Options{})
+		})
 	})
 
 	t.Run("TestRequest", func(t *testing.T) {

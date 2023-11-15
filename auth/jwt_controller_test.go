@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/testutil"
 	"goyave.dev/goyave/v5/validation"
 )
@@ -81,7 +82,8 @@ func TestJWTController(t *testing.T) {
 		cfg.Set("database.name", "testauthenticator.db")
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("app.debug", false)
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
+		buf := &bytes.Buffer{}
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buf))})
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{}
@@ -102,10 +104,13 @@ func TestJWTController(t *testing.T) {
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		_ = resp.Body.Close()
+		assert.NotEmpty(t, buf.String())
 	})
 
 	t.Run("Login_token_func_error", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
+		buf := &bytes.Buffer{}
+		server.Logger = slog.New(slog.NewHandler(false, buf))
 		server.Config().Set("auth.jwt.secret", "secret")
 
 		controller := &JWTController[TestUser]{
@@ -130,6 +135,7 @@ func TestJWTController(t *testing.T) {
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		_ = resp.Body.Close()
+		assert.NotEmpty(t, buf.String())
 	})
 
 	t.Run("Login_with_field_override", func(t *testing.T) {

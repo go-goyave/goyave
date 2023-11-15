@@ -42,7 +42,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", false)
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -73,7 +73,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", false)
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -104,7 +104,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", false)
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -143,7 +143,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", true)
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -185,7 +185,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", false)
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -207,7 +207,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", true)
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -228,7 +228,7 @@ func TestMiddleware(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", false)
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
 		buffer := bytes.NewBufferString("")
 		server.Logger = slog.New(slog.NewHandler(false, buffer))
 
@@ -261,7 +261,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", true)
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))}, nil)
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts

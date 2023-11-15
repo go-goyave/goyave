@@ -48,7 +48,7 @@ type TestServer struct {
 // routes without starting the server.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
-func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goyave.Server, *goyave.Router)) *TestServer {
+func NewTestServer(t *testing.T, configFileName string) *TestServer {
 	rootDirectory := FindRootDirectory()
 	cfgPath := rootDirectory + configFileName
 	cfg, err := config.LoadFrom(cfgPath)
@@ -56,7 +56,7 @@ func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goy
 		panic(errors.New(err))
 	}
 
-	return NewTestServerWithOptions(t, goyave.Options{Config: cfg}, routeRegistrer)
+	return NewTestServerWithOptions(t, goyave.Options{Config: cfg})
 }
 
 // NewTestServerWithOptions creates a new server using the given options.
@@ -64,7 +64,7 @@ func NewTestServer(t *testing.T, configFileName string, routeRegistrer func(*goy
 // routes without starting the server.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
-func NewTestServerWithOptions(t *testing.T, opts goyave.Options, routeRegistrer func(*goyave.Server, *goyave.Router)) *TestServer {
+func NewTestServerWithOptions(t *testing.T, opts goyave.Options) *TestServer {
 	srv, err := goyave.New(opts)
 	if err != nil {
 		panic(err)
@@ -74,10 +74,6 @@ func NewTestServerWithOptions(t *testing.T, opts goyave.Options, routeRegistrer 
 	langDirectory := FindRootDirectory() + sep + "resources" + sep + "lang" + sep
 	if err := srv.Lang.LoadDirectory(&osfs.FS{}, langDirectory); err != nil {
 		panic(err)
-	}
-
-	if routeRegistrer != nil {
-		srv.RegisterRoutes(routeRegistrer)
 	}
 
 	s := &TestServer{srv}
@@ -157,7 +153,7 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // so all functions of `*goyave.Response` can be used safely.
 func NewTestResponse(request *goyave.Request) (*goyave.Response, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
-	return goyave.NewResponse(NewTestServerWithOptions(nil, goyave.Options{Config: config.LoadDefault()}, nil).Server, request, recorder), recorder
+	return goyave.NewResponse(NewTestServerWithOptions(nil, goyave.Options{Config: config.LoadDefault()}).Server, request, recorder), recorder
 }
 
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created

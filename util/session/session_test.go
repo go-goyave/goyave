@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 type testKey struct{}
@@ -71,7 +72,8 @@ func TestGormSession(t *testing.T) {
 		session := GORM(db, opts)
 
 		ctx := context.WithValue(context.Background(), testKey{}, "testvalue")
-		tx := session.Begin(ctx)
+		tx, err := session.Begin(ctx)
+		assert.NoError(t, err)
 		assert.NotEqual(t, session, tx)
 		assert.Equal(t, opts, tx.(Gorm).TxOptions)
 
@@ -123,7 +125,7 @@ func TestGormSession(t *testing.T) {
 			return fmt.Errorf("test err")
 		})
 		assert.Error(t, err)
-		assert.Equal(t, fmt.Errorf("test err"), err)
+		assert.Equal(t, errors.New(fmt.Errorf("test err")).Error(), err.Error())
 		assert.Equal(t, "testvalue", ctxValue)
 		assert.True(t, committer.rolledback)
 		assert.False(t, committer.committed)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // Session aims at facilitating business transactions while abstracting the underlying mechanism,
@@ -18,7 +19,7 @@ import (
 type Session interface {
 	// Begin returns a new session with the given context and a started transaction.
 	// Using the returned session should have no side-effect on the parent session.
-	Begin(ctx context.Context) Session
+	Begin(ctx context.Context) (Session, error)
 
 	// Transaction executes a transaction. If the given function returns an error, the transaction
 	// is rolled back. Otherwise it is automatically committed before `Transaction()` returns.
@@ -51,12 +52,13 @@ func GORM(db *gorm.DB, opt *sql.TxOptions) Gorm {
 // Begin returns a new session with the given context and a started DB transaction.
 // The returned session has manual controls. Make sure a call to `Rollback()` or `Commit()`
 // is executed before the session is expired (eligible for garbage collection).
-func (s Gorm) Begin(ctx context.Context) Session {
+func (s Gorm) Begin(ctx context.Context) (Session, error) {
+	tx := s.db.WithContext(ctx).Begin(s.TxOptions)
 	return Gorm{
 		ctx:       ctx,
 		TxOptions: s.TxOptions,
-		db:        s.db.WithContext(ctx).Begin(s.TxOptions),
-	}
+		db:        tx,
+	}, tx.Error
 }
 
 // Rollback the changes in the transaction. This action is final.
@@ -78,11 +80,15 @@ type dbKey struct{}
 // The Gorm DB associated with this session is injected into the context as a value so `session.DB()`
 // can be used to retrieve it.
 func (s Gorm) Transaction(ctx context.Context, f func(context.Context) error) error {
-	c := context.WithValue(ctx, dbKey{}, s.db.Begin(s.TxOptions))
+	tx := s.db.Begin(s.TxOptions)
+	if tx.Error != nil {
+		return errors.New(tx.Error)
+	}
+	c := context.WithValue(ctx, dbKey{}, tx)
 	err := f(c)
 	if err != nil {
 		_ = s.Rollback()
-		return err
+		return errors.New(err)
 	}
 	return s.Commit()
 }

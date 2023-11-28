@@ -19,17 +19,17 @@ func TestEmailValidator(t *testing.T) {
 
 	cases := []struct {
 		value     any
-		wantValue *mail.Address
+		wantValue string
 		want      bool
 	}{
-		{value: "johndoe@example.org", want: true, wantValue: &mail.Address{Address: "johndoe@example.org"}},
-		{value: &mail.Address{Address: "johndoe@example.org"}, want: true, wantValue: &mail.Address{Address: "johndoe@example.org"}},
-		{value: "johndoe+ext@example.org", want: true, wantValue: &mail.Address{Address: "johndoe+ext@example.org"}},
-		{value: "Barry Gibbs <bg@example.com>", want: true, wantValue: &mail.Address{Name: "Barry Gibbs", Address: "bg@example.com"}},
-		{value: "+@b.io", want: true, wantValue: &mail.Address{Address: "+@b.io"}},
-		{value: "a@b.io", want: true, wantValue: &mail.Address{Address: "a@b.io"}},
-		{value: "a@b", want: true, wantValue: &mail.Address{Address: "a@b"}},
-		{value: "a@b.c", want: true, wantValue: &mail.Address{Address: "a@b.c"}},
+		{value: "johndoe@example.org", want: true, wantValue: "johndoe@example.org"},
+		{value: &mail.Address{Address: "johndoe@example.org"}, want: true, wantValue: "johndoe@example.org"},
+		{value: "johndoe+ext@example.org", want: true, wantValue: "johndoe+ext@example.org"},
+		{value: "Barry Gibbs <bg@example.com>", want: true, wantValue: "bg@example.com"},
+		{value: "+@b.io", want: true, wantValue: "+@b.io"},
+		{value: "a@b.io", want: true, wantValue: "a@b.io"},
+		{value: "a@b", want: true, wantValue: "a@b"},
+		{value: "a@b.c", want: true, wantValue: "a@b.c"},
 		{value: "string", want: false},
 		{value: "", want: false},
 		{value: 'a', want: false},

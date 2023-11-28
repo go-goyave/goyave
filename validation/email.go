@@ -12,14 +12,15 @@ import "net/mail"
 // This validator is not enough in itself to properly validate an email address.
 // The only way to ensure an email address is valid is by sending a confirmation email.
 //
-// On successful validation, converts the value to `*mail.Address`.
+// On successful validation, converts the value to `string`.
 type EmailValidator struct {
 	BaseValidator
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *EmailValidator) Validate(ctx *Context) bool {
-	if _, ok := ctx.Value.(*mail.Address); ok {
+	if addr, ok := ctx.Value.(*mail.Address); ok {
+		ctx.Value = addr.Address
 		return true
 	}
 	val, ok := ctx.Value.(string)
@@ -27,11 +28,10 @@ func (v *EmailValidator) Validate(ctx *Context) bool {
 		return false
 	}
 
-	email, err := mail.ParseAddress(val)
+	addr, err := mail.ParseAddress(val)
 	if err == nil {
-		ctx.Value = email
+		ctx.Value = addr.Address
 	}
-
 	return err == nil
 }
 
@@ -53,7 +53,7 @@ func (v *EmailValidator) Name() string { return "email" }
 // This validator is not enough in itself to properly validate an email address.
 // The only way to ensure an email address is valid is by sending a confirmation email.
 //
-// On successful validation, converts the value to `*mail.Address`.
+// On successful validation, converts the value to `string`.
 func Email() *EmailValidator {
 	return &EmailValidator{}
 }

@@ -87,10 +87,14 @@ func (s Gorm) Transaction(ctx context.Context, f func(context.Context) error) er
 	c := context.WithValue(ctx, dbKey{}, tx)
 	err := f(c)
 	if err != nil {
-		_ = s.Rollback()
+		tx.Rollback()
 		return errors.New(err)
 	}
-	return s.Commit()
+	err = tx.Commit().Error
+	if err != nil {
+		return errors.New(err)
+	}
+	return nil
 }
 
 // DB returns the Gorm instance stored in the given context. Returns the given fallback

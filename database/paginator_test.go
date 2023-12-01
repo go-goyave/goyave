@@ -70,8 +70,8 @@ func TestPaginator(t *testing.T) {
 		assert.Equal(t, 5, p.PageSize)
 		assert.Equal(t, &articles, p.Records)
 
-		res := p.UpdatePageInfo()
-		assert.NoError(t, res.Error)
+		err := p.UpdatePageInfo()
+		assert.NoError(t, err)
 
 		assert.Equal(t, int64(11), p.Total)
 		assert.Equal(t, int64(3), p.MaxPage)
@@ -88,8 +88,8 @@ func TestPaginator(t *testing.T) {
 		assert.Equal(t, 5, p.PageSize)
 		assert.Equal(t, &articles, p.Records)
 
-		res := p.Find()
-		assert.NoError(t, res.Error)
+		err := p.Find()
+		assert.NoError(t, err)
 
 		assert.Equal(t, int64(11), p.Total)
 		assert.Equal(t, int64(3), p.MaxPage)
@@ -115,13 +115,38 @@ func TestPaginator(t *testing.T) {
 		articles := []*TestArticle{}
 		p := NewPaginator(db, 2, 5, &articles)
 
-		res := p.Find()
-		assert.NoError(t, res.Error)
+		err = p.Find()
+		assert.NoError(t, err)
 
 		assert.Equal(t, int64(0), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
 		assert.True(t, p.loadedPageInfo)
 		assert.Empty(t, *p.Records)
+	})
+
+	t.Run("UpdatePageInfo_error", func(t *testing.T) {
+		db, _ := preparePaginatorTestDB()
+		articles := []*TestArticle{}
+
+		db = db.Where("not_a_column", 1)
+		p := NewPaginator(db, 2, 5, &articles)
+
+		err := p.Find() // updatePageInfo is called because the page info is not called yet
+		assert.Error(t, err)
+		assert.False(t, p.loadedPageInfo)
+	})
+
+	t.Run("Find_error", func(t *testing.T) {
+		db, _ := preparePaginatorTestDB()
+		articles := []*TestArticle{}
+
+		db = db.Where("not_a_column", 1)
+		p := NewPaginator(db, 2, 5, &articles)
+		p.loadedPageInfo = true // Let's assume the page info has already been loaded
+
+		err := p.Find()
+		assert.Error(t, err)
+		assert.False(t, p.loadedPageInfo) // Page info invalidated
 	})
 
 	t.Run("select_where_preload", func(t *testing.T) {
@@ -131,8 +156,8 @@ func TestPaginator(t *testing.T) {
 		db = db.Select("id", "title", "author_id").Where("id > ?", 9).Preload("Author")
 		p := NewPaginator(db, 1, 5, &articles)
 
-		res := p.Find()
-		assert.NoError(t, res.Error)
+		err := p.Find()
+		assert.NoError(t, err)
 
 		assert.Equal(t, int64(2), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
@@ -157,8 +182,8 @@ func TestPaginator(t *testing.T) {
 		countQuery := `SELECT COUNT(*) FROM test_articles WHERE id > ?`
 		assert.Equal(t, p, p.Raw(query, queryVars, countQuery, queryVars))
 
-		res := p.Find()
-		assert.NoError(t, res.Error)
+		err := p.Find()
+		assert.NoError(t, err)
 
 		assert.Equal(t, int64(2), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
@@ -174,8 +199,8 @@ func TestPaginator(t *testing.T) {
 		articles = []*TestArticle{}
 		p = NewPaginator(db, 2, 5, &articles)
 		p.Raw(query, queryVars, countQuery, queryVars)
-		res = p.Find()
-		assert.NoError(t, res.Error)
+		err = p.Find()
+		assert.NoError(t, err)
 		assert.Equal(t, int64(2), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
 		assert.True(t, p.loadedPageInfo)

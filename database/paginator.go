@@ -5,6 +5,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // Paginator structure containing pagination information and result records.
@@ -76,11 +77,9 @@ func (p *Paginator[T]) Raw(query string, vars []any, countQuery string, countVar
 	return p
 }
 
-// UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
-// Returns the executed statement, which may contain an error.
-func (p *Paginator[T]) UpdatePageInfo() *gorm.DB {
+func (p *Paginator[T]) updatePageInfo(db *gorm.DB) error {
 	count := int64(0)
-	db := p.DB.Session(&gorm.Session{})
+	db = db.Session(&gorm.Session{})
 	prevPreloads := db.Statement.Preloads
 	if len(prevPreloads) > 0 {
 		db.Statement.Preloads = map[string][]any{}
@@ -103,7 +102,7 @@ func (p *Paginator[T]) UpdatePageInfo() *gorm.DB {
 		res = db.Model(p.Records).Count(&count)
 	}
 	if res.Error != nil {
-		return res
+		return errors.New(res.Error)
 	}
 	p.Total = count
 	p.MaxPage = int64(math.Ceil(float64(count) / float64(p.PageSize)))
@@ -111,32 +110,49 @@ func (p *Paginator[T]) UpdatePageInfo() *gorm.DB {
 		p.MaxPage = 1
 	}
 	p.loadedPageInfo = true
-	return res
+	return nil
 }
 
-// Find requests page information (total records and max page) and
-// executes the transaction. The Paginate struct is updated automatically, as
-// well as the destination slice given in `NewPaginator()`.
+// UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
+// When calling this function manually, it is advised to use a transaction that is calling
+// `Find()` too, to avoid inconsistencies.
+func (p *Paginator[T]) UpdatePageInfo() error {
+	return p.updatePageInfo(p.DB)
+}
+
+// Find requests page information (total records and max page) if not already fetched using
+// `UpdatePageInfo()` and executes the query. The `Paginator` struct is updated automatically,
+// as well as the destination slice given in `NewPaginator()`.
 //
-// Returns the executed statement, which may contain an error.
-func (p *Paginator[T]) Find() *gorm.DB {
-	if !p.loadedPageInfo {
-		res := p.UpdatePageInfo()
-		if res.Error != nil {
-			return res
+// The two queries are executed inside a transaction.
+func (p *Paginator[T]) Find() error {
+	return p.DB.Transaction(func(tx *gorm.DB) error {
+		if !p.loadedPageInfo {
+			err := p.updatePageInfo(tx)
+			if err != nil {
+				return errors.New(err)
+			}
 		}
-	}
-	if p.rawQuery != "" {
-		return p.rawStatement().Scan(p.Records)
-	}
-	return p.DB.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records)
+
+		var err error
+		if p.rawQuery != "" {
+			err = p.rawStatement(tx).Scan(p.Records).Error
+		} else {
+			err = tx.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records).Error
+		}
+		if err != nil {
+			p.loadedPageInfo = false // Invalidate previous page info.
+			return errors.New(err)
+		}
+		return nil
+	})
 }
 
-func (p *Paginator[T]) rawStatement() *gorm.DB {
+func (p *Paginator[T]) rawStatement(tx *gorm.DB) *gorm.DB {
 	offset := (p.CurrentPage - 1) * p.PageSize
-	db := p.DB.Raw(p.rawQuery, p.rawQueryVars...)
+	rawStatement := tx.Raw(p.rawQuery, p.rawQueryVars...)
 	pageSize := p.PageSize
-	db.Statement.SQL.WriteString(" ")
-	clause.Limit{Limit: &pageSize, Offset: offset}.Build(db.Statement)
-	return db
+	rawStatement.Statement.SQL.WriteString(" ")
+	clause.Limit{Limit: &pageSize, Offset: offset}.Build(rawStatement.Statement)
+	return rawStatement
 }

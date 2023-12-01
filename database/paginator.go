@@ -126,7 +126,7 @@ func (p *Paginator[T]) UpdatePageInfo() error {
 //
 // The two queries are executed inside a transaction.
 func (p *Paginator[T]) Find() error {
-	return p.DB.Transaction(func(tx *gorm.DB) error {
+	return p.DB.Session(&gorm.Session{}).Transaction(func(tx *gorm.DB) error {
 		if !p.loadedPageInfo {
 			err := p.updatePageInfo(tx)
 			if err != nil {

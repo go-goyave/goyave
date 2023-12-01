@@ -134,15 +134,14 @@ func (p *Paginator[T]) Find() error {
 			}
 		}
 
-		var err error
 		if p.rawQuery != "" {
-			err = p.rawStatement(tx).Scan(p.Records).Error
+			p.DB = p.rawStatement(tx).Scan(p.Records)
 		} else {
-			err = tx.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records).Error
+			p.DB = tx.Scopes(paginateScope(p.CurrentPage, p.PageSize)).Find(p.Records)
 		}
-		if err != nil {
+		if p.DB.Error != nil {
 			p.loadedPageInfo = false // Invalidate previous page info.
-			return errors.New(err)
+			return errors.New(p.DB.Error)
 		}
 		return nil
 	})

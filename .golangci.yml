@@ -26,6 +26,10 @@ linters:
     - govet
     - unused
     - errcheck
+    - exportloopref
+    - gosimple
+    - ineffassign
+    - staticcheck
   disable-all: false
   fast: false
 

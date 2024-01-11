@@ -14,11 +14,15 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	_ "embed"
 
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
+
+	stderrors "errors"
 )
 
 func deleteFile(path string) {
@@ -243,8 +247,52 @@ func TestParseMultipartFiles(t *testing.T) {
 //go:embed osfs
 var resources embed.FS
 
+type testStatFS struct {
+	embed.FS
+}
+
+type mockFileInfo struct{}
+
+func (fs *mockFileInfo) Name() string       { return "" }
+func (fs *mockFileInfo) Size() int64        { return 0 }
+func (fs *mockFileInfo) Mode() fs.FileMode  { return 0 }
+func (fs *mockFileInfo) ModTime() time.Time { return time.Now() }
+func (fs *mockFileInfo) Sys() any           { return nil }
+func (fs *mockFileInfo) IsDir() bool        { return false }
+
+func (t testStatFS) Stat(_ string) (fileinfo fs.FileInfo, err error) {
+	return &mockFileInfo{}, nil
+}
+
+type mockFile struct {
+	name string
+}
+
+func (f *mockFile) Stat() (fs.FileInfo, error) { return nil, nil }
+func (f *mockFile) Read(_ []byte) (int, error) { return 0, nil }
+func (f *mockFile) Close() error               { return nil }
+
+type mockDirEntry struct{}
+
+func (f *mockDirEntry) Name() string               { return "" }
+func (f *mockDirEntry) IsDir() bool                { return false }
+func (f *mockDirEntry) Type() fs.FileMode          { return 0 }
+func (f *mockDirEntry) Info() (fs.FileInfo, error) { return &mockFileInfo{}, nil }
+
+type mockFS struct{}
+
+func (e mockFS) Open(name string) (fs.File, error) {
+	return &mockFile{
+		name: name,
+	}, nil
+}
+
+func (e mockFS) ReadDir(_ string) ([]fs.DirEntry, error) {
+	return []fs.DirEntry{&mockDirEntry{}}, nil
+}
+
 func TestEmbed(t *testing.T) {
-	e := Embed{FS: resources}
+	e := NewEmbed(resources)
 
 	stat, err := e.Stat("osfs/osfs.go")
 	if !assert.NoError(t, err) {
@@ -256,9 +304,57 @@ func TestEmbed(t *testing.T) {
 	stat, err = e.Stat("notadir/osfs.go")
 	assert.Nil(t, stat)
 	if assert.NotNil(t, err) {
-		e, ok := err.(*fs.PathError)
-		assert.True(t, ok)
-		assert.Equal(t, "open", e.Op)
-		assert.Equal(t, "notadir/osfs.go", e.Path)
+		e, ok := err.(*errors.Error)
+		if assert.True(t, ok) {
+			var fsErr *fs.PathError
+			if assert.True(t, stderrors.As(e, &fsErr)) {
+				assert.Equal(t, "open", fsErr.Op)
+				assert.Equal(t, "notadir/osfs.go", fsErr.Path)
+			}
+		}
 	}
+
+	// Make it so the underlying FS implements
+	e.FS = testStatFS{resources}
+	stat, err = e.Stat("osfs/osfs.go")
+	if !assert.NoError(t, err) {
+		return
+	}
+	_, ok := stat.(*mockFileInfo)
+	assert.True(t, ok)
+
+	t.Run("Open", func(t *testing.T) {
+		e := NewEmbed(&mockFS{})
+
+		f, err := e.Open("")
+		assert.NoError(t, err)
+		_, ok := f.(*mockFile)
+		assert.True(t, ok)
+	})
+	t.Run("ReadDir", func(t *testing.T) {
+		e := NewEmbed(&mockFS{})
+
+		f, err := e.ReadDir("")
+		assert.NoError(t, err)
+		if assert.Len(t, f, 1) {
+			_, ok := f[0].(*mockDirEntry)
+			assert.True(t, ok)
+		}
+	})
+}
+
+func TestEmbedSub(t *testing.T) {
+	t.Run("err", func(t *testing.T) {
+		e := NewEmbed(resources)
+		sub, err := e.Sub("..")
+		assert.Equal(t, Embed{}, sub)
+		assert.Error(t, err)
+	})
+
+	t.Run("Valid", func(t *testing.T) {
+		e := NewEmbed(resources)
+		sub, err := e.Sub("osfs.go") // It is valid to do this
+		assert.NotNil(t, sub.FS)
+		assert.NoError(t, err)
+	})
 }

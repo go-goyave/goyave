@@ -33,18 +33,18 @@ func New() *Languages {
 	return l
 }
 
-// LoadAllAvailableLanguages loads every language directory
-// in the "resources/lang" directory if it exists.
+// LoadAllAvailableLanguages loads every available language directory.
+// If the given FS implements `fsutil.WorkingDirFS`, the directory
+// used will be "<working directory>/resources/lang".
 func (l *Languages) LoadAllAvailableLanguages(fs fsutil.FS) error {
-	prefix := ""
+	langDirectory := "."
 	if wd, ok := fs.(fsutil.WorkingDirFS); ok {
 		workingDir, err := wd.Getwd()
 		if err != nil {
 			return errors.New(err)
 		}
-		prefix = workingDir + "/"
+		langDirectory = workingDir + "/resources/lang"
 	}
-	langDirectory := prefix + "resources/lang"
 	return l.LoadDirectory(fs, langDirectory)
 }
 
@@ -62,7 +62,8 @@ func (l *Languages) LoadDirectory(fs fsutil.FS, directory string) error {
 
 	for _, f := range files {
 		if f.IsDir() {
-			if err := l.load(fs, f.Name(), directory+"/"+f.Name()); err != nil {
+			path := lo.Ternary(directory == ".", f.Name(), directory+"/"+f.Name())
+			if err := l.load(fs, f.Name(), path); err != nil {
 				return err
 			}
 		}

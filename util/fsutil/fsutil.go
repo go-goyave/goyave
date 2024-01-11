@@ -1,7 +1,6 @@
 package fsutil
 
 import (
-	"embed"
 	"io"
 	"io/fs"
 	"net/http"
@@ -181,16 +180,46 @@ type RemoveFS interface {
 	RemoveAll(path string) error
 }
 
-// Embed is an extension of `embed.FS` implementing `fs.StatFS`.
+// Embed is an extension of aimed at improving `embed.FS` by
+// implementing `fs.StatFS` and a `Sub()` function.
 type Embed struct {
-	embed.FS
+	FS fs.ReadDirFS
+}
+
+// NewEmbed returns a new Embed with the given FS.
+func NewEmbed(fs fs.ReadDirFS) Embed {
+	return Embed{
+		FS: fs,
+	}
+}
+
+// Open opens the named file.
+//
+// When Open returns an error, it should be of type *PathError
+// with the Op field set to "open", the Path field set to name,
+// and the Err field describing the problem.
+//
+// Open should reject attempts to open names that do not satisfy
+// ValidPath(name), returning a *PathError with Err set to
+// ErrInvalid or ErrNotExist.
+func (e Embed) Open(name string) (fs.File, error) {
+	return e.FS.Open(name)
+}
+
+// ReadDir reads the named directory
+// and returns a list of directory entries sorted by filename.
+func (e Embed) ReadDir(name string) ([]fs.DirEntry, error) {
+	return e.FS.ReadDir(name)
 }
 
 // Stat returns a FileInfo describing the file.
 func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
+	if statsFS, ok := e.FS.(fs.StatFS); ok {
+		return statsFS.Stat(name)
+	}
 	f, err := e.FS.Open(name)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 	defer func() {
 		e := f.Close()
@@ -201,4 +230,18 @@ func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
 
 	fileinfo, err = f.Stat()
 	return
+}
+
+// Sub returns an Embed FS corresponding to the subtree rooted at dir.
+// Returns and error if the underlying sub FS doesn't implement `fs.ReadDirFS`.
+func (e Embed) Sub(dir string) (Embed, error) {
+	sub, err := fs.Sub(e.FS, dir)
+	if err != nil {
+		return Embed{}, errors.NewSkip(err, 3)
+	}
+	subFS, ok := sub.(fs.ReadDirFS)
+	if !ok {
+		return Embed{}, errors.NewSkip("fsutil.Embed: cannot Sub, underlying sub FS doesn't implement fsutil.FS", 3)
+	}
+	return Embed{FS: subFS}, nil
 }

@@ -120,10 +120,12 @@ func TestServer(t *testing.T) {
 		cfg.Set("database.options", "mode=memory")
 
 		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
+		langEmbed, err := fsutil.NewEmbed(resources).Sub("resources/lang")
+		assert.NoError(t, err)
 		opts := Options{
 			Config: cfg,
 			Logger: logger,
-			LangFS: fsutil.Embed{FS: resources},
+			LangFS: langEmbed,
 		}
 
 		server, err := New(opts)
@@ -137,6 +139,8 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "test_with_config", server.Config().GetString("app.name"))
 		assert.Equal(t, logger, server.Logger)
 		assert.ElementsMatch(t, []string{"en-US", "en-UK"}, server.Lang.GetAvailableLanguages())
+		assert.Equal(t, "load US", server.Lang.Get("en-US", "test-load"))
+		assert.Equal(t, "load UK", server.Lang.Get("en-UK", "test-load"))
 		assert.NotNil(t, server.DB())
 
 		assert.Nil(t, server.CloseDB())

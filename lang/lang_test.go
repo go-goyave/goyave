@@ -74,6 +74,7 @@ func (suite *LangTestSuite) TestLoad() {
 		lines: map[string]string{
 			"malformed-request": "Malformed request",
 			"malformed-json":    "Malformed JSON",
+			"test-load":         "load UK",
 		},
 		validation: validationLines{
 			rules:  map[string]string{},
@@ -93,6 +94,7 @@ func (suite *LangTestSuite) TestLoad() {
 			"custom-line":       "Custom line",
 			"placeholder":       "Line with :placeholders",
 			"many-placeholders": "Line with :count :placeholders",
+			"test-load":         "load US",
 		},
 		validation: validationLines{
 			rules: map[string]string{

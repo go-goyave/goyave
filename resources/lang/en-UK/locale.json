@@ -1,4 +1,5 @@
 {
     "malformed-request": "Malformed request",
-    "malformed-json": "Malformed JSON"
+    "malformed-json": "Malformed JSON",
+    "test-load": "load UK"
 }

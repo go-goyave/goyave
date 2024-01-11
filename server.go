@@ -24,6 +24,9 @@ import (
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
+// serverKey is a context key used to store the server instance into its base context.
+type serverKey struct{}
+
 // Options represent server creation options.
 type Options struct {
 
@@ -41,6 +44,40 @@ type Options struct {
 	// a `resources/lang` directory.
 	// If not provided, uses `osfs.FS` as a default.
 	LangFS fsutil.FS
+
+	// ConnState specifies an optional callback function that is
+	// called when a client connection changes state. See the
+	// `http.ConnState` type and associated constants for details.
+	ConnState func(net.Conn, http.ConnState)
+
+	// Context optionnally defines a function that returns the base context
+	// for the server. It will be used as base context for all incoming requests.
+	//
+	// The provided `net.Listener` is the specific Listener that's
+	// about to start accepting requests.
+	//
+	// If not given, the default is `context.Background()`.
+	//
+	// The context returned then has a the server instance added to it as a value.
+	// The server can thus be retrieved using `goyave.ServerFromContext(ctx)`.
+	//
+	// If the context is canceled, the server won't shut down automatically, you are
+	// responsible of calling `server.Stop()` if you want this to happen. Otherwise the
+	// server will continue serving requests, at the risk of generating "context canceled" errors.
+	BaseContext func(net.Listener) context.Context
+
+	// ConnContext optionally specifies a function that modifies
+	// the context used for a new connection `c`. The provided context
+	// is derived from the base context and has the server instance value, which can
+	// be retrieved using `goyave.ServerFromContext(ctx)`.
+	ConnContext func(ctx context.Context, c net.Conn) context.Context
+
+	// MaxHeaderBytes controls the maximum number of bytes the
+	// server will read parsing the request header's keys and
+	// values, including the request line. It does not limit the
+	// size of the request body.
+	// If zero, DefaultMaxHeaderBytes is used.
+	MaxHeaderBytes int
 }
 
 // Server the central component of a Goyave application.
@@ -65,6 +102,8 @@ type Server struct {
 	stopChannel chan struct{}
 	sigChannel  chan os.Signal
 
+	ctx           context.Context
+	baseContext   func(net.Listener) context.Context
 	startupHooks  []func(*Server)
 	shutdownHooks []func(*Server)
 
@@ -112,7 +151,12 @@ func New(opts Options) (*Server, error) {
 			ReadTimeout:       time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
 			ReadHeaderTimeout: time.Duration(cfg.GetInt("server.readHeaderTimeout")) * time.Second,
 			IdleTimeout:       time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
+			ConnState:         opts.ConnState,
+			ConnContext:       opts.ConnContext,
+			MaxHeaderBytes:    opts.MaxHeaderBytes,
 		},
+		ctx:           context.Background(),
+		baseContext:   opts.BaseContext,
 		config:        cfg,
 		services:      make(map[string]Service),
 		Lang:          languages,
@@ -123,6 +167,7 @@ func New(opts Options) (*Server, error) {
 		port:          port, // TODO document using 0 as port will auto assign an available port
 		Logger:        slogger,
 	}
+	server.server.BaseContext = server.internalBaseContext
 	server.refreshURLs()
 	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
 
@@ -137,6 +182,10 @@ func New(opts Options) (*Server, error) {
 	server.router = NewRouter(server)
 	server.server.Handler = server.router
 	return server, nil
+}
+
+func (s *Server) internalBaseContext(_ net.Listener) context.Context {
+	return s.ctx
 }
 
 func (s *Server) getAddress(cfg *config.Config) string {
@@ -365,6 +414,21 @@ func (s *Server) Start() error {
 	if err != nil {
 		return errors.New(err)
 	}
+	baseCtx := context.Background()
+	if s.baseContext != nil {
+		baseCtx = s.baseContext(ln)
+		if baseCtx == nil {
+			panic("server options BaseContext returned a nil context")
+		}
+	}
+	s.ctx = context.WithValue(baseCtx, serverKey{}, s)
+
+	select {
+	case <-s.ctx.Done():
+		return errors.New("cannot start the server, context is canceled")
+	default:
+	}
+
 	s.port = ln.Addr().(*net.TCPAddr).Port
 	s.refreshURLs()
 	defer func() {
@@ -466,4 +530,15 @@ type errLogWriter struct {
 func (w errLogWriter) Write(p []byte) (n int, err error) {
 	w.server.Logger.Error(fmt.Errorf("%s", p))
 	return len(p), nil
+}
+
+// ServerFromContext returns the `*goyave.Server` stored in the given context or `nil`.
+// This is safe to call using any context retrieved from incoming HTTP requests as this value
+// is automatically injected when the server is created.
+func ServerFromContext(ctx context.Context) *Server {
+	s, ok := ctx.Value(serverKey{}).(*Server)
+	if !ok {
+		return nil
+	}
+	return s
 }

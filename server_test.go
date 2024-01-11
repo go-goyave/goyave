@@ -2,9 +2,11 @@ package goyave
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -55,7 +57,12 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		s, err := New(Options{})
+		s, err := New(Options{
+			MaxHeaderBytes: 123,
+			ConnState:      func(_ net.Conn, _ http.ConnState) {},
+			BaseContext:    func(_ net.Listener) context.Context { return context.Background() },
+			ConnContext:    func(ctx context.Context, _ net.Conn) context.Context { return ctx },
+		})
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -73,6 +80,11 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, 10*time.Second, s.server.ReadTimeout)
 		assert.Equal(t, 10*time.Second, s.server.ReadHeaderTimeout)
 		assert.Equal(t, 20*time.Second, s.server.IdleTimeout)
+		assert.Equal(t, 123, s.server.MaxHeaderBytes)
+		assert.NotNil(t, s.server.ConnState)
+		assert.NotNil(t, s.server.ConnContext)
+		assert.NotNil(t, s.baseContext)
+		assert.NotNil(t, s.server.BaseContext)
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", s.ProxyBaseURL())
 		assert.Nil(t, s.CloseDB())
@@ -507,6 +519,114 @@ func TestServer(t *testing.T) {
 		wg.Wait()
 		assert.False(t, server.IsReady())
 	})
+
+	t.Run("Context", func(t *testing.T) {
+		type baseContextKey struct{}
+		type connContextKey struct{}
+
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		server, err := New(Options{
+			Config: cfg,
+			BaseContext: func(_ net.Listener) context.Context {
+				return context.WithValue(context.Background(), baseContextKey{}, "base-ctx-value")
+			},
+			ConnContext: func(ctx context.Context, _ net.Conn) context.Context {
+				return context.WithValue(ctx, connContextKey{}, "conn-ctx-value")
+			},
+		})
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		startupHookExecuted := true
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		server.RegisterStartupHook(func(s *Server) {
+			// Should be executed when the server is ready
+			startupHookExecuted = true
+
+			assert.True(t, server.IsReady())
+
+			res, err := http.Get(s.BaseURL())
+			if !assert.NoError(t, err) {
+				return
+			}
+			respBody, err := io.ReadAll(res.Body)
+			if !assert.NoError(t, err) {
+				return
+			}
+			_ = res.Body.Close()
+			assert.Equal(t, []byte(fmt.Sprintf("%v|%v", "base-ctx-value", "conn-ctx-value")), respBody)
+
+			// Stop the server, goroutine should return
+			server.Stop()
+			wg.Done()
+		})
+
+		server.RegisterRoutes(func(s *Server, router *Router) {
+			router.Get("/", func(r *Response, req *Request) {
+				ctx := req.Context()
+				assert.Equal(t, server, ServerFromContext(ctx))
+				r.String(http.StatusOK, fmt.Sprintf("%v|%v", ctx.Value(baseContextKey{}), ctx.Value(connContextKey{})))
+			}).Name("base")
+		})
+
+		go func() {
+			err := server.Start()
+			assert.Nil(t, err)
+			wg.Done()
+		}()
+
+		wg.Wait()
+		assert.True(t, startupHookExecuted)
+		assert.False(t, server.IsReady())
+		assert.Equal(t, uint32(3), atomic.LoadUint32(&server.state))
+	})
+
+	t.Run("NilBaseContext", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		server, err := New(Options{
+			Config: cfg,
+			BaseContext: func(_ net.Listener) context.Context {
+				return nil
+			},
+		})
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		assert.Panics(t, func() {
+			_ = server.Start()
+		})
+	})
+
+	t.Run("StartServerWithCanceledContext", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		server, err := New(Options{
+			Config: cfg,
+			BaseContext: func(_ net.Listener) context.Context {
+				return ctx
+			},
+		})
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		err = server.Start()
+		if assert.Error(t, err) {
+			assert.Equal(t, "cannot start the server, context is canceled", err.Error())
+		}
+	})
+}
+
+func TestNoServerFromContext(t *testing.T) {
+	assert.Nil(t, ServerFromContext(context.Background()))
 }
 
 func TestErrLogWriter(t *testing.T) {

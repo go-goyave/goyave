@@ -107,10 +107,11 @@ func New(opts Options) (*Server, error) {
 
 	server := &Server{
 		server: &http.Server{
-			Addr:         host,
-			WriteTimeout: time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
-			ReadTimeout:  time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
-			IdleTimeout:  time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
+			Addr:              host,
+			WriteTimeout:      time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
+			ReadTimeout:       time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
+			ReadHeaderTimeout: time.Duration(cfg.GetInt("server.readHeaderTimeout")) * time.Second,
+			IdleTimeout:       time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
 		},
 		config:        cfg,
 		services:      make(map[string]Service),

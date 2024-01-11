@@ -15,6 +15,7 @@ var configDefaults = object{
 		"port":                  &Entry{8080, []any{}, reflect.Int, false},
 		"writeTimeout":          &Entry{10, []any{}, reflect.Int, false},
 		"readTimeout":           &Entry{10, []any{}, reflect.Int, false},
+		"readHeaderTimeout":     &Entry{10, []any{}, reflect.Int, false},
 		"idleTimeout":           &Entry{20, []any{}, reflect.Int, false},
 		"websocketCloseTimeout": &Entry{10, []any{}, reflect.Int, false},
 		"maxUploadSize":         &Entry{10.0, []any{}, reflect.Float64, false},

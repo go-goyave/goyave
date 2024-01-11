@@ -71,6 +71,7 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "127.0.0.1:8080", s.server.Addr)
 		assert.Equal(t, 10*time.Second, s.server.WriteTimeout)
 		assert.Equal(t, 10*time.Second, s.server.ReadTimeout)
+		assert.Equal(t, 10*time.Second, s.server.ReadHeaderTimeout)
 		assert.Equal(t, 20*time.Second, s.server.IdleTimeout)
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", s.ProxyBaseURL())

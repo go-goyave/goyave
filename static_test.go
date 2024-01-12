@@ -2,12 +2,14 @@ package goyave
 
 import (
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
@@ -18,21 +20,27 @@ func TestCleanStaticPath(t *testing.T) {
 		file      string
 		want      string
 	}{
-		{directory: "config", file: "index.html", want: "config/index.html"},
-		{directory: "config", file: "", want: "config/index.html"},
-		{directory: "config", file: "defaults.json", want: "config/defaults.json"},
-		{directory: "resources", file: "lang/en-US/locale.json", want: "resources/lang/en-US/locale.json"},
-		{directory: "resources", file: "/lang/en-US/locale.json", want: "resources/lang/en-US/locale.json"},
-		{directory: "resources", file: "img/logo", want: "resources/img/logo/index.html"},
-		{directory: "resources", file: "img/logo/", want: "resources/img/logo/index.html"},
-		{directory: "resources", file: "img", want: "resources/img/index.html"},
-		{directory: "resources", file: "img/", want: "resources/img/index.html"},
+		{directory: ".", file: "config/index.html", want: "config/index.html"},
+		{directory: ".", file: "config", want: "config/index.html"},
+		{directory: ".", file: "config/", want: "config/index.html"},
+		{directory: ".", file: "config/defaults.json", want: "config/defaults.json"},
+		{directory: "config", file: "index.html", want: "index.html"},
+		{directory: "config", file: "", want: "index.html"},
+		{directory: "config", file: "defaults.json", want: "defaults.json"},
+		{directory: "resources", file: "lang/en-US/locale.json", want: "lang/en-US/locale.json"},
+		{directory: "resources", file: "/lang/en-US/locale.json", want: "lang/en-US/locale.json"},
+		{directory: "resources", file: "img/logo", want: "img/logo/index.html"},
+		{directory: "resources", file: "img/logo/", want: "img/logo/index.html"},
+		{directory: "resources", file: "img", want: "img/index.html"},
+		{directory: "resources", file: "img/", want: "img/index.html"},
 	}
 
 	for _, c := range cases {
 		c := c
 		t.Run(c.want, func(t *testing.T) {
-			assert.Equal(t, c.want, cleanStaticPath(&osfs.FS{}, c.directory, c.file))
+			f, err := fs.Sub(&osfs.FS{}, c.directory)
+			assert.NoError(t, err)
+			assert.Equal(t, c.want, cleanStaticPath(fsutil.NewEmbed(f.(fs.ReadDirFS)), c.file))
 		})
 	}
 }
@@ -93,7 +101,9 @@ func TestStaticHandler(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			response := NewResponse(srv, request, recorder)
 
-			handler := staticHandler(&osfs.FS{}, c.directory, c.download)
+			f, err := fs.Sub(&osfs.FS{}, c.directory)
+			assert.NoError(t, err)
+			handler := staticHandler(fsutil.NewEmbed(f.(fs.ReadDirFS)), c.download)
 			handler(response, request)
 
 			result := recorder.Result()

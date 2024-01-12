@@ -405,8 +405,8 @@ func (r *Router) Options(uri string, handler Handler) *Route {
 //
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
-func (r *Router) Static(fs fs.StatFS, uri string, directory string, download bool) *Route {
-	return r.registerRoute([]string{http.MethodGet}, uri+"{resource:.*}", staticHandler(fs, directory, download))
+func (r *Router) Static(fs fs.StatFS, uri string, download bool) *Route {
+	return r.registerRoute([]string{http.MethodGet}, uri+"{resource:.*}", staticHandler(fs, download))
 }
 
 func (r *Router) registerRoute(methods []string, uri string, handler Handler) *Route {

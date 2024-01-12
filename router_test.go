@@ -3,6 +3,7 @@ package goyave
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
@@ -277,7 +279,9 @@ func TestRouter(t *testing.T) {
 
 	t.Run("Static", func(t *testing.T) {
 		router := prepareRouterTest()
-		route := router.Static(&osfs.FS{}, "/uri", "resources", false)
+		f, err := fs.Sub(&osfs.FS{}, "resources")
+		assert.NoError(t, err)
+		route := router.Static(fsutil.NewEmbed(f.(fs.ReadDirFS)), "/uri", false)
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
 		assert.Equal(t, []string{"resource"}, route.parameters)
 		assert.Equal(t, "/uri{resource:.*}", route.uri)

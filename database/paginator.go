@@ -79,20 +79,12 @@ func (p *Paginator[T]) Raw(query string, vars []any, countQuery string, countVar
 
 func (p *Paginator[T]) updatePageInfo(db *gorm.DB) error {
 	count := int64(0)
-	db = db.Session(&gorm.Session{})
-	prevPreloads := db.Statement.Preloads
-	if len(prevPreloads) > 0 {
+	db = db.Session(&gorm.Session{Initialized: true})
+	if len(db.Statement.Preloads) > 0 {
 		db.Statement.Preloads = map[string][]any{}
-		defer func() {
-			db.Statement.Preloads = prevPreloads
-		}()
 	}
-	prevSelects := db.Statement.Selects
-	if len(prevSelects) > 0 {
+	if len(db.Statement.Selects) > 0 {
 		db.Statement.Selects = []string{}
-		defer func() {
-			db.Statement.Selects = prevSelects
-		}()
 	}
 
 	var res *gorm.DB

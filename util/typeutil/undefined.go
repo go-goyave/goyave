@@ -87,7 +87,11 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 	}
 
 	if valuer, ok := any(u.Val).(driver.Valuer); ok {
-		return valuer.Value()
+		v, err := valuer.Value()
+		if err != nil {
+			err = errors.New(err)
+		}
+		return v, err
 	}
 	return u.Val, nil
 }

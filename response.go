@@ -312,6 +312,8 @@ func (r *Response) error(err any) {
 	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
 	if e != nil {
 		r.err = e.(*errorutil.Error)
+	} else {
+		r.err = nil
 	}
 
 	if r.server.Config().GetBool("app.debug") && r.IsEmpty() && !r.Hijacked() {

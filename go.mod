@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/Code-Hex/uniseg v0.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/samber/lo v1.39.0
 	github.com/stretchr/testify v1.8.4

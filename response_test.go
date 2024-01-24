@@ -341,6 +341,18 @@ func TestResponse(t *testing.T) {
 		)
 	})
 
+	t.Run("Error_no_debug_nil", func(t *testing.T) {
+		resp, _ := newTestReponse()
+		logBuffer := &bytes.Buffer{}
+		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+		resp.server.config.Set("app.debug", false)
+		resp.Error(nil)
+
+		e := resp.GetError()
+		assert.Nil(t, e)
+		assert.Equal(t, http.StatusInternalServerError, resp.status)
+	})
+
 	t.Run("Error_with_debug", func(t *testing.T) {
 		cases := []struct {
 			expectedLog     func(e *errorutil.Error) *regexp.Regexp
@@ -369,6 +381,9 @@ func TestResponse(t *testing.T) {
 					),
 				)
 			}},
+			{err: nil, expectedMessage: `null`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+				return regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"<nil>"}\n`)
+			}},
 		}
 
 		for _, c := range cases {
@@ -380,8 +395,15 @@ func TestResponse(t *testing.T) {
 			resp.Error(c.err)
 
 			e := resp.GetError()
-			if !assert.NotNil(t, e) {
-				return
+			switch c.err {
+			case nil:
+				if !assert.Nil(t, e) {
+					return
+				}
+			default:
+				if !assert.NotNil(t, e) {
+					return
+				}
 			}
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
 

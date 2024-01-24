@@ -23,28 +23,37 @@ type Error struct {
 	callerFrames FrameStack
 }
 
-// New create a new `Error`. Collects the function callers.
+// New create a new `*Error`. Collects the function callers.
 //
 // If the given reason is already of type `*Error`, returns it without change.
 // If the reason is a slice of `error`, joins them using std's `errors.Join`.
 //
+// If the given reason is `nil`, returns `nil`. If the reason is `[]error` or `[]any`,
+// the `nil` elements are ignored.
+//
 // If the reason is anything other than an `error`, `[]error`, `*Error`, `[]*Error`,
-// `[]any` or `nil`, it will be wrapped in a `Reason` structure, allowing to preserve
+// `[]any`, it will be wrapped in a `Reason` structure, allowing to preserve
 // its JSON marshaling behavior.
-func New(reason any) *Error {
+func New(reason any) error {
 	return NewSkip(reason, 3)
 }
 
-// NewSkip create a new `Error`. Collects the function callers, skipping the given
+// NewSkip create a new `*Error`. Collects the function callers, skipping the given
 // amount of frames.
 //
 // If the given reason is already of type `*Error`, returns it without change.
 // If the reason is a slice of `error`, joins them using std's `errors.Join`.
 //
+// If the given reason is `nil`, returns `nil`. If the reason is `[]error` or `[]any`,
+// the `nil` elements are ignored.
+//
 // If the reason is anything other than an `error`, `[]error`, `*Error`, `[]*Error`,
-// `[]any` or `nil`, it will be wrapped in a `Reason` structure, allowing to preserve
+// `[]any`, it will be wrapped in a `Reason` structure, allowing to preserve
 // its JSON marshaling behavior.
-func NewSkip(reason any, skip int) *Error {
+func NewSkip(reason any, skip int) error {
+	if reason == nil {
+		return nil
+	}
 	if r, ok := reason.(*Error); ok {
 		return r
 	}
@@ -58,7 +67,7 @@ func NewSkip(reason any, skip int) *Error {
 }
 
 // Errorf is a shortcut for `errors.New(fmt.Errorf("format", args))`.
-func Errorf(format string, args ...any) *Error {
+func Errorf(format string, args ...any) error {
 	return NewSkip(fmt.Errorf(format, args...), 3)
 }
 
@@ -68,17 +77,20 @@ func toErr(reason any) []error {
 	case error:
 		errs = append(errs, r)
 	case []error:
-		errs = append(errs, r...)
+		errs = append(errs, lo.Filter(r, func(e error, _ int) bool {
+			return e != nil
+		})...)
 	case []*Error:
 		for _, e := range r {
 			errs = append(errs, e)
 		}
 	case []any:
 		for _, e := range r {
+			if e == nil {
+				continue
+			}
 			errs = append(errs, toErr(e)...)
 		}
-	case nil:
-		errs = append(errs, nil)
 	default:
 		errs = append(errs, Reason{reason: r})
 	}

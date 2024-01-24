@@ -68,7 +68,11 @@ func (l *Logger) ErrorWithSource(ctx context.Context, source uintptr, err error,
 }
 
 func (l *Logger) logError(ctx context.Context, source uintptr, err error, args ...any) {
-	r := l.makeRecord(slog.LevelError, err.Error(), source, args...)
+	msg := "<nil>"
+	if err != nil {
+		msg = err.Error()
+	}
+	r := l.makeRecord(slog.LevelError, msg, source, args...)
 
 	if ctx == nil {
 		ctx = context.Background()

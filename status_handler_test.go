@@ -33,7 +33,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
-		resp.err = errors.New("test error")
+		resp.err = errors.New("test error").(*errors.Error)
 		handler.Handle(resp, req)
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
@@ -53,7 +53,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		handler := &PanicStatusHandler{}
 		handler.Init(resp.server)
 
-		resp.err = errors.New("test error")
+		resp.err = errors.New("test error").(*errors.Error)
 		handler.Handle(resp, req)
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)

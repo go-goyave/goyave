@@ -202,7 +202,7 @@ func (r *Response) IsHeaderWritten() bool {
 	return r.wroteHeader
 }
 
-// GetError return the error that occurred in the process of this response, or `nil`.
+// GetError return the `*errors.Error` that occurred in the process of this response, or `nil`.
 // The error can be set by:
 //   - Calling `Response.Error()`
 //   - The recovery middleware
@@ -310,7 +310,9 @@ func (r *Response) Error(err any) {
 
 func (r *Response) error(err any) {
 	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
-	r.err = e
+	if e != nil {
+		r.err = e.(*errorutil.Error)
+	}
 
 	if r.server.Config().GetBool("app.debug") && r.IsEmpty() && !r.Hijacked() {
 		status := http.StatusInternalServerError

@@ -192,6 +192,14 @@ func TestErrors(t *testing.T) {
 		res, err := reason.MarshalJSON()
 		assert.NoError(t, err)
 		assert.Equal(t, `{"key":"value"}`, string(res))
+	})
 
+	t.Run("Errorf", func(t *testing.T) {
+		wrappedErr := fmt.Errorf("wrapped error")
+		err := Errorf("reason %d %s %w", 1, "msg", wrappedErr)
+		assert.Equal(t, []error{fmt.Errorf("reason %d %s %w", 1, "msg", wrappedErr)}, err.reasons)
+		assert.Equal(t, 3, lo.CountBy(err.callers, func(c uintptr) bool {
+			return c != 0
+		}))
 	})
 }

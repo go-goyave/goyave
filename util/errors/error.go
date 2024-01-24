@@ -57,6 +57,11 @@ func NewSkip(reason any, skip int) *Error {
 	}
 }
 
+// Errorf is a shortcut for `errors.New(fmt.Errorf("format", args))`.
+func Errorf(format string, args ...any) *Error {
+	return NewSkip(fmt.Errorf(format, args...), 3)
+}
+
 func toErr(reason any) []error {
 	errs := []error{}
 	switch r := reason.(type) {

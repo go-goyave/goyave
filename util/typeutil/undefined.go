@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding"
 	"encoding/json"
-	"fmt"
 
 	"goyave.dev/copier"
 	"goyave.dev/goyave/v5/util/errors"
@@ -46,7 +45,7 @@ func NewUndefined[T any](val T) Undefined[T] {
 // On successful unmarshal of the underlying value, sets the `Present` field to `true`.
 func (u *Undefined[T]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &u.Val); err != nil {
-		return errors.New(fmt.Errorf("typeutil.Undefined: couldn't unmarshal JSON: %w", err))
+		return errors.Errorf("typeutil.Undefined: couldn't unmarshal JSON: %w", err)
 	}
 
 	u.Present = true
@@ -88,10 +87,7 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 
 	if valuer, ok := any(u.Val).(driver.Valuer); ok {
 		v, err := valuer.Value()
-		if err != nil {
-			err = errors.New(err)
-		}
-		return v, err
+		return v, errors.New(err)
 	}
 	return u.Val, nil
 }
@@ -102,7 +98,7 @@ func (u *Undefined[T]) Scan(src any) error {
 	u.Present = true
 
 	if scanner, ok := any(&u.Val).(sql.Scanner); ok {
-		return scanner.Scan(src)
+		return errors.New(scanner.Scan(src))
 	}
 
 	switch val := src.(type) {
@@ -116,7 +112,7 @@ func (u *Undefined[T]) Scan(src any) error {
 		u.Val = t
 	default:
 		var t T
-		return fmt.Errorf("typeutil.Undefined: Scan() incompatible types (src: %T, dst: %T)", src, t)
+		return errors.Errorf("typeutil.Undefined: Scan() incompatible types (src: %T, dst: %T)", src, t)
 	}
 	return nil
 }

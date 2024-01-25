@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"strconv"
@@ -54,7 +53,7 @@ func (e *Entry) validate(key string) error {
 			message = "%q type must be %s"
 		}
 
-		return errors.New(fmt.Errorf(message, key, e.Type))
+		return errors.Errorf(message, key, e.Type)
 	}
 
 	if len(e.AuthorizedValues) > 0 {
@@ -65,11 +64,11 @@ func (e *Entry) validate(key string) error {
 			length := list.Len()
 			for i := 0; i < length; i++ {
 				if !lo.Contains(e.AuthorizedValues, list.Index(i).Interface()) {
-					return errors.New(fmt.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues))
+					return errors.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
 				}
 			}
 		} else if !lo.Contains(e.AuthorizedValues, e.Value) {
-			return errors.New(fmt.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues))
+			return errors.Errorf("%q must have one of the following values: %v", key, e.AuthorizedValues)
 		}
 	}
 
@@ -150,7 +149,7 @@ func (e *Entry) tryEnvVarConversion(key string) error {
 		if err == nil && val != nil {
 
 			if e.IsSlice {
-				return errors.New(fmt.Errorf("%q is a slice entry, it cannot be loaded from env", key))
+				return errors.Errorf("%q is a slice entry, it cannot be loaded from env", key)
 			}
 
 			e.Value = val
@@ -166,7 +165,7 @@ func (e *Entry) convertEnvVar(str, key string) (any, error) {
 		varName := str[2 : len(str)-1]
 		value, set := os.LookupEnv(varName)
 		if !set {
-			return nil, errors.New(fmt.Errorf("%q: %q environment variable is not set", key, varName))
+			return nil, errors.Errorf("%q: %q environment variable is not set", key, varName)
 		}
 
 		switch e.Type {
@@ -174,17 +173,17 @@ func (e *Entry) convertEnvVar(str, key string) (any, error) {
 			if i, err := strconv.Atoi(value); err == nil {
 				return i, nil
 			}
-			return nil, errors.New(fmt.Errorf("%q could not be converted to int from environment variable %q of value %q", key, varName, value))
+			return nil, errors.Errorf("%q could not be converted to int from environment variable %q of value %q", key, varName, value)
 		case reflect.Float64:
 			if f, err := strconv.ParseFloat(value, 64); err == nil {
 				return f, nil
 			}
-			return nil, errors.New(fmt.Errorf("%q could not be converted to float64 from environment variable %q of value %q", key, varName, value))
+			return nil, errors.Errorf("%q could not be converted to float64 from environment variable %q of value %q", key, varName, value)
 		case reflect.Bool:
 			if b, err := strconv.ParseBool(value); err == nil {
 				return b, nil
 			}
-			return nil, errors.New(fmt.Errorf("%q could not be converted to bool from environment variable %q of value %q", key, varName, value))
+			return nil, errors.Errorf("%q could not be converted to bool from environment variable %q of value %q", key, varName, value)
 		default:
 			// Keep value as string if type is not supported and let validation do its job
 			return value, nil

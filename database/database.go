@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -27,12 +26,12 @@ func New(cfg *config.Config, logger func() *slog.Logger) (*gorm.DB, error) {
 	driver := cfg.GetString("database.connection")
 
 	if driver == "none" {
-		return nil, fmt.Errorf("Cannot create DB connection. Database is set to \"none\" in the config")
+		return nil, errorutil.Errorf("Cannot create DB connection. Database is set to \"none\" in the config")
 	}
 
 	dialect, ok := dialects[driver]
 	if !ok {
-		return nil, fmt.Errorf("DB Connection %q not supported, forgotten import?", driver)
+		return nil, errorutil.Errorf("DB Connection %q not supported, forgotten import?", driver)
 	}
 
 	dsn := dialect.buildDSN(cfg)
@@ -90,7 +89,7 @@ func initTimeoutPlugin(cfg *config.Config, db *gorm.DB) error {
 		ReadTimeout:  time.Duration(cfg.GetInt("database.defaultReadQueryTimeout")) * time.Millisecond,
 		WriteTimeout: time.Duration(cfg.GetInt("database.defaultWriteQueryTimeout")) * time.Millisecond,
 	}
-	return db.Use(timeoutPlugin)
+	return errorutil.New(db.Use(timeoutPlugin))
 }
 
 func initSQLDB(cfg *config.Config, db *gorm.DB) {

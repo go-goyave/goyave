@@ -237,7 +237,7 @@ func (s *Server) Service(name string) Service {
 	if s, ok := s.services[name]; ok {
 		return s
 	}
-	panic(errors.New(fmt.Errorf("service %q does not exist", name)))
+	panic(errors.Errorf("service %q does not exist", name))
 }
 
 // LookupService search for a service by its name. If the service
@@ -377,11 +377,7 @@ func (s *Server) CloseDB() error {
 	if err != nil {
 		return errors.New(err)
 	}
-	err = db.Close()
-	if err != nil {
-		err = errors.New(err)
-	}
-	return err
+	return errors.New(db.Close())
 }
 
 // Router returns the root router.

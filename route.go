@@ -209,7 +209,7 @@ func (r *Route) BuildURI(parameters ...string) string {
 	fullURI, fullParameters := r.GetFullURIAndParameters()
 
 	if len(parameters) != len(fullParameters) {
-		panic(errors.New(fmt.Errorf("BuildURI: route has %d parameters, %d given", len(fullParameters), len(parameters))))
+		panic(errors.Errorf("BuildURI: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
 	var builder strings.Builder

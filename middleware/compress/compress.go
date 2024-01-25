@@ -46,17 +46,14 @@ func (w *compressWriter) PreWrite(b []byte) {
 
 func (w *compressWriter) Write(b []byte) (int, error) {
 	n, err := w.WriteCloser.Write(b)
-	if err != nil {
-		err = errors.New(err)
-	}
-	return n, err
+	return n, errors.New(err)
 }
 
 func (w *compressWriter) Close() error {
-	err := w.WriteCloser.Close()
+	err := errors.New(w.WriteCloser.Close())
 
 	if wr, ok := w.childWriter.(io.Closer); ok {
-		return wr.Close()
+		return errors.New(wr.Close())
 	}
 
 	return err

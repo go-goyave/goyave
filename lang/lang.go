@@ -2,7 +2,6 @@ package lang
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/samber/lo"
@@ -86,7 +85,7 @@ func (l *Languages) Load(fs fsutil.FS, language, path string) error {
 		return l.load(fs, language, path)
 	}
 
-	return errors.New(fmt.Errorf("failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path))
+	return errors.Errorf("failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path)
 }
 
 func (l *Languages) load(fs fsutil.FS, lang string, path string) error {

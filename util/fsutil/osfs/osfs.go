@@ -4,6 +4,8 @@ import (
 	"io"
 	"io/fs"
 	"os"
+
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // FS implementation of `fsutil.FS` for the local OS file system.
@@ -14,7 +16,8 @@ type FS struct{}
 // descriptor has mode `O_RDONLY`.
 // If there is an error, it will be of type `*PathError“.
 func (FS) Open(name string) (fs.File, error) {
-	return os.Open(name)
+	f, err := os.Open(name)
+	return f, errors.NewSkip(err, 3)
 }
 
 // OpenFile is the generalized open call. It opens the named file with specified flag
@@ -23,7 +26,8 @@ func (FS) Open(name string) (fs.File, error) {
 // methods on the returned file can be used for I/O.
 // If there is an error, it will be of type `*PathError`.
 func (FS) OpenFile(path string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error) {
-	return os.OpenFile(path, flag, perm)
+	rwc, err := os.OpenFile(path, flag, perm)
+	return rwc, errors.NewSkip(err, 3)
 }
 
 // ReadDir reads the named directory,
@@ -32,13 +36,15 @@ func (FS) OpenFile(path string, flag int, perm fs.FileMode) (io.ReadWriteCloser,
 // ReadDir returns the entries it was able to read before the error,
 // along with the error.
 func (FS) ReadDir(name string) ([]fs.DirEntry, error) {
-	return os.ReadDir(name)
+	entries, err := os.ReadDir(name)
+	return entries, errors.NewSkip(err, 3)
 }
 
 // Stat returns a FileInfo describing the named file.
 // If there is an error, it will be of type `*PathError`.
 func (FS) Stat(name string) (fs.FileInfo, error) {
-	return os.Stat(name)
+	info, err := os.Stat(name)
+	return info, errors.NewSkip(err, 3)
 }
 
 // Getwd returns a rooted path name corresponding to the
@@ -46,7 +52,8 @@ func (FS) Stat(name string) (fs.FileInfo, error) {
 // reached via multiple paths (due to symbolic links),
 // Getwd may return any one of them.
 func (FS) Getwd() (string, error) {
-	return os.Getwd()
+	wd, err := os.Getwd()
+	return wd, errors.NewSkip(err, 3)
 }
 
 // FileExists returns true if the file at the given path exists and is readable.
@@ -74,20 +81,20 @@ func (fs FS) IsDirectory(path string) bool {
 // If path is already a directory, `MkdirAll` does nothing
 // and returns `nil`.
 func (FS) MkdirAll(path string, perm fs.FileMode) error {
-	return os.MkdirAll(path, perm)
+	return errors.NewSkip(os.MkdirAll(path, perm), 3)
 }
 
 // Mkdir creates a new directory with the specified name and permission
 // bits (before umask).
 // If there is an error, it will be of type `*PathError`.
 func (FS) Mkdir(path string, perm fs.FileMode) error {
-	return os.Mkdir(path, perm)
+	return errors.NewSkip(os.Mkdir(path, perm), 3)
 }
 
 // Remove removes the named file or (empty) directory.
 // If there is an error, it will be of type `*PathError`.
 func (FS) Remove(path string) error {
-	return os.Remove(path)
+	return errors.NewSkip(os.Remove(path), 3)
 }
 
 // RemoveAll removes path and any children it contains.
@@ -96,5 +103,5 @@ func (FS) Remove(path string) error {
 // returns `nil` (no error).
 // If there is an error, it will be of type `*PathError`.
 func (FS) RemoveAll(path string) error {
-	return os.RemoveAll(path)
+	return errors.NewSkip(os.RemoveAll(path), 3)
 }

@@ -489,9 +489,5 @@ func (r *Router) finalize(response *Response, request *Request) error {
 		response.WriteHeader(response.status)
 	}
 
-	err := response.close()
-	if err != nil {
-		return errorutil.New(err)
-	}
-	return nil
+	return errorutil.New(response.close())
 }

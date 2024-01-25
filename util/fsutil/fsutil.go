@@ -44,7 +44,7 @@ func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64,
 	var f fs.File
 	f, err = filesystem.Open(file)
 	if err != nil {
-		err = errors.NewSkip(err, 3)
+		err = errors.New(err)
 		return
 	}
 	defer func() {
@@ -57,7 +57,7 @@ func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64,
 	var stat fs.FileInfo
 	stat, err = f.Stat()
 	if err != nil {
-		err = errors.NewSkip(err, 3)
+		err = errors.New(err)
 		return
 	}
 
@@ -69,7 +69,7 @@ func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64,
 	if size != 0 {
 		_, err = f.Read(buffer)
 		if err != nil {
-			err = errors.NewSkip(err, 3)
+			err = errors.New(err)
 			return
 		}
 
@@ -203,13 +203,15 @@ func NewEmbed(fs fs.ReadDirFS) Embed {
 // ValidPath(name), returning a *PathError with Err set to
 // ErrInvalid or ErrNotExist.
 func (e Embed) Open(name string) (fs.File, error) {
-	return e.FS.Open(name)
+	f, err := e.FS.Open(name)
+	return f, errors.NewSkip(err, 3)
 }
 
 // ReadDir reads the named directory
 // and returns a list of directory entries sorted by filename.
 func (e Embed) ReadDir(name string) ([]fs.DirEntry, error) {
-	return e.FS.ReadDir(name)
+	entries, err := e.FS.ReadDir(name)
+	return entries, errors.NewSkip(err, 3)
 }
 
 // Stat returns a FileInfo describing the file.
@@ -224,11 +226,14 @@ func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
 	defer func() {
 		e := f.Close()
 		if err == nil && e != nil {
-			err = &fs.PathError{Op: "close", Path: name, Err: e}
+			err = errors.New(&fs.PathError{Op: "close", Path: name, Err: e})
 		}
 	}()
 
 	fileinfo, err = f.Stat()
+	if err != nil {
+		err = errors.New(err)
+	}
 	return
 }
 

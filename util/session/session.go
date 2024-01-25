@@ -58,17 +58,17 @@ func (s Gorm) Begin(ctx context.Context) (Session, error) {
 		ctx:       ctx,
 		TxOptions: s.TxOptions,
 		db:        tx,
-	}, tx.Error
+	}, errors.NewSkip(tx.Error, 3)
 }
 
 // Rollback the changes in the transaction. This action is final.
 func (s Gorm) Rollback() error {
-	return s.db.Rollback().Error
+	return errors.NewSkip(s.db.Rollback().Error, 3)
 }
 
 // Commit the changes in the transaction. This action is final.
 func (s Gorm) Commit() error {
-	return s.db.Commit().Error
+	return errors.NewSkip(s.db.Commit().Error, 3)
 }
 
 // dbKey the key used to store the database in the context.

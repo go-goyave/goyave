@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -64,7 +63,7 @@ func RegisterDialect(name, template string, initializer DialectorInitializer) {
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := dialects[name]; ok {
-		panic(errors.New(fmt.Errorf("dialect %q already exists", name)))
+		panic(errors.Errorf("dialect %q already exists", name))
 	}
 	dialects[name] = dialect{initializer, template}
 }

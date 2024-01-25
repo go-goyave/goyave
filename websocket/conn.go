@@ -105,10 +105,7 @@ func (c *Conn) Close(code int, message string) error {
 			close(c.waitClose)
 		}
 
-		err = c.Conn.Close()
-		if err != nil {
-			err = errors.New(err)
-		}
+		err = errors.New(c.Conn.Close())
 	})
 
 	return err

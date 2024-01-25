@@ -23,10 +23,7 @@ func Convert[T any](data any) (T, error) {
 		return result, errors.NewSkip(err, 3)
 	}
 	err := decoder.Decode(&result)
-	if err != nil {
-		err = errors.NewSkip(err, 3)
-	}
-	return result, err
+	return result, errors.NewSkip(err, 3)
 }
 
 // MustConvert anything into the desired type using JSON marshaling and unmarshaling.

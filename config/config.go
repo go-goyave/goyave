@@ -79,7 +79,7 @@ func (l *loader) register(key string, entry Entry) {
 	category, entryKey, exists := walk(l.defaults, key)
 	if exists {
 		if !reflect.DeepEqual(&entry, category[entryKey].(*Entry)) {
-			panic(errors.New(fmt.Errorf("attempted to override registered config entry %q", key)))
+			panic(errors.Errorf("attempted to override registered config entry %q", key))
 		}
 	} else {
 		category[entryKey] = &entry
@@ -188,10 +188,8 @@ func (l *loader) readConfigFile(filesystem fs.FS, file string) (o object, err er
 			}
 		}()
 		jsonParser := json.NewDecoder(configFile)
-		err = jsonParser.Decode(&o)
-	}
-
-	if err != nil {
+		err = errors.New(jsonParser.Decode(&o))
+	} else {
 		err = errors.New(err)
 	}
 
@@ -243,7 +241,7 @@ func walk(currentCategory object, key string) (object, string, bool) {
 			currentCategory = category
 		} else {
 			if dotIndex < len(key) {
-				panic(errors.New(fmt.Errorf("attempted to add an entry to non-category %q", key[:dotIndex])))
+				panic(errors.Errorf("attempted to add an entry to non-category %q", key[:dotIndex]))
 			}
 
 			// Entry exists
@@ -263,7 +261,7 @@ func walk(currentCategory object, key string) (object, string, bool) {
 		}
 	}
 
-	panic(errors.New(fmt.Errorf("attempted to replace the %q category with an entry", key)))
+	panic(errors.Errorf("attempted to replace the %q category with an entry", key))
 }
 
 // createMissingCategories based on the key path, starting at the given index.
@@ -355,7 +353,7 @@ func (c *Config) Get(key string) any {
 		return val
 	}
 
-	panic(errors.New(fmt.Errorf("config entry \"%s\" doesn't exist", key)))
+	panic(errors.Errorf("config entry \"%s\" doesn't exist", key))
 }
 
 func (c *Config) get(key string) (any, bool) {
@@ -396,7 +394,7 @@ func (c *Config) get(key string) (any, bool) {
 func (c *Config) GetString(key string) string {
 	str, ok := c.Get(key).(string)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not a string", key)))
+		panic(errors.Errorf("config entry \"%s\" is not a string", key))
 	}
 	return str
 }
@@ -406,7 +404,7 @@ func (c *Config) GetString(key string) string {
 func (c *Config) GetBool(key string) bool {
 	val, ok := c.Get(key).(bool)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not a bool", key)))
+		panic(errors.Errorf("config entry \"%s\" is not a bool", key))
 	}
 	return val
 }
@@ -416,7 +414,7 @@ func (c *Config) GetBool(key string) bool {
 func (c *Config) GetInt(key string) int {
 	val, ok := c.Get(key).(int)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not an int", key)))
+		panic(errors.Errorf("config entry \"%s\" is not an int", key))
 	}
 	return val
 }
@@ -426,7 +424,7 @@ func (c *Config) GetInt(key string) int {
 func (c *Config) GetFloat(key string) float64 {
 	val, ok := c.Get(key).(float64)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not a float64", key)))
+		panic(errors.Errorf("config entry \"%s\" is not a float64", key))
 	}
 	return val
 }
@@ -436,7 +434,7 @@ func (c *Config) GetFloat(key string) float64 {
 func (c *Config) GetStringSlice(key string) []string {
 	str, ok := c.Get(key).([]string)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not a string slice", key)))
+		panic(errors.Errorf("config entry \"%s\" is not a string slice", key))
 	}
 	return str
 }
@@ -446,7 +444,7 @@ func (c *Config) GetStringSlice(key string) []string {
 func (c *Config) GetBoolSlice(key string) []bool {
 	str, ok := c.Get(key).([]bool)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not a bool slice", key)))
+		panic(errors.Errorf("config entry \"%s\" is not a bool slice", key))
 	}
 	return str
 }
@@ -456,7 +454,7 @@ func (c *Config) GetBoolSlice(key string) []bool {
 func (c *Config) GetIntSlice(key string) []int {
 	str, ok := c.Get(key).([]int)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not an int slice", key)))
+		panic(errors.Errorf("config entry \"%s\" is not an int slice", key))
 	}
 	return str
 }
@@ -466,7 +464,7 @@ func (c *Config) GetIntSlice(key string) []int {
 func (c *Config) GetFloatSlice(key string) []float64 {
 	str, ok := c.Get(key).([]float64)
 	if !ok {
-		panic(errors.New(fmt.Errorf("config entry \"%s\" is not a float64 slice", key)))
+		panic(errors.Errorf("config entry \"%s\" is not a float64 slice", key))
 	}
 	return str
 }

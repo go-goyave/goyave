@@ -28,7 +28,7 @@ func (file *File) Save(fs WritableFS, path string, name string) (filename string
 
 	if mkdirFS, ok := fs.(MkdirFS); ok {
 		if err = mkdirFS.MkdirAll(path, os.ModePerm); err != nil {
-			err = errors.NewSkip(err, 3)
+			err = errors.New(err)
 			return
 		}
 	}
@@ -36,7 +36,7 @@ func (file *File) Save(fs WritableFS, path string, name string) (filename string
 	var f multipart.File
 	f, err = file.Header.Open()
 	if err != nil {
-		err = errors.NewSkip(err, 3)
+		err = errors.New(err)
 		return
 	}
 	defer func() {
@@ -49,7 +49,7 @@ func (file *File) Save(fs WritableFS, path string, name string) (filename string
 	var writer io.ReadWriteCloser
 	writer, err = fs.OpenFile(path+string(os.PathSeparator)+filename, os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {
-		err = errors.NewSkip(err, 3)
+		err = errors.New(err)
 		return
 	}
 	defer func() {

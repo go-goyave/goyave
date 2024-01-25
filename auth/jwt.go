@@ -118,10 +118,7 @@ func (s *JWTService) GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod
 		return "", err
 	}
 	result, err := token.SignedString(key)
-	if err != nil {
-		err = errorutil.New(err)
-	}
-	return result, err
+	return result, errorutil.New(err)
 }
 
 // GetKey load a JWT signature key from the config.
@@ -159,10 +156,8 @@ func (s *JWTService) GetKey(entry string) (any, error) {
 
 	if err == nil {
 		s.cache.Store(entry, key)
-	} else {
-		err = errorutil.New(err)
 	}
-	return key, err
+	return key, errorutil.New(err)
 }
 
 // GetPrivateKey loads the private key that corresponds to the given `signingMethod`.

@@ -185,10 +185,7 @@ func (s *TestServer) NewTestResponse(request *goyave.Request) (*goyave.Response,
 func ReadJSONBody[T any](body io.Reader) (T, error) {
 	var data T
 	err := json.NewDecoder(body).Decode(&data)
-	if err != nil {
-		return data, errors.New(err)
-	}
-	return data, nil
+	return data, errors.New(err)
 }
 
 // WriteMultipartFile reads a file from the given FS and writes it to the given multipart writer.

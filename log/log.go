@@ -69,10 +69,7 @@ func (w *Writer) PreWrite(b []byte) {
 func (w *Writer) Write(b []byte) (int, error) {
 	w.length += len(b)
 	n, err := w.writer.Write(b)
-	if err != nil {
-		err = errors.New(err)
-	}
-	return n, err
+	return n, errors.New(err)
 }
 
 // Close the writer and its child ResponseWriter, flushing response

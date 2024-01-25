@@ -39,6 +39,12 @@ func (i *testInt64) Scan(src any) error {
 	return nil
 }
 
+type errValuer struct{}
+
+func (e errValuer) Value() (driver.Value, error) {
+	return nil, fmt.Errorf("errValuer")
+}
+
 func TestUndefined(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
 		u := NewUndefined("hello")
@@ -97,6 +103,7 @@ func TestUndefined(t *testing.T) {
 			{undefined: NewUndefined([]string{"a", "b"}), want: []string{"a", "b"}, wantErr: false}, // Doesn't implement driver.Valuer
 			{undefined: NewUndefined(sql.NullInt64{Int64: 123456789, Valid: true}), want: int64(123456789), wantErr: false},
 			{undefined: NewUndefined(sql.NullInt64{}), want: nil, wantErr: false},
+			{undefined: NewUndefined(errValuer{}), want: nil, wantErr: true},
 		}
 
 		for _, c := range cases {
@@ -148,7 +155,9 @@ func TestUndefined(t *testing.T) {
 		for _, c := range cases {
 			c := c
 			err := c.undefined.Scan(c.value)
-			assert.Equal(t, c.wantErr, err)
+			if c.wantErr != nil {
+				assert.ErrorContains(t, err, c.wantErr.Error())
+			}
 
 			assert.Equal(t, c.want, c.undefined)
 		}

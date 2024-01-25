@@ -90,10 +90,7 @@ func (r *Response) PreWrite(b []byte) {
 func (r *Response) Write(data []byte) (int, error) {
 	r.PreWrite(data)
 	n, err := r.writer.Write(data)
-	if err != nil {
-		err = errorutil.New(err)
-	}
-	return n, err
+	return n, errorutil.New(err)
 }
 
 // WriteHeader sends an HTTP response header with the provided
@@ -144,10 +141,8 @@ func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	c, b, e := hijacker.Hijack()
 	if e == nil {
 		r.hijacked = true
-	} else {
-		e = errorutil.New(e)
 	}
-	return c, b, e
+	return c, b, errorutil.New(e)
 }
 
 // Hijacked returns true if the underlying connection has been successfully hijacked
@@ -177,7 +172,7 @@ func (r *Response) SetWriter(writer io.Writer) {
 
 func (r *Response) close() error {
 	if wr, ok := r.writer.(io.Closer); ok {
-		return wr.Close()
+		return errorutil.New(wr.Close())
 	}
 	return nil
 }

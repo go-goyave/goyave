@@ -19,10 +19,12 @@ import (
 type Session interface {
 	// Begin returns a new session with the given context and a started transaction.
 	// Using the returned session should have no side-effect on the parent session.
+	// The underlying transaction mechanism is injected as a value into the new session's context.
 	Begin(ctx context.Context) (Session, error)
 
 	// Transaction executes a transaction. If the given function returns an error, the transaction
 	// is rolled back. Otherwise it is automatically committed before `Transaction()` returns.
+	// The underlying transaction mechanism is injected into the context as a value.
 	Transaction(ctx context.Context, f func(context.Context) error) error
 
 	// Rollback the changes in the transaction. This action is final.
@@ -30,6 +32,11 @@ type Session interface {
 
 	// Commit the changes in the transaction. This action is final.
 	Commit() error
+
+	// Context returns the session's context. If it's the root session, `context.Background()` is returned.
+	// If it's a child session started with `Begin()`, then the context will contain the associated
+	// transaction mechanism as a value.
+	Context() context.Context
 }
 
 // Gorm session implementation.
@@ -52,13 +59,17 @@ func GORM(db *gorm.DB, opt *sql.TxOptions) Gorm {
 // Begin returns a new session with the given context and a started DB transaction.
 // The returned session has manual controls. Make sure a call to `Rollback()` or `Commit()`
 // is executed before the session is expired (eligible for garbage collection).
+// The Gorm DB associated with this session is injected as a value into the new session's context.
 func (s Gorm) Begin(ctx context.Context) (Session, error) {
 	tx := s.db.WithContext(ctx).Begin(s.TxOptions)
+	if tx.Error != nil {
+		return nil, errors.NewSkip(tx.Error, 3)
+	}
 	return Gorm{
-		ctx:       ctx,
+		ctx:       context.WithValue(ctx, dbKey{}, tx),
 		TxOptions: s.TxOptions,
 		db:        tx,
-	}, errors.NewSkip(tx.Error, 3)
+	}, nil
 }
 
 // Rollback the changes in the transaction. This action is final.
@@ -69,6 +80,13 @@ func (s Gorm) Rollback() error {
 // Commit the changes in the transaction. This action is final.
 func (s Gorm) Commit() error {
 	return errors.NewSkip(s.db.Commit().Error, 3)
+}
+
+// Context returns the session's context. If it's the root session, `context.Background()`
+// is returned. If it's a child session started with `Begin()`, then the context will contain
+// the associated Gorm DB and can be used in combination with `session.DB()`.
+func (s Gorm) Context() context.Context {
+	return s.ctx
 }
 
 // dbKey the key used to store the database in the context.

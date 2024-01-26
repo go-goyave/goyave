@@ -18,13 +18,15 @@ type testKey struct{}
 
 type testCommitter struct {
 	gorm.ConnPool
-	committed  bool
-	rolledback bool
+	beginError  error
+	commitError error
+	committed   bool
+	rolledback  bool
 }
 
 func (c *testCommitter) Commit() error {
 	c.committed = true
-	return nil
+	return c.commitError
 }
 
 func (c *testCommitter) Rollback() error {
@@ -33,7 +35,7 @@ func (c *testCommitter) Rollback() error {
 }
 
 func (c *testCommitter) BeginTx(_ context.Context, _ *sql.TxOptions) (gorm.ConnPool, error) {
-	return c, nil
+	return c, c.beginError
 }
 
 func TestGormSession(t *testing.T) {
@@ -76,12 +78,37 @@ func TestGormSession(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEqual(t, session, tx)
 		assert.Equal(t, opts, tx.(Gorm).TxOptions)
+		assert.Equal(t, tx.(Gorm).ctx, tx.Context())
+		assert.Equal(t, "testvalue", tx.Context().Value(testKey{}))
+		assert.Equal(t, tx.(Gorm).db, tx.Context().Value(dbKey{}))
 
 		assert.NoError(t, tx.Commit())
 		assert.True(t, committer.committed)
 
 		assert.NoError(t, tx.Rollback())
 		assert.True(t, committer.rolledback)
+	})
+
+	t.Run("Begin_error", func(t *testing.T) {
+		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
+		if !assert.NoError(t, err) {
+			return
+		}
+		beginErr := fmt.Errorf("begin error")
+		committer := &testCommitter{
+			beginError: beginErr,
+		}
+		db.Statement.ConnPool = committer
+		session := GORM(db, nil)
+
+		tx, err := session.Begin(context.Background())
+		assert.ErrorIs(t, err, beginErr)
+		assert.Nil(t, tx)
+
+		err = session.Transaction(context.Background(), func(ctx context.Context) error {
+			return nil
+		})
+		assert.ErrorIs(t, err, beginErr)
 	})
 
 	t.Run("Transaction", func(t *testing.T) {
@@ -129,6 +156,24 @@ func TestGormSession(t *testing.T) {
 		assert.Equal(t, "testvalue", ctxValue)
 		assert.True(t, committer.rolledback)
 		assert.False(t, committer.committed)
+	})
+
+	t.Run("Transaction_Commit_error", func(t *testing.T) {
+		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
+		if !assert.NoError(t, err) {
+			return
+		}
+		commitErr := fmt.Errorf("commit error")
+		committer := &testCommitter{
+			commitError: commitErr,
+		}
+		db.Statement.ConnPool = committer
+		session := GORM(db, nil)
+
+		err = session.Transaction(context.Background(), func(ctx context.Context) error {
+			return nil
+		})
+		assert.ErrorIs(t, err, commitErr)
 	})
 
 	t.Run("DB", func(t *testing.T) {

@@ -60,8 +60,10 @@ func GORM(db *gorm.DB, opt *sql.TxOptions) Gorm {
 // The returned session has manual controls. Make sure a call to `Rollback()` or `Commit()`
 // is executed before the session is expired (eligible for garbage collection).
 // The Gorm DB associated with this session is injected as a value into the new session's context.
+// If a Gorm DB is found in the given context, it will be used instead of this Session's DB, allowing for
+// nested transactions.
 func (s Gorm) Begin(ctx context.Context) (Session, error) {
-	tx := s.db.WithContext(ctx).Begin(s.TxOptions)
+	tx := DB(ctx, s.db).WithContext(ctx).Begin(s.TxOptions)
 	if tx.Error != nil {
 		return nil, errors.NewSkip(tx.Error, 3)
 	}

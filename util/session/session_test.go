@@ -111,6 +111,25 @@ func TestGormSession(t *testing.T) {
 		assert.ErrorIs(t, err, beginErr)
 	})
 
+	t.Run("Nested_manual", func(t *testing.T) {
+		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
+		if !assert.NoError(t, err) {
+			return
+		}
+		committer := &testCommitter{}
+		db.Statement.ConnPool = committer
+		session := GORM(db, nil)
+
+		ctx := context.WithValue(context.Background(), testKey{}, "testvalue")
+		tx, err := session.Begin(ctx)
+		assert.NoError(t, err)
+		assert.NotNil(t, tx)
+
+		subtx, err := session.Begin(tx.Context())
+		assert.NoError(t, err)
+		assert.Equal(t, "testvalue", subtx.(Gorm).db.Statement.Context.Value(testKey{})) // Parent context is kept
+	})
+
 	t.Run("Transaction", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
 		if !assert.NoError(t, err) {

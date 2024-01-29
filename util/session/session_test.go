@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
@@ -122,12 +123,14 @@ func TestGormSession(t *testing.T) {
 
 		ctx := context.WithValue(context.Background(), testKey{}, "testvalue")
 		tx, err := session.Begin(ctx)
+		tx.(Gorm).db.Statement.Clauses["testclause"] = clause.Clause{} // Use this to check the nested db is based on the parent DB
 		assert.NoError(t, err)
 		assert.NotNil(t, tx)
 
 		subtx, err := session.Begin(tx.Context())
 		assert.NoError(t, err)
 		assert.Equal(t, "testvalue", subtx.(Gorm).db.Statement.Context.Value(testKey{})) // Parent context is kept
+		assert.Contains(t, subtx.(Gorm).db.Statement.Clauses, "testclause")              // Parent DB is used
 	})
 
 	t.Run("Transaction", func(t *testing.T) {
@@ -153,6 +156,30 @@ func TestGormSession(t *testing.T) {
 		assert.Equal(t, "testvalue", ctxValue)
 		assert.True(t, committer.committed)
 		assert.False(t, committer.rolledback)
+	})
+
+	t.Run("Nested_Transaction", func(t *testing.T) {
+		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
+		if !assert.NoError(t, err) {
+			return
+		}
+		committer := &testCommitter{}
+		db.Statement.ConnPool = committer
+		session := GORM(db, nil)
+
+		ctx := context.WithValue(context.Background(), testKey{}, "testvalue")
+		tx, err := session.Begin(ctx)
+		tx.(Gorm).db.Statement.Clauses["testclause"] = clause.Clause{} // Use this to check the nested db is based on the parent DB
+		assert.NoError(t, err)
+		assert.NotNil(t, tx)
+
+		err = session.Transaction(tx.Context(), func(ctx context.Context) error {
+			db := DB(ctx, nil)
+			assert.NotNil(t, db)
+			assert.Contains(t, db.Statement.Clauses, "testclause") // Parent DB is used
+			return nil
+		})
+		assert.NoError(t, err)
 	})
 
 	t.Run("TransactionError", func(t *testing.T) {

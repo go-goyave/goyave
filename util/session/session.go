@@ -100,7 +100,7 @@ type dbKey struct{}
 // The Gorm DB associated with this session is injected into the context as a value so `session.DB()`
 // can be used to retrieve it.
 func (s Gorm) Transaction(ctx context.Context, f func(context.Context) error) error {
-	tx := s.db.WithContext(ctx).Begin(s.TxOptions)
+	tx := DB(ctx, s.db).WithContext(ctx).Begin(s.TxOptions)
 	if tx.Error != nil {
 		return errors.New(tx.Error)
 	}

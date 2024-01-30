@@ -19,16 +19,22 @@ const (
 	MetaCORS = "goyave.cors"
 )
 
+// Special route names.
+const (
+	RouteMethodNotAllowed = "goyave.method-not-allowed"
+	RouteNotFound         = "goyave.not-found"
+)
+
 var (
 	errMatchMethodNotAllowed = errors.New("Method not allowed for this route")
 	errMatchNotFound         = errors.New("No match for this URI")
 
-	methodNotAllowedRoute = newRoute(func(response *Response, request *Request) {
+	methodNotAllowedRoute = newRoute(func(response *Response, request *Request) { // TODO document special route names
 		response.Status(http.StatusMethodNotAllowed)
-	})
+	}, RouteMethodNotAllowed)
 	notFoundRoute = newRoute(func(response *Response, request *Request) {
 		response.Status(http.StatusNotFound)
-	})
+	}, RouteNotFound)
 )
 
 // Handler responds to an HTTP request.

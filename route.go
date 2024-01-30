@@ -38,8 +38,9 @@ type RuleSetFunc func(*Request) validation.RuleSet
 // This is used to generate a fake route for the Method Not Allowed and Not Found handlers.
 // This route has the core middleware enabled and can be used without a parent router.
 // Thus, custom status handlers can use language and body.
-func newRoute(handler Handler) *Route {
+func newRoute(handler Handler, name string) *Route {
 	return &Route{
+		name:    name,
 		handler: handler,
 		Meta:    make(map[string]any),
 		middlewareHolder: middlewareHolder{

@@ -76,6 +76,13 @@ func TestRoute(t *testing.T) {
 
 		route.RemoveMeta("meta-key")
 		assert.Empty(t, route.Meta)
+
+		// Shouldn't panic if there is no meta (usually the case in special
+		// routes such as notFound and methodNotAllowed)
+		route.parent = nil
+		val, ok = route.LookupMeta("nonexistent")
+		assert.Nil(t, val)
+		assert.False(t, ok)
 	})
 
 	t.Run("ValidateBody", func(t *testing.T) {

@@ -127,6 +127,9 @@ func (r *Route) LookupMeta(key string) (any, bool) {
 	if ok {
 		return val, ok
 	}
+	if r.parent == nil {
+		return nil, false
+	}
 	return r.parent.LookupMeta(key)
 }
 

@@ -88,6 +88,7 @@ func TestAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
 		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
@@ -99,6 +100,7 @@ func TestAuthenticator(t *testing.T) {
 
 		request = server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
 		resp = server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
 			response.Status(http.StatusOK)
 		})
@@ -111,6 +113,31 @@ func TestAuthenticator(t *testing.T) {
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
 	})
 
+	t.Run("NoAuth", func(t *testing.T) {
+		server, user := prepareAuthenticatorTest(t)
+		t.Cleanup(func() { server.CloseDB() })
+
+		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
+
+		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
+		request.Request().SetBasicAuth(user.Email, "secret")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: false}}
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
+			assert.Nil(t, request.User)
+			response.Status(http.StatusOK)
+		})
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		_ = resp.Body.Close()
+
+		request.Route = &goyave.Route{Meta: map[string]any{}}
+		resp = server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
+			assert.Nil(t, request.User)
+			response.Status(http.StatusOK)
+		})
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		_ = resp.Body.Close()
+	})
+
 	t.Run("MiddlewareUnauthorizer", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })
@@ -119,6 +146,7 @@ func TestAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
 		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			response.Status(http.StatusOK)
 		})

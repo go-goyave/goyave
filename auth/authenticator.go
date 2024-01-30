@@ -12,6 +12,10 @@ import (
 	"goyave.dev/goyave/v5"
 )
 
+// MetaAuth the authentication middleware will only authenticate the user
+// if this meta is present in the matched route or any of its parent and is equal to `true`.
+const MetaAuth = "goyave.require-auth"
+
 // Column matches a column name with a struct field.
 type Column struct {
 	Field *reflect.StructField
@@ -50,8 +54,15 @@ type Handler[T any] struct {
 // executing the authenticator. Blocks if the authentication is not successful.
 // If the authenticator implements `Unauthorizer`, `OnUnauthorized` is called,
 // otherwise returns a default `401 Unauthorized` error.
+// If the matched route doesn't contain the `MetaAuth` or if it's not equal to `true`,
+// the middleware is skipped.
 func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 	return func(response *goyave.Response, request *goyave.Request) {
+		if requireAuth, ok := request.Route.LookupMeta(MetaAuth); !ok || requireAuth != true {
+			next(response, request)
+			return
+		}
+
 		user := new(T)
 		if err := m.Authenticator.Authenticate(request, user); err != nil {
 			if unauthorizer, ok := m.Authenticator.(Unauthorizer); ok {
@@ -68,6 +79,10 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 
 // Middleware returns an authentication middleware which will use the given
 // authenticator and set the request's user according to the given model.
+// This middleware should be used as a global middleware, and all routes (ou routers)
+// that require authentication should have the meta `MetaAuth` set to `true`.
+// If the matched route or any of its parent doesn't have this meta or if it's not equal to
+// `true`, the authentication is skipped.
 func Middleware[T any](authenticator Authenticator) *Handler[T] {
 	return &Handler[T]{
 		Authenticator: authenticator,

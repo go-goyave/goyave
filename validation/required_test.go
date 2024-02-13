@@ -51,7 +51,7 @@ func TestRequiredValidator(t *testing.T) {
 }
 
 func TestRequiredIfValidator(t *testing.T) {
-	alwaysRequired := func(c *Context) bool { return true }
+	alwaysRequired := func(_ *Context) bool { return true }
 	t.Run("Constructor", func(t *testing.T) {
 		v := RequiredIf(alwaysRequired)
 		assert.NotNil(t, v)
@@ -77,7 +77,7 @@ func TestRequiredIfValidator(t *testing.T) {
 		{value: true, want: true, condition: alwaysRequired},
 		{value: nil, want: false, condition: alwaysRequired},
 		{value: nil, want: true, nullable: true, condition: alwaysRequired},
-		{value: nil, want: true, condition: func(c *Context) bool {
+		{value: nil, want: true, condition: func(_ *Context) bool {
 			return false
 		}},
 	}

@@ -182,7 +182,7 @@ func TestTimeoutPlugin(t *testing.T) {
 		args := lo.RepeatBy(1000, func(index int) string {
 			return fmt.Sprintf("foobar_%d@example.org", index)
 		})
-		err = db.Transaction(func(tx *gorm.DB) error {
+		err = db.Transaction(func(_ *gorm.DB) error {
 			for i := 0; i < 5000; i++ {
 				users := []*TestUser{}
 				res := db.Select("*").Where("email IN (?)", args).Find(&users)

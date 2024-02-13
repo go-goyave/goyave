@@ -262,7 +262,7 @@ func TestServer(t *testing.T) {
 			return
 		}
 
-		server.RegisterRoutes(func(s *Server, router *Router) {
+		server.RegisterRoutes(func(_ *Server, router *Router) {
 			router.Get("/", func(_ *Response, _ *Request) {}).Name("base")
 		})
 		assert.NotNil(t, server.router.GetRoute("base"))
@@ -321,7 +321,7 @@ func TestServer(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(2)
 
-		server.RegisterStartupHook(func(s *Server) {
+		server.RegisterStartupHook(func(_ *Server) {
 			// Should be executed when the server is ready
 			startupHookExecuted = true
 
@@ -343,12 +343,12 @@ func TestServer(t *testing.T) {
 			wg.Done()
 		})
 
-		server.RegisterShutdownHook(func(s *Server) {
+		server.RegisterShutdownHook(func(_ *Server) {
 			shutdownHookExecuted = true
 			assert.False(t, server.IsReady())
 		})
 
-		server.RegisterRoutes(func(s *Server, router *Router) {
+		server.RegisterRoutes(func(_ *Server, router *Router) {
 			router.Get("/", func(r *Response, _ *Request) {
 				r.String(http.StatusOK, "hello world")
 			}).Name("base")
@@ -402,7 +402,7 @@ func TestServer(t *testing.T) {
 			wg.Done()
 		})
 
-		server.RegisterRoutes(func(s *Server, router *Router) {
+		server.RegisterRoutes(func(_ *Server, router *Router) {
 			router.Get("/", func(r *Response, _ *Request) {
 				r.String(http.StatusOK, "hello world")
 			}).Name("base")
@@ -463,7 +463,7 @@ func TestServer(t *testing.T) {
 			return
 		}
 
-		server.RegisterStartupHook(func(s *Server) {})
+		server.RegisterStartupHook(func(_ *Server) {})
 
 		assert.Len(t, server.startupHooks, 1)
 
@@ -477,7 +477,7 @@ func TestServer(t *testing.T) {
 			return
 		}
 
-		server.RegisterShutdownHook(func(s *Server) {})
+		server.RegisterShutdownHook(func(_ *Server) {})
 
 		assert.Len(t, server.shutdownHooks, 1)
 
@@ -501,7 +501,7 @@ func TestServer(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(2)
 
-		server.RegisterStartupHook(func(s *Server) {
+		server.RegisterStartupHook(func(_ *Server) {
 			if runtime.GOOS == "windows" {
 				fmt.Println("Testing on a windows machine. Cannot test proc signals")
 				server.Stop()
@@ -569,7 +569,7 @@ func TestServer(t *testing.T) {
 			wg.Done()
 		})
 
-		server.RegisterRoutes(func(s *Server, router *Router) {
+		server.RegisterRoutes(func(_ *Server, router *Router) {
 			router.Get("/", func(r *Response, req *Request) {
 				ctx := req.Context()
 				assert.Equal(t, server, ServerFromContext(ctx))

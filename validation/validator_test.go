@@ -210,7 +210,7 @@ func TestValidate(t *testing.T) {
 				Now: lo.Must(time.Parse(time.RFC3339, "2023-06-28T00:00:00Z")),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{&testValidator{
-						validateFunc: func(c component, ctx *Context) bool {
+						validateFunc: func(_ component, ctx *Context) bool {
 							assert.Equal(t, lo.Must(time.Parse(time.RFC3339, "2023-06-28T00:00:00Z")), ctx.Now)
 							return true
 						},
@@ -335,7 +335,7 @@ func TestValidate(t *testing.T) {
 					{Path: "object", Rules: RuleSet{
 						{Path: CurrentElement, Rules: List{Required(), Object()}},
 						{Path: "property", Rules: List{Required(), String(), &testValidator{
-							validateFunc: func(c component, ctx *Context) bool {
+							validateFunc: func(_ component, ctx *Context) bool {
 								assert.Equal(t, map[string]any{"property": "value"}, ctx.Data)
 								return true
 							},
@@ -352,21 +352,21 @@ func TestValidate(t *testing.T) {
 				Rules: RuleSet{
 					{Path: "composedArray", Rules: RuleSet{
 						{Path: CurrentElement, Rules: List{Required(), Array(), &testValidator{
-							validateFunc: func(c component, ctx *Context) bool {
+							validateFunc: func(_ component, ctx *Context) bool {
 								assert.Equal(t, [][]string{{"a"}}, ctx.Data)
 								return true
 							},
 						}}},
 						{Path: "[]", Rules: RuleSet{
 							{Path: CurrentElement, Rules: List{Required(), Array(), &testValidator{
-								validateFunc: func(c component, ctx *Context) bool {
+								validateFunc: func(_ component, ctx *Context) bool {
 									assert.Equal(t, []string{"a"}, ctx.Data)
 									return true
 								},
 							}}},
 							{Path: "[]", Rules: RuleSet{
 								{Path: CurrentElement, Rules: List{Required(), String(), &testValidator{
-									validateFunc: func(c component, ctx *Context) bool {
+									validateFunc: func(_ component, ctx *Context) bool {
 										assert.Equal(t, "a", ctx.Data)
 										return true
 									},
@@ -377,7 +377,7 @@ func TestValidate(t *testing.T) {
 					{Path: "array", Rules: List{Required(), Array()}},
 					{Path: "array[]", Rules: List{Required(), Array()}},
 					{Path: "array[][]", Rules: List{Required(), String(), &testValidator{
-						validateFunc: func(c component, ctx *Context) bool {
+						validateFunc: func(_ component, ctx *Context) bool {
 							assert.Equal(t, map[string]any{"composedArray": [][]string{{"a"}}, "array": [][]string{{"b"}}}, ctx.Data)
 							return true
 						},
@@ -576,43 +576,43 @@ func TestValidate(t *testing.T) {
 				Rules: RuleSet{
 					{Path: "string", Rules: List{Required(), String(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ component, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "integer", Rules: List{Required(), Int(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ component, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "float", Rules: List{Required(), Float64(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ component, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "array", Rules: List{Required(), Array(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ component, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "guessString", Rules: List{Required(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ component, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "guessNumeric", Rules: List{Required(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ component, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "guessArray", Rules: List{Required(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ component, _ *Context) bool {
 							return false
 						},
 					}}},

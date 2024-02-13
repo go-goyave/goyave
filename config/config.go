@@ -87,7 +87,7 @@ func (l *loader) register(key string, entry Entry) {
 }
 
 func (l *loader) loadFrom(fs fs.FS, path string) (*Config, error) {
-	return l.load(func(s string) (object, error) { return l.readConfigFile(fs, path) }, path)
+	return l.load(func(_ string) (object, error) { return l.readConfigFile(fs, path) }, path)
 }
 
 func (l *loader) loadJSON(cfg string) (*Config, error) {

@@ -147,7 +147,7 @@ func TestAuthenticator(t *testing.T) {
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
-		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)

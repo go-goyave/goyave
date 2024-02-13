@@ -106,7 +106,7 @@ func TestGormSession(t *testing.T) {
 		assert.ErrorIs(t, err, beginErr)
 		assert.Nil(t, tx)
 
-		err = session.Transaction(context.Background(), func(ctx context.Context) error {
+		err = session.Transaction(context.Background(), func(_ context.Context) error {
 			return nil
 		})
 		assert.ErrorIs(t, err, beginErr)
@@ -216,7 +216,7 @@ func TestGormSession(t *testing.T) {
 		db.Statement.ConnPool = committer
 		session := GORM(db, nil)
 
-		err = session.Transaction(context.Background(), func(ctx context.Context) error {
+		err = session.Transaction(context.Background(), func(_ context.Context) error {
 			return nil
 		})
 		assert.ErrorIs(t, err, commitErr)

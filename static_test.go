@@ -68,7 +68,7 @@ func TestStaticHandler(t *testing.T) {
 			uri:       "/doesn'texist",
 			directory: "resources",
 			download:  false,
-			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
+			expected: func(t *testing.T, response *Response, _ *http.Response, _ []byte) {
 				assert.Equal(t, http.StatusNotFound, response.GetStatus())
 			},
 		},

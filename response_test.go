@@ -381,7 +381,7 @@ func TestResponse(t *testing.T) {
 					),
 				)
 			}},
-			{err: nil, expectedMessage: `null`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+			{err: nil, expectedMessage: `null`, expectedLog: func(_ *errorutil.Error) *regexp.Regexp {
 				return regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"<nil>"}\n`)
 			}},
 		}

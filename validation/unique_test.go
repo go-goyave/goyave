@@ -50,7 +50,7 @@ func prepareUniqueTest(t *testing.T) *Options {
 
 func TestUniqueValidator(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
-		v := Unique(func(db *gorm.DB, val any) *gorm.DB {
+		v := Unique(func(db *gorm.DB, _ any) *gorm.DB {
 			return db
 		})
 		assert.NotNil(t, v)
@@ -141,7 +141,7 @@ func TestUniqueValidator(t *testing.T) {
 
 func TestExistsValidator(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
-		v := Exists(func(db *gorm.DB, val any) *gorm.DB {
+		v := Exists(func(db *gorm.DB, _ any) *gorm.DB {
 			return db
 		})
 		assert.NotNil(t, v)

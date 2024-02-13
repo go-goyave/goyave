@@ -34,7 +34,7 @@ func TestJWTService(t *testing.T) {
 		if !assert.NoError(t, err) {
 			return
 		}
-		parsedToken, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
+		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return []byte(server.Config().GetString("auth.jwt.secret")), nil
 		})
 
@@ -68,7 +68,7 @@ func TestJWTService(t *testing.T) {
 		if !assert.NoError(t, err) {
 			return
 		}
-		parsedToken, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
+		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return []byte(server.Config().GetString("auth.jwt.secret")), nil
 		})
 
@@ -105,7 +105,7 @@ func TestJWTService(t *testing.T) {
 		if !assert.NoError(t, err) {
 			return
 		}
-		parsedToken, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
+		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return service.GetKey("auth.jwt.rsa.public")
 		})
 
@@ -142,7 +142,7 @@ func TestJWTService(t *testing.T) {
 		if !assert.NoError(t, err) {
 			return
 		}
-		parsedToken, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
+		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return service.GetKey("auth.jwt.ecdsa.public")
 		})
 

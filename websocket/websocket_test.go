@@ -258,7 +258,7 @@ func TestMakeUpgrader(t *testing.T) {
 			upgradeErrorExecuted = true
 		},
 		testController: testController{
-			checkOrigin: func(r *goyave.Request) bool {
+			checkOrigin: func(_ *goyave.Request) bool {
 				checkOriginExecuted = true
 				return true
 			},
@@ -282,14 +282,14 @@ func TestUpgrade(t *testing.T) {
 
 	var routeURL string
 	server := testutil.NewTestServerWithOptions(t, prepareTestConfig())
-	server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
+	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t:  t,
 			wg: &wg,
-			checkOrigin: func(r_ *goyave.Request) bool {
+			checkOrigin: func(_ *goyave.Request) bool {
 				return true
 			},
-			upgradeHeaders: func(r *goyave.Request) http.Header {
+			upgradeHeaders: func(_ *goyave.Request) http.Header {
 				headers := http.Header{}
 				headers.Add("X-Test", "Value")
 				return headers
@@ -339,7 +339,7 @@ func TestUpgrade(t *testing.T) {
 
 func TestUpgradeError(t *testing.T) {
 	server := testutil.NewTestServerWithOptions(t, prepareTestConfig())
-	server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
+	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
 			checkOrigin: func(_ *goyave.Request) bool {
@@ -394,14 +394,14 @@ func TestCloseHandshakeTimeout(t *testing.T) {
 
 	var routeURL string
 	server := testutil.NewTestServerWithOptions(t, prepareTestConfig())
-	server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
+	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t:  t,
 			wg: &wg,
 			serve: func(_ *Conn, _ *goyave.Request) error {
 				return nil // Immediately return to trigger the close handshake
 			},
-			checkOrigin: func(r_ *goyave.Request) bool {
+			checkOrigin: func(_ *goyave.Request) bool {
 				return true
 			},
 		})
@@ -480,7 +480,7 @@ func TestGracefulClose(t *testing.T) {
 			expectedLogs:  regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","msg":"websocket handler error","trace":".+"}\n`),
 		},
 		{
-			desc: "error_handler",
+			desc: "erro_handler",
 			serve: func(_ *Conn, _ *goyave.Request) error {
 				return errors.New("websocket handler error")
 			},
@@ -491,7 +491,7 @@ func TestGracefulClose(t *testing.T) {
 			expectedLogs:  regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","msg":"message override"}\n`),
 		},
 		{
-			desc: "normal_server_closure",
+			desc: "normal_serve_closure",
 			serve: func(_ *Conn, _ *goyave.Request) error {
 				return nil
 			},
@@ -508,13 +508,13 @@ func TestGracefulClose(t *testing.T) {
 
 			var routeURL string
 			server := testutil.NewTestServerWithOptions(t, prepareTestConfig())
-			server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
+			server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 				var ctrl Controller = &testController{
 					t:     t,
 					wg:    &wg,
 					serve: c.serve,
 
-					checkOrigin: func(r_ *goyave.Request) bool {
+					checkOrigin: func(_ *goyave.Request) bool {
 						return true
 					},
 				}
@@ -582,7 +582,7 @@ func TestCloseConnectionClosed(t *testing.T) {
 	server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
-			checkOrigin: func(r_ *goyave.Request) bool {
+			checkOrigin: func(_ *goyave.Request) bool {
 				return true
 			},
 		})
@@ -645,7 +645,7 @@ func TestCloseWriteTimeout(t *testing.T) {
 	server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
-			checkOrigin: func(r_ *goyave.Request) bool {
+			checkOrigin: func(_ *goyave.Request) bool {
 				return true
 			},
 		})

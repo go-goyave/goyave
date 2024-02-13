@@ -227,7 +227,7 @@ func TestLanguageMiddleware(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			executed := false
-			handler := middleware.Handle(func(resp *Response, req *Request) {
+			handler := middleware.Handle(func(_ *Response, req *Request) {
 				assert.Equal(t, c.expected, req.Lang.Name())
 				executed = true
 			})
@@ -338,7 +338,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_convert_single_value_arrays",
-			queryRules: func(request *Request) validation.RuleSet {
+			queryRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			query:        map[string]any{"param": "v"},
@@ -413,7 +413,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_convert_single_value_arrays",
-			bodyRules: func(request *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			data:         map[string]any{"param": "v"},
@@ -426,7 +426,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_dont_convert_single_value_arrays",
-			bodyRules: func(request *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			headers:      map[string]string{"Content-Type": "application/json; charset=utf-8"},
@@ -650,7 +650,7 @@ func TestCORSMiddleware(t *testing.T) {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			middleware := &corsMiddleware{}
-			handler := middleware.Handle(func(resp *Response, req *Request) {
+			handler := middleware.Handle(func(resp *Response, _ *Request) {
 				if c.respBody != "" {
 					resp.String(c.respStatus, c.respBody)
 				} else {

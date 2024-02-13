@@ -40,7 +40,7 @@ func TestCompressMiddleware(t *testing.T) {
 
 	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
 
-	handler := func(resp *goyave.Response, req *goyave.Request) {
+	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")
 		resp.String(http.StatusOK, "hello world")
 	}

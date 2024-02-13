@@ -29,10 +29,10 @@ var (
 	errMatchMethodNotAllowed = errors.New("Method not allowed for this route")
 	errMatchNotFound         = errors.New("No match for this URI")
 
-	methodNotAllowedRoute = newRoute(func(response *Response, request *Request) { // TODO document special route names
+	methodNotAllowedRoute = newRoute(func(response *Response, _ *Request) { // TODO document special route names
 		response.Status(http.StatusMethodNotAllowed)
 	}, RouteMethodNotAllowed)
-	notFoundRoute = newRoute(func(response *Response, request *Request) {
+	notFoundRoute = newRoute(func(response *Response, _ *Request) {
 		response.Status(http.StatusNotFound)
 	}, RouteNotFound)
 )

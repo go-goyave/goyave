@@ -147,6 +147,9 @@ func (l *Logger) handleReason(ctx context.Context, reason error, trace *slog.Att
 		if trace != nil {
 			clone.AddAttrs(*trace)
 		}
+		if slogValuer, ok := reason.(slog.LogValuer); ok {
+			clone.AddAttrs(slog.Any("reason", slogValuer.LogValue()))
+		}
 		_ = l.Handler().Handle(ctx, clone)
 	}
 }

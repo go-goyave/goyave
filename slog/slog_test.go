@@ -13,6 +13,16 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
+type testValuerError struct{}
+
+func (testValuerError) Error() string {
+	return "test error"
+}
+
+func (testValuerError) LogValue() slog.Value {
+	return slog.StringValue("test value")
+}
+
 func TestLogger(t *testing.T) {
 
 	t.Run("New", func(t *testing.T) {
@@ -121,6 +131,11 @@ func TestLogger(t *testing.T) {
 					regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset),
 					regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset),
 				)),
+			},
+			{
+				desc: "Valuer",
+				f:    func() { l.Error(errors.New(testValuerError{}), slog.String("attr", "val")) },
+				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%stest error%s\n%sattr: %sval\n%strace: \n%s(.|\n)+\n%sreason: %stest value\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},
 			{
 				desc: "fmt_multi_error", // We expect three separated messages to be printed

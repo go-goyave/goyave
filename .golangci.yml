@@ -30,6 +30,7 @@ linters:
     - gosimple
     - ineffassign
     - staticcheck
+    - testifylint
   disable-all: false
   fast: false
 
@@ -39,6 +40,7 @@ issues:
   max-same-issues: 0
   exclude:
     - should have a package comment
+    - for error assertions use require
   exclude-rules:
     - path: _test\.go
       linters:

@@ -65,39 +65,39 @@ func (suite *ParameterizableTestSuite) TestBraceIndices() {
 	p := &parameterizable{}
 	str := "/product/{id:[0-9]+}"
 	idxs, err := p.braceIndices(str)
-	suite.Nil(err)
+	suite.Require().NoError(err)
 	suite.Equal([]int{9, 19}, idxs)
 
 	str = "/product/{id}"
 	idxs, err = p.braceIndices(str)
-	suite.Nil(err)
+	suite.Require().NoError(err)
 	suite.Equal([]int{9, 12}, idxs)
 
 	str = "/product/{id:[0-9]+}/{name}" // Multiple params
 	idxs, err = p.braceIndices(str)
-	suite.Nil(err)
+	suite.Require().NoError(err)
 	suite.Equal([]int{9, 19, 21, 26}, idxs)
 
 	str = "/product/{id}/{name:[\\w]+}"
 	idxs, err = p.braceIndices(str)
-	suite.Nil(err)
+	suite.Require().NoError(err)
 	suite.Equal([]int{9, 12, 14, 25}, idxs)
 
 	str = "/product/{}" // Empty param, expect error
 	idxs, err = p.braceIndices(str)
-	suite.NotNil(err)
+	suite.Require().Error(err)
 	suite.Equal("empty route parameter in \"/product/{}\"", err.Error())
 	suite.Nil(idxs)
 
 	str = "/product/{id:{[0-9]+}" // Unbalanced
 	idxs, err = p.braceIndices(str)
-	suite.NotNil(err)
+	suite.Require().Error(err)
 	suite.Equal("unbalanced braces in \"/product/{id:{[0-9]+}\"", err.Error())
 	suite.Nil(idxs)
 
 	str = "/product/{id:}[0-9]+}" // Unbalanced
 	idxs, err = p.braceIndices(str)
-	suite.NotNil(err)
+	suite.Require().Error(err)
 	suite.Equal("unbalanced braces in \"/product/{id:}[0-9]+}\"", err.Error())
 	suite.Nil(idxs)
 }

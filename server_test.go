@@ -20,6 +20,7 @@ import (
 	"embed"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/config"
@@ -63,9 +64,7 @@ func TestServer(t *testing.T) {
 			BaseContext:    func(_ net.Listener) context.Context { return context.Background() },
 			ConnContext:    func(ctx context.Context, _ net.Conn) context.Context { return ctx },
 		})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.Equal(t, "test", s.Config().GetString("app.name"))
 		assert.Nil(t, s.db)
@@ -87,7 +86,7 @@ func TestServer(t *testing.T) {
 		assert.NotNil(t, s.server.BaseContext)
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", s.ProxyBaseURL())
-		assert.Nil(t, s.CloseDB())
+		assert.NoError(t, s.CloseDB())
 	})
 
 	t.Run("New_invalid_config", func(t *testing.T) {
@@ -121,7 +120,7 @@ func TestServer(t *testing.T) {
 
 		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 		langEmbed, err := fsutil.NewEmbed(resources).Sub("resources/lang")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		opts := Options{
 			Config: cfg,
 			Logger: logger,
@@ -129,11 +128,9 @@ func TestServer(t *testing.T) {
 		}
 
 		server, err := New(opts)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		defer func() {
-			assert.NoError(t, server.CloseDB())
+			require.NoError(t, server.CloseDB())
 		}()
 
 		assert.Equal(t, "test_with_config", server.Config().GetString("app.name"))
@@ -143,7 +140,7 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "load UK", server.Lang.Get("en-UK", "test-load"))
 		assert.NotNil(t, server.DB())
 
-		assert.Nil(t, server.CloseDB())
+		assert.NoError(t, server.CloseDB())
 	})
 
 	t.Run("NewWithConfig_db_error", func(t *testing.T) {
@@ -151,9 +148,7 @@ func TestServer(t *testing.T) {
 		cfg.Set("database.connection", "not_a_driver")
 
 		server, err := New(Options{Config: cfg})
-		if !assert.Error(t, err) {
-			return
-		}
+		require.Error(t, err)
 		assert.Nil(t, server)
 	})
 
@@ -213,9 +208,7 @@ func TestServer(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.name", "test")
 		server, err := New(Options{Config: cfg})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		service := &DummyService{}
 		server.RegisterService(service)
@@ -238,9 +231,7 @@ func TestServer(t *testing.T) {
 	t.Run("Accessors", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		server, err := New(Options{Config: cfg})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.Equal(t, "127.0.0.1:8080", server.Host())
 		assert.Equal(t, 8080, server.Port())
@@ -258,9 +249,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("RegisterRoutes", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		server.RegisterRoutes(func(_ *Server, router *Router) {
 			router.Get("/", func(_ *Response, _ *Request) {}).Name("base")
@@ -275,9 +264,7 @@ func TestServer(t *testing.T) {
 		cfg.Set("database.name", "sqlite3_server_transaction_test.db")
 		cfg.Set("database.options", "mode=memory")
 		server, err := New(Options{Config: cfg})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		defer func() {
 			assert.NoError(t, server.CloseDB())
 		}()
@@ -300,11 +287,9 @@ func TestServer(t *testing.T) {
 
 	t.Run("ReplaceDB", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
-		assert.Nil(t, server.ReplaceDB(tests.DummyDialector{}))
+		assert.NoError(t, server.ReplaceDB(tests.DummyDialector{}))
 		assert.NotNil(t, server.db)
 	})
 
@@ -312,9 +297,7 @@ func TestServer(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 8888)
 		server, err := New(Options{Config: cfg})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		startupHookExecuted := false
 		shutdownHookExecuted := false
@@ -328,14 +311,12 @@ func TestServer(t *testing.T) {
 			assert.True(t, server.IsReady())
 
 			res, err := http.Get("http://localhost:8888")
-			if !assert.NoError(t, err) {
-				return
-			}
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
+			assert.NoError(t, err)
 			respBody, err := io.ReadAll(res.Body)
-			if !assert.NoError(t, err) {
-				return
-			}
-			_ = res.Body.Close()
+			assert.NoError(t, err)
 			assert.Equal(t, []byte("hello world"), respBody)
 
 			// Stop the server, goroutine should return
@@ -356,7 +337,7 @@ func TestServer(t *testing.T) {
 
 		go func() {
 			err := server.Start()
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			wg.Done()
 		}()
 
@@ -371,9 +352,7 @@ func TestServer(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 0)
 		server, err := New(Options{Config: cfg})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		startupHookExecuted := false
 		wg := sync.WaitGroup{}
@@ -387,14 +366,12 @@ func TestServer(t *testing.T) {
 			assert.NotEqual(t, 0, s.Port())
 
 			res, err := http.Get(s.BaseURL())
-			if !assert.NoError(t, err) {
-				return
-			}
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
+			assert.NoError(t, err)
 			respBody, err := io.ReadAll(res.Body)
-			if !assert.NoError(t, err) {
-				return
-			}
-			_ = res.Body.Close()
+			assert.NoError(t, err)
 			assert.Equal(t, []byte("hello world"), respBody)
 
 			// Stop the server, goroutine should return
@@ -410,7 +387,7 @@ func TestServer(t *testing.T) {
 
 		go func() {
 			err := server.Start()
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			wg.Done()
 		}()
 
@@ -422,9 +399,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("Start_already_running", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		atomic.StoreUint32(&server.state, 2) // Simulate the server already running
 		err = server.Start()
 		if assert.Error(t, err) {
@@ -436,9 +411,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("Start_stopped", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		atomic.StoreUint32(&server.state, 3) // Simulate stopped server
 		err = server.Start()
 		if assert.Error(t, err) {
@@ -450,54 +423,44 @@ func TestServer(t *testing.T) {
 
 	t.Run("Stop_not_started", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, err)
 		server.Stop()
 		// Nothing happens
 	})
 
 	t.Run("StartupHooks", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		server.RegisterStartupHook(func(_ *Server) {})
 
 		assert.Len(t, server.startupHooks, 1)
 
 		server.ClearStartupHooks()
-		assert.Len(t, server.startupHooks, 0)
+		assert.Empty(t, server.startupHooks)
 	})
 
 	t.Run("ShutdownHooks", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		server.RegisterShutdownHook(func(_ *Server) {})
 
 		assert.Len(t, server.shutdownHooks, 1)
 
 		server.ClearShutdownHooks()
-		assert.Len(t, server.shutdownHooks, 0)
+		assert.Empty(t, server.shutdownHooks)
 	})
 
 	t.Run("SignalHook", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 8889)
 		server, err := New(Options{Config: cfg})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		server.RegisterSignalHook()
 
 		proc, err := os.FindProcess(os.Getpid())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		wg := sync.WaitGroup{}
 		wg.Add(2)
 
@@ -516,7 +479,7 @@ func TestServer(t *testing.T) {
 
 		go func() {
 			err := server.Start()
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			wg.Done()
 		}()
 
@@ -539,9 +502,7 @@ func TestServer(t *testing.T) {
 				return context.WithValue(ctx, connContextKey{}, "conn-ctx-value")
 			},
 		})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		startupHookExecuted := true
 		wg := sync.WaitGroup{}
@@ -554,14 +515,12 @@ func TestServer(t *testing.T) {
 			assert.True(t, server.IsReady())
 
 			res, err := http.Get(s.BaseURL())
-			if !assert.NoError(t, err) {
-				return
-			}
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
+			assert.NoError(t, err)
 			respBody, err := io.ReadAll(res.Body)
-			if !assert.NoError(t, err) {
-				return
-			}
-			_ = res.Body.Close()
+			assert.NoError(t, err)
 			assert.Equal(t, []byte(fmt.Sprintf("%v|%v", "base-ctx-value", "conn-ctx-value")), respBody)
 
 			// Stop the server, goroutine should return
@@ -579,7 +538,7 @@ func TestServer(t *testing.T) {
 
 		go func() {
 			err := server.Start()
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			wg.Done()
 		}()
 
@@ -598,9 +557,7 @@ func TestServer(t *testing.T) {
 				return nil
 			},
 		})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.Panics(t, func() {
 			_ = server.Start()
@@ -618,9 +575,7 @@ func TestServer(t *testing.T) {
 				return ctx
 			},
 		})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		err = server.Start()
 		if assert.Error(t, err) {
@@ -636,9 +591,7 @@ func TestNoServerFromContext(t *testing.T) {
 func TestErrLogWriter(t *testing.T) {
 
 	s, err := New(Options{Config: config.LoadDefault()})
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	buf := bytes.NewBuffer(make([]byte, 0, 1024))
 	s.Logger = slog.New(slog.NewHandler(false, buf))
@@ -649,7 +602,7 @@ func TestErrLogWriter(t *testing.T) {
 
 	message := "error message"
 	n, err := w.Write([]byte(message))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, len(message), n)
 
 	assert.Regexp(t, regexp.MustCompile(

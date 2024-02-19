@@ -46,19 +46,19 @@ func (suite *LangTestSuite) TestNew() {
 func (suite *LangTestSuite) TestLoadError() {
 	l := New()
 	err := l.Load(&osfs.FS{}, "notalanguagedir", "notalanguagepath")
-	suite.NotNil(err)
+	suite.Error(err)
 	suite.Len(l.languages, 1)
 }
 
 func (suite *LangTestSuite) TestLoadInvalid() {
 	dst := map[string]string{}
-	suite.NotNil(readLangFile(&osfs.FS{}, "resources/lang/invalid.json", &dst))
+	suite.Error(readLangFile(&osfs.FS{}, "resources/lang/invalid.json", &dst))
 }
 
 func (suite *LangTestSuite) TestLoadOverride() {
 	l := New()
 	err := l.Load(&osfs.FS{}, "en-US", "resources/lang/en-US")
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.Len(l.languages, 1)
 	suite.Equal("rule override", l.languages["en-US"].validation.rules["override"])
 	suite.Equal("Custom line", l.languages["en-US"].lines["custom-line"])
@@ -67,7 +67,7 @@ func (suite *LangTestSuite) TestLoadOverride() {
 func (suite *LangTestSuite) TestLoad() {
 	l := New()
 	err := l.Load(&osfs.FS{}, "en-UK", "resources/lang/en-UK")
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.Len(l.languages, 2)
 	expected := &Language{
 		name: "en-UK",
@@ -84,7 +84,7 @@ func (suite *LangTestSuite) TestLoad() {
 	suite.Equal(expected, l.languages["en-UK"])
 
 	err = l.Load(&osfs.FS{}, "en-UK", "resources/lang/en-US") // Overriding en-UK with the lines in en-US
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.Len(l.languages, 2)
 	expected = &Language{
 		name: "en-UK",
@@ -111,7 +111,7 @@ func (suite *LangTestSuite) TestLoad() {
 
 func (suite *LangTestSuite) TestLoadAllAvailableLanguages() {
 	l := New()
-	suite.Nil(l.LoadAllAvailableLanguages(&osfs.FS{}))
+	suite.NoError(l.LoadAllAvailableLanguages(&osfs.FS{}))
 	suite.Len(l.languages, 2)
 	suite.Contains(l.languages, "en-US")
 	suite.Contains(l.languages, "en-UK")

@@ -9,6 +9,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
@@ -84,9 +85,8 @@ func TestTimeoutPlugin(t *testing.T) {
 
 		users := []*TestUser{}
 		res := db.Select("*").Where("email IN (?)", args).Find(&users)
-		if assert.Error(t, res.Error) {
-			assert.Equal(t, "context deadline exceeded", res.Error.Error())
-		}
+		require.Error(t, res.Error)
+		assert.Equal(t, "context deadline exceeded", res.Error.Error())
 	})
 
 	t.Run("re-use_statement", func(t *testing.T) {
@@ -94,11 +94,9 @@ func TestTimeoutPlugin(t *testing.T) {
 
 		users := []*TestUser{}
 		db = db.Select("*").Where("email", "johndoe@example.org").Find(&users)
-		if !assert.NoError(t, db.Error) {
-			return
-		}
+		require.NoError(t, db.Error)
 		db = db.Select("*").Where("email", "johndoe@example.org").Find(&users)
-		assert.NoError(t, db.Error)
+		require.NoError(t, db.Error)
 	})
 
 	t.Run("dont_override_predefined_context", func(t *testing.T) {
@@ -115,7 +113,7 @@ func TestTimeoutPlugin(t *testing.T) {
 
 		// The context is replaced with a longer timeout so the query can be completed.
 		res := db.WithContext(ctx).Select("*").Where("email IN (?)", args).Find(&users)
-		assert.NoError(t, res.Error)
+		require.NoError(t, res.Error)
 	})
 
 	t.Run("disabled", func(t *testing.T) {
@@ -142,7 +140,7 @@ func TestTimeoutPlugin(t *testing.T) {
 
 		users := []*TestUser{}
 		res := db.Select("*").Where("email IN (?)", args).Find(&users)
-		assert.NoError(t, res.Error)
+		require.NoError(t, res.Error)
 	})
 
 	t.Run("transaction_many_queries", func(t *testing.T) {
@@ -192,6 +190,6 @@ func TestTimeoutPlugin(t *testing.T) {
 			}
 			return nil
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }

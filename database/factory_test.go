@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"goyave.dev/goyave/v5/config"
 )
@@ -74,21 +75,15 @@ func TestFactory(t *testing.T) {
 		cfg.Set("database.name", "factory_test.db")
 		cfg.Set("database.options", "mode=memory")
 		db, err := New(cfg, nil)
-		if !assert.NoError(t, err) {
-			return
-		}
-		if !assert.NoError(t, db.AutoMigrate(&TestUser{})) {
-			return
-		}
+		require.NoError(t, err)
+		require.NoError(t, db.AutoMigrate(&TestUser{}))
 
 		factory := NewFactory(userGenerator)
 		records := factory.Save(db, 3)
 
 		results := []*TestUser{}
 		res := db.Find(&results)
-		if !assert.NoError(t, res.Error) {
-			return
-		}
+		require.NoError(t, res.Error)
 		assert.Equal(t, records, results)
 	})
 }

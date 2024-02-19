@@ -443,7 +443,7 @@ func TestDevModeHandlerFormat(t *testing.T) {
 				if c.h != nil {
 					handler = c.h(handler)
 				}
-				assert.Nil(t, handler.Handle(context.Background(), c.r()))
+				assert.NoError(t, handler.Handle(context.Background(), c.r()))
 
 				assert.Equal(t, c.want, buf.String())
 			})

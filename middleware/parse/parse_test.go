@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/fsutil"
@@ -22,15 +23,15 @@ func TestParseMiddleware(t *testing.T) {
 	t.Run("Max Upload Size", func(t *testing.T) {
 		m := &Middleware{}
 		m.Init(server.Server)
-		assert.Equal(t, 10.0, m.getMaxUploadSize()) // Default
+		assert.InEpsilon(t, 10.0, m.getMaxUploadSize(), 0) // Default
 		m.MaxUploadSize = 2.3
-		assert.Equal(t, 2.3, m.getMaxUploadSize())
+		assert.InEpsilon(t, 2.3, m.getMaxUploadSize(), 0)
 
 		m = &Middleware{
 			MaxUploadSize: 2.3,
 		}
 		m.Init(server.Server)
-		assert.Equal(t, 2.3, m.getMaxUploadSize())
+		assert.InEpsilon(t, 2.3, m.getMaxUploadSize(), 0)
 	})
 
 	t.Run("Parse Query", func(t *testing.T) {
@@ -112,15 +113,13 @@ func TestParseMiddleware(t *testing.T) {
 	t.Run("Multipart", func(t *testing.T) {
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
-		assert.NoError(t, testutil.WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
-		assert.NoError(t, writer.WriteField("email", "johndoe@example.org"))
+		require.NoError(t, testutil.WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
+		require.NoError(t, writer.WriteField("email", "johndoe@example.org"))
 
 		request := testutil.NewTestRequest(http.MethodPost, "/parse", body)
 		request.Header().Set("Content-Type", writer.FormDataContentType())
 
-		if !assert.NoError(t, writer.Close()) {
-			return
-		}
+		require.NoError(t, writer.Close())
 
 		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, req *goyave.Request) {
 			data, ok := req.Data.(map[string]any)

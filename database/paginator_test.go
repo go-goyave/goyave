@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
@@ -71,7 +72,7 @@ func TestPaginator(t *testing.T) {
 		assert.Equal(t, &articles, p.Records)
 
 		err := p.UpdatePageInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, int64(11), p.Total)
 		assert.Equal(t, int64(3), p.MaxPage)
@@ -89,7 +90,7 @@ func TestPaginator(t *testing.T) {
 		assert.Equal(t, &articles, p.Records)
 
 		err := p.Find()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, int64(11), p.Total)
 		assert.Equal(t, int64(3), p.MaxPage)
@@ -116,7 +117,7 @@ func TestPaginator(t *testing.T) {
 		p := NewPaginator(db, 2, 5, &articles)
 
 		err = p.Find()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, int64(0), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
@@ -132,7 +133,7 @@ func TestPaginator(t *testing.T) {
 		p := NewPaginator(db, 2, 5, &articles)
 
 		err := p.Find() // updatePageInfo is called because the page info is not called yet
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, p.loadedPageInfo)
 	})
 
@@ -145,7 +146,7 @@ func TestPaginator(t *testing.T) {
 		p.loadedPageInfo = true // Let's assume the page info has already been loaded
 
 		err := p.Find()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, p.loadedPageInfo) // Page info invalidated
 	})
 
@@ -157,7 +158,7 @@ func TestPaginator(t *testing.T) {
 		p := NewPaginator(db, 1, 5, &articles)
 
 		err := p.Find()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, int64(2), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
@@ -183,7 +184,7 @@ func TestPaginator(t *testing.T) {
 		assert.Equal(t, p, p.Raw(query, queryVars, countQuery, queryVars))
 
 		err := p.Find()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, int64(2), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
@@ -200,7 +201,7 @@ func TestPaginator(t *testing.T) {
 		p = NewPaginator(db, 2, 5, &articles)
 		p.Raw(query, queryVars, countQuery, queryVars)
 		err = p.Find()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, int64(2), p.Total)
 		assert.Equal(t, int64(1), p.MaxPage)
 		assert.True(t, p.loadedPageInfo)

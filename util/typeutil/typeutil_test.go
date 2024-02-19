@@ -5,6 +5,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConvert(t *testing.T) {
@@ -52,11 +53,11 @@ func TestConvert(t *testing.T) {
 			res, err := Convert[*TestStruct](c.value)
 			assert.Equal(t, c.want, res)
 			if c.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-
+				require.NoError(t, err)
 			}
+
 			assert.Equal(t, c.want, res)
 		})
 	}
@@ -64,46 +65,46 @@ func TestConvert(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
 		res, err := Convert[string]("hello")
 		assert.Equal(t, "hello", res)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("int", func(t *testing.T) {
 		res, err := Convert[int](123)
 		assert.Equal(t, 123, res)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("float", func(t *testing.T) {
 		res, err := Convert[float64](0.3)
-		assert.Equal(t, 0.3, res)
-		assert.NoError(t, err)
+		assert.InEpsilon(t, 0.3, res, 0)
+		require.NoError(t, err)
 	})
 	t.Run("bool", func(t *testing.T) {
 		res, err := Convert[bool](true)
-		assert.Equal(t, true, res)
-		assert.NoError(t, err)
+		assert.True(t, res)
+		require.NoError(t, err)
 	})
 	t.Run("mismatching types", func(t *testing.T) {
 		res, err := Convert[bool]("true")
-		assert.Equal(t, false, res)
-		assert.Error(t, err)
+		assert.False(t, res)
+		require.Error(t, err)
 	})
 	t.Run("[]string", func(t *testing.T) {
 		res, err := Convert[[]string]([]string{"a", "b", "c"})
 		assert.Equal(t, []string{"a", "b", "c"}, res)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("[]any", func(t *testing.T) {
 		res, err := Convert[[]any]([]string{"a", "4", "c"})
 		assert.Equal(t, []any{"a", "4", "c"}, res)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		res, err = Convert[[]any]([]any{"a", 4, 4.0, true, []any{"a", "b"}})
 		assert.Equal(t, []any{"a", 4, 4.0, true, []any{"a", "b"}}, res)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
 func TestMustConvert(t *testing.T) {
-	assert.Equal(t, 0.3, MustConvert[float64](0.3))
+	assert.InEpsilon(t, 0.3, MustConvert[float64](0.3), 0)
 
 	assert.Panics(t, func() {
 		MustConvert[float64]("0.3")

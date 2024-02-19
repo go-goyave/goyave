@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/cors"
 	"goyave.dev/goyave/v5/util/fsutil"
@@ -280,7 +281,7 @@ func TestRouter(t *testing.T) {
 	t.Run("Static", func(t *testing.T) {
 		router := prepareRouterTest()
 		f, err := fs.Sub(&osfs.FS{}, "resources")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		route := router.Static(fsutil.NewEmbed(f.(fs.ReadDirFS)), "/uri", false)
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
 		assert.Equal(t, []string{"resource"}, route.parameters)
@@ -428,9 +429,7 @@ func TestRouter(t *testing.T) {
 
 				body, err := io.ReadAll(res.Body)
 				assert.NoError(t, res.Body.Close())
-				if !assert.NoError(t, err) {
-					return
-				}
+				require.NoError(t, err)
 				assert.Equal(t, c.expectedBody, string(body))
 			})
 		}

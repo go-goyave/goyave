@@ -224,9 +224,7 @@ func TestDefaultUpgradeErrorHandler(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 			body, err := testutil.ReadJSONBody[map[string]string](result.Body)
 			assert.NoError(t, result.Body.Close())
-			if !assert.NoError(t, err) {
-				return
-			}
+			assert.NoError(t, err)
 			c.expect(t, body)
 		})
 	}
@@ -308,26 +306,22 @@ func TestUpgrade(t *testing.T) {
 
 		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
 		assert.Equal(t, "Value", resp.Header.Get("X-Test"))
-		if !assert.NoError(t, err) {
-			fmt.Println("RESPONSE STATUS:", resp.StatusCode)
-			fmt.Println("RESPONSE HEADERS:", resp.Header)
-			return
-		}
+		assert.NoError(t, err, fmt.Sprintf("RESPONSE STATUS: %d, RESPONSE HEADERS: %v", resp.StatusCode, resp.Header))
 		assert.NoError(t, resp.Body.Close())
 		defer func() {
 			assert.NoError(t, conn.Close())
 		}()
 
 		message := []byte("hello world")
-		assert.Nil(t, conn.WriteMessage(ws.TextMessage, message))
+		assert.NoError(t, conn.WriteMessage(ws.TextMessage, message))
 
 		messageType, data, err := conn.ReadMessage()
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, ws.TextMessage, messageType)
 		assert.Equal(t, message, data)
 
 		m := ws.FormatCloseMessage(ws.CloseNormalClosure, "Connection closed by client")
-		assert.Nil(t, conn.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second)))
+		assert.NoError(t, conn.WriteControl(ws.CloseMessage, m, time.Now().Add(time.Second)))
 	})
 
 	go func() {
@@ -356,9 +350,7 @@ func TestUpgradeError(t *testing.T) {
 
 	body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
 	assert.NoError(t, resp.Body.Close())
-	if !assert.NoError(t, err) {
-		return
-	}
+	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"error": http.StatusText(http.StatusBadRequest)}, body)
 }
 
@@ -417,19 +409,15 @@ func TestCloseHandshakeTimeout(t *testing.T) {
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), "http")
 
 		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if !assert.NoError(t, err) {
-			fmt.Println("RESPONSE STATUS:", resp.StatusCode)
-			fmt.Println("RESPONSE HEADERS:", resp.Header)
-			return
-		}
 		assert.NoError(t, resp.Body.Close())
+		assert.NoError(t, err, fmt.Sprintf("RESPONSE STATUS: %d, RESPONSE HEADERS: %v", resp.StatusCode, resp.Header))
 		defer func() {
 			assert.NoError(t, conn.Close())
 		}()
 		time.Sleep(1500 * time.Millisecond)
 
 		messageType, _, err := conn.ReadMessage()
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 
 		// The server has sent the close handshake payload with NormalClosureMessage
 		assert.Equal(t, &ws.CloseError{Code: ws.CloseNormalClosure, Text: NormalClosureMessage}, err)
@@ -446,7 +434,7 @@ func TestCloseHandshakeTimeout(t *testing.T) {
 func TestCloseHandler(t *testing.T) {
 	c := newConn(&ws.Conn{}, 1*time.Second)
 
-	assert.Nil(t, c.closeHandler(ws.CloseNormalClosure, ""))
+	assert.NoError(t, c.closeHandler(ws.CloseNormalClosure, ""))
 	select {
 	case <-c.waitClose:
 	default:
@@ -556,12 +544,8 @@ func TestGracefulClose(t *testing.T) {
 
 func testGracefulClose(t *testing.T, routeURL string, expectedError *ws.CloseError) {
 	conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-	if !assert.NoError(t, err) {
-		fmt.Println("RESPONSE STATUS:", resp.StatusCode)
-		fmt.Println("RESPONSE HEADERS:", resp.Header)
-		return
-	}
 	assert.NoError(t, resp.Body.Close())
+	assert.NoError(t, err, fmt.Sprintf("RESPONSE STATUS: %d, RESPONSE HEADERS: %v", resp.StatusCode, resp.Header))
 	defer func() {
 		assert.NoError(t, conn.Close())
 	}()
@@ -591,16 +575,14 @@ func TestCloseConnectionClosed(t *testing.T) {
 		r.Subrouter("/websocket").Get("", func(response *goyave.Response, request *goyave.Request) {
 			defer wg.Done()
 			c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
-			if !assert.NoError(t, err) {
-				return
-			}
+			assert.NoError(t, err)
 			response.Status(http.StatusSwitchingProtocols)
 
 			conn := newConn(c, time.Second)
 
-			assert.Nil(t, conn.Conn.Close()) // Connection closed right away, server wont be able to write anymore
+			assert.NoError(t, conn.Conn.Close()) // Connection closed right away, server wont be able to write anymore
 			err = conn.CloseNormal()
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "use of closed network connection")
 		})
 	})
@@ -614,18 +596,14 @@ func TestCloseConnectionClosed(t *testing.T) {
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), "http")
 
 		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if !assert.NoError(t, err) {
-			fmt.Println("RESPONSE STATUS:", resp.StatusCode)
-			fmt.Println("RESPONSE HEADERS:", resp.Header)
-			return
-		}
 		assert.NoError(t, resp.Body.Close())
+		assert.NoError(t, err, fmt.Sprintf("RESPONSE STATUS: %d, RESPONSE HEADERS: %v", resp.StatusCode, resp.Header))
 		defer func() {
 			assert.NoError(t, conn.Close())
 		}()
 
 		_, _, err = conn.ReadMessage()
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 		assert.Equal(t, &ws.CloseError{Code: ws.CloseAbnormalClosure, Text: "unexpected EOF"}, err)
 	})
 
@@ -654,16 +632,14 @@ func TestCloseWriteTimeout(t *testing.T) {
 		r.Subrouter("/websocket").Get("", func(response *goyave.Response, request *goyave.Request) {
 			defer wg.Done()
 			c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
-			if !assert.NoError(t, err) {
-				return
-			}
+			assert.NoError(t, err)
 			response.Status(http.StatusSwitchingProtocols)
 
 			conn := newConn(c, time.Second)
 			conn.closeTimeout = -1 * time.Second
 
 			// No error expected, the connection should close as normal without waiting
-			assert.Nil(t, conn.CloseNormal())
+			assert.NoError(t, conn.CloseNormal())
 		})
 	})
 
@@ -676,12 +652,8 @@ func TestCloseWriteTimeout(t *testing.T) {
 		routeURL = "ws" + strings.TrimPrefix(route.BuildURL(), "http")
 
 		conn, resp, err := ws.DefaultDialer.Dial(routeURL, nil)
-		if !assert.NoError(t, err) {
-			fmt.Println("RESPONSE STATUS:", resp.StatusCode)
-			fmt.Println("RESPONSE HEADERS:", resp.Header)
-			return
-		}
 		assert.NoError(t, resp.Body.Close())
+		assert.NoError(t, err, fmt.Sprintf("RESPONSE STATUS: %d, RESPONSE HEADERS: %v", resp.StatusCode, resp.Header))
 		assert.NoError(t, conn.Close())
 	})
 

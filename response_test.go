@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
@@ -87,7 +87,7 @@ func TestResponse(t *testing.T) {
 
 		// Header not written
 		res := recorder.Result()
-		assert.NoError(t, res.Body.Close())
+		require.NoError(t, res.Body.Close())
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	})
 
@@ -96,7 +96,7 @@ func TestResponse(t *testing.T) {
 		resp.WriteHeader(http.StatusNoContent)
 
 		res := recorder.Result()
-		assert.NoError(t, res.Body.Close())
+		require.NoError(t, res.Body.Close())
 		assert.Equal(t, http.StatusNoContent, resp.status)
 		assert.True(t, resp.wroteHeader)
 		assert.True(t, resp.IsHeaderWritten())
@@ -113,7 +113,7 @@ func TestResponse(t *testing.T) {
 		resp.WriteHeader(http.StatusOK)
 
 		res := recorder.Result()
-		assert.NoError(t, res.Body.Close())
+		require.NoError(t, res.Body.Close())
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "value", res.Header.Get("X-Test"))
 	})
@@ -141,9 +141,7 @@ func TestResponse(t *testing.T) {
 
 		body, err := io.ReadAll(res.Body)
 		assert.NoError(t, res.Body.Close())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		// utf-8 BOM + text content
 		assert.Equal(t, append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), body)
@@ -168,9 +166,7 @@ func TestResponse(t *testing.T) {
 
 		body, err := io.ReadAll(res.Body)
 		assert.NoError(t, res.Body.Close())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		// utf-8 BOM + text content
 		assert.Equal(t, append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), body)
@@ -188,10 +184,8 @@ func TestResponse(t *testing.T) {
 
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
-		if !assert.NoError(t, err) {
-			return
-		}
 		assert.NoError(t, res.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
 		assert.Equal(t, "{\"hello\":\"world\"}\n", string(body))
@@ -210,10 +204,8 @@ func TestResponse(t *testing.T) {
 
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
-		if !assert.NoError(t, err) {
-			return
-		}
 		assert.NoError(t, res.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "hello world", string(body))
 	})
@@ -226,11 +218,9 @@ func TestResponse(t *testing.T) {
 		})
 
 		res := recorder.Result()
-		assert.NoError(t, res.Body.Close())
+		require.NoError(t, res.Body.Close())
 		cookies := res.Cookies()
-		if !assert.Equal(t, 1, len(cookies)) {
-			return
-		}
+		require.Len(t, cookies, 1)
 		assert.Equal(t, "cookie-name", cookies[0].Name)
 		assert.Equal(t, "test", cookies[0].Value)
 	})
@@ -241,10 +231,8 @@ func TestResponse(t *testing.T) {
 
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
-		if !assert.NoError(t, err) {
-			return
-		}
 		assert.NoError(t, res.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.status) // Ensures PreWrite has been called
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "hello world", string(body))
@@ -258,10 +246,7 @@ func TestResponse(t *testing.T) {
 		assert.False(t, resp.Hijacked())
 
 		c, b, err := resp.Hijack()
-		if !assert.NoError(t, err) {
-			return
-		}
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, c)
 		assert.NotNil(t, b)
 		assert.True(t, resp.hijacked)
@@ -271,7 +256,7 @@ func TestResponse(t *testing.T) {
 			resp, _ := newTestReponse()
 
 			c, b, err := resp.Hijack()
-			assert.True(t, errors.Is(err, ErrNotHijackable))
+			require.ErrorIs(t, err, ErrNotHijackable)
 			assert.Nil(t, c)
 			assert.Nil(t, b)
 		})
@@ -284,20 +269,20 @@ func TestResponse(t *testing.T) {
 			resp.responseWriter = &hijackableRecorder{recorder}
 
 			_, _, err := resp.Hijack()
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			resp.Error(fmt.Errorf("test error"))
 			res := recorder.Result()
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
 
 			body, err := io.ReadAll(res.Body)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			// The connection was hijacked so errors shouldn't be written to the response
 			assert.Empty(t, body)
-			assert.NoError(t, res.Body.Close())
 		})
 	})
 
@@ -315,7 +300,7 @@ func TestResponse(t *testing.T) {
 
 		resp.PreWrite([]byte{1, 2, 3})
 		assert.Equal(t, []byte{1, 2, 3}, newWriter.prewritten)
-		assert.NoError(t, resp.close())
+		require.NoError(t, resp.close())
 		assert.True(t, newWriter.closed)
 	})
 
@@ -409,10 +394,8 @@ func TestResponse(t *testing.T) {
 
 			res := recorder.Result()
 			body, err := io.ReadAll(res.Body)
-			if !assert.NoError(t, err) {
-				return
-			}
 			assert.NoError(t, res.Body.Close())
+			require.NoError(t, err)
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
 			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 			assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
@@ -440,10 +423,8 @@ func TestResponse(t *testing.T) {
 
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
-		if !assert.NoError(t, err) {
-			return
-		}
 		assert.NoError(t, res.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, http.StatusForbidden, resp.status)
 		assert.Equal(t, http.StatusForbidden, res.StatusCode)
 		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
@@ -475,10 +456,8 @@ func TestResponse(t *testing.T) {
 
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
-		if !assert.NoError(t, err) {
-			return
-		}
 		assert.NoError(t, res.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, http.StatusForbidden, resp.status)
 		assert.Equal(t, http.StatusForbidden, res.StatusCode)
 		assert.Equal(t, "forbidden", string(body))
@@ -507,10 +486,8 @@ func TestResponse(t *testing.T) {
 
 			res := recorder.Result()
 			body, err := io.ReadAll(res.Body)
-			if !assert.NoError(t, err) {
-				return
-			}
 			assert.NoError(t, res.Body.Close())
+			require.NoError(t, err)
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
 			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 			assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))

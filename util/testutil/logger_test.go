@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockT struct {
@@ -24,7 +25,7 @@ func TestLogWriter(t *testing.T) {
 	}
 
 	n, err := writerLogger.Write([]byte("logs"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 4, n)
 
 	assert.Equal(t, "logs", buf.String())

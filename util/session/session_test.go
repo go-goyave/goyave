@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/utils/tests"
@@ -44,9 +45,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("New", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		opts := &sql.TxOptions{
 			Isolation: sql.LevelReadCommitted,
@@ -63,9 +62,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("Manual", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		committer := &testCommitter{}
 		db.Statement.ConnPool = committer
 		opts := &sql.TxOptions{
@@ -76,25 +73,23 @@ func TestGormSession(t *testing.T) {
 
 		ctx := context.WithValue(context.Background(), testKey{}, "testvalue")
 		tx, err := session.Begin(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEqual(t, session, tx)
 		assert.Equal(t, opts, tx.(Gorm).TxOptions)
 		assert.Equal(t, tx.(Gorm).ctx, tx.Context())
 		assert.Equal(t, "testvalue", tx.Context().Value(testKey{}))
 		assert.Equal(t, tx.(Gorm).db, tx.Context().Value(dbKey{}))
 
-		assert.NoError(t, tx.Commit())
+		require.NoError(t, tx.Commit())
 		assert.True(t, committer.committed)
 
-		assert.NoError(t, tx.Rollback())
+		require.NoError(t, tx.Rollback())
 		assert.True(t, committer.rolledback)
 	})
 
 	t.Run("Begin_error", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		beginErr := fmt.Errorf("begin error")
 		committer := &testCommitter{
 			beginError: beginErr,
@@ -103,20 +98,18 @@ func TestGormSession(t *testing.T) {
 		session := GORM(db, nil)
 
 		tx, err := session.Begin(context.Background())
-		assert.ErrorIs(t, err, beginErr)
+		require.ErrorIs(t, err, beginErr)
 		assert.Nil(t, tx)
 
 		err = session.Transaction(context.Background(), func(_ context.Context) error {
 			return nil
 		})
-		assert.ErrorIs(t, err, beginErr)
+		require.ErrorIs(t, err, beginErr)
 	})
 
 	t.Run("Nested_manual", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		committer := &testCommitter{}
 		db.Statement.ConnPool = committer
 		session := GORM(db, nil)
@@ -124,20 +117,18 @@ func TestGormSession(t *testing.T) {
 		ctx := context.WithValue(context.Background(), testKey{}, "testvalue")
 		tx, err := session.Begin(ctx)
 		tx.(Gorm).db.Statement.Clauses["testclause"] = clause.Clause{} // Use this to check the nested db is based on the parent DB
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, tx)
 
 		subtx, err := session.Begin(tx.Context())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "testvalue", subtx.(Gorm).db.Statement.Context.Value(testKey{})) // Parent context is kept
 		assert.Contains(t, subtx.(Gorm).db.Statement.Clauses, "testclause")              // Parent DB is used
 	})
 
 	t.Run("Transaction", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		committer := &testCommitter{}
 		db.Statement.ConnPool = committer
 		session := GORM(db, nil)
@@ -152,7 +143,7 @@ func TestGormSession(t *testing.T) {
 			assert.True(t, ok)
 			return nil
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "testvalue", ctxValue)
 		assert.True(t, committer.committed)
 		assert.False(t, committer.rolledback)
@@ -160,9 +151,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("Nested_Transaction", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		committer := &testCommitter{}
 		db.Statement.ConnPool = committer
 		session := GORM(db, nil)
@@ -170,7 +159,7 @@ func TestGormSession(t *testing.T) {
 		ctx := context.WithValue(context.Background(), testKey{}, "testvalue")
 		tx, err := session.Begin(ctx)
 		tx.(Gorm).db.Statement.Clauses["testclause"] = clause.Clause{} // Use this to check the nested db is based on the parent DB
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, tx)
 
 		err = session.Transaction(tx.Context(), func(ctx context.Context) error {
@@ -179,14 +168,12 @@ func TestGormSession(t *testing.T) {
 			assert.Contains(t, db.Statement.Clauses, "testclause") // Parent DB is used
 			return nil
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("TransactionError", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		committer := &testCommitter{}
 		db.Statement.ConnPool = committer
 		session := GORM(db, nil)
@@ -197,7 +184,7 @@ func TestGormSession(t *testing.T) {
 			ctxValue = ctx.Value(testKey{})
 			return fmt.Errorf("test err")
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, errors.New(fmt.Errorf("test err")).Error(), err.Error())
 		assert.Equal(t, "testvalue", ctxValue)
 		assert.True(t, committer.rolledback)
@@ -206,9 +193,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("Transaction_Commit_error", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		commitErr := fmt.Errorf("commit error")
 		committer := &testCommitter{
 			commitError: commitErr,
@@ -219,14 +204,12 @@ func TestGormSession(t *testing.T) {
 		err = session.Transaction(context.Background(), func(_ context.Context) error {
 			return nil
 		})
-		assert.ErrorIs(t, err, commitErr)
+		require.ErrorIs(t, err, commitErr)
 	})
 
 	t.Run("DB", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		fallback := &gorm.DB{}
 
 		cases := []struct {

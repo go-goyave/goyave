@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
@@ -32,18 +33,14 @@ func TestJWTController(t *testing.T) {
 			"password": "secret",
 		}
 		body, err := json.Marshal(data)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		respBody, err := testutil.ReadJSONBody[map[string]any](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.NotEmpty(t, respBody["token"])
 	})
 
@@ -61,18 +58,14 @@ func TestJWTController(t *testing.T) {
 			"password": "wrong password",
 		}
 		body, err := json.Marshal(data)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		respBody, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, respBody)
 	})
 
@@ -96,14 +89,12 @@ func TestJWTController(t *testing.T) {
 			"password": "secret",
 		}
 		body, err := json.Marshal(data)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 		assert.NotEmpty(t, buf.String())
 	})
 
@@ -127,14 +118,12 @@ func TestJWTController(t *testing.T) {
 			"password": "secret",
 		}
 		body, err := json.Marshal(data)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 		assert.NotEmpty(t, buf.String())
 	})
 
@@ -155,18 +144,14 @@ func TestJWTController(t *testing.T) {
 			"pass":  "secret",
 		}
 		body, err := json.Marshal(data)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		respBody, err := testutil.ReadJSONBody[map[string]any](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.NotEmpty(t, respBody["token"])
 	})
 
@@ -181,18 +166,14 @@ func TestJWTController(t *testing.T) {
 
 		data := map[string]any{}
 		body, err := json.Marshal(data)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
 		respBody, err := testutil.ReadJSONBody[map[string]*validation.ErrorResponse](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		if assert.Contains(t, respBody, "error") && assert.NotNil(t, respBody["error"]) {
 			assert.Contains(t, respBody["error"].Body.Fields, "username")
 			assert.Contains(t, respBody["error"].Body.Fields, "password")

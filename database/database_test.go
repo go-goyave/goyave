@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
@@ -65,10 +66,8 @@ func TestNewDatabase(t *testing.T) {
 
 		slogger := slog.New(slog.NewHandler(true, &bytes.Buffer{}))
 		db, err := New(cfg, func() *slog.Logger { return slogger })
-		assert.NoError(t, err)
-		if !assert.NotNil(t, db) {
-			return
-		}
+		require.NoError(t, err)
+		require.NotNil(t, db)
 
 		if assert.NotNil(t, db.Config.Logger) {
 			// Logging is enabled when app.debug is true
@@ -126,10 +125,8 @@ func TestNewDatabase(t *testing.T) {
 
 		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 		db, err := New(cfg, func() *slog.Logger { return logger })
-		assert.NoError(t, err)
-		if !assert.NotNil(t, db) {
-			return
-		}
+		require.NoError(t, err)
+		require.NotNil(t, db)
 
 		if assert.NotNil(t, db.Config.Logger) {
 			// Logging is disable when app.debug is false
@@ -165,10 +162,8 @@ func TestNewDatabase(t *testing.T) {
 
 		dialector := &DummyDialector{}
 		db, err := NewFromDialector(cfg, nil, dialector)
-		assert.NoError(t, err)
-		if !assert.NotNil(t, db) {
-			return
-		}
+		require.NoError(t, err)
+		require.NotNil(t, db)
 
 		dbConfig := db.Config
 		// Can't check log level (gorm logger unexported)
@@ -198,7 +193,7 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.connection", "none")
 		db, err := New(cfg, nil)
 		assert.Nil(t, db)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "Cannot create DB connection. Database is set to \"none\" in the config", err.Error())
 	})
 
@@ -207,7 +202,7 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.connection", "notadriver")
 		db, err := New(cfg, nil)
 		assert.Nil(t, db)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "DB Connection \"notadriver\" not supported, forgotten import?", err.Error())
 	})
 
@@ -219,14 +214,12 @@ func TestNewDatabase(t *testing.T) {
 		cfg.Set("database.options", "mode=memory")
 
 		db, err := New(cfg, nil)
-		assert.NoError(t, err)
-		if !assert.NotNil(t, db) {
-			return
-		}
+		require.NoError(t, err)
+		require.NotNil(t, db)
 
 		dbNames := []string{}
 		res := db.Table("pragma_database_list").Select("name").Find(&dbNames)
-		assert.NoError(t, res.Error)
+		require.NoError(t, res.Error)
 		assert.Equal(t, []string{"main"}, dbNames)
 	})
 }

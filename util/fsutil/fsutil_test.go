@@ -19,10 +19,9 @@ import (
 	_ "embed"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
-
-	stderrors "errors"
 )
 
 func deleteFile(path string) {
@@ -95,36 +94,34 @@ func TestGetMIMEType(t *testing.T) {
 	mime, size, err := GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/img/logo/goyave_16.png"))
 	assert.Equal(t, "image/png", mime)
 	assert.Equal(t, int64(716), size)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/test_script.sh"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "text/plain; charset=utf-8", mime)
 
 	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath(".gitignore"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "application/octet-stream", mime)
 
 	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("config/config.test.json"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "application/json", mime)
 
 	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/test_script.js"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "text/javascript; charset=utf-8", mime)
 
 	cssPath := toAbsolutePath("util/fsutil/test.css")
 	err = os.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	mime, _, err = GetMIMEType(&osfs.FS{}, cssPath)
 	assert.Equal(t, "text/css", mime)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	deleteFile(cssPath)
 
 	_, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("doesn't exist"))
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	t.Run("empty_file", func(t *testing.T) {
 		filename := "empty_GetMIMEType.json"
@@ -140,7 +137,7 @@ func TestGetMIMEType(t *testing.T) {
 
 		assert.Equal(t, "application/json", mime)
 		assert.Equal(t, int64(0), size)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
@@ -295,19 +292,17 @@ func TestEmbed(t *testing.T) {
 	e := NewEmbed(resources)
 
 	stat, err := e.Stat("osfs/osfs.go")
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 	assert.False(t, stat.IsDir())
 	assert.Equal(t, "osfs.go", stat.Name())
 
 	stat, err = e.Stat("notadir/osfs.go")
 	assert.Nil(t, stat)
-	if assert.NotNil(t, err) {
+	if assert.Error(t, err) {
 		e, ok := err.(*errors.Error)
 		if assert.True(t, ok) {
 			var fsErr *fs.PathError
-			if assert.True(t, stderrors.As(e, &fsErr)) {
+			if assert.ErrorAs(t, e, &fsErr) {
 				assert.Equal(t, "open", fsErr.Op)
 				assert.Equal(t, "notadir/osfs.go", fsErr.Path)
 			}
@@ -317,9 +312,7 @@ func TestEmbed(t *testing.T) {
 	// Make it so the underlying FS implements
 	e.FS = testStatFS{resources}
 	stat, err = e.Stat("osfs/osfs.go")
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 	_, ok := stat.(*mockFileInfo)
 	assert.True(t, ok)
 
@@ -327,7 +320,7 @@ func TestEmbed(t *testing.T) {
 		e := NewEmbed(&mockFS{})
 
 		f, err := e.Open("")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, ok := f.(*mockFile)
 		assert.True(t, ok)
 	})
@@ -335,11 +328,10 @@ func TestEmbed(t *testing.T) {
 		e := NewEmbed(&mockFS{})
 
 		f, err := e.ReadDir("")
-		assert.NoError(t, err)
-		if assert.Len(t, f, 1) {
-			_, ok := f[0].(*mockDirEntry)
-			assert.True(t, ok)
-		}
+		require.NoError(t, err)
+		require.Len(t, f, 1)
+		_, ok := f[0].(*mockDirEntry)
+		assert.True(t, ok)
 	})
 }
 

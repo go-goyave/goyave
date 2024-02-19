@@ -7,6 +7,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
@@ -96,7 +97,7 @@ func TestAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 
 		request = server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")
@@ -106,10 +107,8 @@ func TestAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
 	})
 
@@ -127,7 +126,7 @@ func TestAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 
 		request.Route = &goyave.Route{Meta: map[string]any{}}
 		resp = server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
@@ -135,7 +134,7 @@ func TestAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 	})
 
 	t.Run("MiddlewareUnauthorizer", func(t *testing.T) {
@@ -152,10 +151,8 @@ func TestAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"custom error key": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
 	})
 }

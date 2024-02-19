@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
@@ -31,18 +32,16 @@ func TestJWTService(t *testing.T) {
 		expiry := time.Duration(20) * time.Second
 
 		tokenString, err := service.GenerateToken("johndoe")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return []byte(server.Config().GetString("auth.jwt.secret")), nil
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodHS256, parsedToken.Method)
 
-		assert.NoError(t, parsedToken.Claims.Valid())
+		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])
@@ -65,18 +64,16 @@ func TestJWTService(t *testing.T) {
 			"customClaim": "customValue",
 		}
 		tokenString, err := service.GenerateTokenWithClaims(srcClaims, jwt.SigningMethodHS256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return []byte(server.Config().GetString("auth.jwt.secret")), nil
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodHS256, parsedToken.Method)
 
-		assert.NoError(t, parsedToken.Claims.Valid())
+		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])
@@ -102,18 +99,16 @@ func TestJWTService(t *testing.T) {
 			"customClaim": "customValue",
 		}
 		tokenString, err := service.GenerateTokenWithClaims(srcClaims, jwt.SigningMethodRS256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return service.GetKey("auth.jwt.rsa.public")
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodRS256, parsedToken.Method)
 
-		assert.NoError(t, parsedToken.Claims.Valid())
+		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])
@@ -139,18 +134,16 @@ func TestJWTService(t *testing.T) {
 			"customClaim": "customValue",
 		}
 		tokenString, err := service.GenerateTokenWithClaims(srcClaims, jwt.SigningMethodES256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
 			return service.GetKey("auth.jwt.ecdsa.public")
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodES256, parsedToken.Method)
 
-		assert.NoError(t, parsedToken.Claims.Valid())
+		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])
@@ -166,7 +159,7 @@ func TestJWTService(t *testing.T) {
 		server.Config().Set("auth.jwt.expiry", 20)
 
 		_, err := service.GenerateTokenWithClaims(nil, jwt.SigningMethodPS256)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 
@@ -181,9 +174,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateToken(user.Email)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -196,7 +187,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 	})
 
 	t.Run("success_rsa", func(t *testing.T) {
@@ -210,9 +201,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodRS256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -225,7 +214,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 	})
 
 	t.Run("success_ecdsa", func(t *testing.T) {
@@ -239,9 +228,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodES256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -254,7 +241,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 	})
 
 	t.Run("invalid_token", func(t *testing.T) {
@@ -272,10 +259,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
 	})
 
@@ -291,9 +276,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			"sub": user.Email,
 			"nbf": time.Now().Add(time.Hour).Unix(),
 		}, jwt.SigningMethodHS256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -305,10 +288,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-not-valid-yet")}, body)
 	})
 
@@ -324,9 +305,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			"sub": user.Email,
 			"exp": time.Now().Add(-time.Hour).Unix(),
 		}, jwt.SigningMethodHS256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -338,10 +317,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-expired")}, body)
 	})
 
@@ -354,9 +331,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateToken("notjohndoe@example.org")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -368,10 +343,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
 	})
 
@@ -388,9 +361,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateToken("johndoe@example.org")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		authenticator := Middleware[*TestUser](&JWTAuthenticator{})
 		authenticator.Init(server.Server)
@@ -413,9 +384,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": "johndoe@example.org"}, jwt.SigningMethodRS256)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -427,10 +396,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
 	})
 
@@ -442,9 +409,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateToken("johndoe@example.org")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -456,10 +421,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
 	})
 
@@ -471,9 +434,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateToken("johndoe@example.org")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -485,10 +446,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
 	})
 
@@ -500,9 +459,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateToken("johndoe@example.org")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -527,10 +484,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.no-credentials-provided")}, body)
 	})
 
@@ -543,9 +498,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		service := NewJWTService(server.Config(), &osfs.FS{})
 
 		token, err := service.GenerateToken(user.Email)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
@@ -557,7 +510,7 @@ func TestJWTAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 	})
 
 	t.Run("optional_invalid_token", func(t *testing.T) {
@@ -575,10 +528,8 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
-		_ = resp.Body.Close()
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
 	})
 
@@ -594,6 +545,6 @@ func TestJWTAuthenticator(t *testing.T) {
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
+		assert.NoError(t, resp.Body.Close())
 	})
 }

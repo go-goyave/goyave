@@ -13,15 +13,15 @@ func TestConfigureMaxAge(t *testing.T) {
 	headers := http.Header{}
 
 	options.configureMaxAge(headers)
-	assert.Equal(t, headers.Get("Access-Control-Max-Age"), "43200")
+	assert.Equal(t, "43200", headers.Get("Access-Control-Max-Age"))
 
 	options.MaxAge = 5 * time.Second
 	options.configureMaxAge(headers)
-	assert.Equal(t, headers.Get("Access-Control-Max-Age"), "5")
+	assert.Equal(t, "5", headers.Get("Access-Control-Max-Age"))
 
 	options.MaxAge = 6*time.Second + 500*time.Millisecond
 	options.configureMaxAge(headers)
-	assert.Equal(t, headers.Get("Access-Control-Max-Age"), "6")
+	assert.Equal(t, "6", headers.Get("Access-Control-Max-Age"))
 }
 
 func TestConfigureAllowedHeaders(t *testing.T) {
@@ -30,14 +30,14 @@ func TestConfigureAllowedHeaders(t *testing.T) {
 	requestHeaders := http.Header{}
 
 	options.configureAllowedHeaders(headers, requestHeaders)
-	assert.Equal(t, headers.Get("Access-Control-Allow-Headers"), "Origin, Accept, Content-Type, X-Requested-With, Authorization")
+	assert.Equal(t, "Origin, Accept, Content-Type, X-Requested-With, Authorization", headers.Get("Access-Control-Allow-Headers"))
 
 	options.AllowedHeaders = []string{}
 	requestHeaders.Set("Access-Control-Request-Headers", "Accept, Origin")
 
 	options.configureAllowedHeaders(headers, requestHeaders)
-	assert.Equal(t, headers.Get("Access-Control-Allow-Headers"), "Accept, Origin")
-	assert.Equal(t, headers.Get("Vary"), "Access-Control-Request-Headers")
+	assert.Equal(t, "Accept, Origin", headers.Get("Access-Control-Allow-Headers"))
+	assert.Equal(t, "Access-Control-Request-Headers", headers.Get("Vary"))
 }
 
 func TestConfigureAllowedMethods(t *testing.T) {
@@ -120,6 +120,6 @@ func TestPreflight(t *testing.T) {
 
 	options.HandlePreflight(headers, requestHeaders)
 	assert.Equal(t, "GET, PUT", headers.Get("Access-Control-Allow-Methods"))
-	assert.Equal(t, headers.Get("Access-Control-Allow-Headers"), "Origin, Accept, Content-Type, X-Requested-With, Authorization")
-	assert.Equal(t, headers.Get("Access-Control-Max-Age"), "42")
+	assert.Equal(t, "Origin, Accept, Content-Type, X-Requested-With, Authorization", headers.Get("Access-Control-Allow-Headers"))
+	assert.Equal(t, "42", headers.Get("Access-Control-Max-Age"))
 }

@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
@@ -49,7 +50,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestServer_AutoConfig", func(t *testing.T) {
-		assert.NoError(t, os.Setenv("GOYAVE_ENV", "test"))
+		require.NoError(t, os.Setenv("GOYAVE_ENV", "test"))
 		server := NewTestServerWithOptions(t, goyave.Options{})
 
 		assert.NotNil(t, server.Lang)
@@ -57,7 +58,7 @@ func TestTestServer(t *testing.T) {
 
 		assert.Panics(t, func() {
 			// Config file not found
-			assert.NoError(t, os.Setenv("GOYAVE_ENV", ""))
+			require.NoError(t, os.Setenv("GOYAVE_ENV", ""))
 			NewTestServerWithOptions(t, goyave.Options{})
 		})
 	})
@@ -73,10 +74,8 @@ func TestTestServer(t *testing.T) {
 		resp := server.TestRequest(httptest.NewRequest(http.MethodGet, "/route", nil))
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		respBody, err := io.ReadAll(resp.Body)
-		assert.NoError(t, resp.Body.Close())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, "OK", string(respBody))
 	})
 
@@ -108,10 +107,8 @@ func TestTestServer(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		respBody, err := io.ReadAll(resp.Body)
-		assert.NoError(t, resp.Body.Close())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, "OK", string(respBody))
 	})
 
@@ -125,7 +122,7 @@ func TestTestServer(t *testing.T) {
 		assert.NotNil(t, req.Extra)
 
 		b, err := io.ReadAll(req.Body())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "body", string(b))
 		assert.Equal(t, server.Lang.GetDefault(), req.Lang)
 	})
@@ -138,8 +135,8 @@ func TestTestServer(t *testing.T) {
 		resp.String(http.StatusOK, "hello")
 		result := recorder.Result()
 		b, err := io.ReadAll(result.Body)
-		assert.NoError(t, result.Body.Close())
-		assert.NoError(t, err)
+		require.NoError(t, result.Body.Close())
+		require.NoError(t, err)
 		assert.Equal(t, "hello", string(b))
 		assert.NotPanics(t, func() {
 			// No panics because the server is accessible so the ErrLogger.Println succeeds
@@ -162,7 +159,7 @@ func TestNewTestRequest(t *testing.T) {
 	assert.NotNil(t, req.Extra)
 
 	b, err := io.ReadAll(req.Body())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "body", string(b))
 
 }
@@ -174,41 +171,38 @@ func TestNewTestResponse(t *testing.T) {
 	resp.String(http.StatusOK, "hello")
 	result := recorder.Result()
 	b, err := io.ReadAll(result.Body)
-	assert.NoError(t, result.Body.Close())
-	assert.NoError(t, err)
+	require.NoError(t, result.Body.Close())
+	require.NoError(t, err)
 	assert.Equal(t, "hello", string(b))
 }
 
 func TestReadJSONBody(t *testing.T) {
 	body := bytes.NewBufferString(`{"key":"value"}`)
 	jsonBody, err := ReadJSONBody[map[string]string](body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, map[string]string{"key": "value"}, jsonBody)
 
 	jsonBodyError, err := ReadJSONBody[string](body)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, jsonBodyError)
 }
 
 func TestWriteMultipartFile(t *testing.T) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	assert.NoError(t, WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
-	assert.NoError(t, writer.Close())
+	require.NoError(t, WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
+	require.NoError(t, writer.Close())
 
 	req := NewTestRequest(http.MethodPost, "/uri", body)
 	req.Header().Set("Content-Type", writer.FormDataContentType())
-	assert.NoError(t, req.Request().ParseMultipartForm(1024*1024*1024))
+	require.NoError(t, req.Request().ParseMultipartForm(1024*1024*1024))
 
 	files := req.Request().MultipartForm.File
-	if !assert.Len(t, files, 1) || !assert.Contains(t, files, "profile_picture") {
-		return
-	}
+	require.Len(t, files, 1)
+	require.Contains(t, files, "profile_picture")
 
 	file := files["profile_picture"]
-	if !assert.Len(t, file, 1) {
-		return
-	}
+	require.Len(t, file, 1)
 	assert.Equal(t, "goyave_16.png", file[0].Filename)
 	assert.Equal(t, int64(716), file[0].Size)
 	assert.Equal(t, textproto.MIMEHeader{"Content-Type": []string{"application/octet-stream"}, "Content-Disposition": []string{"form-data; name=\"profile_picture\"; filename=\"goyave_16.png\""}}, file[0].Header)
@@ -216,9 +210,8 @@ func TestWriteMultipartFile(t *testing.T) {
 
 func TestCreateTestFiles(t *testing.T) {
 	files, err := CreateTestFiles(&osfs.FS{}, "../../resources/img/logo/goyave_16.png", "../../resources/test_file.txt")
-	if !assert.NoError(t, err) || !assert.Len(t, files, 2) {
-		return
-	}
+	require.NoError(t, err)
+	require.Len(t, files, 2)
 
 	assert.Equal(t, "goyave_16.png", files[0].Header.Filename)
 	assert.Equal(t, int64(716), files[0].Header.Size)
@@ -233,7 +226,7 @@ func TestCreateTestFiles(t *testing.T) {
 func TestToJSON(t *testing.T) {
 	reader := ToJSON(map[string]any{"key": "value"})
 	result, err := io.ReadAll(reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, `{"key":"value"}`, string(result))
 
 	assert.Panics(t, func() {

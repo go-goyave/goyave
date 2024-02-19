@@ -13,6 +13,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/cors"
 	"goyave.dev/goyave/v5/slog"
@@ -206,9 +207,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 
 func TestLanguageMiddleware(t *testing.T) {
 	server, err := New(Options{Config: config.LoadDefault()})
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	middleware := &languageMiddleware{}
 	middleware.Init(server)
 
@@ -529,9 +528,7 @@ func TestValidateMiddleware(t *testing.T) {
 			res := recorder.Result()
 			body, err := io.ReadAll(res.Body)
 			assert.NoError(t, res.Body.Close())
-			if !assert.NoError(t, err) {
-				return
-			}
+			assert.NoError(t, err)
 			assert.Equal(t, c.expectPass, pass)
 			if c.expectPass {
 				assert.Equal(t, "OK", string(body))
@@ -668,17 +665,15 @@ func TestCORSMiddleware(t *testing.T) {
 			response := NewResponse(nil, request, recorder)
 
 			handler(response, request)
-			assert.NoError(t, (&Router{}).finalize(response, request))
+			require.NoError(t, (&Router{}).finalize(response, request))
 			resp := recorder.Result()
 			assert.Equal(t, c.expectedStatusCode, resp.StatusCode)
 			assert.Equal(t, c.expectedHeaders, resp.Header)
 			defer func() {
-				_ = resp.Body.Close()
+				assert.NoError(t, resp.Body.Close())
 			}()
 			body, err := io.ReadAll(resp.Body)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 			assert.Equal(t, c.expectedBody, string(body))
 		})
 	}

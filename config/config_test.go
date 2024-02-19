@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfigError(t *testing.T) {
@@ -44,9 +45,7 @@ func TestLoad(t *testing.T) {
 		// Should use automatically generated path (based on GOYAVE_ENV)
 		t.Setenv("GOYAVE_ENV", "test")
 		cfg, err := Load()
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.NotNil(t, cfg)
 
@@ -72,7 +71,7 @@ func TestLoad(t *testing.T) {
 		t.Setenv("GOYAVE_ENV", "test_invalid")
 		cfg, err := Load()
 		assert.Nil(t, cfg)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Load Default", func(t *testing.T) {
@@ -84,14 +83,12 @@ func TestLoad(t *testing.T) {
 		t.Setenv("GOYAVE_ENV", "nonexisting")
 		cfg, err := Load()
 		assert.Nil(t, cfg)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("LoadFrom", func(t *testing.T) {
 		cfg, err := LoadFrom("../resources/custom_config.json")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.NotNil(t, cfg)
 
@@ -115,9 +112,7 @@ func TestLoad(t *testing.T) {
 
 	t.Run("LoadJSON", func(t *testing.T) {
 		cfg, err := LoadJSON(`{"custom-entry": "value"}`)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.NotNil(t, cfg)
 
@@ -142,27 +137,27 @@ func TestLoad(t *testing.T) {
 	t.Run("LoadJSON Invalid", func(t *testing.T) {
 		cfg, err := LoadJSON(`{"unclosed":`)
 		assert.Nil(t, cfg)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Load Override Entry With Category", func(t *testing.T) {
 		cfg, err := LoadJSON(`{"app": {"name": {}}}`)
 		assert.Nil(t, cfg)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "Config error: \n\t- cannot override entry \"name\" with a category", err.Error())
 	})
 
 	t.Run("Load Override Category With Entry", func(t *testing.T) {
 		cfg, err := LoadJSON(`{"app": "value"}`)
 		assert.Nil(t, cfg)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "Config error: \n\t- cannot override category \"app\" with an entry", err.Error())
 	})
 
 	t.Run("Validation", func(t *testing.T) {
 		cfg, err := LoadJSON(`{"app": {"name": 123}}`)
 		assert.Nil(t, cfg)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "Config error: \n\t- \"app.name\" type must be string", err.Error())
 	})
 
@@ -212,33 +207,31 @@ func TestLoad(t *testing.T) {
 		}`
 
 		cfg, err := loader.loadJSON(json)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.Equal(t, "hello", cfg.Get("envString"))
 		assert.Equal(t, 123, cfg.Get("envInt"))
-		assert.Equal(t, 123.456, cfg.Get("envFloat"))
+		assert.InEpsilon(t, 123.456, cfg.Get("envFloat"), 0)
 		assert.Equal(t, true, cfg.Get("envBool"))
 
 		// Invalid int
 		t.Setenv("TEST_ENV_INT", "hello")
 		cfg, err = loader.loadJSON(json)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cfg)
 		t.Setenv("TEST_ENV_INT", "123")
 
 		// Invalid float
 		t.Setenv("TEST_ENV_FLOAT", "hello")
 		cfg, err = loader.loadJSON(json)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cfg)
 		t.Setenv("TEST_ENV_FLOAT", "123.456")
 
 		// Invalid bool
 		t.Setenv("TEST_ENV_BOOL", "hello")
 		cfg, err = loader.loadJSON(json)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cfg)
 		t.Setenv("TEST_ENV_BOOL", "TRUE")
 	})
@@ -262,7 +255,7 @@ func TestLoad(t *testing.T) {
 		}`
 
 		cfg, err := loader.loadJSON(json)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cfg)
 	})
 
@@ -286,7 +279,7 @@ func TestLoad(t *testing.T) {
 		}`
 
 		cfg, err := loader.loadJSON(json)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cfg)
 	})
 
@@ -304,9 +297,7 @@ func TestLoad(t *testing.T) {
 			}
 		}`
 		cfg, err := LoadJSON(json)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.NotNil(t, cfg)
 
@@ -356,9 +347,7 @@ func TestLoad(t *testing.T) {
 
 		// With partial existence
 		cfg, err = LoadJSON(`{"app": {"subcategory": {"subentry": 456}}}`)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.NotNil(t, cfg)
 
@@ -475,9 +464,7 @@ func TestConfig(t *testing.T) {
 	}`
 
 	cfg, err := loader.loadJSON(cfgJSON)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	t.Run("Get", func(t *testing.T) {
 		v := cfg.Get("testCategory.int")
@@ -517,7 +504,7 @@ func TestConfig(t *testing.T) {
 
 	t.Run("GetBool", func(t *testing.T) {
 		v := cfg.GetBool("testCategory.bool")
-		assert.Equal(t, true, v)
+		assert.True(t, v)
 
 		assert.Panics(t, func() {
 			cfg.GetBool("testCategory.string")
@@ -526,7 +513,7 @@ func TestConfig(t *testing.T) {
 
 	t.Run("GetFloat", func(t *testing.T) {
 		v := cfg.GetFloat("testCategory.float")
-		assert.Equal(t, 123.456, v)
+		assert.InEpsilon(t, 123.456, v, 0)
 
 		assert.Panics(t, func() {
 			cfg.GetFloat("testCategory.string")

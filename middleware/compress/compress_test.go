@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
@@ -63,7 +64,7 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, "hello world", string(body)) // Not compressed
 		assert.NotEqual(t, "gzip", result.Header.Get("Content-Encoding"))
-		assert.Equal(t, result.Header.Get("Content-Length"), "1234")
+		assert.Equal(t, "1234", result.Header.Get("Content-Length"))
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -136,7 +137,7 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, "hello world", string(body)) // Not compressed
 		assert.NotEqual(t, "gzip", result.Header.Get("Content-Encoding"))
-		assert.Equal(t, result.Header.Get("Content-Length"), "1234")
+		assert.Equal(t, "1234", result.Header.Get("Content-Length"))
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -210,6 +211,6 @@ func TestCompressWriter(t *testing.T) {
 
 	assert.True(t, closeableWriter.preWritten)
 
-	assert.NoError(t, writer.Close())
+	require.NoError(t, writer.Close())
 	assert.True(t, closeableWriter.closed)
 }

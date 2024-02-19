@@ -10,6 +10,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
@@ -35,41 +36,31 @@ func TestOSFS(t *testing.T) {
 	t.Run("Open", func(t *testing.T) {
 		fs := &FS{}
 		file, err := fs.Open("resources/test_file.txt")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		defer func() {
 			assert.NoError(t, file.Close())
 		}()
 		contents, err := io.ReadAll(file)
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, err)
 		assert.Equal(t, append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), contents)
 	})
 
 	t.Run("OpenFile", func(t *testing.T) {
 		fs := &FS{}
 		file, err := fs.OpenFile("resources/test_file.txt", os.O_RDONLY, 0660)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		defer func() {
 			assert.NoError(t, file.Close())
 		}()
 		contents, err := io.ReadAll(file)
-		if !assert.NoError(t, err) {
-			return
-		}
+		assert.NoError(t, err)
 		assert.Equal(t, append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), contents)
 	})
 
 	t.Run("ReadDir", func(t *testing.T) {
 		osfs := &FS{}
 		entries, err := osfs.ReadDir("resources/lang")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		type result struct {
 			name  string
@@ -90,9 +81,7 @@ func TestOSFS(t *testing.T) {
 	t.Run("Stat", func(t *testing.T) {
 		fs := &FS{}
 		info, err := fs.Stat("resources/test_file.txt")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.False(t, info.IsDir())
 		assert.Equal(t, "test_file.txt", info.Name())
@@ -101,9 +90,7 @@ func TestOSFS(t *testing.T) {
 	t.Run("Getwd", func(t *testing.T) {
 		fs := &FS{}
 		wd, err := fs.Getwd()
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		assert.NotEmpty(t, wd)
 	})
 
@@ -131,7 +118,7 @@ func TestOSFS(t *testing.T) {
 			}
 		})
 
-		assert.NoError(t, fs.Mkdir(path, 0770))
+		require.NoError(t, fs.Mkdir(path, 0770))
 		assert.True(t, fs.IsDirectory(path))
 	})
 
@@ -145,7 +132,7 @@ func TestOSFS(t *testing.T) {
 			}
 		})
 
-		assert.NoError(t, fs.MkdirAll(path, 0770))
+		require.NoError(t, fs.MkdirAll(path, 0770))
 		assert.True(t, fs.IsDirectory(path))
 	})
 

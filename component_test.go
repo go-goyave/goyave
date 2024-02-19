@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/config"
 
 	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
@@ -15,9 +16,7 @@ func TestComponent(t *testing.T) {
 	cfg.Set("database.name", "test_component.db")
 	cfg.Set("database.options", "mode=memory")
 	server, err := New(Options{Config: cfg})
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	defer func() {
 		assert.NoError(t, server.CloseDB())
 	}()

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
@@ -39,7 +40,7 @@ func TestCleanStaticPath(t *testing.T) {
 		c := c
 		t.Run(c.want, func(t *testing.T) {
 			f, err := fs.Sub(&osfs.FS{}, c.directory)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, c.want, cleanStaticPath(fsutil.NewEmbed(f.(fs.ReadDirFS)), c.file))
 		})
 	}
@@ -91,9 +92,7 @@ func TestStaticHandler(t *testing.T) {
 
 			cfg := config.LoadDefault()
 			srv, err := New(Options{Config: cfg})
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(t, err)
 
 			request := NewRequest(httptest.NewRequest(http.MethodGet, c.uri, nil))
 			request.RouteParams = map[string]string{"resource": c.uri}
@@ -102,16 +101,14 @@ func TestStaticHandler(t *testing.T) {
 			response := NewResponse(srv, request, recorder)
 
 			f, err := fs.Sub(&osfs.FS{}, c.directory)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			handler := staticHandler(fsutil.NewEmbed(f.(fs.ReadDirFS)), c.download)
 			handler(response, request)
 
 			result := recorder.Result()
 			body, err := io.ReadAll(result.Body)
 			assert.NoError(t, result.Body.Close())
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(t, err)
 			c.expected(t, response, result, body)
 		})
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/copier"
 )
 
@@ -54,25 +55,25 @@ func TestUndefined(t *testing.T) {
 	t.Run("UnmarshalJSON", func(t *testing.T) {
 		u := &Undefined[int64]{}
 
-		assert.NoError(t, json.Unmarshal([]byte("123456789"), u))
+		require.NoError(t, json.Unmarshal([]byte("123456789"), u))
 		assert.Equal(t, &Undefined[int64]{Val: 123456789, Present: true}, u)
 
 		u = &Undefined[int64]{}
-		assert.Error(t, json.Unmarshal([]byte("\"notint\""), u))
+		require.Error(t, json.Unmarshal([]byte("\"notint\""), u))
 		assert.Equal(t, &Undefined[int64]{Val: 0, Present: false}, u)
 	})
 
 	t.Run("UnmarshalText", func(t *testing.T) {
 		u := &Undefined[int64]{} // Not a text unmarshaler
-		assert.Error(t, u.UnmarshalText([]byte("123456789")))
+		require.Error(t, u.UnmarshalText([]byte("123456789")))
 		assert.Equal(t, &Undefined[int64]{Val: 0, Present: true}, u)
 
 		u2 := &Undefined[testInt64]{}
-		assert.NoError(t, u2.UnmarshalText([]byte("123456789")))
+		require.NoError(t, u2.UnmarshalText([]byte("123456789")))
 		assert.Equal(t, &Undefined[testInt64]{Val: testInt64{Val: 123456789}, Present: true}, u2)
 
 		u3 := &Undefined[testInt64]{}
-		assert.Error(t, u3.UnmarshalText([]byte("notint")))
+		require.Error(t, u3.UnmarshalText([]byte("notint")))
 		assert.Equal(t, &Undefined[testInt64]{Val: testInt64{Val: 0}, Present: true}, u3)
 	})
 
@@ -111,11 +112,10 @@ func TestUndefined(t *testing.T) {
 			v, err := c.undefined.Value()
 			assert.Equal(t, c.want, v)
 			if c.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
-
 		}
 
 	})
@@ -156,7 +156,7 @@ func TestUndefined(t *testing.T) {
 			c := c
 			err := c.undefined.Scan(c.value)
 			if c.wantErr != nil {
-				assert.ErrorContains(t, err, c.wantErr.Error())
+				require.ErrorContains(t, err, c.wantErr.Error())
 			}
 
 			assert.Equal(t, c.want, c.undefined)

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func strPtr(s string) *string {
@@ -87,7 +88,7 @@ func testPathScanner(t *testing.T, path string, expected []string) {
 	}
 
 	assert.Equal(t, expected, result)
-	assert.Nil(t, scanner.Err())
+	require.NoError(t, scanner.Err())
 }
 
 func testPathScannerError(t *testing.T, path string) {
@@ -98,11 +99,8 @@ func testPathScannerError(t *testing.T, path string) {
 	}
 
 	err := scanner.Err()
-	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "illegal syntax: ")
-	} else {
-		fmt.Printf("%#v\n", result)
-	}
+	require.Error(t, err, fmt.Sprintf("%#v", result))
+	assert.Contains(t, err.Error(), "illegal syntax: ")
 }
 
 func TestPathScanner(t *testing.T) {
@@ -129,7 +127,7 @@ func TestPathScanner(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	path, err := Parse("object.array[].field")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &Path{
 		Name: strPtr("object"),
 		Type: PathTypeObject,
@@ -147,7 +145,7 @@ func TestParse(t *testing.T) {
 	}, path)
 
 	path, err = Parse("array[][]")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &Path{
 		Name: strPtr("array"),
 		Type: PathTypeArray,
@@ -160,7 +158,7 @@ func TestParse(t *testing.T) {
 	}, path)
 
 	path, err = Parse("object.field")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &Path{
 		Name: strPtr("object"),
 		Type: PathTypeObject,
@@ -171,7 +169,7 @@ func TestParse(t *testing.T) {
 	}, path)
 
 	path, err = Parse("array[][].field")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &Path{
 		Name: strPtr("array"),
 		Type: PathTypeArray,
@@ -188,7 +186,7 @@ func TestParse(t *testing.T) {
 	}, path)
 
 	path, err = Parse("array[][].field[]")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &Path{
 		Name: strPtr("array"),
 		Type: PathTypeArray,
@@ -208,7 +206,7 @@ func TestParse(t *testing.T) {
 	}, path)
 
 	path, err = Parse("object.*.prop")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &Path{
 		Name: strPtr("object"),
 		Type: PathTypeObject,
@@ -223,7 +221,7 @@ func TestParse(t *testing.T) {
 	}, path)
 
 	path, err = Parse("")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &Path{
 		Name: strPtr(""),
 		Type: PathTypeElement,
@@ -232,7 +230,7 @@ func TestParse(t *testing.T) {
 
 	path, err = Parse(".invalid[]path")
 	assert.Nil(t, path)
-	assert.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestMustParse(t *testing.T) {
@@ -262,9 +260,7 @@ func testWalk(t *testing.T, data map[string]any, p string) []*Context {
 	matches := make([]*Context, 0, 5)
 	path, err := Parse(p)
 
-	if !assert.Nil(t, err) {
-		assert.FailNow(t, err.Error())
-	}
+	require.NoError(t, err)
 
 	path.Walk(data, func(c *Context) {
 		matches = append(matches, c)
@@ -277,9 +273,7 @@ func testWalkBreak(t *testing.T, data map[string]any, p string) []*Context {
 	matches := make([]*Context, 0, 5)
 	path, err := Parse(p)
 
-	if !assert.Nil(t, err) {
-		assert.FailNow(t, err.Error())
-	}
+	require.NoError(t, err)
 
 	path.Walk(data, func(c *Context) {
 		matches = append(matches, c)
@@ -1412,18 +1406,18 @@ func TestPathSetAllMissingIndexes(t *testing.T) {
 
 func TestPathDepth(t *testing.T) {
 	path, _ := Parse("a.b.c")
-	assert.Equal(t, path.Depth(), uint(3))
+	assert.Equal(t, uint(3), path.Depth())
 	path, _ = Parse("a[].b.c")
-	assert.Equal(t, path.Depth(), uint(4))
+	assert.Equal(t, uint(4), path.Depth())
 	path, _ = Parse("a")
-	assert.Equal(t, path.Depth(), uint(1))
+	assert.Equal(t, uint(1), path.Depth())
 	path, _ = Parse("")
-	assert.Equal(t, path.Depth(), uint(1))
+	assert.Equal(t, uint(1), path.Depth())
 
-	assert.Equal(t, Depth(""), uint(1))
-	assert.Equal(t, Depth("a"), uint(1))
-	assert.Equal(t, Depth("a.b.c"), uint(3))
-	assert.Equal(t, Depth("a[].b.c"), uint(4))
+	assert.Equal(t, uint(1), Depth(""))
+	assert.Equal(t, uint(1), Depth("a"))
+	assert.Equal(t, uint(3), Depth("a.b.c"))
+	assert.Equal(t, uint(4), Depth("a[].b.c"))
 }
 
 func TestPathTruncate(t *testing.T) {

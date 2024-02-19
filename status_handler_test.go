@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
@@ -38,9 +39,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
 		assert.NoError(t, res.Body.Close())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.Equal(t, "{\"error\":\"Internal Server Error\"}\n", string(body))
 	})
@@ -58,9 +57,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
 		assert.NoError(t, res.Body.Close())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.Equal(t, "{\"error\":\"test error\"}\n", string(body))
 
@@ -81,9 +78,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
 		assert.NoError(t, res.Body.Close())
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
 		assert.Equal(t, "{\"error\":null}\n", string(body))
 
@@ -105,9 +100,7 @@ func TestErrorStatusHandler(t *testing.T) {
 	res := recorder.Result()
 	body, err := io.ReadAll(res.Body)
 	assert.NoError(t, res.Body.Close())
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	assert.Equal(t, "{\"error\":\"Not Found\"}\n", string(body))
 }
@@ -134,9 +127,7 @@ func TestValidationStatusHandler(t *testing.T) {
 	res := recorder.Result()
 	body, err := io.ReadAll(res.Body)
 	assert.NoError(t, res.Body.Close())
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	assert.Equal(t, "{\"error\":{\"body\":{\"fields\":{\"field\":{\"errors\":[\"The field is required\"]}},\"errors\":[\"The body is required\"]},\"query\":{\"fields\":{\"query\":{\"errors\":[\"The query is required\"]}}}}}\n", string(body))
 }

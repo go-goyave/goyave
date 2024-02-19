@@ -42,7 +42,7 @@ var (
 // The given `Response` and `Request` value should not
 // be used outside of the context of an HTTP request. e.g.: passed to
 // a goroutine or used after the finalization step in the request lifecycle.
-type Handler func(*Response, *Request)
+type Handler func(response *Response, request *Request)
 
 type routeMatcher interface {
 	match(method string, match *routeMatch) bool

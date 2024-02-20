@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
-	"os"
 	"strings"
 	"testing"
 
@@ -50,7 +49,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestServer_AutoConfig", func(t *testing.T) {
-		require.NoError(t, os.Setenv("GOYAVE_ENV", "test"))
+		t.Setenv("GOYAVE_ENV", "test")
 		server := NewTestServerWithOptions(t, goyave.Options{})
 
 		assert.NotNil(t, server.Lang)
@@ -58,7 +57,7 @@ func TestTestServer(t *testing.T) {
 
 		assert.Panics(t, func() {
 			// Config file not found
-			require.NoError(t, os.Setenv("GOYAVE_ENV", ""))
+			t.Setenv("GOYAVE_ENV", "")
 			NewTestServerWithOptions(t, goyave.Options{})
 		})
 	})

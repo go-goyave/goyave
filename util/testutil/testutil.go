@@ -36,7 +36,7 @@ func (m *copyRequestMiddleware) Handle(next goyave.Handler) goyave.Handler {
 		request.RouteParams = m.request.RouteParams
 		request.User = m.request.User
 		request.Route = m.request.Route
-		next(response, request)
+		next(response, request.WithContext(m.request.Context()))
 	}
 }
 

@@ -15,11 +15,11 @@ import (
 	"goyave.dev/goyave/v5/config"
 )
 
-func prepareTimeoutTest() *gorm.DB {
+func prepareTimeoutTest(dbName string) *gorm.DB {
 	cfg := config.LoadDefault()
 	cfg.Set("app.debug", false)
 	cfg.Set("database.connection", "sqlite3_timeout_test")
-	cfg.Set("database.name", "timeout_test.db")
+	cfg.Set("database.name", fmt.Sprintf("timeout_test_%s.db", dbName))
 	cfg.Set("database.options", "mode=memory")
 	cfg.Set("database.defaultReadQueryTimeout", 5)
 	cfg.Set("database.defaultWriteQueryTimeout", 5)
@@ -52,7 +52,7 @@ func TestTimeoutPlugin(t *testing.T) {
 	})
 
 	t.Run("Callbacks", func(t *testing.T) {
-		db := prepareTimeoutTest()
+		db := prepareTimeoutTest(t.Name())
 
 		callbacks := db.Callback()
 
@@ -76,7 +76,7 @@ func TestTimeoutPlugin(t *testing.T) {
 	})
 
 	t.Run("timeout", func(t *testing.T) {
-		db := prepareTimeoutTest()
+		db := prepareTimeoutTest(t.Name())
 
 		// Generate a huge WHERE condition to artificially make the query very long
 		args := lo.RepeatBy(20000, func(index int) string {
@@ -90,7 +90,7 @@ func TestTimeoutPlugin(t *testing.T) {
 	})
 
 	t.Run("re-use_statement", func(t *testing.T) {
-		db := prepareTimeoutTest()
+		db := prepareTimeoutTest(t.Name())
 
 		users := []*TestUser{}
 		db = db.Select("*").Where("email", "johndoe@example.org").Find(&users)
@@ -100,7 +100,7 @@ func TestTimeoutPlugin(t *testing.T) {
 	})
 
 	t.Run("dont_override_predefined_context", func(t *testing.T) {
-		db := prepareTimeoutTest()
+		db := prepareTimeoutTest(t.Name())
 
 		// Generate a huge WHERE condition to artificially make the query very long
 		args := lo.RepeatBy(20000, func(index int) string {
@@ -120,7 +120,7 @@ func TestTimeoutPlugin(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("app.debug", false)
 		cfg.Set("database.connection", "sqlite3_timeout_test")
-		cfg.Set("database.name", "timeout_test.db")
+		cfg.Set("database.name", "timeout_test_disabled.db")
 		cfg.Set("database.options", "mode=memory")
 		cfg.Set("database.defaultReadQueryTimeout", 0)
 		cfg.Set("database.defaultWriteQueryTimeout", 0)

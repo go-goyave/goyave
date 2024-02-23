@@ -10,11 +10,11 @@ require (
 	github.com/samber/lo v1.39.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.19.0
-	gorm.io/driver/mysql v1.5.4
-	gorm.io/driver/postgres v1.5.6
-	gorm.io/driver/sqlite v1.5.5
-	gorm.io/driver/sqlserver v1.5.3
-	gorm.io/gorm v1.25.7
+	gorm.io/driver/mysql v1.5.2
+	gorm.io/driver/postgres v1.5.4
+	gorm.io/driver/sqlite v1.5.4
+	gorm.io/driver/sqlserver v1.5.2
+	gorm.io/gorm v1.25.6
 	goyave.dev/copier v0.4.3
 )
 

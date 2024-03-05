@@ -148,6 +148,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 		middleware.Init(server)
 
 		handler := middleware.Handle(func(_ *Response, _ *Request) {
+			//nolint:govet
 			panic(nil)
 		})
 

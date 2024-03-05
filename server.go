@@ -109,7 +109,7 @@ type Server struct {
 
 	port int
 
-	state uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
+	state atomic.Uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
 }
 
 // New create a new `Server` using the given options.
@@ -283,8 +283,7 @@ func (s *Server) ProxyBaseURL() string {
 // is ready to serve incoming requests.
 // This operation is concurrently safe.
 func (s *Server) IsReady() bool {
-	state := atomic.LoadUint32(&s.state)
-	return state == 2
+	return s.state.Load() == 2
 }
 
 // RegisterStartupHook to execute some code once the server is ready and running.
@@ -391,16 +390,13 @@ func (s *Server) Router() *Router {
 //
 // Errors returned can be safely type-asserted to `*goyave.Error`.
 func (s *Server) Start() error {
-	state := atomic.LoadUint32(&s.state)
-	if state == 1 || state == 2 {
-		return errors.New("server is already running")
-	} else if state == 3 {
-		return errors.New("cannot restart a stopped server")
+	swapped := s.state.CompareAndSwap(0, 1)
+	if !swapped {
+		return errors.New("server was already started")
 	}
-	atomic.StoreUint32(&s.state, 1)
 
 	defer func() {
-		atomic.StoreUint32(&s.state, 3)
+		s.state.Store(3)
 		// Notify the shutdown is complete so Stop() can return
 		s.stopChannel <- struct{}{}
 		close(s.stopChannel)
@@ -436,7 +432,7 @@ func (s *Server) Start() error {
 		}
 	}()
 
-	atomic.StoreUint32(&s.state, 2)
+	s.state.Store(2)
 
 	go func(s *Server) { // TODO document startup hooks share the same goroutine
 		if s.IsReady() {
@@ -448,7 +444,7 @@ func (s *Server) Start() error {
 		}
 	}(s)
 	if err := s.server.Serve(ln); err != nil && err != http.ErrServerClosed {
-		atomic.StoreUint32(&s.state, 3)
+		s.state.Store(3)
 		return errors.New(err)
 	}
 	return nil
@@ -481,8 +477,7 @@ func (s *Server) Stop() {
 		signal.Stop(s.sigChannel)
 		close(s.sigChannel)
 	}
-	state := atomic.LoadUint32(&s.state)
-	atomic.StoreUint32(&s.state, 3)
+	state := s.state.Swap(3)
 	if state == 0 {
 		// Start has not been called, do nothing
 		return

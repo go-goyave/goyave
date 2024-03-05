@@ -12,7 +12,6 @@ import (
 	"regexp"
 	"runtime"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -345,7 +344,7 @@ func TestServer(t *testing.T) {
 		assert.True(t, startupHookExecuted)
 		assert.True(t, shutdownHookExecuted)
 		assert.False(t, server.IsReady())
-		assert.Equal(t, uint32(3), atomic.LoadUint32(&server.state))
+		assert.Equal(t, uint32(3), server.state.Load())
 	})
 
 	t.Run("StartWithAutoPort", func(t *testing.T) {
@@ -394,16 +393,16 @@ func TestServer(t *testing.T) {
 		wg.Wait()
 		assert.True(t, startupHookExecuted)
 		assert.False(t, server.IsReady())
-		assert.Equal(t, uint32(3), atomic.LoadUint32(&server.state))
+		assert.Equal(t, uint32(3), server.state.Load())
 	})
 
 	t.Run("Start_already_running", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
 		require.NoError(t, err)
-		atomic.StoreUint32(&server.state, 2) // Simulate the server already running
+		server.state.Store(2) // Simulate the server already running
 		err = server.Start()
 		if assert.Error(t, err) {
-			assert.Equal(t, "server is already running", err.Error())
+			assert.Equal(t, "server was already started", err.Error())
 			_, ok := err.(*errors.Error)
 			assert.True(t, ok)
 		}
@@ -412,10 +411,10 @@ func TestServer(t *testing.T) {
 	t.Run("Start_stopped", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
 		require.NoError(t, err)
-		atomic.StoreUint32(&server.state, 3) // Simulate stopped server
+		server.state.Store(3) // Simulate stopped server
 		err = server.Start()
 		if assert.Error(t, err) {
-			assert.Equal(t, "cannot restart a stopped server", err.Error())
+			assert.Equal(t, "server was already started", err.Error())
 			_, ok := err.(*errors.Error)
 			assert.True(t, ok)
 		}
@@ -545,7 +544,7 @@ func TestServer(t *testing.T) {
 		wg.Wait()
 		assert.True(t, startupHookExecuted)
 		assert.False(t, server.IsReady())
-		assert.Equal(t, uint32(3), atomic.LoadUint32(&server.state))
+		assert.Equal(t, uint32(3), server.state.Load())
 	})
 
 	t.Run("NilBaseContext", func(t *testing.T) {

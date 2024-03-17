@@ -151,14 +151,14 @@ func LoadFrom(path string) (*Config, error) {
 //	func main() {
 //		cfg, err := config.LoadJSON(cfgJSON)
 //		if err != nil {
-//			fmt.Println(err)
-//			os.Exit(err.(*goyave.Error).ExitCode)
+//			fmt.Fprintln(os.Stderr, err.(*errors.Error).String())
+//			os.Exit(1)
 //		}
 //
 //		server, err := goyave.New(goyave.Options{Config: cfg})
 //		if err != nil {
-//			fmt.Println(err)
-//			os.Exit(err.(*goyave.Error).ExitCode)
+//			fmt.Fprintln(os.Stderr, err.(*errors.Error).String())
+//			os.Exit(1)
 //		}
 //
 //		// ...

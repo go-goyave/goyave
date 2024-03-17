@@ -1,5 +1,5 @@
 ---
-name: Information
+name: ℹ️ Information
 about: Report a vulnerability, a possible optimization, bad grammar/spelling, ...
 
 ---

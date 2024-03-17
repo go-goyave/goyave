@@ -1,5 +1,5 @@
 ---
-name: Bug report
+name: 🐛 Bug report
 about: Report a bug, improperly working feature or code
 
 ---
@@ -7,7 +7,7 @@ about: Report a bug, improperly working feature or code
 ## Bug report
 
 **Version:** [framework version]  
-**Environment:** [Operating system, Go version]  
+**Environment:** [`go version` output]  
 **Reproduces:** [always|sometimes|once|every second time|...]  
 
 <!-- 
@@ -17,5 +17,4 @@ about: Report a bug, improperly working feature or code
     - Description of the steps before the occurrence
     - Expected result
     - How to reproduce
-
 -->

@@ -164,7 +164,7 @@ func New(opts Options) (*Server, error) {
 		startupHooks:  []func(*Server){},
 		shutdownHooks: []func(*Server){},
 		host:          cfg.GetString("server.host"),
-		port:          port, // TODO document using 0 as port will auto assign an available port
+		port:          port,
 		Logger:        slogger,
 	}
 	server.server.BaseContext = server.internalBaseContext
@@ -432,7 +432,7 @@ func (s *Server) Start() error {
 
 	s.state.Store(2)
 
-	go func(s *Server) { // TODO document startup hooks share the same goroutine
+	go func(s *Server) {
 		if s.IsReady() {
 			// We check if the server is ready to prevent startup hook execution
 			// if `Serve` returned an error before the goroutine started

@@ -37,7 +37,7 @@ var configDefaults = object{
 		"maxOpenConnections":       &Entry{20, []any{}, reflect.Int, false},
 		"maxIdleConnections":       &Entry{20, []any{}, reflect.Int, false},
 		"maxLifetime":              &Entry{300, []any{}, reflect.Int, false},
-		"defaultReadQueryTimeout":  &Entry{20000, []any{}, reflect.Int, false}, // TODO document this (the timeout set by database.TimeoutPlugin), in ms
+		"defaultReadQueryTimeout":  &Entry{20000, []any{}, reflect.Int, false},
 		"defaultWriteQueryTimeout": &Entry{40000, []any{}, reflect.Int, false},
 		"config": object{
 			"skipDefaultTransaction":                   &Entry{false, []any{}, reflect.Bool, false},

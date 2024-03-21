@@ -449,9 +449,6 @@ func (s *Server) Start() error {
 }
 
 // RegisterRoutes creates a new Router for this Server and runs the given `routeRegistrer`.
-//
-// This method is primarily used in tests so routes can be registered without starting the server.
-// Starting the server will overwrite the previously registered routes.
 func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *Router)) {
 	routeRegistrer(s, s.router)
 	s.router.ClearRegexCache()

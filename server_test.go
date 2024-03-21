@@ -427,6 +427,14 @@ func TestServer(t *testing.T) {
 		// Nothing happens
 	})
 
+	t.Run("Stop_already_stopped", func(t *testing.T) {
+		server, err := New(Options{Config: config.LoadDefault()})
+		assert.NoError(t, err)
+		server.state.Store(3)
+		server.Stop()
+		// Nothing happens
+	})
+
 	t.Run("StartupHooks", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
 		require.NoError(t, err)

@@ -476,8 +476,8 @@ func (s *Server) Stop() {
 		close(s.sigChannel)
 	}
 	state := s.state.Swap(3)
-	if state == 0 {
-		// Start has not been called, do nothing
+	if state == 0 || state == 3 {
+		// Start has not been called or Stop has already been called, do nothing
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

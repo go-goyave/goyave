@@ -324,9 +324,8 @@ func (r *Response) error(err any) {
 	r.Status(http.StatusInternalServerError)
 }
 
-// WriteDBError takes a database query result and checks if any error has occurred.
-//
-// Automatically writes HTTP status code 404 Not Found if the error is a "Not found" error.
+// WriteDBError takes an error and automatically writes HTTP status code 404 Not Found
+// if the error is a `gorm.ErrRecordNotFound` error.
 // Calls `Response.Error()` if there is another type of error.
 //
 // Returns true if there is an error. You can then safely `return` in you controller.

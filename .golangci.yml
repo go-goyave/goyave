@@ -1,9 +1,3 @@
-run:
-  skip-dirs:
-    - docs_src
-    - docs
-    - .github
-
 linters-settings:
   gocyclo:
     min-complexity: 18
@@ -37,6 +31,8 @@ issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
+  exclude-dirs:
+    - .github
   exclude:
     - should have a package comment
     - for error assertions use require

@@ -148,6 +148,8 @@ type Context struct {
 	fieldName          string
 	Now                time.Time
 
+	path *walk.Path
+
 	// The name of the field under validation
 	Name string
 
@@ -172,6 +174,19 @@ func (c *Context) AddError(err ...error) {
 // precisely mark which element in the array is invalid.
 func (c *Context) AddArrayElementValidationErrors(index ...int) {
 	c.arrayElementErrors = append(c.arrayElementErrors, index...)
+}
+
+// ArrayElementErrors returns the indexes of the child eelements to the field currently under validation
+// that were marked as invalid with `AddArrayElementValidationErrors`.
+func (c *Context) ArrayElementErrors() []int {
+	return c.arrayElementErrors
+}
+
+// Path returns the exact Path to the current element.
+// The path is relative to the root element. If you are compositing rule sets in your validation,
+// the path returned is NOT relative to the root of the current rule set.
+func (c *Context) Path() *walk.Path {
+	return c.path
 }
 
 // Errors returns this validation context's errors.
@@ -285,6 +300,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				continue
 			}
 
+			errorPath := field.getErrorPath(parentPath, c)
 			ctx := &Context{
 				Data:      data,
 				Extra:     v.options.Extra,
@@ -294,7 +310,9 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				fieldName: fieldName,
 				Now:       v.now,
 				Name:      c.Name,
+				path:      errorPath,
 				Invalid:   !valid,
+				// TODO add validation errors Merge
 			}
 			validator.init(v.options) // TODO document a Rules or RuleSet is not meant to be re-used or used concurrently
 			ok := validator.Validate(ctx)
@@ -305,7 +323,6 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			}
 			if !ok {
 				valid = false
-				errorPath := field.getErrorPath(parentPath, c)
 				message := v.getMessage(ctx, validator)
 				if fieldName == CurrentElement {
 					v.validationErrors.Add(errorPath, message)

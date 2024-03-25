@@ -198,6 +198,7 @@ func TestValidate(t *testing.T) {
 							assert.NotNil(t, ctx.Field) // Content of the field is tested by RuleSet
 							assert.False(t, ctx.Now.IsZero())
 							assert.False(t, ctx.Invalid)
+							assert.Equal(t, walk.MustParse("property"), ctx.Path())
 							return true
 						},
 					}}},

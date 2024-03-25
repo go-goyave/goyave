@@ -134,19 +134,26 @@ type Options struct {
 	ConvertSingleValueArrays bool
 }
 
+// AddedValidationError a simple association path/message for use in `Context.AddValidationError`
+type AddedValidationError struct {
+	Path    *walk.Path
+	Message string
+}
+
 // Context is a structure unique per `Validator.Validate()` execution containing
 // all the data required by a validator.
 type Context struct {
 	Data any
 
 	// Extra the map of Extra from the validation Options.
-	Extra              map[any]any
-	Value              any
-	Parent             any
-	Field              *Field
-	arrayElementErrors []int
-	fieldName          string
-	Now                time.Time
+	Extra                 map[any]any
+	Value                 any
+	Parent                any
+	Field                 *Field
+	arrayElementErrors    []int
+	addedValidationErrors []AddedValidationError
+	fieldName             string
+	Now                   time.Time
 
 	path *walk.Path
 
@@ -182,9 +189,28 @@ func (c *Context) ArrayElementErrors() []int {
 	return c.arrayElementErrors
 }
 
+// AddValidationError add a validation error message at the given path.
+// The path is relative to the root element.
+//
+// This can be used when a validation rule uses nested validation or needs to add
+// a message on another field than the one this validator is targeted at.
+func (c *Context) AddValidationError(path *walk.Path, message string) {
+	c.addedValidationErrors = append(c.addedValidationErrors, AddedValidationError{
+		Path:    path,
+		Message: message,
+	})
+}
+
+// AddedValidationError returns the additional errors added with `AddValidationError`.
+func (c *Context) AddedValidationError() []AddedValidationError {
+	return c.addedValidationErrors
+}
+
 // Path returns the exact Path to the current element.
 // The path is relative to the root element. If you are compositing rule sets in your validation,
 // the path returned is NOT relative to the root of the current rule set.
+//
+// You can use this path to inject validation errors using AddValidationError and MergeValidationErrors.
 func (c *Context) Path() *walk.Path {
 	return c.path
 }
@@ -332,6 +358,9 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				continue
 			}
 
+			for _, e := range ctx.addedValidationErrors {
+				v.validationErrors.Add(&walk.Path{Type: walk.PathTypeObject, Next: e.Path}, e.Message)
+			}
 			v.processArrayElementErrors(ctx, parentPath, c, validator)
 
 			value = ctx.Value

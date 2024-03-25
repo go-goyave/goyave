@@ -504,6 +504,47 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
+			desc: "added_errors",
+			options: &Options{
+				Data:     map[string]any{},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{&addErrorValidator{
+						addedValidationErrors: []AddedValidationError{
+							{Path: walk.MustParse("property"), Message: "added error"},
+							{Path: walk.MustParse("object.addedProp"), Message: "added error"},
+							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("array"), Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}, Message: "added error"},
+							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("narray"), Index: lo.ToPtr(0), Next: &walk.Path{Type: walk.PathTypeArray, Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}}, Message: "added error"},
+						},
+					}}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Fields: FieldsErrors{
+					"property": &Errors{Errors: []string{"added error"}},
+					"object": &Errors{
+						Fields: FieldsErrors{
+							"addedProp": &Errors{Errors: []string{"added error"}},
+						},
+					},
+					"array": &Errors{
+						Elements: ArrayErrors{
+							3: &Errors{Errors: []string{"added error"}},
+						},
+					},
+					"narray": &Errors{
+						Elements: ArrayErrors{
+							0: &Errors{
+								Elements: ArrayErrors{
+									3: &Errors{Errors: []string{"added error"}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			desc: "array_elements_validation_errors",
 			options: &Options{
 				Data:     map[string]any{"array": []any{"d", "e", "f"}},
@@ -651,4 +692,20 @@ func TestValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+type addErrorValidator struct {
+	BaseValidator
+	addedValidationErrors []AddedValidationError
+}
+
+func (addErrorValidator) Name() string {
+	return "addErrorValidator"
+}
+
+func (v addErrorValidator) Validate(ctx *Context) bool {
+	for _, e := range v.addedValidationErrors {
+		ctx.AddValidationError(e.Path, e.Message)
+	}
+	return true
 }

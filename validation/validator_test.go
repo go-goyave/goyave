@@ -510,11 +510,11 @@ func TestValidate(t *testing.T) {
 				Language: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{&addErrorValidator{
-						addedValidationErrors: []AddedValidationError{
-							{Path: walk.MustParse("property"), Message: "added error"},
-							{Path: walk.MustParse("object.addedProp"), Message: "added error"},
-							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("array"), Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}, Message: "added error"},
-							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("narray"), Index: lo.ToPtr(0), Next: &walk.Path{Type: walk.PathTypeArray, Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}}, Message: "added error"},
+						addedValidationErrors: []AddedValidationError[string]{
+							{Path: walk.MustParse("property"), Error: "added error"},
+							{Path: walk.MustParse("object.addedProp"), Error: "added error"},
+							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("array"), Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}, Error: "added error"},
+							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("narray"), Index: lo.ToPtr(0), Next: &walk.Path{Type: walk.PathTypeArray, Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}}, Error: "added error"},
 						},
 					}}},
 				},
@@ -537,6 +537,100 @@ func TestValidate(t *testing.T) {
 							0: &Errors{
 								Elements: ArrayErrors{
 									3: &Errors{Errors: []string{"added error"}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "merge_errors",
+			options: &Options{
+				Data:     map[string]any{"property": "a", "object": map[string]any{"property": "c"}, "array": []any{"d"}, "narray": []any{[]any{1, "e", 3}}, "number": 0},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "property", Rules: List{Required(), Int()}},
+					{Path: "number", Rules: List{Required(), Int(), Between(1, 4)}},
+					{Path: "missing", Rules: List{Required(), String()}},
+					{Path: "object", Rules: List{Required(), Object()}},
+					{Path: "object.property", Rules: List{Required(), Int()}},
+					{Path: "array", Rules: List{Required(), Array()}},
+					{Path: "array[]", Rules: List{Int()}},
+					{Path: "narray", Rules: List{Required(), Array()}},
+					{Path: "narray[]", Rules: List{Required(), Array()}},
+					{Path: "narray[][]", Rules: List{Int()}},
+					{Path: CurrentElement, Rules: List{&addErrorsValidator{
+						addedValidationErrors: []AddedValidationError[*Errors]{
+							{Path: walk.MustParse("object"), Error: &Errors{
+								Fields: FieldsErrors{
+									"mergeProp": &Errors{
+										Errors: []string{"merge err"},
+									},
+								},
+								Elements: ArrayErrors{
+									5: &Errors{
+										Errors: []string{"merge err"},
+									},
+								},
+								Errors: []string{"merge err"},
+							}},
+							{
+								Path: &walk.Path{
+									Type:  walk.PathTypeArray,
+									Name:  lo.ToPtr("array"),
+									Index: lo.ToPtr(0),
+									Next:  &walk.Path{Type: walk.PathTypeElement},
+								},
+								Error: &Errors{
+									Errors: []string{"merge err"},
+								},
+							},
+							{
+								Path: &walk.Path{
+									Type:  walk.PathTypeArray,
+									Name:  lo.ToPtr("narray"),
+									Index: lo.ToPtr(0),
+									Next: &walk.Path{
+										Type:  walk.PathTypeArray,
+										Index: lo.ToPtr(2),
+										Next:  &walk.Path{Type: walk.PathTypeElement},
+									},
+								},
+								Error: &Errors{
+									Errors: []string{"merge err"},
+								},
+							},
+						},
+					}}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Fields: FieldsErrors{
+					"property": &Errors{Errors: []string{"The property must be an integer."}},
+					"number":   &Errors{Errors: []string{"The number must be between 1 and 4."}},
+					"missing":  &Errors{Errors: []string{"The missing is required.", "The missing must be a string."}},
+					"object": &Errors{
+						Fields: FieldsErrors{
+							"property":  &Errors{Errors: []string{"The property must be an integer."}},
+							"mergeProp": &Errors{Errors: []string{"merge err"}},
+						},
+						Elements: ArrayErrors{
+							5: &Errors{Errors: []string{"merge err"}},
+						},
+						Errors: []string{"merge err"},
+					},
+					"array": &Errors{
+						Elements: ArrayErrors{
+							0: &Errors{Errors: []string{"The array elements must be integers.", "merge err"}},
+						},
+					},
+					"narray": &Errors{
+						Elements: ArrayErrors{
+							0: &Errors{
+								Elements: ArrayErrors{
+									1: &Errors{Errors: []string{"The narray[] elements must be integers."}},
+									2: &Errors{Errors: []string{"merge err"}},
 								},
 							},
 						},
@@ -696,7 +790,7 @@ func TestValidate(t *testing.T) {
 
 type addErrorValidator struct {
 	BaseValidator
-	addedValidationErrors []AddedValidationError
+	addedValidationErrors []AddedValidationError[string]
 }
 
 func (addErrorValidator) Name() string {
@@ -705,7 +799,23 @@ func (addErrorValidator) Name() string {
 
 func (v addErrorValidator) Validate(ctx *Context) bool {
 	for _, e := range v.addedValidationErrors {
-		ctx.AddValidationError(e.Path, e.Message)
+		ctx.AddValidationError(e.Path, e.Error)
+	}
+	return true
+}
+
+type addErrorsValidator struct {
+	BaseValidator
+	addedValidationErrors []AddedValidationError[*Errors]
+}
+
+func (addErrorsValidator) Name() string {
+	return "addErrorsValidator"
+}
+
+func (v addErrorsValidator) Validate(ctx *Context) bool {
+	for _, e := range v.addedValidationErrors {
+		ctx.AddValidationErrors(e.Path, e.Error)
 	}
 	return true
 }

@@ -134,10 +134,15 @@ type Options struct {
 	ConvertSingleValueArrays bool
 }
 
-// AddedValidationError a simple association path/message for use in `Context.AddValidationError`
-type AddedValidationError struct {
-	Path    *walk.Path
-	Message string
+type addedValidationErrorConstraint interface {
+	string | *Errors
+}
+
+// AddedValidationError a simple association path/message or path/*Errors
+// for use in `Context.AddValidationError` or `Context.AddValidationErrors`
+type AddedValidationError[T addedValidationErrorConstraint] struct {
+	Path  *walk.Path
+	Error T
 }
 
 // Context is a structure unique per `Validator.Validate()` execution containing
@@ -151,7 +156,8 @@ type Context struct {
 	Parent                any
 	Field                 *Field
 	arrayElementErrors    []int
-	addedValidationErrors []AddedValidationError
+	addedValidationErrors []AddedValidationError[string]
+	mergeErrors           []AddedValidationError[*Errors]
 	fieldName             string
 	Now                   time.Time
 
@@ -195,15 +201,34 @@ func (c *Context) ArrayElementErrors() []int {
 // This can be used when a validation rule uses nested validation or needs to add
 // a message on another field than the one this validator is targeted at.
 func (c *Context) AddValidationError(path *walk.Path, message string) {
-	c.addedValidationErrors = append(c.addedValidationErrors, AddedValidationError{
-		Path:    path,
-		Message: message,
+	c.addedValidationErrors = append(c.addedValidationErrors, AddedValidationError[string]{
+		Path:  path,
+		Error: message,
 	})
 }
 
 // AddedValidationError returns the additional errors added with `AddValidationError`.
-func (c *Context) AddedValidationError() []AddedValidationError {
+func (c *Context) AddedValidationError() []AddedValidationError[string] {
 	return c.addedValidationErrors
+}
+
+// AddValidationErrors add a `*Errors` to be merged into the errors bag of the current
+// validation. The path is relative to the root element.
+//
+// This can be used when a validation rule uses nested validation needs to merge
+// the results into the higher-level validation errors.
+//
+// See `*validation.Errors.Merge` for more details.
+func (c *Context) AddValidationErrors(path *walk.Path, errors *Errors) {
+	c.mergeErrors = append(c.mergeErrors, AddedValidationError[*Errors]{
+		Path:  path,
+		Error: errors,
+	})
+}
+
+// AddedValidationErrors returns the additional errors added with `AddValidationErrors`.
+func (c *Context) AddedValidationErrors() []AddedValidationError[*Errors] {
+	return c.mergeErrors
 }
 
 // Path returns the exact Path to the current element.
@@ -358,10 +383,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				continue
 			}
 
-			for _, e := range ctx.addedValidationErrors {
-				v.validationErrors.Add(&walk.Path{Type: walk.PathTypeObject, Next: e.Path}, e.Message)
-			}
-			v.processArrayElementErrors(ctx, parentPath, c, validator)
+			v.processAddedErrors(ctx, parentPath, c, validator)
 
 			value = ctx.Value
 		}
@@ -407,7 +429,13 @@ func (v *validator) isAbsent(field *Field, c *walk.Context, data any) bool {
 	return !field.IsRequired(requiredCtx) && !(&RequiredValidator{}).Validate(requiredCtx)
 }
 
-func (v *validator) processArrayElementErrors(ctx *Context, parentPath *walk.Path, c *walk.Context, validator Validator) {
+func (v *validator) processAddedErrors(ctx *Context, parentPath *walk.Path, c *walk.Context, validator Validator) {
+	for _, e := range ctx.addedValidationErrors {
+		v.validationErrors.Add(&walk.Path{Type: walk.PathTypeObject, Next: e.Path}, e.Error)
+	}
+	for _, e := range ctx.mergeErrors {
+		v.validationErrors.Merge(&walk.Path{Type: walk.PathTypeObject, Next: e.Path}, e.Error)
+	}
 	if len(ctx.arrayElementErrors) > 0 {
 		errorPath := ctx.Field.getErrorPath(parentPath, c)
 		message := v.options.Language.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, validator)...)

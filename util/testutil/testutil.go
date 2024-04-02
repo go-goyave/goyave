@@ -133,6 +133,7 @@ func (s *TestServer) CloseDB() {
 
 // FindRootDirectory find relative path to the project's root directory based on the
 // existence of a `go.mod` file. The returned path is relative to the working directory
+// and contains a trailing slash.
 // Returns an empty string if not found.
 func FindRootDirectory() string {
 	sep := string(os.PathSeparator)

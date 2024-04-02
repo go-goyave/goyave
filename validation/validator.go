@@ -270,6 +270,9 @@ func Validate(options *Options) (*Errors, []error) {
 		errors:           []error{},
 		validationErrors: &Errors{},
 	}
+	if options.Extra == nil {
+		options.Extra = map[any]any{}
+	}
 
 	rules := options.Rules.AsRules()
 	for _, field := range rules {

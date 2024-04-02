@@ -147,6 +147,18 @@ func TestGetFieldType(t *testing.T) {
 	}
 }
 
+func TestValidateExtraNotNil(t *testing.T) {
+	options := &Options{
+		Data:     nil,
+		Language: lang.New().GetDefault(),
+		Rules: RuleSet{
+			{Path: CurrentElement, Rules: List{Required()}},
+		},
+	}
+	Validate(options)
+	assert.NotNil(t, options.Extra)
+}
+
 func TestValidate(t *testing.T) {
 	cases := []struct {
 		desc                 string
@@ -786,6 +798,29 @@ func TestValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddedErrors(t *testing.T) {
+	ctx := &Context{}
+	expectAddedErrors := []AddedValidationError[string]{
+		{Path: walk.MustParse("field1"), Error: "error"},
+		{Path: walk.MustParse("field2"), Error: "error"},
+	}
+	expectArrayElementErrors := []int{4, 6}
+	expectMergeErrors := []AddedValidationError[*Errors]{
+		{Path: walk.MustParse("field1"), Error: &Errors{
+			Fields: FieldsErrors{"field1": &Errors{Errors: []string{"error"}}},
+		}},
+		{Path: walk.MustParse("field2"), Error: &Errors{Errors: []string{"error"}}},
+	}
+
+	ctx.addedValidationErrors = expectAddedErrors
+	ctx.arrayElementErrors = expectArrayElementErrors
+	ctx.mergeErrors = expectMergeErrors
+
+	assert.Equal(t, expectAddedErrors, ctx.AddedValidationError())
+	assert.Equal(t, expectArrayElementErrors, ctx.ArrayElementErrors())
+	assert.Equal(t, expectMergeErrors, ctx.AddedValidationErrors())
 }
 
 type addErrorValidator struct {

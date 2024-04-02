@@ -223,7 +223,7 @@ func readLangFile(fs fsutil.FS, path string, dest any) (err error) {
 
 	err = json.NewDecoder(langFile).Decode(&dest)
 	if err != nil {
-		err = errors.New(err)
+		err = errors.Errorf("failed to load language file %s: %w", path, err)
 	}
 	return
 }

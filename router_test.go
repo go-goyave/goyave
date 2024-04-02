@@ -171,12 +171,23 @@ func TestRouter(t *testing.T) {
 		route := router.Get("/route", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodGet, http.MethodOptions, http.MethodHead}, route.methods)
 
+		// OPTIONS method is added to routes if one of the parent routes has CORS
+		route = router.Subrouter("/subrouter").Get("/route", func(_ *Response, _ *Request) {})
+		assert.Equal(t, []string{http.MethodGet, http.MethodOptions, http.MethodHead}, route.methods)
+
+		// Disable in subrouter
+		subrouter := router.Subrouter("/subrouter2")
+		subrouter.CORS(nil)
+		route = subrouter.Get("/route-2", func(_ *Response, _ *Request) {})
+		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
+
 		// Disable
 		router.CORS(nil)
 		assert.Contains(t, router.Meta, MetaCORS)
 		assert.Nil(t, router.Meta[MetaCORS])
 		route = router.Get("/route-2", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
+
 	})
 
 	t.Run("StatusHandler", func(t *testing.T) {

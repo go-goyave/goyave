@@ -418,7 +418,7 @@ func (r *Router) Static(fs fs.StatFS, uri string, download bool) *Route {
 func (r *Router) registerRoute(methods []string, uri string, handler Handler) *Route {
 	methodsSlice := slices.Clone(methods)
 
-	corsOptions, hasCORSOptions := r.Meta[MetaCORS]
+	corsOptions, hasCORSOptions := r.LookupMeta(MetaCORS)
 	if hasCORSOptions && corsOptions != (*cors.Options)(nil) && !lo.Contains(methodsSlice, http.MethodOptions) {
 		methodsSlice = append(methodsSlice, http.MethodOptions)
 	}

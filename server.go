@@ -462,20 +462,23 @@ func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *Router)) {
 // separately notify such long-lived connections of shutdown and wait
 // for them to close, if desired. This can be done using shutdown hooks.
 //
+// If registered, the OS signal channel is closed.
+//
 // Make sure the program doesn't exit before `Stop()` returns.
 //
 // After being stopped, a `Server` is not meant to be re-used.
 //
 // This function can be called from any goroutine and is concurrently safe.
+// Calling this function several times is safe. Calls after the first one are no-op.
 func (s *Server) Stop() {
-	if s.sigChannel != nil {
-		signal.Stop(s.sigChannel)
-		close(s.sigChannel) // FIXME close of closed channel
-	}
 	state := s.state.Swap(3)
 	if state == 0 || state == 3 {
 		// Start has not been called or Stop has already been called, do nothing
 		return
+	}
+	if s.sigChannel != nil {
+		signal.Stop(s.sigChannel)
+		close(s.sigChannel)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

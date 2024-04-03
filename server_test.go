@@ -435,6 +435,19 @@ func TestServer(t *testing.T) {
 		// Nothing happens
 	})
 
+	t.Run("Stop_twice", func(t *testing.T) {
+		// This test is for rare but possible cases of concurrent calls of
+		// Stop(). There should be no error (sigChannel: close of closed channel)
+		server, err := New(Options{Config: config.LoadDefault()})
+		require.NoError(t, err)
+		server.sigChannel = make(chan os.Signal, 64)
+		assert.NotPanics(t, func() {
+			server.Stop()
+			server.Stop()
+			// Nothing happens
+		})
+	})
+
 	t.Run("StartupHooks", func(t *testing.T) {
 		server, err := New(Options{Config: config.LoadDefault()})
 		require.NoError(t, err)
@@ -473,7 +486,7 @@ func TestServer(t *testing.T) {
 
 		server.RegisterStartupHook(func(_ *Server) {
 			if runtime.GOOS == "windows" {
-				fmt.Println("Testing on a windows machine. Cannot test proc signals")
+				t.Logf("Testing on a windows machine. Cannot test proc signals")
 				server.Stop()
 			} else {
 				time.Sleep(10 * time.Millisecond)

@@ -50,10 +50,10 @@ type DevModeHandlerOptions struct {
 // performance and its output is not machine-readable.
 type DevModeHandler struct {
 	opts   *DevModeHandlerOptions
+	mu     *sync.Mutex
 	w      io.Writer
 	attrs  []slog.Attr
 	groups []string
-	mu     sync.Mutex
 }
 
 // NewHandler creates a new `slog.Handler` with default options.
@@ -71,7 +71,11 @@ func NewDevModeHandler(w io.Writer, opts *DevModeHandlerOptions) *DevModeHandler
 	if opts == nil {
 		opts = &DevModeHandlerOptions{}
 	}
-	return &DevModeHandler{w: w, opts: opts}
+	return &DevModeHandler{
+		w:    w,
+		mu:   &sync.Mutex{},
+		opts: opts,
+	}
 }
 
 // Handle formats its argument `Record` in an output easily readable by humans.
@@ -177,6 +181,7 @@ func (h *DevModeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &DevModeHandler{
 		opts:   h.opts,
 		w:      h.w,
+		mu:     &sync.Mutex{},
 		attrs:  newAttrs,
 		groups: h.groups,
 	}
@@ -189,6 +194,7 @@ func (h *DevModeHandler) WithGroup(name string) slog.Handler {
 	return &DevModeHandler{
 		opts:   h.opts,
 		w:      h.w,
+		mu:     &sync.Mutex{},
 		attrs:  append(make([]slog.Attr, 0, len(h.attrs)), h.attrs...),
 		groups: append(h.groups, name),
 	}

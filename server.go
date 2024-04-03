@@ -470,7 +470,7 @@ func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *Router)) {
 func (s *Server) Stop() {
 	if s.sigChannel != nil {
 		signal.Stop(s.sigChannel)
-		close(s.sigChannel)
+		close(s.sigChannel) // FIXME close of closed channel
 	}
 	state := s.state.Swap(3)
 	if state == 0 || state == 3 {

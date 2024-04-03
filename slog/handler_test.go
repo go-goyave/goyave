@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,7 +30,7 @@ func TestNewHandler(t *testing.T) {
 		{
 			devMode: true,
 			w:       bytes.NewBuffer(make([]byte, 0, 10)),
-			want:    &DevModeHandler{w: bytes.NewBuffer(make([]byte, 0, 10)), opts: &DevModeHandlerOptions{Level: slog.LevelDebug}},
+			want:    &DevModeHandler{w: bytes.NewBuffer(make([]byte, 0, 10)), mu: &sync.Mutex{}, opts: &DevModeHandlerOptions{Level: slog.LevelDebug}},
 		},
 		{
 			devMode: false,
@@ -57,12 +58,12 @@ func TestDevModeHandler(t *testing.T) {
 			{
 				desc: "nil_options",
 				opts: nil,
-				want: &DevModeHandler{w: bytes.NewBuffer(make([]byte, 0, 10)), opts: &DevModeHandlerOptions{}},
+				want: &DevModeHandler{w: bytes.NewBuffer(make([]byte, 0, 10)), mu: &sync.Mutex{}, opts: &DevModeHandlerOptions{}},
 			},
 			{
 				desc: "log_level_options",
 				opts: &DevModeHandlerOptions{Level: slog.LevelError},
-				want: &DevModeHandler{w: bytes.NewBuffer(make([]byte, 0, 10)), opts: &DevModeHandlerOptions{Level: slog.LevelError}},
+				want: &DevModeHandler{w: bytes.NewBuffer(make([]byte, 0, 10)), mu: &sync.Mutex{}, opts: &DevModeHandlerOptions{Level: slog.LevelError}},
 			},
 		}
 
@@ -141,31 +142,31 @@ func TestDevModeHandler(t *testing.T) {
 		}{
 			{
 				desc: "copy_empty",
-				want: &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{}},
+				want: &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{}},
 			},
 			{
 				desc:       "copy",
 				baseAttrs:  []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)},
 				baseGroups: []string{"group"},
-				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}, groups: []string{"group"}},
+				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}, groups: []string{"group"}},
 			},
 			{
 				desc:  "append_empty",
 				attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)},
-				want:  &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}},
+				want:  &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}},
 			},
 			{
 				desc:      "append",
 				baseAttrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)},
 				attrs:     []slog.Attr{slog.String("c", "c"), slog.Int("d", 3)},
-				want:      &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2), slog.String("c", "c"), slog.Int("d", 3)}},
+				want:      &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2), slog.String("c", "c"), slog.Int("d", 3)}},
 			},
 			{
 				desc:       "append_with_group",
 				baseGroups: []string{"group"},
 				baseAttrs:  []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)},
 				attrs:      []slog.Attr{slog.String("c", "c"), slog.Int("d", 3)},
-				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2), slog.String("c", "c"), slog.Int("d", 3)}, groups: []string{"group"}},
+				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2), slog.String("c", "c"), slog.Int("d", 3)}, groups: []string{"group"}},
 			},
 		}
 
@@ -195,20 +196,20 @@ func TestDevModeHandler(t *testing.T) {
 				desc:      "copy",
 				baseAttrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)},
 				group:     "group",
-				want:      &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}, groups: []string{"group"}},
+				want:      &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}, groups: []string{"group"}},
 			},
 			{
 				desc:       "append",
 				baseGroups: []string{"base"},
 				group:      "group",
-				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{}, groups: []string{"base", "group"}},
+				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{}, groups: []string{"base", "group"}},
 			},
 			{
 				desc:       "append_with_attrs",
 				baseGroups: []string{"base"},
 				baseAttrs:  []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)},
 				group:      "group",
-				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}, groups: []string{"base", "group"}},
+				want:       &DevModeHandler{opts: &DevModeHandlerOptions{}, w: buf, mu: &sync.Mutex{}, attrs: []slog.Attr{slog.String("a", "a"), slog.Int("b", 2)}, groups: []string{"base", "group"}},
 			},
 		}
 

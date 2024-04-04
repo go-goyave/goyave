@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -480,48 +481,63 @@ func TestRouter(t *testing.T) {
 		viewers.Get("/", nil).Name("users.viewers.show")
 		users.Put("/", nil).Name("users.update")
 
+		// Conflicting subrouters
+		conflict := router.Subrouter("/conflict")
+		conflict.Get("/", nil).Name("conflict.root")
+		conflict.Get("/child", nil).Name("conflict.child")
+		conflict2 := router.Subrouter("/conflict-2")
+		conflict2.Get("/", nil).Name("conflict-2.root")
+		conflict2.Get("/child", nil).Name("conflict-2.child")
+
+		// Multiple segments in subrouter path
+		subrouter := router.Subrouter("/subrouter/{param}")
+		subrouter.Get("/", nil).Name("multiple-segments.subroute.index")
+		subrouter.Get("/subroute", nil).Name("multiple-segments.subroute.show")
+		subrouter.Get("/subroute/{name}", nil).Name("multiple-segments.subroute.name")
+
 		cases := []struct {
 			path          string
 			method        string
 			expectedRoute string
 		}{
 			{path: "/", method: http.MethodGet, expectedRoute: "root"},
-			{path: "/", method: http.MethodPost, expectedRoute: "method-not-allowed"},
+			{path: "/", method: http.MethodPost, expectedRoute: RouteMethodNotAllowed},
 			{path: "/first-level", method: http.MethodGet, expectedRoute: "first-level"},
-			{path: "/first-level/", method: http.MethodGet, expectedRoute: "not-found"}, // Trailing slash
-			{path: "/first-level", method: http.MethodPost, expectedRoute: "method-not-allowed"},
+			{path: "/first-level/", method: http.MethodGet, expectedRoute: RouteNotFound}, // Trailing slash
+			{path: "/first-level", method: http.MethodPost, expectedRoute: RouteMethodNotAllowed},
 			{path: "/categories", method: http.MethodGet, expectedRoute: "categories.index"},
+			{path: "/categories/", method: http.MethodGet, expectedRoute: RouteNotFound}, // Trailing slash
 			{path: "/categories/123", method: http.MethodGet, expectedRoute: "categories.show"},
 			{path: "/categories/123/inventory", method: http.MethodGet, expectedRoute: "categories.inventory"},
-			{path: "/categories/test", method: http.MethodGet, expectedRoute: "not-found"},
+			{path: "/categories/test", method: http.MethodGet, expectedRoute: RouteNotFound},
 			{path: "/categories/123/products", method: http.MethodGet, expectedRoute: "products.index"},
 			{path: "/categories/123/products", method: http.MethodPost, expectedRoute: "products.create"},
 			{path: "/categories/123/products/1234567890", method: http.MethodGet, expectedRoute: "products.show"},
 			{path: "/users/manage", method: http.MethodGet, expectedRoute: "users.admins.manage"},
-			{path: "/users/manage", method: http.MethodGet, expectedRoute: "users.admins.manage"},
 			{path: "/users/profile", method: http.MethodGet, expectedRoute: "users.viewers.profile"},
 			{path: "/users", method: http.MethodGet, expectedRoute: "users.viewers.show"}, // Method not allowed on users.admins.create
 			{path: "/users", method: http.MethodPut, expectedRoute: "users.update"},
+			{path: "/conflict", method: http.MethodGet, expectedRoute: "conflict.root"},
+			{path: "/conflict/", method: http.MethodGet, expectedRoute: RouteNotFound},
+			{path: "/conflict/child", method: http.MethodGet, expectedRoute: "conflict.child"},
+			{path: "/conflict-2", method: http.MethodGet, expectedRoute: "conflict-2.root"},
+			{path: "/conflict-2/", method: http.MethodGet, expectedRoute: RouteNotFound},
+			{path: "/conflict-2/child", method: http.MethodGet, expectedRoute: "conflict-2.child"},
+			{path: "/categories/123/not-a-route", method: http.MethodGet, expectedRoute: RouteNotFound},
+			{path: "/categories/123/not-a-route/", method: http.MethodGet, expectedRoute: RouteNotFound},
+			{path: "/subrouter/value", method: http.MethodGet, expectedRoute: "multiple-segments.subroute.index"},
+			{path: "/subrouter/value/", method: http.MethodGet, expectedRoute: RouteNotFound},
+			{path: "/subrouter/value/subroute", method: http.MethodGet, expectedRoute: "multiple-segments.subroute.show"},
+			{path: "/subrouter/value/subroute/", method: http.MethodGet, expectedRoute: RouteNotFound},
+			{path: "/subrouter/value/subroute/johndoe", method: http.MethodGet, expectedRoute: "multiple-segments.subroute.name"},
 		}
 
 		for _, c := range cases {
 			c := c
-			t.Run(fmt.Sprintf("%s_%s", c.method, c.path), func(t *testing.T) {
+			t.Run(fmt.Sprintf("%s_%s", c.method, strings.ReplaceAll(c.path, "/", "_")), func(t *testing.T) {
 				match := routeMatch{currentPath: c.path}
-				ok := router.match(c.method, &match)
-				switch c.expectedRoute {
-				case "":
-					assert.False(t, ok)
-				case "not-found":
-					assert.False(t, ok)
-					assert.Equal(t, notFoundRoute, match.route)
-				case "method-not-allowed":
-					assert.True(t, ok)
-					assert.Equal(t, methodNotAllowedRoute, match.route)
-				default:
-					assert.True(t, ok)
-					assert.Equal(t, c.expectedRoute, match.route.name)
-				}
+				router.match(c.method, &match)
+				assert.Equal(t, c.expectedRoute, match.route.name)
 			})
 		}
 

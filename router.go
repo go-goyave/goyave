@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"maps"
 	"slices"
@@ -29,7 +30,7 @@ var (
 	errMatchMethodNotAllowed = errors.New("Method not allowed for this route")
 	errMatchNotFound         = errors.New("No match for this URI")
 
-	methodNotAllowedRoute = newRoute(func(response *Response, _ *Request) { // TODO document special route names
+	methodNotAllowedRoute = newRoute(func(response *Response, _ *Request) {
 		response.Status(http.StatusMethodNotAllowed)
 	}, RouteMethodNotAllowed)
 	notFoundRoute = newRoute(func(response *Response, _ *Request) {
@@ -66,7 +67,8 @@ func (rm *routeMatch) mergeParams(params map[string]string) {
 }
 
 func (rm *routeMatch) trimCurrentPath(fullMatch string) {
-	rm.currentPath = rm.currentPath[len(fullMatch):]
+	length := len(fullMatch)
+	rm.currentPath = rm.currentPath[length:]
 }
 
 // Router registers routes to be matched and executes a handler.
@@ -85,6 +87,8 @@ type Router struct {
 	prefix     string
 	routes     []*Route
 	subrouters []*Router
+
+	slashCount int
 }
 
 var _ http.Handler = (*Router)(nil) // implements http.Handler
@@ -282,7 +286,16 @@ func (r *Router) match(method string, match *routeMatch) bool {
 	// Check if router itself matches
 	var params []string
 	if r.parameterizable.regex != nil {
-		params = r.parameterizable.regex.FindStringSubmatch(match.currentPath)
+		i := -1
+		if len(match.currentPath) > 0 {
+			// Ignore slashes in router prefix
+			i = nthIndex(match.currentPath[1:], "/", r.slashCount) + 1
+		}
+		if i <= 0 {
+			i = len(match.currentPath)
+		}
+		currentPath := match.currentPath[:i]
+		params = r.parameterizable.regex.FindStringSubmatch(currentPath)
 	} else {
 		params = []string{""}
 	}
@@ -318,7 +331,21 @@ func (r *Router) match(method string, match *routeMatch) bool {
 	}
 
 	match.route = notFoundRoute
-	return false
+	// Return true if the subrouter matched so we don't turn back and check other subrouters
+	return params != nil && len(params[0]) > 0
+}
+
+func nthIndex(str, substr string, n int) int {
+	index := -1
+	for nth := 0; nth < n; nth++ {
+		i := strings.Index(str, substr)
+		if i == -1 || i == len(str) {
+			return -1
+		}
+		index += i + 1
+		str = str[i+1:]
+	}
+	return index
 }
 
 func (r *Router) makeParameters(match []string) map[string]string {
@@ -350,7 +377,10 @@ func (r *Router) Subrouter(prefix string) *Router {
 		globalMiddleware: r.globalMiddleware,
 		regexCache:       r.regexCache,
 	}
-	router.compileParameters(router.prefix, false, r.regexCache)
+	if prefix != "" {
+		router.compileParameters(router.prefix, false, r.regexCache)
+		router.slashCount = strings.Count(prefix, "/")
+	}
 	r.subrouters = append(r.subrouters, router)
 	return router
 }

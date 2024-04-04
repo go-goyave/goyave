@@ -62,6 +62,8 @@ func (p *parameterizable) compileParameters(uri string, ends bool, regexCache ma
 
 	if ends {
 		builder.WriteString("$")
+	} else {
+		builder.WriteString(`/?$`)
 	}
 
 	pattern := builder.String()

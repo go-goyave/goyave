@@ -84,6 +84,17 @@ func TestStaticHandler(t *testing.T) {
 				assert.Equal(t, "{\n    \"custom-entry\": \"value\"\n}", string(body))
 			},
 		},
+		{
+			uri:       "/lang/en-US/fields.json",
+			directory: "resources",
+			download:  true,
+			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
+				assert.Equal(t, http.StatusOK, response.GetStatus())
+				assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+				assert.Equal(t, "attachment; filename=\"fields.json\"", result.Header.Get("Content-Disposition"))
+				assert.Equal(t, "{\n    \"email\": \"email address\"\n}", string(body))
+			},
+		},
 	}
 
 	for _, c := range cases {

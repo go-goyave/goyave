@@ -332,7 +332,7 @@ func (r *Response) error(err any) {
 //
 //	func (ctrl *ProductController) Show(response *goyave.Response, request *goyave.Request) {
 //	    product := model.Product{}
-//	    result := ctrl.DB().First(&product, request.Params["id"])
+//	    result := ctrl.DB().First(&product, request.RouteParams["id"])
 //	    if response.WriteDBError(result.Error) {
 //	        return
 //	    }

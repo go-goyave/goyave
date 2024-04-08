@@ -16,8 +16,6 @@ import (
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
-// TODO document Render, RenderHTML, Redirect, (more?) are not available
-
 var (
 	// ErrNotHijackable returned by response.Hijack() if the underlying
 	// http.ResponseWriter doesn't implement http.Hijacker. This can

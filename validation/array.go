@@ -46,7 +46,12 @@ func convertArray(array any, parentType reflect.Type) any {
 	if elemVal.Kind() != reflect.Interface {
 		return array
 	}
-	elemType := elemVal.Elem().Type()
+	elemVal = elemVal.Elem()
+	if !elemVal.IsValid() {
+		// The first element is probably `nil`, avoid "call of reflect.Value.Interface on zero Value" error.
+		return array
+	}
+	elemType := elemVal.Type()
 	for i := 1; i < length; i++ {
 		elem := list.Index(i).Elem()
 		if !elem.IsValid() || elem.Type() != elemType {

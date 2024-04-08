@@ -28,6 +28,9 @@ func TestArrayValidator(t *testing.T) {
 		{value: []any{"a", "b"}, want: true, wantValue: []string{"a", "b"}},
 		{value: []any{"a", 2}, want: true, wantValue: []any{"a", 2}},
 		{value: []any{1, 2}, want: true, wantValue: []int{1, 2}},
+		{value: []any{1, nil, 3}, want: true, wantValue: []any{1, nil, 3}}, // No conversion because one element is nil
+		{value: []any{nil, 2, 3}, want: true, wantValue: []any{nil, 2, 3}}, // First element is nil (invalid)
+		{value: []any{0, 1, 2}, want: true, wantValue: []int{0, 1, 2}},     // First element is zero value but not nil
 		{value: []any{[]string{"a", "b"}}, want: true, wantValue: [][]string{{"a", "b"}}},
 		{value: []any{[]any{"a", "b"}}, want: true, wantValue: [][]any{{"a", "b"}}},
 		{value: []any{"a", "b"}, want: true, wantValue: []string{"a", "b"}, parent: []any{[]any{"a", "b"}}},

@@ -8,8 +8,6 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
-// TODO find a smooth way to convert a paginator's records to DTO (typeutil.Convert simply?)
-
 // Paginator structure containing pagination information and result records.
 type Paginator[T any] struct {
 	DB *gorm.DB `json:"-"`

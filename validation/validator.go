@@ -366,7 +366,6 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				Name:      c.Name,
 				path:      errorPath,
 				Invalid:   !valid,
-				// TODO add validation errors Merge
 			}
 			validator.init(v.options) // TODO document a Rules or RuleSet is not meant to be re-used or used concurrently
 			ok := validator.Validate(ctx)

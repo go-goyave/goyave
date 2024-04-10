@@ -11,8 +11,6 @@ import (
 	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
-// TODO document there is no initializer and registered models anymore, the view interface has been removed, no auto migrations
-
 // New create a new connection pool using the settings defined in the given configuration.
 //
 // In order to use a specific driver / dialect ("mysql", "sqlite3", ...), you must not

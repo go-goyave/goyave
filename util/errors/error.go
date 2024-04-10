@@ -232,7 +232,3 @@ func (r Reason) Error() string {
 func (r Reason) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r.reason)
 }
-
-// TODO document exit codes are removed
-// Exit code doesn't really bring value, the error message in the logs is more important
-// The server now returns *errors.Error

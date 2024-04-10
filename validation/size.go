@@ -14,7 +14,7 @@ func validateSize(value any, v func(size int) bool) bool {
 	switch getFieldType(val) {
 	case FieldTypeString:
 		return v(uniseg.GraphemeClusterCount(value.(string)))
-	case FieldTypeArray, FieldTypeObject: // TODO document it also works for objects (number of keys)
+	case FieldTypeArray, FieldTypeObject:
 		return v(val.Len())
 	case FieldTypeFile:
 		files, _ := value.([]fsutil.File)

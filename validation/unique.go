@@ -1,8 +1,10 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
@@ -149,6 +151,13 @@ func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
 	}
 
 	db := v.buildQuery(values, condition)
+
+	timeout := v.Config().GetInt("database.defaultReadQueryTimeout")
+	if _, hasDeadline := db.Statement.Context.Deadline(); !hasDeadline && timeout > 0 {
+		timeoutCtx, cancel := context.WithTimeout(db.Statement.Context, time.Duration(timeout)*time.Millisecond)
+		defer cancel()
+		db = db.WithContext(timeoutCtx)
+	}
 
 	results := []int{}
 	if err := db.Find(&results).Error; err != nil {

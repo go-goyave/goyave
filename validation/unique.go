@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // UniqueValidator validates the field under validation must have a unique value in database
@@ -24,7 +25,7 @@ func (v *UniqueValidator) Validate(ctx *Context) bool {
 	count := int64(0)
 
 	if err := v.Scope(v.DB(), ctx.Value).Count(&count).Error; err != nil {
-		ctx.AddError(err)
+		ctx.AddError(errors.New(err))
 		return false
 	}
 	return count == 0
@@ -151,7 +152,7 @@ func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
 
 	results := []int{}
 	if err := db.Find(&results).Error; err != nil {
-		ctx.AddError(err)
+		ctx.AddError(errors.New(err))
 		return false
 	}
 

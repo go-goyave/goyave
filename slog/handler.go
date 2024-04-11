@@ -181,7 +181,7 @@ func (h *DevModeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &DevModeHandler{
 		opts:   h.opts,
 		w:      h.w,
-		mu:     &sync.Mutex{},
+		mu:     h.mu,
 		attrs:  newAttrs,
 		groups: h.groups,
 	}
@@ -194,7 +194,7 @@ func (h *DevModeHandler) WithGroup(name string) slog.Handler {
 	return &DevModeHandler{
 		opts:   h.opts,
 		w:      h.w,
-		mu:     &sync.Mutex{},
+		mu:     h.mu,
 		attrs:  append(make([]slog.Attr, 0, len(h.attrs)), h.attrs...),
 		groups: append(h.groups, name),
 	}

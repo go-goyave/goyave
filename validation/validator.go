@@ -590,7 +590,13 @@ func translateFieldName(lang *lang.Language, fieldName string) string {
 	if i := strings.LastIndex(fieldName, "."); i != -1 {
 		fieldName = fieldName[i+1:]
 	}
-	fieldName = strings.TrimSuffix(fieldName, "[]")
+	for {
+		f := strings.TrimSuffix(fieldName, "[]")
+		if len(f) == len(fieldName) {
+			break
+		}
+		fieldName = f
+	}
 	entry := "validation.fields." + fieldName
 	name := lang.Get(entry)
 	if name == entry {

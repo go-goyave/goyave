@@ -14,5 +14,3 @@ type Service interface {
 	// to retrieve the service.
 	Name() string
 }
-
-// TODO Document why Service, why repository, how they are initialized, etc

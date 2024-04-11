@@ -507,7 +507,7 @@ func TestValidate(t *testing.T) {
 						Elements: ArrayErrors{
 							0: &Errors{
 								Elements: ArrayErrors{
-									1: &Errors{Errors: []string{"The narray[] elements must be integers."}}, // TODO should the "[]" be completely removed?
+									1: &Errors{Errors: []string{"The narray elements must be integers."}},
 								},
 							},
 						},
@@ -641,7 +641,7 @@ func TestValidate(t *testing.T) {
 						Elements: ArrayErrors{
 							0: &Errors{
 								Elements: ArrayErrors{
-									1: &Errors{Errors: []string{"The narray[] elements must be integers."}},
+									1: &Errors{Errors: []string{"The narray elements must be integers."}},
 									2: &Errors{Errors: []string{"merge err"}},
 								},
 							},

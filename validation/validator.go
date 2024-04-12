@@ -367,7 +367,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				path:      errorPath,
 				Invalid:   !valid,
 			}
-			validator.init(v.options) // TODO document a Rules or RuleSet is not meant to be re-used or used concurrently
+			validator.init(v.options)
 			ok := validator.Validate(ctx)
 			if len(ctx.errors) > 0 {
 				valid = false
@@ -417,7 +417,7 @@ func (v *validator) convertSingleValueArray(field *Field, value any) any {
 }
 
 func (v *validator) isAbsent(field *Field, c *walk.Context, data any) bool {
-	if c.Found == walk.ParentNotFound { // TODO document field is skipped if parent not found (make sure to also define rules for parents)
+	if c.Found == walk.ParentNotFound {
 		return true
 	}
 	requiredCtx := &Context{

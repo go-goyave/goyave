@@ -74,7 +74,7 @@ func (c *Context) Break() {
 // The given "f" function is executed for each final element matched. If the path
 // cannot be completed because the step's name doesn't exist in the currently explored map,
 // the function will be executed as well, with a the `Context`'s `NotFound` field set to `true`.
-func (p *Path) Walk(currentElement any, f func(*Context)) { // TODO document callback parameter is now a pointer
+func (p *Path) Walk(currentElement any, f func(*Context)) {
 	trackPath := &Path{
 		Name: p.Name,
 		Type: p.Type,

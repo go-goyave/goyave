@@ -99,9 +99,9 @@ func Middleware[T any](authenticator Authenticator) *Handler[T] {
 //
 //	 type TestUser struct {
 //			gorm.Model
-//			Name     string `gorm:"type:varchar(100)"`
-//			Password string `gorm:"type:varchar(100)" auth:"password"`
-//			Email    string `gorm:"type:varchar(100);uniqueIndex" auth:"username"`
+//			Name     string
+//			Password string `auth:"password"`
+//			Email    string `gorm:"uniqueIndex" auth:"username"`
 //	 }
 //
 // The result will be the "Email" field, "nil" and the "Password" field.

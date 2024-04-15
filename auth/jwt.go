@@ -238,7 +238,10 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error
 			if claimName == "" {
 				claimName = "sub"
 			}
-			result := a.DB().Where(column.Name, claims[claimName]).First(user)
+			result := a.DB().
+				WithContext(request.Context()).
+				Where(column.Name, claims[claimName]).
+				First(user)
 
 			if result.Error != nil {
 				if errors.Is(result.Error, gorm.ErrRecordNotFound) {

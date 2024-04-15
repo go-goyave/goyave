@@ -46,7 +46,10 @@ func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user any) err
 
 	columns := FindColumns(a.DB(), user, "username", "password")
 
-	result := a.DB().Where(columns[0].Name+" = ?", username).First(user)
+	result := a.DB().
+		WithContext(request.Context()).
+		Where(columns[0].Name, username).
+		First(user)
 	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
 
 	if result.Error != nil && !notFound {

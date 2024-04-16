@@ -15,7 +15,7 @@ type File struct {
 	MIMEType string
 }
 
-// Save writes the given file on the disk.
+// Save writes the file's content to a new file in the given file system.
 // Appends a timestamp to the given file name to avoid duplicate file names.
 // The file is not readable anymore once saved as its FileReader has already been
 // closed.

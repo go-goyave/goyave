@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -8,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
@@ -15,7 +18,8 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
+		mockUserService := &MockUserService[TestUser]{user: user}
+		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
@@ -30,9 +34,29 @@ func TestBasicAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 	})
 
+	t.Run("success_ptr", func(t *testing.T) {
+		server, user := prepareAuthenticatorTest(t)
+		mockUserService := &MockUserService[*TestUser]{user: &user}
+		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
+
+		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
+		request.Request().SetBasicAuth(user.Email, "secret")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
+			u := request.User.(**TestUser)
+			assert.Equal(t, user.ID, (*u).ID)
+			assert.Equal(t, user.Name, (*u).Name)
+			assert.Equal(t, user.Email, (*u).Email)
+			response.Status(http.StatusOK)
+		})
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.NoError(t, resp.Body.Close())
+	})
+
 	t.Run("wrong_password", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
+		mockUserService := &MockUserService[TestUser]{user: user}
+		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
@@ -48,9 +72,30 @@ func TestBasicAuthenticator(t *testing.T) {
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
 	})
 
+	t.Run("service_error", func(t *testing.T) {
+		server, user := prepareAuthenticatorTest(t)
+		buf := &bytes.Buffer{}
+		server.Logger = slog.New(slog.NewHandler(false, buf))
+		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("service_error")}
+		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
+
+		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
+		request.Request().SetBasicAuth(user.Email, "secret")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
+			assert.Fail(t, "middleware passed despite failed authentication")
+			response.Status(http.StatusOK)
+		})
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.NoError(t, resp.Body.Close())
+	})
+
 	t.Run("optional_success", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
+		mockUserService := &MockUserService[TestUser]{user: user}
+		a := NewBasicAuthenticator(mockUserService, "Password")
+		a.Optional = true
+		authenticator := Middleware(a)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "secret")
@@ -67,7 +112,10 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("optional_wrong_password", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
+		mockUserService := &MockUserService[TestUser]{user: user}
+		a := NewBasicAuthenticator(mockUserService, "Password")
+		a.Optional = true
+		authenticator := Middleware(a)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
@@ -84,8 +132,11 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_no_auth", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
-		authenticator := Middleware[*TestUser](&BasicAuthenticator{Optional: true})
+		server, user := prepareAuthenticatorTest(t)
+		mockUserService := &MockUserService[TestUser]{user: user}
+		a := NewBasicAuthenticator(mockUserService, "Password")
+		a.Optional = true
+		authenticator := Middleware(a)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
@@ -97,41 +148,41 @@ func TestBasicAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 	})
 
-	t.Run("error_no_table", func(t *testing.T) {
-		assert.Panics(t, func() {
-			cfg := config.LoadDefault()
-			cfg.Set("database.connection", "sqlite3")
-			cfg.Set("database.name", "testbasicauthenticator_no_table.db")
-			cfg.Set("database.options", "mode=memory")
-			cfg.Set("app.debug", false)
-			server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
-			authenticator := Middleware[*TestUserPromoted](&BasicAuthenticator{})
-			authenticator.Init(server.Server)
-			request := server.NewTestRequest(http.MethodGet, "/protected", nil)
-			request.Request().SetBasicAuth("johndoe", "secret")
-			request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
-
-			// Panic here because table doesn't exist
-			user := &TestUserPromoted{}
-			_ = authenticator.Authenticate(request, &user)
-		})
-	})
-
 	t.Run("no_auth", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("database.connection", "sqlite3")
-		cfg.Set("database.name", "testbasicauthenticator_no_table.db")
-		cfg.Set("database.options", "mode=memory")
-		cfg.Set("app.debug", false)
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
-		authenticator := Middleware[*TestUser](&BasicAuthenticator{})
-		authenticator.Init(server.Server)
+		server, user := prepareAuthenticatorTest(t)
+		mockUserService := &MockUserService[TestUser]{user: user}
+		a := NewBasicAuthenticator(mockUserService, "Password")
+		authenticator := Middleware(a)
+
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
+			assert.Fail(t, "middleware passed despite failed authentication")
+			response.Status(http.StatusOK)
+		})
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
+		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.no-credentials-provided")}, body)
+	})
 
-		err := authenticator.Authenticate(request, &TestUserPromoted{})
-		require.Error(t, err)
-		assert.Equal(t, server.Lang.GetDefault().Get("auth.no-credentials-provided"), err.Error())
+	t.Run("non-existing_password_field", func(t *testing.T) {
+		server, user := prepareAuthenticatorTest(t)
+		buf := &bytes.Buffer{}
+		server.Logger = slog.New(slog.NewHandler(false, buf))
+		mockUserService := &MockUserService[TestUser]{user: user}
+		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "NotAColumn"))
+
+		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
+		request.Request().SetBasicAuth(user.Email, "secret")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
+			assert.Fail(t, "middleware passed despite failed authentication")
+			response.Status(http.StatusOK)
+		})
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.NoError(t, resp.Body.Close())
 	})
 }
 

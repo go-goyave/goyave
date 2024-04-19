@@ -175,10 +175,14 @@ func (s *JWTService) GetPrivateKey(signingMethod jwt.SigningMethod) (any, error)
 }
 
 // JWTAuthenticator implementation of Authenticator using a JSON Web Token.
-type JWTAuthenticator struct {
+//
+// The T parameter represents the user DTO and should not be a pointer.
+type JWTAuthenticator[T any] struct {
 	goyave.Component
 
 	service *JWTService
+
+	UserService UserService[T]
 
 	// SigningMethod expected by this authenticator when parsing JWT.
 	// Defaults to HMAC.
@@ -190,15 +194,22 @@ type JWTAuthenticator struct {
 
 	// Optional defines if the authenticator allows requests that
 	// don't provide credentials. Handlers should therefore check
-	// if request.User is not nil before accessing it.
+	// if `request.User` is not `nil` before accessing it.
 	Optional bool
 }
 
-var _ Authenticator = (*JWTAuthenticator)(nil) // implements Authenticator
+// NewJWTAuthenticator create a new authenticator for the JSON Web Token authentication flow.
+//
+// The T parameter represents the user DTO and should not be a pointer.
+func NewJWTAuthenticator[T any](userService UserService[T]) *JWTAuthenticator[T] {
+	return &JWTAuthenticator[T]{
+		UserService: userService,
+	}
+}
 
 // Init the authenticator. Automatically registers the `JWTService` if not already registered,
 // using `osfs.FS` as file system for the keys.
-func (a *JWTAuthenticator) Init(server *goyave.Server) {
+func (a *JWTAuthenticator[T]) Init(server *goyave.Server) {
 	a.Component.Init(server)
 
 	service, ok := server.LookupService(JWTServiceName)
@@ -210,22 +221,17 @@ func (a *JWTAuthenticator) Init(server *goyave.Server) {
 }
 
 // Authenticate fetch the user corresponding to the token
-// found in the given request and puts the result in the given user pointer.
+// found in the given request and returns it.
 // If no user can be authenticated, returns an error.
 //
-// The database request is executed based on the model name and the
-// struct tag `auth:"username"`.
-//
 // If the token is valid and has claims, those claims will be added to `request.Extra` with the key "jwt_claims".
-//
-// This implementation is a JWT-based authentication using HMAC SHA256, supporting only one active token.
-func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error {
+func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) {
 	tokenString, ok := request.BearerToken()
 	if tokenString == "" || !ok {
 		if a.Optional {
-			return nil
+			return nil, nil
 		}
-		return fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
+		return nil, fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	token, err := jwt.Parse(tokenString, a.keyFunc)
@@ -233,32 +239,27 @@ func (a *JWTAuthenticator) Authenticate(request *goyave.Request, user any) error
 	if err == nil && token.Valid {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			request.Extra[ExtraJWTClaims{}] = claims
-			column := FindColumns(a.DB(), user, "username")[0]
+
 			claimName := a.ClaimName
 			if claimName == "" {
 				claimName = "sub"
 			}
-			result := a.DB().
-				WithContext(request.Context()).
-				Where(column.Name, claims[claimName]).
-				First(user)
-
-			if result.Error != nil {
-				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-					return fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
+			user, err := a.UserService.FindByUsername(request.Context(), claims[claimName])
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return nil, fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
 				}
-				panic(errorutil.New(result.Error))
-
+				panic(errorutil.New(err))
 			}
 
-			return nil
+			return user, nil
 		}
 	}
 
-	return a.makeError(request.Lang, err.(*jwt.ValidationError).Errors)
+	return nil, a.makeError(request.Lang, err.(*jwt.ValidationError).Errors)
 }
 
-func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (any, error) {
+func (a *JWTAuthenticator[T]) keyFunc(token *jwt.Token) (any, error) {
 	switch a.SigningMethod.(type) {
 	case *jwt.SigningMethodRSA:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
@@ -288,7 +289,7 @@ func (a *JWTAuthenticator) keyFunc(token *jwt.Token) (any, error) {
 	}
 }
 
-func (a *JWTAuthenticator) makeError(language *lang.Language, bitfield uint32) error {
+func (a *JWTAuthenticator[T]) makeError(language *lang.Language, bitfield uint32) error {
 	if bitfield&jwt.ValidationErrorNotValidYet != 0 {
 		return fmt.Errorf(language.Get("auth.jwt-not-valid-yet"))
 	} else if bitfield&jwt.ValidationErrorExpired != 0 {

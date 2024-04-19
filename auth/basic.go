@@ -15,58 +15,73 @@ import (
 
 // BasicAuthenticator implementation of Authenticator with the Basic
 // authentication method.
-type BasicAuthenticator struct {
+//
+// The T parameter represents the user DTO and should not be a pointer. The DTO used should be
+// different from the DTO returned to clients as a response because it needs to contain the user's password.
+type BasicAuthenticator[T any] struct {
 	goyave.Component
+
+	UserService UserService[T]
+
+	// PasswordField the name of T's struct field that holds the user's hashed password.
+	// It will be used to compare the password hash with the user input.
+	PasswordField string
 
 	// Optional defines if the authenticator allows requests that
 	// don't provide credentials. Handlers should therefore check
-	// if request.User is not nil before accessing it.
+	// if `request.User` is not `nil` before accessing it.
 	Optional bool
 }
 
-var _ Authenticator = (*BasicAuthenticator)(nil) // implements Authenticator
+// NewBasicAuthenticator create a new authenticator for the Basic authentication flow.
+//
+// The T parameter represents the user DTO and should not be a pointer. The DTO used should be
+// different from the DTO returned to clients as a response because it needs to contain the user's password.
+//
+// The `passwordField` corresponds to the name of T's struct field that holds the user's hashed password.
+// It will be used to compare the password hash with the user input.
+func NewBasicAuthenticator[T any](userService UserService[T], passwordField string) *BasicAuthenticator[T] {
+	return &BasicAuthenticator[T]{
+		UserService:   userService,
+		PasswordField: passwordField,
+	}
+}
 
 // Authenticate fetch the user corresponding to the credentials
-// found in the given request and puts the result in the given user pointer.
+// found in the given request and returns it.
 // If no user can be authenticated, returns an error.
-//
-// The database request is executed based on the model name and the
-// struct tags `auth:"username"` and `auth:"password"`.
-// The password is checked using bcrypt. The username field should unique.
-func (a *BasicAuthenticator) Authenticate(request *goyave.Request, user any) error {
+// The password is checked using bcrypt.
+func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) {
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
-
 		if a.Optional {
-			return nil
+			return nil, nil
 		}
-		return fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
+		return nil, fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
 	}
 
-	columns := FindColumns(a.DB(), user, "username", "password")
+	user, err := a.UserService.FindByUsername(request.Context(), username)
 
-	result := a.DB().
-		WithContext(request.Context()).
-		Where(columns[0].Name, username).
-		First(user)
-	notFound := errors.Is(result.Error, gorm.ErrRecordNotFound)
-
-	if result.Error != nil && !notFound {
-		panic(errorutil.New(result.Error))
+	notFound := errors.Is(err, gorm.ErrRecordNotFound)
+	if err != nil && !notFound {
+		panic(errorutil.New(err))
 	}
 
 	t := reflect.Indirect(reflect.ValueOf(user))
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
-	pass := t.FieldByName(columns[1].Field.Name)
-
-	if notFound || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
-		return fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
+	pass := t.FieldByName(a.PasswordField)
+	if pass.Kind() == reflect.Invalid {
+		panic(errorutil.Errorf("could not find valid field/column %q in type %T", a.PasswordField, user))
 	}
 
-	return nil
+	if notFound || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
+		return nil, fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
+	}
+
+	return user, nil
 }
 
 //--------------------------------------------
@@ -97,26 +112,23 @@ type ConfigBasicAuthenticator struct {
 	goyave.Component
 }
 
-var _ Authenticator = (*ConfigBasicAuthenticator)(nil) // implements Authenticator
-
 // Authenticate check if the request basic auth header matches the
 // "auth.basic.username" and "auth.basic.password" config entries.
-func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request, user any) error {
+func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request) (*BasicUser, error) {
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
-		return fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
+		return nil, fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	if subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.username")), []byte(username)) != 1 ||
 		subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.password")), []byte(password)) != 1 {
-		return fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
+		return nil, fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
 	}
 
-	(*user.(**BasicUser)) = &BasicUser{
+	return &BasicUser{
 		Name: username,
-	}
-	return nil
+	}, nil
 }
 
 // ConfigBasicAuth create a new authenticator middleware for
@@ -124,6 +136,6 @@ func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request, user an
 // user is set to a `*BasicUser`.
 // The user is authenticated if the "auth.basic.username" and "auth.basic.password" config entries
 // match the request's Authorization header.
-func ConfigBasicAuth() *Handler[*BasicUser] {
-	return Middleware[*BasicUser](&ConfigBasicAuthenticator{})
+func ConfigBasicAuth() *Handler[BasicUser] {
+	return Middleware(&ConfigBasicAuthenticator{})
 }

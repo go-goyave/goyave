@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"net/http"
-	"reflect"
 
 	"goyave.dev/goyave/v5"
 )
@@ -11,12 +10,6 @@ import (
 // MetaAuth the authentication middleware will only authenticate the user
 // if this meta is present in the matched route or any of its parent and is equal to `true`.
 const MetaAuth = "goyave.require-auth"
-
-// Column matches a column name with a struct field.
-type Column struct {
-	Field *reflect.StructField
-	Name  string
-}
 
 // Authenticator is an object in charge of authenticating a client.
 //

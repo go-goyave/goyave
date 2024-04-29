@@ -385,8 +385,6 @@ func (s *Server) Router() *Router {
 }
 
 // Start the server. This operation is blocking and returns when the server is closed.
-//
-// The `routeRegistrer` parameter is a function aimed at registering all your routes and middleware.
 func (s *Server) Start() error {
 	swapped := s.state.CompareAndSwap(0, 1)
 	if !swapped {

@@ -199,8 +199,8 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 // If the websocket Handler returns an error that is not a CloseError, the Upgrader's error
 // handler will be executed and the close frame sent to the client will have status code
 // 1011 (internal server error) and "Internal server error" as message.
-// If debug is enabled, the message will be set to the one of the error returned by the
-// websocket Handler. Otherwise the close frame will have status code 1000 (normal closure)
+// If debug is enabled, the message will be the error message returned by the
+// websocket handler. Otherwise the close frame will have status code 1000 (normal closure)
 // and "Server closed connection" as a message.
 //
 // This HTTP handler features a recovery mechanism. If the websocket Handler panics,

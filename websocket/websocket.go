@@ -56,7 +56,7 @@ type Controller interface {
 	//			c.Logger().Debug("recv", "message", string(message))
 	//			err = c.WriteMessage(mt, message)
 	//			if err != nil {
-	//				return errors.New(fmt.Errorf("write: %w", err))
+	//				return errors.Errof("write: %w", err)
 	//			}
 	//		}
 	//	}

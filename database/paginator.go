@@ -51,8 +51,8 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 //	articles := []model.Article{}
 //	tx := db.Where("title LIKE ?", "%"+sqlutil.EscapeLike(search)+"%")
 //	paginator := database.NewPaginator(tx, page, pageSize, &articles)
-//	result := paginator.Find()
-//	if response.WriteDBError(result.Error) {
+//	err := paginator.Find()
+//	if response.WriteDBError(err) {
 //		return
 //	}
 //	response.JSON(http.StatusOK, paginator)

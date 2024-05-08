@@ -42,6 +42,7 @@ func (c *testCommitter) BeginTx(_ context.Context, _ *sql.TxOptions) (gorm.ConnP
 
 func TestGormSession(t *testing.T) {
 	cfg := config.LoadDefault()
+	cfg.Set("database.config.disableAutomaticPing", true)
 
 	t.Run("New", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, tests.DummyDialector{})

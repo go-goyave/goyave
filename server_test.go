@@ -285,7 +285,9 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("ReplaceDB", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		cfg := config.LoadDefault()
+		cfg.Set("database.config.disableAutomaticPing", true)
+		server, err := New(Options{Config: cfg})
 		require.NoError(t, err)
 
 		assert.NoError(t, server.ReplaceDB(tests.DummyDialector{}))

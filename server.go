@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	stderrors "errors"
+
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
@@ -439,7 +441,7 @@ func (s *Server) Start() error {
 			}
 		}
 	}(s)
-	if err := s.server.Serve(ln); err != nil && err != http.ErrServerClosed {
+	if err := s.server.Serve(ln); err != nil && !stderrors.Is(err, http.ErrServerClosed) {
 		s.state.Store(3)
 		return errors.New(err)
 	}

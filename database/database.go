@@ -61,8 +61,7 @@ func NewFromDialector(cfg *config.Config, logger func() *slog.Logger, dialector 
 		return db, errorutil.New(err)
 	}
 
-	initSQLDB(cfg, db)
-	return db, nil
+	return db, initSQLDB(cfg, db)
 }
 
 func newConfig(cfg *config.Config, logger func() *slog.Logger) *gorm.Config {
@@ -90,15 +89,16 @@ func initTimeoutPlugin(cfg *config.Config, db *gorm.DB) error {
 	return errorutil.New(db.Use(timeoutPlugin))
 }
 
-func initSQLDB(cfg *config.Config, db *gorm.DB) {
+func initSQLDB(cfg *config.Config, db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {
 		if errors.Is(err, gorm.ErrInvalidDB) {
-			return
+			return nil
 		}
-		panic(errorutil.New(err))
+		return errorutil.New(err)
 	}
 	sqlDB.SetMaxOpenConns(cfg.GetInt("database.maxOpenConnections"))
 	sqlDB.SetMaxIdleConns(cfg.GetInt("database.maxIdleConnections"))
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.GetInt("database.maxLifetime")) * time.Second)
+	return nil
 }

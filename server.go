@@ -76,7 +76,7 @@ type Options struct {
 	// server will read parsing the request header's keys and
 	// values, including the request line. It does not limit the
 	// size of the request body.
-	// If zero, DefaultMaxHeaderBytes is used.
+	// If zero, http.DefaultMaxHeaderBytes is used.
 	MaxHeaderBytes int
 }
 

@@ -42,9 +42,7 @@ func New(cfg *config.Config, logger func() *slog.Logger) (*gorm.DB, error) {
 		return db, errorutil.New(err)
 	}
 
-	initSQLDB(cfg, db)
-
-	return db, nil
+	return db, initSQLDB(cfg, db)
 }
 
 // NewFromDialector create a new connection pool from a gorm dialector and using the settings

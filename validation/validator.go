@@ -551,6 +551,7 @@ func appendPath(parentPath, childPath *walk.Path, index int) *walk.Path {
 //   - "string" (`lang.FieldTypeString`) if the value is a string
 //   - "array" (`lang.FieldTypeArray`) if the value is a slice
 //   - "file" (`lang.FieldTypeFile`) if the value is a slice of "fsutil.File"
+//   - "bool" (`lang.FieldTypeBool`) if the value is a bool
 //   - "unsupported" (`lang.FieldTypeUnsupported`) otherwise
 func GetFieldType(value any) string {
 	return getFieldType(reflect.ValueOf(value))

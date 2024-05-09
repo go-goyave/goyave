@@ -16,37 +16,42 @@
     <a href="https://discord.gg/mfemDMc"><img src="https://img.shields.io/discord/744264895209537617?logo=discord" alt="Discord"/></a>
 </p>
 
-# ⚠️ v5 documentation WIP
+## The enterprise REST API framework
 
-## Table of contents
+**Goyave** an **opinionated** all-in-one Golang web framework focused on **REST APIs**, with emphasis on code **reliability**, **maintainability** and **developer experience** (DX).
 
-- [Learning Goyave](#learning-goyave)
-- [Contributing](#contributing)
-- [License](#license)
+In short, Goyave's **goals** are:
+- Catering to companies with enterprise-level clean architecture, for medium to large projects
+- Help developers focus on the business logic of their application instead of spending time on technical aspects
+- Provide an all-in-one package with no setup friction
+- Provide all the features a typical project needs without bloating or magic
+- Provide an optimal setup for the real-world
+- Ensure robust, reliable and resilient code 
+- Stay open and hackable despite being opinionated
+- Make backend development easy and enjoyable
+- Keep a clear and extensive documentation so developers can always find the answer to their questions
 
-## Learning Goyave
+Goyave's **non-goals** are:
+- Hyper-optimisation and performance
+- Small projects and prototypes
+- Providing control on low-level networking
+- Providing tools for front-end development
 
-The Goyave framework has an extensive documentation covering in-depth subjects and teaching you how to run a project using Goyave from setup to deployment.
+If you feel like the above description fits your needs, **welcome**! Feel free to read the full documentation on [goyave.dev](https://goyave.dev/). This website contains the **documentation** and **guides** on how to use the framework to its fullest, so you can start creating value for your business.
 
-- [Read the documentation](https://goyave.dev/guide/installation.html)
-- [pkg.go.dev](https://pkg.go.dev/goyave.dev/goyave/v5)
-- [Example project](https://github.com/go-goyave/goyave-blog-example)
+You can also take a look at the [example project](https://github.com/go-goyave/goyave-blog-example).
 
-## Getting started
+## Features
 
-### Requirements
+Routing, Controllers, Middleware, Request parsing, Advanced validation, Business transactions, Authentication, Configuration, Testing utilities, Database support and ORM, Localization, Advanced error handling, Structured logging, CORS, Support for file systems, Websockets, Dynamic filtering and pagination using query parameters, DTO conversion and model mapping, and the list goes on...
 
-- Go 1.20+
+If you want to learn more, all features are documented on [goyave.dev](https://goyave.dev/). 
 
 ## Contributing
 
-Thank you for considering contributing to the Goyave framework! You can find the contribution guide in the [documentation](https://goyave.dev/guide/contribution-guide.html).
+Thank you for considering contributing to the Goyave framework! You can find the contribution guide in the [documentation](https://goyave.dev/contributing.html).
 
-I have many ideas for the future of Goyave. I would be infinitely grateful to whoever want to support me and let me continue working on Goyave and making it better and better.
-
-You can support me on Github Sponsor.
-
-<a href="https://github.com/sponsors/System-Glitch">❤ Sponsor me!</a>
+For financial support, you can support me on Github Sponsor: [❤ Sponsor me!](https://github.com/sponsors/System-Glitch)
 
 I'm very grateful to my patrons, sponsors and donators:
 
@@ -74,18 +79,6 @@ A big "Thank you" to the Goyave contributors:
 - [Darkweak](https://github.com/darkweak) (`HTTP cache, RFC compliant` middleware based on [Souin HTTP cache system](https://github.com/darkweak/souin))
 - [Jason C Keller](https://github.com/imuni4fun) (Testify interface compatibility)
 
-## Used by
-
-<p align="center">
-    <a href="https://adagio.io" target="_blank" rel="nofollow">
-        <img src=".github/usedby/adagio.webp" alt="Adagio.io"/>
-    </a>
-</p>
-
-<p align="center">
-    Do you want to be featured here? <a href="https://github.com/go-goyave/goyave/issues/new?template=used_by.md" target="_blank" rel="nofollow">Open an issue</a>.
-</p>
-
 ## License
 
-The Goyave framework is MIT Licensed. Copyright © 2023 Jérémy LAMBERT (SystemGlitch) 
+The Goyave framework is MIT Licensed. Copyright © 2024 Jérémy LAMBERT (SystemGlitch) 

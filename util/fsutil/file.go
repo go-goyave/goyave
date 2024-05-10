@@ -8,6 +8,8 @@ import (
 	"os"
 	"sync"
 
+	pathutil "path"
+
 	"github.com/google/uuid"
 	"goyave.dev/goyave/v5/util/errors"
 )
@@ -119,7 +121,7 @@ func (file *File) Save(fs WritableFS, path string, name string) (filename string
 	}()
 
 	var writer io.ReadWriteCloser
-	writer, err = fs.OpenFile(path+string(os.PathSeparator)+filename, os.O_WRONLY|os.O_CREATE, 0660)
+	writer, err = fs.OpenFile(pathutil.Join(path, filename), os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {
 		err = errors.New(err)
 		return

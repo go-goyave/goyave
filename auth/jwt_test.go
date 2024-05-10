@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"path"
 	"testing"
 	"time"
 
@@ -91,8 +92,8 @@ func TestJWTService(t *testing.T) {
 	t.Run("GenerateTokenWithClaims_RSA", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, service := prepareJWTServiceTest(t)
-		server.Config().Set("auth.jwt.rsa.public", rootDir+"resources/rsa/public.pem")
-		server.Config().Set("auth.jwt.rsa.private", rootDir+"resources/rsa/private.pem")
+		server.Config().Set("auth.jwt.rsa.public", path.Join(rootDir, "resources/rsa/public.pem"))
+		server.Config().Set("auth.jwt.rsa.private", path.Join(rootDir, "resources/rsa/private.pem"))
 		server.Config().Set("auth.jwt.expiry", 20)
 
 		now := time.Now()
@@ -126,8 +127,8 @@ func TestJWTService(t *testing.T) {
 	t.Run("GenerateTokenWithClaims_ECDSA", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, service := prepareJWTServiceTest(t)
-		server.Config().Set("auth.jwt.ecdsa.public", rootDir+"resources/ecdsa/public.pem")
-		server.Config().Set("auth.jwt.ecdsa.private", rootDir+"resources/ecdsa/private.pem")
+		server.Config().Set("auth.jwt.ecdsa.public", path.Join(rootDir, "resources/ecdsa/public.pem"))
+		server.Config().Set("auth.jwt.ecdsa.private", path.Join(rootDir, "resources/ecdsa/private.pem"))
 		server.Config().Set("auth.jwt.expiry", 20)
 
 		now := time.Now()
@@ -198,8 +199,8 @@ func TestJWTAuthenticator(t *testing.T) {
 	t.Run("success_rsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.rsa.public", rootDir+"resources/rsa/public.pem")
-		server.Config().Set("auth.jwt.rsa.private", rootDir+"resources/rsa/private.pem")
+		server.Config().Set("auth.jwt.rsa.public", path.Join(rootDir, "resources/rsa/public.pem"))
+		server.Config().Set("auth.jwt.rsa.private", path.Join(rootDir, "resources/rsa/private.pem"))
 		mockUserService := &MockUserService[TestUser]{user: user}
 		a := NewJWTAuthenticator(mockUserService)
 		a.SigningMethod = jwt.SigningMethodRS256
@@ -228,8 +229,8 @@ func TestJWTAuthenticator(t *testing.T) {
 	t.Run("success_ecdsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.ecdsa.public", rootDir+"resources/ecdsa/public.pem")
-		server.Config().Set("auth.jwt.ecdsa.private", rootDir+"resources/ecdsa/private.pem")
+		server.Config().Set("auth.jwt.ecdsa.public", path.Join(rootDir, "resources/ecdsa/public.pem"))
+		server.Config().Set("auth.jwt.ecdsa.private", path.Join(rootDir, "resources/ecdsa/private.pem"))
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		a := NewJWTAuthenticator(mockUserService)
@@ -392,8 +393,8 @@ func TestJWTAuthenticator(t *testing.T) {
 	t.Run("unexpected_method_hmac", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.rsa.public", rootDir+"resources/rsa/public.pem")
-		server.Config().Set("auth.jwt.rsa.private", rootDir+"resources/rsa/private.pem")
+		server.Config().Set("auth.jwt.rsa.public", path.Join(rootDir, "resources/rsa/public.pem"))
+		server.Config().Set("auth.jwt.rsa.private", path.Join(rootDir, "resources/rsa/private.pem"))
 		mockUserService := &MockUserService[TestUser]{}
 		a := NewJWTAuthenticator(mockUserService)
 		a.SigningMethod = jwt.SigningMethodHS256

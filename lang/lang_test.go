@@ -16,11 +16,10 @@ type LangTestSuite struct {
 }
 
 func setRootWorkingDirectory() {
-	sep := string(os.PathSeparator)
 	_, filename, _, _ := runtime.Caller(1)
-	directory := path.Dir(filename) + sep
-	for !fsutil.FileExists(&osfs.FS{}, directory+sep+"go.mod") {
-		directory += ".." + sep
+	directory := path.Dir(filename)
+	for !fsutil.FileExists(&osfs.FS{}, path.Join(directory, "go.mod")) {
+		directory = path.Join(directory, "..")
 		if !fsutil.IsDirectory(&osfs.FS{}, directory) {
 			panic("Couldn't find project's root directory.")
 		}

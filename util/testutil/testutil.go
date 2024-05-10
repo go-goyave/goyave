@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -54,7 +55,7 @@ type TestServer struct {
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
 func NewTestServer(t *testing.T, configFileName string) *TestServer {
 	rootDirectory := FindRootDirectory()
-	cfgPath := rootDirectory + configFileName
+	cfgPath := path.Join(rootDirectory, configFileName)
 	cfg, err := config.LoadFrom(cfgPath)
 	if err != nil {
 		panic(errors.New(err))
@@ -89,8 +90,7 @@ func NewTestServerWithOptions(t *testing.T, opts goyave.Options) *TestServer {
 		panic(err)
 	}
 
-	sep := string(os.PathSeparator)
-	langDirectory := FindRootDirectory() + sep + "resources" + sep + "lang" + sep
+	langDirectory := path.Join(FindRootDirectory(), "resources", "lang")
 	if err := srv.Lang.LoadDirectory(&osfs.FS{}, langDirectory); err != nil {
 		panic(err)
 	}
@@ -132,19 +132,17 @@ func (s *TestServer) CloseDB() {
 }
 
 // FindRootDirectory find relative path to the project's root directory based on the
-// existence of a `go.mod` file. The returned path is relative to the working directory
-// and contains a trailing slash.
+// existence of a `go.mod` file. The returned path is a rooted path.
 // Returns an empty string if not found.
 func FindRootDirectory() string {
-	sep := string(os.PathSeparator)
 	wd, err := os.Getwd()
 	if err != nil {
 		return ""
 	}
-	directory := wd + sep
+	directory := wd
 	fs := &osfs.FS{}
-	for !fs.FileExists(directory + sep + "go.mod") {
-		directory += ".." + sep
+	for !fs.FileExists(path.Join(directory, "go.mod")) {
+		directory = path.Join(directory, "..")
 		if !fs.IsDirectory(directory) {
 			return ""
 		}

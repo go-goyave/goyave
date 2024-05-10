@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
-	"strings"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +15,7 @@ import (
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
+	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
@@ -146,7 +147,7 @@ func TestTestServer(t *testing.T) {
 
 func TestFindRootDirectory(t *testing.T) {
 	dir := FindRootDirectory()
-	assert.True(t, strings.HasSuffix(dir, "/../../"))
+	assert.True(t, fsutil.FileExists(&osfs.FS{}, path.Join(dir, "go.mod")))
 }
 
 func TestNewTestRequest(t *testing.T) {

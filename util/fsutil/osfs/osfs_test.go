@@ -15,11 +15,10 @@ import (
 )
 
 func setRootWorkingDirectory() {
-	sep := string(os.PathSeparator)
 	_, filename, _, _ := runtime.Caller(1)
-	directory := path.Dir(filename) + sep
-	for !fsutil.FileExists(&FS{}, directory+sep+"go.mod") {
-		directory += ".." + sep
+	directory := path.Dir(filename)
+	for !fsutil.FileExists(&FS{}, path.Join(directory, "go.mod")) {
+		directory = path.Join(directory, "..")
 		if !fsutil.IsDirectory(&FS{}, directory) {
 			panic("Couldn't find project's root directory.")
 		}

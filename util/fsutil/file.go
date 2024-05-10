@@ -1,18 +1,90 @@
 package fsutil
 
 import (
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"sync"
 
+	"github.com/google/uuid"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
+// marshalCache temporarily stores files' `*multipart.FileHeader`. This type
+// cannot be marshaled, making the use of `fsutil.file` inconvenient with DTO conversion.
+// The key should a be unique ID. The key is removed from the map.
+// To avoid infinite growth of this cache, leading to potential memory problems, this map
+// is reset every time its length goes back to 0.
+var marshalCache = map[string]*multipart.FileHeader{}
+var cacheMu sync.RWMutex
+
 // File represents a file received from client.
+//
+// File implements `json.Marshaler` and `json.Unmarshaler` to be able
+// to be used in DTO conversion (`typeutil.Convert()`). This works with a global
+// concurrency-safe map that acts as a cache for the `*multipart.FileHeader`.
+// When marshaling, a UUID v1 is generated and used as a key. This UUID is the actual value
+// used when marhsaling the `Header` field. When unmarshaling, the `*multipart.FileHeader` is
+// retrieved then deleted from the cache. To avoid orphans clogging up the cache, you should
+// never JSON marshal this type outside of `typeutil.Convert()`: if a marshaled File never gets
+// unmarshaled, its UUID would remain in the cache forever.
 type File struct {
 	Header   *multipart.FileHeader
 	MIMEType string
+}
+
+type marshaledFile struct {
+	MIMEType string
+	Header   string
+}
+
+// MarshalJSON implementation of `json.Marhsaler`.
+func (file File) MarshalJSON() ([]byte, error) {
+	headerUID, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	uidStr := headerUID.String()
+	cacheMu.Lock()
+	marshalCache[uidStr] = file.Header
+	cacheMu.Unlock()
+
+	return json.Marshal(marshaledFile{
+		Header:   uidStr,
+		MIMEType: file.MIMEType,
+	})
+}
+
+// UnmarshalJSON implementation of `json.Unmarhsaler`.
+func (file *File) UnmarshalJSON(data []byte) error {
+	var v marshaledFile
+	if err := json.Unmarshal(data, &v); err != nil {
+		return errors.New(err)
+	}
+
+	file.MIMEType = v.MIMEType
+
+	cacheMu.RLock()
+	header, ok := marshalCache[v.Header]
+	cacheMu.RUnlock()
+	if !ok {
+		return errors.New("cannot unmarshal fsutil.File: multipart header not found in cache")
+	}
+
+	cacheMu.Lock()
+	delete(marshalCache, v.Header)
+	if len(marshalCache) == 0 {
+		// Maps never shrink, let's allocate a new empty map to reset the cache capacity
+		// and allow garbage collecting.
+		marshalCache = map[string]*multipart.FileHeader{}
+	}
+	cacheMu.Unlock()
+
+	file.Header = header
+	return nil
 }
 
 // Save writes the file's content to a new file in the given file system.

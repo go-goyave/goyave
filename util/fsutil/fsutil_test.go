@@ -3,6 +3,7 @@ package fsutil
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"io"
 	"io/fs"
 	"math"
@@ -22,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
+	"goyave.dev/goyave/v5/util/typeutil"
 )
 
 func deleteFile(path string) {
@@ -190,6 +192,44 @@ func TestSave(t *testing.T) {
 	file = createTestFiles("resources/img/logo/goyave_16.png")[0]
 	_, err = file.Save(fs, toAbsolutePath("./go.mod"), "saved")
 	assert.Error(t, err)
+}
+
+func TestMarshalFile(t *testing.T) {
+	type testDTO struct {
+		Files []File `json:"files"`
+	}
+
+	t.Run("success", func(t *testing.T) {
+		files := createTestFiles("resources/img/logo/goyave_16.png")
+		data := map[string]any{"files": files}
+
+		dto, err := typeutil.Convert[*testDTO](data)
+		require.NoError(t, err)
+
+		assert.Equal(t, files, dto.Files)
+		for i, f := range files {
+			assert.Same(t, f.Header, dto.Files[i].Header)
+		}
+
+		// Cache should be emptied.
+		cacheMu.RLock()
+		assert.Empty(t, marshalCache)
+		cacheMu.RUnlock()
+	})
+
+	t.Run("unmarshal_err", func(t *testing.T) {
+		data := map[string]any{"files": 123}
+
+		_, err := typeutil.Convert[*testDTO](data)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot unmarshal number into Go struct field testDTO.files of type []fsutil.File")
+	})
+
+	t.Run("unmarshal_nocache", func(t *testing.T) {
+		err := json.Unmarshal([]byte(`{"files": [{"Header":"uuid"}]}`), &testDTO{})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot unmarshal fsutil.File: multipart header not found in cache")
+	})
 }
 
 func TestOpenFileError(t *testing.T) {

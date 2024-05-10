@@ -154,4 +154,44 @@ func TestOSFS(t *testing.T) {
 		assert.False(t, fs.IsDirectory(path))
 		assert.False(t, fs.IsDirectory("resources/testdirremoveall"))
 	})
+
+	t.Run("Sub", func(t *testing.T) {
+		f, err := (&FS{}).Sub("resources")
+		require.NoError(t, err)
+		require.Equal(t, "resources", f.dir)
+
+		file, err := f.Open("test_file.txt")
+		require.NoError(t, err)
+		defer func() {
+			assert.NoError(t, file.Close())
+		}()
+		contents, err := io.ReadAll(file)
+		assert.NoError(t, err)
+		assert.Equal(t, append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), contents)
+
+		subfs, err := f.Sub("lang")
+		require.NoError(t, err)
+		require.Equal(t, "resources/lang", subfs.dir)
+
+		file2, err := subfs.Open("invalid.json")
+		require.NoError(t, err)
+		defer func() {
+			assert.NoError(t, file2.Close())
+		}()
+		contents, err = io.ReadAll(file2)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("[]"), contents)
+
+		dotFS, err := subfs.Sub(".")
+		assert.NoError(t, err)
+		assert.Same(t, subfs, dotFS)
+
+		_, err = subfs.Sub("\xC0")
+		require.Error(t, err)
+		if pathErr, ok := err.(*fs.PathError); assert.True(t, ok) {
+			assert.Equal(t, "sub", pathErr.Op)
+			assert.Equal(t, "resources/lang/\xC0", pathErr.Path)
+			assert.Equal(t, "invalid name", pathErr.Err.Error())
+		}
+	})
 }

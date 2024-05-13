@@ -376,6 +376,9 @@ func (s *Server) CloseDB() error {
 	}
 	db, err := s.db.DB()
 	if err != nil {
+		if stderrors.Is(err, gorm.ErrInvalidDB) {
+			return nil
+		}
 		return errors.New(err)
 	}
 	return errors.New(db.Close())

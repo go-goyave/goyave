@@ -294,6 +294,17 @@ func TestServer(t *testing.T) {
 		assert.NotNil(t, server.db)
 	})
 
+	t.Run("CloseDB_no_error_for_invalid_db", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("database.config.disableAutomaticPing", true)
+		server, err := New(Options{Config: cfg})
+		require.NoError(t, err)
+
+		assert.NoError(t, server.ReplaceDB(tests.DummyDialector{})) // DummyDialector has invalid DB
+		require.NotNil(t, server.db)
+		require.NoError(t, server.CloseDB())
+	})
+
 	t.Run("Start", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 8888)

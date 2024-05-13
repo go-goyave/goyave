@@ -193,4 +193,9 @@ func TestOSFS(t *testing.T) {
 			assert.Equal(t, "invalid name", pathErr.Err.Error())
 		}
 	})
+
+	t.Run("New", func(t *testing.T) {
+		fs := New("/home")
+		assert.Equal(t, "/home", fs.dir)
+	})
 }

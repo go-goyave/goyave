@@ -16,6 +16,14 @@ type FS struct {
 	dir string
 }
 
+// New create a new OS file system for the tree of files rooted at the directory "baseDir".
+//
+// Giving an empty string will use the current working directory as a base.
+// The path is cleaned using `path.Clean()`.
+func New(baseDir string) *FS {
+	return &FS{dir: path.Clean(baseDir)}
+}
+
 // Open opens the named file for reading. If successful, methods on
 // the returned file can be used for reading; the associated file
 // descriptor has mode `O_RDONLY`.
@@ -115,6 +123,8 @@ func (f *FS) RemoveAll(name string) error {
 //
 // Because `*osfs.FS` internally uses the functions from the `os` package, bear in mind
 // that changing the working directory will affect all instances of `*osfs.FS`.
+//
+// You can't use `Sub` if the current `osfs.FS` has a rooted prefix.
 func (f *FS) Sub(dir string) (*FS, error) {
 	if dir == "." {
 		return f, nil

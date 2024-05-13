@@ -22,8 +22,6 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Run tests
         run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
           go test -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
       - if: ${{ matrix.go == '1.22' }}
         uses: shogo82148/actions-goveralls@v1

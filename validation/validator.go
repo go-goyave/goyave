@@ -520,6 +520,9 @@ func makeGenericSlice(original any) ([]any, bool) {
 		return o, false
 	}
 	list := reflect.ValueOf(original)
+	if !list.IsValid() {
+		return []any{}, false
+	}
 	length := list.Len()
 	newSlice := make([]any, 0, length)
 	for i := 0; i < length; i++ {

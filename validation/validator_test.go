@@ -717,6 +717,45 @@ func TestValidate(t *testing.T) {
 			wantData: map[string]any{"property": 123, "object": map[string]any{"property": 456}, "array": []int{7}, "narray": [][]int{{1, 8, 3}}},
 		},
 		{
+			desc: "empty_array",
+			options: &Options{
+				Data:     map[string]any{"narray": []any{}},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "narray", Rules: List{Required(), Array()}},
+					{Path: "narray[]", Rules: List{Array()}},
+					{Path: "narray[][]", Rules: List{Int()}},
+				},
+			},
+			wantData: map[string]any{"narray": []any{}},
+		},
+		{
+			desc: "empty_narray",
+			options: &Options{
+				Data:     map[string]any{"narray": []any{[]any{}}},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "narray", Rules: List{Required(), Array()}},
+					{Path: "narray[]", Rules: List{Array()}},
+					{Path: "narray[][]", Rules: List{Int()}},
+				},
+			},
+			wantData: map[string]any{"narray": [][]any{{}}},
+		},
+		{
+			desc: "nil_array",
+			options: &Options{
+				Data:     map[string]any{"narray": nil},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "narray", Rules: List{Required(), Nullable(), Array()}},
+					{Path: "narray[]", Rules: List{Required(), Array()}},
+					{Path: "narray[][]", Rules: List{Int()}},
+				},
+			},
+			wantData: map[string]any{"narray": nil},
+		},
+		{
 			desc: "type-dependent",
 			options: &Options{
 				Data:     map[string]any{"guessString": "string", "guessNumeric": 1, "guessArray": []string{}},

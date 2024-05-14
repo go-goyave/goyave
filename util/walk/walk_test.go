@@ -256,7 +256,7 @@ func TestMustParse(t *testing.T) {
 	})
 }
 
-func testWalk(t *testing.T, data map[string]any, p string) []*Context {
+func testWalk(t *testing.T, data any, p string) []*Context {
 	matches := make([]*Context, 0, 5)
 	path, err := Parse(p)
 
@@ -877,7 +877,7 @@ func TestPathWalkWildcardEmptyObject(t *testing.T) {
 }
 
 func TestPathWalkEmptyArray(t *testing.T) {
-	data := map[string]any{
+	var data any = map[string]any{
 		"array":  []string{},
 		"narray": [][][]string{},
 	}
@@ -885,7 +885,7 @@ func TestPathWalkEmptyArray(t *testing.T) {
 	expected := []*Context{
 		{
 			Value:  nil,
-			Parent: data["array"],
+			Parent: data.(map[string]any)["array"],
 			Name:   "",
 			Path: &Path{
 				Name: strPtr("array"),
@@ -904,7 +904,7 @@ func TestPathWalkEmptyArray(t *testing.T) {
 	expected = []*Context{
 		{
 			Value:  nil,
-			Parent: data["narray"],
+			Parent: data.(map[string]any)["narray"],
 			Name:   "",
 			Path: &Path{
 				Name: strPtr("narray"),
@@ -915,6 +915,48 @@ func TestPathWalkEmptyArray(t *testing.T) {
 			Found: ParentNotFound,
 		},
 	}
+	assert.Equal(t, expected, matches)
+
+	// nil array
+	data = map[string]any{
+		"array": nil,
+	}
+	expected = []*Context{
+		{
+			Value:  nil,
+			Parent: data,
+			Name:   "array",
+			Path: &Path{
+				Name: strPtr("array"),
+				Type: PathTypeElement,
+				Next: nil,
+			},
+			Index: -1,
+			Found: ParentNotFound,
+		},
+	}
+
+	matches = testWalk(t, data, "array[]")
+	assert.Equal(t, expected, matches)
+
+	// array is the root element
+	data = []any{}
+	expected = []*Context{
+		{
+			Value:  nil,
+			Parent: data,
+			Name:   "",
+			Path: &Path{
+				Name: nil,
+				Type: PathTypeArray,
+				Next: &Path{},
+			},
+			Index: -1,
+			Found: ElementNotFound,
+		},
+	}
+
+	matches = testWalk(t, data, "[]")
 	assert.Equal(t, expected, matches)
 }
 

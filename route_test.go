@@ -148,7 +148,7 @@ func TestRoute(t *testing.T) {
 		route.CORS(opts)
 
 		assert.Equal(t, opts, route.Meta[MetaCORS])
-		middleware := findMiddleware[*corsMiddleware](route.middleware)
+		middleware := findMiddleware[*corsMiddleware](router.globalMiddleware.middleware)
 		if !assert.NotNil(t, middleware) {
 			return
 		}

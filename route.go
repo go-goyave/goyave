@@ -158,7 +158,7 @@ func (r *Route) ValidateQuery(validationRules RuleSetFunc) *Route {
 // CORS set the CORS options for this route only.
 // The "OPTIONS" method is added if this route doesn't already support it.
 //
-// If the options are not `nil`, the CORS middleware is automatically added.
+// If the options are not `nil`, the CORS middleware is automatically added globally.
 // To disable CORS, give `nil` options. The "OPTIONS" method will be removed
 // if it isn't the only method for this route.
 func (r *Route) CORS(options *cors.Options) *Route {
@@ -171,8 +171,8 @@ func (r *Route) CORS(options *cors.Options) *Route {
 		return r
 	}
 	r.Meta[MetaCORS] = options
-	if !routeHasMiddleware[*corsMiddleware](r) && !routerHasMiddleware[*corsMiddleware](r.parent) {
-		r.Middleware(&corsMiddleware{})
+	if !hasMiddleware[*corsMiddleware](r.parent.globalMiddleware.middleware) {
+		r.parent.GlobalMiddleware(&corsMiddleware{})
 	}
 	if i == -1 {
 		r.methods = append(r.methods, http.MethodOptions)

@@ -228,7 +228,7 @@ func (r *Router) Middleware(middleware ...Middleware) *Router {
 }
 
 // CORS set the CORS options for this route group.
-// If the options are not `nil`, the CORS middleware is automatically added.
+// If the options are not `nil`, the CORS middleware is automatically added globally.
 // To disable CORS for this router, subrouters and routes, give `nil` options.
 // CORS can be re-enabled for subrouters and routes on a case-by-case basis
 // using non-nil options.
@@ -237,8 +237,8 @@ func (r *Router) CORS(options *cors.Options) *Router {
 	if options == nil {
 		return r
 	}
-	if !routerHasMiddleware[*corsMiddleware](r) {
-		r.Middleware(&corsMiddleware{})
+	if !hasMiddleware[*corsMiddleware](r.globalMiddleware.middleware) {
+		r.GlobalMiddleware(&corsMiddleware{})
 	}
 	return r
 }

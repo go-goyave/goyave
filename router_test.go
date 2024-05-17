@@ -166,7 +166,7 @@ func TestRouter(t *testing.T) {
 		router.CORS(opts)
 
 		assert.Equal(t, opts, router.Meta[MetaCORS])
-		assert.True(t, routerHasMiddleware[*corsMiddleware](router))
+		assert.True(t, hasMiddleware[*corsMiddleware](router.globalMiddleware.middleware))
 
 		// OPTIONS method is added to routes if the router has CORS
 		route := router.Get("/route", func(_ *Response, _ *Request) {})

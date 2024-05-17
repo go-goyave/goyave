@@ -114,6 +114,9 @@ func (s *TestServer) TestRequest(request *http.Request) *http.Response {
 // make assertions. Keep in mind that this procedure won't be executed if your middleware is blocking.
 //
 // The request will go through the entire lifecycle like a regular request.
+//
+// The given request is cloned. If the middleware alters the request object, these changes won't be reflected on the input request.
+// You can do your assertions inside the `procedure`.
 func (s *TestServer) TestMiddleware(middleware goyave.Middleware, request *goyave.Request, procedure goyave.Handler) *http.Response {
 	recorder := httptest.NewRecorder()
 	router := goyave.NewRouter(s.Server)

@@ -95,7 +95,7 @@ func TestGetFileExtension(t *testing.T) {
 func TestGetMIMEType(t *testing.T) {
 	mime, size, err := GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/img/logo/goyave_16.png"))
 	assert.Equal(t, "image/png", mime)
-	assert.Equal(t, int64(716), size)
+	assert.Equal(t, int64(630), size)
 	require.NoError(t, err)
 
 	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/test_script.sh"))

@@ -204,7 +204,7 @@ func TestWriteMultipartFile(t *testing.T) {
 	file := files["profile_picture"]
 	require.Len(t, file, 1)
 	assert.Equal(t, "goyave_16.png", file[0].Filename)
-	assert.Equal(t, int64(716), file[0].Size)
+	assert.Equal(t, int64(630), file[0].Size)
 	assert.Equal(t, textproto.MIMEHeader{"Content-Type": []string{"application/octet-stream"}, "Content-Disposition": []string{"form-data; name=\"profile_picture\"; filename=\"goyave_16.png\""}}, file[0].Header)
 }
 
@@ -214,7 +214,7 @@ func TestCreateTestFiles(t *testing.T) {
 	require.Len(t, files, 2)
 
 	assert.Equal(t, "goyave_16.png", files[0].Header.Filename)
-	assert.Equal(t, int64(716), files[0].Header.Size)
+	assert.Equal(t, int64(630), files[0].Header.Size)
 	assert.Equal(t, textproto.MIMEHeader{"Content-Type": []string{"application/octet-stream"}, "Content-Disposition": []string{"form-data; name=\"file\"; filename=\"goyave_16.png\""}}, files[0].Header.Header)
 
 	assert.Equal(t, "test_file.txt", files[1].Header.Filename)

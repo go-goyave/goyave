@@ -138,7 +138,7 @@ func TestParseMiddleware(t *testing.T) {
 			}
 			assert.Equal(t, "image/png", picture[0].MIMEType)
 			assert.Equal(t, "goyave_16.png", picture[0].Header.Filename)
-			assert.Equal(t, int64(716), picture[0].Header.Size)
+			assert.Equal(t, int64(630), picture[0].Header.Size)
 
 			resp.Status(http.StatusOK)
 		})

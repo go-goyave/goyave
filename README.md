@@ -1,6 +1,6 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/go-goyave/goyave/master/resources/img/logo/goyave_text.png#gh-light-mode-only" alt="Goyave Logo" width="550"/>
-    <img src="https://raw.githubusercontent.com/go-goyave/goyave/master/resources/img/logo/goyave_text_dark.png#gh-dark-mode-only" alt="Goyave Logo" width="550"/>
+    <img src="./resources/img/logo/goyave_banner.png#gh-light-mode-only" alt="Goyave Logo" width="550"/>
+    <img src="./resources/img/logo/goyave_banner_dark.png#gh-dark-mode-only" alt="Goyave Logo" width="550"/>
 </p>
 
 <p align="center">

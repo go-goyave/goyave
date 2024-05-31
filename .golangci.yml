@@ -9,6 +9,10 @@ linters-settings:
     disable:
       - shadow
     enable-all: true
+  testifylint:
+    disable:
+      - require-error
+      - error-nil
 
 linters:
   enable:
@@ -35,7 +39,6 @@ issues:
     - .github
   exclude:
     - should have a package comment
-    - for error assertions use require
   exclude-rules:
     - path: _test\.go
       linters:

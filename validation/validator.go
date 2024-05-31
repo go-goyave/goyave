@@ -520,7 +520,7 @@ func makeGenericSlice(original any) ([]any, bool) {
 		return o, false
 	}
 	list := reflect.ValueOf(original)
-	if !list.IsValid() {
+	if !list.IsValid() || list.Kind() != reflect.Slice {
 		return []any{}, false
 	}
 	length := list.Len()

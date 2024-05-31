@@ -817,6 +817,24 @@ func TestValidate(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "expect_array_got_map",
+			options: &Options{
+				Data:     map[string]any{"array": map[string]any{"key": "value"}},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "array", Rules: List{Required(), Array()}},
+					{Path: "array[]", Rules: List{Int()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Fields: FieldsErrors{
+					"array": &Errors{
+						Errors: []string{"The array must be an array."},
+					},
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {

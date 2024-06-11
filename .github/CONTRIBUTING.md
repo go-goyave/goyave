@@ -8,7 +8,7 @@ Thank you very much for your time contributing to the Goyave framework!
     - This is where we settle on a design and discuss about it.
     - If we decide that we want work to be done on the subject, then an **issue** will be created. This issue will reference the original discussion. Issues can then be used for tracking progress or show to potential contributors how they can help.
     - If a pull request is opened, it should reference both the issue and the discussion it is associated with. Further comments will now take place on the pull request instead of the original discussion.
-- **Assistance requests and support** also belong to the [discussions]((https://github.com/go-goyave/goyave/discussions)) section.
+- **Assistance requests and support** also belong to the [discussions](https://github.com/go-goyave/goyave/discussions) section.
 - **Bugs, typos, improperly working features or code** are reported in the [issues](https://github.com/go-goyave/goyave/issues) section.
 - When creating an [issue](https://github.com/go-goyave/goyave/issues/new/choose), please use one of the available issue templates.
 - If there is no template that fits your needs, consider opening a [discussion](https://github.com/go-goyave/goyave/discussions) instead.

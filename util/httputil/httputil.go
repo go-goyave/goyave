@@ -14,7 +14,7 @@ type HeaderValue struct {
 	Priority float64
 }
 
-var multiValuesHeaderRegex *regexp.Regexp
+var qualityValueRegex = regexp.MustCompile(`^q=([01]\.[0-9]{1,3})$`)
 
 // ParseMultiValuesHeader parses multi-values HTTP headers, taking the
 // quality values into account. The result is a slice of values sorted
@@ -30,9 +30,6 @@ var multiValuesHeaderRegex *regexp.Regexp
 //
 //	[{text/html 1} {*/* 0.7} {text/* 0.5}]
 func ParseMultiValuesHeader(header string) []HeaderValue {
-	if multiValuesHeaderRegex == nil {
-		multiValuesHeaderRegex = regexp.MustCompile(`^q=([01]\.[0-9]{1,3})$`)
-	}
 	split := strings.Split(header, ",")
 	values := make([]HeaderValue, 0, len(split))
 
@@ -42,7 +39,7 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 			// Parse priority
 			q := v[i+1:]
 
-			sub := multiValuesHeaderRegex.FindStringSubmatch(q)
+			sub := qualityValueRegex.FindStringSubmatch(q)
 			priority := 0.0
 			if len(sub) > 1 {
 				if p, err := strconv.ParseFloat(sub[1], 64); err == nil {

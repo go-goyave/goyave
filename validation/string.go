@@ -104,7 +104,7 @@ type DoesntStartWithValidator struct {
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *DoesntStartWithValidator) Validate(ctx *Context) bool {
 	val, ok := ctx.Value.(string)
-	return !ok || !lo.ContainsBy(v.Prefix, func(prefix string) bool {
+	return ok && !lo.ContainsBy(v.Prefix, func(prefix string) bool {
 		return strings.HasPrefix(val, prefix)
 	})
 }
@@ -119,8 +119,8 @@ func (v *DoesntStartWithValidator) MessagePlaceholders(_ *Context) []string {
 	}
 }
 
-// StartsWith the field under validation must be a string starting
-// with at least one of the specified prefixes.
+// DoesntStartWith the field under validation must be a string not starting
+// with any of the specified prefixes.
 func DoesntStartWith(prefix ...string) *DoesntStartWithValidator {
 	return &DoesntStartWithValidator{Prefix: prefix}
 }

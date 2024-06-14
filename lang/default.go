@@ -133,6 +133,8 @@ var enUS = &Language{
 			"starts_with.element":                "The :field elements must start with one of the following values: :values.",
 			"ends_with":                          "The :field must end with one of the following values: :values.",
 			"ends_with.element":                  "The :field elements must end with one of the following values: :values.",
+			"doesnt_start_with":                  "The :field must not start with any of the following values: :values.",
+			"doesnt_start_with.element":          "The :field elements must not start with any of the following values: :values.",
 			"in":                                 "The :field must have one of the following values: :values.",
 			"in.element":                         "The :field elements must have one of the following values: :values.",
 			"not_in":                             "The :field must not have one of the following values: :values.",

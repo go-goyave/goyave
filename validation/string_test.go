@@ -126,3 +126,45 @@ func TestEndsWithValidator(t *testing.T) {
 		})
 	}
 }
+
+func TestDoesntStartWithValidator(t *testing.T) {
+	t.Run("Constructor", func(t *testing.T) {
+		v := DoesntStartWith("pre", "fix")
+		assert.NotNil(t, v)
+		assert.Equal(t, "doesnt_start_with", v.Name())
+		assert.False(t, v.IsType())
+		assert.False(t, v.IsTypeDependent())
+		assert.Equal(t, []string{":values", "pre, fix"}, v.MessagePlaceholders(&Context{}))
+	})
+
+	cases := []struct {
+		value any
+		want  bool
+	}{
+		{value: "string", want: true},
+		{value: "pre-string", want: false},
+		{value: "fix-string", want: false},
+		{value: "string-pre", want: true},
+		{value: "string-fix", want: true},
+		{value: "", want: true},
+		{value: 'a', want: true},
+		{value: 2, want: true},
+		{value: 2.5, want: true},
+		{value: map[string]any{"a": 1}, want: true},
+		{value: []string{"string"}, want: true},
+		{value: []string{"pre-string"}, want: true},
+		{value: []string{"fix-string"}, want: true},
+		{value: true, want: true},
+		{value: nil, want: true},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
+			v := DoesntStartWith("pre", "fix")
+			assert.Equal(t, c.want, v.Validate(&Context{
+				Value: c.value,
+			}))
+		})
+	}
+}

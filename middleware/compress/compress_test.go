@@ -214,3 +214,98 @@ func TestCompressWriter(t *testing.T) {
 	require.NoError(t, writer.Close())
 	assert.True(t, closeableWriter.closed)
 }
+
+type testEncoder struct {
+	encoding string
+}
+
+func (e *testEncoder) NewWriter(_ io.Writer) io.WriteCloser {
+	return nil
+}
+
+func (e *testEncoder) Encoding() string {
+	return e.encoding
+}
+
+func TestEncoderPriority(t *testing.T) {
+
+	gzip := &testEncoder{encoding: "gzip"}
+	br := &testEncoder{encoding: "br"}
+	zstd := &testEncoder{encoding: "zstd"}
+
+	cases := []struct {
+		want           Encoder
+		acceptEncoding string
+		encoders       []Encoder
+	}{
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip, deflate, br, zstd",
+			want:           br,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "*",
+			want:           br,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip, *",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip, br, *",
+			want:           br,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "*, gzip, br",
+			want:           br,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip, *;q=0.9",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "zstd;q=0.9, br;q=0.9",
+			want:           br,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "zstd;q=0.9, br;q=0.8",
+			want:           zstd,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip;q=0.8, *;q=0.1",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip;q=0.8, *;q=1.0",
+			want:           br,
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.acceptEncoding, func(t *testing.T) {
+			middleware := &Middleware{
+				Encoders: c.encoders,
+			}
+			request := testutil.NewTestRequest(http.MethodGet, "/", nil)
+			request.Header().Set("Accept-Encoding", c.acceptEncoding)
+			response, _ := testutil.NewTestResponse(request)
+			e := middleware.getEncoder(response, request)
+			assert.Equal(t, c.want, e)
+		})
+	}
+}

@@ -89,7 +89,10 @@ func (w *Gzip) NewWriter(wr io.Writer) io.WriteCloser {
 // and the value returned by the `Encoder`'s `Encoding()` method. Quality values in
 // the headers are taken into account.
 //
-// If the header's value is `*`, the first element of the slice is used.
+// In case of equal priority, the encoding that is the earliest in the slice is chosen.
+// If the header's value is `*` and no encoding already matched,
+// the first element of the slice is used.
+//
 // If none of the accepted encodings are available in the `Encoders` slice, then the
 // response will not be compressed and the middleware immediately passes.
 //
@@ -142,16 +145,21 @@ func (m *Middleware) getEncoder(response *goyave.Response, request *goyave.Reque
 	if response.Hijacked() || request.Header().Get("Upgrade") != "" {
 		return nil
 	}
-	encodings := httputil.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
-	for _, h := range encodings {
-		if h.Value == "*" {
-			return m.Encoders[0]
-		}
+	acceptedEncodings := httputil.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
+	groupedByPriority := lo.PartitionBy(acceptedEncodings, func(h httputil.HeaderValue) float64 {
+		return h.Priority
+	})
+	for _, h := range groupedByPriority {
 		w, ok := lo.Find(m.Encoders, func(w Encoder) bool {
-			return w.Encoding() == h.Value
+			return lo.ContainsBy(h, func(h httputil.HeaderValue) bool { return h.Value == w.Encoding() })
 		})
 		if ok {
 			return w
+		}
+
+		hasWildCard := lo.ContainsBy(h, func(h httputil.HeaderValue) bool { return h.Value == "*" })
+		if hasWildCard {
+			return m.Encoders[0]
 		}
 	}
 

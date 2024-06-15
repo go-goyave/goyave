@@ -78,6 +78,7 @@ A big "Thank you" to the Goyave contributors:
 - [Clement3](https://github.com/Clement3) (`search` feature on [`goyave.dev/filter`](https://github.com/go-goyave/filter))
 - [Darkweak](https://github.com/darkweak) (`HTTP cache, RFC compliant` middleware based on [Souin HTTP cache system](https://github.com/darkweak/souin))
 - [Jason C Keller](https://github.com/imuni4fun) (Testify interface compatibility)
+- [saltyFamiliar](https://github.com/saltyFamiliar) (`DoesntStartWithValidator`)
 
 ## License
 

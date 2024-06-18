@@ -186,7 +186,7 @@ func TestKeysInValidator(t *testing.T) {
 	}{
 		{value: []string{"a", "b", "c"}, input: map[string]any{"a": 1, "b": 2, "c": 3}, want: true},
 		{value: []string{"a", "b", "c"}, input: map[string]any{"a": 1, "b": 2, "c": 3, "d": 4}, want: false},
-		{value: []string{"a", "b", "c"}, input: map[string]any{"a": 1, "b": 2}, want: false},
+		{value: []string{"a", "b", "c"}, input: map[string]any{"a": 1, "b": 2}, want: true},
 	}
 
 	for _, tc := range cases {

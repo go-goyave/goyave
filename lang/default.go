@@ -189,6 +189,8 @@ var enUS = &Language{
 			"unique.element":                     "The :field element value has already been taken.",
 			"exists":                             "The :field does not exist.",
 			"exists.element":                     "The :field element value does not exist.",
+			"doesnt_end_with":                    "The :field must not end with any of the following values: :values.",
+			"doesnt_end_with.element":            "The :field elements must not end with any of the following values: :values.",
 		},
 		fields: map[string]string{
 			"":        "body",

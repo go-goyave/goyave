@@ -124,3 +124,34 @@ func (v *DoesntStartWithValidator) MessagePlaceholders(_ *Context) []string {
 func DoesntStartWith(prefix ...string) *DoesntStartWithValidator {
 	return &DoesntStartWithValidator{Prefix: prefix}
 }
+
+//------------------------------
+
+// DoesntEndWithValidator validates that the string under validation doesn't end with the given suffix.
+type DoesntEndWithValidator struct {
+	BaseValidator
+	Suffix []string
+}
+
+// Validate checks the field under validation satisfies this validator's criteria.
+func (v *DoesntEndWithValidator) Validate(ctx *Context) bool {
+	val, ok := ctx.Value.(string)
+	return ok && !lo.ContainsBy(v.Suffix, func(prefix string) bool {
+		return strings.HasSuffix(val, prefix)
+	})
+}
+
+// Name returns the string name of the validator.
+func (v *DoesntEndWithValidator) Name() string { return "doesnt_end_with" }
+
+// MessagePlaceholders returns the ":values" placeholder.
+func (v *DoesntEndWithValidator) MessagePlaceholders(_ *Context) []string {
+	return []string{
+		":values", strings.Join(v.Suffix, ", "),
+	}
+}
+
+// DoesntEndWith validates that the string under validation doesn't end with the given suffix.
+func DoesntEndWith(suffix ...string) *DoesntEndWithValidator {
+	return &DoesntEndWithValidator{Suffix: suffix}
+}

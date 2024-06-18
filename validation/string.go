@@ -124,3 +124,46 @@ func (v *DoesntStartWithValidator) MessagePlaceholders(_ *Context) []string {
 func DoesntStartWith(prefix ...string) *DoesntStartWithValidator {
 	return &DoesntStartWithValidator{Prefix: prefix}
 }
+
+//------------------------------
+
+// KeysInValidator validates the field under validation must only contain the given keys.
+type KeysInValidator struct {
+	BaseValidator
+	Keys []string
+}
+
+// Validate checks the field under validation satisfies this validator's criteria.
+func (v *KeysInValidator) Validate(ctx *Context) bool {
+	obj, ok := ctx.Value.(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	allowedKeys := make(map[string]struct{})
+	for _, key := range v.Keys {
+		allowedKeys[key] = struct{}{}
+	}
+
+	for key := range obj {
+		if _, ok := allowedKeys[key]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// Name returns the string name of the validator.
+func (v *KeysInValidator) Name() string { return "keys_in" }
+
+// MessagePlaceholders returns the ":values" placeholder.
+func (v *KeysInValidator) MessagePlaceholders(_ *Context) []string {
+	return []string{
+		":values", strings.Join(v.Keys, ", "),
+	}
+}
+
+// KeysIn creates a new KeysInValidator.
+func KeysIn(keys ...string) *KeysInValidator {
+	return &KeysInValidator{Keys: keys}
+}

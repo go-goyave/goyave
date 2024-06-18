@@ -189,6 +189,8 @@ var enUS = &Language{
 			"unique.element":                     "The :field element value has already been taken.",
 			"exists":                             "The :field does not exist.",
 			"exists.element":                     "The :field element value does not exist.",
+			"keysin":                             "The :field must have the following keys: :values.",
+			"keysin.element":                     "The :field elements must have the following keys: :values.",
 		},
 		fields: map[string]string{
 			"":        "body",

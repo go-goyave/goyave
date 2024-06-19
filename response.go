@@ -72,6 +72,7 @@ func (r *Response) reset(server *Server, request *Request, writer http.ResponseW
 	r.status = 0
 	r.empty = true
 	r.wroteHeader = false
+	r.hijacked = false
 }
 
 // --------------------------------------

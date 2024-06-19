@@ -127,7 +127,8 @@ func DoesntStartWith(prefix ...string) *DoesntStartWithValidator {
 
 //------------------------------
 
-// DoesntEndWithValidator validates that the string under validation doesn't end with the given suffix.
+// DoesntEndWithValidator the field under validation must be a string not ending
+// with any of the specified prefixes.
 type DoesntEndWithValidator struct {
 	BaseValidator
 	Suffix []string
@@ -151,7 +152,8 @@ func (v *DoesntEndWithValidator) MessagePlaceholders(_ *Context) []string {
 	}
 }
 
-// DoesntEndWith validates that the string under validation doesn't end with the given suffix.
+// DoesntEndWith the field under validation must be a string not ending
+// with any of the specified prefixes.
 func DoesntEndWith(suffix ...string) *DoesntEndWithValidator {
 	return &DoesntEndWithValidator{Suffix: suffix}
 }

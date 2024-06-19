@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
@@ -266,9 +265,12 @@ type validator struct {
 func Validate(options *Options) (*Errors, []error) {
 	validator := &validator{
 		options:          options,
-		now:              lo.Ternary(options.Now.IsZero(), time.Now(), options.Now),
+		now:              options.Now,
 		errors:           []error{},
 		validationErrors: &Errors{},
+	}
+	if validator.now.IsZero() {
+		validator.now = time.Now()
 	}
 	if options.Extra == nil {
 		options.Extra = map[any]any{}

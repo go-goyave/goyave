@@ -485,7 +485,11 @@ func (r *Router) Controller(controller Registrer) *Router {
 func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
 	request := NewRequest(rawRequest)
 	request.Route = match.route
-	request.RouteParams = lo.Ternary(match.parameters == nil, map[string]string{}, match.parameters)
+	if match.parameters == nil {
+		request.RouteParams = map[string]string{}
+	} else {
+		request.RouteParams = match.parameters
+	}
 	response := NewResponse(r.server, request, w)
 	handler := match.route.handler
 
@@ -505,6 +509,9 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	if err := r.finalize(response, request); err != nil {
 		r.server.Logger.Error(err)
 	}
+
+	requestPool.Put(request)
+	responsePool.Put(response)
 }
 
 // finalize the request's life-cycle.

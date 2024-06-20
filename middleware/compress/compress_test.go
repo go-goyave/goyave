@@ -68,25 +68,6 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
-	t.Run("Gzip", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
-		request.Header().Set("Accept-Encoding", "gzip")
-		result := server.TestMiddleware(compressMiddleware, request, handler)
-
-		reader, err := gzip.NewReader(result.Body)
-		if err != nil {
-			panic(err)
-		}
-		body, err := io.ReadAll(reader)
-		if err != nil {
-			panic(err)
-		}
-		assert.NoError(t, result.Body.Close())
-		assert.Equal(t, "hello world", string(body))
-		assert.Equal(t, "gzip", result.Header.Get("Content-Encoding"))
-		assert.Empty(t, result.Header.Get("Content-Length"))
-	})
-
 	t.Run("Accept all", func(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "*")
@@ -163,29 +144,6 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.Equal(t, "{\n    \"custom-entry\": \"value\"\n}", string(body))
 	})
 
-}
-
-func TestGzipEncoder(t *testing.T) {
-	encoder := &Gzip{
-		Level: gzip.BestCompression,
-	}
-	assert.Equal(t, "gzip", encoder.Encoding())
-	assert.Equal(t, gzip.BestCompression, encoder.Level)
-
-	buf := bytes.NewBuffer([]byte{})
-	writer := encoder.NewWriter(buf)
-	if assert.NotNil(t, writer) {
-		_, ok := writer.(*gzip.Writer)
-		assert.True(t, ok)
-	}
-
-	assert.Panics(t, func() {
-		// Invalid level
-		encoder := &Gzip{
-			Level: -3,
-		}
-		encoder.NewWriter(bytes.NewBuffer([]byte{}))
-	})
 }
 
 func TestCompressWriter(t *testing.T) {

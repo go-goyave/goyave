@@ -709,10 +709,10 @@ func TestConfig(t *testing.T) {
 func TestEntryValidationRequired(t *testing.T) {
 	tests := []struct {
 		name         string
-		entry        Entry
 		key          string
-		expectsError bool
 		errMsg       string
+		entry        Entry
+		expectsError bool
 	}{
 		{
 			name:         "Required string empty",

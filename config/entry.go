@@ -62,36 +62,8 @@ func (e *Entry) validate(key string) error {
 		return errors.Errorf(message, key, e.Type)
 	}
 
-	v := reflect.ValueOf(e.Value)
-	if e.Required {
-		switch kind {
-		case reflect.String:
-			if v.Len() == 0 {
-				return errors.Errorf("%q is required and cannot be an empty string", key)
-			}
-		case reflect.Map:
-			if len(v.MapKeys()) == 0 {
-				return errors.Errorf("%q is required and cannot be an empty map", key)
-			}
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if v.Int() == 0 {
-				return errors.Errorf("%q is required and cannot be zero", key)
-			}
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			if v.Uint() == 0 {
-				return errors.Errorf("%q is required and cannot be zero", key)
-			}
-		case reflect.Float32, reflect.Float64:
-			if v.Float() == 0 {
-				return errors.Errorf("%q is required and cannot be zero", key)
-			}
-		case reflect.Ptr, reflect.Interface:
-			if v.IsNil() {
-				return errors.Errorf("%q is required and cannot be nil", key)
-			}
-		default:
-			// Nothing to reflect on. Should pass.
-		}
+	if err := e.validateRequired(kind, key); err != nil {
+		return err
 	}
 
 	if len(e.AuthorizedValues) > 0 {
@@ -229,4 +201,41 @@ func (e *Entry) convertEnvVar(str, key string) (any, error) {
 	}
 
 	return nil, nil
+}
+
+func (e *Entry) validateRequired(kind reflect.Kind, key string) error {
+	v := reflect.ValueOf(e.Value)
+
+	if e.Required {
+		switch kind {
+		case reflect.String:
+			if v.Len() == 0 {
+				return errors.Errorf("%q is required and cannot be an empty string", key)
+			}
+		case reflect.Map:
+			if len(v.MapKeys()) == 0 {
+				return errors.Errorf("%q is required and cannot be an empty map", key)
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if v.Int() == 0 {
+				return errors.Errorf("%q is required and cannot be zero", key)
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if v.Uint() == 0 {
+				return errors.Errorf("%q is required and cannot be zero", key)
+			}
+		case reflect.Float32, reflect.Float64:
+			if v.Float() == 0 {
+				return errors.Errorf("%q is required and cannot be zero", key)
+			}
+		case reflect.Ptr, reflect.Interface:
+			if v.IsNil() {
+				return errors.Errorf("%q is required and cannot be nil", key)
+			}
+		default:
+			return nil
+		}
+	}
+
+	return nil
 }

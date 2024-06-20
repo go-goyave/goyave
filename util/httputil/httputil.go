@@ -20,6 +20,8 @@ var qualityValueRegex = regexp.MustCompile(`^q=([01]\.[0-9]{1,3})$`)
 // quality values into account. The result is a slice of values sorted
 // according to the order of priority.
 //
+// The input is trimmed. If the input is empty, returns an empty slice.
+//
 // See: https://developer.mozilla.org/en-US/docs/Glossary/Quality_values
 //
 // For the following header:
@@ -30,10 +32,19 @@ var qualityValueRegex = regexp.MustCompile(`^q=([01]\.[0-9]{1,3})$`)
 //
 //	[{text/html 1} {*/* 0.7} {text/* 0.5}]
 func ParseMultiValuesHeader(header string) []HeaderValue {
-	split := strings.Split(header, ",")
-	values := make([]HeaderValue, 0, len(split))
+	count := strings.Count(header, ",")
+	values := make([]HeaderValue, 0, count+1)
 
-	for _, v := range split {
+	h := strings.TrimSpace(header)
+	if h == "" {
+		return values
+	}
+	for {
+		comma := strings.Index(h, ",")
+		if comma == -1 {
+			comma = len(h)
+		}
+		v := h[:comma]
 		val := HeaderValue{}
 		if i := strings.Index(v, ";"); i != -1 {
 			// Parse priority
@@ -49,13 +60,17 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 			// Priority set to 0 if the quality value cannot be parsed
 			val.Priority = priority
 
-			val.Value = strings.Trim(v[:i], " ")
+			val.Value = strings.TrimSpace(v[:i])
 		} else {
-			val.Value = strings.Trim(v, " ")
+			val.Value = strings.TrimSpace(v)
 			val.Priority = 1
 		}
 
 		values = append(values, val)
+		if comma == len(h) {
+			break
+		}
+		h = h[comma+1:]
 	}
 
 	sort.Sort(byPriority(values))

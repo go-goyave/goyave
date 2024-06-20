@@ -146,6 +146,9 @@ func (m *Middleware) getEncoder(response *goyave.Response, request *goyave.Reque
 		return nil
 	}
 	acceptedEncodings := httputil.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
+	if len(acceptedEncodings) == 0 {
+		return nil
+	}
 	groupedByPriority := lo.PartitionBy(acceptedEncodings, func(h httputil.HeaderValue) float64 {
 		return h.Priority
 	})

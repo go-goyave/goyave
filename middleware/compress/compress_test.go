@@ -293,6 +293,11 @@ func TestEncoderPriority(t *testing.T) {
 			acceptEncoding: "gzip;q=0.8, *;q=1.0",
 			want:           br,
 		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "",
+			want:           nil,
+		},
 	}
 
 	for _, c := range cases {

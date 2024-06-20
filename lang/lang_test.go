@@ -171,6 +171,7 @@ func (suite *LangTestSuite) TestDetectLanguage() {
 	suite.Equal(l.languages["en-US"], l.DetectLanguage("en, fr-FR;q=0.9"))
 	suite.Equal(l.languages["en-US"], l.DetectLanguage("*"))
 	suite.Equal(l.languages["en-US"], l.DetectLanguage("notalang"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage(""))
 }
 
 func (suite *LangTestSuite) TestLanguagesGet() {

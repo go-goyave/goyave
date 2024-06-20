@@ -705,3 +705,104 @@ func TestConfig(t *testing.T) {
 		})
 	})
 }
+
+func TestEntryValidationRequired(t *testing.T) {
+	tests := []struct {
+		name         string
+		entry        Entry
+		key          string
+		expectsError bool
+		errMsg       string
+	}{
+		{
+			name:         "Required string empty",
+			entry:        Entry{Value: "", Type: reflect.String, Required: true},
+			key:          "emptyString",
+			expectsError: true,
+			errMsg:       `"emptyString" is required and cannot be an empty string`,
+		},
+		{
+			name:         "Required string non-empty",
+			entry:        Entry{Value: "hello", Type: reflect.String, Required: true},
+			key:          "nonEmptyString",
+			expectsError: false,
+		},
+		{
+			name:         "Required int zero",
+			entry:        Entry{Value: 0, Type: reflect.Int, Required: true},
+			key:          "zeroInt",
+			expectsError: true,
+			errMsg:       `"zeroInt" is required and cannot be zero`,
+		},
+		{
+			name:         "Required int non-zero",
+			entry:        Entry{Value: 123, Type: reflect.Int, Required: true},
+			key:          "nonZeroInt",
+			expectsError: false,
+		},
+		{
+			name:         "Required (string) slice empty",
+			entry:        Entry{Value: []string{}, Type: reflect.String, IsSlice: true, Required: true},
+			key:          "emptySlice",
+			expectsError: true,
+			errMsg:       `"emptySlice" is required and cannot be an empty string`,
+		},
+		{
+			name:         "Required slice non-empty",
+			entry:        Entry{Value: []string{"hello"}, Type: reflect.String, IsSlice: true, Required: true},
+			key:          "nonEmptySlice",
+			expectsError: false,
+		},
+		{
+			name:         "Required float zero",
+			entry:        Entry{Value: 0.0, Type: reflect.Float64, Required: true},
+			key:          "zeroFloat",
+			expectsError: true,
+			errMsg:       `"zeroFloat" is required and cannot be zero`,
+		},
+		{
+			name:         "Required float non-zero",
+			entry:        Entry{Value: 1.23, Type: reflect.Float64, Required: true},
+			key:          "nonZeroFloat",
+			expectsError: false,
+		},
+		{
+			name:         "Required map empty",
+			entry:        Entry{Value: map[string]string{}, Type: reflect.Map, Required: true},
+			key:          "emptyMap",
+			expectsError: true,
+			errMsg:       `"emptyMap" is required and cannot be an empty map`,
+		},
+		{
+			name:         "Required map non-empty",
+			entry:        Entry{Value: map[string]string{"key": "value"}, Type: reflect.Map, Required: true},
+			key:          "nonEmptyMap",
+			expectsError: false,
+		},
+		{
+			name:         "Required nil pointer",
+			entry:        Entry{Value: (*string)(nil), Type: reflect.Ptr, Required: true},
+			key:          "nilPointer",
+			expectsError: true,
+			errMsg:       `"nilPointer" is required and cannot be nil`,
+		},
+		{
+			name:         "Required non-nil pointer",
+			entry:        Entry{Value: new(string), Type: reflect.Ptr, Required: true},
+			key:          "nonNilPointer",
+			expectsError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.entry.validate(tt.key)
+			if tt.expectsError {
+				require.Error(t, err)
+				assert.Equal(t, tt.errMsg, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

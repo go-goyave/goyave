@@ -19,6 +19,7 @@ type Entry struct {
 	AuthorizedValues []any // Leave empty for "any"
 	Type             reflect.Kind
 	IsSlice          bool
+	Required         bool
 }
 
 func makeEntryFromValue(value any) *Entry {
@@ -29,17 +30,22 @@ func makeEntryFromValue(value any) *Entry {
 		kind = t.Elem().Kind()
 		isSlice = true
 	}
-	return &Entry{value, []any{}, kind, isSlice}
+	return &Entry{value, []any{}, kind, isSlice, false}
 }
 
 func (e *Entry) validate(key string) error {
-	if e.Value == nil { // nil values means unset
+	if e.Value == nil {
+		if e.Required {
+			return errors.Errorf("%q is required and must contain a value", key)
+		}
+		// When just nil, we don't need to validate.
 		return nil
 	}
 
 	if err := e.tryEnvVarConversion(key); err != nil {
 		return err
 	}
+
 	t := reflect.TypeOf(e.Value)
 	kind := t.Kind()
 	if e.IsSlice && kind == reflect.Slice {
@@ -54,6 +60,38 @@ func (e *Entry) validate(key string) error {
 		}
 
 		return errors.Errorf(message, key, e.Type)
+	}
+
+	v := reflect.ValueOf(e.Value)
+	if e.Required {
+		switch kind {
+		case reflect.String:
+			if v.Len() == 0 {
+				return errors.Errorf("%q is required and cannot be an empty string", key)
+			}
+		case reflect.Map:
+			if len(v.MapKeys()) == 0 {
+				return errors.Errorf("%q is required and cannot be an empty map", key)
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if v.Int() == 0 {
+				return errors.Errorf("%q is required and cannot be zero", key)
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if v.Uint() == 0 {
+				return errors.Errorf("%q is required and cannot be zero", key)
+			}
+		case reflect.Float32, reflect.Float64:
+			if v.Float() == 0 {
+				return errors.Errorf("%q is required and cannot be zero", key)
+			}
+		case reflect.Ptr, reflect.Interface:
+			if v.IsNil() {
+				return errors.Errorf("%q is required and cannot be nil", key)
+			}
+		default:
+			// Nothing to reflect on. Should pass.
+		}
 	}
 
 	if len(e.AuthorizedValues) > 0 {

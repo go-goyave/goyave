@@ -171,7 +171,7 @@ func TestDoesntStartWithValidator(t *testing.T) {
 
 func TestKeysInValidator(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
-		v := KeysIn([]string{"a", "b", "c"}...)
+		v := KeysIn("a", "b", "c")
 		assert.NotNil(t, v)
 		assert.Equal(t, "keys_in", v.Name())
 		assert.False(t, v.IsType())
@@ -180,18 +180,26 @@ func TestKeysInValidator(t *testing.T) {
 	})
 
 	cases := []struct {
-		value []string
 		input any
+		value []string
 		want  bool
 	}{
 		{value: []string{"a", "b", "c"}, input: map[string]any{"a": 1, "b": 2, "c": 3}, want: true},
 		{value: []string{"a", "b", "c"}, input: map[string]any{"a": 1, "b": 2, "c": 3, "d": 4}, want: false},
 		{value: []string{"a", "b", "c"}, input: map[string]any{"a": 1, "b": 2}, want: true},
+		{value: []string{"a", "b", "c"}, input: map[string]any{}, want: true},
+		{value: []string{"a", "b", "c"}, input: "", want: false},
+		{value: []string{"a", "b", "c"}, input: 'a', want: false},
+		{value: []string{"a", "b", "c"}, input: 2, want: false},
+		{value: []string{"a", "b", "c"}, input: 2.5, want: false},
+		{value: []string{"a", "b", "c"}, input: true, want: false},
+		{value: []string{"a", "b", "c"}, input: nil, want: false},
+		{value: []string{"a", "b", "c"}, input: (map[string]any)(nil), want: true},
 	}
 
 	for _, tc := range cases {
 		tc := tc
-		t.Run(fmt.Sprintf("Validate_%v_%t", tc.value, tc.want), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Validate_%v_%t", tc.input, tc.want), func(t *testing.T) {
 			v := KeysIn(tc.value...)
 			assert.Equal(t, tc.want, v.Validate(&Context{
 				Value: tc.input,

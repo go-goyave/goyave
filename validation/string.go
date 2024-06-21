@@ -127,7 +127,8 @@ func DoesntStartWith(prefix ...string) *DoesntStartWithValidator {
 
 //------------------------------
 
-// KeysInValidator validates the field under validation must only contain the given keys.
+// KeysInValidator the field under validation must be an object and all its keys must
+// be equal to one of the given values.
 type KeysInValidator struct {
 	BaseValidator
 	Keys []string
@@ -163,7 +164,8 @@ func (v *KeysInValidator) MessagePlaceholders(_ *Context) []string {
 	}
 }
 
-// KeysIn creates a new KeysInValidator.
+// KeysIn the field under validation must be an object and all its keys must
+// be equal to one of the given values.
 func KeysIn(keys ...string) *KeysInValidator {
 	return &KeysInValidator{Keys: keys}
 }

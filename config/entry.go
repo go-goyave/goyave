@@ -34,19 +34,19 @@ func makeEntryFromValue(value any) *Entry {
 }
 
 func (e *Entry) validate(key string) error {
-	if e.Value == nil {
-		if e.Required {
-			return errors.Errorf("%q is required and must contain a value", key)
-		}
-		// When just nil, we don't need to validate.
-		return nil
-	}
-
 	if err := e.tryEnvVarConversion(key); err != nil {
 		return err
 	}
 
+	v := reflect.ValueOf(e.Value)
+	if e.Required && (!v.IsValid() || e.Value == nil) {
+		return errors.Errorf("%q is required", key)
+	}
+
 	t := reflect.TypeOf(e.Value)
+	if t == nil {
+		return nil // Can't determine
+	}
 	kind := t.Kind()
 	if e.IsSlice && kind == reflect.Slice {
 		kind = t.Elem().Kind()
@@ -62,18 +62,13 @@ func (e *Entry) validate(key string) error {
 		return errors.Errorf(message, key, e.Type)
 	}
 
-	if err := e.validateRequired(kind, key); err != nil {
-		return err
-	}
-
 	if len(e.AuthorizedValues) > 0 {
 		if e.IsSlice {
 			// Accepted values for slices define the values that can be used inside the slice
 			// It doesn't represent the value of the slice itself (content and order)
-			list := reflect.ValueOf(e.Value)
-			length := list.Len()
+			length := v.Len()
 			for i := 0; i < length; i++ {
-				if !lo.Contains(e.AuthorizedValues, list.Index(i).Interface()) {
+				if !lo.Contains(e.AuthorizedValues, v.Index(i).Interface()) {
 					return errors.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
 				}
 			}
@@ -201,41 +196,4 @@ func (e *Entry) convertEnvVar(str, key string) (any, error) {
 	}
 
 	return nil, nil
-}
-
-func (e *Entry) validateRequired(kind reflect.Kind, key string) error {
-	v := reflect.ValueOf(e.Value)
-
-	if e.Required {
-		switch kind {
-		case reflect.String:
-			if v.Len() == 0 {
-				return errors.Errorf("%q is required and cannot be an empty string", key)
-			}
-		case reflect.Map:
-			if len(v.MapKeys()) == 0 {
-				return errors.Errorf("%q is required and cannot be an empty map", key)
-			}
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if v.Int() == 0 {
-				return errors.Errorf("%q is required and cannot be zero", key)
-			}
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			if v.Uint() == 0 {
-				return errors.Errorf("%q is required and cannot be zero", key)
-			}
-		case reflect.Float32, reflect.Float64:
-			if v.Float() == 0 {
-				return errors.Errorf("%q is required and cannot be zero", key)
-			}
-		case reflect.Ptr, reflect.Interface:
-			if v.IsNil() {
-				return errors.Errorf("%q is required and cannot be nil", key)
-			}
-		default:
-			return nil
-		}
-	}
-
-	return nil
 }

@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,6 +64,7 @@ func TestLoad(t *testing.T) {
 			AuthorizedValues: []any{},
 			Type:             reflect.String,
 			IsSlice:          false,
+			Required:         true,
 		}
 		assert.Equal(t, expected, cfg.config["app"].(object)["name"])
 	})
@@ -106,6 +108,7 @@ func TestLoad(t *testing.T) {
 			AuthorizedValues: []any{},
 			Type:             reflect.String,
 			IsSlice:          false,
+			Required:         true,
 		}
 		assert.Equal(t, expected, cfg.config["app"].(object)["name"])
 	})
@@ -130,6 +133,7 @@ func TestLoad(t *testing.T) {
 			AuthorizedValues: []any{},
 			Type:             reflect.String,
 			IsSlice:          false,
+			Required:         true,
 		}
 		assert.Equal(t, expected, cfg.config["app"].(object)["name"])
 	})
@@ -670,6 +674,7 @@ func TestConfig(t *testing.T) {
 			AuthorizedValues: []any{},
 			Type:             reflect.String,
 			IsSlice:          false,
+			Required:         true,
 		}
 		loader.register("app.name", entry)
 		assert.NotSame(t, &entry, loader.defaults["app"].(object)["name"])
@@ -681,6 +686,7 @@ func TestConfig(t *testing.T) {
 				AuthorizedValues: []any{"a", "b"},
 				Type:             reflect.String,
 				IsSlice:          true,
+				Required:         true,
 			})
 		})
 
@@ -691,6 +697,7 @@ func TestConfig(t *testing.T) {
 				AuthorizedValues: []any{},
 				Type:             reflect.Int,
 				IsSlice:          false,
+				Required:         true,
 			})
 		})
 
@@ -701,7 +708,81 @@ func TestConfig(t *testing.T) {
 				AuthorizedValues: []any{},
 				Type:             reflect.String,
 				IsSlice:          false,
+				Required:         true,
 			})
 		})
 	})
+}
+
+func TestRequiredConfig(t *testing.T) {
+	loader := loader{
+		defaults: make(object),
+	}
+
+	loader.register("testCategory.nullValueNotRequired", Entry{
+		Value:            nil,
+		AuthorizedValues: []any{},
+		Type:             reflect.String,
+		Required:         false,
+	})
+
+	loader.register("testCategory.nullValueRequired", Entry{
+		Value:            nil,
+		AuthorizedValues: []any{},
+		Type:             reflect.String,
+		Required:         true,
+	})
+
+	loader.register("testCategory.valueCompletelyMissing", Entry{
+		Type:     reflect.String,
+		Required: true,
+	})
+
+	loader.register("testCategory.valueValidAndDefined", Entry{
+		Type:     reflect.Int,
+		Required: true,
+	})
+
+	var nilPointer *string
+	loader.register("testCategory.nilPointerRequired", Entry{
+		Value:    nilPointer,
+		Type:     reflect.Ptr,
+		Required: true,
+	})
+
+	validPointer := new(string)
+	*validPointer = "valid"
+	loader.register("testCategory.validPointer", Entry{
+		Value:    validPointer,
+		Type:     reflect.Ptr,
+		Required: true,
+	})
+
+	cfgJSON := `{
+		"testCategory": {
+			"nullValueNotRequired": null,
+			"nullValueRequired": null,
+			"valueValidAndDefined": 123,
+			"valueValidAndDefined": 123,
+			"validPointer": "valid"
+		}
+	}`
+
+	_, err := loader.loadJSON(cfgJSON)
+	require.Error(t, err)
+
+	expectedErrors := []string{
+		"- \"testCategory.valueCompletelyMissing\" is required",
+		"- \"testCategory.nullValueRequired\" is required",
+		"- \"testCategory.nilPointerRequired\" is required",
+	}
+
+	actualErrors := strings.Split(err.Error(), "\n")
+	for i, line := range actualErrors {
+		actualErrors[i] = strings.TrimSpace(line)
+	}
+
+	for _, expectedMessage := range expectedErrors {
+		assert.Contains(t, actualErrors, expectedMessage)
+	}
 }

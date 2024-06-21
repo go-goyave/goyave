@@ -44,4 +44,12 @@ func TestParseMultiValuesHeader(t *testing.T) {
 	expected = []HeaderValue{{Value: "fr", Priority: 0.3}}
 	result = ParseMultiValuesHeader("fr;q=0.3")
 	assert.Equal(t, expected, result)
+
+	expected = []HeaderValue{}
+	result = ParseMultiValuesHeader("")
+	assert.Equal(t, expected, result)
+
+	expected = []HeaderValue{}
+	result = ParseMultiValuesHeader("   ")
+	assert.Equal(t, expected, result)
 }

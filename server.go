@@ -116,7 +116,6 @@ type Server struct {
 
 // New create a new `Server` using the given options.
 func New(opts Options) (*Server, error) {
-
 	cfg := opts.Config
 
 	if opts.Config == nil {

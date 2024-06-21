@@ -191,6 +191,8 @@ var enUS = &Language{
 			"exists.element":                     "The :field element value does not exist.",
 			"keysin":                             "The :field keys must be one of the following: :values.",
 			"keysin.element":                     "The :field elements keys must be one of the following: :values.",
+			"doesnt_end_with":                    "The :field must not end with any of the following values: :values.",
+			"doesnt_end_with.element":            "The :field elements must not end with any of the following values: :values.",
 		},
 		fields: map[string]string{
 			"":        "body",

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"goyave.dev/goyave/v5/lang"
@@ -52,17 +53,31 @@ type Request struct {
 	cookies     []*http.Cookie
 }
 
+var requestPool = sync.Pool{
+	New: func() any {
+		return &Request{}
+	},
+}
+
 // NewRequest create a new Request from the given raw http request.
 // Initializes Now with the current time and Extra with a non-nil map.
 func NewRequest(httpRequest *http.Request) *Request {
-	return &Request{
-		httpRequest: httpRequest,
-		Now:         time.Now(),
-		Extra:       map[any]any{},
-		// Route is set by the router
-		// Lang is set inside the language middleware
-		// Query is set inside the parse request middleware
-	}
+	req := requestPool.Get().(*Request)
+	req.reset(httpRequest)
+	return req
+}
+
+func (r *Request) reset(httpRequest *http.Request) {
+	r.httpRequest = httpRequest
+	r.Now = time.Now()
+	r.Extra = map[any]any{}
+	r.cookies = nil
+	r.Data = nil
+	r.Lang = nil
+	r.Query = nil
+	r.Route = nil
+	r.RouteParams = nil
+	r.User = nil
 }
 
 // Request return the raw http request.

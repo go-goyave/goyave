@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"gorm.io/gorm"
 	errorutil "goyave.dev/goyave/v5/util/errors"
@@ -49,17 +50,29 @@ type Response struct {
 	hijacked    bool
 }
 
+var responsePool = sync.Pool{
+	New: func() any {
+		return &Response{}
+	},
+}
+
 // NewResponse create a new Response using the given `http.ResponseWriter` and request.
 func NewResponse(server *Server, request *Request, writer http.ResponseWriter) *Response {
-	return &Response{
-		server:         server,
-		request:        request,
-		responseWriter: writer,
-		writer:         writer,
-		empty:          true,
-		status:         0,
-		wroteHeader:    false,
-	}
+	resp := responsePool.Get().(*Response)
+	resp.reset(server, request, writer)
+	return resp
+}
+
+func (r *Response) reset(server *Server, request *Request, writer http.ResponseWriter) {
+	r.writer = writer
+	r.responseWriter = writer
+	r.server = server
+	r.request = request
+	r.err = nil
+	r.status = 0
+	r.empty = true
+	r.wroteHeader = false
+	r.hijacked = false
 }
 
 // --------------------------------------

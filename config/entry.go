@@ -19,6 +19,7 @@ type Entry struct {
 	AuthorizedValues []any // Leave empty for "any"
 	Type             reflect.Kind
 	IsSlice          bool
+	Required         bool
 }
 
 func makeEntryFromValue(value any) *Entry {
@@ -29,18 +30,23 @@ func makeEntryFromValue(value any) *Entry {
 		kind = t.Elem().Kind()
 		isSlice = true
 	}
-	return &Entry{value, []any{}, kind, isSlice}
+	return &Entry{value, []any{}, kind, isSlice, false}
 }
 
 func (e *Entry) validate(key string) error {
-	if e.Value == nil { // nil values means unset
-		return nil
-	}
-
 	if err := e.tryEnvVarConversion(key); err != nil {
 		return err
 	}
+
+	v := reflect.ValueOf(e.Value)
+	if e.Required && (!v.IsValid() || e.Value == nil || (v.Kind() == reflect.Pointer && v.IsNil())) {
+		return errors.Errorf("%q is required", key)
+	}
+
 	t := reflect.TypeOf(e.Value)
+	if t == nil {
+		return nil // Can't determine type, is 'zero' value.
+	}
 	kind := t.Kind()
 	if e.IsSlice && kind == reflect.Slice {
 		kind = t.Elem().Kind()
@@ -60,10 +66,9 @@ func (e *Entry) validate(key string) error {
 		if e.IsSlice {
 			// Accepted values for slices define the values that can be used inside the slice
 			// It doesn't represent the value of the slice itself (content and order)
-			list := reflect.ValueOf(e.Value)
-			length := list.Len()
+			length := v.Len()
 			for i := 0; i < length; i++ {
-				if !lo.Contains(e.AuthorizedValues, list.Index(i).Interface()) {
+				if !lo.Contains(e.AuthorizedValues, v.Index(i).Interface()) {
 					return errors.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
 				}
 			}

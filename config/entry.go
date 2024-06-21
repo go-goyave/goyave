@@ -39,7 +39,7 @@ func (e *Entry) validate(key string) error {
 	}
 
 	v := reflect.ValueOf(e.Value)
-	if e.Required && (!v.IsValid() || e.Value == nil) {
+	if e.Required && (!v.IsValid() || e.Value == nil || (v.Kind() == reflect.Pointer && v.IsNil())) {
 		return errors.Errorf("%q is required", key)
 	}
 

@@ -45,7 +45,7 @@ func (e *Entry) validate(key string) error {
 
 	t := reflect.TypeOf(e.Value)
 	if t == nil {
-		return nil // Can't determine
+		return nil // Can't determine type, is 'zero' value.
 	}
 	kind := t.Kind()
 	if e.IsSlice && kind == reflect.Slice {

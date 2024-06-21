@@ -715,12 +715,9 @@ func TestConfig(t *testing.T) {
 }
 
 func TestRequiredConfig(t *testing.T) {
-	defaultLoader.mu.Lock()
 	loader := loader{
-		defaults: make(object, len(defaultLoader.defaults)),
+		defaults: make(object),
 	}
-	loadDefaults(defaultLoader.defaults, loader.defaults)
-	defaultLoader.mu.Unlock()
 
 	loader.register("testCategory.nullValueNotRequired", Entry{
 		Value:            nil,

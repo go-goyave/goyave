@@ -743,11 +743,28 @@ func TestRequiredConfig(t *testing.T) {
 		Required: true,
 	})
 
+	var nilPointer *string
+	loader.register("testCategory.nilPointerRequired", Entry{
+		Value:    nilPointer,
+		Type:     reflect.Ptr,
+		Required: true,
+	})
+
+	validPointer := new(string)
+	*validPointer = "valid"
+	loader.register("testCategory.validPointer", Entry{
+		Value:    validPointer,
+		Type:     reflect.Ptr,
+		Required: true,
+	})
+
 	cfgJSON := `{
 		"testCategory": {
 			"nullValueNotRequired": null,
 			"nullValueRequired": null,
-			"valueValidAndDefined": 123
+			"valueValidAndDefined": 123,
+			"valueValidAndDefined": 123,
+			"validPointer": "valid"
 		}
 	}`
 
@@ -757,6 +774,7 @@ func TestRequiredConfig(t *testing.T) {
 	expectedErrors := []string{
 		"- \"testCategory.valueCompletelyMissing\" is required",
 		"- \"testCategory.nullValueRequired\" is required",
+		"- \"testCategory.nilPointerRequired\" is required",
 	}
 
 	actualErrors := strings.Split(err.Error(), "\n")

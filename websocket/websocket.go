@@ -60,7 +60,7 @@ type Controller interface {
 	//			}
 	//		}
 	//	}
-	Serve(*Conn, *goyave.Request) error
+	Serve(conn *Conn, request *goyave.Request) error
 }
 
 // Registrer qualifies a `websocket.Controller` that registers its route itself, allowing
@@ -71,7 +71,7 @@ type Controller interface {
 type Registrer interface {
 	// RegisterRoute registers the route for the websocket upgrade. The route must only match the
 	// GET HTTP method and use the `goyave.Handler` received as a parameter.
-	RegisterRoute(*goyave.Router, goyave.Handler)
+	RegisterRoute(router *goyave.Router, handler goyave.Handler)
 }
 
 type upgradeErrorHandlerFunc func(response *goyave.Response, request *goyave.Request, status int, reason error)

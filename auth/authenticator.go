@@ -45,7 +45,7 @@ type UserService[T any] interface {
 // Unauthorizer can be implemented by Authenticators to define custom behavior
 // when authentication fails.
 type Unauthorizer interface {
-	OnUnauthorized(*goyave.Response, *goyave.Request, error)
+	OnUnauthorized(response *goyave.Response, request *goyave.Request, err error)
 }
 
 // Handler a middleware that automatically sets the request's `User` if the

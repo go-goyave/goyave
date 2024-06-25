@@ -30,6 +30,7 @@ linters:
     - testifylint
     - whitespace
     - bodyclose
+    - inamedparam
   disable-all: false
   fast: false
 

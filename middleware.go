@@ -17,7 +17,7 @@ import (
 // validation, gzip compression.
 type Middleware interface {
 	Composable
-	Handle(Handler) Handler
+	Handle(next Handler) Handler
 }
 
 type middlewareHolder struct {

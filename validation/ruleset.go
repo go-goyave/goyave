@@ -21,11 +21,11 @@ type Ruler interface {
 // scoped to a single field validation in a single request.
 type Validator interface {
 	Composable
-	init(*Options)
+	init(opts *Options)
 
 	// Validate checks the field under validation satisfies this validator's criteria.
 	// If necessary, replaces the `Context.Value` with a converted value (see `IsType()`).
-	Validate(*Context) bool
+	Validate(ctx *Context) bool
 
 	// Name returns the string name of the validator.
 	// This is used to generate the language entry for the

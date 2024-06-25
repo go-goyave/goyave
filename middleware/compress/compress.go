@@ -22,7 +22,7 @@ import (
 //  2. replaces the response writer with the writer returned by `NewWriter`
 //  3. sets the `Content-Encoding` response header
 type Encoder interface {
-	NewWriter(io.Writer) io.WriteCloser
+	NewWriter(wr io.Writer) io.WriteCloser
 	Encoding() string
 }
 

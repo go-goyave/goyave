@@ -12,7 +12,7 @@ import (
 // accessors to the essential server resources.
 // A component can be parent of several sub-components.
 type Composable interface {
-	Init(*Server)
+	Init(server *Server)
 	Server() *Server
 	DB() *gorm.DB
 	Config() *config.Config
@@ -27,7 +27,7 @@ type Composable interface {
 // to use `router.Controller()`.
 type Registrer interface {
 	Composable
-	RegisterRoutes(*Router)
+	RegisterRoutes(router *Router)
 }
 
 // Component base implementation of `Composable` to easily make a

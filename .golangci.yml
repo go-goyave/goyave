@@ -29,6 +29,7 @@ linters:
     - staticcheck
     - testifylint
     - whitespace
+    - bodyclose
   disable-all: false
   fast: false
 

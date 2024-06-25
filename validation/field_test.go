@@ -11,7 +11,6 @@ import (
 type isRequiredKey struct{}
 
 func TestField(t *testing.T) {
-
 	t.Run("New", func(t *testing.T) {
 		validators := []Validator{
 			Required(),

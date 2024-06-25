@@ -71,5 +71,4 @@ func extTestFilesNames(value any) string {
 		return "[" + strings.Join(lo.Map(files, func(f fsutil.File, _ int) string { return f.Header.Filename }), "_") + "]"
 	}
 	return fmt.Sprintf("%v", value)
-
 }

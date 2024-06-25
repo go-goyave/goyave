@@ -143,7 +143,6 @@ func (file *File) Save(fs WritableFS, path string, name string) (filename string
 func ParseMultipartFiles(headers []*multipart.FileHeader) ([]File, error) {
 	files := []File{}
 	for _, fh := range headers {
-
 		fileHeader := make([]byte, 512)
 
 		if fh.Size != 0 {

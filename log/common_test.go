@@ -12,7 +12,6 @@ import (
 )
 
 func TestCommonFormatter(t *testing.T) {
-
 	ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 
 	t.Run("no_user", func(t *testing.T) {

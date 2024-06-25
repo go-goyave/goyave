@@ -86,7 +86,6 @@ func NewDevModeHandler(w io.Writer, opts *DevModeHandlerOptions) *DevModeHandler
 //
 // Each call to `Handle` results in a single serialized call to `io.Writer.Write()`.
 func (h *DevModeHandler) Handle(_ context.Context, r slog.Record) error {
-
 	buf := bytes.NewBuffer(make([]byte, 0, 1024))
 
 	buf.WriteRune('\n')
@@ -201,7 +200,6 @@ func (h *DevModeHandler) WithGroup(name string) slog.Handler {
 }
 
 func printAttr(attr slog.Attr, buf *bytes.Buffer, indent int) {
-
 	indentString := strings.Repeat(Indent, indent)
 	buf.WriteString(indentString)
 	buf.WriteString(WhiteBold)

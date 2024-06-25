@@ -31,7 +31,6 @@ func (m *testMiddleware) Handle(_ goyave.Handler) goyave.Handler {
 }
 
 func TestTestServer(t *testing.T) {
-
 	t.Run("NewTestServer", func(t *testing.T) {
 		server := NewTestServer(t, "resources/custom_config.json")
 		assert.Equal(t, "value", server.Config().Get("custom-entry"))
@@ -161,7 +160,6 @@ func TestNewTestRequest(t *testing.T) {
 	b, err := io.ReadAll(req.Body())
 	require.NoError(t, err)
 	assert.Equal(t, "body", string(b))
-
 }
 
 func TestNewTestResponse(t *testing.T) {
@@ -220,7 +218,6 @@ func TestCreateTestFiles(t *testing.T) {
 	assert.Equal(t, "test_file.txt", files[1].Header.Filename)
 	assert.Equal(t, int64(25), files[1].Header.Size)
 	assert.Equal(t, textproto.MIMEHeader{"Content-Type": []string{"application/octet-stream"}, "Content-Disposition": []string{"form-data; name=\"file\"; filename=\"test_file.txt\""}}, files[1].Header.Header)
-
 }
 
 func TestToJSON(t *testing.T) {

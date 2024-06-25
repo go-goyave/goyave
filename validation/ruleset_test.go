@@ -67,7 +67,6 @@ func BenchmarkRuleSet(b *testing.B) {
 }
 
 func TestRuleset(t *testing.T) {
-
 	ruleset := RuleSet{
 		{Path: CurrentElement, Rules: List{
 			Object(),

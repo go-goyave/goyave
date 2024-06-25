@@ -23,7 +23,6 @@ func userGenerator() *TestUser {
 }
 
 func TestFactory(t *testing.T) {
-
 	t.Run("New", func(t *testing.T) {
 		factory := NewFactory(userGenerator)
 

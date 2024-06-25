@@ -43,7 +43,6 @@ func prepareTimeoutTest(dbName string) *gorm.DB {
 }
 
 func TestTimeoutPlugin(t *testing.T) {
-
 	RegisterDialect("sqlite3_timeout_test", "file:{name}?{options}", sqlite.Open)
 	t.Cleanup(func() {
 		mu.Lock()

@@ -67,7 +67,6 @@ func (c *testController) RegisterRoutes(_ *Router) {
 }
 
 func TestRouter(t *testing.T) {
-
 	t.Run("New", func(t *testing.T) {
 		router := prepareRouterTest()
 		if !assert.NotNil(t, router) {
@@ -188,7 +187,6 @@ func TestRouter(t *testing.T) {
 		assert.Nil(t, router.Meta[MetaCORS])
 		route = router.Get("/route-2", func(_ *Response, _ *Request) {})
 		assert.Equal(t, []string{http.MethodGet, http.MethodHead}, route.methods)
-
 	})
 
 	t.Run("StatusHandler", func(t *testing.T) {
@@ -540,6 +538,5 @@ func TestRouter(t *testing.T) {
 				assert.Equal(t, c.expectedRoute, match.route.name)
 			})
 		}
-
 	})
 }

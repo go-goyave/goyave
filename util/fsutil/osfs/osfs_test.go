@@ -29,7 +29,6 @@ func setRootWorkingDirectory() {
 }
 
 func TestOSFS(t *testing.T) {
-
 	setRootWorkingDirectory()
 
 	t.Run("Open", func(t *testing.T) {

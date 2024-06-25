@@ -36,7 +36,6 @@ func (w *testWriter) Close() error {
 }
 
 func TestWriter(t *testing.T) {
-
 	t.Run("Write", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
@@ -179,7 +178,6 @@ func TestWriter(t *testing.T) {
 }
 
 func TestMiddleware(t *testing.T) {
-
 	t.Run("Common", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()

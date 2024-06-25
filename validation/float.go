@@ -134,7 +134,6 @@ func (v *floatValidator[T]) checkFloatRange(ctx *Context, val float64) bool {
 }
 
 func (v *floatValidator[T]) checkIntRange(ctx *Context, val int) bool {
-
 	var t T
 	ok := false
 	switch any(t).(type) {

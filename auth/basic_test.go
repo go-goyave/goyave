@@ -15,7 +15,6 @@ import (
 )
 
 func TestBasicAuthenticator(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
@@ -187,7 +186,6 @@ func TestBasicAuthenticator(t *testing.T) {
 }
 
 func TestConfigBasicAuthenticator(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("auth.basic.username", "johndoe")

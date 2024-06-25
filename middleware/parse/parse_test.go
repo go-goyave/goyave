@@ -17,7 +17,6 @@ import (
 )
 
 func TestParseMiddleware(t *testing.T) {
-
 	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
 
 	t.Run("Max Upload Size", func(t *testing.T) {

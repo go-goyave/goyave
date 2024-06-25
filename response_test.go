@@ -59,7 +59,6 @@ func (r *testChainedWriter) Close() error {
 }
 
 func TestResponse(t *testing.T) {
-
 	t.Run("NewResponse", func(t *testing.T) {
 		resp, _ := newTestReponse()
 		assert.NotNil(t, resp.server)
@@ -471,7 +470,6 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("WriteDBError", func(t *testing.T) {
-
 		t.Run("ErrRecordNotFound", func(t *testing.T) {
 			resp, _ := newTestReponse()
 			assert.True(t, resp.WriteDBError(fmt.Errorf("%w", gorm.ErrRecordNotFound)))
@@ -498,7 +496,5 @@ func TestResponse(t *testing.T) {
 			resp, _ := newTestReponse()
 			assert.False(t, resp.WriteDBError(nil))
 		})
-
 	})
-
 }

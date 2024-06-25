@@ -23,7 +23,6 @@ import (
 )
 
 func TestMiddlewareHolder(t *testing.T) {
-
 	m1 := &recoveryMiddleware{}
 	m2 := &languageMiddleware{}
 	holder := middlewareHolder{
@@ -35,7 +34,6 @@ func TestMiddlewareHolder(t *testing.T) {
 }
 
 func TestHasMiddleware(t *testing.T) {
-
 	t.Run("findMiddleware", func(t *testing.T) {
 		m := &recoveryMiddleware{}
 		holder := []Middleware{m}
@@ -258,7 +256,6 @@ func (v *testValidator) Name() string {
 }
 
 func TestValidateMiddleware(t *testing.T) {
-
 	cases := []struct {
 		next              func(*Response, *Request)
 		queryRules        func(*Request) validation.RuleSet

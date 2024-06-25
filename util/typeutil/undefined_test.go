@@ -92,7 +92,6 @@ func TestUndefined(t *testing.T) {
 	})
 
 	t.Run("Value", func(t *testing.T) {
-
 		cases := []struct {
 			undefined driver.Valuer
 			want      driver.Value
@@ -117,7 +116,6 @@ func TestUndefined(t *testing.T) {
 				require.NoError(t, err)
 			}
 		}
-
 	})
 
 	t.Run("CopyValue", func(t *testing.T) {

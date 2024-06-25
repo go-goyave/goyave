@@ -11,7 +11,6 @@ import (
 )
 
 func TestRequest(t *testing.T) {
-
 	t.Run("NewRequest", func(t *testing.T) {
 		httpReq := httptest.NewRequest(http.MethodGet, "/test", nil)
 		r := NewRequest(httpReq)

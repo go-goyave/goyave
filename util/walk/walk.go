@@ -100,7 +100,6 @@ func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, 
 					if !clone.walk(element, parent, -1, trackClone, tail, f) {
 						return false
 					}
-
 				}
 				return true
 			}

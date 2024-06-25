@@ -245,7 +245,6 @@ func TestOpenFileError(t *testing.T) {
 }
 
 func TestParseMultipartFiles(t *testing.T) {
-
 	t.Run("png", func(t *testing.T) {
 		form := createTestForm("resources/img/logo/goyave_16.png")
 		files, err := ParseMultipartFiles(form.File["file"])

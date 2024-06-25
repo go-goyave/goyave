@@ -183,7 +183,6 @@ func TestGetCheckOriginFunction(t *testing.T) {
 }
 
 func TestDefaultUpgradeErrorHandler(t *testing.T) {
-
 	cases := []struct {
 		config    func() goyave.Options
 		expect    func(*testing.T, map[string]string)
@@ -443,7 +442,6 @@ func TestCloseHandler(t *testing.T) {
 }
 
 func TestGracefulClose(t *testing.T) {
-
 	cases := []struct {
 		expectedError *ws.CloseError
 		serve         func(conn *Conn, r *goyave.Request) error
@@ -539,7 +537,6 @@ func TestGracefulClose(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func testGracefulClose(t *testing.T, routeURL string, expectedError *ws.CloseError) {

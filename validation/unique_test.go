@@ -136,7 +136,6 @@ func TestUniqueValidator(t *testing.T) {
 			assert.Equal(t, c.expectedErrors, lo.Map(ctx.errors, func(e error, _ int) string { return e.Error() }))
 		})
 	}
-
 }
 
 func TestExistsValidator(t *testing.T) {
@@ -363,7 +362,6 @@ func TestUniqueArrayValidator(t *testing.T) {
 	}
 
 	t.Run("buildQuery", func(t *testing.T) {
-
 		cases := []struct {
 			dialect  string
 			expected string
@@ -527,7 +525,6 @@ func TestExistsArrayValidator(t *testing.T) {
 	}
 
 	t.Run("buildQuery", func(t *testing.T) {
-
 		cases := []struct {
 			dialect  string
 			expected string

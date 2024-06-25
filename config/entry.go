@@ -152,7 +152,6 @@ func (e *Entry) tryEnvVarConversion(key string) error {
 	if ok {
 		val, err := e.convertEnvVar(str, key)
 		if err == nil && val != nil {
-
 			if e.IsSlice {
 				return errors.Errorf("%q is a slice entry, it cannot be loaded from env", key)
 			}

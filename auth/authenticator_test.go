@@ -58,7 +58,6 @@ func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser) {
 }
 
 func TestAuthenticator(t *testing.T) {
-
 	t.Run("Middleware", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })

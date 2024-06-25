@@ -97,7 +97,6 @@ func TestNewDatabase(t *testing.T) {
 				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.WriteTimeout)
 			}
 		}
-
 	})
 
 	t.Run("silent", func(t *testing.T) {
@@ -185,7 +184,6 @@ func TestNewDatabase(t *testing.T) {
 				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.WriteTimeout)
 			}
 		}
-
 	})
 
 	t.Run("New_connection_none", func(t *testing.T) {

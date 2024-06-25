@@ -18,7 +18,6 @@ func (t mockT) Log(args ...any) {
 }
 
 func TestLogWriter(t *testing.T) {
-
 	buf := &bytes.Buffer{}
 	writerLogger := &LogWriter{
 		t: mockT{buf: buf},

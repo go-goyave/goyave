@@ -48,7 +48,6 @@ func TestNewHandler(t *testing.T) {
 }
 
 func TestDevModeHandler(t *testing.T) {
-
 	t.Run("New", func(t *testing.T) {
 		cases := []struct {
 			opts *DevModeHandlerOptions
@@ -227,7 +226,6 @@ func TestDevModeHandler(t *testing.T) {
 }
 
 func TestDevModeHandlerFormat(t *testing.T) {
-
 	t.Run("levelColor", func(t *testing.T) {
 		cases := []struct {
 			want  string
@@ -281,7 +279,6 @@ func TestDevModeHandlerFormat(t *testing.T) {
 	})
 
 	t.Run("Handle", func(t *testing.T) {
-
 		time := lo.Must(time.Parse(time.RFC3339Nano, "2023-04-09T15:04:05.123456789Z"))
 
 		pc, file, line, ok := runtime.Caller(1)

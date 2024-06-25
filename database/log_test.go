@@ -16,7 +16,6 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-
 	t.Run("New", func(t *testing.T) {
 		slogger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 		f := func() *slog.Logger { return slogger }
@@ -35,7 +34,6 @@ func TestLogger(t *testing.T) {
 	})
 
 	t.Run("Info", func(t *testing.T) {
-
 		t.Run("nil_slogger", func(t *testing.T) {
 			l := NewLogger(nil)
 
@@ -54,7 +52,6 @@ func TestLogger(t *testing.T) {
 	})
 
 	t.Run("Warn", func(t *testing.T) {
-
 		t.Run("nil_slogger", func(t *testing.T) {
 			l := NewLogger(nil)
 
@@ -73,7 +70,6 @@ func TestLogger(t *testing.T) {
 	})
 
 	t.Run("Error", func(t *testing.T) {
-
 		t.Run("nil_slogger", func(t *testing.T) {
 			l := NewLogger(nil)
 
@@ -92,7 +88,6 @@ func TestLogger(t *testing.T) {
 	})
 
 	t.Run("Trace", func(t *testing.T) {
-
 		t.Run("nil_slogger", func(t *testing.T) {
 			l := NewLogger(nil)
 

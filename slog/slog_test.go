@@ -24,7 +24,6 @@ func (testValuerError) LogValue() slog.Value {
 }
 
 func TestLogger(t *testing.T) {
-
 	t.Run("New", func(t *testing.T) {
 		handler := NewDevModeHandler(bytes.NewBuffer(make([]byte, 0, 10)), nil)
 		l := New(handler)

@@ -27,7 +27,6 @@ func prepareJWTServiceTest(t *testing.T) (*testutil.TestServer, *JWTService) {
 }
 
 func TestJWTService(t *testing.T) {
-
 	t.Run("GenerateToken", func(t *testing.T) {
 		server, service := prepareJWTServiceTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
@@ -169,7 +168,6 @@ func TestJWTService(t *testing.T) {
 }
 
 func TestJWTAuthenticator(t *testing.T) {
-
 	t.Run("success_hs256", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")

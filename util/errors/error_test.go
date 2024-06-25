@@ -12,9 +12,7 @@ import (
 )
 
 func TestErrors(t *testing.T) {
-
 	t.Run("toErr", func(t *testing.T) {
-
 		cases := []struct {
 			desc     string
 			reason   any
@@ -143,7 +141,6 @@ func TestErrors(t *testing.T) {
 	})
 
 	t.Run("FileLine", func(t *testing.T) { // Note: this test is very sensitive to line changes. If you add lines before this, be sure to also update this test.
-
 		cases := []struct {
 			err      *Error
 			expected *regexp.Regexp

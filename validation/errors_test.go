@@ -9,7 +9,6 @@ import (
 )
 
 func TestErrors(t *testing.T) {
-
 	t.Run("Error_on_root_element", func(t *testing.T) {
 		errs := &Errors{}
 
@@ -149,7 +148,6 @@ func TestErrors(t *testing.T) {
 	})
 
 	t.Run("Merge", func(t *testing.T) {
-
 		mergeErrs := func() *Errors {
 			return &Errors{
 				Fields: FieldsErrors{

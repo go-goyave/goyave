@@ -119,7 +119,6 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) *gorm.D
 		if isMySQL {
 			params = append(params, gorm.Expr("ROW(?,?)", transformedValue, i))
 		} else {
-
 			params = append(params, gorm.Expr(
 				"(?,?)",
 				transformedValue,

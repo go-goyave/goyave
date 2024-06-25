@@ -41,7 +41,6 @@ func (s *DummyService) Name() string {
 }
 
 func TestServer(t *testing.T) {
-
 	t.Run("New", func(t *testing.T) {
 		// Create a test config file (with only the app name)
 		data, err := json.Marshal(map[string]any{"app": map[string]any{"name": "test"}})
@@ -622,7 +621,6 @@ func TestNoServerFromContext(t *testing.T) {
 }
 
 func TestErrLogWriter(t *testing.T) {
-
 	s, err := New(Options{Config: config.LoadDefault()})
 	require.NoError(t, err)
 

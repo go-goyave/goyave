@@ -38,7 +38,6 @@ func (w *closeableChildWriter) Close() error {
 }
 
 func TestCompressMiddleware(t *testing.T) {
-
 	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
@@ -143,7 +142,6 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
 		assert.Equal(t, "{\n    \"custom-entry\": \"value\"\n}", string(body))
 	})
-
 }
 
 func TestCompressWriter(t *testing.T) {
@@ -186,7 +184,6 @@ func (e *testEncoder) Encoding() string {
 }
 
 func TestEncoderPriority(t *testing.T) {
-
 	gzip := &testEncoder{encoding: "gzip"}
 	br := &testEncoder{encoding: "br"}
 	zstd := &testEncoder{encoding: "zstd"}

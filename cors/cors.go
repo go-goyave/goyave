@@ -106,7 +106,6 @@ func (o *Options) configureAllowedHeaders(headers http.Header, requestHeaders ht
 	} else {
 		headers.Set("Access-Control-Allow-Headers", strings.Join(o.AllowedHeaders, ", "))
 	}
-
 }
 
 func (o *Options) configureMaxAge(headers http.Header) {

@@ -17,7 +17,6 @@ import (
 )
 
 func TestJWTController(t *testing.T) {
-
 	t.Run("Login", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")

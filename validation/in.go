@@ -91,7 +91,6 @@ type InFieldValidator[T comparable] struct {
 // Always return false if the validated value is not of type `T` or the matched arrays
 // are not of type `[]T`.
 func (v *InFieldValidator[T]) Validate(ctx *Context) bool {
-
 	val, ok := ctx.Value.(T)
 	if !ok {
 		return false

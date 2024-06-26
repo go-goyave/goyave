@@ -283,6 +283,23 @@ func TestValidate(t *testing.T) {
 			wantData: map[string]any{},
 		},
 		{
+			desc: "nil_delete_from_parent_without_language",
+			options: &Options{
+				Data: map[string]any{"property": nil},
+				Rules: RuleSet{
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Fields: FieldsErrors{
+					"property": &Errors{
+						Errors: []string{"The property is required."},
+					},
+				},
+			},
+			wantData: map[string]any{},
+		},
+		{
 			desc: "nil_nullable_dont_delete_from_parent",
 			options: &Options{
 				Data:     map[string]any{"property": nil},

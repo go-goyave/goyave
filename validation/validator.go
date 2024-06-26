@@ -275,6 +275,9 @@ func Validate(options *Options) (*Errors, []error) {
 	if options.Extra == nil {
 		options.Extra = map[any]any{}
 	}
+	if options.Language == nil {
+		options.Language = lang.New().GetDefault()
+	}
 
 	rules := options.Rules.AsRules()
 	for _, field := range rules {

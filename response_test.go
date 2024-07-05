@@ -292,6 +292,19 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, newWriter, resp.Writer())
 	})
 
+	t.Run("SetWriter_composable", func(t *testing.T) {
+		type composableWriter struct {
+			Component
+			bytes.Buffer
+		}
+
+		resp, _ := newTestReponse()
+		newWriter := &composableWriter{}
+		resp.SetWriter(newWriter)
+		assert.Equal(t, newWriter, resp.Writer())
+		assert.Equal(t, resp.server, newWriter.server)
+	})
+
 	t.Run("Chained_writer", func(t *testing.T) {
 		resp, _ := newTestReponse()
 		newWriter := &testChainedWriter{}

@@ -178,6 +178,9 @@ func (r *Response) Writer() io.Writer {
 //
 // The original http.ResponseWriter is always kept.
 func (r *Response) SetWriter(writer io.Writer) {
+	if c, ok := writer.(Composable); ok {
+		c.Init(r.server)
+	}
 	r.writer = writer
 }
 

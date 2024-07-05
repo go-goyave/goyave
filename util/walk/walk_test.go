@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -828,6 +829,50 @@ func TestPathWalk(t *testing.T) {
 		},
 	}
 	matches = testWalk(t, data, "array[].field")
+	assert.Equal(t, expected, matches)
+
+	// [].value
+	expected = []*Context{
+		{
+			Value:  "a",
+			Parent: map[string]any{"value": "a"},
+			Path: &Path{
+				Name:  nil,
+				Type:  PathTypeArray,
+				Index: lo.ToPtr(0),
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{
+						Name: strPtr("value"),
+						Type: PathTypeElement,
+					},
+				},
+			},
+			Name:  "value",
+			Index: -1,
+			Found: Found,
+		},
+		{
+			Value:  "b",
+			Parent: map[string]any{"value": "b"},
+			Path: &Path{
+				Name:  nil,
+				Type:  PathTypeArray,
+				Index: lo.ToPtr(1),
+				Next: &Path{
+					Type: PathTypeObject,
+					Next: &Path{
+						Name: strPtr("value"),
+						Type: PathTypeElement,
+					},
+				},
+			},
+			Name:  "value",
+			Index: -1,
+			Found: Found,
+		},
+	}
+	matches = testWalk(t, []any{map[string]any{"value": "a"}, map[string]any{"value": "b"}}, "[].value")
 	assert.Equal(t, expected, matches)
 }
 

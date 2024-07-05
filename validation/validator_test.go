@@ -305,6 +305,61 @@ func TestValidate(t *testing.T) {
 			wantData: []string{"a", "b", "c"},
 		},
 		{
+			desc: "root_object_array",
+			options: &Options{
+				Data:     []any{map[string]any{"value": "a"}, map[string]any{"value": "b"}},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Required(), Array()}},
+					{Path: "[]", Rules: List{Object()}},
+					{Path: "[].value", Rules: List{Required(), String()}},
+				},
+			},
+			wantData: []map[string]any{{"value": "a"}, {"value": "b"}},
+		},
+		{
+			desc: "root_object_array_with_error",
+			options: &Options{
+				Data:     []any{map[string]any{"value": "a"}, map[string]any{"value": "b"}, "c"},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Required(), Array()}},
+					{Path: "[]", Rules: List{Object()}},
+					{Path: "[].value", Rules: List{Required(), String()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Elements: ArrayErrors{
+					2: &Errors{
+						Errors: []string{"The body elements must be objects."},
+					},
+				},
+			},
+		},
+		{
+			desc: "root_object_array_with_deep_error",
+			options: &Options{
+				Data:     []any{map[string]any{"value": "a"}},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Required(), Array()}},
+					{Path: "[]", Rules: List{Object()}},
+					{Path: "[].value", Rules: List{Required(), Object()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Elements: ArrayErrors{
+					0: &Errors{
+						Fields: FieldsErrors{
+							"value": &Errors{
+								Errors: []string{"The value must be an object."},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			desc: "root_n_array",
 			options: &Options{
 				Data:     [][]any{{"a", "b"}, {"c", ""}},

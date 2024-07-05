@@ -278,7 +278,7 @@ func Validate(options *Options) (*Errors, []error) {
 
 	rules := options.Rules.AsRules()
 	for _, field := range rules {
-		if *field.Path.Name == CurrentElement {
+		if field.Path.Name != nil && *field.Path.Name == CurrentElement {
 			// Validate the root element
 			fakeParent := map[string]any{CurrentElement: options.Data}
 			validator.validateField(*field.Path.Name, field, fakeParent, nil)
@@ -379,7 +379,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			if !ok {
 				valid = false
 				message := v.getMessage(ctx, validator)
-				if fieldName == CurrentElement {
+				if v.isRootElement(fieldName, errorPath) {
 					v.validationErrors.Add(errorPath, message)
 				} else {
 					v.validationErrors.Add(&walk.Path{Type: walk.PathTypeObject, Next: errorPath}, message)
@@ -396,6 +396,10 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			replaceValue(value, c)
 		}
 	})
+}
+
+func (v *validator) isRootElement(fieldName string, errorPath *walk.Path) bool {
+	return fieldName == CurrentElement || (errorPath.Type == walk.PathTypeArray && (errorPath.Name == nil || *errorPath.Name == CurrentElement))
 }
 
 func (v *validator) shouldDeleteFromParent(field *Field, parentIsObject bool, value any) bool {

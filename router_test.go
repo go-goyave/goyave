@@ -19,9 +19,14 @@ import (
 
 type testStatusHandler struct {
 	Component
+	override Handler
 }
 
-func (*testStatusHandler) Handle(response *Response, _ *Request) {
+func (h *testStatusHandler) Handle(response *Response, request *Request) {
+	if h.override != nil {
+		h.override(response, request)
+		return
+	}
 	message := map[string]string{
 		"status": http.StatusText(response.GetStatus()),
 	}
@@ -347,6 +352,16 @@ func TestRouter(t *testing.T) {
 			r.Status(http.StatusOK)
 		}).Middleware(&testMiddleware{key: "route"})
 
+		statusHandlerSubrouter := router.Subrouter("/statushandler")
+		statusHandlerSubrouter.StatusHandler(&testStatusHandler{
+			override: func(response *Response, _ *Request) {
+				response.String(response.GetStatus(), "Override Bad Request")
+			},
+		}, http.StatusBadRequest)
+		statusHandlerSubrouter.Get("/", func(r *Response, _ *Request) {
+			r.Status(http.StatusBadRequest)
+		})
+
 		cases := []struct {
 			desc           string
 			requestMethod  string
@@ -423,6 +438,13 @@ func TestRouter(t *testing.T) {
 				requestURL:     "/middleware",
 				expectedStatus: http.StatusOK,
 				expectedBody:   "",
+			},
+			{
+				desc:           "subrouter_status_handler",
+				requestMethod:  http.MethodGet,
+				requestURL:     "/statushandler",
+				expectedStatus: http.StatusBadRequest,
+				expectedBody:   "Override Bad Request",
 			},
 		}
 

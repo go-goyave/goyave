@@ -506,7 +506,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 
 	handler(response, request)
 
-	if err := r.finalize(response, request); err != nil {
+	if err := r.finalize(match, response, request); err != nil {
 		r.server.Logger.Error(err)
 	}
 
@@ -515,13 +515,13 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 }
 
 // finalize the request's life-cycle.
-func (r *Router) finalize(response *Response, request *Request) error {
+func (r *Router) finalize(match *routeMatch, response *Response, request *Request) error {
 	if response.empty {
 		if response.status == 0 {
 			// If the response is empty, return status 204 to
 			// comply with RFC 7231, 6.3.5
 			response.Status(http.StatusNoContent)
-		} else if statusHandler, ok := r.statusHandlers[response.status]; ok {
+		} else if statusHandler, ok := r.getStatusHandler(match, response.status); ok {
 			// Status has been set but body is empty.
 			// Execute status handler if exists.
 			statusHandler.Handle(response, request)
@@ -533,4 +533,13 @@ func (r *Router) finalize(response *Response, request *Request) error {
 	}
 
 	return errorutil.New(response.close())
+}
+
+func (r *Router) getStatusHandler(match *routeMatch, status int) (StatusHandler, bool) {
+	if match.route.parent == nil {
+		h, ok := r.statusHandlers[status]
+		return h, ok
+	}
+	h, ok := match.route.parent.statusHandlers[status]
+	return h, ok
 }

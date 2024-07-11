@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -130,4 +131,22 @@ func TestValidationStatusHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "{\"error\":{\"body\":{\"fields\":{\"field\":{\"errors\":[\"The field is required\"]}},\"errors\":[\"The body is required\"]},\"query\":{\"fields\":{\"query\":{\"errors\":[\"The query is required\"]}}}}}\n", string(body))
+}
+
+func TestRequestErrorStatusHandler(t *testing.T) {
+	req, resp, recorder := prepareStatusHandlerTest()
+	handler := &RequestErrorStatusHandler{}
+	handler.Init(resp.server)
+
+	req.Extra[ExtraRequestError{}] = []error{fmt.Errorf("request.json-empty-body")}
+
+	handler.Handle(resp, req)
+
+	res := recorder.Result()
+	body, err := io.ReadAll(res.Body)
+
+	assert.NoError(t, res.Body.Close())
+	require.NoError(t, err)
+
+	assert.Equal(t, "{\"error\":[\"The request Content-Type indicates JSON, but the request body is empty\"]}\n", string(body))
 }

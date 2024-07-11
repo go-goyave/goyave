@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"fmt"
 	"net/http"
 
 	"goyave.dev/goyave/v5/validation"
@@ -46,6 +47,39 @@ func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
 		"error": http.StatusText(response.GetStatus()),
 	}
 	response.JSON(response.GetStatus(), message)
+}
+
+type RequestErrorStatusHandler struct {
+	Component
+}
+
+func (h *RequestErrorStatusHandler) Handle(response *Response, request *Request) {
+	var errorMessages []string
+	var lang string
+
+	if request.Lang == nil {
+		lang = h.Lang().GetDefault().Name()
+	} else {
+		lang = request.Lang.Name()
+	}
+
+	if e, ok := request.Extra[ExtraRequestError{}]; ok {
+		switch v := e.(type) {
+		case []error:
+			for _, err := range v {
+				errorMessages = append(errorMessages, h.Lang().GetLanguage(lang).Get(err.Error()))
+			}
+		case string:
+			errorMessages = append(errorMessages, h.Lang().GetLanguage(lang).Get(v))
+		default:
+			errorMessages = append(errorMessages, h.Lang().GetLanguage(lang).Get(fmt.Sprintf("%v", v)))
+		}
+	}
+
+	messages := map[string][]string{
+		"error": errorMessages,
+	}
+	response.JSON(response.GetStatus(), messages)
 }
 
 // ValidationStatusHandler for HTTP 422 errors.

@@ -28,9 +28,13 @@ type (
 	// ExtraQueryValidationError the key used in `Context.Extra` to
 	// store the query validation errors.
 	ExtraQueryValidationError struct{}
+
+	// ExtraRequestError the key used in `Context.Extra` to
+	// store specific request errors.
+	ExtraRequestError struct{}
 )
 
-// Request represents an http request received by the server.
+// Request represents a http request received by the server.
 type Request struct {
 	httpRequest *http.Request
 	Now         time.Time

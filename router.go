@@ -122,6 +122,7 @@ func NewRouter(server *Server) *Router {
 	for i := 400; i <= 418; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
+	router.StatusHandler(&RequestErrorStatusHandler{}, http.StatusBadRequest)
 	router.StatusHandler(&ValidationStatusHandler{}, http.StatusUnprocessableEntity)
 	for i := 423; i <= 426; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)

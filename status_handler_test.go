@@ -138,7 +138,7 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 	handler := &RequestErrorStatusHandler{}
 	handler.Init(resp.server)
 
-	req.Extra[ExtraRequestError{}] = []error{fmt.Errorf("request.json-empty-body")}
+	req.Extra[ExtraRequestError{}] = []error{fmt.Errorf("request.json-invalid-body")}
 
 	handler.Handle(resp, req)
 
@@ -148,5 +148,5 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 	assert.NoError(t, res.Body.Close())
 	require.NoError(t, err)
 
-	assert.Equal(t, "{\"error\":[\"The request Content-Type indicates JSON, but the request body is empty\"]}\n", string(body))
+	assert.Equal(t, "{\"error\":[\"The request Content-Type indicates JSON, but the request body is empty or invalid\"]}\n", string(body))
 }

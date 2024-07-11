@@ -109,7 +109,7 @@ func TestParseMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
 		assert.NotNil(t, request.Extra[goyave.ExtraRequestError{}])
-		assert.Contains(t, request.Extra[goyave.ExtraRequestError{}].([]error), fmt.Errorf("request.json-empty-body"))
+		assert.Contains(t, request.Extra[goyave.ExtraRequestError{}].([]error), fmt.Errorf("request.json-invalid-body"))
 	})
 
 	t.Run("Multipart", func(t *testing.T) {

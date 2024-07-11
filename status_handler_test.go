@@ -133,12 +133,31 @@ func TestValidationStatusHandler(t *testing.T) {
 	assert.Equal(t, "{\"error\":{\"body\":{\"fields\":{\"field\":{\"errors\":[\"The field is required\"]}},\"errors\":[\"The body is required\"]},\"query\":{\"fields\":{\"query\":{\"errors\":[\"The query is required\"]}}}}}\n", string(body))
 }
 
-func TestRequestErrorStatusHandler(t *testing.T) {
+func TestRequestErrorStatusHandlerWithSliceOfErrors(t *testing.T) {
 	req, resp, recorder := prepareStatusHandlerTest()
 	handler := &RequestErrorStatusHandler{}
 	handler.Init(resp.server)
 
 	req.Extra[ExtraRequestError{}] = []error{fmt.Errorf("request.json-invalid-body")}
+
+	handler.Handle(resp, req)
+
+	res := recorder.Result()
+	body, err := io.ReadAll(res.Body)
+
+	assert.NoError(t, res.Body.Close())
+	require.NoError(t, err)
+
+	assert.Equal(t, "{\"error\":[\"The request Content-Type indicates JSON, but the request body is empty or invalid\"]}\n", string(body))
+}
+
+func TestRequestErrorStatusHandlerWithString(t *testing.T) {
+	req, resp, recorder := prepareStatusHandlerTest()
+
+	handler := &RequestErrorStatusHandler{}
+	handler.Init(resp.server)
+
+	req.Extra[ExtraRequestError{}] = "request.json-invalid-body"
 
 	handler.Handle(resp, req)
 

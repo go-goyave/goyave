@@ -41,7 +41,7 @@ type ErrorStatusHandler struct {
 	Component
 }
 
-// Handle generic error reponses.
+// Handle generic error responses.
 func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
 	message := map[string]string{
 		"error": http.StatusText(response.GetStatus()),
@@ -49,10 +49,12 @@ func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
 	response.JSON(response.GetStatus(), message)
 }
 
+// RequestErrorStatusHandler a generic (error) status handler for requests.
 type RequestErrorStatusHandler struct {
 	Component
 }
 
+// Handle generic request (error) responses.
 func (h *RequestErrorStatusHandler) Handle(response *Response, request *Request) {
 	var errorMessages []string
 	var lang string

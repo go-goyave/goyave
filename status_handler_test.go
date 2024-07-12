@@ -20,8 +20,11 @@ func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder
 	if err != nil {
 		panic(err)
 	}
+
 	httpReq := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req := NewRequest(httpReq)
+	req.Lang = server.Lang.GetDefault()
+
 	recorder := httptest.NewRecorder()
 	resp := NewResponse(server, req, recorder)
 	return req, resp, recorder
@@ -139,29 +142,19 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 		expectedResponse string
 	}{
 		{
-			name:             "WithSliceOfErrors",
-			extra:            []error{ErrInvalidJSONBody},
-			expectedResponse: `{"error":["The request Content-Type indicates JSON, but the request body is empty or invalid"]}` + "\n",
-		},
-		{
 			name:             "WithString",
-			extra:            "request.json-invalid-body",
-			expectedResponse: `{"error":["The request Content-Type indicates JSON, but the request body is empty or invalid"]}` + "\n",
+			extra:            "parse.json-invalid-body",
+			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid"}` + "\n",
 		},
 		{
-			name:             "WithSingleError",
+			name:             "WithError",
 			extra:            ErrInvalidJSONBody,
-			expectedResponse: `{"error":["The request Content-Type indicates JSON, but the request body is empty or invalid"]}` + "\n",
+			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid"}` + "\n",
 		},
 		{
 			name:             "WithIntegerValue",
 			extra:            123,
-			expectedResponse: `{"error":["123"]}` + "\n",
-		},
-		{
-			name:             "WithAny",
-			extra:            []any{ErrInvalidJSONBody},
-			expectedResponse: `{"error":["[request.json-invalid-body]"]}` + "\n",
+			expectedResponse: `{"error":"123"}` + "\n",
 		},
 	}
 
@@ -172,7 +165,7 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 			handler := &RequestErrorStatusHandler{}
 			handler.Init(resp.server)
 
-			req.Extra[ExtraRequestError{}] = tt.extra
+			req.Extra[ExtraParseError{}] = tt.extra
 
 			handler.Handle(resp, req)
 

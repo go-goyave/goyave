@@ -30,14 +30,14 @@ type (
 	// store the query validation errors.
 	ExtraQueryValidationError struct{}
 
-	// ExtraRequestError the key used in `Context.Extra` to
+	// ExtraParseError the key used in `Context.Extra` to
 	// store specific request errors.
-	ExtraRequestError struct{}
+	ExtraParseError struct{}
 )
 
 var (
 	// ErrInvalidJSONBody error for invalid JSON body
-	ErrInvalidJSONBody = errors.New("request.json-invalid-body")
+	ErrInvalidJSONBody = errors.New("parse.json-invalid-body")
 )
 
 // Request represents a http request received by the server.

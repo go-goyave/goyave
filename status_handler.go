@@ -56,35 +56,25 @@ type RequestErrorStatusHandler struct {
 
 // Handle generic request (error) responses.
 func (h *RequestErrorStatusHandler) Handle(response *Response, request *Request) {
-	var errorMessages []string
-	var langName string
+	var errorMessage string
 
-	if request.Lang == nil {
-		langName = h.Lang().GetDefault().Name()
-	} else {
-		langName = request.Lang.Name()
-	}
-	lang := h.Lang().GetLanguage(langName)
+	lang := h.Lang().GetLanguage(request.Lang.Name())
 
-	if e, ok := request.Extra[ExtraRequestError{}]; ok {
+	if e, ok := request.Extra[ExtraParseError{}]; ok {
 		switch v := e.(type) {
-		case []error:
-			for _, err := range v {
-				errorMessages = append(errorMessages, lang.Get(err.Error()))
-			}
 		case error:
-			errorMessages = append(errorMessages, lang.Get(v.Error()))
+			errorMessage = lang.Get(v.Error())
 		case string:
-			errorMessages = append(errorMessages, lang.Get(v))
+			errorMessage = lang.Get(v)
 		default:
-			errorMessages = append(errorMessages, lang.Get(fmt.Sprintf("%v", v)))
+			errorMessage = lang.Get(fmt.Sprintf("%v", v))
 		}
 	}
 
-	messages := map[string][]string{
-		"error": errorMessages,
+	message := map[string]string{
+		"error": errorMessage,
 	}
-	response.JSON(response.GetStatus(), messages)
+	response.JSON(response.GetStatus(), message)
 }
 
 // ValidationStatusHandler for HTTP 422 errors.

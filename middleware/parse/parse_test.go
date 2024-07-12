@@ -49,6 +49,7 @@ func TestParseMiddleware(t *testing.T) {
 
 	t.Run("Parse Query Error", func(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodGet, "/parse?inv;alid", nil)
+		request.Lang = server.Lang.GetDefault()
 
 		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
 			assert.Equal(t, map[string]any{}, req.Query)
@@ -100,6 +101,7 @@ func TestParseMiddleware(t *testing.T) {
 
 	t.Run("JSON Invalid", func(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodPost, "/parse", bytes.NewBuffer([]byte("{\"unclosed\"")))
+		request.Lang = server.Lang.GetDefault()
 		request.Header().Set("Content-Type", "application/json")
 
 		result := server.TestMiddleware(&Middleware{MaxUploadSize: 0.01}, request, func(_ *goyave.Response, _ *goyave.Request) {
@@ -107,11 +109,11 @@ func TestParseMiddleware(t *testing.T) {
 		})
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
-		assert.NotNil(t, request.Extra[goyave.ExtraRequestError{}])
+		assert.NotNil(t, request.Extra[goyave.ExtraParseError{}])
 		assert.NotPanics(t, func() {
-			extraErrors, ok := request.Extra[goyave.ExtraRequestError{}].([]error)
+			extraError, ok := request.Extra[goyave.ExtraParseError{}].(error)
 			require.True(t, ok)
-			assert.Contains(t, extraErrors, goyave.ErrInvalidJSONBody)
+			assert.Error(t, extraError)
 		})
 	})
 

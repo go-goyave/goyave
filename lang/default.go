@@ -10,7 +10,7 @@ var enUS = &Language{
 		"auth.jwt-invalid":             "Your authentication token is invalid.",
 		"auth.jwt-not-valid-yet":       "Your authentication token is not valid yet.",
 		"auth.jwt-expired":             "Your authentication token is expired.",
-		"request.json-invalid-body":    "The request Content-Type indicates JSON, but the request body is empty or invalid",
+		"parse.json-invalid-body":      "The request Content-Type indicates JSON, but the request body is empty or invalid",
 	},
 	validation: validationLines{
 		rules: map[string]string{

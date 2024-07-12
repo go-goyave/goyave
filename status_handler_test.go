@@ -144,12 +144,12 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 		{
 			name:             "WithString",
 			extra:            "parse.json-invalid-body",
-			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid"}` + "\n",
+			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid."}` + "\n",
 		},
 		{
 			name:             "WithError",
 			extra:            ErrInvalidJSONBody,
-			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid"}` + "\n",
+			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid."}` + "\n",
 		},
 		{
 			name:             "WithIntegerValue",

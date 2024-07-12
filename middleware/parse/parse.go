@@ -47,6 +47,7 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 	return func(response *goyave.Response, r *goyave.Request) {
 		if err := parseQuery(r); err != nil {
 			response.Status(http.StatusBadRequest)
+			r.Extra[goyave.ExtraParseError{}] = fmt.Errorf("%w: %w", goyave.ErrInvalidQuery, err)
 			return
 		}
 
@@ -83,10 +84,12 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 					r.Data, err = generateFlatMap(req, maxSize)
 					if err != nil {
 						response.Status(http.StatusBadRequest)
+						r.Extra[goyave.ExtraParseError{}] = fmt.Errorf("%w: %w", goyave.ErrInvalidContentForType, err)
 					}
 				}
 			} else {
 				response.Status(http.StatusBadRequest)
+				r.Extra[goyave.ExtraParseError{}] = fmt.Errorf("%w: %w", goyave.ErrErrorInRequestBody, err)
 			}
 		}
 

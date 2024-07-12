@@ -158,8 +158,8 @@ func TestCompressWriter(t *testing.T) {
 	response := httptest.NewRecorder()
 
 	writer := &compressWriter{
-		WriteCloser:    encoder.NewWriter(closeableWriter),
-		ResponseWriter: response,
+		CommonWriter:   goyave.NewCommonWriter(encoder.NewWriter(closeableWriter)),
+		responseWriter: response,
 		childWriter:    closeableWriter,
 	}
 
@@ -169,6 +169,8 @@ func TestCompressWriter(t *testing.T) {
 
 	require.NoError(t, writer.Close())
 	assert.True(t, closeableWriter.closed)
+
+	// TODO flush test
 }
 
 type testEncoder struct {

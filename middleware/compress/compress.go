@@ -27,29 +27,37 @@ type Encoder interface {
 }
 
 type compressWriter struct {
-	io.WriteCloser
-	http.ResponseWriter
-	childWriter io.Writer
+	goyave.CommonWriter
+	responseWriter http.ResponseWriter
+	childWriter    io.Writer
 }
 
 func (w *compressWriter) PreWrite(b []byte) {
 	if pr, ok := w.childWriter.(goyave.PreWriter); ok {
 		pr.PreWrite(b)
 	}
-	h := w.ResponseWriter.Header()
+	h := w.responseWriter.Header()
 	if h.Get("Content-Type") == "" {
 		h.Set("Content-Type", http.DetectContentType(b))
 	}
 	h.Del("Content-Length")
 }
 
-func (w *compressWriter) Write(b []byte) (int, error) {
-	n, err := w.WriteCloser.Write(b)
-	return n, errors.New(err)
+func (w *compressWriter) Flush() error {
+	if err := w.CommonWriter.Flush(); err != nil {
+		return errors.New(err)
+	}
+	switch flusher := w.childWriter.(type) {
+	case goyave.Flusher:
+		return errors.New(flusher.Flush())
+	case http.Flusher:
+		flusher.Flush()
+	}
+	return nil
 }
 
 func (w *compressWriter) Close() error {
-	err := errors.New(w.WriteCloser.Close())
+	err := errors.New(w.CommonWriter.Close())
 
 	if wr, ok := w.childWriter.(io.Closer); ok {
 		return errors.New(wr.Close())
@@ -106,8 +114,8 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 
 		respWriter := response.Writer()
 		compressWriter := &compressWriter{
-			WriteCloser:    encoder.NewWriter(respWriter),
-			ResponseWriter: response,
+			CommonWriter:   goyave.NewCommonWriter(encoder.NewWriter(respWriter)),
+			responseWriter: response,
 			childWriter:    respWriter,
 		}
 		response.SetWriter(compressWriter)

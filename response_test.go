@@ -235,6 +235,8 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.status) // Ensures PreWrite has been called
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "hello world", string(body))
+
+		// TODO test PreWrite only called once
 	})
 
 	t.Run("Hijack", func(t *testing.T) {
@@ -510,4 +512,6 @@ func TestResponse(t *testing.T) {
 			assert.False(t, resp.WriteDBError(nil))
 		})
 	})
+
+	// TODO flush test
 }

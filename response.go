@@ -26,9 +26,66 @@ var (
 
 // PreWriter is a writter that needs to alter the response headers or status
 // before they are written.
-// If implemented, PreWrite will be called right before the Write operation.
+// If implemented, PreWrite will be called right before the first `Write` operation.
 type PreWriter interface {
 	PreWrite(b []byte)
+}
+
+// The Flusher interface is implemented by writers that allow
+// handlers to flush buffered data to the client.
+//
+// Note that even for writers that support flushing, if the client
+// is connected through an HTTP proxy, the buffered data may not reach
+// the client until the response completes.
+type Flusher interface {
+	Flush() error
+}
+
+// CommonWriter is a component meant to be used with composition
+// to avoid having to implement the base behavior of the common interfaces
+// a chained writer has to implement (`PreWrite()`, `Write()`, `Close()`, `Flush()`)
+type CommonWriter struct { // TODO test CommonWriter
+	Component
+	wr io.Writer
+}
+
+// NewCommonWriter create a new common writer that will output to the given `io.Writer`.
+func NewCommonWriter(wr io.Writer) CommonWriter {
+	return CommonWriter{
+		wr: wr,
+	}
+}
+
+// PreWrite calls PreWrite on the
+// child writer if it implements PreWriter.
+func (w CommonWriter) PreWrite(b []byte) {
+	if pr, ok := w.wr.(PreWriter); ok {
+		pr.PreWrite(b)
+	}
+}
+
+func (w CommonWriter) Write(b []byte) (int, error) {
+	n, err := w.wr.Write(b)
+	return n, errorutil.New(err)
+}
+
+// Close the underlying writer if it implements `io.Closer`.
+func (w CommonWriter) Close() error {
+	if wr, ok := w.wr.(io.Closer); ok {
+		return errorutil.New(wr.Close())
+	}
+	return nil
+}
+
+// Flush the underlying writer if it implements `goyave.Flusher` or `http.Flusher`.
+func (w *CommonWriter) Flush() error {
+	switch flusher := w.wr.(type) {
+	case Flusher:
+		return errorutil.New(flusher.Flush())
+	case http.Flusher:
+		flusher.Flush()
+	}
+	return nil
 }
 
 // Response implementation wrapping `http.ResponseWriter`. Writing an HTTP response without
@@ -81,10 +138,12 @@ func (r *Response) reset(server *Server, request *Request, writer http.ResponseW
 // PreWrite writes the response header after calling PreWrite on the
 // child writer if it implements PreWriter.
 func (r *Response) PreWrite(b []byte) {
-	r.empty = false
-	if pr, ok := r.writer.(PreWriter); ok {
-		pr.PreWrite(b)
+	if r.empty {
+		if pr, ok := r.writer.(PreWriter); ok {
+			pr.PreWrite(b)
+		}
 	}
+	r.empty = false
 	if !r.wroteHeader {
 		if r.status == 0 {
 			r.status = http.StatusOK
@@ -97,7 +156,7 @@ func (r *Response) PreWrite(b []byte) {
 // http.ResponseWriter implementation
 
 // Write writes the data as a response.
-// See http.ResponseWriter.Write
+// See `http.ResponseWriter.Write`.
 func (r *Response) Write(data []byte) (int, error) {
 	r.PreWrite(data)
 	n, err := r.writer.Write(data)
@@ -126,6 +185,25 @@ func (r *Response) Header() http.Header {
 // silently dropped.
 func (r *Response) Cookie(cookie *http.Cookie) {
 	http.SetCookie(r.responseWriter, cookie)
+}
+
+// Flush sends any buffered data to the client if the underlying
+// writer implements `goyave.Flusher`.
+//
+// If the response headers have not been written already, `PreWrite()` will
+// be called with an empty byte slice.
+func (r *Response) Flush() {
+	if !r.wroteHeader {
+		r.PreWrite([]byte{})
+	}
+	switch flusher := r.writer.(type) {
+	case Flusher:
+		if err := flusher.Flush(); err != nil {
+			r.server.Logger.Error(errorutil.New(err))
+		}
+	case http.Flusher:
+		flusher.Flush()
+	}
 }
 
 // --------------------------------------
@@ -254,7 +332,6 @@ func (r *Response) writeFile(fs fs.StatFS, file string, disposition string) {
 		r.Status(http.StatusNotFound)
 		return
 	}
-	r.empty = false
 	r.status = http.StatusOK
 	mime, size, err := fsutil.GetMIMEType(fs, file)
 	if err != nil {

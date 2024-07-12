@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	// StatusNginxNoResponse nginx status code: indicates server to return no information to the client and close the connection immediately.
 	StatusNginxNoResponse = 444
 )
 

@@ -127,7 +127,7 @@ func NewRouter(server *Server) *Router {
 	for i := http.StatusLocked; i <= http.StatusUpgradeRequired; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
-	router.StatusHandler(&ErrorStatusHandler{}, http.StatusMisdirectedRequest, http.StatusPreconditionRequired, http.StatusTooManyRequests, http.StatusRequestHeaderFieldsTooLarge, 444, http.StatusUnavailableForLegalReasons)
+	router.StatusHandler(&ErrorStatusHandler{}, http.StatusMisdirectedRequest, http.StatusPreconditionRequired, http.StatusTooManyRequests, http.StatusRequestHeaderFieldsTooLarge, StatusNginxNoResponse, http.StatusUnavailableForLegalReasons)
 	for i := http.StatusNotImplemented; i <= http.StatusLoopDetected; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}

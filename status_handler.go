@@ -1,7 +1,7 @@
 package goyave
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 
 	"goyave.dev/goyave/v5/validation"
@@ -60,15 +60,18 @@ func (h *RequestErrorStatusHandler) Handle(response *Response, request *Request)
 
 	lang := h.Lang().GetLanguage(request.Lang.Name())
 
-	if e, ok := request.Extra[ExtraParseError{}]; ok {
-		switch v := e.(type) {
-		case error:
-			errorMessage = lang.Get(v.Error())
-		case string:
-			errorMessage = lang.Get(v)
-		default:
-			errorMessage = lang.Get(fmt.Sprintf("%v", v))
-		}
+	err := request.Extra[ExtraParseError{}].(error)
+	switch {
+	case errors.Is(err, ErrInvalidJSONBody):
+		errorMessage = lang.Get("parse.json-invalid-body")
+	case errors.Is(err, ErrInvalidQuery):
+		errorMessage = lang.Get("parse.invalid-query")
+	case errors.Is(err, ErrInvalidContentForType):
+		errorMessage = lang.Get("parse.invalid-content-for-type")
+	case errors.Is(err, ErrErrorInRequestBody):
+		errorMessage = lang.Get("parse.error-in-request-body")
+	default:
+		errorMessage = lang.Get(err.Error())
 	}
 
 	message := map[string]string{

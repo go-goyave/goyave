@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -137,24 +138,40 @@ func TestValidationStatusHandler(t *testing.T) {
 
 func TestRequestErrorStatusHandler(t *testing.T) {
 	tests := []struct {
-		name             string
-		extra            interface{}
-		expectedResponse string
+		name            string
+		err             error
+		expectedMessage string
+		expectedStatus  int
 	}{
 		{
-			name:             "WithString",
-			extra:            "parse.json-invalid-body",
-			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid."}` + "\n",
+			name:            "InvalidJSONBody",
+			err:             ErrInvalidJSONBody,
+			expectedMessage: "The request Content-Type indicates JSON, but the request body is empty or invalid.",
+			expectedStatus:  http.StatusBadRequest,
 		},
 		{
-			name:             "WithError",
-			extra:            ErrInvalidJSONBody,
-			expectedResponse: `{"error":"The request Content-Type indicates JSON, but the request body is empty or invalid."}` + "\n",
+			name:            "InvalidQuery",
+			err:             ErrInvalidQuery,
+			expectedMessage: "Failed to parse query string due to invalid syntax or unexpected input format.",
+			expectedStatus:  http.StatusBadRequest,
 		},
 		{
-			name:             "WithIntegerValue",
-			extra:            123,
-			expectedResponse: `{"error":"123"}` + "\n",
+			name:            "InvalidContentForType",
+			err:             ErrInvalidContentForType,
+			expectedMessage: "The request content does not match its type. E.g. invalid multipart/form-data or a problem with the file upload.",
+			expectedStatus:  http.StatusBadRequest,
+		},
+		{
+			name:            "ErrorInRequestBody",
+			err:             ErrErrorInRequestBody,
+			expectedMessage: "Failed to read request body due to connection issues, timeouts, size mismatches, or corrupted data.",
+			expectedStatus:  http.StatusBadRequest,
+		},
+		{
+			name:            "OtherError",
+			err:             errors.New("some.other.error"),
+			expectedMessage: "some.other.error",
+			expectedStatus:  http.StatusBadRequest,
 		},
 	}
 
@@ -165,7 +182,8 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 			handler := &RequestErrorStatusHandler{}
 			handler.Init(resp.server)
 
-			req.Extra[ExtraParseError{}] = tt.extra
+			req.Extra[ExtraParseError{}] = tt.err
+			resp.Status(tt.expectedStatus)
 
 			handler.Handle(resp, req)
 
@@ -175,7 +193,9 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 			assert.NoError(t, res.Body.Close())
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedResponse, string(body))
+			expectedResponse := fmt.Sprintf(`{"error":"%s"}`, tt.expectedMessage) + "\n"
+			assert.Equal(t, expectedResponse, string(body))
+			assert.Equal(t, tt.expectedStatus, res.StatusCode)
 		})
 	}
 }

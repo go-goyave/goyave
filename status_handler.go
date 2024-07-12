@@ -57,24 +57,27 @@ type RequestErrorStatusHandler struct {
 // Handle generic request (error) responses.
 func (h *RequestErrorStatusHandler) Handle(response *Response, request *Request) {
 	var errorMessages []string
-	var lang string
+	var langName string
 
 	if request.Lang == nil {
-		lang = h.Lang().GetDefault().Name()
+		langName = h.Lang().GetDefault().Name()
 	} else {
-		lang = request.Lang.Name()
+		langName = request.Lang.Name()
 	}
+	lang := h.Lang().GetLanguage(langName)
 
 	if e, ok := request.Extra[ExtraRequestError{}]; ok {
 		switch v := e.(type) {
 		case []error:
 			for _, err := range v {
-				errorMessages = append(errorMessages, h.Lang().GetLanguage(lang).Get(err.Error()))
+				errorMessages = append(errorMessages, lang.Get(err.Error()))
 			}
+		case error:
+			errorMessages = append(errorMessages, lang.Get(v.Error()))
 		case string:
-			errorMessages = append(errorMessages, h.Lang().GetLanguage(lang).Get(v))
+			errorMessages = append(errorMessages, lang.Get(v))
 		default:
-			errorMessages = append(errorMessages, h.Lang().GetLanguage(lang).Get(fmt.Sprintf("%v", v)))
+			errorMessages = append(errorMessages, lang.Get(fmt.Sprintf("%v", v)))
 		}
 	}
 

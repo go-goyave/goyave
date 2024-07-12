@@ -2,7 +2,6 @@ package goyave
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -42,7 +41,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		assert.NoError(t, res.Body.Close())
 		require.NoError(t, err)
 
-		assert.Equal(t, "{\"error\":\"Internal Server Error\"}\n", string(body))
+		assert.Equal(t, `{"error":"Internal Server Error"}`+"\n", string(body))
 	})
 
 	t.Run("debug", func(t *testing.T) {
@@ -60,7 +59,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		assert.NoError(t, res.Body.Close())
 		require.NoError(t, err)
 
-		assert.Equal(t, "{\"error\":\"test error\"}\n", string(body))
+		assert.Equal(t, `{"error":"test error"}`+"\n", string(body))
 
 		// Error and stacktrace already printed by the recovery middleware or `response.Error`
 		// (those are not executed in this test, thus leaving the log buffer empty)
@@ -81,7 +80,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		assert.NoError(t, res.Body.Close())
 		require.NoError(t, err)
 
-		assert.Equal(t, "{\"error\":null}\n", string(body))
+		assert.Equal(t, `{"error":null}`+"\n", string(body))
 
 		// Error and stacktrace are not printed to console because recovery middleware
 		// is not executed (no error raised, we just set the response status to 500 for example)
@@ -103,7 +102,7 @@ func TestErrorStatusHandler(t *testing.T) {
 	assert.NoError(t, res.Body.Close())
 	require.NoError(t, err)
 
-	assert.Equal(t, "{\"error\":\"Not Found\"}\n", string(body))
+	assert.Equal(t, `{"error":"Not Found"}`+"\n", string(body))
 }
 
 func TestValidationStatusHandler(t *testing.T) {
@@ -130,42 +129,60 @@ func TestValidationStatusHandler(t *testing.T) {
 	assert.NoError(t, res.Body.Close())
 	require.NoError(t, err)
 
-	assert.Equal(t, "{\"error\":{\"body\":{\"fields\":{\"field\":{\"errors\":[\"The field is required\"]}},\"errors\":[\"The body is required\"]},\"query\":{\"fields\":{\"query\":{\"errors\":[\"The query is required\"]}}}}}\n", string(body))
+	assert.Equal(t, `{"error":{"body":{"fields":{"field":{"errors":["The field is required"]}},"errors":["The body is required"]},"query":{"fields":{"query":{"errors":["The query is required"]}}}}}`+"\n", string(body))
 }
 
-func TestRequestErrorStatusHandlerWithSliceOfErrors(t *testing.T) {
-	req, resp, recorder := prepareStatusHandlerTest()
-	handler := &RequestErrorStatusHandler{}
-	handler.Init(resp.server)
+func TestRequestErrorStatusHandler(t *testing.T) {
+	tests := []struct {
+		name             string
+		extra            interface{}
+		expectedResponse string
+	}{
+		{
+			name:             "WithSliceOfErrors",
+			extra:            []error{ErrInvalidJSONBody},
+			expectedResponse: `{"error":["The request Content-Type indicates JSON, but the request body is empty or invalid"]}` + "\n",
+		},
+		{
+			name:             "WithString",
+			extra:            "request.json-invalid-body",
+			expectedResponse: `{"error":["The request Content-Type indicates JSON, but the request body is empty or invalid"]}` + "\n",
+		},
+		{
+			name:             "WithSingleError",
+			extra:            ErrInvalidJSONBody,
+			expectedResponse: `{"error":["The request Content-Type indicates JSON, but the request body is empty or invalid"]}` + "\n",
+		},
+		{
+			name:             "WithIntegerValue",
+			extra:            123,
+			expectedResponse: `{"error":["123"]}` + "\n",
+		},
+		{
+			name:             "WithAny",
+			extra:            []any{ErrInvalidJSONBody},
+			expectedResponse: `{"error":["[request.json-invalid-body]"]}` + "\n",
+		},
+	}
 
-	req.Extra[ExtraRequestError{}] = []error{fmt.Errorf("request.json-invalid-body")}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, resp, recorder := prepareStatusHandlerTest()
 
-	handler.Handle(resp, req)
+			handler := &RequestErrorStatusHandler{}
+			handler.Init(resp.server)
 
-	res := recorder.Result()
-	body, err := io.ReadAll(res.Body)
+			req.Extra[ExtraRequestError{}] = tt.extra
 
-	assert.NoError(t, res.Body.Close())
-	require.NoError(t, err)
+			handler.Handle(resp, req)
 
-	assert.Equal(t, "{\"error\":[\"The request Content-Type indicates JSON, but the request body is empty or invalid\"]}\n", string(body))
-}
+			res := recorder.Result()
+			body, err := io.ReadAll(res.Body)
 
-func TestRequestErrorStatusHandlerWithString(t *testing.T) {
-	req, resp, recorder := prepareStatusHandlerTest()
+			assert.NoError(t, res.Body.Close())
+			require.NoError(t, err)
 
-	handler := &RequestErrorStatusHandler{}
-	handler.Init(resp.server)
-
-	req.Extra[ExtraRequestError{}] = "request.json-invalid-body"
-
-	handler.Handle(resp, req)
-
-	res := recorder.Result()
-	body, err := io.ReadAll(res.Body)
-
-	assert.NoError(t, res.Body.Close())
-	require.NoError(t, err)
-
-	assert.Equal(t, "{\"error\":[\"The request Content-Type indicates JSON, but the request body is empty or invalid\"]}\n", string(body))
+			assert.Equal(t, tt.expectedResponse, string(body))
+		})
+	}
 }

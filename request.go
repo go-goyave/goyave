@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -32,6 +33,11 @@ type (
 	// ExtraRequestError the key used in `Context.Extra` to
 	// store specific request errors.
 	ExtraRequestError struct{}
+)
+
+var (
+	// ErrInvalidJSONBody error for invalid JSON body
+	ErrInvalidJSONBody = errors.New("request.json-invalid-body")
 )
 
 // Request represents a http request received by the server.

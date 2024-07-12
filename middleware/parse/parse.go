@@ -3,7 +3,6 @@ package parse
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -75,7 +74,7 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 					if err := json.Unmarshal(bodyBytes, &body); err != nil {
 						response.Status(http.StatusBadRequest)
 						r.Extra[goyave.ExtraRequestError{}] = []error{
-							fmt.Errorf("request.json-invalid-body"),
+							goyave.ErrInvalidJSONBody,
 						}
 					}
 					r.Data = body

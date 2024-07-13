@@ -24,3 +24,12 @@ If you would like to contribute but you are not sure on what you could work, the
 ## Design philosophy
 
 The goal of the project is to provide an opinionated framework for REST API building. Using it must be simple, while staying flexible and hackable. We don't want to gate too many things so developers have the freedom to build whatever they want, even edge cases. However, the goal is to make the most common cases a breeze, so they can focus on what their app really does: the business logic. For example, it is extremely common to have some sort of permissions on resources in REST APIs, so instead of forcing developers to spend time working on this, which can be complicated, Goyave would provide a comprehensive set of tools to achieve this. On top of this, Goyave strives to reach a level of quality that exceeds the expectations and that would allow companies and independents to build large scale applications with confidence.
+
+## Reviews
+
+You are very much welcomed to leave reviews on pull requests, even if they don't belong to you or your organization. Reviews are a valuable form of contribution. To make the best of them, please follow these rules:
+- **Avoid nitpicking**. The linter configuration and lint Github Action are responsible of notifying the author of required minor changes for code quality. The golangci-lint configuration has been carefully set up to be balanced, suited to this project, and not excessive. Reporting typos or unclear naming is not considered nitpicking.
+- **Don't go out of scope**. Please keep your comments within the scope of the pull request. If you noticed something that could be improved but is not related directly to the added or modifed code, please open an issue, a discussion or another pull request.
+- **Stay neutral**. Please keep discussions civil and respectful. Don't denigrate or make value judgements. Feel free to express your opinion as long as you don't act like if it is absolute truth.
+
+You are free to ignore any comment on your pull requests that don't comply with these rules.

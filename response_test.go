@@ -235,8 +235,25 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.status) // Ensures PreWrite has been called
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "hello world", string(body))
+	})
 
-		// TODO test PreWrite only called once
+	t.Run("PreWrite_called_once", func(t *testing.T) {
+		resp, recorder := newTestReponse()
+		newWriter := &testChainedWriter{
+			ResponseRecorder: recorder,
+		}
+		resp.SetWriter(newWriter)
+		_, _ = resp.Write([]byte("hello world\n"))
+		_, _ = resp.Write([]byte("how are you today?"))
+
+		res := recorder.Result()
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, res.Body.Close())
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.status)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.Equal(t, "hello world\nhow are you today?", string(body))
+		assert.Equal(t, "hello world\n", string(newWriter.prewritten))
 	})
 
 	t.Run("Hijack", func(t *testing.T) {

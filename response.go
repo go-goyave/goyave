@@ -44,7 +44,7 @@ type Flusher interface {
 // CommonWriter is a component meant to be used with composition
 // to avoid having to implement the base behavior of the common interfaces
 // a chained writer has to implement (`PreWrite()`, `Write()`, `Close()`, `Flush()`)
-type CommonWriter struct { // TODO test CommonWriter
+type CommonWriter struct {
 	Component
 	wr io.Writer
 }

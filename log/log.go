@@ -6,6 +6,7 @@ import (
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // Context contains all information needed for a `Formatter`.
@@ -58,7 +59,8 @@ func NewWriter(server *goyave.Server, response *goyave.Response, request *goyave
 // for later logging.
 func (w *Writer) Write(b []byte) (int, error) {
 	w.length += len(b)
-	return w.CommonWriter.Write(b)
+	n, err := w.CommonWriter.Write(b)
+	return n, errors.New(err)
 }
 
 // Close the writer and its child ResponseWriter, flushing response
@@ -79,7 +81,7 @@ func (w *Writer) Close() error {
 		w.Logger().Info(message, lo.Map(attrs, func(a slog.Attr, _ int) any { return a })...)
 	}
 
-	return w.CommonWriter.Close()
+	return errors.New(w.CommonWriter.Close())
 }
 
 // AccessMiddleware captures response data and outputs it to the logger at the

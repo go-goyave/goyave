@@ -132,7 +132,8 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) *gorm.D
 	column := db.Statement.Quote(v.Column)
 
 	sql := fmt.Sprintf(
-		"WITH ctx_values(id, i) AS (SELECT * FROM (VALUES %s) t%s) SELECT i FROM ctx_values LEFT JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
+		"WITH ctx_values(id, i) AS (SELECT * FROM (VALUES %s%s) t%s) SELECT i FROM ctx_values LEFT JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
+		lo.Ternary(dbType == "clickhouse", "'a UInt64, b UInt64', ", ""),
 		strings.Join(questionMarks, ","),
 		lo.Ternary(dbType == "mssql", "(id,i)", ""),
 		table,

@@ -31,7 +31,7 @@ type (
 	ExtraQueryValidationError struct{}
 
 	// ExtraParseError the key used in `Context.Extra` to
-	// store specific request errors.
+	// store specific parsing errors.
 	ExtraParseError struct{}
 )
 

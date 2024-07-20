@@ -17,11 +17,6 @@ import (
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
-const (
-	// StatusNginxNoResponse nginx status code: indicates server to return no information to the client and close the connection immediately.
-	StatusNginxNoResponse = 444
-)
-
 var (
 	// ErrNotHijackable returned by response.Hijack() if the underlying
 	// http.ResponseWriter doesn't implement http.Hijacker. This can

@@ -136,7 +136,7 @@ func TestValidationStatusHandler(t *testing.T) {
 	assert.Equal(t, `{"error":{"body":{"fields":{"field":{"errors":["The field is required"]}},"errors":["The body is required"]},"query":{"fields":{"query":{"errors":["The query is required"]}}}}}`+"\n", string(body))
 }
 
-func TestRequestErrorStatusHandler(t *testing.T) {
+func TestParseErrorStatusHandler(t *testing.T) {
 	tests := []struct {
 		name            string
 		err             error
@@ -179,7 +179,7 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req, resp, recorder := prepareStatusHandlerTest()
 
-			handler := &RequestErrorStatusHandler{}
+			handler := &ParseErrorStatusHandler{}
 			handler.Init(resp.server)
 
 			req.Extra[ExtraParseError{}] = tt.err
@@ -198,4 +198,26 @@ func TestRequestErrorStatusHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, res.StatusCode)
 		})
 	}
+}
+
+func TestParseErrorStatusHandlerWithNonSupportedErrorStruct(t *testing.T) {
+	req, resp, recorder := prepareStatusHandlerTest()
+
+	handler := &ParseErrorStatusHandler{}
+	handler.Init(resp.server)
+
+	req.Extra[ExtraValidationError{}] = errors.New("some.other.error")
+	resp.Status(http.StatusBadRequest)
+
+	handler.Handle(resp, req)
+
+	res := recorder.Result()
+	body, err := io.ReadAll(res.Body)
+
+	assert.NoError(t, res.Body.Close())
+	require.NoError(t, err)
+
+	expectedResponse := fmt.Sprintf(`{"error":"%s"}`, "Bad Request") + "\n"
+	assert.Equal(t, expectedResponse, string(body))
+	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 }

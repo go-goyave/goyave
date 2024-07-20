@@ -49,29 +49,32 @@ func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
 	response.JSON(response.GetStatus(), message)
 }
 
-// RequestErrorStatusHandler a generic (error) status handler for requests.
-type RequestErrorStatusHandler struct {
+// ParseErrorStatusHandler a generic (error) status handler for requests.
+type ParseErrorStatusHandler struct {
 	Component
 }
 
 // Handle generic request (error) responses.
-func (h *RequestErrorStatusHandler) Handle(response *Response, request *Request) {
+func (h *ParseErrorStatusHandler) Handle(response *Response, request *Request) {
 	var errorMessage string
+	lang := request.Lang
 
-	lang := h.Lang().GetLanguage(request.Lang.Name())
-
-	err := request.Extra[ExtraParseError{}].(error)
-	switch {
-	case errors.Is(err, ErrInvalidJSONBody):
-		errorMessage = lang.Get("parse.json-invalid-body")
-	case errors.Is(err, ErrInvalidQuery):
-		errorMessage = lang.Get("parse.invalid-query")
-	case errors.Is(err, ErrInvalidContentForType):
-		errorMessage = lang.Get("parse.invalid-content-for-type")
-	case errors.Is(err, ErrErrorInRequestBody):
-		errorMessage = lang.Get("parse.error-in-request-body")
-	default:
-		errorMessage = lang.Get(err.Error())
+	err, ok := request.Extra[ExtraParseError{}].(error)
+	if ok {
+		switch {
+		case errors.Is(err, ErrInvalidJSONBody):
+			errorMessage = lang.Get("parse.json-invalid-body")
+		case errors.Is(err, ErrInvalidQuery):
+			errorMessage = lang.Get("parse.invalid-query")
+		case errors.Is(err, ErrInvalidContentForType):
+			errorMessage = lang.Get("parse.invalid-content-for-type")
+		case errors.Is(err, ErrErrorInRequestBody):
+			errorMessage = lang.Get("parse.error-in-request-body")
+		default:
+			errorMessage = lang.Get(err.Error())
+		}
+	} else {
+		errorMessage = http.StatusText(response.GetStatus())
 	}
 
 	message := map[string]string{

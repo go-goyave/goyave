@@ -122,12 +122,12 @@ func NewRouter(server *Server) *Router {
 	for i := http.StatusBadRequest; i <= http.StatusTeapot; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
-	router.StatusHandler(&RequestErrorStatusHandler{}, http.StatusBadRequest)
+	router.StatusHandler(&ParseErrorStatusHandler{}, http.StatusBadRequest)
 	router.StatusHandler(&ValidationStatusHandler{}, http.StatusUnprocessableEntity)
 	for i := http.StatusLocked; i <= http.StatusUpgradeRequired; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
-	router.StatusHandler(&ErrorStatusHandler{}, http.StatusMisdirectedRequest, http.StatusPreconditionRequired, http.StatusTooManyRequests, http.StatusRequestHeaderFieldsTooLarge, StatusNginxNoResponse, http.StatusUnavailableForLegalReasons)
+	router.StatusHandler(&ErrorStatusHandler{}, http.StatusMisdirectedRequest, http.StatusPreconditionRequired, http.StatusTooManyRequests, http.StatusRequestHeaderFieldsTooLarge, 444, http.StatusUnavailableForLegalReasons) // 444 is a nginx status code. Indicates server to return no information to the client and close the connection immediately
 	for i := http.StatusNotImplemented; i <= http.StatusLoopDetected; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}

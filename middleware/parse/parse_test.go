@@ -114,7 +114,7 @@ func TestParseMiddleware(t *testing.T) {
 		}{
 			{
 				name:     "JSON Invalid",
-				body:     []byte("{\"unclosed\""),
+				body:     []byte(`{"unclosed"`),
 				expected: http.StatusBadRequest,
 			},
 			{

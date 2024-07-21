@@ -370,7 +370,7 @@ func TestUniqueArrayValidator(t *testing.T) {
 			{dialect: "mysql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(2,0),ROW(7,1),ROW(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
 			{dialect: "postgres", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0::int),(7,1::int),(6,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
 			{dialect: "mssql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
-			{dialect: "clickhouse", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'a UInt64, b UInt64', (2,0),(7,1),(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
+			{dialect: "clickhouse", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (2,0),(7,1),(6,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
 		}
 
 		for _, c := range cases {
@@ -534,7 +534,7 @@ func TestExistsArrayValidator(t *testing.T) {
 			{dialect: "mysql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(2,0),ROW(7,1),ROW(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
 			{dialect: "postgres", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0::int),(7,1::int),(6,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
 			{dialect: "mssql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "clickhouse", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'a UInt64, b UInt64', (2,0),(7,1),(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: "clickhouse", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (2,0),(7,1),(6,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
 		}
 
 		for _, c := range cases {

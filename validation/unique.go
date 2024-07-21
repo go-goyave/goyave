@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -107,6 +108,10 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) *gorm.D
 	params := []any{}
 
 	dbType := v.Config().GetString("database.connection")
+	if dbType == "clickhouse" {
+		return v.buildClickhouseQuery(values, condition)
+	}
+
 	isMySQL := dbType == "mysql"
 	isPostgres := dbType == "postgres"
 
@@ -132,8 +137,7 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) *gorm.D
 	column := db.Statement.Quote(v.Column)
 
 	sql := fmt.Sprintf(
-		"WITH ctx_values(id, i) AS (SELECT * FROM (VALUES %s%s) t%s) SELECT i FROM ctx_values LEFT JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
-		lo.Ternary(dbType == "clickhouse", "'a UInt64, b UInt64', ", ""),
+		"WITH ctx_values(id, i) AS (SELECT * FROM (VALUES %s) t%s) SELECT i FROM ctx_values LEFT JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
 		strings.Join(questionMarks, ","),
 		lo.Ternary(dbType == "mssql", "(id,i)", ""),
 		table,
@@ -142,6 +146,68 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) *gorm.D
 		lo.Ternary(condition, "", "NOT"),
 	)
 	return db.Raw(sql, params...)
+}
+
+// Build Query for Clickhouse syntax
+func (v *ExistsArrayValidator[T]) buildClickhouseQuery(values []T, condition bool) *gorm.DB {
+	questionMarks := []string{}
+	params := []any{}
+
+	paramZeroType := ""
+	paramOneType := ""
+
+	for i, val := range values {
+		questionMarks = append(questionMarks, "?")
+		var transformedValue any = val
+		if v.Transform != nil {
+			transformedValue = v.Transform(val)
+		}
+		params = append(params, gorm.Expr(
+			"(?,?)",
+			transformedValue, i))
+		if paramZeroType == "" {
+			paramZeroType = clickhouseTypes[reflect.TypeOf(transformedValue)]
+		}
+		if paramOneType == "" {
+			paramOneType = clickhouseTypes[reflect.TypeOf(i)]
+		}
+	}
+
+	db := v.DB()
+	table := db.Statement.Quote(v.Table)
+	column := db.Statement.Quote(v.Column)
+
+	sql := fmt.Sprintf(
+		"WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id %s, i %s', %s)) SELECT i FROM ctx_values INNER JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
+		paramZeroType,
+		paramOneType,
+		strings.Join(questionMarks, ","),
+		table,
+		table, column,
+		table, column,
+		lo.Ternary(condition, "", "NOT"),
+	)
+	return db.Raw(sql, params...)
+}
+
+// Mapping of Go types to Clickhouse types can be found here:
+// https://github.com/ClickHouse/clickhouse-go/blob/main/TYPES.md
+// Go types uint and int are not specified, default to 'UInt64' and 'Int64', respectively
+var clickhouseTypes = map[reflect.Type]string{
+	reflect.TypeOf(uint64(0)):  "UInt64",
+	reflect.TypeOf(uint32(0)):  "UInt32",
+	reflect.TypeOf(uint16(0)):  "UInt16",
+	reflect.TypeOf(uint8(0)):   "UInt8",
+	reflect.TypeOf(uint(0)):    "UInt64",
+	reflect.TypeOf(int64(0)):   "Int64",
+	reflect.TypeOf(int32(0)):   "Int32",
+	reflect.TypeOf(int16(0)):   "Int16",
+	reflect.TypeOf(int8(0)):    "Int8",
+	reflect.TypeOf(int(0)):     "Int64",
+	reflect.TypeOf(float32(0)): "Float32",
+	reflect.TypeOf(float64(0)): "Float64",
+	reflect.TypeOf(""):         "String",
+	reflect.TypeOf(true):       "Bool",
 }
 
 func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {

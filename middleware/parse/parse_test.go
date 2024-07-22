@@ -192,7 +192,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Header().Set("Content-Type", writer.FormDataContentType())
 
 		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, _ *goyave.Request) {
-			resp.Status(http.StatusBadRequest)
+			resp.Status(http.StatusOK)
 		})
 
 		assert.NoError(t, result.Body.Close())

@@ -200,13 +200,12 @@ func TestParseErrorStatusHandler(t *testing.T) {
 	}
 }
 
-func TestParseErrorStatusHandlerWithNonSupportedErrorStruct(t *testing.T) {
+func TestParseErrorStatusHandlerWithoutExtra(t *testing.T) {
 	req, resp, recorder := prepareStatusHandlerTest()
 
 	handler := &ParseErrorStatusHandler{}
 	handler.Init(resp.server)
 
-	req.Extra[ExtraValidationError{}] = errors.New("some.other.error")
 	resp.Status(http.StatusBadRequest)
 
 	handler.Handle(resp, req)

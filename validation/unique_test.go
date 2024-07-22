@@ -381,7 +381,7 @@ func TestUniqueArrayValidator(t *testing.T) {
 				v := UniqueArray[int]("models", "name", nil)
 				v.init(opts)
 
-				tx := v.buildQuery([]int{2, 7, 6}, false)
+				tx, _ := v.buildQuery([]int{2, 7, 6}, false)
 
 				sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
 					return tx
@@ -542,10 +542,12 @@ func TestExistsArrayValidator(t *testing.T) {
 			t.Run(c.dialect, func(t *testing.T) {
 				opts := prepareUniqueTest(t)
 				opts.Config.Set("database.connection", c.dialect)
-				v := ExistsArray[int]("models", "name", nil)
+				v := ExistsArray[int]("models", "name", func(val int) clause.Expr {
+					return gorm.Expr("?", val-1)
+				})
 				v.init(opts)
 
-				tx := v.buildQuery([]int{2, 7, 6}, true)
+				tx, _ := v.buildQuery([]int{2, 7, 6}, true)
 
 				sql := tx.ToSQL(func(tx *gorm.DB) *gorm.DB {
 					return tx

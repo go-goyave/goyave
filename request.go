@@ -37,16 +37,16 @@ type (
 
 var (
 	// ErrInvalidQuery error when an invalid query string is passed.
-	ErrInvalidQuery = errors.New("parse.invalid-query")
+	ErrInvalidQuery = errors.New("parse middleware: could not parse query")
 
 	// ErrInvalidJSONBody error when an empty or malformed JSON body is sent.
-	ErrInvalidJSONBody = errors.New("parse.json-invalid-body")
+	ErrInvalidJSONBody = errors.New("parse middleware: could not JSON unmarshal body")
 
 	// ErrInvalidContentForType error when e.g. a multipart form is not actually multipart, or empty.
-	ErrInvalidContentForType = errors.New("parse.invalid-content-for-type")
+	ErrInvalidContentForType = errors.New("parse middleware: could not parse form")
 
 	// ErrErrorInRequestBody error when e.g. a incoming request is not received properly.
-	ErrErrorInRequestBody = errors.New("parse.error-in-request-body")
+	ErrErrorInRequestBody = errors.New("parse middleware: could not read body")
 )
 
 // Request represents a http request received by the server.

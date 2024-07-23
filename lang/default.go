@@ -3,13 +3,17 @@ package lang
 var enUS = &Language{
 	name: "en-US",
 	lines: map[string]string{
-		"malformed-request":            "Malformed request",
-		"malformed-json":               "Malformed JSON",
-		"auth.invalid-credentials":     "Invalid credentials.",
-		"auth.no-credentials-provided": "Invalid or missing authentication header.",
-		"auth.jwt-invalid":             "Your authentication token is invalid.",
-		"auth.jwt-not-valid-yet":       "Your authentication token is not valid yet.",
-		"auth.jwt-expired":             "Your authentication token is expired.",
+		"malformed-request":              "Malformed request",
+		"malformed-json":                 "Malformed JSON",
+		"auth.invalid-credentials":       "Invalid credentials.",
+		"auth.no-credentials-provided":   "Invalid or missing authentication header.",
+		"auth.jwt-invalid":               "Your authentication token is invalid.",
+		"auth.jwt-not-valid-yet":         "Your authentication token is not valid yet.",
+		"auth.jwt-expired":               "Your authentication token is expired.",
+		"parse.invalid-query":            "Failed to parse query string due to invalid syntax or unexpected input format.",
+		"parse.json-invalid-body":        "The request Content-Type indicates JSON, but the request body is empty or invalid.",
+		"parse.invalid-content-for-type": "The request content does not match its type. E.g. invalid multipart/form-data or a problem with the file upload.",
+		"parse.error-in-request-body":    "Failed to read request body due to connection issues, timeouts, size mismatches, or corrupted data.",
 	},
 	validation: validationLines{
 		rules: map[string]string{

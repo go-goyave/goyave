@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,9 +29,27 @@ type (
 	// ExtraQueryValidationError the key used in `Context.Extra` to
 	// store the query validation errors.
 	ExtraQueryValidationError struct{}
+
+	// ExtraParseError the key used in `Context.Extra` to
+	// store specific parsing errors.
+	ExtraParseError struct{}
 )
 
-// Request represents an http request received by the server.
+var (
+	// ErrInvalidQuery error when an invalid query string is passed.
+	ErrInvalidQuery = errors.New("parse.invalid-query")
+
+	// ErrInvalidJSONBody error when an empty or malformed JSON body is sent.
+	ErrInvalidJSONBody = errors.New("parse.json-invalid-body")
+
+	// ErrInvalidContentForType error when e.g. a multipart form is not actually multipart, or empty.
+	ErrInvalidContentForType = errors.New("parse.invalid-content-for-type")
+
+	// ErrErrorInRequestBody error when e.g. a incoming request is not received properly.
+	ErrErrorInRequestBody = errors.New("parse.error-in-request-body")
+)
+
+// Request represents a http request received by the server.
 type Request struct {
 	httpRequest *http.Request
 	Now         time.Time

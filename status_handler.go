@@ -1,6 +1,7 @@
 package goyave
 
 import (
+	"errors"
 	"net/http"
 
 	"goyave.dev/goyave/v5/validation"
@@ -40,10 +41,44 @@ type ErrorStatusHandler struct {
 	Component
 }
 
-// Handle generic error reponses.
+// Handle generic error responses.
 func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
 	message := map[string]string{
 		"error": http.StatusText(response.GetStatus()),
+	}
+	response.JSON(response.GetStatus(), message)
+}
+
+// ParseErrorStatusHandler a generic (error) status handler for requests.
+type ParseErrorStatusHandler struct {
+	Component
+}
+
+// Handle generic request (error) responses.
+func (h *ParseErrorStatusHandler) Handle(response *Response, request *Request) {
+	var errorMessage string
+	lang := request.Lang
+
+	err, ok := request.Extra[ExtraParseError{}].(error)
+	if ok {
+		switch {
+		case errors.Is(err, ErrInvalidJSONBody):
+			errorMessage = lang.Get("parse.json-invalid-body")
+		case errors.Is(err, ErrInvalidQuery):
+			errorMessage = lang.Get("parse.invalid-query")
+		case errors.Is(err, ErrInvalidContentForType):
+			errorMessage = lang.Get("parse.invalid-content-for-type")
+		case errors.Is(err, ErrErrorInRequestBody):
+			errorMessage = lang.Get("parse.error-in-request-body")
+		default:
+			errorMessage = lang.Get(err.Error())
+		}
+	} else {
+		errorMessage = http.StatusText(response.GetStatus())
+	}
+
+	message := map[string]string{
+		"error": errorMessage,
 	}
 	response.JSON(response.GetStatus(), message)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -49,12 +50,19 @@ func TestParseMiddleware(t *testing.T) {
 
 	t.Run("Parse Query Error", func(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodGet, "/parse?inv;alid", nil)
+		request.Lang = server.Lang.GetDefault()
 
 		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
 			assert.Equal(t, map[string]any{}, req.Query)
 		})
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+		assert.NotNil(t, request.Extra[goyave.ExtraParseError{}])
+		assert.NotPanics(t, func() {
+			extraError, ok := request.Extra[goyave.ExtraParseError{}].(error)
+			require.True(t, ok)
+			assert.ErrorIs(t, extraError, goyave.ErrInvalidQuery)
+		})
 	})
 
 	t.Run("Entity Too Large", func(t *testing.T) {
@@ -98,15 +106,44 @@ func TestParseMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
-	t.Run("JSON Invalid", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodPost, "/parse", bytes.NewBuffer([]byte("{\"unclosed\"")))
-		request.Header().Set("Content-Type", "application/json")
+	t.Run("JSON Parsing Tests", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			body     []byte
+			expected int
+		}{
+			{
+				name:     "JSON Invalid",
+				body:     []byte(`{"unclosed"`),
+				expected: http.StatusBadRequest,
+			},
+			{
+				name:     "JSON Empty",
+				body:     []byte(""),
+				expected: http.StatusBadRequest,
+			},
+		}
 
-		result := server.TestMiddleware(&Middleware{MaxUploadSize: 0.01}, request, func(_ *goyave.Response, _ *goyave.Request) {
-			assert.Fail(t, "Middleware should not pass")
-		})
-		assert.NoError(t, result.Body.Close())
-		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				request := testutil.NewTestRequest(http.MethodPost, "/parse", bytes.NewBuffer(tt.body))
+				request.Lang = server.Lang.GetDefault()
+				request.Header().Set("Content-Type", "application/json")
+
+				result := server.TestMiddleware(&Middleware{MaxUploadSize: 0.01}, request, func(_ *goyave.Response, _ *goyave.Request) {
+					assert.Fail(t, "Middleware should not pass")
+				})
+
+				assert.NoError(t, result.Body.Close())
+				assert.Equal(t, tt.expected, result.StatusCode)
+				assert.NotNil(t, request.Extra[goyave.ExtraParseError{}])
+				assert.NotPanics(t, func() {
+					extraError, ok := request.Extra[goyave.ExtraParseError{}].(error)
+					require.True(t, ok)
+					assert.ErrorIs(t, extraError, goyave.ErrInvalidJSONBody)
+				})
+			})
+		}
 	})
 
 	t.Run("Multipart", func(t *testing.T) {
@@ -144,6 +181,72 @@ func TestParseMiddleware(t *testing.T) {
 
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, http.StatusOK, result.StatusCode)
+	})
+
+	t.Run("Invalid Multipart", func(t *testing.T) {
+		// Write empty body, which is not allowed for content multipart.
+		writer := multipart.NewWriter(nil)
+
+		request := testutil.NewTestRequest(http.MethodPost, "/parse", nil)
+		request.Lang = server.Lang.GetDefault()
+		request.Header().Set("Content-Type", writer.FormDataContentType())
+
+		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, _ *goyave.Request) {
+			resp.Status(http.StatusOK)
+		})
+
+		assert.NoError(t, result.Body.Close())
+		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+		assert.NotNil(t, request.Extra[goyave.ExtraParseError{}])
+		assert.NotPanics(t, func() {
+			extraError, ok := request.Extra[goyave.ExtraParseError{}].(error)
+			require.True(t, ok)
+			assert.ErrorIs(t, extraError, goyave.ErrInvalidContentForType)
+		})
+	})
+
+	t.Run("Error Reading Request Body", func(t *testing.T) {
+		// Create a test server that sends partial data
+		faultyRequest := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Length", "10")
+			w.WriteHeader(http.StatusOK)
+			// Write only part of the promised data
+			_, err := w.Write([]byte("Partial "))
+			assert.NoError(t, err)
+
+			// Then flush the writer to send the incomplete response
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+			// Don't close the connection, just stop writing
+		}))
+		defer faultyRequest.Close()
+
+		// Create a client that will make a request to our test server
+		client := faultyRequest.Client()
+		resp, err := client.Get(faultyRequest.URL)
+		require.NoError(t, err)
+
+		// Use the response body from our test server as the request body for our middleware
+		request := testutil.NewTestRequest(http.MethodPost, "/parse", resp.Body)
+		request.Lang = server.Lang.GetDefault()
+		request.Header().Set("Content-Type", "multipart/form-data")
+
+		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, _ *goyave.Request) {
+			resp.Status(http.StatusBadRequest)
+		})
+
+		assert.NoError(t, result.Body.Close())
+		assert.NoError(t, resp.Body.Close())
+
+		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+		assert.NotNil(t, request.Extra[goyave.ExtraParseError{}])
+		assert.NotPanics(t, func() {
+			extraError, ok := request.Extra[goyave.ExtraParseError{}].(error)
+			require.True(t, ok)
+			assert.ErrorIs(t, extraError, goyave.ErrErrorInRequestBody)
+			assert.Contains(t, extraError.Error(), "unexpected EOF")
+		})
 	})
 
 	t.Run("Form URL-encoded", func(t *testing.T) {

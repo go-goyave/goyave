@@ -119,15 +119,19 @@ func NewRouter(server *Server) *Router {
 		Meta:       make(map[string]any),
 	}
 	router.StatusHandler(&PanicStatusHandler{}, http.StatusInternalServerError)
-	for i := 400; i <= 418; i++ {
+	for i := http.StatusBadRequest; i <= http.StatusTeapot; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
+	router.StatusHandler(&ParseErrorStatusHandler{}, http.StatusBadRequest)
 	router.StatusHandler(&ValidationStatusHandler{}, http.StatusUnprocessableEntity)
-	for i := 423; i <= 426; i++ {
+	for i := http.StatusLocked; i <= http.StatusUpgradeRequired; i++ {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
-	router.StatusHandler(&ErrorStatusHandler{}, 421, 428, 429, 431, 444, 451)
-	router.StatusHandler(&ErrorStatusHandler{}, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511)
+	router.StatusHandler(&ErrorStatusHandler{}, http.StatusMisdirectedRequest, http.StatusPreconditionRequired, http.StatusTooManyRequests, http.StatusRequestHeaderFieldsTooLarge, 444, http.StatusUnavailableForLegalReasons) // 444 is a nginx status code. Indicates server to return no information to the client and close the connection immediately
+	for i := http.StatusNotImplemented; i <= http.StatusLoopDetected; i++ {
+		router.StatusHandler(&ErrorStatusHandler{}, i)
+	}
+	router.StatusHandler(&ErrorStatusHandler{}, http.StatusNotExtended, http.StatusNetworkAuthenticationRequired)
 	router.GlobalMiddleware(&recoveryMiddleware{}, &languageMiddleware{})
 	return router
 }

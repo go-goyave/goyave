@@ -31,9 +31,8 @@ type Formatter func(ctx *Context) (message string, attributes []slog.Attr)
 // Writer chained writer keeping response body in memory.
 // Used for loggin in common format.
 type Writer struct {
-	goyave.Component
+	goyave.CommonWriter
 	formatter Formatter
-	writer    io.Writer
 	request   *goyave.Request
 	response  *goyave.Response
 	length    int
@@ -47,28 +46,20 @@ var _ goyave.PreWriter = (*Writer)(nil)
 // formatter.
 func NewWriter(server *goyave.Server, response *goyave.Response, request *goyave.Request, formatter Formatter) *Writer {
 	writer := &Writer{
-		request:   request,
-		writer:    response.Writer(),
-		response:  response,
-		formatter: formatter,
+		CommonWriter: goyave.NewCommonWriter(response.Writer()),
+		request:      request,
+		response:     response,
+		formatter:    formatter,
 	}
 	writer.Init(server)
 	return writer
-}
-
-// PreWrite calls PreWrite on the
-// child writer if it implements PreWriter.
-func (w *Writer) PreWrite(b []byte) {
-	if pr, ok := w.writer.(goyave.PreWriter); ok {
-		pr.PreWrite(b)
-	}
 }
 
 // Write writes the data as a response and keeps its length in memory
 // for later logging.
 func (w *Writer) Write(b []byte) (int, error) {
 	w.length += len(b)
-	n, err := w.writer.Write(b)
+	n, err := w.CommonWriter.Write(b)
 	return n, errors.New(err)
 }
 
@@ -90,10 +81,7 @@ func (w *Writer) Close() error {
 		w.Logger().Info(message, lo.Map(attrs, func(a slog.Attr, _ int) any { return a })...)
 	}
 
-	if wr, ok := w.writer.(io.Closer); ok {
-		return wr.Close()
-	}
-	return nil
+	return errors.New(w.CommonWriter.Close())
 }
 
 // AccessMiddleware captures response data and outputs it to the logger at the

@@ -15,6 +15,29 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
+// Mapping of Go types to Clickhouse types can be found here:
+// https://github.com/ClickHouse/clickhouse-go/blob/main/TYPES.md
+// Go types uint and int are not specified, default to 'UInt64' and 'Int64', respectively
+var clickhouseTypes = map[reflect.Type]string{
+	reflect.TypeOf(uint64(0)):     "UInt64",
+	reflect.TypeOf(uint32(0)):     "UInt32",
+	reflect.TypeOf(uint16(0)):     "UInt16",
+	reflect.TypeOf(uint8(0)):      "UInt8",
+	reflect.TypeOf(uint(0)):       "UInt64",
+	reflect.TypeOf(int64(0)):      "Int64",
+	reflect.TypeOf(int32(0)):      "Int32",
+	reflect.TypeOf(int16(0)):      "Int16",
+	reflect.TypeOf(int8(0)):       "Int8",
+	reflect.TypeOf(int(0)):        "Int64",
+	reflect.TypeOf(float32(0)):    "Float32",
+	reflect.TypeOf(float64(0)):    "Float64",
+	reflect.TypeOf(""):            "String",
+	reflect.TypeOf(true):          "Bool",
+	reflect.TypeOf(uuid.New()):    "UUID",
+	reflect.TypeOf(time.Now()):    "DateTime64",
+	reflect.TypeOf(big.NewInt(0)): "Int256",
+}
+
 // UniqueValidator validates the field under validation must have a unique value in database
 // according to the provided database scope. Uniqueness is checked using a COUNT query.
 type UniqueValidator struct {
@@ -150,7 +173,6 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) (*gorm.
 	return db.Raw(sql, params...), nil
 }
 
-// Build Query for Clickhouse syntax
 func (v *ExistsArrayValidator[T]) buildClickhouseQuery(values []T, condition bool) (*gorm.DB, error) {
 	questionMarks := []string{}
 	params := []any{}
@@ -158,7 +180,7 @@ func (v *ExistsArrayValidator[T]) buildClickhouseQuery(values []T, condition boo
 	var zeroVal T
 	paramType, ok := clickhouseTypes[reflect.TypeOf(zeroVal)]
 	if !ok && v.Transform == nil {
-		return v.db, errors.New("Value type not supported in Clickhouse types, must provide Transform function ")
+		return nil, errors.Errorf("ExistsArray/UniqueArray validator: value of type T (%T) is not supported for Clickhouse. You must provide a Transform function", zeroVal)
 	}
 
 	for i, val := range values {
@@ -167,9 +189,7 @@ func (v *ExistsArrayValidator[T]) buildClickhouseQuery(values []T, condition boo
 		if v.Transform != nil {
 			transformedValue = v.Transform(val)
 		}
-		params = append(params, gorm.Expr(
-			"(?,?)",
-			transformedValue, i))
+		params = append(params, gorm.Expr("(?,?)", transformedValue, i))
 	}
 
 	db := v.DB()
@@ -186,29 +206,6 @@ func (v *ExistsArrayValidator[T]) buildClickhouseQuery(values []T, condition boo
 		lo.Ternary(condition, "", "NOT"),
 	)
 	return db.Raw(sql, params...), nil
-}
-
-// Mapping of Go types to Clickhouse types can be found here:
-// https://github.com/ClickHouse/clickhouse-go/blob/main/TYPES.md
-// Go types uint and int are not specified, default to 'UInt64' and 'Int64', respectively
-var clickhouseTypes = map[reflect.Type]string{
-	reflect.TypeOf(uint64(0)):     "UInt64",
-	reflect.TypeOf(uint32(0)):     "UInt32",
-	reflect.TypeOf(uint16(0)):     "UInt16",
-	reflect.TypeOf(uint8(0)):      "UInt8",
-	reflect.TypeOf(uint(0)):       "UInt64",
-	reflect.TypeOf(int64(0)):      "Int64",
-	reflect.TypeOf(int32(0)):      "Int32",
-	reflect.TypeOf(int16(0)):      "Int16",
-	reflect.TypeOf(int8(0)):       "Int8",
-	reflect.TypeOf(int(0)):        "Int64",
-	reflect.TypeOf(float32(0)):    "Float32",
-	reflect.TypeOf(float64(0)):    "Float64",
-	reflect.TypeOf(""):            "String",
-	reflect.TypeOf(true):          "Bool",
-	reflect.TypeOf(uuid.New()):    "UUID",
-	reflect.TypeOf(time.Now()):    "DateTime64",
-	reflect.TypeOf(big.NewInt(0)): "Int256",
 }
 
 func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {

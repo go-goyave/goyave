@@ -6,6 +6,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -589,4 +590,18 @@ func TestBuildQueryValidatorWithTransform(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestClickhouseUnsupportedType(t *testing.T) {
+	opts := prepareUniqueTest(t)
+	opts.Config.Set("database.connection", "clickhouse")
+	v := ExistsArray[struct{}]("models", "name", nil)
+	v.init(opts)
+
+	ctx := &Context{
+		Value: []struct{}{{}, {}},
+	}
+	v.validate(ctx, true)
+	require.Len(t, ctx.errors, 1)
+	assert.Equal(t, "ExistsArray/UniqueArray validator: value of type T (struct {}) is not supported for Clickhouse. You must provide a Transform function", ctx.errors[0].Error())
 }

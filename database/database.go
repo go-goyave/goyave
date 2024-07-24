@@ -20,6 +20,7 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/postgres"
 //	import _ "goyave.dev/goyave/v5/database/dialect/sqlite"
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
+//	import _ "goyave.dev/goyave/v5/database/dialect/clickhouse"
 func New(cfg *config.Config, logger func() *slog.Logger) (*gorm.DB, error) {
 	driver := cfg.GetString("database.connection")
 

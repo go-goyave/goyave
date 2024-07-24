@@ -80,7 +80,8 @@ A big "Thank you" to the Goyave contributors:
 - [Jason C Keller](https://github.com/imuni4fun) (Testify interface compatibility)
 - [saltyFamiliar](https://github.com/saltyFamiliar) (`DoesntStartWithValidator`)
 - [Muhammad Meganata Adam](https://github.com/bangadam) (`DoesntEndWithValidator`, `KeysInValidator`)
-- [BowlOfSoup](https://github.com/BowlOfSoup) (`Required` flag in configuration entries)
+- [BowlOfSoup](https://github.com/BowlOfSoup) (`Required` flag in configuration entries, `ParseErrorStatusHandler`)
+- [AidanKenney](https://github.com/AidanKenney) (Clickhouse support)
 
 ## License
 

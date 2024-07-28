@@ -8,12 +8,11 @@ import (
 )
 
 // Zlib encoder for the gzip format using Go's standard `compress/gzip` package.
-//
 // Takes a compression level and "dict" ([]byte) as parameters. Accepted values are defined by constants
 // in the standard `compress/zlib` package.
 type Zlib struct {
-	Level int
 	Dict  []byte
+	Level int
 }
 
 // Encoding returns "zlib".

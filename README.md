@@ -81,7 +81,7 @@ A big "Thank you" to the Goyave contributors:
 - [saltyFamiliar](https://github.com/saltyFamiliar) (`DoesntStartWithValidator`)
 - [Muhammad Meganata Adam](https://github.com/bangadam) (`DoesntEndWithValidator`, `KeysInValidator`)
 - [BowlOfSoup](https://github.com/BowlOfSoup) (`Required` flag in configuration entries, `ParseErrorStatusHandler`)
-- [AidanKenney](https://github.com/AidanKenney) (Clickhouse support)
+- [AidanKenney](https://github.com/AidanKenney) (Clickhouse support, compression encoders)
 
 ## License
 

@@ -114,7 +114,10 @@ type Options struct {
 	// To avoid allocating when assigning to an `interface{}`, context keys often have
 	// concrete type `struct{}`. Alternatively, exported context key variables' static
 	// type should be a pointer or interface.
-	Extra    map[any]any
+	Extra map[any]any
+
+	// Language used for translating validation error messages.
+	// Defaults to `lang.Default`.
 	Language *lang.Language
 	DB       *gorm.DB
 	Config   *config.Config
@@ -274,6 +277,9 @@ func Validate(options *Options) (*Errors, []error) {
 	}
 	if options.Extra == nil {
 		options.Extra = map[any]any{}
+	}
+	if options.Language == nil {
+		options.Language = lang.Default
 	}
 
 	rules := options.Rules.AsRules()

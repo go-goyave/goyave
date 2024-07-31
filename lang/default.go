@@ -207,6 +207,11 @@ var enUS = &Language{
 	},
 }
 
+// Default language used if no language is provided in a feature's options.
+// By default, equals to the built-in "en-US" language.
+// Although it can be replaced, writing to this variable is not concurrently safe.
+var Default = enUS
+
 // SetDefaultLine set the language line identified by the given key in the
 // default "en-US" language.
 // Values set this way can be overridden by language files.

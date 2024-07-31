@@ -890,6 +890,23 @@ func TestValidate(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "no_language_provided_in_options",
+			options: &Options{
+				Data: map[string]any{"property": nil},
+				Rules: RuleSet{
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Fields: FieldsErrors{
+					"property": &Errors{
+						Errors: []string{"The property is required."}, // Translated message (using lang.Default)
+					},
+				},
+			},
+			wantData: map[string]any{},
+		},
 	}
 
 	for _, c := range cases {

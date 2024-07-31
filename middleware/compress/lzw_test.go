@@ -25,6 +25,7 @@ func TestLzwEncoder(t *testing.T) {
 	buf := bytes.NewBuffer([]byte{})
 	writer := encoder.NewWriter(buf)
 	require.NotNil(t, writer)
+	assert.Equal(t, 8, encoder.LitWidth)
 	_, ok := writer.(*lzw.Writer)
 	assert.True(t, ok)
 

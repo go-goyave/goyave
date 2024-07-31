@@ -39,7 +39,7 @@ func TestBrotliEncoder(t *testing.T) {
 	assert.Panics(t, func() {
 		// Invalid LGWin
 		encoder := &Brotli{
-			Quality: 12,
+			Quality: 11,
 			LGWin:   9,
 		}
 		encoder.NewWriter(bytes.NewBuffer([]byte{}))

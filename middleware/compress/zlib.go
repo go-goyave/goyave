@@ -7,17 +7,18 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
-// Zlib encoder for the gzip format using Go's standard `compress/gzip` package.
+// Zlib encoder for the deflate format using Go's standard `compress/zlib` package.
 // Takes a compression level and "dict" ([]byte) as parameters. Accepted values are defined by constants
 // in the standard `compress/zlib` package.
 type Zlib struct {
+	// The dictionary is optional and may be nil
 	Dict  []byte
 	Level int
 }
 
-// Encoding returns "zlib".
+// Encoding returns "deflate".
 func (w *Zlib) Encoding() string {
-	return "zlib"
+	return "deflate"
 }
 
 // NewWriter returns a new `compress/zlib.Writer` using the compression level

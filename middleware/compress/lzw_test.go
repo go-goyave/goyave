@@ -15,23 +15,22 @@ import (
 )
 
 func TestLzwEncoder(t *testing.T) {
-	encoder := &Lzw{
-		Order:    lzw.LSB,
-		LitWidth: 5,
+	// Default LitWidth of 8 supplied
+	encoder := &LZW{
+		Order: lzw.LSB,
 	}
 
-	assert.Equal(t, "lzw", encoder.Encoding())
+	assert.Equal(t, "compress", encoder.Encoding())
 
 	buf := bytes.NewBuffer([]byte{})
 	writer := encoder.NewWriter(buf)
-	if assert.NotNil(t, writer) {
-		_, ok := writer.(*lzw.Writer)
-		assert.True(t, ok)
-	}
+	require.NotNil(t, writer)
+	_, ok := writer.(*lzw.Writer)
+	assert.True(t, ok)
 
 	assert.Panics(t, func() {
 		// Invalid LitWidth
-		encoder := &Lzw{
+		encoder := &LZW{
 			Order:    lzw.LSB,
 			LitWidth: 9,
 		}
@@ -49,7 +48,7 @@ func TestLzwCompression(t *testing.T) {
 
 	compressMiddleWare := &Middleware{
 		Encoders: []Encoder{
-			&Lzw{
+			&LZW{
 				Order:    lzw.LSB,
 				LitWidth: 8,
 			},
@@ -57,7 +56,7 @@ func TestLzwCompression(t *testing.T) {
 	}
 
 	request := testutil.NewTestRequest(http.MethodGet, "/lzw", nil)
-	request.Header().Set("Accept-Encoding", "lzw")
+	request.Header().Set("Accept-Encoding", "compress")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 
 	reader := lzw.NewReader(result.Body, lzw.LSB, 8)
@@ -65,6 +64,6 @@ func TestLzwCompression(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoError(t, result.Body.Close())
 	assert.Equal(t, "hello world", string(body))
-	assert.Equal(t, "lzw", result.Header.Get("Content-Encoding"))
+	assert.Equal(t, "compress", result.Header.Get("Content-Encoding"))
 	assert.Empty(t, result.Header.Get("Content-Length"))
 }

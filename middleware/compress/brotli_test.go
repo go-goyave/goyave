@@ -19,7 +19,7 @@ func TestBrotliEncoder(t *testing.T) {
 		Quality: 6,
 	}
 
-	assert.Equal(t, "brotli", encoder.Encoding())
+	assert.Equal(t, "br", encoder.Encoding())
 
 	buf := bytes.NewBuffer([]byte{})
 	writer := encoder.NewWriter(buf)
@@ -29,9 +29,18 @@ func TestBrotliEncoder(t *testing.T) {
 	}
 
 	assert.Panics(t, func() {
-		// Invalid Level
+		// Invalid Quality
 		encoder := &Brotli{
 			Quality: 12,
+		}
+		encoder.NewWriter(bytes.NewBuffer([]byte{}))
+	})
+
+	assert.Panics(t, func() {
+		// Invalid LGWin
+		encoder := &Brotli{
+			Quality: 12,
+			LGWin:   9,
 		}
 		encoder.NewWriter(bytes.NewBuffer([]byte{}))
 	})
@@ -55,7 +64,7 @@ func TestBrotliCompression(t *testing.T) {
 	}
 
 	request := testutil.NewTestRequest(http.MethodGet, "/brotli", nil)
-	request.Header().Set("Accept-Encoding", "brotli")
+	request.Header().Set("Accept-Encoding", "br")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 
 	reader := brotli.NewReader(result.Body)
@@ -63,6 +72,6 @@ func TestBrotliCompression(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoError(t, result.Body.Close())
 	assert.Equal(t, "hello world", string(body))
-	assert.Equal(t, "brotli", result.Header.Get("Content-Encoding"))
+	assert.Equal(t, "br", result.Header.Get("Content-Encoding"))
 	assert.Empty(t, result.Header.Get("Content-Length"))
 }

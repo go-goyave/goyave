@@ -7,7 +7,7 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
-// Brotli encoder for the brotli compression format
+// Brotli encoder for the br compression format
 type Brotli struct {
 	// Quality controls the compression-speed vs compression-density trade-offs.
 	// The higher the quality, the slower the compression. Range is 0 to 11.
@@ -17,15 +17,15 @@ type Brotli struct {
 	LGWin int
 }
 
-// Encoding returns "brotli".
+// Encoding returns "br".
 func (w *Brotli) Encoding() string {
-	return "brotli"
+	return "br"
 }
 
 // NewWriter returns a new `brotli.Writer` using the
 // Compression Quality and LGWin provided in the Brotli encoder
 func (w *Brotli) NewWriter(wr io.Writer) io.WriteCloser {
-	if w.Quality < 0 || w.Quality > 11 {
+	if w.Quality < brotli.BestSpeed || w.Quality > brotli.BestCompression {
 		panic(errors.New("Brotli Compression Level must be in range [0, 11]"))
 	}
 	if w.LGWin != 0 {

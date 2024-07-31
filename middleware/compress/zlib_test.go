@@ -20,7 +20,7 @@ func TestZlibEncoder(t *testing.T) {
 		Dict:  nil,
 	}
 
-	assert.Equal(t, "zlib", encoder.Encoding())
+	assert.Equal(t, "deflate", encoder.Encoding())
 	assert.Equal(t, zlib.BestCompression, encoder.Level)
 
 	buf := bytes.NewBuffer([]byte{})
@@ -55,7 +55,7 @@ func TestZlibCompression(t *testing.T) {
 	}
 
 	request := testutil.NewTestRequest(http.MethodGet, "/zlib", nil)
-	request.Header().Set("Accept-Encoding", "zlib")
+	request.Header().Set("Accept-Encoding", "deflate")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 
 	reader, err := zlib.NewReader(result.Body)
@@ -64,7 +64,7 @@ func TestZlibCompression(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoError(t, result.Body.Close())
 	assert.Equal(t, "hello world", string(body))
-	assert.Equal(t, "zlib", result.Header.Get("Content-Encoding"))
+	assert.Equal(t, "deflate", result.Header.Get("Content-Encoding"))
 	assert.Empty(t, result.Header.Get("Content-Length"))
 }
 
@@ -83,7 +83,7 @@ func TestZlibCompressionNoDict(t *testing.T) {
 	}
 
 	request := testutil.NewTestRequest(http.MethodGet, "/zlib", nil)
-	request.Header().Set("Accept-Encoding", "zlib")
+	request.Header().Set("Accept-Encoding", "deflate")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 
 	reader, err := zlib.NewReader(result.Body)
@@ -92,6 +92,6 @@ func TestZlibCompressionNoDict(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoError(t, result.Body.Close())
 	assert.Equal(t, "hello world", string(body))
-	assert.Equal(t, "zlib", result.Header.Get("Content-Encoding"))
+	assert.Equal(t, "deflate", result.Header.Get("Content-Encoding"))
 	assert.Empty(t, result.Header.Get("Content-Length"))
 }

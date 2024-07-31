@@ -23,10 +23,9 @@ func TestZstdEncoder(t *testing.T) {
 
 	buf := bytes.NewBuffer([]byte{})
 	writer := encoder.NewWriter(buf)
-	if assert.NotNil(t, writer) {
-		_, ok := writer.(*zstd.Encoder)
-		assert.True(t, ok)
-	}
+	require.NotNil(t, writer)
+	_, ok := writer.(*zstd.Encoder)
+	assert.True(t, ok)
 
 	assert.Panics(t, func() {
 		// Invalid EncoderConcurrency
@@ -62,7 +61,9 @@ func TestZstdCompression(t *testing.T) {
 	request.Header().Set("Accept-Encoding", "zstd")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 
-	reader, _ := zstd.NewReader(result.Body)
+	reader, err := zstd.NewReader(result.Body)
+	require.NoError(t, err)
+
 	body, err := io.ReadAll(reader)
 	require.NoError(t, err)
 	assert.NoError(t, result.Body.Close())

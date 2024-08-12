@@ -116,6 +116,11 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 		return
 	}
 
+	if notFound {
+		response.JSON(http.StatusUnauthorized, map[string]string{"error": request.Lang.Get("auth.invalid-credentials")})
+		return
+	}
+
 	t := reflect.Indirect(reflect.ValueOf(user))
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -126,7 +131,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 		return
 	}
 
-	if !notFound && bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) == nil {
+	if bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) == nil {
 		tokenFunc := lo.Ternary(c.TokenFunc == nil, c.defaultTokenFunc, c.TokenFunc)
 		token, err := tokenFunc(request, user)
 		if err != nil {

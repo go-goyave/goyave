@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/testutil"
@@ -69,7 +70,7 @@ func TestJWTController(t *testing.T) {
 		assert.NotEmpty(t, respBody["token"])
 	})
 
-	t.Run("Login_invalid", func(t *testing.T) {
+	t.Run("Login_invalid_password", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		server.Config().Set("auth.jwt.secret", "secret")
 
@@ -82,6 +83,32 @@ func TestJWTController(t *testing.T) {
 		data := map[string]any{
 			"username": user.Email,
 			"password": "wrong password",
+		}
+		body, err := json.Marshal(data)
+		require.NoError(t, err)
+		request := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
+		request.Header.Set("Content-Type", "application/json")
+		resp := server.TestRequest(request)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		respBody, err := testutil.ReadJSONBody[map[string]string](resp.Body)
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
+		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, respBody)
+	})
+
+	t.Run("Login_invalid_username", func(t *testing.T) {
+		server, user := prepareAuthenticatorTest(t)
+		server.Config().Set("auth.jwt.secret", "secret")
+
+		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("test errors: %w", gorm.ErrRecordNotFound)}
+		controller := NewJWTController(mockUserService, "Password")
+		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
+			router.Controller(controller)
+		})
+
+		data := map[string]any{
+			"username": "wrong username",
+			"password": user.Password,
 		}
 		body, err := json.Marshal(data)
 		require.NoError(t, err)

@@ -13,6 +13,14 @@ linters-settings:
     disable:
       - require-error
       - error-nil
+  revive:
+    rules:
+      - name: var-naming
+        arguments:
+          - [] # AllowList
+          - ["DTO"] # DenyList
+      - name: unused-parameter
+        disabled: false
 
 linters:
   enable:

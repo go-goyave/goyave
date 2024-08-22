@@ -52,7 +52,6 @@ func TestDateValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Date(c.formats...)
 			ctx := &Context{
@@ -97,7 +96,6 @@ func TestDateEqualsValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := DateEquals(c.ref)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -157,7 +155,6 @@ func TestEqualsFieldValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := DateEqualsField(path)
 			assert.Equal(t, c.want, v.Validate(&Context{

@@ -46,7 +46,6 @@ func TestExtensionValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%s_%t", extTestFilesNames(c.value), c.want), func(t *testing.T) {
 			v := Extension(c.allowed...)
 			assert.Equal(t, c.want, v.Validate(&Context{

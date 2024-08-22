@@ -449,7 +449,6 @@ func TestRouter(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				recorder := httptest.NewRecorder()
 				rawRequest := httptest.NewRequest(c.requestMethod, c.requestURL, nil)
@@ -553,7 +552,6 @@ func TestRouter(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(fmt.Sprintf("%s_%s", c.method, strings.ReplaceAll(c.path, "/", "_")), func(t *testing.T) {
 				match := routeMatch{currentPath: c.path}
 				router.match(c.method, &match)

@@ -110,7 +110,6 @@ func TestGetFieldName(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			assert.Equal(t, c.want, GetFieldName(language, c.path))
 		})
@@ -140,7 +139,6 @@ func TestGetFieldType(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			assert.Equal(t, c.want, GetFieldType(c.value))
 		})
@@ -910,7 +908,6 @@ func TestValidate(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			validationErrors, errs := Validate(c.options)
 			assert.Equal(t, c.wantValidationErrors, validationErrors)

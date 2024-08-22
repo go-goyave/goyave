@@ -13,6 +13,7 @@ linters-settings:
     disable:
       - require-error
       - error-nil
+      - formatter
   revive:
     rules:
       - name: var-naming
@@ -31,7 +32,7 @@ linters:
     - govet
     - unused
     - errcheck
-    - exportloopref
+    - copyloopvar
     - gosimple
     - ineffassign
     - staticcheck

@@ -40,7 +40,6 @@ func TestNewHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("devMode_%v", c.devMode), func(t *testing.T) {
 			assert.Equal(t, c.want, NewHandler(c.devMode, c.w))
 		})
@@ -67,7 +66,6 @@ func TestDevModeHandler(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				buf := bytes.NewBuffer(make([]byte, 0, 10))
 				handler := NewDevModeHandler(buf, c.opts)
@@ -120,7 +118,6 @@ func TestDevModeHandler(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(fmt.Sprintf("%s_%s", c.opts.Level, c.level), func(t *testing.T) {
 				buf := bytes.NewBuffer(make([]byte, 0, 10))
 				handler := NewDevModeHandler(buf, c.opts)
@@ -170,7 +167,6 @@ func TestDevModeHandler(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				handler := NewDevModeHandler(buf, &DevModeHandlerOptions{})
 				handler.attrs = c.baseAttrs
@@ -213,7 +209,6 @@ func TestDevModeHandler(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				handler := NewDevModeHandler(buf, &DevModeHandlerOptions{})
 				handler.attrs = c.baseAttrs
@@ -245,7 +240,6 @@ func TestDevModeHandlerFormat(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.level.String(), func(t *testing.T) {
 				assert.Equal(t, c.want, levelColor(c.level))
 			})
@@ -271,7 +265,6 @@ func TestDevModeHandlerFormat(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.level.String(), func(t *testing.T) {
 				assert.Equal(t, c.want, messageColor(c.level))
 			})
@@ -433,7 +426,6 @@ func TestDevModeHandlerFormat(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				buf := bytes.NewBuffer(make([]byte, 0, 1024))
 				handler := NewDevModeHandler(buf, &DevModeHandlerOptions{Level: slog.LevelDebug})

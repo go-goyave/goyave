@@ -33,7 +33,6 @@ func TestStringValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := String()
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -75,7 +74,6 @@ func TestStartsWithValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := StartsWith("pre", "fix")
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -117,7 +115,6 @@ func TestEndsWithValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := EndsWith("suf", "fix")
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -159,7 +156,6 @@ func TestDoesntStartWithValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := DoesntStartWith("pre", "fix")
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -201,7 +197,6 @@ func TestDoesntEndWithValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := DoesntEndWith("suf", "fix")
 			assert.Equal(t, c.want, v.Validate(&Context{

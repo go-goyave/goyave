@@ -418,7 +418,6 @@ func TestResponse(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			resp, recorder := newTestReponse()
 			logBuffer := &bytes.Buffer{}
 			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))

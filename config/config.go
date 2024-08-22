@@ -341,7 +341,7 @@ func (o object) validate(key string) error {
 	}
 
 	if !valid {
-		return fmt.Errorf(message)
+		return fmt.Errorf("%s", message)
 	}
 	return nil
 }

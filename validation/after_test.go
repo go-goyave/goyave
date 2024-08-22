@@ -41,7 +41,6 @@ func TestAfterValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := After(c.ref)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -82,7 +81,6 @@ func TestAfterEqualValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AfterEqual(c.ref)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -138,7 +136,6 @@ func TestAfterFieldValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AfterField(path)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -200,7 +197,6 @@ func TestAfterEqualFieldValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AfterEqualField(path)
 			assert.Equal(t, c.want, v.Validate(&Context{

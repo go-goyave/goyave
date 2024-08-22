@@ -159,7 +159,6 @@ func TestGreaterThanValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := GreaterThan(path)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -336,7 +335,6 @@ func TestGreaterThanEqualValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := GreaterThanEqual(path)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -487,7 +485,6 @@ func TestLowerThanValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := LowerThan(path)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -664,7 +661,6 @@ func TestLowerThanEqualValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := LowerThanEqual(path)
 			assert.Equal(t, c.want, v.Validate(&Context{

@@ -63,7 +63,6 @@ func TestIntValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int()
 			ctx := &Context{
@@ -138,7 +137,6 @@ func TestInt8Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int8()
 			ctx := &Context{
@@ -214,7 +212,6 @@ func TestInt16Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int16()
 			ctx := &Context{
@@ -287,7 +284,6 @@ func TestInt32Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int32()
 			ctx := &Context{
@@ -357,7 +353,6 @@ func TestInt64Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Int64()
 			ctx := &Context{
@@ -427,7 +422,6 @@ func TestUintValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint()
 			ctx := &Context{
@@ -505,7 +499,6 @@ func TestUint8Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint8()
 			ctx := &Context{
@@ -581,7 +574,6 @@ func TestUint16Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint16()
 			ctx := &Context{
@@ -655,7 +647,6 @@ func TestUint32Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint32()
 			ctx := &Context{
@@ -725,7 +716,6 @@ func TestUint64Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Uint64()
 			ctx := &Context{

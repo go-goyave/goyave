@@ -36,7 +36,6 @@ func TestCleanStaticPath(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.want, func(t *testing.T) {
 			f, err := fs.Sub(&osfs.FS{}, c.directory)
 			require.NoError(t, err)
@@ -96,7 +95,6 @@ func TestStaticHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.uri, func(t *testing.T) {
 			cfg := config.LoadDefault()
 			srv, err := New(Options{Config: cfg})

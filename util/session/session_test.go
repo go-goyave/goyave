@@ -411,7 +411,6 @@ func TestGormSession(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				db := DB(c.ctx, fallback)
 				assert.Equal(t, c.expect, db)

@@ -58,7 +58,7 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 		if a.Optional {
 			return nil, nil
 		}
-		return nil, fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
+		return nil, fmt.Errorf("%s", request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	user, err := a.UserService.FindByUsername(request.Context(), username)
@@ -78,7 +78,7 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 	}
 
 	if notFound || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
-		return nil, fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
+		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
 	}
 
 	return user, nil
@@ -118,12 +118,12 @@ func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request) (*Basic
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
-		return nil, fmt.Errorf(request.Lang.Get("auth.no-credentials-provided"))
+		return nil, fmt.Errorf("%s", request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	if subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.username")), []byte(username)) != 1 ||
 		subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.password")), []byte(password)) != 1 {
-		return nil, fmt.Errorf(request.Lang.Get("auth.invalid-credentials"))
+		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
 	}
 
 	return &BasicUser{

@@ -313,7 +313,6 @@ func TestEncoderPriority(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.acceptEncoding, func(t *testing.T) {
 			middleware := &Middleware{
 				Encoders: c.encoders,

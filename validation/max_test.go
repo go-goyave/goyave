@@ -55,7 +55,6 @@ func TestMaxValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%f_%t", c.value, c.max, c.want), func(t *testing.T) {
 			v := Max(c.max)
 			ctx := &Context{

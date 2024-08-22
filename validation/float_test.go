@@ -66,7 +66,6 @@ func TestFloat32Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Float32()
 			ctx := &Context{
@@ -133,7 +132,6 @@ func TestFloat64Validator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Float64()
 			ctx := &Context{

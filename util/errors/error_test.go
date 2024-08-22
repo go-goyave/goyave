@@ -40,7 +40,6 @@ func TestErrors(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				errs := toErr(c.reason)
 				assert.Equal(t, c.expected, errs)
@@ -95,7 +94,6 @@ func TestErrors(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				err := &Error{reasons: c.reasons}
 				assert.Equal(t, c.expected, err.Error())
@@ -133,7 +131,6 @@ func TestErrors(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				assert.Regexp(t, c.expected, c.err.String())
 			})
@@ -151,7 +148,6 @@ func TestErrors(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				assert.Regexp(t, c.expected, c.err.FileLine())
 			})
@@ -180,7 +176,6 @@ func TestErrors(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				res, err := json.Marshal(c.err)
 				if c.expectedErr {

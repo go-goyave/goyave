@@ -61,7 +61,6 @@ func TestDifferentValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			v := Different(path)
 			assert.Equal(t, c.want, v.Validate(&Context{

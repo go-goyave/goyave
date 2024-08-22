@@ -130,7 +130,6 @@ func TestIsCloseError(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.err.Error(), func(t *testing.T) {
 			assert.Equal(t, c.want, IsCloseError(c.err))
 		})
@@ -208,7 +207,6 @@ func TestDefaultUpgradeErrorHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			server := testutil.NewTestServerWithOptions(t, c.config())
 			req := server.NewTestRequest(http.MethodGet, "/websocket", nil)
@@ -486,7 +484,6 @@ func TestGracefulClose(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			t.Parallel()
 			wg := sync.WaitGroup{}

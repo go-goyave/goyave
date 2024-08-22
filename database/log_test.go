@@ -192,7 +192,6 @@ func TestLogger(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				buf := bytes.NewBuffer(make([]byte, 0, 1024))
 				slogger := slog.New(stdslog.NewJSONHandler(buf, &stdslog.HandlerOptions{Level: c.level}))

@@ -40,7 +40,6 @@ func TestAlphaValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Alpha()
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -83,7 +82,6 @@ func TestAlphaNumValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AlphaNum()
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -124,7 +122,6 @@ func TestAlphaDashValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := AlphaDash()
 			assert.Equal(t, c.want, v.Validate(&Context{

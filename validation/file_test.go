@@ -36,7 +36,6 @@ func TestFileValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := File()
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -79,7 +78,6 @@ func TestFileCountValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := FileCount(3)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -122,7 +120,6 @@ func TestMinFileCountValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := MinFileCount(3)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -165,7 +162,6 @@ func TestMaxFileCountValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := MaxFileCount(3)
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -209,7 +205,6 @@ func TestFileCountBetweenValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := FileCountBetween(2, 3)
 			assert.Equal(t, c.want, v.Validate(&Context{

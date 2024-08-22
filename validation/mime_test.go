@@ -40,7 +40,6 @@ func TestMIMEValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := MIME("image/jpeg", "image/png")
 			assert.Equal(t, c.want, v.Validate(&Context{
@@ -82,7 +81,6 @@ func TestImageValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Image()
 			assert.Equal(t, c.want, v.Validate(&Context{

@@ -222,7 +222,6 @@ func TestLanguageMiddleware(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			executed := false
 			handler := middleware.Handle(func(_ *Response, req *Request) {
@@ -479,7 +478,6 @@ func TestValidateMiddleware(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			cfg := config.LoadDefault()
 			if c.hasDB {
@@ -642,7 +640,6 @@ func TestCORSMiddleware(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			middleware := &corsMiddleware{}
 			handler := middleware.Handle(func(resp *Response, _ *Request) {

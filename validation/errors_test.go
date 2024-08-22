@@ -428,7 +428,6 @@ func TestErrors(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				errs := c.base
 				errs.Merge(c.path, c.mergeErrs)

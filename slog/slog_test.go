@@ -61,7 +61,6 @@ func TestLogger(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				c.f(nil, pc, "message", slog.String("attr", "val"))
 
@@ -152,7 +151,6 @@ func TestLogger(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.desc, func(t *testing.T) {
 				c.f()
 				assert.Regexp(t, c.want, buf.String())

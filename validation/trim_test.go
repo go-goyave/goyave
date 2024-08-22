@@ -37,7 +37,6 @@ func TestTrimValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		format := "Validate_%q"
 		if _, ok := c.value.(string); !ok {
 			format = "Validate_%v"

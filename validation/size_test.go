@@ -46,7 +46,6 @@ func TestSizeValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%d_%t", c.value, c.size, c.want), func(t *testing.T) {
 			v := Size(c.size)
 			ctx := &Context{

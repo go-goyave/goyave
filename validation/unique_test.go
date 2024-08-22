@@ -115,7 +115,6 @@ func TestUniqueValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			opts := prepareUniqueTest(t)
 			if len(c.records) > 0 {
@@ -205,7 +204,6 @@ func TestExistsValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			opts := prepareUniqueTest(t)
 			if len(c.records) > 0 {
@@ -340,7 +338,6 @@ func TestUniqueArrayValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			opts := prepareUniqueTest(t)
 			if len(c.records) > 0 {
@@ -375,7 +372,6 @@ func TestUniqueArrayValidator(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.dialect, func(t *testing.T) {
 				opts := prepareUniqueTest(t)
 				opts.Config.Set("database.connection", c.dialect)
@@ -504,7 +500,6 @@ func TestExistsArrayValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			opts := prepareUniqueTest(t)
 			if len(c.records) > 0 {
@@ -539,7 +534,6 @@ func TestExistsArrayValidator(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.dialect, func(t *testing.T) {
 				opts := prepareUniqueTest(t)
 				opts.Config.Set("database.connection", c.dialect)
@@ -571,7 +565,6 @@ func TestBuildQueryValidatorWithTransform(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(c.dialect, func(t *testing.T) {
 				opts := prepareUniqueTest(t)
 				opts.Config.Set("database.connection", c.dialect)

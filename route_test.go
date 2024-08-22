@@ -280,7 +280,6 @@ func TestRoute(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			c := c
 			t.Run(fmt.Sprintf("%s_%s", c.method, c.uri), func(t *testing.T) {
 				match := routeMatch{currentPath: c.uri}
 				assert.Equal(t, c.expectedResult, c.route.match(c.method, &match))

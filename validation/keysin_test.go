@@ -36,7 +36,6 @@ func TestKeysInValidator(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("Validate_%v_%t", tc.input, tc.want), func(t *testing.T) {
 			v := KeysIn(tc.allowedKeys...)
 			assert.Equal(t, tc.want, v.Validate(&Context{

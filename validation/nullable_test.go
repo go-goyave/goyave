@@ -34,7 +34,6 @@ func TestNullableValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Nullable()
 			ctx := &Context{

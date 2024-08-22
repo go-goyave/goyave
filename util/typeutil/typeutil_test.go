@@ -48,7 +48,6 @@ func TestConvert(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run("TestStruct", func(t *testing.T) {
 			res, err := Convert[*TestStruct](c.value)
 			assert.Equal(t, c.want, res)
@@ -405,7 +404,6 @@ func TestCopy(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			if c.wantPanic {
 				assert.Panics(t, func() {

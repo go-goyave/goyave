@@ -35,7 +35,6 @@ func TestRequiredValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := Required()
 			ctx := &Context{
@@ -83,7 +82,6 @@ func TestRequiredIfValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := RequiredIf(c.condition)
 			ctx := &Context{

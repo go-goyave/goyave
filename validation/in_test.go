@@ -42,7 +42,6 @@ func TestInValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := In(c.values)
 			ctx := &Context{
@@ -78,7 +77,6 @@ func TestNotInValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := NotIn(c.values)
 			ctx := &Context{
@@ -126,7 +124,6 @@ func TestInFieldValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := InField[string]("field")
 			v.lang = &lang.Language{}
@@ -188,7 +185,6 @@ func TestNotInFieldValidator(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := NotInField[string]("field")
 			v.lang = &lang.Language{}

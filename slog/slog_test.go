@@ -176,4 +176,12 @@ func TestLogger(t *testing.T) {
 		l.ErrorWithSource(context.Background(), pc, err)
 		assert.Regexp(t, r, buf.String())
 	})
+
+	t.Run("DiscardLogger", func(t *testing.T) {
+		logger := DiscardLogger()
+
+		assert.NotPanics(t, func() {
+			logger.Info("This log should be discarded")
+		})
+	})
 }

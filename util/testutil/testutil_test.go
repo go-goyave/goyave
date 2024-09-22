@@ -34,7 +34,7 @@ func TestTestServer(t *testing.T) {
 	t.Run("NewTestServer", func(t *testing.T) {
 		server := NewTestServer(t, "resources/custom_config.json")
 		assert.Equal(t, "value", server.Config().Get("custom-entry"))
-		assert.Equal(t, slog.New(slog.NewHandler(true, &LogWriter{t: t})), server.Logger)
+		assert.Equal(t, slog.DiscardLogger(), server.Logger)
 	})
 
 	t.Run("NewTestServerWithOptions", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestTestServer(t *testing.T) {
 
 		assert.NotNil(t, server.Lang)
 		assert.Equal(t, "test-value", server.Config().Get("test-entry"))
-		assert.Equal(t, slog.New(slog.NewHandler(true, &LogWriter{t: t})), server.Logger)
+		assert.Equal(t, slog.DiscardLogger(), server.Logger)
 	})
 
 	t.Run("NewTestServer_AutoConfig", func(t *testing.T) {

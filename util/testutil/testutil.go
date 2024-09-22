@@ -69,7 +69,7 @@ func NewTestServer(t *testing.T, configFileName string) *TestServer {
 // routes without starting the server.
 //
 // By default, if no `Logger` is given in the options, a default logger redirecting the
-// output to `testing.T.Log()` is used.
+// output to `io.Discard` is used.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
 func NewTestServerWithOptions(t *testing.T, opts goyave.Options) *TestServer {
@@ -82,7 +82,7 @@ func NewTestServerWithOptions(t *testing.T, opts goyave.Options) *TestServer {
 	}
 
 	if opts.Logger == nil {
-		opts.Logger = slog.New(slog.NewHandler(opts.Config.GetBool("app.debug"), &LogWriter{t: t}))
+		opts.Logger = slog.DiscardLogger()
 	}
 
 	srv, err := goyave.New(opts)

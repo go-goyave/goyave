@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"runtime"
 	"time"
@@ -191,4 +192,9 @@ func structValue(v reflect.Value) slog.Value {
 		return slog.AnyValue(v.Interface())
 	}
 	return slog.GroupValue(attrs...)
+}
+
+// DiscardLogger returns a new Logger that discards all logs.
+func DiscardLogger() *Logger {
+	return &Logger{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
 }

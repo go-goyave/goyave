@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,6 +22,8 @@ import (
 
 	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
 )
+
+type testCtxKey struct{}
 
 func TestMiddlewareHolder(t *testing.T) {
 	m1 := &recoveryMiddleware{}
@@ -317,10 +320,11 @@ func TestValidateMiddleware(t *testing.T) {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
-						assert.NotNil(t, v.DB())
 						assert.NotNil(t, v.Config())
+						assert.NotNil(t, v.DB())
 						assert.NotNil(t, v.Logger())
 						assert.NotNil(t, v.Lang())
+						assert.Equal(t, "test-value", ctx.Context.Value(testCtxKey{}))
 						return false
 					},
 				}}}}
@@ -396,6 +400,7 @@ func TestValidateMiddleware(t *testing.T) {
 						assert.NotNil(t, v.DB())
 						assert.NotNil(t, v.Logger())
 						assert.NotNil(t, v.Lang())
+						assert.Equal(t, "test-value", ctx.Context.Value(testCtxKey{}))
 						return false
 					},
 				}}}}
@@ -501,6 +506,7 @@ func TestValidateMiddleware(t *testing.T) {
 			m.Init(server)
 
 			request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+			request.WithContext(context.WithValue(request.Context(), testCtxKey{}, "test-value"))
 			request.Lang = server.Lang.GetDefault()
 			request.Query = c.query
 			request.Data = c.data

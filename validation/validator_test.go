@@ -2,12 +2,14 @@ package validation
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
@@ -979,4 +981,62 @@ func (v addErrorsValidator) Validate(ctx *Context) bool {
 		ctx.AddValidationErrors(e.Path, e.Error)
 	}
 	return true
+}
+
+func TestValidateWithContext(t *testing.T) {
+	cases := []struct {
+		ctx    context.Context
+		expect func(*testing.T, context.Context) bool
+		desc   string
+	}{
+		{
+			desc: "default_background",
+			ctx:  nil,
+			expect: func(t *testing.T, ctx context.Context) bool {
+				return assert.Equal(t, context.Background(), ctx)
+			},
+		},
+		{
+			desc: "custom",
+			ctx:  context.WithValue(context.Background(), testCtxKey{}, "test-value"),
+			expect: func(t *testing.T, ctx context.Context) bool {
+				return assert.Equal(t, "test-value", ctx.Value(testCtxKey{}))
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			opts := &Options{
+				Data:    map[string]any{},
+				Context: c.ctx,
+				Rules: RuleSet{
+					{
+						Path:  CurrentElement,
+						Rules: List{&ctxValidator{t: t, expect: c.expect}},
+					},
+				},
+			}
+
+			validationErrors, errs := Validate(opts)
+			require.Nil(t, errs)
+			require.Nil(t, validationErrors)
+		})
+	}
+}
+
+type testCtxKey struct{}
+
+type ctxValidator struct {
+	BaseValidator
+	t      *testing.T
+	expect func(*testing.T, context.Context) bool
+}
+
+func (ctxValidator) Name() string {
+	return "ctxValidator"
+}
+
+func (v ctxValidator) Validate(ctx *Context) bool {
+	return v.expect(v.t, ctx.Context)
 }

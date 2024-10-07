@@ -147,6 +147,7 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 		var errors []error
 		if m.QueryRules != nil {
 			opt := &validation.Options{
+				Context:                  r.Context(),
 				Data:                     r.Query,
 				Rules:                    m.QueryRules(r).AsRules(),
 				ConvertSingleValueArrays: true,
@@ -168,6 +169,7 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 		}
 		if m.BodyRules != nil {
 			opt := &validation.Options{
+				Context:                  r.Context(),
 				Data:                     r.Data,
 				Rules:                    m.BodyRules(r).AsRules(),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),

@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"time"
@@ -101,8 +102,10 @@ func (c *component) Logger() *slog.Logger {
 // Only `Data`, `Rules` and `Language` are mandatory. However, it is recommended
 // to provide values for all the options in case a `Validator` requires them to function.
 type Options struct {
-	Data  any
-	Rules Ruler
+	// Context defaults to `context.Background()` if not provided.
+	Context context.Context
+	Data    any
+	Rules   Ruler
 
 	Now time.Time
 
@@ -150,7 +153,9 @@ type AddedValidationError[T addedValidationErrorConstraint] struct {
 // Context is a structure unique per `Validator.Validate()` execution containing
 // all the data required by a validator.
 type Context struct {
-	Data any
+	// Context is never nil. Defaults to `context.Background()`. Readonly.
+	Context context.Context
+	Data    any
 
 	// Extra the map of Extra from the validation Options.
 	Extra                 map[any]any
@@ -281,6 +286,9 @@ func Validate(options *Options) (*Errors, []error) {
 	if options.Language == nil {
 		options.Language = lang.Default
 	}
+	if options.Context == nil {
+		options.Context = context.Background()
+	}
 
 	rules := options.Rules.AsRules()
 	for _, field := range rules {
@@ -364,6 +372,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 
 			errorPath := field.getErrorPath(parentPath, c)
 			ctx := &Context{
+				Context:   v.options.Context,
 				Data:      data,
 				Extra:     v.options.Extra,
 				Value:     value,

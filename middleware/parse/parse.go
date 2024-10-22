@@ -43,8 +43,14 @@ type Middleware struct {
 // Handle reads the request query and body and parses it if necessary.
 // If the request Data is not nil, the body is not parsed again and the
 // middleware immediately passes after parsing the query.
+// If the current route is the special "not found" or "method not allowed" route,
+// the middleware is skipped and immediately passes.
 func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 	return func(response *goyave.Response, r *goyave.Request) {
+		if r.Route.GetName() == goyave.RouteNotFound || r.Route.GetName() == goyave.RouteMethodNotAllowed {
+			next(response, r)
+			return
+		}
 		if err := parseQuery(r); err != nil {
 			response.Status(http.StatusBadRequest)
 			r.Extra[goyave.ExtraParseError{}] = fmt.Errorf("%w: %w", goyave.ErrInvalidQuery, err)

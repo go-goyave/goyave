@@ -636,10 +636,10 @@ func TestErrLogWriter(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, len(message), n)
 
-	assert.Regexp(t, regexp.MustCompile(
+	assert.Regexp(t,
 		fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`,
 			regexp.QuoteMeta(message),
-		)),
+		),
 		buf.String(),
 	)
 }

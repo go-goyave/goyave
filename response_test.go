@@ -364,10 +364,10 @@ func TestResponse(t *testing.T) {
 		}
 		assert.Equal(t, []error{err}, e.Unwrap())
 		assert.Equal(t, http.StatusInternalServerError, resp.status)
-		assert.Regexp(t, regexp.MustCompile(
+		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 				regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
-			)),
+			),
 			logBuffer.String(),
 		)
 	})
@@ -475,10 +475,10 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
 		assert.Equal(t, "{\"error\":\"custom error\"}\n", string(body))
 
-		assert.Regexp(t, regexp.MustCompile(
+		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 				regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
-			)),
+			),
 			logBuffer.String(),
 		)
 	})
@@ -507,10 +507,10 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, res.StatusCode)
 		assert.Equal(t, "forbidden", string(body))
 
-		assert.Regexp(t, regexp.MustCompile(
+		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 				regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
-			)),
+			),
 			logBuffer.String(),
 		)
 	})

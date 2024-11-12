@@ -14,6 +14,7 @@ linters-settings:
       - require-error
       - error-nil
       - formatter
+      - encoded-compare
   revive:
     rules:
       - name: var-naming

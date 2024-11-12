@@ -109,10 +109,10 @@ func TestRecoveryMiddleware(t *testing.T) {
 			return
 		}
 		assert.Equal(t, []error{panicErr}, returnedErr.Unwrap())
-		assert.Regexp(t, regexp.MustCompile(
+		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 				regexp.QuoteMeta(returnedErr.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(returnedErr.StackFrames().String())))),
-			)),
+			),
 			logBuffer.String(),
 		)
 		assert.Equal(t, http.StatusInternalServerError, response.status)
@@ -163,10 +163,10 @@ func TestRecoveryMiddleware(t *testing.T) {
 			return
 		}
 		assert.Equal(t, []error{&runtime.PanicNilError{}}, returnedErr.Unwrap())
-		assert.Regexp(t, regexp.MustCompile(
+		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 				regexp.QuoteMeta(returnedErr.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(returnedErr.StackFrames().String())))),
-			)),
+			),
 			logBuffer.String(),
 		)
 		assert.Equal(t, http.StatusInternalServerError, response.status)
@@ -197,10 +197,10 @@ func TestRecoveryMiddleware(t *testing.T) {
 			return
 		}
 		assert.Len(t, returnedErr.Unwrap(), 1)
-		assert.Regexp(t, regexp.MustCompile(
+		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 				regexp.QuoteMeta(returnedErr.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(returnedErr.StackFrames().String())))),
-			)),
+			),
 			logBuffer.String(),
 		)
 		assert.Equal(t, http.StatusInternalServerError, response.status)

@@ -48,7 +48,7 @@ func TestLogger(t *testing.T) {
 
 		l.Info(context.Background(), "message %d", 1)
 
-		assert.Regexp(t, regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"message 1"}\n`), buf.String())
+		assert.Regexp(t, `{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"message 1"}\n`, buf.String())
 	})
 
 	t.Run("Warn", func(t *testing.T) {
@@ -66,7 +66,7 @@ func TestLogger(t *testing.T) {
 
 		l.Warn(context.Background(), "message %d", 1)
 
-		assert.Regexp(t, regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"WARN","source":{"function":".+","file":".+","line":\d+},"msg":"message 1"}\n`), buf.String())
+		assert.Regexp(t, `{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"WARN","source":{"function":".+","file":".+","line":\d+},"msg":"message 1"}\n`, buf.String())
 	})
 
 	t.Run("Error", func(t *testing.T) {
@@ -84,7 +84,7 @@ func TestLogger(t *testing.T) {
 
 		l.Error(context.Background(), "message %d", 1)
 
-		assert.Regexp(t, regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"message 1"}\n`), buf.String())
+		assert.Regexp(t, `{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"message 1"}\n`, buf.String())
 	})
 
 	t.Run("Trace", func(t *testing.T) {

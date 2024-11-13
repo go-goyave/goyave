@@ -42,3 +42,10 @@ jobs:
         with:
           version: v1.62
           args: --timeout 5m
+
+  govulncheck:
+    name: Check vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - id: govulncheck
+        uses: golang/govulncheck-action@v1

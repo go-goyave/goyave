@@ -22,6 +22,7 @@ func TestDistinctValidator(t *testing.T) {
 		validator Validator
 		want      bool
 	}{
+		{value: []any{}, validator: Distinct[string](), want: true},
 		{value: []string{}, validator: Distinct[string](), want: true},
 		{value: []string{"a", "b"}, validator: Distinct[string](), want: true},
 		{value: []string{"a", "b", "a"}, validator: Distinct[string](), want: false},

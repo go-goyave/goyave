@@ -8,6 +8,11 @@ type DistinctValidator[T comparable] struct {
 
 // Validate checks the field under validation satisfies this validator's criteria.
 func (v *DistinctValidator[T]) Validate(ctx *Context) bool {
+	if empty, ok := ctx.Value.([]any); ok && len(empty) == 0 {
+		// The array will stay `[]any` even after recursive validation if it's empty.
+		// We don't want to check distinct elements for empty arrays.
+		return true
+	}
 	list, ok := ctx.Value.([]T)
 	if !ok {
 		return false

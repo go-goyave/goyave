@@ -445,6 +445,10 @@ func (r *Router) Options(uri string, handler Handler) *Route {
 //
 // If no file is given in the url, or if the given file is a directory, the handler will
 // send the "index.html" file if it exists.
+//
+// As a precaution, all requests with a path containing a path segment in the form of ".", ".." are rejected with
+// `http.StatusNotFound`. This ensures clients cannot access files outside of the given filesystem base directory.
+// Paths containing  "\" or "//" are also rejected.
 func (r *Router) Static(fs fs.StatFS, uri string, download bool) *Route {
 	return r.registerRoute([]string{http.MethodGet}, uri+"{resource:.*}", staticHandler(fs, download))
 }

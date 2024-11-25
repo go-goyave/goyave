@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,6 +72,74 @@ func TestStaticHandler(t *testing.T) {
 			},
 		},
 		{
+			uri:       "custom_config.json", // Force leading slash if the path is not empty
+			directory: "resources",
+			download:  false,
+			expected: func(t *testing.T, response *Response, _ *http.Response, _ []byte) {
+				assert.Equal(t, http.StatusNotFound, response.GetStatus())
+			},
+		},
+		{
+			uri:       "index.html", // Force leading slash if the path is not empty
+			directory: "resources",
+			download:  false,
+			expected: func(t *testing.T, response *Response, _ *http.Response, _ []byte) {
+				assert.Equal(t, http.StatusNotFound, response.GetStatus())
+			},
+		},
+		{
+			uri:       "",
+			directory: "resources",
+			download:  false,
+			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
+				assert.Equal(t, http.StatusOK, response.GetStatus())
+				assert.Equal(t, "text/html; charset=utf-8", result.Header.Get("Content-Type"))
+				assert.Equal(t, "<html></html>", string(body))
+			},
+		},
+		{
+			uri:       "", // Download index.html
+			directory: "resources",
+			download:  true,
+			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
+				assert.Equal(t, http.StatusOK, response.GetStatus())
+				assert.Equal(t, "text/html; charset=utf-8", result.Header.Get("Content-Type"))
+				assert.Equal(t, "attachment; filename=\"index.html\"", result.Header.Get("Content-Disposition"))
+				assert.Equal(t, "<html></html>", string(body))
+			},
+		},
+		{
+			uri:       "/",
+			directory: "resources",
+			download:  false,
+			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
+				assert.Equal(t, http.StatusOK, response.GetStatus())
+				assert.Equal(t, "text/html; charset=utf-8", result.Header.Get("Content-Type"))
+				assert.Equal(t, "<html></html>", string(body))
+			},
+		},
+		{
+			uri:       "/index.html",
+			directory: "resources",
+			download:  false,
+			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
+				assert.Equal(t, http.StatusOK, response.GetStatus())
+				assert.Equal(t, "text/html; charset=utf-8", result.Header.Get("Content-Type"))
+				assert.Equal(t, "<html></html>", string(body))
+			},
+		},
+		{
+			uri:       "/", // Download index.html
+			directory: "resources",
+			download:  true,
+			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
+				assert.Equal(t, http.StatusOK, response.GetStatus())
+				assert.Equal(t, "text/html; charset=utf-8", result.Header.Get("Content-Type"))
+				assert.Equal(t, "attachment; filename=\"index.html\"", result.Header.Get("Content-Disposition"))
+				assert.Equal(t, "<html></html>", string(body))
+			},
+		},
+		{
 			uri:       "/custom_config.json",
 			directory: "resources",
 			download:  true,
@@ -95,12 +164,12 @@ func TestStaticHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.uri, func(t *testing.T) {
+		t.Run(strings.ReplaceAll(c.uri, "/", "_"), func(t *testing.T) {
 			cfg := config.LoadDefault()
 			srv, err := New(Options{Config: cfg})
 			require.NoError(t, err)
 
-			request := NewRequest(httptest.NewRequest(http.MethodGet, c.uri, nil))
+			request := NewRequest(httptest.NewRequest(http.MethodGet, "/static"+c.uri, nil))
 			request.RouteParams = map[string]string{"resource": c.uri}
 
 			recorder := httptest.NewRecorder()
@@ -116,6 +185,52 @@ func TestStaticHandler(t *testing.T) {
 			assert.NoError(t, result.Body.Close())
 			require.NoError(t, err)
 			c.expected(t, response, result, body)
+		})
+	}
+}
+
+func TestStaticHandlerBounds(t *testing.T) {
+	// This test ensures a client cannot request a file outside of
+	// the bounds of the set directory (using . or ..)
+	cases := []string{
+		"/resources/.",
+		"/resources/./",
+		"/resources/..",
+		"/resources/../",
+		"/resources/img/..",
+		"/resources/img/../custom_config.json",
+		"/resources/img/./logo/goyave_16.png",
+		"/resources/img//logo/goyave_16.png",
+		"/resources/\\",
+		"/resources/img\\logo\\goyave_16.png",
+		"/resources/../README.md",
+		"/resources//custom_config.json",
+		"/.",
+		"/..",
+		".",
+		"..",
+	}
+
+	for _, c := range cases {
+		t.Run(strings.ReplaceAll(c, "/", "_"), func(t *testing.T) {
+			cfg := config.LoadDefault()
+			srv, err := New(Options{Config: cfg})
+			require.NoError(t, err)
+
+			request := NewRequest(httptest.NewRequest(http.MethodGet, "/static"+c, nil))
+			request.RouteParams = map[string]string{"resource": c}
+
+			recorder := httptest.NewRecorder()
+			response := NewResponse(srv, request, recorder)
+
+			require.NoError(t, err)
+			handler := staticHandler(&osfs.FS{}, false)
+			handler(response, request)
+
+			result := recorder.Result()
+			assert.NoError(t, result.Body.Close())
+			require.NoError(t, err)
+			assert.Equal(t, http.StatusNotFound, response.GetStatus())
 		})
 	}
 }

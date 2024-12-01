@@ -12,11 +12,56 @@ import (
 )
 
 var contentTypeByExtension = map[string]string{
+	".css":    "text/css",
+	".bmp":    "image/bmp",
+	".csv":    "text/csv",
+	".doc":    "application/msword",
+	".docx":   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	".gz":     "application/gzip",
+	".gif":    "image/gif",
+	".htm":    "text/html",
+	".html":   "text/html",
+	".ico":    "image/vnd.microsoft.icon",
+	".jpg":    "image/jpeg",
+	".jpeg":   "image/jpeg",
+	".js":     "text/javascript",
 	".jsonld": "application/ld+json",
 	".json":   "application/json",
-	".js":     "text/javascript",
 	".mjs":    "text/javascript",
-	".css":    "text/css",
+	".mp3":    "audio/mpeg",
+	".mp4":    "video/mp4",
+	".mpeg":   "audio/mpeg",
+	".ods":    "application/vnd.oasis.opendocument.spreadsheet",
+	".odt":    "application/vnd.oasis.opendocument.text",
+	".oga":    "audio/ogg",
+	".ogv":    "video/ogg",
+	".ogx":    "application/ogg",
+	".opus":   "audio/ogg",
+	".otf":    "font/otf",
+	".png":    "image/png",
+	".pdf":    "application/pdf",
+	".ppt":    "application/vnd.ms-powerpoint",
+	".pptx":   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+	".sh":     "application/x-sh",
+	".svg":    "image/svg+xml",
+	".tar":    "application/x-tar",
+	".tif":    "image/tiff",
+	".tiff":   "image/tiff",
+	".ts":     "video/mp2t",
+	".ttf":    "font/ttf",
+	".txt":    "text/plain",
+	".wav":    "audio/wav",
+	".weba":   "audio/webm",
+	".webm":   "audio/webm",
+	".webp":   "image/webp",
+	".woff":   "font/woff",
+	".woff2":  "font/woff2",
+	".xhtml":  "application/xhtml+xml",
+	".xls":    "application/vnd.ms-excel",
+	".xlsx":   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	".xml":    "application/xml",
+	".zip":    "application/zip",
+	".7z":     "application/x-7z-compressed",
 }
 
 // GetFileExtension returns the last part of a file name.
@@ -30,15 +75,8 @@ func GetFileExtension(filename string) string {
 }
 
 // GetMIMEType get the mime type and size of the given file.
-// This function calls `http.DetectContentType`. If the detected content type
-// could not be determined or if it's a text file, `GetMIMEType` will attempt to
-// detect the MIME type based on the file extension. The following extensions are
-// supported:
-//   - `.jsonld`: "application/ld+json"
-//   - `.json`: "application/json"
-//   - `.js` / `.mjs`: "text/javascript"
-//   - `.css`: "text/css"
-//
+// This function opens the file, stats it and calls `fsutil.DetectContentType`.
+// If the file is empty (size of 0), the content-type will be detected using `fsutil.DetectContentTypeByExtension`.
 // If a specific MIME type cannot be determined, returns "application/octet-stream" as a fallback.
 func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64, err error) {
 	var f fs.File
@@ -63,33 +101,73 @@ func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64,
 
 	size = stat.Size()
 
-	buffer := make([]byte, 512)
-	contentType = "application/octet-stream"
-
-	if size != 0 {
-		_, err = f.Read(buffer)
-		if err != nil {
-			err = errors.New(err)
-			return
-		}
-
-		contentType = http.DetectContentType(buffer)
+	if size == 0 {
+		contentType = DetectContentTypeByExtension(file)
+		return
 	}
 
-	if strings.HasPrefix(contentType, "application/octet-stream") || strings.HasPrefix(contentType, "text/plain") {
-		for ext, t := range contentTypeByExtension {
-			if strings.HasSuffix(file, ext) {
-				tmp := t
-				if i := strings.Index(contentType, ";"); i != -1 {
-					tmp = t + contentType[i:]
-				}
-				contentType = tmp
-				break
-			}
-		}
+	contentType, err = DetectContentType(f, file)
+	if err != nil {
+		err = errors.New(err)
 	}
 
 	return
+}
+
+// DetectContentType by sniffing the first 512 bytes of the given reader using `http.DetectContentType`.
+//
+// If the detected content type is `"application/octet-stream"` or `"text/plain"`, this function will attempt to
+// find a more precise one using `fsutil.DetectContentTypeByExtension`.
+// The header parameter is retained (e.g: `charset=utf-8`).
+//
+// If there is no error, this function always returns a valid MIME type. If it cannot determine a more specific one,
+// it returns `"application/octet-stream"`.
+//
+// If the given reader implements `io.Seeker`, the reader's offset is reset to the start.
+func DetectContentType(r io.Reader, fileName string) (string, error) {
+	buffer := make([]byte, 512)
+	_, err := r.Read(buffer)
+	if err != nil {
+		return "", errors.New(err)
+	}
+	if seeker, ok := r.(io.Seeker); ok {
+		_, err = seeker.Seek(0, io.SeekStart)
+		if err != nil {
+			return "", errors.New(err)
+		}
+	}
+
+	contentType := http.DetectContentType(buffer)
+	if strings.HasPrefix(contentType, "application/octet-stream") || strings.HasPrefix(contentType, "text/plain") {
+		contentType = detectContentTypeByExtension(fileName, contentType)
+	}
+	return contentType, nil
+}
+
+func detectContentTypeByExtension(fileName, contentType string) string {
+	for ext, t := range contentTypeByExtension {
+		if strings.HasSuffix(fileName, ext) {
+			tmp := t
+			if i := strings.Index(contentType, ";"); i != -1 {
+				tmp = t + contentType[i:] // Keep the "charset" arguments
+			}
+			contentType = tmp
+			break
+		}
+	}
+	return contentType
+}
+
+// DetectContentTypeByExtension returns a MIME type associated with the extension (suffix) of the given file name.
+// Note that this function should be used as a fallback if sniffing using `fsutil.DetectContentType`
+// isn't possible due to:
+//   - the file being empty (size of 0)
+//   - the file requiring to be read after the sniffing but its reader doesn't implement `io.Seeker` for rewinding.
+//
+// The local database covers the most common MIME types.
+// If the extension is not known to the `fsutil` package, returns `"application/octet-stream"`.
+func DetectContentTypeByExtension(fileName string) string {
+	return detectContentTypeByExtension(fileName, "application/octet-stream")
 }
 
 // FileExists returns true if the file at the given path exists and is readable.

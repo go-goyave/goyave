@@ -143,53 +143,204 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("File", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		cases := []struct {
+			setup           func(resp *Response)
+			desc            string
+			filename        string
+			wantLength      string
+			wantContentType string
+			wantDisposition string
+			wantBody        []byte
+			wantStatus      int
+		}{
+			{
+				desc:            "content-type_detection",
+				filename:        "resources/test_file.txt",
+				wantLength:      "25",
+				wantContentType: "text/plain; charset=utf-8",
+				wantDisposition: "inline",
+				wantStatus:      http.StatusOK,
+				wantBody:        append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), // utf-8 BOM + text content
+			},
+			{
+				desc: "content-type_provided",
+				setup: func(resp *Response) {
+					resp.Header().Set("Content-Type", "provided")
+				},
+				filename:        "resources/test_file.txt",
+				wantLength:      "25",
+				wantContentType: "provided",
+				wantDisposition: "inline",
+				wantStatus:      http.StatusOK,
+				wantBody:        append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), // utf-8 BOM + text content
+			},
+			{
+				desc:            "empty_txt_file",
+				filename:        "resources/empty.txt",
+				wantLength:      "0",
+				wantContentType: "text/plain",
+				wantDisposition: "inline",
+				wantStatus:      0, // Will be set to 200 in finalization step, which isn't executed here.
+				wantBody:        []byte{},
+			},
+			{
+				desc:            "empty_file",
+				filename:        "resources/empty",
+				wantLength:      "0",
+				wantContentType: "application/octet-stream",
+				wantDisposition: "inline",
+				wantStatus:      0, // Will be set to 200 in finalization step, which isn't executed here.
+				wantBody:        []byte{},
+			},
+			{
+				desc:            "not_found",
+				filename:        "not_a_file",
+				wantLength:      "",
+				wantContentType: "",
+				wantDisposition: "",
+				wantStatus:      http.StatusNotFound,
+				wantBody:        []byte{},
+			},
+			{
+				desc:            "directory",
+				filename:        ".",
+				wantLength:      "",
+				wantContentType: "",
+				wantDisposition: "",
+				wantStatus:      http.StatusNotFound,
+				wantBody:        []byte{},
+			},
+		}
 
-		resp.File(&osfs.FS{}, "resources/test_file.txt")
-		res := recorder.Result()
+		for _, c := range cases {
+			t.Run(c.desc, func(t *testing.T) {
+				resp, recorder := newTestReponse()
+				if c.setup != nil {
+					c.setup(resp)
+				}
+				resp.File(&osfs.FS{}, c.filename)
+				res := recorder.Result()
 
-		assert.Equal(t, http.StatusOK, res.StatusCode)
-		assert.Equal(t, "inline", res.Header.Get("Content-Disposition"))
-		assert.Equal(t, "25", res.Header.Get("Content-Length"))
-		assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
+				assert.Equal(t, c.wantStatus, resp.status)
+				assert.Equal(t, c.wantDisposition, res.Header.Get("Content-Disposition"))
+				assert.Equal(t, c.wantLength, res.Header.Get("Content-Length"))
+				assert.Equal(t, c.wantContentType, res.Header.Get("Content-Type"))
 
-		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, res.Body.Close())
-		require.NoError(t, err)
-
-		// utf-8 BOM + text content
-		assert.Equal(t, append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), body)
-
-		t.Run("not_found", func(t *testing.T) {
-			resp, _ := newTestReponse()
-			resp.File(&osfs.FS{}, "not_a_file")
-			assert.Equal(t, http.StatusNotFound, resp.status)
-		})
+				body, err := io.ReadAll(res.Body)
+				assert.NoError(t, res.Body.Close())
+				require.NoError(t, err)
+				assert.Equal(t, c.wantBody, body)
+			})
+		}
 	})
 
 	t.Run("Download", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		cases := []struct {
+			setup           func(resp *Response)
+			desc            string
+			path            string
+			filename        string
+			wantLength      string
+			wantContentType string
+			wantDisposition string
+			wantBody        []byte
+			wantStatus      int
+		}{
+			{
+				desc:            "content-type_detection",
+				path:            "resources/test_file.txt",
+				filename:        "name.txt",
+				wantLength:      "25",
+				wantContentType: "text/plain; charset=utf-8",
+				wantDisposition: "attachment; filename=\"name.txt\"",
+				wantStatus:      http.StatusOK,
+				wantBody:        append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), // utf-8 BOM + text content
+			},
+			{
+				desc: "content-type_provided",
+				setup: func(resp *Response) {
+					resp.Header().Set("Content-Type", "provided")
+				},
+				path:            "resources/test_file.txt",
+				filename:        "name.txt",
+				wantLength:      "25",
+				wantContentType: "provided",
+				wantDisposition: "attachment; filename=\"name.txt\"",
+				wantStatus:      http.StatusOK,
+				wantBody:        append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), // utf-8 BOM + text content
+			},
+			{
+				desc:            "empty_txt_file",
+				path:            "resources/empty.txt",
+				filename:        "name.txt",
+				wantLength:      "0",
+				wantContentType: "text/plain",
+				wantDisposition: "attachment; filename=\"name.txt\"",
+				wantStatus:      0, // Will be set to 200 in finalization step, which isn't executed here.
+				wantBody:        []byte{},
+			},
+			{
+				desc:            "empty_file",
+				path:            "resources/empty",
+				filename:        "empty",
+				wantLength:      "0",
+				wantContentType: "application/octet-stream",
+				wantDisposition: "attachment; filename=\"empty\"",
+				wantStatus:      0, // Will be set to 200 in finalization step, which isn't executed here.
+				wantBody:        []byte{},
+			},
+			{
+				desc:            "empty_json_file", // The content-type should be detected from the file extension as a fallback
+				path:            "resources/empty.json",
+				filename:        "name.json",
+				wantLength:      "0",
+				wantContentType: "application/json",
+				wantDisposition: "attachment; filename=\"name.json\"",
+				wantStatus:      0, // Will be set to 200 in finalization step, which isn't executed here.
+				wantBody:        []byte{},
+			},
+			{
+				desc:            "not_found",
+				path:            "not_a_file",
+				filename:        "name.txt",
+				wantLength:      "",
+				wantContentType: "",
+				wantDisposition: "",
+				wantStatus:      http.StatusNotFound,
+				wantBody:        []byte{},
+			},
+			{
+				desc:            "directory",
+				path:            ".",
+				filename:        "name.txt",
+				wantLength:      "",
+				wantContentType: "",
+				wantDisposition: "",
+				wantStatus:      http.StatusNotFound,
+				wantBody:        []byte{},
+			},
+		}
 
-		resp.Download(&osfs.FS{}, "resources/test_file.txt", "test_file.txt")
-		res := recorder.Result()
+		for _, c := range cases {
+			t.Run(c.desc, func(t *testing.T) {
+				resp, recorder := newTestReponse()
+				if c.setup != nil {
+					c.setup(resp)
+				}
+				resp.Download(&osfs.FS{}, c.path, c.filename)
+				res := recorder.Result()
 
-		assert.Equal(t, http.StatusOK, res.StatusCode)
-		assert.Equal(t, "attachment; filename=\"test_file.txt\"", res.Header.Get("Content-Disposition"))
-		assert.Equal(t, "25", res.Header.Get("Content-Length"))
-		assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
+				assert.Equal(t, c.wantStatus, resp.status)
+				assert.Equal(t, c.wantDisposition, res.Header.Get("Content-Disposition"))
+				assert.Equal(t, c.wantLength, res.Header.Get("Content-Length"))
+				assert.Equal(t, c.wantContentType, res.Header.Get("Content-Type"))
 
-		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, res.Body.Close())
-		require.NoError(t, err)
-
-		// utf-8 BOM + text content
-		assert.Equal(t, append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...), body)
-
-		t.Run("not_found", func(t *testing.T) {
-			resp, _ := newTestReponse()
-			resp.Download(&osfs.FS{}, "not_a_file", "file.txt")
-			assert.Equal(t, http.StatusNotFound, resp.status)
-		})
+				body, err := io.ReadAll(res.Body)
+				assert.NoError(t, res.Body.Close())
+				require.NoError(t, err)
+				assert.Equal(t, c.wantBody, body)
+			})
+		}
 	})
 
 	t.Run("JSON", func(t *testing.T) {

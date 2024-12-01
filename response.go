@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 	errorutil "goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
@@ -328,32 +329,37 @@ func (r *Response) String(responseCode int, message string) {
 }
 
 func (r *Response) writeFile(fs fs.StatFS, file string, disposition string) {
-	if !fsutil.FileExists(fs, file) {
+	f, err := fs.Open(file)
+	if err != nil {
 		r.Status(http.StatusNotFound)
 		return
 	}
-	r.status = http.StatusOK
-	mime, size, err := fsutil.GetMIMEType(fs, file)
-	if err != nil {
-		r.Error(errorutil.NewSkip(err, 4))
-		return
-	}
-	header := r.responseWriter.Header()
-	header.Set("Content-Disposition", disposition)
-
-	if header.Get("Content-Type") == "" {
-		header.Set("Content-Type", mime)
-	}
-
-	header.Set("Content-Length", strconv.FormatInt(size, 10))
-
-	f, _ := fs.Open(file)
-	// FIXME: the file is opened thrice here, can we optimize this so it's only opened once?
-	// No need to check for errors, fsutil.FileExists(fs, file) and
-	// fsutil.GetMIMEType(fs, file) already handled that.
 	defer func() {
 		_ = f.Close()
 	}()
+	stat, err := f.Stat()
+	if err != nil || stat.IsDir() {
+		r.Status(http.StatusNotFound)
+		return
+	}
+	size := stat.Size()
+	header := r.responseWriter.Header()
+
+	contentType, _ := lo.Coalesce(header.Get("Content-Type"), "application/octet-stream")
+	if header.Get("Content-Type") == "" {
+		readSeeker, ok := f.(io.ReadSeeker)
+		if size == 0 || !ok {
+			contentType = fsutil.DetectContentTypeByExtension(file)
+		} else {
+			contentType, err = fsutil.DetectContentType(readSeeker, file)
+			if err != nil {
+				panic(errorutil.NewSkip(err, 4))
+			}
+		}
+	}
+	header.Set("Content-Disposition", disposition)
+	header.Set("Content-Length", strconv.FormatInt(size, 10))
+	header.Set("Content-Type", contentType)
 	if _, err := io.Copy(r, f); err != nil {
 		panic(errorutil.NewSkip(err, 4))
 	}

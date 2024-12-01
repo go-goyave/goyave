@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"math"
@@ -19,6 +20,7 @@ import (
 
 	_ "embed"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/util/errors"
@@ -93,37 +95,82 @@ func TestGetFileExtension(t *testing.T) {
 }
 
 func TestGetMIMEType(t *testing.T) {
-	mime, size, err := GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/img/logo/goyave_16.png"))
-	assert.Equal(t, "image/png", mime)
-	assert.Equal(t, int64(630), size)
-	require.NoError(t, err)
-
-	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/test_script.sh"))
-	require.NoError(t, err)
-	assert.Equal(t, "text/plain; charset=utf-8", mime)
-
-	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath(".gitignore"))
-	require.NoError(t, err)
-	assert.Equal(t, "application/octet-stream", mime)
-
-	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("config/config.test.json"))
-	require.NoError(t, err)
-	assert.Equal(t, "application/json", mime)
-
-	mime, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("resources/test_script.js"))
-	require.NoError(t, err)
-	assert.Equal(t, "text/javascript; charset=utf-8", mime)
-
 	cssPath := toAbsolutePath("util/fsutil/test.css")
-	err = os.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)
+	err := os.WriteFile(cssPath, []byte("body{ margin:0; }"), 0644)
 	require.NoError(t, err)
-	mime, _, err = GetMIMEType(&osfs.FS{}, cssPath)
-	assert.Equal(t, "text/css", mime)
-	require.NoError(t, err)
-	deleteFile(cssPath)
+	t.Cleanup(func() {
+		deleteFile(cssPath)
+	})
 
-	_, _, err = GetMIMEType(&osfs.FS{}, toAbsolutePath("doesn't exist"))
-	require.Error(t, err)
+	cases := []struct {
+		wantSize *int64
+		path     string
+		wantMIME string
+		wantErr  bool
+	}{
+		{
+			path:     "resources/img/logo/goyave_16.png",
+			wantMIME: "image/png",
+			wantSize: lo.ToPtr(int64(630)),
+			wantErr:  false,
+		},
+		{
+			path:     "resources/test_script.sh",
+			wantMIME: "application/x-sh; charset=utf-8",
+			wantErr:  false,
+		},
+		{
+			path:     "resources/empty.txt",
+			wantMIME: "text/plain",
+			wantErr:  false,
+		},
+		{
+			path:     "resources/test_file.txt",
+			wantMIME: "text/plain; charset=utf-8",
+			wantErr:  false,
+		},
+		{
+			path:     ".gitignore",
+			wantMIME: "application/octet-stream",
+			wantErr:  false,
+		},
+		{
+			path:     "config/config.test.json",
+			wantMIME: "application/json",
+			wantErr:  false,
+		},
+		{
+			path:     "resources/test_script.js",
+			wantMIME: "text/javascript; charset=utf-8",
+			wantErr:  false,
+		},
+		{
+			path:     "util/fsutil/test.css",
+			wantMIME: "text/css",
+			wantErr:  false,
+		},
+		{
+			path:     "doesn't exist",
+			wantMIME: "",
+			wantSize: lo.ToPtr(int64(0)),
+			wantErr:  true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.path, func(t *testing.T) {
+			mime, size, err := GetMIMEType(&osfs.FS{}, toAbsolutePath(c.path))
+			assert.Equal(t, c.wantMIME, mime)
+			if c.wantSize != nil {
+				assert.Equal(t, *c.wantSize, size)
+			}
+			if c.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 
 	t.Run("empty_file", func(t *testing.T) {
 		filename := "empty_GetMIMEType.json"
@@ -135,12 +182,133 @@ func TestGetMIMEType(t *testing.T) {
 			deleteFile(filename)
 		})
 
-		mime, size, err = GetMIMEType(&osfs.FS{}, filename)
+		mime, size, err := GetMIMEType(&osfs.FS{}, filename)
 
 		assert.Equal(t, "application/json", mime)
 		assert.Equal(t, int64(0), size)
 		require.NoError(t, err)
 	})
+}
+
+type testBuffer struct {
+	buf []byte
+	off int
+}
+
+func (b *testBuffer) Seek(_ int64, _ int) (int64, error) {
+	b.off = 0
+	return 0, nil
+}
+
+func (b *testBuffer) Read(p []byte) (int, error) {
+	if b.off >= len(b.buf) {
+		return 0, fmt.Errorf("EOF")
+	}
+	n := copy(p, b.buf[b.off:])
+	b.off += n
+	return n, nil
+}
+
+func TestDetectContentType(t *testing.T) {
+	cases := []struct {
+		fileName string
+		wantMIME string
+		buf      []byte
+		wantErr  bool
+	}{
+		{
+			fileName: "utf8.txt",
+			buf:      append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...),
+			wantMIME: "text/plain; charset=utf-8",
+		},
+		{
+			fileName: "utf8.json",
+			buf:      append([]byte{0xef, 0xbb, 0xbf}, []byte("utf-8 with BOM content")...),
+			wantMIME: "application/json; charset=utf-8",
+		},
+		{
+			fileName: "file.json",
+			buf:      []byte("non-utf-8 content"),
+			wantMIME: "application/json",
+		},
+		{
+			fileName: "octet-stream",
+			buf:      []byte{1, 2, 3},
+			wantMIME: "application/octet-stream",
+		},
+		{
+			fileName: "octet-stream.js",
+			buf:      []byte{1, 2, 3},
+			wantMIME: "text/javascript",
+		},
+		{
+			fileName: "eof",
+			buf:      []byte{},
+			wantErr:  true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.fileName, func(t *testing.T) {
+			b := &testBuffer{
+				buf: c.buf,
+			}
+			mime, err := DetectContentType(b, c.fileName)
+			assert.Equal(t, c.wantMIME, mime)
+			if c.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, 0, b.off) // The reader has been reset
+		})
+	}
+}
+
+func TestDetectContentTypeByExtension(t *testing.T) {
+	cases := []struct {
+		desc        string
+		want        string
+		fileName    string
+		contentType string
+	}{
+		{
+			desc:        "unknown",
+			want:        "unknown",
+			contentType: "unknown",
+			fileName:    "test.xyz",
+		},
+		{
+			desc:        "unknown_with_params",
+			want:        "unknown; charset=utf-8",
+			contentType: "unknown; charset=utf-8",
+			fileName:    "test.xyz",
+		},
+		{
+			desc:        "webp",
+			want:        "image/webp",
+			contentType: "application/octet-stream",
+			fileName:    "picture.webp",
+		},
+		{
+			desc:        "utf8_text",
+			want:        "text/plain; charset=utf-8",
+			contentType: "text/plain; charset=utf-8",
+			fileName:    "test.txt",
+		},
+		{
+			desc:        "utf8_css",
+			want:        "text/css; charset=utf-8",
+			contentType: "text/plain; charset=utf-8",
+			fileName:    "test.css",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			assert.Equal(t, c.want, detectContentTypeByExtension(c.fileName, c.contentType))
+		})
+	}
 }
 
 func TestFileExists(t *testing.T) {

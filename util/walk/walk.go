@@ -357,16 +357,18 @@ func (p *Path) setAllMissingIndexes() {
 //
 // Example paths:
 //
-//	name
-//	object.field
-//	object.subobject.field
-//	object.*
-//	object.array[]
-//	object.arrayOfObjects[].field
-//	[]
-//	[].field
+//			name
+//			object.field
+//			object.subobject.field
+//			object.*
+//			object.array[]
+//			object.arrayOfObjects[].field
+//			[]
+//			[].field
+//		 	object*field
+//	     	object.field\[]
+//	     	object.field\[text\]
 func Parse(p string) (*Path, error) {
-	// TODO add escape system so '*', '[]' can be escaped
 	rootPath := &Path{}
 	path := rootPath
 
@@ -404,6 +406,7 @@ func Parse(p string) (*Path, error) {
 				path = path.Next
 			}
 		default:
+			t = removeEscapeChars(t)
 			path.Name = &t
 		}
 	}
@@ -436,6 +439,12 @@ func Depth(p string) uint {
 }
 
 func createPathScanner(path string) *bufio.Scanner {
+	escape := map[rune]bool{
+		'*': true,
+		'[': true,
+		']': true,
+	}
+
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
 		if len(path) == 0 || path[0] == '.' {
@@ -447,6 +456,13 @@ func createPathScanner(path string) *bufio.Scanner {
 
 			if i+width < len(data) {
 				next, _ := utf8.DecodeRune(data[i+width:])
+				// case: escape chars
+				_, escapeNext := escape[next]
+				if r == '\\' && escapeNext {
+					// Skips the next character
+					i += width
+					continue
+				}
 				if isValidSyntax(r, next) {
 					return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
 				}
@@ -475,4 +491,13 @@ func isValidSyntax(r rune, next rune) bool {
 		(r == '.' && (next == ']' || next == '[')) ||
 		(r != '.' && r != '[' && next == ']') ||
 		(r == ']' && next != '[' && next != '.')
+}
+
+func removeEscapeChars(t string) string {
+	r := strings.NewReplacer(
+		`\*`, `*`,
+		`\[`, `[`,
+		`\]`, `]`,
+	)
+	return r.Replace(t)
 }

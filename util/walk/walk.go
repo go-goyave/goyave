@@ -40,6 +40,14 @@ const (
 	ElementNotFound
 )
 
+var Escape = map[rune]struct{}{
+	'*':  {},
+	'[':  {},
+	']':  {},
+	'.':  {},
+	'\\': {},
+}
+
 // Path allows for complex untyped data structure exploration.
 // An instance of this structure represents a step in exploration.
 // Items NOT having `PathTypeElement` as a `Type` are expected to have a non-nil `Next`.
@@ -439,12 +447,6 @@ func Depth(p string) uint {
 }
 
 func createPathScanner(path string) *bufio.Scanner {
-	escape := map[rune]bool{
-		'*': true,
-		'[': true,
-		']': true,
-	}
-
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
 		if len(path) == 0 || path[0] == '.' {
@@ -457,13 +459,12 @@ func createPathScanner(path string) *bufio.Scanner {
 			if i+width < len(data) {
 				next, _ := utf8.DecodeRune(data[i+width:])
 				// case: escape chars
-				_, escapeNext := escape[next]
-				if r == '\\' && escapeNext {
+				if _, escapeNext := Escape[next]; r == '\\' && escapeNext {
 					// Skips the next character
 					i += width
 					continue
 				}
-				if isValidSyntax(r, next) {
+				if isSyntaxInvalid(r, next) {
 					return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
 				}
 
@@ -485,12 +486,14 @@ func createPathScanner(path string) *bufio.Scanner {
 	return scanner
 }
 
-func isValidSyntax(r rune, next rune) bool {
+func isSyntaxInvalid(r rune, next rune) bool {
+	_, escapeNext := Escape[next]
 	return (r == '.' && next == '.') ||
 		(r == '[' && next != ']') ||
 		(r == '.' && (next == ']' || next == '[')) ||
 		(r != '.' && r != '[' && next == ']') ||
-		(r == ']' && next != '[' && next != '.')
+		(r == ']' && next != '[' && next != '.') ||
+		(r == '\\' && !escapeNext)
 }
 
 func removeEscapeChars(t string) string {
@@ -498,6 +501,8 @@ func removeEscapeChars(t string) string {
 		`\*`, `*`,
 		`\[`, `[`,
 		`\]`, `]`,
+		`\.`, `.`,
+		`\\`, `\`,
 	)
 	return r.Replace(t)
 }

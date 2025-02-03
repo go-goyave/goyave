@@ -135,7 +135,7 @@ func (suite *ParameterizableTestSuite) TestGetParameters() {
 	}
 	params := p.GetParameters()
 	suite.Equal(p.parameters, params)
-	suite.NotSame(p.parameters, params)
+	suite.NotSame(&p.parameters, &params)
 }
 
 func TestParameterizableTestSuite(t *testing.T) {

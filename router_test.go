@@ -215,7 +215,7 @@ func TestRouter(t *testing.T) {
 		assert.Equal(t, router, subrouter.parent)
 		assert.Equal(t, "/subrouter", subrouter.prefix)
 		assert.Equal(t, router.statusHandlers, subrouter.statusHandlers)
-		assert.NotSame(t, router.statusHandlers, subrouter.statusHandlers)
+		assert.NotSame(t, &router.statusHandlers, &subrouter.statusHandlers)
 		assert.Equal(t, router.namedRoutes, subrouter.namedRoutes)
 		assert.Equal(t, router.globalMiddleware, subrouter.globalMiddleware)
 		assert.Equal(t, router.regexCache, subrouter.regexCache)

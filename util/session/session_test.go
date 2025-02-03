@@ -69,6 +69,8 @@ type testDialector struct {
 
 	savepoint    string
 	rolledbackTo string
+
+	id string
 }
 
 func (d *testDialector) SavePoint(_ *gorm.DB, name string) error {
@@ -384,36 +386,45 @@ func TestGormSession(t *testing.T) {
 	})
 
 	t.Run("DB", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{})
+		db, err := database.NewFromDialector(cfg, nil, &testDialector{id: "in_context"})
 		require.NoError(t, err)
-		fallback := &gorm.DB{}
+		fallback, err := database.NewFromDialector(cfg, nil, &testDialector{id: "fallback"})
+		require.NoError(t, err)
 
+		valueCtx := context.WithValue(context.Background(), testKey{}, "testvalue")
 		cases := []struct {
 			ctx    context.Context
-			expect *gorm.DB
+			expect func(t *testing.T, result *gorm.DB)
 			desc   string
 		}{
 			{
-				desc:   "missing_from_context",
-				ctx:    context.Background(),
-				expect: fallback,
+				desc: "missing_from_context",
+				ctx:  context.Background(),
+				expect: func(t *testing.T, result *gorm.DB) {
+					assert.Equal(t, fallback.Dialector.(*testDialector).id, result.Dialector.(*testDialector).id)
+				},
 			},
 			{
-				desc:   "fallback",
-				ctx:    context.Background(),
-				expect: fallback,
+				desc: "fallback",
+				ctx:  valueCtx,
+				expect: func(t *testing.T, result *gorm.DB) {
+					assert.Equal(t, fallback.Dialector.(*testDialector).id, result.Dialector.(*testDialector).id)
+					assert.Equal(t, "testvalue", result.Statement.Context.Value(testKey{}))
+				},
 			},
 			{
-				desc:   "found",
-				ctx:    context.WithValue(context.Background(), dbKey{}, db),
-				expect: db,
+				desc: "found",
+				ctx:  context.WithValue(context.Background(), dbKey{}, db),
+				expect: func(t *testing.T, result *gorm.DB) {
+					assert.Same(t, db, result)
+				},
 			},
 		}
 
 		for _, c := range cases {
 			t.Run(c.desc, func(t *testing.T) {
 				db := DB(c.ctx, fallback)
-				assert.Equal(t, c.expect, db)
+				c.expect(t, db)
 			})
 		}
 	})

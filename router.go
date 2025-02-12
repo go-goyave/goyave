@@ -518,8 +518,10 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 		r.server.Logger.Error(err)
 	}
 
-	requestPool.Put(request)
-	responsePool.Put(response)
+	if !response.hijacked {
+		requestPool.Put(request)
+		responsePool.Put(response)
+	}
 }
 
 // finalize the request's life-cycle.

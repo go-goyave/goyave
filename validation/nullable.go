@@ -16,6 +16,9 @@ func (v *NullableValidator) Name() string { return "nullable" }
 
 // Nullable indicates `nil` values are accepted. If this field under validation is not
 // nullable and its value is `nil`, it will be removed from the input data.
+//
+// If the field under validation is nullable and its value is `nil`, all subsequent
+// validators are skipped.
 func Nullable() *NullableValidator {
 	return &NullableValidator{}
 }

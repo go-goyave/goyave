@@ -265,6 +265,16 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
+			desc: "absent_nullable_not_required",
+			options: &Options{
+				Data:     map[string]any{},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "property", Rules: List{String(), Nullable()}},
+				},
+			},
+		},
+		{
 			desc: "nil_delete_from_parent",
 			options: &Options{
 				Data:     map[string]any{"property": nil},
@@ -291,7 +301,8 @@ func TestValidate(t *testing.T) {
 					{Path: "property", Rules: List{Required(), Nullable()}},
 				},
 			},
-			wantData: map[string]any{"property": nil}},
+			wantData: map[string]any{"property": nil},
+		},
 		{
 			desc: "root_array",
 			options: &Options{

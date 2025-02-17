@@ -449,7 +449,7 @@ func (v *validator) isAbsent(field *Field, c *walk.Context, data any) bool {
 		Field:  field,
 		Name:   c.Name,
 	}
-	return !field.IsRequired(requiredCtx) && !(&RequiredValidator{}).Validate(requiredCtx)
+	return c.Found == walk.ElementNotFound && !field.IsRequired(requiredCtx)
 }
 
 func (v *validator) processAddedErrors(ctx *Context, parentPath *walk.Path, c *walk.Context, validator Validator) {

@@ -42,7 +42,7 @@ var clickhouseTypes = map[reflect.Type]string{
 // according to the provided database scope. Uniqueness is checked using a COUNT query.
 type UniqueValidator struct {
 	BaseValidator
-	Scope func(db *gorm.DB, val any) *gorm.DB
+	Scope func(db *gorm.DB, val any) *gorm.DB // TODO v6: change val to validation.Context
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.

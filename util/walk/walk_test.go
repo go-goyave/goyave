@@ -234,6 +234,83 @@ func TestParse(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestEscapedParse(t *testing.T) {
+	path, err := Parse(`object\*field`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object*field"),
+		Type: PathTypeElement,
+		Next: nil,
+	}, path)
+
+	path, err = Parse(`object\.*field`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object.*field"),
+		Type: PathTypeElement,
+		Next: nil,
+	}, path)
+
+	path, err = Parse(`object.\*field`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("*field"),
+			Type: PathTypeElement,
+		},
+	}, path)
+
+	path, err = Parse(`path\\to\\element`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr(`path\to\element`),
+		Type: PathTypeElement,
+		Next: nil,
+	}, path)
+
+	// this is an invalid path
+	path, err = Parse(`path\to\element`)
+	assert.Nil(t, path)
+	require.Error(t, err)
+
+	path, err = Parse(`array[][].field\[]`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("array"),
+		Type: PathTypeArray,
+		Next: &Path{
+			Type: PathTypeArray,
+			Next: &Path{
+				Type: PathTypeObject,
+				Next: &Path{
+					Name: strPtr("field[]"),
+					Type: PathTypeElement,
+					Next: nil,
+				},
+			},
+		},
+	}, path)
+
+	path, err = Parse(`array[][].field\[tx\]`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("array"),
+		Type: PathTypeArray,
+		Next: &Path{
+			Type: PathTypeArray,
+			Next: &Path{
+				Type: PathTypeObject,
+				Next: &Path{
+					Name: strPtr("field[tx]"),
+					Type: PathTypeElement,
+					Next: nil,
+				},
+			},
+		},
+	}, path)
+}
 func TestMustParse(t *testing.T) {
 	path := MustParse("object.array[].field")
 	assert.Equal(t, &Path{

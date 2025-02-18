@@ -316,14 +316,25 @@ func TestValidate(t *testing.T) {
 				Data:     map[string]any{"property": nil},
 				Language: lang.New().GetDefault(),
 				Rules: RuleSet{
-					{Path: "property", Rules: List{Required()}},
+					{Path: "property", Rules: List{Required(), String()}},
 				},
 			},
 			wantValidationErrors: &Errors{
 				Fields: FieldsErrors{
 					"property": &Errors{
-						Errors: []string{"The property is required."},
+						Errors: []string{"The property is required.", "The property must be a string."},
 					},
+				},
+			},
+			wantData: map[string]any{},
+		},
+		{
+			desc: "nil_delete_from_parent_not_validated",
+			options: &Options{
+				Data:     map[string]any{"property": nil},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "property", Rules: List{String()}},
 				},
 			},
 			wantData: map[string]any{},
@@ -556,6 +567,30 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			wantData: map[string]any{"singleValueArray": []string{"a"}, "array": []string{"b", "c"}},
+		},
+		{
+			desc: "single_value_nil_array_conversion",
+			options: &Options{
+				Data:                     map[string]any{"singleValueArray": nil},
+				ConvertSingleValueArrays: true,
+				Rules: RuleSet{
+					{Path: "singleValueArray", Rules: List{Array()}},
+					{Path: "singleValueArray[]", Rules: List{String()}},
+				},
+			},
+			wantData: map[string]any{},
+		},
+		{
+			desc: "single_value_nullable_nil_array_conversion",
+			options: &Options{
+				Data:                     map[string]any{"singleValueArray": nil},
+				ConvertSingleValueArrays: true,
+				Rules: RuleSet{
+					{Path: "singleValueArray", Rules: List{Nullable(), Array()}},
+					{Path: "singleValueArray[]", Rules: List{String()}},
+				},
+			},
+			wantData: map[string]any{"singleValueArray": nil},
 		},
 		{
 			desc: "errors",

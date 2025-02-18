@@ -321,11 +321,12 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 		if c.Found == walk.Found {
 			if shouldDeleteFromParent {
 				delete(parentObject, c.Name)
-			}
-
-			if v.shouldConvertSingleValueArray(fieldName) {
-				c.Value = v.convertSingleValueArray(field, c.Value)
-				parentObject[c.Name] = c.Value
+				c.Found = walk.ElementNotFound
+			} else {
+				if v.shouldConvertSingleValueArray(fieldName) {
+					c.Value = v.convertSingleValueArray(field, c.Value)
+					parentObject[c.Name] = c.Value
+				}
 			}
 		}
 
@@ -429,6 +430,9 @@ func (v *validator) shouldConvertSingleValueArray(fieldName string) bool {
 }
 
 func (v *validator) convertSingleValueArray(field *Field, value any) any {
+	if value == nil {
+		return value
+	}
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
 	if field.IsArray() && kind != "slice" {

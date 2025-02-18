@@ -54,4 +54,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-retract v5.5.3 // Introduces bug in the validation package, 5.5.4 fixes this bug
+retract (
+	v5.5.3 // Introduces bug in the validation package, 5.5.4 fixes this bug
+	v5.5.4 // Introduces another bug in the validation package, 5.5.5 fixes this bug
+)

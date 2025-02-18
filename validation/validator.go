@@ -294,7 +294,10 @@ func Validate(options *Options) (*Errors, []error) {
 	for _, field := range rules {
 		if field.Path.Name != nil && *field.Path.Name == CurrentElement {
 			// Validate the root element
-			fakeParent := map[string]any{CurrentElement: options.Data}
+			fakeParent := map[string]any{}
+			if options.Data != nil {
+				fakeParent[CurrentElement] = options.Data
+			}
 			validator.validateField(*field.Path.Name, field, fakeParent, nil)
 			options.Data = fakeParent[CurrentElement]
 		} else {

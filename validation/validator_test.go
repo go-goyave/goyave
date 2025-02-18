@@ -265,6 +265,42 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
+			desc: "root_absent_not_required",
+			options: &Options{
+				Data:     nil,
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Object()}},
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+		},
+		{
+			desc: "root_absent_required",
+			options: &Options{
+				Data:     nil,
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Required(), Object()}},
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Errors: []string{"The body is required.", "The body must be an object."},
+			},
+		},
+		{
+			desc: "root_nullable",
+			options: &Options{
+				Data:     nil,
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Nullable(), Object()}},
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+		},
+		{
 			desc: "absent_nullable_not_required",
 			options: &Options{
 				Data:     map[string]any{},

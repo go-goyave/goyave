@@ -40,6 +40,14 @@ const (
 	ElementNotFound
 )
 
+var Escape = map[rune]struct{}{
+	'*':  {},
+	'[':  {},
+	']':  {},
+	'.':  {},
+	'\\': {},
+}
+
 // Path allows for complex untyped data structure exploration.
 // An instance of this structure represents a step in exploration.
 // Items NOT having `PathTypeElement` as a `Type` are expected to have a non-nil `Next`.
@@ -357,16 +365,18 @@ func (p *Path) setAllMissingIndexes() {
 //
 // Example paths:
 //
-//	name
-//	object.field
-//	object.subobject.field
-//	object.*
-//	object.array[]
-//	object.arrayOfObjects[].field
-//	[]
-//	[].field
+//			name
+//			object.field
+//			object.subobject.field
+//			object.*
+//			object.array[]
+//			object.arrayOfObjects[].field
+//			[]
+//			[].field
+//		 	object*field
+//	     	object.field\[]
+//	     	object.field\[text\]
 func Parse(p string) (*Path, error) {
-	// TODO add escape system so '*', '[]' can be escaped
 	rootPath := &Path{}
 	path := rootPath
 
@@ -404,6 +414,7 @@ func Parse(p string) (*Path, error) {
 				path = path.Next
 			}
 		default:
+			t = removeEscapeChars(t)
 			path.Name = &t
 		}
 	}
@@ -447,7 +458,13 @@ func createPathScanner(path string) *bufio.Scanner {
 
 			if i+width < len(data) {
 				next, _ := utf8.DecodeRune(data[i+width:])
-				if isValidSyntax(r, next) {
+				// case: escape chars
+				if _, escapeNext := Escape[next]; r == '\\' && escapeNext {
+					// Skips the next character
+					i += width
+					continue
+				}
+				if isSyntaxInvalid(r, next) {
 					return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
 				}
 
@@ -469,10 +486,23 @@ func createPathScanner(path string) *bufio.Scanner {
 	return scanner
 }
 
-func isValidSyntax(r rune, next rune) bool {
+func isSyntaxInvalid(r rune, next rune) bool {
+	_, escapeNext := Escape[next]
 	return (r == '.' && next == '.') ||
 		(r == '[' && next != ']') ||
 		(r == '.' && (next == ']' || next == '[')) ||
 		(r != '.' && r != '[' && next == ']') ||
-		(r == ']' && next != '[' && next != '.')
+		(r == ']' && next != '[' && next != '.') ||
+		(r == '\\' && !escapeNext)
+}
+
+func removeEscapeChars(t string) string {
+	r := strings.NewReplacer(
+		`\*`, `*`,
+		`\[`, `[`,
+		`\]`, `]`,
+		`\.`, `.`,
+		`\\`, `\`,
+	)
+	return r.Replace(t)
 }

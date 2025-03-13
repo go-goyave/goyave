@@ -20,14 +20,19 @@ import (
 // case where the field is absent (zero-value) and where the field is present but has
 // a null value are indistinguishable.
 //
-// This type only implements:
+// This type implements:
 //   - `encoding.TextUnmarshaler`
 //   - `json.Unmarshaler`
+//   - `json.Marshaler`
 //   - `driver.Valuer`
+//   - `sql.Scanner`
 //
-// Because it only implements "read"-related interfaces, it is not recommended to use it
-// for responses or for scanning database results. For these use-cases, it is recommended
-// to use pointers for the field types with the json tag "omitempty".
+// It is recommended to use the json tag `omitzero` on struct fields of type `Undefined`
+// to properly handle JSON marshaling, model mapping and DTO conversion.
+//
+// This type can be used in response DTOs or for scanning database results. This is useful when
+// you don't always select all fields from the model and you don't want the unselected fields to
+// show in the response.
 type Undefined[T any] struct {
 	Val     T
 	Present bool
@@ -52,6 +57,17 @@ func (u *Undefined[T]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON implements json.Marshaler.
+// Only the value is marshaled, even if the field is not present.
+// Therefore, it is recommended to use the json tag `omitzero`.
+func (u Undefined[T]) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(u.Val)
+	if err != nil {
+		return nil, errors.Errorf("typeutil.Undefined: couldn't JSON marshal: %w", err)
+	}
+	return data, nil
+}
+
 // UnmarshalText implements encoding.TextUnmarshaler.
 // If the input is a blank string, `Present` is set to `false`, otherwise `true`.
 // This implementation will return an error if the underlying value doesn't implement
@@ -69,7 +85,7 @@ func (u *Undefined[T]) UnmarshalText(text []byte) error {
 	return errors.New("typeutil.Undefined: cannot unmarshal text: underlying value doesn't implement encoding.TextUnmarshaler")
 }
 
-// IsZero returns true for non-present values, for potential future omitempty support.
+// IsZero returns true for non-present values.
 func (u Undefined[T]) IsZero() bool {
 	return !u.Present
 }
@@ -79,7 +95,7 @@ func (u Undefined[T]) IsPresent() bool {
 	return u.Present
 }
 
-// Value implements the driver sql.Valuer interface.
+// Value implements the `driver.Valuer` interface.
 func (u Undefined[T]) Value() (driver.Value, error) {
 	if !u.Present {
 		return nil, nil
@@ -92,8 +108,14 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 	return u.Val, nil
 }
 
-// Scan implementation of `sql.Scanner` meant to be able to support copying
-// from and to `Undefined` structures with `typeutil.Copy`.
+// Scan implements the `sql.Scanner` interface.
+//
+// When called, always set `Present` to `true`.
+//
+// If the generic type T implements `sql.Scanner`, its implementation will be used.
+// If not, the operation will only succeed if `src` is of type `T`, `*T` or `nil`.
+//
+// This implementation is also useful in the case of model mapping with `typeutil.Copy`.
 func (u *Undefined[T]) Scan(src any) error {
 	u.Present = true
 

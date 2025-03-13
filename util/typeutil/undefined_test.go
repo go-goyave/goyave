@@ -63,6 +63,36 @@ func TestUndefined(t *testing.T) {
 		assert.Equal(t, &Undefined[int64]{Val: 0, Present: false}, u)
 	})
 
+	t.Run("MarshalJSON", func(t *testing.T) {
+		uInt := NewUndefined[int64](1234)
+
+		data, err := json.Marshal(uInt)
+		require.NoError(t, err)
+		assert.Equal(t, "1234", string(data))
+
+		uStr := NewUndefined("hello")
+		data, err = json.Marshal(uStr)
+		require.NoError(t, err)
+		assert.Equal(t, `"hello"`, string(data))
+
+		uChan := NewUndefined(make(chan struct{}))
+		_, err = json.Marshal(uChan)
+		require.Error(t, err)
+		close(uChan.Val)
+
+		type testStrct struct {
+			Optional Undefined[string] `json:"optional,omitzero"`
+		}
+
+		data, err = json.Marshal(testStrct{})
+		require.NoError(t, err)
+		assert.Equal(t, "{}", string(data))
+
+		data, err = json.Marshal(testStrct{Optional: NewUndefined("hello")})
+		require.NoError(t, err)
+		assert.Equal(t, `{"optional":"hello"}`, string(data))
+	})
+
 	t.Run("UnmarshalText", func(t *testing.T) {
 		u := &Undefined[int64]{} // Not a text unmarshaler
 		require.Error(t, u.UnmarshalText([]byte("123456789")))

@@ -52,6 +52,22 @@ func TestUndefined(t *testing.T) {
 		assert.Equal(t, Undefined[string]{Val: "hello", Present: true}, u)
 	})
 
+	t.Run("Set", func(t *testing.T) {
+		u := Undefined[string]{}
+		u.Set("hello")
+		assert.Equal(t, Undefined[string]{Val: "hello", Present: true}, u)
+	})
+
+	t.Run("Unset", func(t *testing.T) {
+		u := NewUndefined("hello")
+		u.Unset()
+		assert.Equal(t, Undefined[string]{}, u)
+
+		uPtr := NewUndefined(lo.ToPtr("hello"))
+		uPtr.Unset()
+		assert.Equal(t, Undefined[*string]{}, uPtr)
+	})
+
 	t.Run("UnmarshalJSON", func(t *testing.T) {
 		u := &Undefined[int64]{}
 

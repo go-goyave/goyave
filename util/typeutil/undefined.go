@@ -46,6 +46,20 @@ func NewUndefined[T any](val T) Undefined[T] {
 	}
 }
 
+// Set the value. Automatically sets `Present` to `true`.
+func (u *Undefined[T]) Set(value T) {
+	u.Val = value
+	u.Present = true
+}
+
+// Unset the value (reset to zero-value) and set `Present` to `false`.
+// This effectively works like if the value was entirely removed from the struct.
+func (u *Undefined[T]) Unset() {
+	var v T
+	u.Val = v
+	u.Present = false
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 // On successful unmarshal of the underlying value, sets the `Present` field to `true`.
 func (u *Undefined[T]) UnmarshalJSON(data []byte) error {

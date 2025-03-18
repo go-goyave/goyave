@@ -126,27 +126,42 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 //
 // When called, always set `Present` to `true`.
 //
-// If the generic type T implements `sql.Scanner`, its implementation will be used.
-// If not, the operation will only succeed if `src` is of type `T`, `*T` or `nil`.
+// If `src` is of type `Undefined`, `*Undefined`, `T` or `*T`, the value is copied
+// directly. In case of nil pointer, T's zero value is used instead.
+//
+// If the generic type T implements `sql.Scanner` and `src`'s type doesn't match any of
+// the above, T's `Scan()` method will be used.
 //
 // This implementation is also useful in the case of model mapping with `typeutil.Copy`.
 func (u *Undefined[T]) Scan(src any) error {
 	u.Present = true
 
-	if scanner, ok := any(&u.Val).(sql.Scanner); ok {
-		return errors.New(scanner.Scan(src))
-	}
-
 	switch val := src.(type) {
+	case nil:
+		var t T
+		u.Val = t
+	case Undefined[T]:
+		u.Val = val.Val
+	case *Undefined[T]:
+		if val == nil {
+			var t T
+			u.Val = t
+		} else {
+			u.Val = val.Val
+		}
 	case T:
 		u.Val = val
 	case *T:
-		u.Val = *val
-	case nil:
-		// Set to zero-value
-		var t T
-		u.Val = t
+		if val == nil {
+			var t T
+			u.Val = t
+		} else {
+			u.Val = *val
+		}
 	default:
+		if scanner, ok := any(&u.Val).(sql.Scanner); ok {
+			return errors.New(scanner.Scan(src))
+		}
 		var t T
 		return errors.Errorf("typeutil.Undefined: Scan() incompatible types (src: %T, dst: %T)", src, t)
 	}

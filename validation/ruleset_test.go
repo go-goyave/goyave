@@ -4,6 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
+	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -280,4 +284,24 @@ func TestRulesetRequired(t *testing.T) {
 func TestRules(t *testing.T) {
 	rules := Rules{{}, {}}
 	assert.Equal(t, rules, rules.AsRules())
+}
+
+func TestBaseValidator(t *testing.T) {
+	v := &BaseValidator{}
+
+	opts := &Options{
+		DB:       &gorm.DB{},
+		Config:   &config.Config{},
+		Language: lang.Default,
+		Logger:   &slog.Logger{},
+	}
+	v.Init(opts)
+	assert.Same(t, opts.DB, v.db)
+	assert.Same(t, opts.Config, v.config)
+	assert.Same(t, opts.Language, v.lang)
+	assert.Same(t, opts.Logger, v.logger)
+
+	assert.False(t, v.IsTypeDependent())
+	assert.False(t, v.IsType())
+	assert.Equal(t, []string{}, v.MessagePlaceholders(nil))
 }

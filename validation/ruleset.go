@@ -21,7 +21,12 @@ type Ruler interface {
 // scoped to a single field validation in a single request.
 type Validator interface {
 	Composable
+
+	// init unexported method to force compositing with `BaseValidator`.
 	init(opts *Options)
+
+	// Init the validator with the resources required by the `Composable` interface.
+	Init(opts *Options)
 
 	// Validate checks the field under validation satisfies this validator's criteria.
 	// If necessary, replaces the `Context.Value` with a converted value (see `IsType()`).
@@ -65,6 +70,11 @@ func (v *BaseValidator) init(options *Options) {
 		lang:   options.Language,
 		logger: options.Logger,
 	}
+}
+
+// Init the validator with the resources required by the `Composable` interface.
+func (v *BaseValidator) Init(options *Options) {
+	v.init(options)
 }
 
 // IsTypeDependent returns false.

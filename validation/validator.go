@@ -388,7 +388,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				path:      errorPath,
 				Invalid:   !valid,
 			}
-			validator.init(v.options)
+			validator.Init(v.options)
 			ok := validator.Validate(ctx)
 			if len(ctx.errors) > 0 {
 				valid = false

@@ -114,12 +114,27 @@ func TestRuleset(t *testing.T) {
 			{Path: "[]", Rules: List{Int()}},
 		}},
 
+		{Path: "array_of_objects_composition", Rules: RuleSet{
+			{Path: CurrentElement, Rules: List{Array()}},
+			{Path: "[]", Rules: List{Object()}},
+			{Path: "[].field", Rules: List{String()}},
+		}},
+
 		{Path: "array_element_composition", Rules: RuleSet{
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: RuleSet{
 				{Path: CurrentElement, Rules: List{Int()}},
 			}},
 		}},
+
+		{Path: "array_object_element_composition", Rules: RuleSet{
+			{Path: CurrentElement, Rules: List{Array()}},
+			{Path: "[]", Rules: RuleSet{
+				{Path: CurrentElement, Rules: List{Object()}},
+				{Path: "field", Rules: List{String()}},
+			}},
+		}},
+
 		{Path: "deep_array_element_composition", Rules: RuleSet{
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: RuleSet{
@@ -228,12 +243,46 @@ func TestRuleset(t *testing.T) {
 			isArray:     true,
 		},
 		{
+			Path:       walk.MustParse("array_of_objects_composition"),
+			Validators: []Validator{Array()},
+			Elements: &Field{
+				Path:        walk.MustParse("[]"),
+				Validators:  []Validator{Object()},
+				prefixDepth: 1,
+				isObject:    true,
+			},
+			prefixDepth: 1,
+			isArray:     true,
+		},
+		{
+			Path:        walk.MustParse("array_of_objects_composition[].field"),
+			Validators:  []Validator{String()},
+			prefixDepth: 1,
+		},
+		{
 			Path:       walk.MustParse("array_element_composition"),
 			Validators: []Validator{Array()},
 			Elements: &Field{
 				Path:        walk.MustParse("[]"),
 				Validators:  []Validator{Int()},
 				prefixDepth: 2,
+			},
+			prefixDepth: 1,
+			isArray:     true,
+		},
+		{
+			Path:        walk.MustParse("array_object_element_composition[].field"),
+			Validators:  []Validator{String()},
+			prefixDepth: 2,
+		},
+		{
+			Path:       walk.MustParse("array_object_element_composition"),
+			Validators: []Validator{Array()},
+			Elements: &Field{
+				Path:        walk.MustParse("[]"),
+				Validators:  []Validator{Object()},
+				prefixDepth: 2,
+				isObject:    true,
 			},
 			prefixDepth: 1,
 			isArray:     true,

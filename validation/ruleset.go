@@ -136,7 +136,7 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 	for _, field := range sortedRuleSet {
 		path := prefix
 		if field.Path != CurrentElement {
-			if strings.HasPrefix("[]", field.Path) || path == "" {
+			if strings.HasPrefix(field.Path, "[]") || path == "" {
 				path += field.Path
 			} else {
 				path += "." + field.Path

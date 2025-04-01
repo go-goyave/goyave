@@ -148,7 +148,7 @@ func (s Gorm) Transaction(ctx context.Context, f func(context.Context) error) er
 		return errors.New(tx.Error)
 	}
 	c := context.WithValue(ctx, dbKey{}, tx)
-	err := errors.New(f(c))
+	err := f(c)
 	if err != nil {
 		tx.Rollback()
 		return errors.New(err)
@@ -176,7 +176,7 @@ func (s Gorm) nestedTransaction(tx *gorm.DB, f func(context.Context) error) erro
 			tx.RollbackTo(savepoint)
 		}
 	}()
-	err = errors.New(f(c))
+	err = f(c)
 	panicked = false
 	return err
 }

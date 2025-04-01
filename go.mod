@@ -5,7 +5,7 @@ go 1.23.6
 require (
 	github.com/Code-Hex/uniseg v0.2.0
 	github.com/andybalholm/brotli v1.1.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/klauspost/compress v1.17.11
@@ -55,6 +55,6 @@ require (
 )
 
 retract (
-	v5.5.3 // Introduces bug in the validation package, 5.5.4 fixes this bug
 	v5.5.4 // Introduces another bug in the validation package, 5.5.5 fixes this bug
+	v5.5.3 // Introduces bug in the validation package, 5.5.4 fixes this bug
 )

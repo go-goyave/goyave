@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
@@ -256,7 +256,7 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 		}
 	}
 
-	return nil, a.makeError(request.Lang, err.(*jwt.ValidationError).Errors)
+	return nil, a.makeError(request.Lang, err)
 }
 
 func (a *JWTAuthenticator[T]) keyFunc(token *jwt.Token) (any, error) {
@@ -289,11 +289,13 @@ func (a *JWTAuthenticator[T]) keyFunc(token *jwt.Token) (any, error) {
 	}
 }
 
-func (a *JWTAuthenticator[T]) makeError(language *lang.Language, bitfield uint32) error {
-	if bitfield&jwt.ValidationErrorNotValidYet != 0 {
+func (a *JWTAuthenticator[T]) makeError(language *lang.Language, err error) error {
+	switch {
+	case errors.Is(err, jwt.ErrTokenNotValidYet):
 		return fmt.Errorf("%s", language.Get("auth.jwt-not-valid-yet"))
-	} else if bitfield&jwt.ValidationErrorExpired != 0 {
+	case errors.Is(err, jwt.ErrTokenExpired):
 		return fmt.Errorf("%s", language.Get("auth.jwt-expired"))
+	default:
+		return fmt.Errorf("%s", language.Get("auth.jwt-invalid"))
 	}
-	return fmt.Errorf("%s", language.Get("auth.jwt-invalid"))
 }

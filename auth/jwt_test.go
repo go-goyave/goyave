@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -45,7 +45,6 @@ func TestJWTService(t *testing.T) {
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodHS256, parsedToken.Method)
 
-		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])
@@ -77,7 +76,6 @@ func TestJWTService(t *testing.T) {
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodHS256, parsedToken.Method)
 
-		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])
@@ -112,7 +110,6 @@ func TestJWTService(t *testing.T) {
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodRS256, parsedToken.Method)
 
-		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])
@@ -147,7 +144,6 @@ func TestJWTService(t *testing.T) {
 		assert.True(t, parsedToken.Valid)
 		assert.Equal(t, jwt.SigningMethodES256, parsedToken.Method)
 
-		require.NoError(t, parsedToken.Claims.Valid())
 		claims, ok := parsedToken.Claims.(jwt.MapClaims)
 		if assert.True(t, ok) {
 			assert.Equal(t, "johndoe", claims["sub"])

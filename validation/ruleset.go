@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"sort"
 	"strings"
 
 	"slices"
@@ -128,12 +127,12 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 		pDepth = walk.Depth(prefix)
 	}
 
-	sortedRuleSet := slices.Clone(r)
-	sortedRuleSet = sortedRuleSet.injectArrayParents()
-	sortedRuleSet.sort()
+	r = r.injectArrayParents()
 
 	rules := make(Rules, 0, len(r))
-	for _, field := range sortedRuleSet {
+	// Keep a map for array fields to easily assign their element field later
+	arrays := make(map[string]*Field, len(r))
+	for _, field := range r {
 		path := prefix
 		if field.Path != CurrentElement {
 			if strings.HasPrefix(field.Path, "[]") || path == "" {
@@ -146,13 +145,17 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 		fields := field.Rules.convert(path, field, pDepth)
 
 		rules = append(rules, fields...)
+		for _, f := range fields {
+			if f.isArray {
+				arrays[f.Path.String()] = f
+			}
+		}
 	}
 
-	// Assign array elements to their parent field
 	for {
 		arrayElement, index, ok := lo.FindIndexOf(rules, func(f *Field) bool {
 			p := f.Path
-			for i := 0; i < int(pDepth)-1; i++ {
+			for range int(pDepth) - 1 {
 				p = lo.Ternary(p.Next == nil, p, p.Next)
 			}
 			relativePath := p.String()
@@ -161,16 +164,18 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 		if !ok {
 			break
 		}
+
 		parentArrayPath := arrayElement.Path.Clone()
 		lastParent := parentArrayPath.LastParent()
 		lastParent.Type = walk.PathTypeElement
 		lastParent.Next = nil
 
-		arrayElement.Path = &walk.Path{Type: walk.PathTypeArray, Next: &walk.Path{}}
+		parentArrayPathStr := parentArrayPath.String()
+		parentArrayElement, parentFound := arrays[parentArrayPathStr]
 
-		rules = append(rules[:index], rules[index+1:]...)
-		parentArrayElement, parentFound := lo.Find(rules, func(f *Field) bool { return f.Path.String() == parentArrayPath.String() })
-		if parentFound {
+		rules = slices.Delete(rules, index, index+1)
+		if parentFound { // Should never be false because we injected array parents.
+			arrayElement.Path = &walk.Path{Type: walk.PathTypeArray, Next: &walk.Path{}}
 			parentArrayElement.Elements = arrayElement
 		}
 	}
@@ -184,6 +189,8 @@ func (r RuleSet) injectArrayParents() RuleSet {
 		keys[f.Path] = struct{}{}
 	}
 	for i := 0; i < len(r); i++ {
+		// len(r) MUST be re-evaluated each loop, using "range r" would break it
+		// because the length is only evaluated once at the start of the loop.
 		f := r[i]
 		if strings.HasSuffix(f.Path, "[]") {
 			parentPath := f.Path[:len(f.Path)-2]
@@ -199,23 +206,6 @@ func (r RuleSet) injectArrayParents() RuleSet {
 	}
 
 	return r
-}
-
-func (r RuleSet) sort() {
-	// Make sure the array elements are before their parent in the list
-	sort.SliceStable(r, func(i, j int) bool {
-		field1 := r[i]
-		field2 := r[j]
-		if strings.HasSuffix(field1.Path, "[]") && !strings.HasSuffix(field2.Path, "[]") {
-			return true
-		}
-		if !strings.HasSuffix(field1.Path, "[]") && !strings.HasSuffix(field2.Path, "[]") {
-			return false
-		}
-		count1 := strings.Count(field1.Path, "[]")
-		count2 := strings.Count(field2.Path, "[]")
-		return count1 > count2
-	})
 }
 
 // Rules is the result of the transformation of RuleSet using `AsRules()`.

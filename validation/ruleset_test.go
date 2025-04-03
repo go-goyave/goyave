@@ -103,11 +103,11 @@ func TestRuleset(t *testing.T) {
 		}},
 		{Path: "two_dim_array", Rules: List{Array()}},
 		{Path: "two_dim_array[]", Rules: List{Array()}},
-		{Path: "two_dim_array[][]", Rules: List{Int()}},
+		{Path: "two_dim_array[][]", Rules: List{Int64()}},
 
 		// Parent arrays should be injected
 		{Path: "array[]", Rules: List{Int()}},
-		{Path: "deep_array[][][]", Rules: List{Int()}},
+		{Path: "deep_array[][][]", Rules: List{Int16()}},
 
 		{Path: "array_composition", Rules: RuleSet{
 			{Path: CurrentElement, Rules: List{Array()}},
@@ -123,7 +123,7 @@ func TestRuleset(t *testing.T) {
 		{Path: "array_element_composition", Rules: RuleSet{
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: RuleSet{
-				{Path: CurrentElement, Rules: List{Int()}},
+				{Path: CurrentElement, Rules: List{Int8()}},
 			}},
 		}},
 
@@ -139,7 +139,7 @@ func TestRuleset(t *testing.T) {
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: RuleSet{
 				{Path: "[]", Rules: RuleSet{
-					{Path: CurrentElement, Rules: List{Int()}},
+					{Path: CurrentElement, Rules: List{Int32()}},
 				}},
 			}},
 		}},
@@ -197,7 +197,7 @@ func TestRuleset(t *testing.T) {
 				Validators: []Validator{Array()},
 				Elements: &Field{
 					Path:       walk.MustParse("[]"),
-					Validators: []Validator{Int()},
+					Validators: []Validator{Int64()},
 				},
 				isArray: true,
 			},
@@ -223,7 +223,7 @@ func TestRuleset(t *testing.T) {
 					Validators: []Validator{Array()},
 					Elements: &Field{
 						Path:       walk.MustParse("[]"),
-						Validators: []Validator{Int()},
+						Validators: []Validator{Int16()},
 					},
 					isArray: true,
 				},
@@ -264,16 +264,11 @@ func TestRuleset(t *testing.T) {
 			Validators: []Validator{Array()},
 			Elements: &Field{
 				Path:        walk.MustParse("[]"),
-				Validators:  []Validator{Int()},
+				Validators:  []Validator{Int8()},
 				prefixDepth: 2,
 			},
 			prefixDepth: 1,
 			isArray:     true,
-		},
-		{
-			Path:        walk.MustParse("array_object_element_composition[].field"),
-			Validators:  []Validator{String()},
-			prefixDepth: 2,
 		},
 		{
 			Path:       walk.MustParse("array_object_element_composition"),
@@ -288,6 +283,11 @@ func TestRuleset(t *testing.T) {
 			isArray:     true,
 		},
 		{
+			Path:        walk.MustParse("array_object_element_composition[].field"),
+			Validators:  []Validator{String()},
+			prefixDepth: 2,
+		},
+		{
 			Path:       walk.MustParse("deep_array_element_composition"),
 			Validators: []Validator{Array()},
 			Elements: &Field{
@@ -295,7 +295,7 @@ func TestRuleset(t *testing.T) {
 				Validators: []Validator{Array()},
 				Elements: &Field{
 					Path:        walk.MustParse("[]"),
-					Validators:  []Validator{Int()},
+					Validators:  []Validator{Int32()},
 					prefixDepth: 3,
 				},
 				prefixDepth: 2,
@@ -309,7 +309,7 @@ func TestRuleset(t *testing.T) {
 	assert.Equal(t, expected, ruleset.AsRules())
 }
 
-func TestRulesetRequired(t *testing.T) {
+func TestRuleSetRequired(t *testing.T) {
 	ruleset := RuleSet{
 		{Path: "required", Rules: List{
 			Required(),
@@ -353,4 +353,90 @@ func TestBaseValidator(t *testing.T) {
 	assert.False(t, v.IsTypeDependent())
 	assert.False(t, v.IsType())
 	assert.Equal(t, []string{}, v.MessagePlaceholders(nil))
+}
+
+// https://github.com/go-goyave/goyave/issues/248
+// The order of validation must be preserved when using composition.
+func TestRuleSetIssue248(t *testing.T) {
+	ruleset := RuleSet{
+		{Path: CurrentElement, Rules: List{Object()}},
+		{Path: "field1", Rules: List{String()}},
+		{Path: "array", Rules: List{Array()}},
+		{Path: "array[]", Rules: RuleSet{
+			{Path: CurrentElement, Rules: List{Object()}},
+			{Path: "elementField", Rules: List{Int64()}},
+		}},
+	}
+
+	expected := Rules{
+		{
+			Path:       walk.MustParse(""),
+			Validators: []Validator{Object()},
+			isObject:   true,
+		},
+		{
+			Path:       walk.MustParse("field1"),
+			Validators: []Validator{String()},
+		},
+		{
+			Path:       walk.MustParse("array"),
+			Validators: []Validator{Array()},
+			Elements: &Field{
+				Path:        walk.MustParse("[]"),
+				Validators:  []Validator{Object()},
+				prefixDepth: 2,
+				isObject:    true,
+			},
+			isArray: true,
+		},
+		{
+			Path:        walk.MustParse("array[].elementField"),
+			Validators:  []Validator{Int64()},
+			prefixDepth: 2,
+		},
+	}
+
+	assert.Equal(t, expected, ruleset.AsRules())
+
+	// Let's try again but simply swapping the order of "array[]" and "array"
+	// "elementField" should now be validated before "array" and "array[]".
+	ruleset = RuleSet{
+		{Path: CurrentElement, Rules: List{Object()}},
+		{Path: "field1", Rules: List{String()}},
+		{Path: "array[]", Rules: RuleSet{
+			{Path: CurrentElement, Rules: List{Object()}},
+			{Path: "elementField", Rules: List{Int64()}},
+		}},
+		{Path: "array", Rules: List{Array()}},
+	}
+
+	expected = Rules{
+		{
+			Path:       walk.MustParse(""),
+			Validators: []Validator{Object()},
+			isObject:   true,
+		},
+		{
+			Path:       walk.MustParse("field1"),
+			Validators: []Validator{String()},
+		},
+		{
+			Path:        walk.MustParse("array[].elementField"),
+			Validators:  []Validator{Int64()},
+			prefixDepth: 2,
+		},
+		{
+			Path:       walk.MustParse("array"),
+			Validators: []Validator{Array()},
+			Elements: &Field{
+				Path:        walk.MustParse("[]"),
+				Validators:  []Validator{Object()},
+				prefixDepth: 2,
+				isObject:    true,
+			},
+			isArray: true,
+		},
+	}
+
+	assert.Equal(t, expected, ruleset.AsRules())
 }

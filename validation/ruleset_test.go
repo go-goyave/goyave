@@ -440,3 +440,85 @@ func TestRuleSetIssue248(t *testing.T) {
 
 	assert.Equal(t, expected, ruleset.AsRules())
 }
+
+// https://github.com/go-goyave/goyave/issues/249
+// Repeated paths are forbidden (should panic)
+func TestRuleSetRepeatedPath(t *testing.T) {
+	cases := []struct {
+		desc    string
+		ruleset RuleSet
+	}{
+		{
+			desc: "root_element",
+			ruleset: RuleSet{
+				{Path: CurrentElement, Rules: List{JSON()}},
+				{Path: CurrentElement, Rules: List{Object()}},
+			},
+		},
+		{
+			desc: "field",
+			ruleset: RuleSet{
+				{Path: CurrentElement, Rules: List{Object()}},
+				{Path: "field", Rules: List{String()}},
+				{Path: "field", Rules: List{Min(1)}},
+			},
+		},
+		{
+			desc: "array",
+			ruleset: RuleSet{
+				{Path: CurrentElement, Rules: List{Object()}},
+				{Path: "array", Rules: List{Array()}},
+				{Path: "array[]", Rules: List{Int()}},
+				{Path: "array[]", Rules: List{Min(1)}},
+			},
+		},
+		{
+			desc: "composition",
+			ruleset: RuleSet{
+				{Path: CurrentElement, Rules: List{Object()}},
+				{Path: "object", Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Object()}},
+					{Path: "field", Rules: List{String()}},
+				}},
+				{Path: "object.field", Rules: List{Min(1)}},
+			},
+		},
+		{
+			desc: "composition_current_element",
+			ruleset: RuleSet{
+				{Path: CurrentElement, Rules: List{Object()}},
+				{Path: "object", Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Object()}},
+					{Path: "field", Rules: List{String()}},
+				}},
+				{Path: "object", Rules: List{Min(1)}},
+			},
+		},
+		{
+			desc: "composition_array",
+			ruleset: RuleSet{
+				{Path: CurrentElement, Rules: List{Object()}},
+				{Path: "array", Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Array()}},
+					{Path: "[]", Rules: List{String()}},
+				}},
+				{Path: "array[]", Rules: List{Min(1)}},
+			},
+		},
+		{
+			desc: "deep_injected_array",
+			ruleset: RuleSet{
+				{Path: "[][][]", Rules: List{Int()}},
+				{Path: "[][][]", Rules: List{Min(1)}},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			assert.Panics(t, func() {
+				c.ruleset.AsRules()
+			})
+		})
+	}
+}

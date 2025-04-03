@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/samber/lo"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -103,7 +104,6 @@ func (l List) convert(path string, field *FieldRules, prefixDepth uint) Rules {
 // FieldRules structure associating a path (see `walk.Path`) identifying a field
 // with a `FieldRulesApplier` (a `List` of rules or another `RuleSet` via composition).
 type FieldRules struct {
-	// TODO what behavior if there are duplicates? If it ever becomes a problem, can probably merge the Lists. But it's unnecessary for now.
 	Rules FieldRulesConverter
 	Path  string
 }
@@ -152,6 +152,8 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 		}
 	}
 
+	rules.checkDuplicates()
+
 	for {
 		arrayElement, index, ok := lo.FindIndexOf(rules, func(f *Field) bool {
 			p := f.Path
@@ -174,7 +176,7 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 		parentArrayElement, parentFound := arrays[parentArrayPathStr]
 
 		rules = slices.Delete(rules, index, index+1)
-		if parentFound { // Should never be false because we injected array parents.
+		if parentFound { // Should never be false because we injected array parents and there are no duplicates.
 			arrayElement.Path = &walk.Path{Type: walk.PathTypeArray, Next: &walk.Path{}}
 			parentArrayElement.Elements = arrayElement
 		}
@@ -206,6 +208,27 @@ func (r RuleSet) injectArrayParents() RuleSet {
 	}
 
 	return r
+}
+
+func (r Rules) checkDuplicates() {
+	paths := make(map[string]struct{}, len(r))
+	for _, f := range r {
+		path := f.Path.String()
+		includeElementsKeys(paths, path, f.Elements)
+		if _, exists := paths[path]; exists {
+			panic(errors.Errorf("validation.RuleSet: duplicate path %q in rule set", path))
+		}
+		paths[path] = struct{}{}
+	}
+}
+
+func includeElementsKeys(paths map[string]struct{}, path string, elementField *Field) {
+	if elementField == nil {
+		return
+	}
+	elementPath := path + "[]"
+	paths[elementPath] = struct{}{}
+	includeElementsKeys(paths, elementPath, elementField.Elements)
 }
 
 // Rules is the result of the transformation of RuleSet using `AsRules()`.

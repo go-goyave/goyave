@@ -83,8 +83,8 @@ func NotIn[T comparable](values []T) *NotInValidator[T] {
 // InFieldValidator validates the field under validation must be in at least one
 // of the arrays matched by the specified path.
 type InFieldValidator[T comparable] struct {
-	BaseValidator
 	Path *walk.Path
+	BaseValidator
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.

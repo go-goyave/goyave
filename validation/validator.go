@@ -485,6 +485,10 @@ func (v *validator) processAddedErrors(ctx *Context, parentPath *walk.Path, c *w
 }
 
 func (v *validator) getLangEntry(ctx *Context, validator Validator) string {
+	override := validator.getMessageOverride()
+	if override != "" {
+		return override
+	}
 	langEntry := "validation.rules." + validator.Name()
 	if validator.IsTypeDependent() {
 		typeValidator := v.findTypeValidator(ctx.Field.Validators)

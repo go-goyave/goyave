@@ -55,12 +55,16 @@ type Validator interface {
 	// This is use to generate the validation error message. An empty slice can be returned.
 	// See `lang.Language.Get()` for more details.
 	MessagePlaceholders(ctx *Context) []string
+
+	overrideMessage(langEntry string)
+	getMessageOverride() string
 }
 
 // BaseValidator composable structure that implements the basic functions required to
 // satisfy the `Validator` interface.
 type BaseValidator struct {
 	component
+	messageOverride string
 }
 
 func (v *BaseValidator) init(options *Options) {
@@ -85,6 +89,22 @@ func (v *BaseValidator) IsType() bool { return false }
 
 // MessagePlaceholders returns an empty slice (no placeholders)
 func (v *BaseValidator) MessagePlaceholders(_ *Context) []string { return []string{} }
+
+func (v *BaseValidator) overrideMessage(langEntry string) {
+	v.messageOverride = langEntry
+}
+
+func (v *BaseValidator) getMessageOverride() string {
+	return v.messageOverride
+}
+
+// WithMessage set a custom language entry for the error message of a Validator.
+// Original placeholders returned by the validator are still used to render the message.
+// Type-dependent and "element" suffixes are not added when the message is overridden.
+func WithMessage[V Validator](v V, langEntry string) V {
+	v.overrideMessage(langEntry)
+	return v
+}
 
 // FieldRulesConverter types implementing this interface define their behavior
 // when converting a `FieldRules` to `Rules`. This enables rule sets composition.

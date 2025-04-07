@@ -36,8 +36,8 @@ func Required() *RequiredValidator {
 // RequiredIfValidator is the same as `RequiredValidator` but only applies the behavior
 // described if the specified `Condition` function returns true.
 type RequiredIfValidator struct {
-	RequiredValidator
 	Condition func(*Context) bool
+	RequiredValidator
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.

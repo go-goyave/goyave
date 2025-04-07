@@ -16,15 +16,16 @@ import (
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
 type extraKey struct{}
 
 type testValidator struct {
+	placeholders func(ctx *Context) []string
+	validateFunc func(c component, ctx *Context) bool
 	BaseValidator
-	placeholders    func(ctx *Context) []string
-	validateFunc    func(c component, ctx *Context) bool
 	isType          bool
 	isTypeDependent bool
 }
@@ -1110,9 +1111,9 @@ func TestValidateWithContext(t *testing.T) {
 type testCtxKey struct{}
 
 type ctxValidator struct {
-	BaseValidator
 	t      *testing.T
 	expect func(*testing.T, context.Context) bool
+	BaseValidator
 }
 
 func (ctxValidator) Name() string {
@@ -1121,4 +1122,31 @@ func (ctxValidator) Name() string {
 
 func (v ctxValidator) Validate(ctx *Context) bool {
 	return v.expect(v.t, ctx.Context)
+}
+
+func TestValidateMessageOverride(t *testing.T) {
+	lang := lang.New()
+	require.NoError(t, lang.Load(osfs.New("."), "en-US", "../resources/lang/en-US"))
+	opts := &Options{
+		Data: map[string]any{
+			"field": "str",
+		},
+		Language: lang.GetDefault(),
+		Rules: RuleSet{
+			{
+				Path:  "field",
+				Rules: List{WithMessage(Between(123, 456), "validation.rules.messageOverride")},
+			},
+		},
+	}
+
+	validationErrors, errs := Validate(opts)
+	require.Nil(t, errs)
+
+	want := &Errors{
+		Fields: FieldsErrors{
+			"field": {Errors: []string{"Custom error message: placeholders work: 'field', 123 - 456"}},
+		},
+	}
+	assert.Equal(t, want, validationErrors)
 }

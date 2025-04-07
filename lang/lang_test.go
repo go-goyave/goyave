@@ -97,8 +97,9 @@ func (suite *LangTestSuite) TestLoad() {
 		},
 		validation: validationLines{
 			rules: map[string]string{
-				"override":       "rule override",
-				"required.array": "The :field values are required.",
+				"override":        "rule override",
+				"required.array":  "The :field values are required.",
+				"messageOverride": "Custom error message: placeholders work: ':field', :min - :max",
 			},
 			fields: map[string]string{
 				"email": "email address",

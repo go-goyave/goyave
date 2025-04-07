@@ -5,8 +5,8 @@ import "regexp"
 // RegexValidator the field under validation must be a string matching
 // the specified `*regexp.Regexp`.
 type RegexValidator struct {
-	BaseValidator
 	Regexp *regexp.Regexp
+	BaseValidator
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.

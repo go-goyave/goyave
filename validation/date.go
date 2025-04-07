@@ -62,8 +62,8 @@ func Date(acceptedFormats ...string) *DateValidator {
 
 // DateComparisonValidator factorized date comparison validator for static dates (before, after, etc.)
 type DateComparisonValidator struct {
-	BaseValidator
 	Date time.Time
+	BaseValidator
 }
 
 func (v *DateComparisonValidator) validate(ctx *Context, comparisonFunc func(time.Time, time.Time) bool) bool {
@@ -85,8 +85,8 @@ func (v *DateComparisonValidator) MessagePlaceholders(_ *Context) []string {
 
 // DateFieldComparisonValidator factorized date comparison validator for field dates (before field, after field, etc.)
 type DateFieldComparisonValidator struct {
-	BaseValidator
 	Path *walk.Path
+	BaseValidator
 }
 
 func (v *DateFieldComparisonValidator) validate(ctx *Context, comparisonFunc func(time.Time, time.Time) bool) bool {

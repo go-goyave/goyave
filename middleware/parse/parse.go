@@ -29,6 +29,9 @@ import (
 // If the form is not a multipart form, attempts `ParseForm`. If `ParseMultipartForm` or `ParseForm` return
 // an error, returns "400 Bad request".
 //
+// This middleware depletes the request's body reader. You cannot read `request.Body()` to access the unparsed
+// data afterwards.
+//
 // In `multipart/form-data`, all file parts are automatically converted to `[]fsutil.File`.
 // Inside `request.Data`, a field of type "file" will therefore always be of type `[]fsutil.File`.
 // It is a slice so it support multi-file uploads in a single field.

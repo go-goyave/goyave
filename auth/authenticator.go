@@ -74,7 +74,7 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 			return
 		}
 
-		user, err := m.Authenticator.Authenticate(request)
+		user, err := m.Authenticate(request)
 		if err != nil {
 			if unauthorizer, ok := m.Authenticator.(Unauthorizer); ok {
 				unauthorizer.OnUnauthorized(response, request, err)

@@ -253,7 +253,7 @@ func TestRouter(t *testing.T) {
 			assert.Equal(t, "/", route.uri)
 
 			route = router.Subrouter("/subrouter").Route([]string{http.MethodGet}, "/", func(_ *Response, _ *Request) {})
-			assert.Equal(t, "", route.uri)
+			assert.Empty(t, route.uri)
 		})
 	})
 

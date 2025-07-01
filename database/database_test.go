@@ -69,9 +69,9 @@ func TestNewDatabase(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
-		if assert.NotNil(t, db.Config.Logger) {
+		if assert.NotNil(t, db.Logger) {
 			// Logging is enabled when app.debug is true
-			l, ok := db.Config.Logger.(*Logger)
+			l, ok := db.Logger.(*Logger)
 			if assert.True(t, ok) {
 				assert.NotNil(t, l.slogger)
 			}
@@ -127,9 +127,9 @@ func TestNewDatabase(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
-		if assert.NotNil(t, db.Config.Logger) {
+		if assert.NotNil(t, db.Logger) {
 			// Logging is disable when app.debug is false
-			l, ok := db.Config.Logger.(*Logger)
+			l, ok := db.Logger.(*Logger)
 			if assert.True(t, ok) {
 				assert.Nil(t, l.slogger)
 			}

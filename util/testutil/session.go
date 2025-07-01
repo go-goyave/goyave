@@ -20,7 +20,7 @@ var (
 	ErrSessionEnded     = stderrors.New("testutil.Session: session already ended")
 	ErrEndRootSession   = stderrors.New("testutil.Session: cannot commit/rollback root session")
 	ErrChildRunning     = stderrors.New("testutil.Session: cannot commit/rollback if a child session is still running")
-	ErrNotParentContext = stderrors.New("testutil.Session: cannot create a child session with an unrelated context. Parent context should be the context or a child context of the parent session.")
+	ErrNotParentContext = stderrors.New("testutil.Session: cannot create a child session with an unrelated context. Parent context should be the context or a child context of the parent session")
 )
 
 // ctxKey the key used to store the `*Session` into a context value.

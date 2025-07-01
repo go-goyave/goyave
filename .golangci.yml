@@ -39,17 +39,7 @@ linters:
         - formatter
         - encoded-compare
     staticcheck:
-      checks:
-        [
-          "all",
-          "-ST1000",
-          "-ST1003",
-          "-ST1016",
-          "-ST1020",
-          "-ST1021",
-          "-ST1022",
-          "-QF1001",
-        ]
+      checks: ["all", "-QF1001"]
   exclusions:
     generated: strict
     rules:

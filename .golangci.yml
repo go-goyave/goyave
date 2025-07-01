@@ -1,59 +1,77 @@
-linters-settings:
-  gocyclo:
-    min-complexity: 18
-  gofmt:
-    simplify: true
-  misspell:
-    locale: US
-  govet:
-    disable:
-      - shadow
-    enable-all: true
-  testifylint:
-    disable:
-      - require-error
-      - error-nil
-      - formatter
-      - encoded-compare
-  revive:
-    rules:
-      - name: var-naming
-        arguments:
-          - [] # AllowList
-          - ["DTO"] # DenyList
-      - name: unused-parameter
-        disabled: false
-
+version: "2"
 linters:
   enable:
-    - gofmt
-    - revive
-    - gocyclo
-    - misspell
-    - govet
-    - unused
-    - errcheck
+    - bodyclose
     - copyloopvar
-    - gosimple
-    - ineffassign
-    - staticcheck
+    - gocyclo
+    - inamedparam
+    - misspell
+    - revive
     - testifylint
     - whitespace
-    - bodyclose
-    - inamedparam
-  disable-all: false
-  fast: false
-
+    - unused
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - govet
+  settings:
+    gocyclo:
+      min-complexity: 18
+    govet:
+      disable:
+        - shadow
+      enable-all: true
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: var-naming
+          disabled: false
+          arguments:
+            - [] # AllowList
+            - ["DTO"] # DenyList
+        - name: unused-parameter
+          disabled: false
+    testifylint:
+      disable:
+        - require-error
+        - error-nil
+        - formatter
+        - encoded-compare
+    staticcheck:
+      checks:
+        [
+          "all",
+          "-ST1000",
+          "-ST1003",
+          "-ST1016",
+          "-ST1020",
+          "-ST1021",
+          "-ST1022",
+          "-QF1001",
+        ]
+  exclusions:
+    generated: strict
+    rules:
+      - linters:
+          - gocyclo
+        path: _test\.go
+      - path: (.+)\.go$
+        text: should have a package comment
+    paths:
+      - .github
+      - resources
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-dirs:
-    - .github
-    - resources
-  exclude:
-    - should have a package comment
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocyclo
+formatters:
+  enable:
+    - gofmt
+  settings:
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: strict
+    paths:
+      - .github
+      - resources

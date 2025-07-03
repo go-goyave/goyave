@@ -14,6 +14,7 @@ linters:
     - staticcheck
     - ineffassign
     - govet
+    - sqlclosecheck
   settings:
     gocyclo:
       min-complexity: 18
@@ -31,6 +32,8 @@ linters:
             - [] # AllowList
             - ["DTO"] # DenyList
         - name: unused-parameter
+          disabled: false
+        - name: use-any
           disabled: false
     testifylint:
       disable:

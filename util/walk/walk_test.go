@@ -1624,6 +1624,10 @@ func TestPathDepth(t *testing.T) {
 	assert.Equal(t, uint(1), Depth("a"))
 	assert.Equal(t, uint(3), Depth("a.b.c"))
 	assert.Equal(t, uint(4), Depth("a[].b.c"))
+
+	assert.Equal(t, uint(3), Depth(`a\[\].b\.c\\d.\*`))
+	assert.Equal(t, uint(3), Depth(`a\[].b\.c\\d.\*`))
+	assert.Equal(t, uint(3), Depth(`object.\*.field`))
 }
 
 func TestPathTruncate(t *testing.T) {

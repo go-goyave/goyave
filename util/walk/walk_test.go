@@ -1706,4 +1706,12 @@ func TestPathString(t *testing.T) {
 		},
 	}
 	assert.Equal(t, "array[1].field[1]", path.String())
+
+	// Escaped fields
+	path, _ = Parse(`a\[\].b\.c\\d.\*`)
+	assert.Equal(t, `a[].b.c\d.*`, path.String())
+
+	// Wildcard
+	path, _ = Parse(`object.\*.field`)
+	assert.Equal(t, `object.*.field`, path.String())
 }

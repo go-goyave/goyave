@@ -44,7 +44,7 @@ const (
 var wildcard = lo.ToPtr("*")
 
 // Escape the list of characters that can be escaped using a backslash `\` when
-// parsing a Path.
+// parsing a Path. This map is read-only.
 var Escape = map[rune]struct{}{
 	'*':  {},
 	'[':  {},
@@ -52,6 +52,14 @@ var Escape = map[rune]struct{}{
 	'.':  {},
 	'\\': {},
 }
+
+var escapeReplacer = strings.NewReplacer(
+	`\*`, `*`,
+	`\[`, `[`,
+	`\]`, `]`,
+	`\.`, `.`,
+	`\\`, `\`,
+)
 
 // Path allows for complex untyped data structure exploration.
 // An instance of this structure represents a step in exploration.
@@ -520,12 +528,5 @@ func isSyntaxInvalid(r rune, next rune) bool {
 }
 
 func removeEscapeChars(t string) string {
-	r := strings.NewReplacer(
-		`\*`, `*`,
-		`\[`, `[`,
-		`\]`, `]`,
-		`\.`, `.`,
-		`\\`, `\`,
-	)
-	return r.Replace(t)
+	return escapeReplacer.Replace(t)
 }

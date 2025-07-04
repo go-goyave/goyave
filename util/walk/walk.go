@@ -473,7 +473,7 @@ func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
 		if len(path) == 0 || path[0] == '.' {
-			return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
+			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
 		}
 		for width, i := 0, 0; i < len(data); i += width {
 			var r rune
@@ -488,7 +488,7 @@ func createPathScanner(path string) *bufio.Scanner {
 					continue
 				}
 				if isSyntaxInvalid(r, next) {
-					return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
+					return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
 				}
 
 				if r == '.' && i == 0 {
@@ -497,7 +497,7 @@ func createPathScanner(path string) *bufio.Scanner {
 					return i + width, data[:i+width], nil
 				}
 			} else if r == '.' || r == '[' {
-				return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
+				return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
 			}
 		}
 		if atEOF && len(data) > 0 {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/samber/lo"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
@@ -39,6 +40,8 @@ const (
 	// itself could not.
 	ElementNotFound
 )
+
+var wildcard = lo.ToPtr("*")
 
 var Escape = map[rune]struct{}{
 	'*':  {},
@@ -96,7 +99,7 @@ func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, 
 		ce, ok := currentElement.(map[string]any)
 		notFoundType := ParentNotFound
 		if ok {
-			if *p.Name == "*" && len(ce) != 0 {
+			if len(ce) != 0 && p.Name == wildcard {
 				for k := range ce {
 					key := k
 					trackClone := trackPath.Clone()
@@ -327,6 +330,11 @@ func (p *Path) Clone() *Path {
 	return clone
 }
 
+// IsWildcard returns true if the path has unescaped "*" as Name.
+func (p *Path) IsWildcard() bool {
+	return p.Name == wildcard
+}
+
 // String returns a string representation of the Path.
 func (p *Path) String() string {
 	path := ""
@@ -369,6 +377,7 @@ func (p *Path) setAllMissingIndexes() {
 //			object.field
 //			object.subobject.field
 //			object.*
+//			object.\*
 //			object.array[]
 //			object.arrayOfObjects[].field
 //			[]
@@ -376,6 +385,7 @@ func (p *Path) setAllMissingIndexes() {
 //		 	object*field
 //	     	object.field\[]
 //	     	object.field\[text\]
+//	     	path\\to\\element
 func Parse(p string) (*Path, error) {
 	rootPath := &Path{}
 	path := rootPath
@@ -414,8 +424,12 @@ func Parse(p string) (*Path, error) {
 				path = path.Next
 			}
 		default:
-			t = removeEscapeChars(t)
-			path.Name = &t
+			if t == "*" {
+				path.Name = wildcard
+			} else {
+				t = removeEscapeChars(t)
+				path.Name = &t
+			}
 		}
 	}
 

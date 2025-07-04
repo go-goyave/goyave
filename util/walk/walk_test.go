@@ -124,6 +124,7 @@ func TestPathScanner(t *testing.T) {
 	testPathScannerError(t, "array.[]field")
 	testPathScannerError(t, "array.[]field")
 	testPathScannerError(t, "")
+	testPathScannerError(t, `path\to\element`)
 }
 
 func TestParse(t *testing.T) {
@@ -212,7 +213,7 @@ func TestParse(t *testing.T) {
 		Name: strPtr("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("*"),
+			Name: wildcard,
 			Type: PathTypeObject,
 			Next: &Path{
 				Name: strPtr("prop"),
@@ -220,6 +221,8 @@ func TestParse(t *testing.T) {
 			},
 		},
 	}, path)
+	assert.Same(t, path.Next.Name, wildcard)
+	assert.True(t, path.Next.IsWildcard())
 
 	path, err = Parse("")
 	require.NoError(t, err)
@@ -261,6 +264,19 @@ func TestEscapedParse(t *testing.T) {
 			Type: PathTypeElement,
 		},
 	}, path)
+
+	path, err = Parse(`object.\*`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Type: PathTypeElement,
+			Name: strPtr("*"),
+		},
+	}, path)
+	assert.NotSame(t, path.Next.Name, wildcard)
+	assert.False(t, path.Next.IsWildcard())
 
 	path, err = Parse(`path\\to\\element`)
 	require.NoError(t, err)
@@ -311,6 +327,7 @@ func TestEscapedParse(t *testing.T) {
 		},
 	}, path)
 }
+
 func TestMustParse(t *testing.T) {
 	path := MustParse("object.array[].field")
 	assert.Equal(t, &Path{
@@ -486,6 +503,31 @@ func TestPathWalk(t *testing.T) {
 	matches = testWalk(t, data, "object.*")
 	assert.ElementsMatch(t, expected, matches)
 
+	// object.\*
+	data = map[string]any{
+		"object": map[string]any{
+			"field":  5,
+			"field2": "6",
+			"*":      "abc",
+		},
+	}
+	expected = []*Context{
+		{
+			Value:  "abc",
+			Parent: data["object"],
+			Path: &Path{
+				Name: strPtr("object"),
+				Type: PathTypeObject,
+				Next: &Path{Name: strPtr("*")},
+			},
+			Name:  "*",
+			Index: -1,
+			Found: Found,
+		},
+	}
+	matches = testWalk(t, data, `object.\*`)
+	assert.ElementsMatch(t, expected, matches)
+
 	// object.* but object is not an object
 	data = map[string]any{
 		"object": []string{
@@ -499,7 +541,7 @@ func TestPathWalk(t *testing.T) {
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("*")},
+				Next: &Path{Name: wildcard},
 			},
 			Name:  "*",
 			Index: -1,
@@ -965,7 +1007,7 @@ func TestPathWalkWildcardEmptyObject(t *testing.T) {
 			Path: &Path{
 				Name: strPtr("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("*")},
+				Next: &Path{Name: wildcard},
 			},
 			Name:  "*",
 			Index: -1,
@@ -984,7 +1026,7 @@ func TestPathWalkWildcardEmptyObject(t *testing.T) {
 				Name: strPtr("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("*"),
+					Name: wildcard,
 					Type: PathTypeObject,
 					Next: &Path{Name: strPtr("prop")},
 				},

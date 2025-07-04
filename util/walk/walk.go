@@ -43,6 +43,8 @@ const (
 
 var wildcard = lo.ToPtr("*")
 
+// Escape the list of characters that can be escaped using a backslash `\` when
+// parsing a Path.
 var Escape = map[rune]struct{}{
 	'*':  {},
 	'[':  {},
@@ -371,6 +373,13 @@ func (p *Path) setAllMissingIndexes() {
 
 // Parse transform given path string representation into usable Path.
 //
+// The wildcard `*` can be used to match all keys of an object. It is only effective
+// if it is an entire path segment. For example, the `*` in `field*name` won't be
+// considered a wildcard and only the literal field will match.
+//
+// Special characters defined in the `Escape` map (by default `*`, `[`, `]`, `.` and `\`)
+// can be escaped using a backslack `\`.
+//
 // Example paths:
 //
 //			name
@@ -382,7 +391,7 @@ func (p *Path) setAllMissingIndexes() {
 //			object.arrayOfObjects[].field
 //			[]
 //			[].field
-//		 	object*field
+//		 	field*name
 //	     	object.field\[]
 //	     	object.field\[text\]
 //	     	path\\to\\element

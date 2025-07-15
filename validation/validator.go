@@ -366,6 +366,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 
 		value := c.Value
 		valid := true
+		translatedFieldName := ""
 		for _, validator := range field.Validators {
 			if _, ok := validator.(*NullableValidator); ok {
 				if value == nil {
@@ -397,7 +398,10 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			}
 			if !ok {
 				valid = false
-				message := v.getMessage(ctx, validator)
+				if translatedFieldName == "" {
+					translatedFieldName = translateFieldName(v.options.Language, fieldName)
+				}
+				message := v.getMessage(ctx, translatedFieldName, validator)
 				if v.isRootElement(fieldName, errorPath) {
 					v.validationErrors.Add(errorPath, message)
 				} else {
@@ -470,7 +474,7 @@ func (v *validator) processAddedErrors(ctx *Context, parentPath *walk.Path, c *w
 	}
 	if len(ctx.arrayElementErrors) > 0 {
 		errorPath := ctx.Field.getErrorPath(parentPath, c)
-		message := v.options.Language.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, validator)...)
+		message := v.options.Language.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, translateFieldName(v.options.Language, ctx.fieldName), validator)...)
 		for _, index := range ctx.arrayElementErrors {
 			i := index
 			elementPath := errorPath.Clone()
@@ -515,13 +519,13 @@ func (v *validator) getLangEntry(ctx *Context, validator Validator) string {
 	return langEntry
 }
 
-func (v *validator) processPlaceholders(ctx *Context, validator Validator) []string {
-	return append([]string{":field", translateFieldName(v.options.Language, ctx.fieldName)}, validator.MessagePlaceholders(ctx)...)
+func (v *validator) processPlaceholders(ctx *Context, translatedFieldName string, validator Validator) []string {
+	return append([]string{":field", translatedFieldName}, validator.MessagePlaceholders(ctx)...)
 }
 
-func (v *validator) getMessage(ctx *Context, validator Validator) string {
+func (v *validator) getMessage(ctx *Context, translatedFieldName string, validator Validator) string {
 	langEntry := v.getLangEntry(ctx, validator)
-	return v.options.Language.Get(langEntry, v.processPlaceholders(ctx, validator)...)
+	return v.options.Language.Get(langEntry, v.processPlaceholders(ctx, translatedFieldName, validator)...)
 }
 
 // findTypeValidator find the expected type of a field for a given array dimension.

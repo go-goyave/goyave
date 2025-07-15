@@ -422,20 +422,20 @@ func (p *Path) setAllMissingIndexes() {
 //
 // Example paths:
 //
-//			name
-//			object.field
-//			object.subobject.field
-//			object.*
-//			object.\*
-//			object.array[]
-//			object.arrayOfObjects[].field
-//			[]
-//			[].field
-//		 	field*name
-//	     	object.field\[]
-//	     	object.field\[text\]
-//	     	abc\[\]def
-//	     	path\\to\\element
+//	name
+//	object.field
+//	object.subobject.field
+//	object.*
+//	object.\*
+//	object.array[]
+//	object.arrayOfObjects[].field
+//	[]
+//	[].field
+//	field*name
+//	object.field\[]
+//	object.field\[text\]
+//	abc\[\]def
+//	path\\to\\element
 func Parse(p string) (*Path, error) {
 	rootPath := &Path{}
 	path := rootPath

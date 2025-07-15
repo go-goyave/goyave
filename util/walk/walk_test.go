@@ -92,7 +92,7 @@ func testPathScanner(t *testing.T, path string, expected []string) {
 	require.NoError(t, scanner.Err())
 }
 
-func testPathScannerError(t *testing.T, path string) {
+func testPathScannerError(t *testing.T, path, expectedError string) {
 	scanner := createPathScanner(path)
 	result := []string{}
 	for scanner.Scan() {
@@ -102,6 +102,7 @@ func testPathScannerError(t *testing.T, path string) {
 	err := scanner.Err()
 	require.Error(t, err, fmt.Sprintf("%#v", result))
 	assert.Contains(t, err.Error(), "illegal syntax: ")
+	assert.Contains(t, err.Error(), "("+expectedError+")")
 }
 
 func TestPathScanner(t *testing.T) {
@@ -117,27 +118,26 @@ func TestPathScanner(t *testing.T) {
 	testPathScanner(t, `abc\[[]`, []string{`abc\[`, `[]`})
 	testPathScanner(t, `abc\[\]def`, []string{`abc\[\]def`})
 
-	testPathScannerError(t, "object[].[]")
-	testPathScannerError(t, "object..field")
-	testPathScannerError(t, "object.")
-	testPathScannerError(t, `object\..`)
-	testPathScannerError(t, ".object")
-	testPathScannerError(t, "array[")
-	testPathScannerError(t, "array]")
-	testPathScannerError(t, "array[.]")
-	testPathScannerError(t, "array[aa]")
-	testPathScannerError(t, "array[[]]")
-	testPathScannerError(t, "array[a[b]c]")
-	testPathScannerError(t, "[]array")
-	testPathScannerError(t, "array[]field")
-	testPathScannerError(t, "array.[]field")
-	testPathScannerError(t, "array.[]field")
-	testPathScannerError(t, "")
-	testPathScannerError(t, `path\to\element`)
-	testPathScannerError(t, `array[]\[]`)
-	testPathScannerError(t, `field\`)
-	testPathScannerError(t, `abc\[[`)
-	testPathScannerError(t, `abc\[]def`)
+	testPathScannerError(t, "object[].[]", "a dot cannot be followed by brackets")
+	testPathScannerError(t, "object..field", "a dot cannot be followed by another dot")
+	testPathScannerError(t, "object.", "path cannot end with a dot, an open bracket or a backslash")
+	testPathScannerError(t, `object\..`, "path cannot end with a dot, an open bracket or a backslash")
+	testPathScannerError(t, ".object", "path cannot start with a dot")
+	testPathScannerError(t, "array[", "path cannot end with a dot, an open bracket or a backslash")
+	testPathScannerError(t, "array]", "a closed bracket must be preceded by an open bracket")
+	testPathScannerError(t, "array[.]", "an open bracket must be followed by a closed bracket")
+	testPathScannerError(t, "array[aa]", "an open bracket must be followed by a closed bracket")
+	testPathScannerError(t, "array[[]]", "an open bracket must be followed by a closed bracket")
+	testPathScannerError(t, "array[a[b]c]", "an open bracket must be followed by a closed bracket")
+	testPathScannerError(t, "[]array", "a closed bracket can only be followed by an open bracket or a dot")
+	testPathScannerError(t, "array[]field", "a closed bracket can only be followed by an open bracket or a dot")
+	testPathScannerError(t, "array.[]field", "a dot cannot be followed by brackets")
+	testPathScannerError(t, "", "path is empty")
+	testPathScannerError(t, `path\to\element`, "cannot escape character \"t\"")
+	testPathScannerError(t, `array[]\[]`, "a closed bracket can only be followed by an open bracket or a dot")
+	testPathScannerError(t, `field\`, "path cannot end with a dot, an open bracket or a backslash")
+	testPathScannerError(t, `abc\[[`, "path cannot end with a dot, an open bracket or a backslash")
+	testPathScannerError(t, `abc\[]def`, "a closed bracket can only be followed by an open bracket or a dot")
 }
 
 func TestParse(t *testing.T) {

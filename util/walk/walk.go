@@ -513,8 +513,11 @@ func Depth(p string) uint {
 func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
-		if len(path) == 0 || path[0] == '.' {
-			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
+		if len(path) == 0 {
+			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path is empty)", path)
+		}
+		if path[0] == '.' {
+			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path cannot start with a dot)", path)
 		}
 		for width, i := 0, 0; i < len(data); i += width {
 			var r rune
@@ -522,8 +525,8 @@ func createPathScanner(path string) *bufio.Scanner {
 
 			if i+width < len(data) {
 				next, nextWidth := utf8.DecodeRune(data[i+width:])
-				if isSyntaxInvalid(r, next) {
-					return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
+				if syntaxErr := checkSyntax(r, next); syntaxErr != nil {
+					return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (%w)", path, syntaxErr)
 				}
 
 				if _, escapeNext := EscapeChars[next]; r == '\\' && escapeNext {
@@ -539,7 +542,7 @@ func createPathScanner(path string) *bufio.Scanner {
 					return i + width, data[:i+width], nil
 				}
 			} else if r == '.' || r == '[' || r == '\\' {
-				return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
+				return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path cannot end with a dot, an open bracket or a backslash)", path)
 			}
 		}
 		if atEOF && len(data) > 0 {
@@ -551,14 +554,27 @@ func createPathScanner(path string) *bufio.Scanner {
 	return scanner
 }
 
-func isSyntaxInvalid(r rune, next rune) bool {
+func checkSyntax(r rune, next rune) error {
+	if r == '.' && next == '.' {
+		return fmt.Errorf("a dot cannot be followed by another dot")
+	}
+	if r == '[' && next != ']' {
+		return fmt.Errorf("an open bracket must be followed by a closed bracket")
+	}
+	if r == '.' && (next == ']' || next == '[') {
+		return fmt.Errorf("a dot cannot be followed by brackets")
+	}
+	if r != '.' && r != '[' && r != '\\' && next == ']' {
+		return fmt.Errorf("a closed bracket must be preceded by an open bracket")
+	}
+	if r == ']' && next != '[' && next != '.' {
+		return fmt.Errorf("a closed bracket can only be followed by an open bracket or a dot")
+	}
 	_, escapeNext := EscapeChars[next]
-	return (r == '.' && next == '.') ||
-		(r == '[' && next != ']') ||
-		(r == '.' && (next == ']' || next == '[')) ||
-		(r != '.' && r != '[' && r != '\\' && next == ']') ||
-		(r == ']' && next != '[' && next != '.') ||
-		(r == '\\' && !escapeNext)
+	if r == '\\' && !escapeNext {
+		return fmt.Errorf("cannot escape character \"%s\"", string(next))
+	}
+	return nil
 }
 
 func removeEscapeChars(t string) string {

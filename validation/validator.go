@@ -426,16 +426,18 @@ func (v *validator) shouldDeleteFromParent(field *Field, parentIsObject bool, va
 }
 
 func (v *validator) shouldConvertSingleValueArray(fieldName string) bool {
-	return v.options.ConvertSingleValueArrays && fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
+	// It's OK not to check for escape characters for the brackets here since the fieldName is the
+	// escaped representation of the field name: e.g.: "escapedArray\[\]" and "escapedArray\[\][]"
+	return v.options.ConvertSingleValueArrays && fieldName != CurrentElement && !strings.Contains(fieldName, "[]")
 }
 
 func (v *validator) convertSingleValueArray(field *Field, value any) any {
-	if value == nil {
+	if value == nil || !field.IsArray() {
 		return value
 	}
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
-	if field.IsArray() && kind != "slice" {
+	if kind != "slice" {
 		rt := reflect.TypeOf(value)
 		slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
 		slice = reflect.Append(slice, rv)

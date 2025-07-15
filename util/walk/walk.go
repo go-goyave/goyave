@@ -43,22 +43,32 @@ const (
 
 var wildcard = lo.ToPtr("*")
 
-// Escape the list of characters that can be escaped using a backslash `\` when
-// parsing a Path. This map is read-only.
-var Escape = map[rune]struct{}{
-	'*':  {},
-	'[':  {},
-	']':  {},
-	'.':  {},
-	'\\': {},
-}
+var (
+	// Escape the list of characters that can be escaped using a backslash `\` when
+	// parsing a Path. This map is read-only.
+	Escape = map[rune]struct{}{
+		'*':  {},
+		'[':  {},
+		']':  {},
+		'.':  {},
+		'\\': {},
+	}
 
-var escapeReplacer = strings.NewReplacer(
-	`\*`, `*`,
-	`\[`, `[`,
-	`\]`, `]`,
-	`\.`, `.`,
-	`\\`, `\`,
+	escapeRemover = strings.NewReplacer(
+		`\*`, `*`,
+		`\[`, `[`,
+		`\]`, `]`,
+		`\.`, `.`,
+		`\\`, `\`,
+	)
+
+	escapeReplacer = strings.NewReplacer(
+		`*`, `\*`,
+		`[`, `\[`,
+		`]`, `\]`,
+		`.`, `\.`,
+		`\`, `\\`,
+	)
 )
 
 // Path allows for complex untyped data structure exploration.
@@ -349,7 +359,11 @@ func (p *Path) IsWildcard() bool {
 func (p *Path) String() string {
 	path := ""
 	if p.Name != nil {
-		path += *p.Name
+		if p.Name == wildcard {
+			path += "*"
+		} else {
+			path += escapeReplacer.Replace(*p.Name)
+		}
 	}
 	switch p.Type {
 	case PathTypeElement:
@@ -402,6 +416,7 @@ func (p *Path) setAllMissingIndexes() {
 //		 	field*name
 //	     	object.field\[]
 //	     	object.field\[text\]
+//	     	abc\[\]def
 //	     	path\\to\\element
 func Parse(p string) (*Path, error) {
 	rootPath := &Path{}
@@ -488,15 +503,16 @@ func createPathScanner(path string) *bufio.Scanner {
 			r, width = utf8.DecodeRune(data[i:])
 
 			if i+width < len(data) {
-				next, _ := utf8.DecodeRune(data[i+width:])
-				// case: escape chars
-				if _, escapeNext := Escape[next]; r == '\\' && escapeNext {
-					// Skips the next character
-					i += width
-					continue
-				}
+				next, nextWidth := utf8.DecodeRune(data[i+width:])
 				if isSyntaxInvalid(r, next) {
 					return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
+				}
+
+				if _, escapeNext := Escape[next]; r == '\\' && escapeNext {
+					// Skip the next character
+					width += nextWidth
+					r = next
+					next, _ = utf8.DecodeRune(data[i+width:])
 				}
 
 				if r == '.' && i == 0 {
@@ -504,7 +520,7 @@ func createPathScanner(path string) *bufio.Scanner {
 				} else if next == '.' || next == '[' {
 					return i + width, data[:i+width], nil
 				}
-			} else if r == '.' || r == '[' {
+			} else if r == '.' || r == '[' || r == '\\' {
 				return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
 			}
 		}
@@ -522,11 +538,11 @@ func isSyntaxInvalid(r rune, next rune) bool {
 	return (r == '.' && next == '.') ||
 		(r == '[' && next != ']') ||
 		(r == '.' && (next == ']' || next == '[')) ||
-		(r != '.' && r != '[' && next == ']') ||
+		(r != '.' && r != '[' && r != '\\' && next == ']') ||
 		(r == ']' && next != '[' && next != '.') ||
 		(r == '\\' && !escapeNext)
 }
 
 func removeEscapeChars(t string) string {
-	return escapeReplacer.Replace(t)
+	return escapeRemover.Replace(t)
 }

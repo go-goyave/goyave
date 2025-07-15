@@ -155,7 +155,7 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 	for _, field := range r {
 		path := prefix
 		if field.Path != CurrentElement {
-			if strings.HasPrefix(field.Path, "[]") || path == "" {
+			if (strings.HasPrefix(field.Path, "[]") && !strings.HasPrefix(field.Path, `\[]`)) || path == "" {
 				path += field.Path
 			} else {
 				path += "." + field.Path
@@ -181,7 +181,7 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 				p = lo.Ternary(p.Next == nil, p, p.Next)
 			}
 			relativePath := p.String()
-			return strings.HasSuffix(relativePath, "[]")
+			return strings.HasSuffix(relativePath, "[]") && !strings.HasSuffix(relativePath, `\[\]`)
 		})
 		if !ok {
 			break
@@ -214,7 +214,7 @@ func (r RuleSet) injectArrayParents() RuleSet {
 		// len(r) MUST be re-evaluated each loop, using "range r" would break it
 		// because the length is only evaluated once at the start of the loop.
 		f := r[i]
-		if strings.HasSuffix(f.Path, "[]") {
+		if strings.HasSuffix(f.Path, "[]") && !strings.HasSuffix(f.Path, `\[]`) {
 			parentPath := f.Path[:len(f.Path)-2]
 			if _, ok := keys[parentPath]; !ok {
 				// No parent array found, inject it

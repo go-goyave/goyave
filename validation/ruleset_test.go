@@ -87,6 +87,9 @@ func TestRuleset(t *testing.T) {
 		{Path: "object.property", Rules: List{
 			String(),
 		}},
+		{Path: `object.\*`, Rules: List{
+			String(),
+		}},
 		{Path: "anonymous.property", Rules: List{
 			String(),
 		}},
@@ -109,6 +112,10 @@ func TestRuleset(t *testing.T) {
 		{Path: "array[]", Rules: List{Int()}},
 		{Path: "deep_array[][][]", Rules: List{Int16()}},
 
+		// Should not be injected because bracket is escaped
+		{Path: `escaped_array\[]`, Rules: List{Int8()}},
+		{Path: `object.array\[]`, Rules: List{Int8()}},
+
 		{Path: "array_composition", Rules: RuleSet{
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: List{Int()}},
@@ -118,6 +125,9 @@ func TestRuleset(t *testing.T) {
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: List{Object()}},
 			{Path: "[].field", Rules: List{String()}},
+			{Path: `[].fi\[\]eld`, Rules: List{String()}},
+			{Path: `[].\*`, Rules: List{String()}},
+			{Path: `[].object.prop\.with\.a\.dot`, Rules: List{String()}},
 		}},
 
 		{Path: "array_element_composition", Rules: RuleSet{
@@ -168,6 +178,10 @@ func TestRuleset(t *testing.T) {
 		},
 		{
 			Path:       walk.MustParse("object.property"),
+			Validators: []Validator{String()},
+		},
+		{
+			Path:       walk.MustParse(`object.\*`),
 			Validators: []Validator{String()},
 		},
 		{
@@ -232,6 +246,14 @@ func TestRuleset(t *testing.T) {
 			isArray: true,
 		},
 		{
+			Path:       walk.MustParse(`escaped_array\[]`),
+			Validators: []Validator{Int8()},
+		},
+		{
+			Path:       walk.MustParse(`object.array\[]`),
+			Validators: []Validator{Int8()},
+		},
+		{
 			Path:       walk.MustParse("array_composition"),
 			Validators: []Validator{Array()},
 			Elements: &Field{
@@ -256,6 +278,21 @@ func TestRuleset(t *testing.T) {
 		},
 		{
 			Path:        walk.MustParse("array_of_objects_composition[].field"),
+			Validators:  []Validator{String()},
+			prefixDepth: 1,
+		},
+		{
+			Path:        walk.MustParse(`array_of_objects_composition[].fi\[\]eld`),
+			Validators:  []Validator{String()},
+			prefixDepth: 1,
+		},
+		{
+			Path:        walk.MustParse(`array_of_objects_composition[].\*`),
+			Validators:  []Validator{String()},
+			prefixDepth: 1,
+		},
+		{
+			Path:        walk.MustParse(`array_of_objects_composition[].object.prop\.with\.a\.dot`),
 			Validators:  []Validator{String()},
 			prefixDepth: 1,
 		},

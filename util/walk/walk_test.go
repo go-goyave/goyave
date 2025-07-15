@@ -108,10 +108,19 @@ func TestPathScanner(t *testing.T) {
 	testPathScanner(t, "object.array[].field", []string{"object", ".", "array", "[]", ".", "field"})
 	testPathScanner(t, "array[][]", []string{"array", "[]", "[]"})
 	testPathScanner(t, "object.field", []string{"object", ".", "field"})
+	testPathScanner(t, `a\[\].b\.c\\d.\*`, []string{`a\[\]`, ".", `b\.c\\d`, ".", `\*`})
+	testPathScanner(t, `a\[].b`, []string{`a\[]`, ".", `b`})
+	testPathScanner(t, `object.\*.field`, []string{"object", ".", `\*`, ".", "field"})
+	testPathScanner(t, `object.\.`, []string{"object", ".", `\.`})
+	testPathScanner(t, `object.field\[]`, []string{"object", ".", `field\[]`})
+	testPathScanner(t, `field\\`, []string{`field\\`})
+	testPathScanner(t, `abc\[[]`, []string{`abc\[`, `[]`})
+	testPathScanner(t, `abc\[\]def`, []string{`abc\[\]def`})
 
 	testPathScannerError(t, "object[].[]")
 	testPathScannerError(t, "object..field")
 	testPathScannerError(t, "object.")
+	testPathScannerError(t, `object\..`)
 	testPathScannerError(t, ".object")
 	testPathScannerError(t, "array[")
 	testPathScannerError(t, "array]")
@@ -125,6 +134,10 @@ func TestPathScanner(t *testing.T) {
 	testPathScannerError(t, "array.[]field")
 	testPathScannerError(t, "")
 	testPathScannerError(t, `path\to\element`)
+	testPathScannerError(t, `array[]\[]`)
+	testPathScannerError(t, `field\`)
+	testPathScannerError(t, `abc\[[`)
+	testPathScannerError(t, `abc\[]def`)
 }
 
 func TestParse(t *testing.T) {
@@ -235,6 +248,15 @@ func TestParse(t *testing.T) {
 	path, err = Parse(".invalid[]path")
 	assert.Nil(t, path)
 	require.Error(t, err)
+
+	path, err = Parse("[]")
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Type: PathTypeArray,
+		Next: &Path{
+			Type: PathTypeElement,
+		},
+	}, path)
 }
 
 func TestEscapedParse(t *testing.T) {
@@ -278,6 +300,39 @@ func TestEscapedParse(t *testing.T) {
 	assert.NotSame(t, path.Next.Name, wildcard)
 	assert.False(t, path.Next.IsWildcard())
 
+	path, err = Parse(`object.\*.field`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("*"),
+			Type: PathTypeObject,
+			Next: &Path{
+				Name: strPtr("field"),
+				Type: PathTypeElement,
+			},
+		},
+	}, path)
+
+	path, err = Parse(`object.\.`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("."),
+			Type: PathTypeElement,
+		},
+	}, path)
+
+	path, err = Parse(`\[]`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("[]"),
+		Type: PathTypeElement,
+	}, path)
+
 	path, err = Parse(`path\\to\\element`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
@@ -286,7 +341,16 @@ func TestEscapedParse(t *testing.T) {
 		Next: nil,
 	}, path)
 
-	// this is an invalid path
+	path, err = Parse(`abc\[[]`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("abc["),
+		Type: PathTypeArray,
+		Next: &Path{
+			Type: PathTypeElement,
+		},
+	}, path)
+
 	path, err = Parse(`path\to\element`)
 	assert.Nil(t, path)
 	require.Error(t, err)
@@ -306,6 +370,30 @@ func TestEscapedParse(t *testing.T) {
 					Next: nil,
 				},
 			},
+		},
+	}, path)
+
+	path, err = Parse(`array\[\].b`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("array[]"),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("b"),
+			Type: PathTypeElement,
+			Next: nil,
+		},
+	}, path)
+
+	path, err = Parse(`object\..b`)
+	require.NoError(t, err)
+	assert.Equal(t, &Path{
+		Name: strPtr("object."),
+		Type: PathTypeObject,
+		Next: &Path{
+			Name: strPtr("b"),
+			Type: PathTypeElement,
+			Next: nil,
 		},
 	}, path)
 
@@ -1709,9 +1797,14 @@ func TestPathString(t *testing.T) {
 
 	// Escaped fields
 	path, _ = Parse(`a\[\].b\.c\\d.\*`)
-	assert.Equal(t, `a[].b.c\d.*`, path.String())
+	assert.Equal(t, `a\[\].b\.c\\d.\*`, path.String())
+
+	path, _ = Parse(`a\[].b\.c\\d.\*`)
+	assert.Equal(t, `a\[\].b\.c\\d.\*`, path.String())
 
 	// Wildcard
 	path, _ = Parse(`object.\*.field`)
+	assert.Equal(t, `object.\*.field`, path.String())
+	path, _ = Parse(`object.*.field`)
 	assert.Equal(t, `object.*.field`, path.String())
 }

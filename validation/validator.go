@@ -301,7 +301,7 @@ func Validate(options *Options) (*Errors, []error) {
 			validator.validateField(*field.Path.Name, field, fakeParent, nil)
 			options.Data = fakeParent[CurrentElement]
 		} else {
-			validator.validateField(*field.Path.Tail().Name, field, options.Data, nil)
+			validator.validateField(field.Path.Tail().String(), field, options.Data, nil)
 		}
 	}
 
@@ -623,9 +623,10 @@ func GetFieldName(lang *lang.Language, path *walk.Path) string {
 }
 
 func translateFieldName(lang *lang.Language, fieldName string) string {
-	if i := strings.LastIndex(fieldName, "."); i != -1 {
+	if i := lastUnescapedDot(fieldName); i != -1 {
 		fieldName = fieldName[i+1:]
 	}
+	fieldName = walk.Unescape(fieldName)
 	for {
 		f := strings.TrimSuffix(fieldName, "[]")
 		if len(f) == len(fieldName) {
@@ -639,4 +640,16 @@ func translateFieldName(lang *lang.Language, fieldName string) string {
 		return fieldName
 	}
 	return name
+}
+
+func lastUnescapedDot(str string) int {
+	for i := len(str) - 1; i >= 0; i-- {
+		if str[i] == '.' {
+			if i > 0 && str[i-1] == '\\' {
+				continue
+			}
+			return i
+		}
+	}
+	return -1
 }

@@ -44,9 +44,9 @@ const (
 var wildcard = lo.ToPtr("*")
 
 var (
-	// Escape the list of characters that can be escaped using a backslash `\` when
+	// EscapeChars the list of characters that can be escaped using a backslash `\` when
 	// parsing a Path. This map is read-only.
-	Escape = map[rune]struct{}{
+	EscapeChars = map[rune]struct{}{
 		'*':  {},
 		'[':  {},
 		']':  {},
@@ -356,13 +356,26 @@ func (p *Path) IsWildcard() bool {
 }
 
 // String returns a string representation of the Path.
+// The result contains the escape characters, if any.
 func (p *Path) String() string {
+	return p.toString(true)
+}
+
+// UnescapedString returns a string representation of the Path
+// without the escape characters.
+func (p *Path) UnescapedString() string {
+	return p.toString(false)
+}
+
+func (p *Path) toString(showEscapeChars bool) string {
 	path := ""
 	if p.Name != nil {
 		if p.Name == wildcard {
 			path += "*"
-		} else {
+		} else if showEscapeChars {
 			path += escapeReplacer.Replace(*p.Name)
+		} else {
+			path += *p.Name
 		}
 	}
 	switch p.Type {
@@ -378,9 +391,14 @@ func (p *Path) String() string {
 	}
 
 	if p.Next != nil {
-		path += p.Next.String()
+		path += p.Next.toString(showEscapeChars)
 	}
 	return path
+}
+
+// Unescape remove escape characters from a path without parsing it.
+func Unescape(path string) string {
+	return removeEscapeChars(path)
 }
 
 // setAllMissingIndexes set Index to -1 for all `PathTypeArray` steps in this path.
@@ -508,7 +526,7 @@ func createPathScanner(path string) *bufio.Scanner {
 					return len(data), data[:], errors.Errorf("illegal syntax: \"%s\"", path)
 				}
 
-				if _, escapeNext := Escape[next]; r == '\\' && escapeNext {
+				if _, escapeNext := EscapeChars[next]; r == '\\' && escapeNext {
 					// Skip the next character
 					width += nextWidth
 					r = next
@@ -534,7 +552,7 @@ func createPathScanner(path string) *bufio.Scanner {
 }
 
 func isSyntaxInvalid(r rune, next rune) bool {
-	_, escapeNext := Escape[next]
+	_, escapeNext := EscapeChars[next]
 	return (r == '.' && next == '.') ||
 		(r == '[' && next != ']') ||
 		(r == '.' && (next == ']' || next == '[')) ||

@@ -110,6 +110,10 @@ func TestGetFieldName(t *testing.T) {
 		{desc: "translated_email", path: walk.MustParse("email"), want: "email address"},
 		{desc: "translated_object.email", path: walk.MustParse("object.email"), want: "email address"},
 		{desc: "translated_email[]", path: walk.MustParse("email[]"), want: "email address"},
+		{desc: `prop\\er\.ty`, path: walk.MustParse(`prop\\er\.ty`), want: `prop\er.ty`},
+		{desc: `untranslated_object.prop\\er\.ty`, path: walk.MustParse(`object.prop\\er\.ty`), want: `prop\er.ty`},
+		{desc: `escaped_array\[]`, path: walk.MustParse(`escaped_array\[]`), want: "escaped_array"},
+		{desc: `\.`, path: walk.MustParse(`\.`), want: "."},
 	}
 
 	for _, c := range cases {

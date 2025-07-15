@@ -1798,13 +1798,21 @@ func TestPathString(t *testing.T) {
 	// Escaped fields
 	path, _ = Parse(`a\[\].b\.c\\d.\*`)
 	assert.Equal(t, `a\[\].b\.c\\d.\*`, path.String())
+	assert.Equal(t, `a[].b.c\d.*`, path.UnescapedString())
 
 	path, _ = Parse(`a\[].b\.c\\d.\*`)
 	assert.Equal(t, `a\[\].b\.c\\d.\*`, path.String())
+	assert.Equal(t, `a[].b.c\d.*`, path.UnescapedString())
 
 	// Wildcard
 	path, _ = Parse(`object.\*.field`)
 	assert.Equal(t, `object.\*.field`, path.String())
+	assert.Equal(t, `object.*.field`, path.UnescapedString())
 	path, _ = Parse(`object.*.field`)
 	assert.Equal(t, `object.*.field`, path.String())
+	assert.Equal(t, `object.*.field`, path.UnescapedString())
+}
+
+func TestUnescape(t *testing.T) {
+	assert.Equal(t, `a[].b.c\d.*`, Unescape(`a\[\].b\.c\\d.\*`))
 }

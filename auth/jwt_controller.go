@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/samber/lo"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -79,7 +79,7 @@ func (c *JWTController[T]) Init(server *goyave.Server) {
 
 // RegisterRoutes register the "/login" route (with validation) on the given router.
 func (c *JWTController[T]) RegisterRoutes(router *goyave.Router) {
-	router.Post("/login", c.Login).Middleware(&parse.Middleware{}).ValidateBody(c.validationRules)
+	router.Post("/login", c.Login).SetMeta(MetaAuth, false).Middleware(&parse.Middleware{}).ValidateBody(c.validationRules)
 }
 
 func (c *JWTController[T]) validationRules(_ *goyave.Request) validation.RuleSet {

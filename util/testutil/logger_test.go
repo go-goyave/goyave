@@ -14,7 +14,7 @@ type mockT struct {
 }
 
 func (t mockT) Log(args ...any) {
-	t.buf.Write([]byte(fmt.Sprint(args...)))
+	fmt.Fprint(t.buf, args...)
 }
 
 func TestLogWriter(t *testing.T) {

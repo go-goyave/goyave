@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	_ "embed"
-
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,7 +89,7 @@ func toAbsolutePath(relativePath string) string {
 func TestGetFileExtension(t *testing.T) {
 	assert.Equal(t, "png", GetFileExtension("test.png"))
 	assert.Equal(t, "gz", GetFileExtension("test.tar.gz"))
-	assert.Equal(t, "", GetFileExtension("test"))
+	assert.Empty(t, GetFileExtension("test"))
 }
 
 func TestGetMIMEType(t *testing.T) {

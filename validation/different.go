@@ -14,8 +14,8 @@ import (
 // For numbers, make sure the two compared numbers have the same type. A `uint` with value `1` will be considered
 // different from an `int` with value `1`.
 type DifferentValidator struct {
-	BaseValidator
 	Path *walk.Path
+	BaseValidator
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.

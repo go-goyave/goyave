@@ -58,7 +58,10 @@ type Handler[T any] struct {
 	Authenticator[T]
 }
 
-// Handle set the request's `User` to the user returned by the authenticator if it succeeds.
+// Handle on success, set the request's `User` to the user returned by the authenticator
+// and inject it in the request's `context.Context`. The user can be retrieved from the
+// context using `UserFromContext`.
+//
 // Blocks if the authentication is not successful.
 // If the authenticator implements `Unauthorizer`, `OnUnauthorized` is called,
 // otherwise returns a default `401 Unauthorized` error.
@@ -71,7 +74,7 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 			return
 		}
 
-		user, err := m.Authenticator.Authenticate(request)
+		user, err := m.Authenticate(request)
 		if err != nil {
 			if unauthorizer, ok := m.Authenticator.(Unauthorizer); ok {
 				unauthorizer.OnUnauthorized(response, request, err)
@@ -81,6 +84,7 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 			return
 		}
 		request.User = user
+		request.WithContext(ContextWithUser(request.Context(), user))
 		next(response, request)
 	}
 }
@@ -97,4 +101,25 @@ func Middleware[T any](authenticator Authenticator[T]) *Handler[T] {
 	return &Handler[T]{
 		Authenticator: authenticator,
 	}
+}
+
+// userCtxKey the key used to store the authenticated user in the context.
+type userCtxKey struct{}
+
+// ContextWithUser inject the given user as a context value. The user
+// can be retrieved from the returned context using `UserFromContext`.
+func ContextWithUser(ctx context.Context, user any) context.Context {
+	return context.WithValue(ctx, userCtxKey{}, user)
+}
+
+// UserFromContext return the authenticated user stored in the given context or nil.
+// The type T should be identical to the type used in your Authenticator. If the user
+// stored in the context isn't of type `*T`, nil is returned.
+//
+//	user := UserFromContext[dto.InternalUser](ctx)
+func UserFromContext[T any](ctx context.Context) *T {
+	if u, ok := ctx.Value(userCtxKey{}).(*T); ok {
+		return u
+	}
+	return nil
 }

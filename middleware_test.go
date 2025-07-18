@@ -245,8 +245,8 @@ func TestLanguageMiddleware(t *testing.T) {
 }
 
 type testValidator struct {
-	validation.BaseValidator
 	validateFunc func(c *testValidator, ctx *validation.Context) bool
+	validation.BaseValidator
 }
 
 func (v *testValidator) Validate(ctx *validation.Context) bool {

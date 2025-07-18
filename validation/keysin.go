@@ -1,6 +1,10 @@
 package validation
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/samber/lo"
+)
 
 // KeysInValidator the field under validation must be an object and all its keys must
 // be equal to one of the given values.
@@ -41,6 +45,8 @@ func (v *KeysInValidator) MessagePlaceholders(_ *Context) []string {
 
 // KeysIn the field under validation must be an object and all its keys must
 // be equal to one of the given values.
-func KeysIn(keys ...string) *KeysInValidator {
-	return &KeysInValidator{Keys: keys}
+func KeysIn[T ~string](keys ...T) *KeysInValidator {
+	return &KeysInValidator{Keys: lo.Map(keys, func(k T, _ int) string {
+		return string(k)
+	})}
 }

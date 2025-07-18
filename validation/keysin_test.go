@@ -15,6 +15,11 @@ func TestKeysInValidator(t *testing.T) {
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
 		assert.Equal(t, []string{":values", "a, b, c"}, v.MessagePlaceholders(&Context{}))
+
+		// Type alias
+		type Alias string
+		v = KeysIn(Alias("a"), "b")
+		assert.Equal(t, []string{"a", "b"}, v.Keys)
 	})
 
 	cases := []struct {

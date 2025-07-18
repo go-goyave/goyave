@@ -126,7 +126,7 @@ func TestUniqueValidator(t *testing.T) {
 			v := Unique(func(db *gorm.DB, val any) *gorm.DB {
 				return db.Model(&uniqueTestModel{}).Where(c.column, val)
 			})
-			v.init(opts)
+			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -215,7 +215,7 @@ func TestExistsValidator(t *testing.T) {
 			v := Exists(func(db *gorm.DB, val any) *gorm.DB {
 				return db.Model(&uniqueTestModel{}).Where(c.column, val)
 			})
-			v.init(opts)
+			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -347,7 +347,7 @@ func TestUniqueArrayValidator(t *testing.T) {
 			}
 
 			v := UniqueArray[int](c.table, c.column, c.transform)
-			v.init(opts)
+			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -376,7 +376,7 @@ func TestUniqueArrayValidator(t *testing.T) {
 				opts := prepareUniqueTest(t)
 				opts.Config.Set("database.connection", c.dialect)
 				v := UniqueArray[int]("models", "name", nil)
-				v.init(opts)
+				v.Init(opts)
 
 				tx, _ := v.buildQuery([]int{2, 7, 6}, false)
 
@@ -509,7 +509,7 @@ func TestExistsArrayValidator(t *testing.T) {
 			}
 
 			v := ExistsArray[int](c.table, c.column, c.transform)
-			v.init(opts)
+			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -538,7 +538,7 @@ func TestExistsArrayValidator(t *testing.T) {
 				opts := prepareUniqueTest(t)
 				opts.Config.Set("database.connection", c.dialect)
 				v := ExistsArray[int]("models", "name", nil)
-				v.init(opts)
+				v.Init(opts)
 
 				tx, _ := v.buildQuery([]int{2, 7, 6}, true)
 
@@ -572,7 +572,7 @@ func TestBuildQueryValidatorWithTransform(t *testing.T) {
 					return gorm.Expr("?", val-1)
 				}
 				v := ExistsArray[int]("models", "name", transform)
-				v.init(opts)
+				v.Init(opts)
 
 				tx, _ := v.buildQuery([]int{2, 7, 6}, true)
 
@@ -589,7 +589,7 @@ func TestClickhouseUnsupportedType(t *testing.T) {
 	opts := prepareUniqueTest(t)
 	opts.Config.Set("database.connection", "clickhouse")
 	v := ExistsArray[struct{}]("models", "name", nil)
-	v.init(opts)
+	v.Init(opts)
 
 	ctx := &Context{
 		Value: []struct{}{{}, {}},

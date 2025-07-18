@@ -215,7 +215,7 @@ func TestRouter(t *testing.T) {
 		assert.Equal(t, router, subrouter.parent)
 		assert.Equal(t, "/subrouter", subrouter.prefix)
 		assert.Equal(t, router.statusHandlers, subrouter.statusHandlers)
-		assert.NotSame(t, router.statusHandlers, subrouter.statusHandlers)
+		assert.NotSame(t, &router.statusHandlers, &subrouter.statusHandlers)
 		assert.Equal(t, router.namedRoutes, subrouter.namedRoutes)
 		assert.Equal(t, router.globalMiddleware, subrouter.globalMiddleware)
 		assert.Equal(t, router.regexCache, subrouter.regexCache)
@@ -253,7 +253,7 @@ func TestRouter(t *testing.T) {
 			assert.Equal(t, "/", route.uri)
 
 			route = router.Subrouter("/subrouter").Route([]string{http.MethodGet}, "/", func(_ *Response, _ *Request) {})
-			assert.Equal(t, "", route.uri)
+			assert.Empty(t, route.uri)
 		})
 	})
 

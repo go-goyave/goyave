@@ -22,7 +22,7 @@ var (
 	// ErrNotHijackable returned by response.Hijack() if the underlying
 	// http.ResponseWriter doesn't implement http.Hijacker. This can
 	// happen with HTTP/2 connections.
-	ErrNotHijackable = errors.New("Underlying http.ResponseWriter doesn't implement http.Hijacker")
+	ErrNotHijackable = errors.New("underlying http.ResponseWriter doesn't implement http.Hijacker")
 )
 
 // PreWriter is a writter that needs to alter the response headers or status

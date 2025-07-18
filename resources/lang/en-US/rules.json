@@ -1,4 +1,5 @@
 {
     "override": "rule override",
-    "required.array": "The :field values are required."
+    "required.array": "The :field values are required.",
+    "messageOverride": "Custom error message: placeholders work: ':field', :min - :max"
 }

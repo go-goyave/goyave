@@ -181,12 +181,13 @@ func (s Gorm) nestedTransaction(tx *gorm.DB, f func(context.Context) error) erro
 	return err
 }
 
-// DB returns the Gorm instance stored in the given context. Returns the given fallback
-// if no Gorm DB could be found in the context.
+// DB returns the Gorm instance stored in the given context.
+// If no Gorm DB could be found in the context, calls `fallback.WithContext` and
+// return the result.
 func DB(ctx context.Context, fallback *gorm.DB) *gorm.DB {
 	db := ctx.Value(dbKey{})
 	if db == nil {
-		return fallback
+		return fallback.WithContext(ctx)
 	}
 	return db.(*gorm.DB)
 }

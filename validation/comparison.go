@@ -16,8 +16,8 @@ import (
 //   - Compare the number of keys in an object with a numeric field
 //   - Compare a file (or multifile) size with a numeric field. The number of KiB of each file is rounded up (ceil).
 type ComparisonValidator struct {
-	BaseValidator
 	Path *walk.Path
+	BaseValidator
 }
 
 // Validate checks the field under validation satisfies this validator's criteria.

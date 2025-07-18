@@ -88,13 +88,14 @@ func (p *parameterizable) braceIndices(s string) ([]int, error) {
 	var level, idx int
 	indices := make([]int, 0, 2)
 	length := len(s)
-	for i := 0; i < length; i++ {
-		if s[i] == '{' {
+	for i := range length {
+		switch s[i] {
+		case '{':
 			level++
 			if level == 1 {
 				idx = i
 			}
-		} else if s[i] == '}' {
+		case '}':
 			level--
 			if level == 0 {
 				if i == idx+1 {

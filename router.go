@@ -27,8 +27,8 @@ const (
 )
 
 var (
-	errMatchMethodNotAllowed = errors.New("Method not allowed for this route")
-	errMatchNotFound         = errors.New("No match for this URI")
+	errMatchMethodNotAllowed = errors.New("method not allowed for this route")
+	errMatchNotFound         = errors.New("no match for this URI")
 
 	methodNotAllowedRoute = newRoute(func(response *Response, _ *Request) {
 		response.Status(http.StatusMethodNotAllowed)
@@ -289,7 +289,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *Router) match(method string, match *routeMatch) bool {
 	// Check if router itself matches
 	var params []string
-	if r.parameterizable.regex != nil {
+	if r.regex != nil {
 		i := -1
 		if len(match.currentPath) > 0 {
 			// Ignore slashes in router prefix
@@ -299,7 +299,7 @@ func (r *Router) match(method string, match *routeMatch) bool {
 			i = len(match.currentPath)
 		}
 		currentPath := match.currentPath[:i]
-		params = r.parameterizable.regex.FindStringSubmatch(currentPath)
+		params = r.regex.FindStringSubmatch(currentPath)
 	} else {
 		params = []string{""}
 	}
@@ -329,7 +329,7 @@ func (r *Router) match(method string, match *routeMatch) bool {
 		}
 	}
 
-	if match.err == errMatchMethodNotAllowed {
+	if errors.Is(match.err, errMatchMethodNotAllowed) {
 		match.route = methodNotAllowedRoute
 		return true
 	}
@@ -518,8 +518,10 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 		r.server.Logger.Error(err)
 	}
 
-	requestPool.Put(request)
-	responsePool.Put(response)
+	if !response.hijacked {
+		requestPool.Put(request)
+		responsePool.Put(response)
+	}
 }
 
 // finalize the request's life-cycle.

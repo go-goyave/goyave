@@ -50,7 +50,7 @@ func newRoute(handler Handler, name string) *Route {
 }
 
 func (r *Route) match(method string, match *routeMatch) bool {
-	if params := r.parameterizable.regex.FindStringSubmatch(match.currentPath); params != nil {
+	if params := r.regex.FindStringSubmatch(match.currentPath); params != nil {
 		if r.checkMethod(method) {
 			if len(params) > 1 {
 				match.mergeParams(r.makeParameters(params))

@@ -16,15 +16,16 @@ import (
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
 type extraKey struct{}
 
 type testValidator struct {
+	placeholders func(ctx *Context) []string
+	validateFunc func(c component, ctx *Context) bool
 	BaseValidator
-	placeholders    func(ctx *Context) []string
-	validateFunc    func(c component, ctx *Context) bool
 	isType          bool
 	isTypeDependent bool
 }
@@ -109,6 +110,10 @@ func TestGetFieldName(t *testing.T) {
 		{desc: "translated_email", path: walk.MustParse("email"), want: "email address"},
 		{desc: "translated_object.email", path: walk.MustParse("object.email"), want: "email address"},
 		{desc: "translated_email[]", path: walk.MustParse("email[]"), want: "email address"},
+		{desc: `prop\\er\.ty`, path: walk.MustParse(`prop\\er\.ty`), want: `prop\er.ty`},
+		{desc: `untranslated_object.prop\\er\.ty`, path: walk.MustParse(`object.prop\\er\.ty`), want: `prop\er.ty`},
+		{desc: `escaped_array\[]`, path: walk.MustParse(`escaped_array\[]`), want: "escaped_array"},
+		{desc: `\.`, path: walk.MustParse(`\.`), want: "."},
 	}
 
 	for _, c := range cases {
@@ -265,19 +270,76 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
+			desc: "root_absent_not_required",
+			options: &Options{
+				Data:     nil,
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Object()}},
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+		},
+		{
+			desc: "root_absent_required",
+			options: &Options{
+				Data:     nil,
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Required(), Object()}},
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Errors: []string{"The body is required.", "The body must be an object."},
+			},
+		},
+		{
+			desc: "root_nullable",
+			options: &Options{
+				Data:     nil,
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: CurrentElement, Rules: List{Nullable(), Object()}},
+					{Path: "property", Rules: List{Required()}},
+				},
+			},
+		},
+		{
+			desc: "absent_nullable_not_required",
+			options: &Options{
+				Data:     map[string]any{},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "property", Rules: List{String(), Nullable()}},
+				},
+			},
+		},
+		{
 			desc: "nil_delete_from_parent",
 			options: &Options{
 				Data:     map[string]any{"property": nil},
 				Language: lang.New().GetDefault(),
 				Rules: RuleSet{
-					{Path: "property", Rules: List{Required()}},
+					{Path: "property", Rules: List{Required(), String()}},
 				},
 			},
 			wantValidationErrors: &Errors{
 				Fields: FieldsErrors{
 					"property": &Errors{
-						Errors: []string{"The property is required."},
+						Errors: []string{"The property is required.", "The property must be a string."},
 					},
+				},
+			},
+			wantData: map[string]any{},
+		},
+		{
+			desc: "nil_delete_from_parent_not_validated",
+			options: &Options{
+				Data:     map[string]any{"property": nil},
+				Language: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "property", Rules: List{String()}},
 				},
 			},
 			wantData: map[string]any{},
@@ -291,7 +353,8 @@ func TestValidate(t *testing.T) {
 					{Path: "property", Rules: List{Required(), Nullable()}},
 				},
 			},
-			wantData: map[string]any{"property": nil}},
+			wantData: map[string]any{"property": nil},
+		},
 		{
 			desc: "root_array",
 			options: &Options{
@@ -499,16 +562,42 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "single_value_array_conversion",
 			options: &Options{
-				Data:                     map[string]any{"singleValueArray": "a", "array": []string{"b", "c"}},
+				Data:                     map[string]any{"singleValueArray": "a", "array": []string{"b", "c"}, "escapedArray[]": "[]"},
 				ConvertSingleValueArrays: true,
 				Rules: RuleSet{
 					{Path: "array", Rules: List{Required(), Array()}},
 					{Path: "array[]", Rules: List{String()}},
 					{Path: "singleValueArray", Rules: List{Required(), Array()}},
 					{Path: "singleValueArray[]", Rules: List{String()}},
+					{Path: `escapedArray\[\]`, Rules: List{Array()}},
+					{Path: `escapedArray\[\][]`, Rules: List{String()}},
 				},
 			},
-			wantData: map[string]any{"singleValueArray": []string{"a"}, "array": []string{"b", "c"}},
+			wantData: map[string]any{"singleValueArray": []string{"a"}, "array": []string{"b", "c"}, "escapedArray[]": []string{"[]"}},
+		},
+		{
+			desc: "single_value_nil_array_conversion",
+			options: &Options{
+				Data:                     map[string]any{"singleValueArray": nil},
+				ConvertSingleValueArrays: true,
+				Rules: RuleSet{
+					{Path: "singleValueArray", Rules: List{Array()}},
+					{Path: "singleValueArray[]", Rules: List{String()}},
+				},
+			},
+			wantData: map[string]any{},
+		},
+		{
+			desc: "single_value_nullable_nil_array_conversion",
+			options: &Options{
+				Data:                     map[string]any{"singleValueArray": nil},
+				ConvertSingleValueArrays: true,
+				Rules: RuleSet{
+					{Path: "singleValueArray", Rules: List{Nullable(), Array()}},
+					{Path: "singleValueArray[]", Rules: List{String()}},
+				},
+			},
+			wantData: map[string]any{"singleValueArray": nil},
 		},
 		{
 			desc: "errors",
@@ -1028,9 +1117,9 @@ func TestValidateWithContext(t *testing.T) {
 type testCtxKey struct{}
 
 type ctxValidator struct {
-	BaseValidator
 	t      *testing.T
 	expect func(*testing.T, context.Context) bool
+	BaseValidator
 }
 
 func (ctxValidator) Name() string {
@@ -1039,4 +1128,31 @@ func (ctxValidator) Name() string {
 
 func (v ctxValidator) Validate(ctx *Context) bool {
 	return v.expect(v.t, ctx.Context)
+}
+
+func TestValidateMessageOverride(t *testing.T) {
+	lang := lang.New()
+	require.NoError(t, lang.Load(osfs.New("."), "en-US", "../resources/lang/en-US"))
+	opts := &Options{
+		Data: map[string]any{
+			"field": "str",
+		},
+		Language: lang.GetDefault(),
+		Rules: RuleSet{
+			{
+				Path:  "field",
+				Rules: List{WithMessage(Between(123, 456), "validation.rules.messageOverride")},
+			},
+		},
+	}
+
+	validationErrors, errs := Validate(opts)
+	require.Nil(t, errs)
+
+	want := &Errors{
+		Fields: FieldsErrors{
+			"field": {Errors: []string{"Custom error message: placeholders work: 'field', 123 - 456"}},
+		},
+	}
+	assert.Equal(t, want, validationErrors)
 }

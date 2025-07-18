@@ -83,6 +83,8 @@ A big "Thank you" to the Goyave contributors:
 - [BowlOfSoup](https://github.com/BowlOfSoup) (`Required` flag in configuration entries, `ParseErrorStatusHandler`)
 - [AidanKenney](https://github.com/AidanKenney) (Clickhouse support, compression encoders)
 - [SallesCosta](https://github.com/SallesCosta) (Slog discard logger)
+- [fnoopv](https://github.com/fnoopv) (JWT controller auth meta)
+- [Achilles Moraites](https://github.com/achimoraites) (Escape characters in `walk.Path`)
 
 ## License
 

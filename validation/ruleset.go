@@ -1,12 +1,12 @@
 package validation
 
 import (
-	"sort"
 	"strings"
 
 	"slices"
 
 	"github.com/samber/lo"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -21,7 +21,12 @@ type Ruler interface {
 // scoped to a single field validation in a single request.
 type Validator interface {
 	Composable
+
+	// init unexported method to force compositing with `BaseValidator`.
 	init(opts *Options)
+
+	// Init the validator with the resources required by the `Composable` interface.
+	Init(opts *Options)
 
 	// Validate checks the field under validation satisfies this validator's criteria.
 	// If necessary, replaces the `Context.Value` with a converted value (see `IsType()`).
@@ -50,12 +55,16 @@ type Validator interface {
 	// This is use to generate the validation error message. An empty slice can be returned.
 	// See `lang.Language.Get()` for more details.
 	MessagePlaceholders(ctx *Context) []string
+
+	overrideMessage(langEntry string)
+	getMessageOverride() string
 }
 
 // BaseValidator composable structure that implements the basic functions required to
 // satisfy the `Validator` interface.
 type BaseValidator struct {
 	component
+	messageOverride string
 }
 
 func (v *BaseValidator) init(options *Options) {
@@ -67,6 +76,11 @@ func (v *BaseValidator) init(options *Options) {
 	}
 }
 
+// Init the validator with the resources required by the `Composable` interface.
+func (v *BaseValidator) Init(options *Options) {
+	v.init(options)
+}
+
 // IsTypeDependent returns false.
 func (v *BaseValidator) IsTypeDependent() bool { return false }
 
@@ -75,6 +89,22 @@ func (v *BaseValidator) IsType() bool { return false }
 
 // MessagePlaceholders returns an empty slice (no placeholders)
 func (v *BaseValidator) MessagePlaceholders(_ *Context) []string { return []string{} }
+
+func (v *BaseValidator) overrideMessage(langEntry string) {
+	v.messageOverride = langEntry
+}
+
+func (v *BaseValidator) getMessageOverride() string {
+	return v.messageOverride
+}
+
+// WithMessage set a custom language entry for the error message of a Validator.
+// Original placeholders returned by the validator are still used to render the message.
+// Type-dependent and "element" suffixes are not added when the message is overridden.
+func WithMessage[V Validator](v V, langEntry string) V {
+	v.overrideMessage(langEntry)
+	return v
+}
 
 // FieldRulesConverter types implementing this interface define their behavior
 // when converting a `FieldRules` to `Rules`. This enables rule sets composition.
@@ -94,7 +124,6 @@ func (l List) convert(path string, field *FieldRules, prefixDepth uint) Rules {
 // FieldRules structure associating a path (see `walk.Path`) identifying a field
 // with a `FieldRulesApplier` (a `List` of rules or another `RuleSet` via composition).
 type FieldRules struct {
-	// TODO what behavior if there are duplicates? If it ever becomes a problem, can probably merge the Lists. But it's unnecessary for now.
 	Rules FieldRulesConverter
 	Path  string
 }
@@ -118,15 +147,15 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 		pDepth = walk.Depth(prefix)
 	}
 
-	sortedRuleSet := slices.Clone(r)
-	sortedRuleSet = sortedRuleSet.injectArrayParents()
-	sortedRuleSet.sort()
+	r = r.injectArrayParents()
 
 	rules := make(Rules, 0, len(r))
-	for _, field := range sortedRuleSet {
+	// Keep a map for array fields to easily assign their element field later
+	arrays := make(map[string]*Field, len(r))
+	for _, field := range r {
 		path := prefix
 		if field.Path != CurrentElement {
-			if strings.HasPrefix("[]", field.Path) || path == "" {
+			if (strings.HasPrefix(field.Path, "[]") && !strings.HasPrefix(field.Path, `\[]`)) || path == "" {
 				path += field.Path
 			} else {
 				path += "." + field.Path
@@ -136,31 +165,39 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 		fields := field.Rules.convert(path, field, pDepth)
 
 		rules = append(rules, fields...)
+		for _, f := range fields {
+			if f.isArray {
+				arrays[f.Path.String()] = f
+			}
+		}
 	}
 
-	// Assign array elements to their parent field
+	rules.checkDuplicates()
+
 	for {
 		arrayElement, index, ok := lo.FindIndexOf(rules, func(f *Field) bool {
 			p := f.Path
-			for i := 0; i < int(pDepth)-1; i++ {
+			for range int(pDepth) - 1 {
 				p = lo.Ternary(p.Next == nil, p, p.Next)
 			}
 			relativePath := p.String()
-			return strings.HasSuffix(relativePath, "[]")
+			return strings.HasSuffix(relativePath, "[]") && !strings.HasSuffix(relativePath, `\[\]`)
 		})
 		if !ok {
 			break
 		}
+
 		parentArrayPath := arrayElement.Path.Clone()
 		lastParent := parentArrayPath.LastParent()
 		lastParent.Type = walk.PathTypeElement
 		lastParent.Next = nil
 
-		arrayElement.Path = &walk.Path{Type: walk.PathTypeArray, Next: &walk.Path{}}
+		parentArrayPathStr := parentArrayPath.String()
+		parentArrayElement, parentFound := arrays[parentArrayPathStr]
 
-		rules = append(rules[:index], rules[index+1:]...)
-		parentArrayElement, parentFound := lo.Find(rules, func(f *Field) bool { return f.Path.String() == parentArrayPath.String() })
-		if parentFound {
+		rules = slices.Delete(rules, index, index+1)
+		if parentFound { // Should never be false because we injected array parents and there are no duplicates.
+			arrayElement.Path = &walk.Path{Type: walk.PathTypeArray, Next: &walk.Path{}}
 			parentArrayElement.Elements = arrayElement
 		}
 	}
@@ -174,8 +211,10 @@ func (r RuleSet) injectArrayParents() RuleSet {
 		keys[f.Path] = struct{}{}
 	}
 	for i := 0; i < len(r); i++ {
+		// len(r) MUST be re-evaluated each loop, using "range r" would break it
+		// because the length is only evaluated once at the start of the loop.
 		f := r[i]
-		if strings.HasSuffix(f.Path, "[]") {
+		if strings.HasSuffix(f.Path, "[]") && !strings.HasSuffix(f.Path, `\[]`) {
 			parentPath := f.Path[:len(f.Path)-2]
 			if _, ok := keys[parentPath]; !ok {
 				// No parent array found, inject it
@@ -191,21 +230,38 @@ func (r RuleSet) injectArrayParents() RuleSet {
 	return r
 }
 
-func (r RuleSet) sort() {
-	// Make sure the array elements are before their parent in the list
-	sort.SliceStable(r, func(i, j int) bool {
-		field1 := r[i]
-		field2 := r[j]
-		if strings.HasSuffix(field1.Path, "[]") && !strings.HasSuffix(field2.Path, "[]") {
-			return true
+func (r Rules) checkDuplicates() {
+	paths := make(map[string]struct{}, len(r))
+	wildcardPaths := make(map[string]struct{}, len(r))
+	for _, f := range r {
+		path := f.Path.String()
+		includeElementsKeys(paths, path, f.Elements)
+		if _, exists := paths[path]; exists {
+			panic(errors.Errorf("validation.RuleSet: duplicate path \"%s\" in rule set", path))
 		}
-		if !strings.HasSuffix(field1.Path, "[]") && !strings.HasSuffix(field2.Path, "[]") {
-			return false
+		var parentPath string
+		depth := f.Path.Depth()
+		if depth == 1 {
+			parentPath = CurrentElement
+		} else {
+			parentPath = f.Path.Truncate(depth - 1).String()
 		}
-		count1 := strings.Count(field1.Path, "[]")
-		count2 := strings.Count(field2.Path, "[]")
-		return count1 > count2
-	})
+		if f.Path.Tail().IsWildcard() {
+			wildcardPaths[parentPath] = struct{}{}
+		} else if _, exists := wildcardPaths[parentPath]; exists {
+			panic(errors.Errorf("validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"%s\")", path))
+		}
+		paths[path] = struct{}{}
+	}
+}
+
+func includeElementsKeys(paths map[string]struct{}, path string, elementField *Field) {
+	if elementField == nil {
+		return
+	}
+	elementPath := path + "[]"
+	paths[elementPath] = struct{}{}
+	includeElementsKeys(paths, elementPath, elementField.Elements)
 }
 
 // Rules is the result of the transformation of RuleSet using `AsRules()`.

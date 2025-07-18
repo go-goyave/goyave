@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
@@ -256,14 +256,14 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 		}
 	}
 
-	return nil, a.makeError(request.Lang, err.(*jwt.ValidationError).Errors)
+	return nil, a.makeError(request.Lang, err)
 }
 
 func (a *JWTAuthenticator[T]) keyFunc(token *jwt.Token) (any, error) {
 	switch a.SigningMethod.(type) {
 	case *jwt.SigningMethodRSA:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		key, err := a.service.GetKey("auth.jwt.rsa.public")
 		if err != nil {
@@ -272,7 +272,7 @@ func (a *JWTAuthenticator[T]) keyFunc(token *jwt.Token) (any, error) {
 		return key, nil
 	case *jwt.SigningMethodECDSA:
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		key, err := a.service.GetKey("auth.jwt.ecdsa.public")
 		if err != nil {
@@ -281,7 +281,7 @@ func (a *JWTAuthenticator[T]) keyFunc(token *jwt.Token) (any, error) {
 		return key, nil
 	case *jwt.SigningMethodHMAC, nil:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(a.Config().GetString("auth.jwt.secret")), nil
 	default:
@@ -289,11 +289,13 @@ func (a *JWTAuthenticator[T]) keyFunc(token *jwt.Token) (any, error) {
 	}
 }
 
-func (a *JWTAuthenticator[T]) makeError(language *lang.Language, bitfield uint32) error {
-	if bitfield&jwt.ValidationErrorNotValidYet != 0 {
+func (a *JWTAuthenticator[T]) makeError(language *lang.Language, err error) error {
+	switch {
+	case errors.Is(err, jwt.ErrTokenNotValidYet):
 		return fmt.Errorf("%s", language.Get("auth.jwt-not-valid-yet"))
-	} else if bitfield&jwt.ValidationErrorExpired != 0 {
+	case errors.Is(err, jwt.ErrTokenExpired):
 		return fmt.Errorf("%s", language.Get("auth.jwt-expired"))
+	default:
+		return fmt.Errorf("%s", language.Get("auth.jwt-invalid"))
 	}
-	return fmt.Errorf("%s", language.Get("auth.jwt-invalid"))
 }

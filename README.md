@@ -85,6 +85,7 @@ A big "Thank you" to the Goyave contributors:
 - [SallesCosta](https://github.com/SallesCosta) (Slog discard logger)
 - [fnoopv](https://github.com/fnoopv) (JWT controller auth meta)
 - [Achilles Moraites](https://github.com/achimoraites) (Escape characters in `walk.Path`)
+- [pn03](https://github.com/pn03) (Bigquery dialect)
 
 ## License
 

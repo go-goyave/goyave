@@ -110,6 +110,10 @@ func TestGetFieldName(t *testing.T) {
 		{desc: "translated_email", path: walk.MustParse("email"), want: "email address"},
 		{desc: "translated_object.email", path: walk.MustParse("object.email"), want: "email address"},
 		{desc: "translated_email[]", path: walk.MustParse("email[]"), want: "email address"},
+		{desc: `prop\\er\.ty`, path: walk.MustParse(`prop\\er\.ty`), want: `prop\er.ty`},
+		{desc: `untranslated_object.prop\\er\.ty`, path: walk.MustParse(`object.prop\\er\.ty`), want: `prop\er.ty`},
+		{desc: `escaped_array\[]`, path: walk.MustParse(`escaped_array\[]`), want: "escaped_array"},
+		{desc: `\.`, path: walk.MustParse(`\.`), want: "."},
 	}
 
 	for _, c := range cases {
@@ -558,16 +562,18 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "single_value_array_conversion",
 			options: &Options{
-				Data:                     map[string]any{"singleValueArray": "a", "array": []string{"b", "c"}},
+				Data:                     map[string]any{"singleValueArray": "a", "array": []string{"b", "c"}, "escapedArray[]": "[]"},
 				ConvertSingleValueArrays: true,
 				Rules: RuleSet{
 					{Path: "array", Rules: List{Required(), Array()}},
 					{Path: "array[]", Rules: List{String()}},
 					{Path: "singleValueArray", Rules: List{Required(), Array()}},
 					{Path: "singleValueArray[]", Rules: List{String()}},
+					{Path: `escapedArray\[\]`, Rules: List{Array()}},
+					{Path: `escapedArray\[\][]`, Rules: List{String()}},
 				},
 			},
-			wantData: map[string]any{"singleValueArray": []string{"a"}, "array": []string{"b", "c"}},
+			wantData: map[string]any{"singleValueArray": []string{"a"}, "array": []string{"b", "c"}, "escapedArray[]": []string{"[]"}},
 		},
 		{
 			desc: "single_value_nil_array_conversion",

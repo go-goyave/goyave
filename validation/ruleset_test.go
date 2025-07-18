@@ -87,6 +87,9 @@ func TestRuleset(t *testing.T) {
 		{Path: "object.property", Rules: List{
 			String(),
 		}},
+		{Path: `object.\*`, Rules: List{
+			String(),
+		}},
 		{Path: "anonymous.property", Rules: List{
 			String(),
 		}},
@@ -109,6 +112,10 @@ func TestRuleset(t *testing.T) {
 		{Path: "array[]", Rules: List{Int()}},
 		{Path: "deep_array[][][]", Rules: List{Int16()}},
 
+		// Should not be injected because bracket is escaped
+		{Path: `escaped_array\[]`, Rules: List{Int8()}},
+		{Path: `object.array\[]`, Rules: List{Int8()}},
+
 		{Path: "array_composition", Rules: RuleSet{
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: List{Int()}},
@@ -118,6 +125,9 @@ func TestRuleset(t *testing.T) {
 			{Path: CurrentElement, Rules: List{Array()}},
 			{Path: "[]", Rules: List{Object()}},
 			{Path: "[].field", Rules: List{String()}},
+			{Path: `[].fi\[\]eld`, Rules: List{String()}},
+			{Path: `[].\*`, Rules: List{String()}},
+			{Path: `[].object.prop\.with\.a\.dot`, Rules: List{String()}},
 		}},
 
 		{Path: "array_element_composition", Rules: RuleSet{
@@ -168,6 +178,10 @@ func TestRuleset(t *testing.T) {
 		},
 		{
 			Path:       walk.MustParse("object.property"),
+			Validators: []Validator{String()},
+		},
+		{
+			Path:       walk.MustParse(`object.\*`),
 			Validators: []Validator{String()},
 		},
 		{
@@ -232,6 +246,14 @@ func TestRuleset(t *testing.T) {
 			isArray: true,
 		},
 		{
+			Path:       walk.MustParse(`escaped_array\[]`),
+			Validators: []Validator{Int8()},
+		},
+		{
+			Path:       walk.MustParse(`object.array\[]`),
+			Validators: []Validator{Int8()},
+		},
+		{
 			Path:       walk.MustParse("array_composition"),
 			Validators: []Validator{Array()},
 			Elements: &Field{
@@ -256,6 +278,21 @@ func TestRuleset(t *testing.T) {
 		},
 		{
 			Path:        walk.MustParse("array_of_objects_composition[].field"),
+			Validators:  []Validator{String()},
+			prefixDepth: 1,
+		},
+		{
+			Path:        walk.MustParse(`array_of_objects_composition[].fi\[\]eld`),
+			Validators:  []Validator{String()},
+			prefixDepth: 1,
+		},
+		{
+			Path:        walk.MustParse(`array_of_objects_composition[].\*`),
+			Validators:  []Validator{String()},
+			prefixDepth: 1,
+		},
+		{
+			Path:        walk.MustParse(`array_of_objects_composition[].object.prop\.with\.a\.dot`),
 			Validators:  []Validator{String()},
 			prefixDepth: 1,
 		},
@@ -442,10 +479,12 @@ func TestRuleSetIssue248(t *testing.T) {
 }
 
 // https://github.com/go-goyave/goyave/issues/249
-// Repeated paths are forbidden (should panic)
+// Repeated / duplicate paths are forbidden (should panic)
+// Use of both wildcard and object properties is forbidden
 func TestRuleSetRepeatedPath(t *testing.T) {
 	cases := []struct {
 		desc    string
+		wantErr string
 		ruleset RuleSet
 	}{
 		{
@@ -454,6 +493,23 @@ func TestRuleSetRepeatedPath(t *testing.T) {
 				{Path: CurrentElement, Rules: List{JSON()}},
 				{Path: CurrentElement, Rules: List{Object()}},
 			},
+			wantErr: "validation.RuleSet: duplicate path \"\" in rule set",
+		},
+		{
+			desc: "root_element_wildcard",
+			ruleset: RuleSet{
+				{Path: "*", Rules: List{JSON()}},
+				{Path: "*", Rules: List{Object()}},
+			},
+			wantErr: "validation.RuleSet: duplicate path \"*\" in rule set",
+		},
+		{
+			desc: "root_element_escaped_wildcard",
+			ruleset: RuleSet{
+				{Path: "*", Rules: List{JSON()}},
+				{Path: `\*`, Rules: List{Object()}},
+			},
+			wantErr: "validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"\\*\")",
 		},
 		{
 			desc: "field",
@@ -462,6 +518,7 @@ func TestRuleSetRepeatedPath(t *testing.T) {
 				{Path: "field", Rules: List{String()}},
 				{Path: "field", Rules: List{Min(1)}},
 			},
+			wantErr: "validation.RuleSet: duplicate path \"field\" in rule set",
 		},
 		{
 			desc: "array",
@@ -471,6 +528,42 @@ func TestRuleSetRepeatedPath(t *testing.T) {
 				{Path: "array[]", Rules: List{Int()}},
 				{Path: "array[]", Rules: List{Min(1)}},
 			},
+			wantErr: "validation.RuleSet: duplicate path \"array[]\" in rule set",
+		},
+		{
+			desc: "escaped_wildcard",
+			ruleset: RuleSet{
+				{Path: "object.*", Rules: List{JSON()}},
+				{Path: `object.\*`, Rules: List{Object()}},
+			},
+			wantErr: "validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"object.\\*\")",
+		},
+		{
+			desc: "deep_escaped_wildcard",
+			ruleset: RuleSet{
+				{Path: "objects", Rules: List{Object()}},
+				{Path: "objects.*", Rules: List{Object()}},
+				{Path: "objects.*.sub", Rules: List{Object()}},
+				{Path: "objects.*.sub.*", Rules: List{JSON()}},
+				{Path: `objects.*.sub.\*`, Rules: List{Object()}},
+			},
+			wantErr: "validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"objects.*.sub.\\*\")",
+		},
+		{
+			desc: "wildcard_with_other_props",
+			ruleset: RuleSet{
+				{Path: "object.*", Rules: List{JSON()}},
+				{Path: `object.a`, Rules: List{Object()}},
+			},
+			wantErr: "validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"object.a\")",
+		},
+		{
+			desc: "escaped_array",
+			ruleset: RuleSet{
+				{Path: `array\[]`, Rules: List{Array()}},
+				{Path: `array\[\]`, Rules: List{Array()}},
+			},
+			wantErr: "validation.RuleSet: duplicate path \"array\\[\\]\" in rule set",
 		},
 		{
 			desc: "composition",
@@ -482,6 +575,7 @@ func TestRuleSetRepeatedPath(t *testing.T) {
 				}},
 				{Path: "object.field", Rules: List{Min(1)}},
 			},
+			wantErr: "validation.RuleSet: duplicate path \"object.field\" in rule set",
 		},
 		{
 			desc: "composition_current_element",
@@ -493,6 +587,7 @@ func TestRuleSetRepeatedPath(t *testing.T) {
 				}},
 				{Path: "object", Rules: List{Min(1)}},
 			},
+			wantErr: "validation.RuleSet: duplicate path \"object\" in rule set",
 		},
 		{
 			desc: "composition_array",
@@ -504,6 +599,7 @@ func TestRuleSetRepeatedPath(t *testing.T) {
 				}},
 				{Path: "array[]", Rules: List{Min(1)}},
 			},
+			wantErr: "validation.RuleSet: duplicate path \"array[]\" in rule set",
 		},
 		{
 			desc: "deep_injected_array",
@@ -511,12 +607,13 @@ func TestRuleSetRepeatedPath(t *testing.T) {
 				{Path: "[][][]", Rules: List{Int()}},
 				{Path: "[][][]", Rules: List{Min(1)}},
 			},
+			wantErr: "validation.RuleSet: duplicate path \"[][][]\" in rule set",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			assert.Panics(t, func() {
+			assert.PanicsWithError(t, c.wantErr, func() {
 				c.ruleset.AsRules()
 			})
 		})

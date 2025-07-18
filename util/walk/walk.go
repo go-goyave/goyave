@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/samber/lo"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
@@ -38,6 +39,36 @@ const (
 	// ElementNotFound indicates all parents of the element were found but the element
 	// itself could not.
 	ElementNotFound
+)
+
+var wildcard = lo.ToPtr("*")
+
+var (
+	// EscapeChars the list of characters that can be escaped using a backslash `\` when
+	// parsing a Path. This map is read-only.
+	EscapeChars = map[rune]struct{}{
+		'*':  {},
+		'[':  {},
+		']':  {},
+		'.':  {},
+		'\\': {},
+	}
+
+	escapeRemover = strings.NewReplacer(
+		`\*`, `*`,
+		`\[`, `[`,
+		`\]`, `]`,
+		`\.`, `.`,
+		`\\`, `\`,
+	)
+
+	escapeReplacer = strings.NewReplacer(
+		`*`, `\*`,
+		`[`, `\[`,
+		`]`, `\]`,
+		`.`, `\.`,
+		`\`, `\\`,
+	)
 )
 
 // Path allows for complex untyped data structure exploration.
@@ -88,7 +119,7 @@ func (p *Path) walk(currentElement any, parent any, index int, trackPath *Path, 
 		ce, ok := currentElement.(map[string]any)
 		notFoundType := ParentNotFound
 		if ok {
-			if *p.Name == "*" && len(ce) != 0 {
+			if len(ce) != 0 && p.Name == wildcard {
 				for k := range ce {
 					key := k
 					trackClone := trackPath.Clone()
@@ -319,11 +350,33 @@ func (p *Path) Clone() *Path {
 	return clone
 }
 
+// IsWildcard returns true if the path has unescaped "*" as Name.
+func (p *Path) IsWildcard() bool {
+	return p.Name == wildcard
+}
+
 // String returns a string representation of the Path.
+// The result contains the escape characters, if any.
 func (p *Path) String() string {
+	return p.toString(true)
+}
+
+// UnescapedString returns a string representation of the Path
+// without the escape characters.
+func (p *Path) UnescapedString() string {
+	return p.toString(false)
+}
+
+func (p *Path) toString(showEscapeChars bool) string {
 	path := ""
 	if p.Name != nil {
-		path += *p.Name
+		if p.Name == wildcard {
+			path += "*"
+		} else if showEscapeChars {
+			path += escapeReplacer.Replace(*p.Name)
+		} else {
+			path += *p.Name
+		}
 	}
 	switch p.Type {
 	case PathTypeElement:
@@ -338,9 +391,14 @@ func (p *Path) String() string {
 	}
 
 	if p.Next != nil {
-		path += p.Next.String()
+		path += p.Next.toString(showEscapeChars)
 	}
 	return path
+}
+
+// Unescape remove escape characters from a path without parsing it.
+func Unescape(path string) string {
+	return removeEscapeChars(path)
 }
 
 // setAllMissingIndexes set Index to -1 for all `PathTypeArray` steps in this path.
@@ -355,18 +413,30 @@ func (p *Path) setAllMissingIndexes() {
 
 // Parse transform given path string representation into usable Path.
 //
+// The wildcard `*` can be used to match all keys of an object. It is only effective
+// if it is an entire path segment. For example, the `*` in `field*name` won't be
+// considered a wildcard and only the literal field will match.
+//
+// Special characters defined in the `Escape` map (by default `*`, `[`, `]`, `.` and `\`)
+// can be escaped using a backslack `\`.
+//
 // Example paths:
 //
 //	name
 //	object.field
 //	object.subobject.field
 //	object.*
+//	object.\*
 //	object.array[]
 //	object.arrayOfObjects[].field
 //	[]
 //	[].field
+//	field*name
+//	object.field\[]
+//	object.field\[text\]
+//	abc\[\]def
+//	path\\to\\element
 func Parse(p string) (*Path, error) {
-	// TODO add escape system so '*', '[]' can be escaped
 	rootPath := &Path{}
 	path := rootPath
 
@@ -404,7 +474,12 @@ func Parse(p string) (*Path, error) {
 				path = path.Next
 			}
 		default:
-			path.Name = &t
+			if t == "*" {
+				path.Name = wildcard
+			} else {
+				t = removeEscapeChars(t)
+				path.Name = &t
+			}
 		}
 	}
 
@@ -432,23 +507,33 @@ func MustParse(p string) *Path {
 
 // Depth calculate the path's depth without parsing it.
 func Depth(p string) uint {
-	return uint(strings.Count(p, ".")+strings.Count(p, "[]")) + 1
+	return uint(strings.Count(p, ".")-strings.Count(p, `\.`)+strings.Count(p, "[]")-strings.Count(p, `\[]`)) + 1
 }
 
 func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
-		if len(path) == 0 || path[0] == '.' {
-			return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
+		if len(path) == 0 {
+			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path is empty)", path)
+		}
+		if path[0] == '.' {
+			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path cannot start with a dot)", path)
 		}
 		for width, i := 0, 0; i < len(data); i += width {
 			var r rune
 			r, width = utf8.DecodeRune(data[i:])
 
 			if i+width < len(data) {
-				next, _ := utf8.DecodeRune(data[i+width:])
-				if isValidSyntax(r, next) {
-					return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
+				next, nextWidth := utf8.DecodeRune(data[i+width:])
+				if syntaxErr := checkSyntax(r, next); syntaxErr != nil {
+					return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (%w)", path, syntaxErr)
+				}
+
+				if _, escapeNext := EscapeChars[next]; r == '\\' && escapeNext {
+					// Skip the next character
+					width += nextWidth
+					r = next
+					next, _ = utf8.DecodeRune(data[i+width:])
 				}
 
 				if r == '.' && i == 0 {
@@ -456,8 +541,8 @@ func createPathScanner(path string) *bufio.Scanner {
 				} else if next == '.' || next == '[' {
 					return i + width, data[:i+width], nil
 				}
-			} else if r == '.' || r == '[' {
-				return len(data), data[:], errors.Errorf("illegal syntax: %q", path)
+			} else if r == '.' || r == '[' || r == '\\' {
+				return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path cannot end with a dot, an open bracket or a backslash)", path)
 			}
 		}
 		if atEOF && len(data) > 0 {
@@ -469,10 +554,29 @@ func createPathScanner(path string) *bufio.Scanner {
 	return scanner
 }
 
-func isValidSyntax(r rune, next rune) bool {
-	return (r == '.' && next == '.') ||
-		(r == '[' && next != ']') ||
-		(r == '.' && (next == ']' || next == '[')) ||
-		(r != '.' && r != '[' && next == ']') ||
-		(r == ']' && next != '[' && next != '.')
+func checkSyntax(r rune, next rune) error {
+	if r == '.' && next == '.' {
+		return fmt.Errorf("a dot cannot be followed by another dot")
+	}
+	if r == '[' && next != ']' {
+		return fmt.Errorf("an open bracket must be followed by a closed bracket")
+	}
+	if r == '.' && (next == ']' || next == '[') {
+		return fmt.Errorf("a dot cannot be followed by brackets")
+	}
+	if r != '.' && r != '[' && r != '\\' && next == ']' {
+		return fmt.Errorf("a closed bracket must be preceded by an open bracket")
+	}
+	if r == ']' && next != '[' && next != '.' {
+		return fmt.Errorf("a closed bracket can only be followed by an open bracket or a dot")
+	}
+	_, escapeNext := EscapeChars[next]
+	if r == '\\' && !escapeNext {
+		return fmt.Errorf("cannot escape character \"%s\"", string(next))
+	}
+	return nil
+}
+
+func removeEscapeChars(t string) string {
+	return escapeRemover.Replace(t)
 }

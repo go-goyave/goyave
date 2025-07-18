@@ -301,7 +301,7 @@ func Validate(options *Options) (*Errors, []error) {
 			validator.validateField(*field.Path.Name, field, fakeParent, nil)
 			options.Data = fakeParent[CurrentElement]
 		} else {
-			validator.validateField(*field.Path.Tail().Name, field, options.Data, nil)
+			validator.validateField(field.Path.Tail().String(), field, options.Data, nil)
 		}
 	}
 
@@ -366,6 +366,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 
 		value := c.Value
 		valid := true
+		translatedFieldName := ""
 		for _, validator := range field.Validators {
 			if _, ok := validator.(*NullableValidator); ok {
 				if value == nil {
@@ -397,7 +398,10 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			}
 			if !ok {
 				valid = false
-				message := v.getMessage(ctx, validator)
+				if translatedFieldName == "" {
+					translatedFieldName = translateFieldName(v.options.Language, fieldName)
+				}
+				message := v.getMessage(ctx, translatedFieldName, validator)
 				if v.isRootElement(fieldName, errorPath) {
 					v.validationErrors.Add(errorPath, message)
 				} else {
@@ -426,16 +430,18 @@ func (v *validator) shouldDeleteFromParent(field *Field, parentIsObject bool, va
 }
 
 func (v *validator) shouldConvertSingleValueArray(fieldName string) bool {
-	return v.options.ConvertSingleValueArrays && fieldName != CurrentElement && !strings.Contains(fieldName, ".") && !strings.Contains(fieldName, "[]")
+	// It's OK not to check for escape characters for the brackets here since the fieldName is the
+	// escaped representation of the field name: e.g.: "escapedArray\[\]" and "escapedArray\[\][]"
+	return v.options.ConvertSingleValueArrays && fieldName != CurrentElement && !strings.Contains(fieldName, "[]")
 }
 
 func (v *validator) convertSingleValueArray(field *Field, value any) any {
-	if value == nil {
+	if value == nil || !field.IsArray() {
 		return value
 	}
 	rv := reflect.ValueOf(value)
 	kind := rv.Kind().String()
-	if field.IsArray() && kind != "slice" {
+	if kind != "slice" {
 		rt := reflect.TypeOf(value)
 		slice := reflect.MakeSlice(reflect.SliceOf(rt), 0, 1)
 		slice = reflect.Append(slice, rv)
@@ -468,7 +474,7 @@ func (v *validator) processAddedErrors(ctx *Context, parentPath *walk.Path, c *w
 	}
 	if len(ctx.arrayElementErrors) > 0 {
 		errorPath := ctx.Field.getErrorPath(parentPath, c)
-		message := v.options.Language.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, validator)...)
+		message := v.options.Language.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, translateFieldName(v.options.Language, ctx.fieldName), validator)...)
 		for _, index := range ctx.arrayElementErrors {
 			i := index
 			elementPath := errorPath.Clone()
@@ -513,13 +519,13 @@ func (v *validator) getLangEntry(ctx *Context, validator Validator) string {
 	return langEntry
 }
 
-func (v *validator) processPlaceholders(ctx *Context, validator Validator) []string {
-	return append([]string{":field", translateFieldName(v.options.Language, ctx.fieldName)}, validator.MessagePlaceholders(ctx)...)
+func (v *validator) processPlaceholders(ctx *Context, translatedFieldName string, validator Validator) []string {
+	return append([]string{":field", translatedFieldName}, validator.MessagePlaceholders(ctx)...)
 }
 
-func (v *validator) getMessage(ctx *Context, validator Validator) string {
+func (v *validator) getMessage(ctx *Context, translatedFieldName string, validator Validator) string {
 	langEntry := v.getLangEntry(ctx, validator)
-	return v.options.Language.Get(langEntry, v.processPlaceholders(ctx, validator)...)
+	return v.options.Language.Get(langEntry, v.processPlaceholders(ctx, translatedFieldName, validator)...)
 }
 
 // findTypeValidator find the expected type of a field for a given array dimension.
@@ -623,9 +629,10 @@ func GetFieldName(lang *lang.Language, path *walk.Path) string {
 }
 
 func translateFieldName(lang *lang.Language, fieldName string) string {
-	if i := strings.LastIndex(fieldName, "."); i != -1 {
+	if i := lastUnescapedDot(fieldName); i != -1 {
 		fieldName = fieldName[i+1:]
 	}
+	fieldName = walk.Unescape(fieldName)
 	for {
 		f := strings.TrimSuffix(fieldName, "[]")
 		if len(f) == len(fieldName) {
@@ -639,4 +646,16 @@ func translateFieldName(lang *lang.Language, fieldName string) string {
 		return fieldName
 	}
 	return name
+}
+
+func lastUnescapedDot(str string) int {
+	for i := len(str) - 1; i >= 0; i-- {
+		if str[i] == '.' {
+			if i > 0 && str[i-1] == '\\' {
+				continue
+			}
+			return i
+		}
+	}
+	return -1
 }

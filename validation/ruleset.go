@@ -155,7 +155,7 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 	for _, field := range r {
 		path := prefix
 		if field.Path != CurrentElement {
-			if strings.HasPrefix(field.Path, "[]") || path == "" {
+			if (strings.HasPrefix(field.Path, "[]") && !strings.HasPrefix(field.Path, `\[]`)) || path == "" {
 				path += field.Path
 			} else {
 				path += "." + field.Path
@@ -181,7 +181,7 @@ func (r RuleSet) asRulesWithPrefix(prefix string) Rules {
 				p = lo.Ternary(p.Next == nil, p, p.Next)
 			}
 			relativePath := p.String()
-			return strings.HasSuffix(relativePath, "[]")
+			return strings.HasSuffix(relativePath, "[]") && !strings.HasSuffix(relativePath, `\[\]`)
 		})
 		if !ok {
 			break
@@ -214,7 +214,7 @@ func (r RuleSet) injectArrayParents() RuleSet {
 		// len(r) MUST be re-evaluated each loop, using "range r" would break it
 		// because the length is only evaluated once at the start of the loop.
 		f := r[i]
-		if strings.HasSuffix(f.Path, "[]") {
+		if strings.HasSuffix(f.Path, "[]") && !strings.HasSuffix(f.Path, `\[]`) {
 			parentPath := f.Path[:len(f.Path)-2]
 			if _, ok := keys[parentPath]; !ok {
 				// No parent array found, inject it
@@ -232,11 +232,24 @@ func (r RuleSet) injectArrayParents() RuleSet {
 
 func (r Rules) checkDuplicates() {
 	paths := make(map[string]struct{}, len(r))
+	wildcardPaths := make(map[string]struct{}, len(r))
 	for _, f := range r {
 		path := f.Path.String()
 		includeElementsKeys(paths, path, f.Elements)
 		if _, exists := paths[path]; exists {
-			panic(errors.Errorf("validation.RuleSet: duplicate path %q in rule set", path))
+			panic(errors.Errorf("validation.RuleSet: duplicate path \"%s\" in rule set", path))
+		}
+		var parentPath string
+		depth := f.Path.Depth()
+		if depth == 1 {
+			parentPath = CurrentElement
+		} else {
+			parentPath = f.Path.Truncate(depth - 1).String()
+		}
+		if f.Path.Tail().IsWildcard() {
+			wildcardPaths[parentPath] = struct{}{}
+		} else if _, exists := wildcardPaths[parentPath]; exists {
+			panic(errors.Errorf("validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"%s\")", path))
 		}
 		paths[path] = struct{}{}
 	}

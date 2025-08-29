@@ -56,11 +56,13 @@ func TestServer(t *testing.T) {
 			}
 		})
 
+		http2Cfg := &http.HTTP2Config{}
 		s, err := New(Options{
 			MaxHeaderBytes: 123,
 			ConnState:      func(_ net.Conn, _ http.ConnState) {},
 			BaseContext:    func(_ net.Listener) context.Context { return context.Background() },
 			ConnContext:    func(ctx context.Context, _ net.Conn) context.Context { return ctx },
+			HTTP2:          http2Cfg,
 		})
 		require.NoError(t, err)
 
@@ -82,6 +84,7 @@ func TestServer(t *testing.T) {
 		assert.NotNil(t, s.server.ConnContext)
 		assert.NotNil(t, s.baseContext)
 		assert.NotNil(t, s.server.BaseContext)
+		assert.Same(t, http2Cfg, s.server.HTTP2)
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", s.ProxyBaseURL())
 		assert.NoError(t, s.CloseDB())

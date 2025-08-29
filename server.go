@@ -47,6 +47,9 @@ type Options struct {
 	// If not provided, uses `osfs.FS` as a default.
 	LangFS fsutil.FS
 
+	// HTTP2 configures HTTP/2 connections.
+	HTTP2 *http.HTTP2Config
+
 	// ConnState specifies an optional callback function that is
 	// called when a client connection changes state. See the
 	// `http.ConnState` type and associated constants for details.
@@ -155,6 +158,7 @@ func New(opts Options) (*Server, error) {
 			ConnState:         opts.ConnState,
 			ConnContext:       opts.ConnContext,
 			MaxHeaderBytes:    opts.MaxHeaderBytes,
+			HTTP2:             opts.HTTP2,
 		},
 		ctx:           context.Background(),
 		baseContext:   opts.BaseContext,

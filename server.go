@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -145,12 +146,12 @@ func New(opts Options) (*Server, error) {
 		return nil, err
 	}
 
+	host := cfg.GetString("server.host")
 	port := cfg.GetInt("server.port")
-	host := cfg.GetString("server.host") + ":" + strconv.Itoa(port)
 
 	server := &Server{
 		server: &http.Server{
-			Addr:              host,
+			Addr:              net.JoinHostPort(host, strconv.Itoa(port)),
 			WriteTimeout:      time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
 			ReadTimeout:       time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
 			ReadHeaderTimeout: time.Duration(cfg.GetInt("server.readHeaderTimeout")) * time.Second,
@@ -168,7 +169,7 @@ func New(opts Options) (*Server, error) {
 		stopChannel:   make(chan struct{}, 1),
 		startupHooks:  []func(*Server){},
 		shutdownHooks: []func(*Server){},
-		host:          cfg.GetString("server.host"),
+		host:          host,
 		port:          port,
 		Logger:        slogger,
 	}
@@ -193,18 +194,29 @@ func (s *Server) internalBaseContext(_ net.Listener) context.Context {
 	return s.ctx
 }
 
+func (s *Server) isIPv6(host string) bool {
+	return strings.IndexByte(host, ':') >= 0
+}
+
 func (s *Server) getAddress(cfg *config.Config) string {
 	shouldShowPort := s.port != 80
 	host := cfg.GetString("server.domain")
 	if len(host) == 0 {
 		host = cfg.GetString("server.host")
-		if host == "0.0.0.0" {
+		switch host {
+		case "0.0.0.0":
 			host = "127.0.0.1"
+		case "::":
+			host = "::1"
 		}
 	}
 
 	if shouldShowPort {
-		host += ":" + strconv.Itoa(s.port)
+		return "http://" + net.JoinHostPort(host, strconv.Itoa(s.port))
+	}
+
+	if s.isIPv6(host) {
+		host = "[" + host + "]"
 	}
 
 	return "http://" + host
@@ -225,7 +237,9 @@ func (s *Server) getProxyAddress(cfg *config.Config) string {
 	}
 	host := cfg.GetString("server.proxy.host")
 	if shouldShowPort {
-		host += ":" + strconv.Itoa(port)
+		host = net.JoinHostPort(host, strconv.Itoa(s.port))
+	} else if s.isIPv6(host) {
+		host = "[" + host + "]"
 	}
 
 	return proto + "://" + host + cfg.GetString("server.proxy.base")
@@ -262,7 +276,7 @@ func (s *Server) RegisterService(service Service) {
 
 // Host returns the hostname and port the server is running on.
 func (s *Server) Host() string {
-	return s.host + ":" + strconv.Itoa(s.port)
+	return net.JoinHostPort(s.host, strconv.Itoa(s.port))
 }
 
 // Port returns the port the server is running on.

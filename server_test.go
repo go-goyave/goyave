@@ -88,6 +88,14 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", s.ProxyBaseURL())
 		assert.NoError(t, s.CloseDB())
+
+		t.Run("ipv6_host", func(t *testing.T) {
+			cfg := config.LoadDefault()
+			cfg.Set("server.host", "::")
+			s, err = New(Options{Config: cfg})
+			require.NoError(t, err)
+			assert.Equal(t, "[::]:8080", s.server.Addr)
+		})
 	})
 
 	t.Run("New_invalid_config", func(t *testing.T) {
@@ -153,6 +161,25 @@ func TestServer(t *testing.T) {
 		assert.Nil(t, server)
 	})
 
+	t.Run("Host", func(t *testing.T) {
+		t.Run("ipv4", func(t *testing.T) {
+			server := &Server{host: "0.0.0.0", port: 80}
+			assert.Equal(t, "0.0.0.0:80", server.Host())
+		})
+		t.Run("ipv4_loopback", func(t *testing.T) {
+			server := &Server{host: "127.0.0.1", port: 80}
+			assert.Equal(t, "127.0.0.1:80", server.Host())
+		})
+		t.Run("ipv6", func(t *testing.T) {
+			server := &Server{host: "::", port: 80}
+			assert.Equal(t, "[::]:80", server.Host())
+		})
+		t.Run("ipv6_loopback", func(t *testing.T) {
+			server := &Server{host: "::1", port: 80}
+			assert.Equal(t, "[::1]:80", server.Host())
+		})
+	})
+
 	t.Run("getAddress", func(t *testing.T) {
 		t.Run("0.0.0.0", func(t *testing.T) {
 			cfg := config.LoadDefault()
@@ -160,6 +187,13 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.port", 8080)
 			server := &Server{config: cfg, port: 8080}
 			assert.Equal(t, "http://127.0.0.1:8080", server.getAddress(cfg))
+		})
+		t.Run("0.0.0.0_ipv6", func(t *testing.T) {
+			cfg := config.LoadDefault()
+			cfg.Set("server.host", "::")
+			cfg.Set("server.port", 8080)
+			server := &Server{config: cfg, port: 8080}
+			assert.Equal(t, "http://[::1]:8080", server.getAddress(cfg))
 		})
 		t.Run("hide_port", func(t *testing.T) {
 			cfg := config.LoadDefault()
@@ -172,6 +206,19 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.domain", "example.org")
 			server := &Server{config: cfg, port: 1234}
 			assert.Equal(t, "http://example.org:1234", server.getAddress(cfg))
+		})
+		t.Run("ipv6", func(t *testing.T) {
+			cfg := config.LoadDefault()
+			cfg.Set("server.host", "::1")
+			server := &Server{config: cfg, port: 1234}
+			assert.Equal(t, "http://[::1]:1234", server.getAddress(cfg))
+		})
+		t.Run("ipv6_hide_port", func(t *testing.T) {
+			cfg := config.LoadDefault()
+			cfg.Set("server.host", "::1")
+			cfg.Set("server.port", 80)
+			server := &Server{config: cfg, port: 80}
+			assert.Equal(t, "http://[::1]", server.getAddress(cfg))
 		})
 	})
 
@@ -202,6 +249,36 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.proxy.base", "/base")
 			server = &Server{config: cfg, port: 80}
 			assert.Equal(t, "http://proxy.example.org/base", server.getProxyAddress(cfg))
+		})
+
+		t.Run("full_ipv4", func(t *testing.T) {
+			cfg := config.LoadDefault()
+			cfg.Set("server.proxy.host", "192.168.1.11")
+			cfg.Set("server.proxy.protocol", "http")
+			cfg.Set("server.proxy.port", 1234)
+			cfg.Set("server.proxy.base", "/base")
+			server := &Server{config: cfg, port: 1234}
+			assert.Equal(t, "http://192.168.1.11:1234/base", server.getProxyAddress(cfg))
+		})
+
+		t.Run("full_ipv6", func(t *testing.T) {
+			cfg := config.LoadDefault()
+			cfg.Set("server.proxy.host", "::ffff:c0a8:10b")
+			cfg.Set("server.proxy.protocol", "http")
+			cfg.Set("server.proxy.port", 1234)
+			cfg.Set("server.proxy.base", "/base")
+			server := &Server{config: cfg, port: 1234}
+			assert.Equal(t, "http://[::ffff:c0a8:10b]:1234/base", server.getProxyAddress(cfg))
+		})
+
+		t.Run("hide_port_ipv6", func(t *testing.T) {
+			cfg := config.LoadDefault()
+			cfg.Set("server.proxy.host", "::ffff:c0a8:10b")
+			cfg.Set("server.proxy.protocol", "http")
+			cfg.Set("server.proxy.port", 80)
+			cfg.Set("server.proxy.base", "/base")
+			server := &Server{config: cfg, port: 80}
+			assert.Equal(t, "http://[::ffff:c0a8:10b]/base", server.getProxyAddress(cfg))
 		})
 	})
 

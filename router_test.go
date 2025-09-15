@@ -55,7 +55,9 @@ func (m *testMiddleware) Handle(next Handler) Handler {
 }
 
 func prepareRouterTest() *Router {
-	server, err := New(Options{Config: config.LoadDefault()})
+	cfg := config.LoadDefault()
+	cfg.Set("app.debug", false)
+	server, err := New(Options{Config: cfg})
 	if err != nil {
 		panic(err)
 	}
@@ -69,6 +71,16 @@ type testController struct {
 
 func (c *testController) RegisterRoutes(_ *Router) {
 	c.registered = true
+}
+
+type testPanicStatusHandler struct {
+	PanicStatusHandler
+	executed bool
+}
+
+func (h *testPanicStatusHandler) Handle(response *Response, request *Request) {
+	h.executed = true
+	h.PanicStatusHandler.Handle(response, request)
 }
 
 func TestRouter(t *testing.T) {
@@ -312,62 +324,13 @@ func TestRouter(t *testing.T) {
 	})
 
 	t.Run("ServeHTTP", func(t *testing.T) {
-		router := prepareRouterTest()
-		router.server.config.Set("server.proxy.host", "proxy.io")
-		router.server.config.Set("server.proxy.protocol", "http")
-		router.server.config.Set("server.proxy.port", 80)
-		router.server.config.Set("server.proxy.base", "/base")
-
-		var route *Route
-		route = router.Get("/route/{param}", func(r *Response, req *Request) {
-			assert.Equal(t, map[string]string{"param": "value"}, req.RouteParams)
-			assert.Equal(t, route, req.Route)
-			assert.False(t, req.Now.IsZero())
-			r.String(http.StatusOK, "hello world")
-		})
-		router.Put("/empty", func(_ *Response, _ *Request) {})
-		router.Get("/forbidden", func(r *Response, _ *Request) {
-			r.Status(http.StatusForbidden)
-		})
-
-		router.Subrouter("/noparam").Get("", func(r *Response, req *Request) {
-			assert.Equal(t, map[string]string{}, req.RouteParams)
-			r.Status(http.StatusOK)
-		})
-
-		subrouter := router.Subrouter("/subrouter/{param}")
-		subrouter.Get("/subroute", func(r *Response, req *Request) {
-			assert.Equal(t, map[string]string{"param": "value"}, req.RouteParams)
-			r.Status(http.StatusOK)
-		})
-		subrouter.Get("/subroute/{name}", func(r *Response, req *Request) {
-			assert.Equal(t, map[string]string{"param": "value", "name": "johndoe"}, req.RouteParams)
-			r.Status(http.StatusOK)
-		})
-
-		router.Middleware(&testMiddleware{key: "router"})
-		router.GlobalMiddleware(&testMiddleware{key: "global"})
-		router.Get("/middleware", func(r *Response, req *Request) {
-			assert.Equal(t, []string{"global", "router", "route"}, req.Extra[extraMiddlewareOrder{}])
-			r.Status(http.StatusOK)
-		}).Middleware(&testMiddleware{key: "route"})
-
-		statusHandlerSubrouter := router.Subrouter("/statushandler")
-		statusHandlerSubrouter.StatusHandler(&testStatusHandler{
-			override: func(response *Response, _ *Request) {
-				response.String(response.GetStatus(), "Override Bad Request")
-			},
-		}, http.StatusBadRequest)
-		statusHandlerSubrouter.Get("/", func(r *Response, _ *Request) {
-			r.Status(http.StatusBadRequest)
-		})
-
 		cases := []struct {
-			desc           string
-			requestMethod  string
-			requestURL     string
-			expectedBody   string
-			expectedStatus int
+			desc                     string
+			requestMethod            string
+			requestURL               string
+			expectedBody             string
+			expectedStatus           int
+			expectPanicStatusHandler bool
 		}{
 			{
 				desc:           "simple_param",
@@ -446,10 +409,110 @@ func TestRouter(t *testing.T) {
 				expectedStatus: http.StatusBadRequest,
 				expectedBody:   "Override Bad Request",
 			},
+			{
+				desc:                     "error_status_handler",
+				requestMethod:            http.MethodGet,
+				requestURL:               "/statushandler/error",
+				expectedStatus:           http.StatusInternalServerError,
+				expectedBody:             "{\"error\":\"Internal Server Error\"}\n",
+				expectPanicStatusHandler: true,
+			},
+			{
+				desc:                     "error_status_handler_after_write_header",
+				requestMethod:            http.MethodGet,
+				requestURL:               "/statushandler/error-after-write-header",
+				expectedStatus:           http.StatusNoContent,
+				expectedBody:             "",
+				expectPanicStatusHandler: true,
+			},
+			{
+				desc:                     "error_status_handler_after_write_500_header",
+				requestMethod:            http.MethodGet,
+				requestURL:               "/statushandler/error-after-write-500-header",
+				expectedStatus:           http.StatusInternalServerError,
+				expectedBody:             "{\"error\":\"Internal Server Error\"}\n",
+				expectPanicStatusHandler: true,
+			},
+			{
+				desc:                     "error_status_handler_after_write",
+				requestMethod:            http.MethodGet,
+				requestURL:               "/statushandler/error-after-write",
+				expectedStatus:           http.StatusOK,
+				expectedBody:             "hello world",
+				expectPanicStatusHandler: true,
+			},
 		}
 
 		for _, c := range cases {
 			t.Run(c.desc, func(t *testing.T) {
+				router := prepareRouterTest()
+				router.server.config.Set("server.proxy.host", "proxy.io")
+				router.server.config.Set("server.proxy.protocol", "http")
+				router.server.config.Set("server.proxy.port", 80)
+				router.server.config.Set("server.proxy.base", "/base")
+
+				panicStatusHandler := &testPanicStatusHandler{}
+				router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)
+
+				var route *Route
+				route = router.Get("/route/{param}", func(r *Response, req *Request) {
+					assert.Equal(t, map[string]string{"param": "value"}, req.RouteParams)
+					assert.Equal(t, route, req.Route)
+					assert.False(t, req.Now.IsZero())
+					r.String(http.StatusOK, "hello world")
+				})
+				router.Put("/empty", func(_ *Response, _ *Request) {})
+				router.Get("/forbidden", func(r *Response, _ *Request) {
+					r.Status(http.StatusForbidden)
+				})
+
+				router.Subrouter("/noparam").Get("", func(r *Response, req *Request) {
+					assert.Equal(t, map[string]string{}, req.RouteParams)
+					r.Status(http.StatusOK)
+				})
+
+				subrouter := router.Subrouter("/subrouter/{param}")
+				subrouter.Get("/subroute", func(r *Response, req *Request) {
+					assert.Equal(t, map[string]string{"param": "value"}, req.RouteParams)
+					r.Status(http.StatusOK)
+				})
+				subrouter.Get("/subroute/{name}", func(r *Response, req *Request) {
+					assert.Equal(t, map[string]string{"param": "value", "name": "johndoe"}, req.RouteParams)
+					r.Status(http.StatusOK)
+				})
+
+				router.Middleware(&testMiddleware{key: "router"})
+				router.GlobalMiddleware(&testMiddleware{key: "global"})
+				router.Get("/middleware", func(r *Response, req *Request) {
+					assert.Equal(t, []string{"global", "router", "route"}, req.Extra[extraMiddlewareOrder{}])
+					r.Status(http.StatusOK)
+				}).Middleware(&testMiddleware{key: "route"})
+
+				statusHandlerSubrouter := router.Subrouter("/statushandler")
+				statusHandlerSubrouter.StatusHandler(&testStatusHandler{
+					override: func(response *Response, _ *Request) {
+						response.String(response.GetStatus(), "Override Bad Request")
+					},
+				}, http.StatusBadRequest)
+				statusHandlerSubrouter.Get("/", func(r *Response, _ *Request) {
+					r.Status(http.StatusBadRequest)
+				})
+				statusHandlerSubrouter.Get("/error", func(r *Response, _ *Request) {
+					r.Error("test error")
+				})
+				statusHandlerSubrouter.Get("/error-after-write-header", func(r *Response, _ *Request) {
+					r.WriteHeader(http.StatusNoContent)
+					panic(http.ErrBodyNotAllowed)
+				})
+				statusHandlerSubrouter.Get("/error-after-write-500-header", func(r *Response, _ *Request) {
+					r.WriteHeader(http.StatusInternalServerError)
+					panic("test error")
+				})
+				statusHandlerSubrouter.Get("/error-after-write", func(r *Response, _ *Request) {
+					r.String(http.StatusOK, "hello world")
+					r.Error("test error")
+				})
+
 				recorder := httptest.NewRecorder()
 				rawRequest := httptest.NewRequest(c.requestMethod, c.requestURL, nil)
 				router.ServeHTTP(recorder, rawRequest)
@@ -457,6 +520,7 @@ func TestRouter(t *testing.T) {
 				res := recorder.Result()
 
 				assert.Equal(t, c.expectedStatus, res.StatusCode)
+				assert.Equal(t, c.expectPanicStatusHandler, panicStatusHandler.executed)
 
 				body, err := io.ReadAll(res.Body)
 				assert.NoError(t, res.Body.Close())

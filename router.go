@@ -531,9 +531,19 @@ func (r *Router) finalize(match *routeMatch, response *Response, request *Reques
 			// If the response is empty, return status 204 to
 			// comply with RFC 7231, 6.3.5
 			response.Status(http.StatusNoContent)
+		} else if response.err != nil && response.wroteHeader {
+			// An error occurred after the response header has been written. We still want to execute the panic status handler.
+			if statusHandler, ok := r.getStatusHandler(match, http.StatusInternalServerError); ok {
+				statusHandler.Handle(response, request)
+			}
 		} else if statusHandler, ok := r.getStatusHandler(match, response.status); ok {
 			// Status has been set but body is empty.
 			// Execute status handler if exists.
+			statusHandler.Handle(response, request)
+		}
+	} else if response.err != nil {
+		// An error has occurred after a write. We still want to execute the panic status handler.
+		if statusHandler, ok := r.getStatusHandler(match, http.StatusInternalServerError); ok {
 			statusHandler.Handle(response, request)
 		}
 	}

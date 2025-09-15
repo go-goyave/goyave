@@ -83,7 +83,9 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 				e := errors.NewSkip(err, 4).(*errors.Error) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
 				m.Logger().Error(e)
 				response.err = e
-				response.status = http.StatusInternalServerError // Force status override
+				if !response.wroteHeader {
+					response.status = http.StatusInternalServerError // Force status override if the header hasn't been written yet.
+				}
 			}
 		}()
 

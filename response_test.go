@@ -363,6 +363,30 @@ func TestResponse(t *testing.T) {
 		})
 	})
 
+	t.Run("JSON_doesnt_override_written_status", func(t *testing.T) {
+		resp, recorder := newTestReponse()
+		resp.WriteHeader(http.StatusCreated)
+		resp.JSON(http.StatusOK, map[string]any{"hello": "world"})
+
+		res := recorder.Result()
+		assert.NoError(t, res.Body.Close())
+		assert.Empty(t, res.Header.Get("Content-Type")) // Content-type was not known when WriteHeader was called.
+		assert.Equal(t, http.StatusCreated, res.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.status)
+	})
+
+	t.Run("JSON_override_status_before_write", func(t *testing.T) {
+		resp, recorder := newTestReponse()
+		resp.Status(http.StatusNoContent)
+		resp.JSON(http.StatusCreated, map[string]any{"hello": "world"})
+
+		res := recorder.Result()
+		assert.NoError(t, res.Body.Close())
+		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
+		assert.Equal(t, http.StatusCreated, res.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.status)
+	})
+
 	t.Run("String", func(t *testing.T) {
 		resp, recorder := newTestReponse()
 		resp.String(http.StatusOK, "hello world")
@@ -373,6 +397,28 @@ func TestResponse(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "hello world", string(body))
+	})
+
+	t.Run("String_doesnt_override_written_status", func(t *testing.T) {
+		resp, recorder := newTestReponse()
+		resp.WriteHeader(http.StatusCreated)
+		resp.String(http.StatusOK, "hello world")
+
+		res := recorder.Result()
+		assert.NoError(t, res.Body.Close())
+		assert.Equal(t, http.StatusCreated, res.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.status)
+	})
+
+	t.Run("String_override_status_before_write", func(t *testing.T) {
+		resp, recorder := newTestReponse()
+		resp.Status(http.StatusNoContent)
+		resp.String(http.StatusCreated, "hello world")
+
+		res := recorder.Result()
+		assert.NoError(t, res.Body.Close())
+		assert.Equal(t, http.StatusCreated, res.StatusCode)
+		assert.Equal(t, http.StatusCreated, resp.status)
 	})
 
 	t.Run("Cookie", func(t *testing.T) {

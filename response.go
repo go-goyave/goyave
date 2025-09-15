@@ -318,16 +318,20 @@ func (r *Response) Status(status int) {
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically.
 func (r *Response) JSON(responseCode int, data any) {
-	r.responseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
-	r.status = responseCode
+	if !r.wroteHeader {
+		r.responseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+		r.status = responseCode
+	}
 	if err := json.NewEncoder(r).Encode(data); err != nil {
 		panic(errorutil.NewSkip(err, 3))
 	}
 }
 
-// String write a string as a response
+// String write a string as a response.
 func (r *Response) String(responseCode int, message string) {
-	r.status = responseCode
+	if !r.wroteHeader {
+		r.status = responseCode
+	}
 	if _, err := r.Write([]byte(message)); err != nil {
 		panic(errorutil.NewSkip(err, 3))
 	}

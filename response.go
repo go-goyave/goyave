@@ -89,6 +89,11 @@ func (w *CommonWriter) Flush() error {
 	return nil
 }
 
+// Writer returns the underlying writer.
+func (w *CommonWriter) Writer() io.Writer {
+	return w.wr
+}
+
 // Response implementation wrapping `http.ResponseWriter`. Writing an HTTP response without
 // using it is incorrect. This acts as a proxy to one or many `io.Writer` chained, with the original
 // `http.ResponseWriter` always last.

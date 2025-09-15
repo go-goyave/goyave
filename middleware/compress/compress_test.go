@@ -100,6 +100,7 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.Equal(t, "hello world", string(body)) // Not compressed
 		assert.NotEqual(t, "gzip", result.Header.Get("Content-Encoding"))
 		assert.Equal(t, "1234", result.Header.Get("Content-Length"))
+		assert.Empty(t, result.Header.Get("Vary"))
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -121,6 +122,7 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, "hello world", string(body))
 		assert.Empty(t, result.Header.Get("Content-Length"))
+		assert.Equal(t, "Accept-Encoding", result.Header.Get("Vary"))
 	})
 
 	t.Run("Unsupported encoding", func(t *testing.T) {
@@ -136,6 +138,7 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, "hello world", string(body)) // Not compressed
 		assert.Empty(t, result.Header.Get("Content-Encoding"))
+		assert.Empty(t, result.Header.Get("Vary"))
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -154,6 +157,7 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.Equal(t, "hello world", string(body)) // Not compressed
 		assert.NotEqual(t, "gzip", result.Header.Get("Content-Encoding"))
 		assert.Equal(t, "1234", result.Header.Get("Content-Length"))
+		assert.Empty(t, result.Header.Get("Vary"))
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
@@ -175,8 +179,25 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, "gzip", result.Header.Get("Content-Encoding"))
 		assert.Empty(t, result.Header.Get("Content-Length"))
+		assert.Equal(t, "Accept-Encoding", result.Header.Get("Vary"))
 		assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
 		assert.Equal(t, "{\n    \"custom-entry\": \"value\"\n}", string(body))
+	})
+
+	t.Run("No content", func(t *testing.T) {
+		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request.Header().Set("Accept-Encoding", "gzip")
+		result := server.TestMiddleware(compressMiddleware, request, func(r *goyave.Response, _ *goyave.Request) {
+			r.Status(http.StatusNoContent)
+		})
+
+		assert.Equal(t, "gzip", result.Header.Get("Content-Encoding"))
+		assert.Empty(t, result.Header.Get("Content-Length"))
+
+		body, err := io.ReadAll(result.Body)
+		require.NoError(t, err)
+		assert.Empty(t, body)
+		assert.NoError(t, result.Body.Close())
 	})
 }
 

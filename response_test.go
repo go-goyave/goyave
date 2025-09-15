@@ -757,6 +757,7 @@ func TestCommonWriter(t *testing.T) {
 	}
 	wr := NewCommonWriter(chainedWriter)
 	assert.Equal(t, chainedWriter, wr.wr)
+	assert.Equal(t, chainedWriter, wr.Writer())
 
 	wr.PreWrite([]byte("hello"))
 	assert.Equal(t, []byte("hello"), chainedWriter.prewritten)

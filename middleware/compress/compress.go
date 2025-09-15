@@ -26,16 +26,22 @@ type Encoder interface {
 	Encoding() string
 }
 
+type resettable interface {
+	Reset(w io.Writer)
+}
+
 type compressWriter struct {
 	goyave.CommonWriter
 	responseWriter http.ResponseWriter
 	childWriter    io.Writer
+	empty          bool
 }
 
 func (w *compressWriter) PreWrite(b []byte) {
 	if pr, ok := w.childWriter.(goyave.PreWriter); ok {
 		pr.PreWrite(b)
 	}
+	w.empty = false
 	h := w.responseWriter.Header()
 	if h.Get("Content-Type") == "" {
 		h.Set("Content-Type", http.DetectContentType(b))
@@ -57,6 +63,12 @@ func (w *compressWriter) Flush() error {
 }
 
 func (w *compressWriter) Close() error {
+	if w.empty {
+		// Do not write gzip/br/... footer if nothing has been written to the response body.
+		if r, ok := w.Writer().(resettable); ok {
+			r.Reset(io.Discard)
+		}
+	}
 	err := errors.New(w.CommonWriter.Close())
 
 	if wr, ok := w.childWriter.(io.Closer); ok {
@@ -117,9 +129,11 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 			CommonWriter:   goyave.NewCommonWriter(encoder.NewWriter(respWriter)),
 			responseWriter: response,
 			childWriter:    respWriter,
+			empty:          true,
 		}
 		response.SetWriter(compressWriter)
 		response.Header().Set("Content-Encoding", encoder.Encoding())
+		response.Header().Add("Vary", "Accept-Encoding")
 
 		next(response, request)
 	}

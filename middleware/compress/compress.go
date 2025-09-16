@@ -34,6 +34,7 @@ type compressWriter struct {
 	goyave.CommonWriter
 	responseWriter http.ResponseWriter
 	childWriter    io.Writer
+	encoding       string
 	empty          bool
 }
 
@@ -46,6 +47,8 @@ func (w *compressWriter) PreWrite(b []byte) {
 	if h.Get("Content-Type") == "" {
 		h.Set("Content-Type", http.DetectContentType(b))
 	}
+	h.Set("Content-Encoding", w.encoding)
+	h.Add("Vary", "Accept-Encoding")
 	h.Del("Content-Length")
 }
 
@@ -129,11 +132,10 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 			CommonWriter:   goyave.NewCommonWriter(encoder.NewWriter(respWriter)),
 			responseWriter: response,
 			childWriter:    respWriter,
+			encoding:       encoder.Encoding(),
 			empty:          true,
 		}
 		response.SetWriter(compressWriter)
-		response.Header().Set("Content-Encoding", encoder.Encoding())
-		response.Header().Add("Vary", "Accept-Encoding")
 
 		next(response, request)
 	}

@@ -98,7 +98,7 @@ func TestCompressMiddleware(t *testing.T) {
 		}
 		assert.NoError(t, result.Body.Close())
 		assert.Equal(t, "hello world", string(body)) // Not compressed
-		assert.NotEqual(t, "gzip", result.Header.Get("Content-Encoding"))
+		assert.Empty(t, result.Header.Get("Content-Encoding"))
 		assert.Equal(t, "1234", result.Header.Get("Content-Length"))
 		assert.Empty(t, result.Header.Get("Vary"))
 		assert.Equal(t, http.StatusOK, result.StatusCode)
@@ -191,7 +191,7 @@ func TestCompressMiddleware(t *testing.T) {
 			r.Status(http.StatusNoContent)
 		})
 
-		assert.Equal(t, "gzip", result.Header.Get("Content-Encoding"))
+		assert.Empty(t, result.Header.Get("Content-Encoding"))
 		assert.Empty(t, result.Header.Get("Content-Length"))
 
 		body, err := io.ReadAll(result.Body)

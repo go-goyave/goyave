@@ -31,7 +31,7 @@ func (*PanicStatusHandler) Handle(response *Response, _ *Request) {
 		message := map[string]string{
 			"error": http.StatusText(http.StatusInternalServerError),
 		}
-		response.JSON(response.GetStatus(), message)
+		response.JSON(http.StatusInternalServerError, message)
 	}
 }
 

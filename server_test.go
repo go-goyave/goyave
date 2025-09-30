@@ -694,6 +694,58 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, "cannot start the server, context is canceled", err.Error())
 		}
 	})
+
+	t.Run("StartWithCustomListenConfig", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+
+		// Create a custom ListenConfig with custom keep-alive settings
+		customListenConfig := &net.ListenConfig{
+			KeepAlive: 1 * time.Minute, // Custom keep-alive duration
+		}
+
+		server, err := New(Options{
+			Config:       cfg,
+			ListenConfig: customListenConfig,
+		})
+		require.NoError(t, err)
+
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		server.RegisterStartupHook(func(s *Server) {
+			assert.True(t, server.IsReady())
+			assert.NotEqual(t, 0, s.Port())
+
+			res, err := http.Get(s.BaseURL())
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
+			assert.NoError(t, err)
+			respBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, []byte("hello world"), respBody)
+
+			server.Stop()
+			wg.Done()
+		})
+
+		server.RegisterRoutes(func(_ *Server, router *Router) {
+			router.Get("/", func(r *Response, _ *Request) {
+				r.String(http.StatusOK, "hello world")
+			}).Name("base")
+		})
+
+		go func() {
+			err := server.Start()
+			assert.NoError(t, err)
+			wg.Done()
+		}()
+
+		wg.Wait()
+		assert.False(t, server.IsReady())
+		assert.Equal(t, uint32(3), server.state.Load())
+	})
 }
 
 func TestNoServerFromContext(t *testing.T) {

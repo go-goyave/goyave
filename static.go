@@ -3,7 +3,7 @@ package goyave
 import (
 	"io/fs"
 	"net/http"
-	"path/filepath"
+	fpath "path"
 	"strings"
 
 	"github.com/samber/lo"
@@ -39,7 +39,7 @@ func cleanStaticPath(fs fs.StatFS, file string) string {
 		}
 		path += "index.html"
 	}
-	return filepath.Clean(path)
+	return fpath.Clean(path)
 }
 
 func checkStaticPath(path string) bool {

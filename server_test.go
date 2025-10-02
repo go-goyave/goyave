@@ -148,6 +148,7 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "load US", server.Lang.Get("en-US", "test-load"))
 		assert.Equal(t, "load UK", server.Lang.Get("en-UK", "test-load"))
 		assert.NotNil(t, server.DB())
+		assert.True(t, server.HasDB())
 
 		assert.NoError(t, server.CloseDB())
 	})
@@ -318,6 +319,7 @@ func TestServer(t *testing.T) {
 		assert.False(t, server.IsReady())
 		assert.Equal(t, cfg, server.Config())
 		assert.NotNil(t, server.Router())
+		assert.False(t, server.HasDB())
 
 		// No DB
 		assert.Panics(t, func() {

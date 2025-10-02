@@ -7,7 +7,12 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/bigquery"
+	"gorm.io/driver/clickhouse"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"goyave.dev/goyave/v5/config"
@@ -23,9 +28,36 @@ func (m uniqueTestModel) TableName() string {
 	return "models"
 }
 
-func prepareUniqueTest(t *testing.T) *Options {
+var (
+	dialectorNameSQLite     = sqlite.Dialector{}.Name()
+	dialectorNamePostgres   = postgres.Dialector{}.Name()
+	dialectorNameMySQL      = mysql.Dialector{}.Name()
+	dialectorNameMSSQL      = sqlserver.Dialector{}.Name()
+	dialectorNameClickhouse = clickhouse.Dialector{}.Name()
+	dialectorNameBigquery   = bigquery.Dialector{}.Name()
+)
+
+type testDialector struct {
+	gorm.Dialector
+	name string
+}
+
+func (d testDialector) Name() string {
+	return d.name
+}
+
+func openTestDialector(name string) func(dsn string) gorm.Dialector {
+	return func(dsn string) gorm.Dialector {
+		return &testDialector{
+			Dialector: sqlite.Open(dsn),
+			name:      name,
+		}
+	}
+}
+
+func prepareUniqueTest(t *testing.T, dialectorName string) *Options {
 	dialect := fmt.Sprintf("sqlite3_%s_test", t.Name())
-	database.RegisterDialect(dialect, "file:{name}?{options}", sqlite.Open)
+	database.RegisterDialect(dialect, "file:{name}?{options}", openTestDialector(dialectorName))
 	cfg := config.LoadDefault()
 	cfg.Set("app.name", t.Name())
 	cfg.Set("app.debug", false)
@@ -116,7 +148,7 @@ func TestUniqueValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t)
+			opts := prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := opts.DB.Create(c.records).Error; err != nil {
 					assert.FailNow(t, err.Error())
@@ -205,7 +237,7 @@ func TestExistsValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t)
+			opts := prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := opts.DB.Create(c.records).Error; err != nil {
 					assert.FailNow(t, err.Error())
@@ -339,14 +371,14 @@ func TestUniqueArrayValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t)
+			opts := prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := opts.DB.Create(c.records).Error; err != nil {
 					assert.FailNow(t, err.Error())
 				}
 			}
 
-			v := UniqueArray[int](c.table, c.column, c.transform)
+			v := UniqueArray(c.table, c.column, c.transform)
 			v.Init(opts)
 
 			ctx := &Context{
@@ -364,17 +396,17 @@ func TestUniqueArrayValidator(t *testing.T) {
 			dialect  string
 			expected string
 		}{
-			{dialect: "sqlite3", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
-			{dialect: "mysql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(2,0),ROW(7,1),ROW(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
-			{dialect: "postgres", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0::int),(7,1::int),(6,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
-			{dialect: "mssql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
-			{dialect: "clickhouse", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (2,0),(7,1),(6,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
+			{dialect: dialectorNameSQLite, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
+			{dialect: dialectorNameBigquery, expected: "WITH ctx_values AS (SELECT * FROM UNNEST([STRUCT(2 AS id, 0 AS i),STRUCT(7 AS id, 1 AS i),STRUCT(6 AS id, 2 AS i)])) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
+			{dialect: dialectorNameMySQL, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(2,0),ROW(7,1),ROW(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
+			{dialect: dialectorNamePostgres, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0::int),(7,1::int),(6,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
+			{dialect: dialectorNameMSSQL, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
+			{dialect: dialectorNameClickhouse, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (2,0),(7,1),(6,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS NOT NULL"},
 		}
 
 		for _, c := range cases {
 			t.Run(c.dialect, func(t *testing.T) {
-				opts := prepareUniqueTest(t)
-				opts.Config.Set("database.connection", c.dialect)
+				opts := prepareUniqueTest(t, c.dialect)
 				v := UniqueArray[int]("models", "name", nil)
 				v.Init(opts)
 
@@ -501,14 +533,14 @@ func TestExistsArrayValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t)
+			opts := prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := opts.DB.Create(c.records).Error; err != nil {
 					assert.FailNow(t, err.Error())
 				}
 			}
 
-			v := ExistsArray[int](c.table, c.column, c.transform)
+			v := ExistsArray(c.table, c.column, c.transform)
 			v.Init(opts)
 
 			ctx := &Context{
@@ -526,17 +558,17 @@ func TestExistsArrayValidator(t *testing.T) {
 			dialect  string
 			expected string
 		}{
-			{dialect: "sqlite3", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "mysql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(2,0),ROW(7,1),ROW(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "postgres", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0::int),(7,1::int),(6,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "mssql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "clickhouse", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (2,0),(7,1),(6,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameSQLite, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameBigquery, expected: "WITH ctx_values AS (SELECT * FROM UNNEST([STRUCT(2 AS id, 0 AS i),STRUCT(7 AS id, 1 AS i),STRUCT(6 AS id, 2 AS i)])) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameMySQL, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(2,0),ROW(7,1),ROW(6,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNamePostgres, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0::int),(7,1::int),(6,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameMSSQL, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (2,0),(7,1),(6,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameClickhouse, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (2,0),(7,1),(6,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
 		}
 
 		for _, c := range cases {
 			t.Run(c.dialect, func(t *testing.T) {
-				opts := prepareUniqueTest(t)
-				opts.Config.Set("database.connection", c.dialect)
+				opts := prepareUniqueTest(t, c.dialect)
 				v := ExistsArray[int]("models", "name", nil)
 				v.Init(opts)
 
@@ -557,21 +589,21 @@ func TestBuildQueryValidatorWithTransform(t *testing.T) {
 			dialect  string
 			expected string
 		}{
-			{dialect: "sqlite3", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (1,0),(6,1),(5,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "mysql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(1,0),ROW(6,1),ROW(5,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "postgres", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (1,0::int),(6,1::int),(5,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "mssql", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (1,0),(6,1),(5,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
-			{dialect: "clickhouse", expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (1,0),(6,1),(5,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameSQLite, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (1,0),(6,1),(5,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameBigquery, expected: "WITH ctx_values AS (SELECT * FROM UNNEST([STRUCT(1 AS id, 0 AS i),STRUCT(6 AS id, 1 AS i),STRUCT(5 AS id, 2 AS i)])) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameMySQL, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES ROW(1,0),ROW(6,1),ROW(5,2)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNamePostgres, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (1,0::int),(6,1::int),(5,2::int)) t) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameMSSQL, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES (1,0),(6,1),(5,2)) t(id,i)) SELECT i FROM ctx_values LEFT JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
+			{dialect: dialectorNameClickhouse, expected: "WITH ctx_values(id, i) AS (SELECT * FROM (VALUES 'id Int64, i Int64', (1,0),(6,1),(5,2))) SELECT i FROM ctx_values INNER JOIN `models` ON `models`.`name` = ctx_values.id WHERE `models`.`name` IS  NULL"},
 		}
 
 		for _, c := range cases {
 			t.Run(c.dialect, func(t *testing.T) {
-				opts := prepareUniqueTest(t)
-				opts.Config.Set("database.connection", c.dialect)
+				opts := prepareUniqueTest(t, c.dialect)
 				transform := func(val int) clause.Expr {
 					return gorm.Expr("?", val-1)
 				}
-				v := ExistsArray[int]("models", "name", transform)
+				v := ExistsArray("models", "name", transform)
 				v.Init(opts)
 
 				tx, _ := v.buildQuery([]int{2, 7, 6}, true)
@@ -586,7 +618,7 @@ func TestBuildQueryValidatorWithTransform(t *testing.T) {
 }
 
 func TestClickhouseUnsupportedType(t *testing.T) {
-	opts := prepareUniqueTest(t)
+	opts := prepareUniqueTest(t, dialectorNameClickhouse)
 	opts.Config.Set("database.connection", "clickhouse")
 	v := ExistsArray[struct{}]("models", "name", nil)
 	v.Init(opts)

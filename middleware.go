@@ -141,7 +141,7 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 		contentType := r.Header().Get("Content-Type")
 
 		var db *gorm.DB
-		if m.Config().GetString("database.connection") != "none" {
+		if m.Server().HasDB() {
 			db = m.DB().WithContext(r.Context())
 		}
 		var errsBag *validation.Errors

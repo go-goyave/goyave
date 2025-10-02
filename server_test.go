@@ -706,9 +706,8 @@ func TestServer(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Set("server.port", 0)
 
-		// Create a custom ListenConfig with custom keep-alive settings
 		customListenConfig := &net.ListenConfig{
-			KeepAlive: 1 * time.Minute, // Custom keep-alive duration
+			KeepAlive: 1 * time.Minute,
 		}
 
 		server, err := New(Options{
@@ -759,9 +758,12 @@ func TestServer(t *testing.T) {
 		cfg.Set("server.port", 0)
 
 		// Create a custom ListenConfig with a Control function that always returns an error
+		// to ensure that the custom config is correctly used if provided.
+		// The StartWithCustomListenConfig test only checks that the server still works and is able
+		// to process requests with the custom config.
 		expectedErr := fmt.Errorf("test control error")
 		customListenConfig := &net.ListenConfig{
-			Control: func(network, address string, c syscall.RawConn) error {
+			Control: func(_, _ string, _ syscall.RawConn) error {
 				return expectedErr
 			},
 		}
@@ -774,10 +776,7 @@ func TestServer(t *testing.T) {
 
 		// Attempt to start the server - it should fail with the error from Control
 		err = server.Start()
-		if assert.Error(t, err) {
-			// The error should contain our expected error message
-			assert.ErrorIs(t, err, expectedErr)
-		}
+		assert.ErrorIs(t, err, expectedErr)
 	})
 }
 

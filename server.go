@@ -51,6 +51,12 @@ type Options struct {
 	// HTTP2 configures HTTP/2 connections.
 	HTTP2 *http.HTTP2Config
 
+	// ListenConfig optionally specifies the configuration for the network listener.
+	// If not provided, the default net.ListenConfig is used.
+	// This can be useful for customizing keep-alives and other network-level settings
+	// for optimal performance in large traffic scenarios.
+	ListenConfig *net.ListenConfig
+
 	// ConnState specifies an optional callback function that is
 	// called when a client connection changes state. See the
 	// `http.ConnState` type and associated constants for details.
@@ -84,12 +90,6 @@ type Options struct {
 	// size of the request body.
 	// If zero, http.DefaultMaxHeaderBytes is used.
 	MaxHeaderBytes int
-
-	// ListenConfig optionally specifies the configuration for the network listener.
-	// If not provided, the default net.ListenConfig is used.
-	// This can be useful for customizing keep-alives and other network-level settings
-	// for optimal performance in large traffic scenarios.
-	ListenConfig *net.ListenConfig
 }
 
 // Server the central component of a Goyave application.
@@ -275,7 +275,7 @@ func (s *Server) LookupService(name string) (Service, bool) {
 	return service, ok
 }
 
-// RegisterService on thise server using its name (returned by `Service.Name()`).
+// RegisterService on this server using its name (returned by `Service.Name()`).
 // A service's name should be unique.
 // `Service.Init(server)` is called on the given service upon registration.
 func (s *Server) RegisterService(service Service) {

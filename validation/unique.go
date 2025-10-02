@@ -132,13 +132,14 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) (*gorm.
 	questionMarks := []string{}
 	params := []any{}
 
-	dbType := v.Config().GetString("database.connection")
-	if dbType == "clickhouse" {
+	db := v.DB()
+	dialectorName := db.Name()
+
+	if dialectorName == "clickhouse" {
 		return v.buildClickhouseQuery(values, condition)
 	}
 
-	isMySQL := dbType == "mysql"
-	isPostgres := dbType == "postgres"
+	isPostgres := dialectorName == "postgres"
 
 	for i, val := range values {
 		questionMarks = append(questionMarks, "?")
@@ -146,9 +147,12 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) (*gorm.
 		if v.Transform != nil {
 			transformedValue = v.Transform(val)
 		}
-		if isMySQL {
+		switch dialectorName {
+		case "mysql":
 			params = append(params, gorm.Expr("ROW(?,?)", transformedValue, i))
-		} else {
+		case "bigquery":
+			params = append(params, gorm.Expr("STRUCT(? AS id, ? AS i)", transformedValue, i))
+		default:
 			params = append(params, gorm.Expr(
 				"(?,?)",
 				transformedValue,
@@ -157,14 +161,23 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) (*gorm.
 		}
 	}
 
-	db := v.DB()
 	table := db.Statement.Quote(v.Table)
 	column := db.Statement.Quote(v.Column)
 
+	var cte string
+	switch dialectorName {
+	case "bigquery":
+		cte = fmt.Sprintf("WITH ctx_values AS (SELECT * FROM UNNEST([%s]))", strings.Join(questionMarks, ","))
+	default:
+		cte = fmt.Sprintf("WITH ctx_values(id, i) AS (SELECT * FROM (VALUES %s) t%s)",
+			strings.Join(questionMarks, ","),
+			lo.Ternary(dialectorName == "sqlserver", "(id,i)", ""),
+		)
+	}
+
 	sql := fmt.Sprintf(
-		"WITH ctx_values(id, i) AS (SELECT * FROM (VALUES %s) t%s) SELECT i FROM ctx_values LEFT JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
-		strings.Join(questionMarks, ","),
-		lo.Ternary(dbType == "mssql", "(id,i)", ""),
+		"%s SELECT i FROM ctx_values LEFT JOIN %s ON %s.%s = ctx_values.id WHERE %s.%s IS %s NULL",
+		cte,
 		table,
 		table, column,
 		table, column,

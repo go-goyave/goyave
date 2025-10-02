@@ -57,12 +57,16 @@ func TestServer(t *testing.T) {
 		})
 
 		http2Cfg := &http.HTTP2Config{}
+		customListenConfig := &net.ListenConfig{
+			KeepAlive: 1 * time.Minute,
+		}
 		s, err := New(Options{
 			MaxHeaderBytes: 123,
 			ConnState:      func(_ net.Conn, _ http.ConnState) {},
 			BaseContext:    func(_ net.Listener) context.Context { return context.Background() },
 			ConnContext:    func(ctx context.Context, _ net.Conn) context.Context { return ctx },
 			HTTP2:          http2Cfg,
+			ListenConfig:   customListenConfig,
 		})
 		require.NoError(t, err)
 
@@ -85,6 +89,7 @@ func TestServer(t *testing.T) {
 		assert.NotNil(t, s.baseContext)
 		assert.NotNil(t, s.server.BaseContext)
 		assert.Same(t, http2Cfg, s.server.HTTP2)
+		assert.Same(t, customListenConfig, s.listenConfig)
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", s.ProxyBaseURL())
 		assert.NoError(t, s.CloseDB())
@@ -695,6 +700,83 @@ func TestServer(t *testing.T) {
 		if assert.Error(t, err) {
 			assert.Equal(t, "cannot start the server, context is canceled", err.Error())
 		}
+	})
+
+	t.Run("StartWithCustomListenConfig", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+
+		customListenConfig := &net.ListenConfig{
+			KeepAlive: 1 * time.Minute,
+		}
+
+		server, err := New(Options{
+			Config:       cfg,
+			ListenConfig: customListenConfig,
+		})
+		require.NoError(t, err)
+
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		server.RegisterStartupHook(func(s *Server) {
+			assert.True(t, server.IsReady())
+			assert.NotEqual(t, 0, s.Port())
+
+			res, err := http.Get(s.BaseURL())
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
+			assert.NoError(t, err)
+			respBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, []byte("hello world"), respBody)
+
+			server.Stop()
+			wg.Done()
+		})
+
+		server.RegisterRoutes(func(_ *Server, router *Router) {
+			router.Get("/", func(r *Response, _ *Request) {
+				r.String(http.StatusOK, "hello world")
+			}).Name("base")
+		})
+
+		go func() {
+			err := server.Start()
+			assert.NoError(t, err)
+			wg.Done()
+		}()
+
+		wg.Wait()
+		assert.False(t, server.IsReady())
+		assert.Equal(t, uint32(3), server.state.Load())
+	})
+
+	t.Run("StartWithCustomListenConfigControlError", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+
+		// Create a custom ListenConfig with a Control function that always returns an error
+		// to ensure that the custom config is correctly used if provided.
+		// The StartWithCustomListenConfig test only checks that the server still works and is able
+		// to process requests with the custom config.
+		expectedErr := fmt.Errorf("test control error")
+		customListenConfig := &net.ListenConfig{
+			Control: func(_, _ string, _ syscall.RawConn) error {
+				return expectedErr
+			},
+		}
+
+		server, err := New(Options{
+			Config:       cfg,
+			ListenConfig: customListenConfig,
+		})
+		require.NoError(t, err)
+
+		// Attempt to start the server - it should fail with the error from Control
+		err = server.Start()
+		assert.ErrorIs(t, err, expectedErr)
 	})
 }
 

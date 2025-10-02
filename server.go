@@ -51,6 +51,12 @@ type Options struct {
 	// HTTP2 configures HTTP/2 connections.
 	HTTP2 *http.HTTP2Config
 
+	// ListenConfig optionally specifies the configuration for the network listener.
+	// If not provided, the default net.ListenConfig is used.
+	// This can be useful for customizing keep-alives and other network-level settings
+	// for optimal performance in large traffic scenarios.
+	ListenConfig *net.ListenConfig
+
 	// ConnState specifies an optional callback function that is
 	// called when a client connection changes state. See the
 	// `http.ConnState` type and associated constants for details.
@@ -110,6 +116,7 @@ type Server struct {
 
 	ctx           context.Context
 	baseContext   func(net.Listener) context.Context
+	listenConfig  *net.ListenConfig
 	startupHooks  []func(*Server)
 	shutdownHooks []func(*Server)
 
@@ -163,6 +170,7 @@ func New(opts Options) (*Server, error) {
 		},
 		ctx:           context.Background(),
 		baseContext:   opts.BaseContext,
+		listenConfig:  opts.ListenConfig,
 		config:        cfg,
 		services:      make(map[string]Service),
 		Lang:          languages,
@@ -267,7 +275,7 @@ func (s *Server) LookupService(name string) (Service, bool) {
 	return service, ok
 }
 
-// RegisterService on thise server using its name (returned by `Service.Name()`).
+// RegisterService on this server using its name (returned by `Service.Name()`).
 // A service's name should be unique.
 // `Service.Init(server)` is called on the given service upon registration.
 func (s *Server) RegisterService(service Service) {
@@ -424,7 +432,13 @@ func (s *Server) Start() error {
 		close(s.stopChannel)
 	}()
 
-	ln, err := net.Listen("tcp", s.server.Addr)
+	var ln net.Listener
+	var err error
+	if s.listenConfig != nil {
+		ln, err = s.listenConfig.Listen(context.Background(), "tcp", s.server.Addr)
+	} else {
+		ln, err = net.Listen("tcp", s.server.Addr)
+	}
 	if err != nil {
 		return errors.New(err)
 	}

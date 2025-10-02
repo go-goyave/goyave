@@ -57,12 +57,16 @@ func TestServer(t *testing.T) {
 		})
 
 		http2Cfg := &http.HTTP2Config{}
+		customListenConfig := &net.ListenConfig{
+			KeepAlive: 1 * time.Minute,
+		}
 		s, err := New(Options{
 			MaxHeaderBytes: 123,
 			ConnState:      func(_ net.Conn, _ http.ConnState) {},
 			BaseContext:    func(_ net.Listener) context.Context { return context.Background() },
 			ConnContext:    func(ctx context.Context, _ net.Conn) context.Context { return ctx },
 			HTTP2:          http2Cfg,
+			ListenConfig:   customListenConfig,
 		})
 		require.NoError(t, err)
 
@@ -85,6 +89,7 @@ func TestServer(t *testing.T) {
 		assert.NotNil(t, s.baseContext)
 		assert.NotNil(t, s.server.BaseContext)
 		assert.Same(t, http2Cfg, s.server.HTTP2)
+		assert.Same(t, customListenConfig, s.listenConfig)
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
 		assert.Equal(t, "http://127.0.0.1:8080", s.ProxyBaseURL())
 		assert.NoError(t, s.CloseDB())
@@ -747,6 +752,32 @@ func TestServer(t *testing.T) {
 		wg.Wait()
 		assert.False(t, server.IsReady())
 		assert.Equal(t, uint32(3), server.state.Load())
+	})
+
+	t.Run("StartWithCustomListenConfigControlError", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+
+		// Create a custom ListenConfig with a Control function that always returns an error
+		expectedErr := fmt.Errorf("test control error")
+		customListenConfig := &net.ListenConfig{
+			Control: func(network, address string, c syscall.RawConn) error {
+				return expectedErr
+			},
+		}
+
+		server, err := New(Options{
+			Config:       cfg,
+			ListenConfig: customListenConfig,
+		})
+		require.NoError(t, err)
+
+		// Attempt to start the server - it should fail with the error from Control
+		err = server.Start()
+		if assert.Error(t, err) {
+			// The error should contain our expected error message
+			assert.ErrorIs(t, err, expectedErr)
+		}
 	})
 }
 

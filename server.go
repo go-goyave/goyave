@@ -335,11 +335,15 @@ func (s *Server) Config() *config.Config {
 	return s.config
 }
 
+func (s *Server) HasDB() bool {
+	return s.db != nil
+}
+
 // DB returns the root database instance. Panics if no
 // database connection is set up.
 func (s *Server) DB() *gorm.DB {
 	if s.db == nil {
-		panic(errors.NewSkip("No database connection. Database is set to \"none\" in the config", 3))
+		panic(errors.NewSkip("no database connection", 3))
 	}
 	return s.db
 }
@@ -353,7 +357,7 @@ func (s *Server) DB() *gorm.DB {
 // This is used for tests. This operation is not concurrently safe.
 func (s *Server) Transaction(opts ...*sql.TxOptions) func() {
 	if s.db == nil {
-		panic(errors.NewSkip("No database connection. Database is set to \"none\" in the config", 3))
+		panic(errors.NewSkip("no database connection", 3))
 	}
 	ogDB := s.db
 	s.db = s.db.Begin(opts...)

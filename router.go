@@ -138,9 +138,7 @@ func NewRouter(server *Server) *Router {
 
 // ClearRegexCache set internal router's regex cache used for route parameters optimisation to nil
 // so it can be garbage collected.
-// You don't need to call this function if you are using `goyave.Server`.
-// However, this method SHOULD be called by external tooling that build routers without starting the HTTP
-// server when they are done registering routes and subrouters.
+// You don't need to call this function if you are using `server.RegisterRoutes`.
 func (r *Router) ClearRegexCache() {
 	r.regexCache = nil
 	for _, subrouter := range r.subrouters {

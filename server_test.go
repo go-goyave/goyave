@@ -340,6 +340,12 @@ func TestServer(t *testing.T) {
 			router.Get("/", func(_ *Response, _ *Request) {}).Name("base")
 		})
 		assert.NotNil(t, server.router.GetRoute("base"))
+
+		t.Run("panic_if_called_twice", func(t *testing.T) {
+			assert.PanicsWithError(t, "router's regex cache has already been cleared, did you call RegisterRoutes twice?", func() {
+				server.RegisterRoutes(func(_ *Server, _ *Router) {})
+			})
+		})
 	})
 
 	t.Run("Transaction", func(t *testing.T) {

@@ -31,6 +31,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("success_ptr", func(t *testing.T) {
@@ -50,6 +51,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {
@@ -69,6 +71,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
+		assert.Equal(t, `Basic realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("service_error", func(t *testing.T) {
@@ -87,6 +90,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("optional_success", func(t *testing.T) {
@@ -107,6 +111,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("optional_wrong_password", func(t *testing.T) {
@@ -114,7 +119,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		mockUserService := &MockUserService[TestUser]{user: user}
 		a := NewBasicAuthenticator(mockUserService, "Password")
 		a.Optional = true
-		authenticator := Middleware(a)
+		authenticator := MiddlewareWithRealm(a, "custom realm")
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
@@ -128,6 +133,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
+		assert.Equal(t, `Basic realm="custom realm", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("optional_no_auth", func(t *testing.T) {
@@ -145,6 +151,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
@@ -164,6 +171,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.no-credentials-provided")}, body)
+		assert.Equal(t, `Basic realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("non-existing_password_field", func(t *testing.T) {
@@ -182,6 +190,7 @@ func TestBasicAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 }
 
@@ -200,6 +209,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {
@@ -219,6 +229,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
+		assert.Equal(t, `Basic realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
@@ -228,7 +239,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
-		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.Response, _ *goyave.Request) {
+		resp := server.TestMiddleware(ConfigBasicAuthWithRealm("custom realm"), request, func(response *goyave.Response, _ *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})
@@ -237,5 +248,6 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.no-credentials-provided")}, body)
+		assert.Equal(t, `Basic realm="custom realm", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 }

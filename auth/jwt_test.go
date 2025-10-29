@@ -188,6 +188,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("success_rsa", func(t *testing.T) {
@@ -218,6 +219,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("success_ecdsa", func(t *testing.T) {
@@ -249,6 +251,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("invalid_token", func(t *testing.T) {
@@ -270,6 +273,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("token_not_valid_yet", func(t *testing.T) {
@@ -300,6 +304,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-not-valid-yet")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("token_expired", func(t *testing.T) {
@@ -330,6 +335,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-expired")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("unknown_user", func(t *testing.T) {
@@ -359,6 +365,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("service_error", func(t *testing.T) {
@@ -382,6 +389,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("unexpected_method_hmac", func(t *testing.T) {
@@ -412,6 +420,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("unexpected_method_rsa", func(t *testing.T) {
@@ -440,6 +449,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("unexpected_method_ecdsa", func(t *testing.T) {
@@ -468,6 +478,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("unsupported_method", func(t *testing.T) {
@@ -509,6 +520,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.no-credentials-provided")}, body)
+		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("optional_success", func(t *testing.T) {
@@ -538,6 +550,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("optional_invalid_token", func(t *testing.T) {
@@ -546,7 +559,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		mockUserService := &MockUserService[TestUser]{}
 		a := NewJWTAuthenticator(mockUserService)
 		a.Optional = true
-		authenticator := Middleware(a)
+		authenticator := MiddlewareWithRealm(a, "custom realm")
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer invalidtoken")
@@ -561,6 +574,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.jwt-invalid")}, body)
+		assert.Equal(t, `Bearer realm="custom realm", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
 	t.Run("optional_no_auth", func(t *testing.T) {
@@ -579,5 +593,6 @@ func TestJWTAuthenticator(t *testing.T) {
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
+		assert.Empty(t, resp.Header.Get("WWW-Authenticate"))
 	})
 }

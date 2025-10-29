@@ -84,6 +84,10 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 	return user, nil
 }
 
+func (a *BasicAuthenticator[T]) Scheme() string {
+	return "Basic"
+}
+
 //--------------------------------------------
 
 func init() {
@@ -131,6 +135,10 @@ func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request) (*Basic
 	}, nil
 }
 
+func (a *ConfigBasicAuthenticator) Scheme() string {
+	return "Basic"
+}
+
 // ConfigBasicAuth create a new authenticator middleware for
 // config-based Basic authentication. On auth success, the request
 // user is set to a `*BasicUser`.
@@ -138,4 +146,11 @@ func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request) (*Basic
 // match the request's Authorization header.
 func ConfigBasicAuth() *Handler[BasicUser] {
 	return Middleware(&ConfigBasicAuthenticator{})
+}
+
+// ConfigBasicAuthWithRealm is the same as ConfigBasicAuth but with a custom realm description.
+// The realm describes the protected area and is returned in the `WWW-Authenticate` header
+// when the authentication fails.
+func ConfigBasicAuthWithRealm(realm string) *Handler[BasicUser] {
+	return MiddlewareWithRealm(&ConfigBasicAuthenticator{}, realm)
 }

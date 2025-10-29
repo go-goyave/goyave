@@ -299,3 +299,7 @@ func (a *JWTAuthenticator[T]) makeError(language *lang.Language, err error) erro
 		return fmt.Errorf("%s", language.Get("auth.jwt-invalid"))
 	}
 }
+
+func (a *JWTAuthenticator[T]) Scheme() string {
+	return "Bearer"
+}

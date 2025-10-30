@@ -87,6 +87,7 @@ A big "Thank you" to the Goyave contributors:
 - [Achilles Moraites](https://github.com/achimoraites) (Escape characters in `walk.Path`)
 - [pn03](https://github.com/pn03) (Bigquery dialect)
 - [Supakorn Ieamgomol](https://github.com/Supakornn) (Server `net.ListenConfig`)
+- [Yo Sev](https://github.com/YoSev) (Embedded FS static serving compatibility on Windows)
 
 ## License
 

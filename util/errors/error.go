@@ -190,7 +190,7 @@ func (e Error) MarshalJSON() ([]byte, error) {
 		}
 		marshaledErrors = append(marshaledErrors, string(res))
 	}
-	return []byte(fmt.Sprintf("[%s]", strings.Join(marshaledErrors, ","))), nil
+	return fmt.Appendf(nil, "[%s]", strings.Join(marshaledErrors, ",")), nil
 }
 
 func (Error) marshalReason(e error) ([]byte, error) {

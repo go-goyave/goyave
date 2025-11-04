@@ -15,7 +15,7 @@ func requiredIfTestFunction(_ *Context) bool { return true }
 
 func BenchmarkRuleSet(b *testing.B) {
 	b.ReportAllocs()
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		ruleset := RuleSet{
 			{Path: CurrentElement, Rules: List{
 				Object(),

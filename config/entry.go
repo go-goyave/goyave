@@ -67,7 +67,7 @@ func (e *Entry) validate(key string) error {
 			// Accepted values for slices define the values that can be used inside the slice
 			// It doesn't represent the value of the slice itself (content and order)
 			length := v.Len()
-			for i := 0; i < length; i++ {
+			for i := range length {
 				if !lo.Contains(e.AuthorizedValues, v.Index(i).Interface()) {
 					return errors.Errorf("%q elements must have one of the following values: %v", key, e.AuthorizedValues)
 				}

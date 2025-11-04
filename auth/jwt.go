@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"reflect"
 	"sync"
 	"time"
@@ -108,9 +109,7 @@ func (s *JWTService) GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod
 		"nbf": now.Unix(),          // Not Before
 		"exp": now.Add(exp).Unix(), // Expiry
 	}
-	for k, c := range claims {
-		customClaims[k] = c
-	}
+	maps.Copy(customClaims, claims)
 	token := jwt.NewWithClaims(signingMethod, customClaims)
 
 	key, err := s.GetPrivateKey(signingMethod)

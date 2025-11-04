@@ -28,7 +28,7 @@ func BenchmarkServeHTTPWithLogs(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		s.Router().ServeHTTP(httptest.NewRecorder(), req)
 	}
 }

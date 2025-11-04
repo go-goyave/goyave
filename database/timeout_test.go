@@ -180,7 +180,7 @@ func TestTimeoutPlugin(t *testing.T) {
 			return fmt.Sprintf("foobar_%d@example.org", index)
 		})
 		err = db.Transaction(func(_ *gorm.DB) error {
-			for i := 0; i < 5000; i++ {
+			for range 5000 {
 				users := []*TestUser{}
 				res := db.Select("*").Where("email IN (?)", args).Find(&users)
 				if res.Error != nil {

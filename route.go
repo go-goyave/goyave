@@ -3,6 +3,7 @@ package goyave
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/samber/lo"
@@ -73,12 +74,7 @@ func (r *Route) match(method string, match *routeMatch) bool {
 }
 
 func (r *Route) checkMethod(method string) bool {
-	for _, m := range r.methods {
-		if m == method {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(r.methods, method)
 }
 
 func (r *Route) makeParameters(match []string) map[string]string {

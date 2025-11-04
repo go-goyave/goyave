@@ -1,6 +1,9 @@
 package lang
 
-import "strings"
+import (
+	"maps"
+	"strings"
+)
 
 type validationLines struct {
 	// Default messages for rules
@@ -32,9 +35,9 @@ func (l *Language) clone() *Language {
 		},
 	}
 
-	mergeMap(cpy.lines, l.lines)
-	mergeMap(cpy.validation.rules, l.validation.rules)
-	mergeMap(cpy.validation.fields, l.validation.fields)
+	maps.Copy(cpy.lines, l.lines)
+	maps.Copy(cpy.validation.rules, l.validation.rules)
+	maps.Copy(cpy.validation.fields, l.validation.fields)
 
 	return cpy
 }

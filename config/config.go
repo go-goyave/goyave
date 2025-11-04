@@ -320,7 +320,7 @@ func override(src object, dst object) error {
 }
 
 func (o object) validate(key string) error {
-	message := ""
+	var message strings.Builder
 	valid := true
 	for k, entry := range o {
 		var subKey string
@@ -331,17 +331,17 @@ func (o object) validate(key string) error {
 		}
 		if category, ok := entry.(object); ok {
 			if err := category.validate(subKey); err != nil {
-				message += err.Error()
+				message.WriteString(err.Error())
 				valid = false
 			}
 		} else if err := entry.(*Entry).validate(subKey); err != nil {
-			message += "\n\t- " + err.Error()
+			message.WriteString("\n\t- " + err.Error())
 			valid = false
 		}
 	}
 
 	if !valid {
-		return fmt.Errorf("%s", message)
+		return fmt.Errorf("%s", message.String())
 	}
 	return nil
 }

@@ -172,7 +172,7 @@ func structValue(v reflect.Value) slog.Value {
 		t := v.Type()
 		numField := t.NumField()
 		attrs = make([]slog.Attr, 0, numField)
-		for i := 0; i < numField; i++ {
+		for i := range numField {
 			fieldType := t.Field(i)
 			fieldValue := v.Field(i)
 			if !fieldType.IsExported() {

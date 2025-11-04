@@ -563,7 +563,7 @@ func makeGenericSlice(original any) ([]any, bool) {
 	}
 	length := list.Len()
 	newSlice := make([]any, 0, length)
-	for i := 0; i < length; i++ {
+	for i := range length {
 		newSlice = append(newSlice, list.Index(i).Interface())
 	}
 	return newSlice, true

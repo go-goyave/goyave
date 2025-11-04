@@ -646,7 +646,7 @@ func TestServer(t *testing.T) {
 			assert.NoError(t, err)
 			respBody, err := io.ReadAll(res.Body)
 			assert.NoError(t, err)
-			assert.Equal(t, []byte(fmt.Sprintf("%v|%v", "base-ctx-value", "conn-ctx-value")), respBody)
+			assert.Equal(t, fmt.Appendf(nil, "%v|%v", "base-ctx-value", "conn-ctx-value"), respBody)
 
 			// Stop the server, goroutine should return
 			server.Stop()

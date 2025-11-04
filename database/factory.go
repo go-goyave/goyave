@@ -41,7 +41,7 @@ func (f *Factory[T]) Generate(count int) []*T {
 
 	slice := make([]*T, 0, count)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		record := f.generator()
 		if f.override != nil {
 			if err := copier.CopyWithOption(record, f.override, copier.Option{IgnoreEmpty: true, DeepCopy: true, CaseSensitive: true}); err != nil {

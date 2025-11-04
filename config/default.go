@@ -65,7 +65,7 @@ func loadDefaults(src object, dst object) {
 				list := reflect.ValueOf(value)
 				length := list.Len()
 				slice := reflect.MakeSlice(reflect.SliceOf(t.Elem()), 0, length)
-				for i := 0; i < length; i++ {
+				for i := range length {
 					slice = reflect.Append(slice, list.Index(i))
 				}
 				value = slice.Interface()

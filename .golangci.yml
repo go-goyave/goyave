@@ -15,6 +15,7 @@ linters:
     - ineffassign
     - govet
     - sqlclosecheck
+    - modernize
   settings:
     gocyclo:
       min-complexity: 18

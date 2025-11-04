@@ -204,7 +204,7 @@ func (p *Path) walkArray(element any, parent any, index int, trackPath *Path, la
 		f(ctx)
 		return !ctx.stop
 	}
-	for i := 0; i < length; i++ {
+	for i := range length {
 		j := i
 		trackClone := trackPath.Clone()
 		tail := trackClone.Tail()

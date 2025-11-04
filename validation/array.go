@@ -65,7 +65,7 @@ func convertArray(array any, parentType reflect.Type) any {
 	}
 
 	convertedArray := reflect.MakeSlice(reflect.SliceOf(elemType), 0, length)
-	for i := 0; i < length; i++ {
+	for i := range length {
 		convertedArray = reflect.Append(convertedArray, list.Index(i).Elem())
 	}
 

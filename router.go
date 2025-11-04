@@ -61,9 +61,7 @@ func (rm *routeMatch) mergeParams(params map[string]string) {
 		rm.parameters = params
 		return
 	}
-	for k, v := range params {
-		rm.parameters[k] = v
-	}
+	maps.Copy(rm.parameters, params)
 }
 
 func (rm *routeMatch) trimCurrentPath(fullMatch string) {
@@ -339,7 +337,7 @@ func (r *Router) match(method string, match *routeMatch) bool {
 
 func nthIndex(str, substr string, n int) int {
 	index := -1
-	for nth := 0; nth < n; nth++ {
+	for range n {
 		i := strings.Index(str, substr)
 		if i == -1 || i == len(str) {
 			return -1

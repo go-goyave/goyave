@@ -2,6 +2,7 @@ package lang
 
 import (
 	"encoding/json"
+	"maps"
 	"strings"
 
 	"github.com/samber/lo"
@@ -229,13 +230,7 @@ func readLangFile(fs fsutil.FS, path string, dest any) (err error) {
 }
 
 func mergeLang(dst *Language, src *Language) {
-	mergeMap(dst.lines, src.lines)
-	mergeMap(dst.validation.rules, src.validation.rules)
-	mergeMap(dst.validation.fields, src.validation.fields)
-}
-
-func mergeMap(dst map[string]string, src map[string]string) {
-	for key, value := range src {
-		dst[key] = value
-	}
+	maps.Copy(dst.lines, src.lines)
+	maps.Copy(dst.validation.rules, src.validation.rules)
+	maps.Copy(dst.validation.fields, src.validation.fields)
 }

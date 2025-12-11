@@ -32,10 +32,12 @@ linters:
           arguments:
             - [] # AllowList
             - ["DTO"] # DenyList
+            - - skip-package-name-collision-with-go-std: true
         - name: unused-parameter
           disabled: false
         - name: use-any
           disabled: false
+
     testifylint:
       disable:
         - require-error

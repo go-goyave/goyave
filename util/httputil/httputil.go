@@ -46,9 +46,9 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 		}
 		v := h[:comma]
 		val := HeaderValue{}
-		if i := strings.Index(v, ";"); i != -1 {
+		if before, after, ok := strings.Cut(v, ";"); ok {
 			// Parse priority
-			q := v[i+1:]
+			q := after
 
 			sub := qualityValueRegex.FindStringSubmatch(q)
 			priority := 0.0
@@ -60,7 +60,7 @@ func ParseMultiValuesHeader(header string) []HeaderValue {
 			// Priority set to 0 if the quality value cannot be parsed
 			val.Priority = priority
 
-			val.Value = strings.TrimSpace(v[:i])
+			val.Value = strings.TrimSpace(before)
 		} else {
 			val.Value = strings.TrimSpace(v)
 			val.Priority = 1

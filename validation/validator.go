@@ -330,7 +330,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			}
 		}
 
-		if v.isAbsent(field, c, v.options.Data) {
+		if v.isAbsent(field, c, parentPath, v.options.Data) {
 			return
 		}
 
@@ -450,17 +450,21 @@ func (v *validator) convertSingleValueArray(field *Field, value any) any {
 	return value
 }
 
-func (v *validator) isAbsent(field *Field, c *walk.Context, data any) bool {
+func (v *validator) isAbsent(field *Field, c *walk.Context, parentPath *walk.Path, data any) bool {
 	if c.Found == walk.ParentNotFound {
 		return true
 	}
 	requiredCtx := &Context{
-		Data:   data,
-		Extra:  v.options.Extra,
-		Value:  c.Value,
-		Parent: c.Parent,
-		Field:  field,
-		Name:   c.Name,
+		Context: v.options.Context,
+		Data:    data,
+		Extra:   v.options.Extra,
+		Value:   c.Value,
+		Parent:  c.Parent,
+		Field:   field,
+		Now:     v.now,
+		Name:    c.Name,
+		path:    field.getErrorPath(parentPath, c),
+		Invalid: false,
 	}
 	return c.Found == walk.ElementNotFound && !field.IsRequired(requiredCtx)
 }

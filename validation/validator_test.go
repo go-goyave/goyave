@@ -270,6 +270,44 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
+			desc: "absent_required_if",
+			options: &Options{
+				Data:     map[string]any{"property": "value", "object": map[string]any{}},
+				Language: lang.New().GetDefault(),
+				Extra:    map[any]any{extraKey{}: "value"},
+				Rules: RuleSet{
+					{Path: "property", Rules: List{Required()}},
+					{Path: "object", Rules: List{Object()}},
+					{Path: "object.property", Rules: List{RequiredIf(func(ctx *Context) bool {
+						// Test the contents of the Context given to the RequiredIf validator
+						// is correctly set both in isAbsent and when executing the validator
+						t := ctx.Context.Value(testCtxKey{}).(*testing.T)
+						assert.Equal(t, map[any]any{extraKey{}: "value"}, ctx.Extra)
+						assert.Equal(t, map[string]any{"property": "value", "object": map[string]any{}}, ctx.Data)
+						assert.Nil(t, ctx.Value)
+						assert.Equal(t, map[string]any{}, ctx.Parent)
+						assert.Equal(t, "property", ctx.Name)
+						assert.NotNil(t, ctx.Field) // Content of the field is tested by RuleSet
+						assert.False(t, ctx.Now.IsZero())
+						assert.False(t, ctx.Invalid)
+						assert.Equal(t, walk.MustParse("object.property"), ctx.Path())
+						return true
+					})}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Fields: FieldsErrors{
+					"object": &Errors{
+						Fields: FieldsErrors{
+							"property": {
+								Errors: []string{"The property is required."},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			desc: "root_absent_not_required",
 			options: &Options{
 				Data:     nil,
@@ -1000,6 +1038,7 @@ func TestValidate(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
+			c.options.Context = context.WithValue(t.Context(), testCtxKey{}, t)
 			validationErrors, errs := Validate(c.options)
 			assert.Equal(t, c.wantValidationErrors, validationErrors)
 			assert.Len(t, errs, len(c.wantErrors))

@@ -28,8 +28,8 @@ type Error struct {
 // If the given reason is already of type `*Error`, returns it without change.
 // If the reason is a slice of `error`, joins them using std's `errors.Join`.
 //
-// If the given reason is `nil`, returns `nil`. If the reason is `[]error` or `[]any`,
-// the `nil` elements are ignored.
+// If the given reason is `nil`, returns `nil`. If the reason is `[]error`, `[]*Error` or `[]any`,
+// the `nil` elements are ignored. `nil` is returned if the reason is an empty slice.
 //
 // If the reason is anything other than an `error`, `[]error`, `*Error`, `[]*Error`,
 // `[]any`, it will be wrapped in a `Reason` structure, allowing to preserve
@@ -44,8 +44,8 @@ func New(reason any) error {
 // If the given reason is already of type `*Error`, returns it without change.
 // If the reason is a slice of `error`, joins them using std's `errors.Join`.
 //
-// If the given reason is `nil`, returns `nil`. If the reason is `[]error` or `[]any`,
-// the `nil` elements are ignored.
+// If the given reason is `nil`, returns `nil`. If the reason is `[]error`, `[]*Error` or `[]any`,
+// the `nil` elements are ignored. `nil` is returned if the reason is an empty slice.
 //
 // If the reason is anything other than an `error`, `[]error`, `*Error`, `[]*Error`,
 // `[]any`, it will be wrapped in a `Reason` structure, allowing to preserve
@@ -60,8 +60,12 @@ func NewSkip(reason any, skip int) error {
 	callers := make([]uintptr, 50)
 	_ = runtime.Callers(skip, callers)
 
+	reasons := toErr(reason)
+	if len(reasons) == 0 {
+		return nil
+	}
 	return &Error{
-		reasons: toErr(reason),
+		reasons: reasons,
 		callers: callers,
 	}
 }
@@ -84,6 +88,9 @@ func toErr(reason any) []error {
 		})...)
 	case []*Error:
 		for _, e := range r {
+			if e == nil {
+				continue
+			}
 			errs = append(errs, e)
 		}
 	case []any:

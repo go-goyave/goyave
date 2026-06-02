@@ -72,7 +72,7 @@ func (*FS) Getwd() (string, error) {
 // FileExists returns true if the file at the given path exists and is readable.
 // Returns false if the given file is a directory.
 func (f *FS) FileExists(name string) bool {
-	if stats, err := f.Stat(path.Join(f.dir, name)); err == nil {
+	if stats, err := f.Stat(name); err == nil {
 		return !stats.IsDir()
 	}
 	return false
@@ -80,7 +80,7 @@ func (f *FS) FileExists(name string) bool {
 
 // IsDirectory returns true if the file at the given path exists, is a directory and is readable.
 func (f *FS) IsDirectory(name string) bool {
-	if stats, err := f.Stat(path.Join(f.dir, name)); err == nil {
+	if stats, err := f.Stat(name); err == nil {
 		return stats.IsDir()
 	}
 	return false

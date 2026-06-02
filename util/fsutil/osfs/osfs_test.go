@@ -99,11 +99,25 @@ func TestOSFS(t *testing.T) {
 		assert.False(t, fs.FileExists("resources/notafile.txt"))
 	})
 
+	t.Run("FileExistsWithBaseDir", func(t *testing.T) {
+		fs := New("resources")
+		assert.True(t, fs.FileExists("test_file.txt"))
+		assert.False(t, fs.FileExists("lang"))
+		assert.False(t, fs.FileExists("notafile.txt"))
+	})
+
 	t.Run("IsDirectory", func(t *testing.T) {
 		fs := &FS{}
 		assert.False(t, fs.IsDirectory("resources/test_file.txt"))
 		assert.True(t, fs.IsDirectory("resources"))
 		assert.False(t, fs.IsDirectory("resources/notadir"))
+	})
+
+	t.Run("IsDirectoryWithBaseDir", func(t *testing.T) {
+		fs := New("resources")
+		assert.False(t, fs.IsDirectory("test_file.txt"))
+		assert.True(t, fs.IsDirectory("lang"))
+		assert.False(t, fs.IsDirectory("notadir"))
 	})
 
 	t.Run("Mkdir", func(t *testing.T) {

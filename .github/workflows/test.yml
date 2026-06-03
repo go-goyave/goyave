@@ -48,6 +48,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: govulncheck
-        uses: golang/govulncheck-action@v1
+        uses: golang/govulncheck-action@31f7c5463448f83528bd771c2d978d940080c9fd
         with:
           go-version-input: 1.26.4

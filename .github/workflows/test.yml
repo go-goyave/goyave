@@ -40,7 +40,7 @@ jobs:
       - name: Run lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11
+          version: v2.12
           args: --timeout 5m
 
   govulncheck:
@@ -49,3 +49,5 @@ jobs:
     steps:
       - id: govulncheck
         uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: 1.26.4

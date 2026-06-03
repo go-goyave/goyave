@@ -69,7 +69,7 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 	}
 
 	t := reflect.Indirect(reflect.ValueOf(user))
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	pass := t.FieldByName(a.PasswordField)

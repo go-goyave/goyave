@@ -294,14 +294,14 @@ func (r *Route) GetFullURIAndParameters() (string, []string) {
 	segments = append(segments, r.uri)
 
 	parameters := make([]string, 0, len(r.parameters))
-	for i := len(r.parameters) - 1; i >= 0; i-- {
-		parameters = append(parameters, r.parameters[i])
+	for _, v := range slices.Backward(r.parameters) {
+		parameters = append(parameters, v)
 	}
 
 	for router != nil {
 		segments = append(segments, router.prefix)
-		for i := len(router.parameters) - 1; i >= 0; i-- {
-			parameters = append(parameters, router.parameters[i])
+		for _, v := range slices.Backward(router.parameters) {
+			parameters = append(parameters, v)
 		}
 		router = router.parent
 	}

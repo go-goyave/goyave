@@ -2,6 +2,7 @@ package goyave
 
 import (
 	"net/http"
+	"slices"
 	"strings"
 
 	"gorm.io/gorm"
@@ -25,8 +26,8 @@ type middlewareHolder struct {
 }
 
 func (h *middlewareHolder) applyMiddleware(handler Handler) Handler {
-	for i := len(h.middleware) - 1; i >= 0; i-- {
-		handler = h.middleware[i].Handle(handler)
+	for _, v := range slices.Backward(h.middleware) {
+		handler = v.Handle(handler)
 	}
 	return handler
 }

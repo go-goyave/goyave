@@ -122,7 +122,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 	}
 
 	t := reflect.Indirect(reflect.ValueOf(user))
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	pass := t.FieldByName(c.PasswordField)

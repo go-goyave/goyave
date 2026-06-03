@@ -746,7 +746,7 @@ func TestRequiredConfig(t *testing.T) {
 	var nilPointer *string
 	loader.register("testCategory.nilPointerRequired", Entry{
 		Value:    nilPointer,
-		Type:     reflect.Ptr,
+		Type:     reflect.Pointer,
 		Required: true,
 	})
 
@@ -754,7 +754,7 @@ func TestRequiredConfig(t *testing.T) {
 	*validPointer = "valid"
 	loader.register("testCategory.validPointer", Entry{
 		Value:    validPointer,
-		Type:     reflect.Ptr,
+		Type:     reflect.Pointer,
 		Required: true,
 	})
 

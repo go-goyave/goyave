@@ -14,6 +14,7 @@ var enUS = &Language{
 		"parse.json-invalid-body":        "The request Content-Type indicates JSON, but the request body is empty or invalid.",
 		"parse.invalid-content-for-type": "The request content does not match its type. E.g. invalid multipart/form-data or a problem with the file upload.",
 		"parse.error-in-request-body":    "Failed to read request body due to connection issues, timeouts, size mismatches, or corrupted data.",
+		"config.root-object-validation":  "The configuration root must be an object.",
 	},
 	validation: validationLines{
 		rules: map[string]string{

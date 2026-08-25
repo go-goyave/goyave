@@ -107,10 +107,14 @@ type Options struct {
 	Data    any
 	Rules   Ruler
 
+	// Now the time at which the validation started. If omitted, `time.Now()` is used instead.
+	// It is passed to each `Validator` via the validation `Context`.
 	Now time.Time
 
 	// Extra can be used to store any extra information. It is passed to each `Validator`
 	// via the validation `Context`.
+	//
+	// If omitted, an empty map is used instead.
 	//
 	// The keys must be comparable and should not be of type
 	// string or any other built-in type to avoid collisions.
@@ -158,6 +162,7 @@ type Context struct {
 	Data    any
 
 	// Extra the map of Extra from the validation Options.
+	// The value is never `nil`.
 	Extra                 map[any]any
 	Value                 any
 	Parent                any

@@ -8,3 +8,8 @@
     - support for slices and slices of objects
     - powerful validation using the goyave validator
     - support for default values
+    - server timeout configuration entries are now in ms
+    - added SQL connection's max idle time setting.
+    - added Gorm settings: FullSaveAssociations, PrepareStmtMaxSize, PrepareStmtTTL, IgnoreRelationshipsWhenMigrating, QueryFields, CreateBatchSize, TranslateError, PropagateUnscoped
+- server:
+  - added options for MaxHeaderValueCount and DisableClientPriority

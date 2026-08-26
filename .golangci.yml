@@ -16,6 +16,7 @@ linters:
     - govet
     - sqlclosecheck
     - modernize
+    - godoclint
   settings:
     gocyclo:
       min-complexity: 18
@@ -45,11 +46,19 @@ linters:
         - encoded-compare
     staticcheck:
       checks: ["all", "-QF1001"]
+    godoclint:
+      enable:
+        #- require-doc
+        - deprecated
+      options:
+        require-doc:
+          ignore-exported: false
   exclusions:
     generated: strict
     rules:
       - linters:
           - gocyclo
+          - godoclint
         path: _test\.go
       - path: (.+)\.go$
         text: should have a package comment

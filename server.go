@@ -90,6 +90,25 @@ type Options struct {
 	// size of the request body.
 	// If zero, http.DefaultMaxHeaderBytes is used.
 	MaxHeaderBytes int
+
+	// MaxHeaderValueCount controls the maximum number of header
+	// values that the server is willing to parse from a request.
+	// If zero, http.DefaultMaxHeaderValueCount is used.
+	// Note that comma-separated values in a single header line are
+	// counted once, while values sent as multiple header lines are
+	// counted multiple times.
+	MaxHeaderValueCount int
+
+	// DisableClientPriority specifies whether client-specified priority, as
+	// specified in RFC 9218, should be respected or not.
+	//
+	// This field only takes effect if using HTTP/2, and if no custom write
+	// scheduler is defined for the HTTP/2 server. Otherwise, this field is a
+	// no-op.
+	//
+	// If set to true, requests will be served in a round-robin manner, without
+	// prioritization.
+	DisableClientPriority bool
 }
 
 // Server the central component of a Goyave application.
@@ -158,15 +177,17 @@ func New(opts Options) (*Server, error) {
 
 	server := &Server{
 		server: &http.Server{
-			Addr:              net.JoinHostPort(host, strconv.Itoa(port)),
-			WriteTimeout:      time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
-			ReadTimeout:       time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
-			ReadHeaderTimeout: time.Duration(cfg.GetInt("server.readHeaderTimeout")) * time.Second,
-			IdleTimeout:       time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
-			ConnState:         opts.ConnState,
-			ConnContext:       opts.ConnContext,
-			MaxHeaderBytes:    opts.MaxHeaderBytes,
-			HTTP2:             opts.HTTP2,
+			Addr:                  net.JoinHostPort(host, strconv.Itoa(port)),
+			WriteTimeout:          time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
+			ReadTimeout:           time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
+			ReadHeaderTimeout:     time.Duration(cfg.GetInt("server.readHeaderTimeout")) * time.Second,
+			IdleTimeout:           time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
+			ConnState:             opts.ConnState,
+			ConnContext:           opts.ConnContext,
+			MaxHeaderBytes:        opts.MaxHeaderBytes,
+			MaxHeaderValueCount:   opts.MaxHeaderValueCount,
+			HTTP2:                 opts.HTTP2,
+			DisableClientPriority: opts.DisableClientPriority,
 		},
 		ctx:           context.Background(),
 		baseContext:   opts.BaseContext,

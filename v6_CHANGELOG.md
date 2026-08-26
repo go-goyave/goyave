@@ -1,0 +1,10 @@
+- Config revamp
+    - strongly-typed system, returns a struct
+    - load from one or multiple sources (merging)
+      - support for loading from raw bytes, a stream/reader, embedded file, embedded file system, os file system. Can be expanded if needed by implementing config.Source
+    - support for custom umarshaler / other formats (yml, toml, ...)
+    - environment variable interpolation full support
+      - "environment variable is not set" error doesn't exist anymore when loading configuration with environment variables. An empty string is used instead in that case.
+    - support for slices and slices of objects
+    - powerful validation using the goyave validator
+    - support for default values

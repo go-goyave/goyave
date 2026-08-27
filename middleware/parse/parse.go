@@ -36,11 +36,16 @@ import (
 // Inside `request.Data`, a field of type "file" will therefore always be of type `[]fsutil.File`.
 // It is a slice so it support multi-file uploads in a single field.
 type Middleware struct {
-	goyave.Component
-
 	// MaxUpoadSize the maximum size of the request (in MiB).
-	// Defaults to the value provided in the config "server.maxUploadSize".
 	MaxUploadSize float64
+}
+
+// NewMiddleware returns a new parse middleware.
+// The maximum upload size of the request is in MiB.
+func NewMiddleware(maxUploadSize float64) *Middleware {
+	return &Middleware{
+		MaxUploadSize: maxUploadSize,
+	}
 }
 
 // Handle reads the request query and body and parses it if necessary.
@@ -68,7 +73,10 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 		r.Data = nil
 		contentType := r.Header().Get("Content-Type")
 		if contentType != "" {
-			maxSize := int64(m.getMaxUploadSize() * 1024 * 1024)
+			// TODO use http.MaxBytesReader? this allows closing the connection automatically after responding
+			// Or add an API to request connection closing on Response
+			// http.MaxBytesReader(response, r.Body(), maxSize)
+			maxSize := int64(m.MaxUploadSize * 1024 * 1024)
 			maxValueBytes := maxSize
 			var bodyBuf bytes.Buffer
 			n, err := io.CopyN(&bodyBuf, r.Body(), maxValueBytes+1)
@@ -106,14 +114,6 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 			next(response, r)
 		}
 	}
-}
-
-func (m *Middleware) getMaxUploadSize() float64 {
-	if m.MaxUploadSize == 0 {
-		return m.Config().GetFloat("server.maxUploadSize")
-	}
-
-	return m.MaxUploadSize
 }
 
 func parseQuery(request *goyave.Request) error {

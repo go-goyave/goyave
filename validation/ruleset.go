@@ -69,10 +69,7 @@ type BaseValidator struct {
 
 func (v *BaseValidator) init(options *Options) {
 	v.component = component{
-		db:     options.DB,
-		config: options.Config,
-		lang:   options.Language,
-		logger: options.Logger,
+		lang: options.Language,
 	}
 }
 

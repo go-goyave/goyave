@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // MetaAuth the authentication middleware will only authenticate the user
@@ -19,15 +20,14 @@ const defaultRealm = "Authorization required"
 // The generic type should be a DTO and not be a pointer. The `request.User`
 // will use this type on successful authentication.
 type Authenticator[T any] interface {
-	goyave.Composable
-
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and returns it.
 	// If no user can be authenticated, returns the error detailing why the
 	// authentication failed. The error message is already localized.
 	//
-	// The error returned doesn't need to be wrapped as it will only
-	// be used for the message returned in the response.
+	// If the returned error is of type `*errors.Error`, it will be considered
+	// as a system error. Other error types don't need to be wrapped as they
+	// will only be used for the message returned in the response.
 	//
 	// If an unexpected error happens (e.g.: database error), this
 	// method should panic instead of returning an error.
@@ -97,6 +97,10 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 
 		user, err := m.Authenticate(request)
 		if err != nil {
+			if _, ok := err.(*errors.Error); ok { // System error (failed to read key for example)
+				response.Error(err)
+				return
+			}
 			if authenticateHeader := m.getAuthenticateHeader(); authenticateHeader != "" {
 				response.Header().Set("WWW-Authenticate", authenticateHeader)
 			}

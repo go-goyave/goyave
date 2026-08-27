@@ -59,6 +59,7 @@ func CommonLogFormatter(ctx *Context) (string, []slog.Attr) {
 		ctx.Length,
 	)
 
+	// TODO figure out a way to identify a Group for no-display in dev mode? to avoid clutter
 	details := slog.Group("details",
 		slog.String("host", host),
 		slog.String("username", username),

@@ -46,7 +46,6 @@ type Flusher interface {
 // to avoid having to implement the base behavior of the common interfaces
 // a chained writer has to implement (`PreWrite()`, `Write()`, `Close()`, `Flush()`)
 type CommonWriter struct {
-	Component
 	wr io.Writer
 }
 
@@ -262,9 +261,6 @@ func (r *Response) Writer() io.Writer {
 //
 // The original http.ResponseWriter is always kept.
 func (r *Response) SetWriter(writer io.Writer) {
-	if c, ok := writer.(Composable); ok {
-		c.Init(r.server)
-	}
 	r.writer = writer
 }
 
@@ -417,7 +413,7 @@ func (r *Response) error(err any) {
 		r.err = nil
 	}
 
-	if r.server.Config().GetBool("app.debug") && r.IsEmpty() && !r.Hijacked() {
+	if r.server.debug && r.IsEmpty() && !r.Hijacked() {
 		status := http.StatusInternalServerError
 		if r.status != 0 {
 			status = r.status

@@ -22,7 +22,6 @@ import (
 type extraKey struct{}
 
 type testMiddleware struct {
-	goyave.Component
 	procedure goyave.Handler
 }
 

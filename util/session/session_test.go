@@ -85,7 +85,8 @@ func (d *testDialector) RollbackTo(_ *gorm.DB, name string) error {
 
 func TestGormSession(t *testing.T) {
 	cfg := config.LoadDefault()
-	cfg.Set("database.config.disableAutomaticPing", true)
+	// TODO update session test
+	// cfg.Set("database.config.disableAutomaticPing", true)
 
 	t.Run("New", func(t *testing.T) {
 		db, err := database.NewFromDialector(cfg, nil, &testDialector{})

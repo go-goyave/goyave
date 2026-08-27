@@ -39,14 +39,14 @@ func TestWriter(t *testing.T) {
 	t.Run("Write", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
+		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
 
-		writer := NewWriter(server.Server, resp, req, CommonLogFormatter)
+		writer := NewWriter(resp, req, CommonLogFormatter)
 		resp.SetWriter(writer)
 
 		i, err := resp.Write([]byte("body response"))
@@ -70,14 +70,14 @@ func TestWriter(t *testing.T) {
 	t.Run("Write_dev_mode", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
+		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
 
-		writer := NewWriter(server.Server, resp, req, CommonLogFormatter)
+		writer := NewWriter(resp, req, CommonLogFormatter)
 		resp.SetWriter(writer)
 
 		i, err := resp.Write([]byte("body response"))
@@ -101,7 +101,7 @@ func TestWriter(t *testing.T) {
 	t.Run("child_writer_prewrite_and_close", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
+		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
@@ -114,7 +114,7 @@ func TestWriter(t *testing.T) {
 			Writer:     resp.Writer(),
 		}
 		resp.SetWriter(child)
-		writer := NewWriter(server.Server, resp, req, CommonLogFormatter)
+		writer := NewWriter(resp, req, CommonLogFormatter)
 		resp.SetWriter(writer)
 
 		i, err := resp.Write([]byte("body response"))
@@ -140,7 +140,7 @@ func TestWriter(t *testing.T) {
 	t.Run("child_writer_prewrite_and_close_dev_mode", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", true)
+		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
@@ -153,7 +153,7 @@ func TestWriter(t *testing.T) {
 			Writer:     resp.Writer(),
 		}
 		resp.SetWriter(child)
-		writer := NewWriter(server.Server, resp, req, CommonLogFormatter)
+		writer := NewWriter(resp, req, CommonLogFormatter)
 		resp.SetWriter(writer)
 
 		i, err := resp.Write([]byte("body response"))
@@ -181,7 +181,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("Common", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
+		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
@@ -203,7 +203,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("Common_dev_mode", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", true)
+		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
@@ -225,7 +225,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("Combined", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
+		cfg.App.Debug = false
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
 		buffer := bytes.NewBufferString("")
 		server.Logger = slog.New(slog.NewHandler(false, buffer))
@@ -257,7 +257,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("Combined_dev_mode", func(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
-		cfg.Set("app.debug", true)
+		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
 		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 

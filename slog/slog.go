@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -226,4 +227,39 @@ func structValue(v reflect.Value, seen map[uintptr]struct{}) slog.Value {
 // DiscardLogger returns a new Logger that discards all logs.
 func DiscardLogger() *Logger {
 	return &Logger{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
+}
+
+var defaultLogger = New(NewHandler(false, os.Stderr))
+
+// Default returns the default global logger.
+// This logger uses the JSON handler and outputs to `os.Stderr`.
+func Default() *Logger {
+	return defaultLogger
+}
+
+// SetDefault replace the default logger.
+//
+// This operation is not concurrently safe.
+func SetDefault(logger *Logger) {
+	defaultLogger = logger
+}
+
+// loggerCtxKey the key used to store the logger in the context.
+type loggerCtxKey struct{}
+
+// Context inject the given logger as a context value. The logger
+// can be retrieved from the returned context using `FromContext`.
+func Context(ctx context.Context, logger *Logger) context.Context {
+	return context.WithValue(ctx, loggerCtxKey{}, logger)
+}
+
+// FromContext return the logger stored in the context. If there
+// is no logger in the context, returns the default logger instead.
+//
+// The default logger uses the JSON handler and outputs to `os.Stderr`.
+func FromContext(ctx context.Context) *Logger {
+	if u, ok := ctx.Value(loggerCtxKey{}).(*Logger); ok {
+		return u
+	}
+	return defaultLogger
 }

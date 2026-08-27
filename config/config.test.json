@@ -1,6 +1,27 @@
 {
-    "rootLevel": "root level content",
-    "app": {
-        "environment": "test"
-    }
+    "App": {
+        "Environment": "test_json",
+        "DefaultLanguage": "fr-FR",
+        "Debug": false,
+        "Nested": {
+            "Value": "bla"
+        }
+    },
+    "CustomField": "1${ENV_TEST}",
+    "CustomSection": {
+        "A": "",
+        "B": 6.999
+    },
+    "Connections": [
+        {
+            "Driver": "postgres",
+            "Host": "127.0.0.1",
+            "Port": 65534
+        },
+        {
+            "Driver": "mysql",
+            "Host": "127.0.0.1",
+            "Port": 65535
+        }
+    ]
 }

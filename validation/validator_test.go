@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"testing"
@@ -10,10 +9,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
@@ -55,23 +51,14 @@ func (v *testValidator) Name() string {
 
 func TestComponent(t *testing.T) {
 	c := &component{
-		db:     &gorm.DB{},
-		config: config.LoadDefault(),
-		lang:   lang.New().GetDefault(),
-		logger: slog.New(slog.NewDevModeHandler(bytes.NewBuffer(make([]byte, 0, 10)), nil)),
+		lang: lang.New().GetDefault(),
 	}
 
-	assert.Equal(t, c.db, c.DB())
-	assert.Equal(t, c.config, c.Config())
 	assert.Equal(t, c.lang, c.Lang())
-	assert.Equal(t, c.logger, c.Logger())
 
 	t.Run("unset", func(t *testing.T) {
 		c := &component{}
-		assert.Panics(t, func() { c.DB() })
-		assert.Panics(t, func() { c.Config() })
 		assert.Panics(t, func() { c.Lang() })
-		assert.Panics(t, func() { c.Logger() })
 	})
 }
 
@@ -192,19 +179,13 @@ func TestValidate(t *testing.T) {
 			desc: "context",
 			options: &Options{
 				Data:     map[string]any{"property": "value"},
-				DB:       &gorm.DB{},
-				Logger:   slog.New(slog.NewDevModeHandler(bytes.NewBuffer(make([]byte, 0, 10)), nil)),
 				Extra:    map[any]any{extraKey{}: "value"},
 				Language: lang.New().GetDefault(),
-				Config:   config.LoadDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{&testValidator{
 						validateFunc: func(c component, ctx *Context) bool {
 							// Validator init called
-							assert.NotNil(t, c.db)
-							assert.NotNil(t, c.config)
 							assert.NotNil(t, c.lang)
-							assert.NotNil(t, c.logger)
 
 							// Context content
 							assert.Equal(t, map[any]any{extraKey{}: "value"}, ctx.Extra)

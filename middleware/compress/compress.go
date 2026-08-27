@@ -112,7 +112,6 @@ func (w *compressWriter) Close() error {
 //		},
 //	}
 type Middleware struct {
-	goyave.Component
 	Encoders []Encoder
 }
 

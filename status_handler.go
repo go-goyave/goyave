@@ -11,7 +11,6 @@ import (
 // if the response body is empty but a status code has been set.
 // Status handlers are mainly used to implement a custom behavior for user or server errors (400 and 500 status codes).
 type StatusHandler interface {
-	Composable
 	Handle(response *Response, request *Request)
 }
 
@@ -20,9 +19,7 @@ type StatusHandler interface {
 // print stacktrace in the console.
 // If debugging is not enabled, writes `{"error": "Internal Server Error"}`
 // to the response.
-type PanicStatusHandler struct {
-	Component
-}
+type PanicStatusHandler struct{}
 
 // Handle internal server error responses.
 func (*PanicStatusHandler) Handle(response *Response, _ *Request) {
@@ -37,9 +34,7 @@ func (*PanicStatusHandler) Handle(response *Response, _ *Request) {
 
 // ErrorStatusHandler a generic status handler for non-success codes.
 // Writes the corresponding status message to the response.
-type ErrorStatusHandler struct {
-	Component
-}
+type ErrorStatusHandler struct{}
 
 // Handle generic error responses.
 func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
@@ -50,9 +45,7 @@ func (*ErrorStatusHandler) Handle(response *Response, _ *Request) {
 }
 
 // ParseErrorStatusHandler a generic (error) status handler for requests.
-type ParseErrorStatusHandler struct {
-	Component
-}
+type ParseErrorStatusHandler struct{}
 
 // Handle generic request (error) responses.
 func (h *ParseErrorStatusHandler) Handle(response *Response, request *Request) {
@@ -85,9 +78,7 @@ func (h *ParseErrorStatusHandler) Handle(response *Response, request *Request) {
 
 // ValidationStatusHandler for HTTP 422 errors.
 // Writes the validation errors to the response.
-type ValidationStatusHandler struct {
-	Component
-}
+type ValidationStatusHandler struct{}
 
 // Handle validation error responses.
 func (*ValidationStatusHandler) Handle(response *Response, request *Request) {

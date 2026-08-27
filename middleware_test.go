@@ -92,7 +92,6 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		middleware := &recoveryMiddleware{}
-		middleware.Init(server)
 
 		panicErr := fmt.Errorf("test error")
 		handler := middleware.Handle(func(_ *Response, _ *Request) {
@@ -125,7 +124,6 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		middleware := &recoveryMiddleware{}
-		middleware.Init(server)
 
 		handler := middleware.Handle(func(_ *Response, _ *Request) {})
 
@@ -146,7 +144,6 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		middleware := &recoveryMiddleware{}
-		middleware.Init(server)
 
 		handler := middleware.Handle(func(_ *Response, _ *Request) {
 			//nolint:govet
@@ -209,7 +206,6 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(err)
 		}
 		middleware := &recoveryMiddleware{}
-		middleware.Init(server)
 
 		handler := middleware.Handle(func(r *Response, _ *Request) {
 			r.JSON(http.StatusOK, make(chan struct{})) // Unsupported type for JSON encoding, status is set to 200 before writing
@@ -238,8 +234,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 func TestLanguageMiddleware(t *testing.T) {
 	server, err := New(Options{Config: config.LoadDefault()})
 	require.NoError(t, err)
-	middleware := &languageMiddleware{}
-	middleware.Init(server)
+	middleware := newLanguageMiddleware(server.Lang)
 
 	cases := []struct {
 		desc     string
@@ -297,7 +292,6 @@ func TestValidateMiddleware(t *testing.T) {
 		expectBodyErrors  *validation.Errors
 		desc              string
 		expectBody        string
-		hasDB             bool
 		expectPass        bool
 		expectStatus      int
 	}{
@@ -342,15 +336,11 @@ func TestValidateMiddleware(t *testing.T) {
 			expectBody:   "{\"error\": [\"test error 1\",\"test error 2\"]}",
 		},
 		{
-			desc:  "query_validation_options",
-			hasDB: true,
+			desc: "query_validation_options",
 			queryRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
-						assert.NotNil(t, v.Config())
-						assert.NotNil(t, v.DB())
-						assert.NotNil(t, v.Logger())
 						assert.NotNil(t, v.Lang())
 						assert.Equal(t, "test-value", ctx.Context.Value(testCtxKey{}))
 						return false
@@ -418,15 +408,11 @@ func TestValidateMiddleware(t *testing.T) {
 			expectBody:   "{\"error\": [\"test error 1\",\"test error 2\"]}",
 		},
 		{
-			desc:  "body_validation_options",
-			hasDB: true,
+			desc: "body_validation_options",
 			bodyRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
-						assert.NotNil(t, v.Config())
-						assert.NotNil(t, v.DB())
-						assert.NotNil(t, v.Logger())
 						assert.NotNil(t, v.Lang())
 						assert.Equal(t, "test-value", ctx.Context.Value(testCtxKey{}))
 						return false
@@ -513,11 +499,6 @@ func TestValidateMiddleware(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			cfg := config.LoadDefault()
-			if c.hasDB {
-				cfg.Set("database.connection", "sqlite3")
-				cfg.Set("database.name", fmt.Sprintf("test_validation_middleware_%s.db", c.desc))
-				cfg.Set("database.options", "mode=memory")
-			}
 			buffer := &bytes.Buffer{}
 			server, err := New(Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 			if err != nil {
@@ -531,7 +512,6 @@ func TestValidateMiddleware(t *testing.T) {
 				QueryRules: c.queryRules,
 				BodyRules:  c.bodyRules,
 			}
-			m.Init(server)
 
 			request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
 			request.WithContext(context.WithValue(request.Context(), testCtxKey{}, "test-value"))

@@ -13,7 +13,7 @@ import (
 
 func BenchmarkServeHTTPWithLogs(b *testing.B) {
 	cfg := config.LoadDefault()
-	cfg.Set("app.debug", false)
+	cfg.App.Debug = false
 	logger := slog.New(slog.NewHandler(false, io.Discard))
 	s, _ := goyave.New(goyave.Options{Config: cfg, Logger: logger})
 

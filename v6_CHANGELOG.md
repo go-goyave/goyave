@@ -11,5 +11,26 @@
     - server timeout configuration entries are now in ms
     - added SQL connection's max idle time setting.
     - added Gorm settings: FullSaveAssociations, PrepareStmtMaxSize, PrepareStmtTTL, IgnoreRelationshipsWhenMigrating, QueryFields, CreateBatchSize, TranslateError, PropagateUnscoped
+    - server options now take a *config.Base
+    - testutil.Server lets you choose source and config type 
+- slog:
+  - global default logger
+  - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context
 - server:
   - added options for MaxHeaderValueCount and DisableClientPriority
+  - Config accessor removed
+  - DB accessor removed (DB detached from server)
+- websocket: New() now takes a configuration struct as parameter
+- validation:
+  - no more access to Config and DB
+  - removed the Composable interface, dependencies are passed directly
+  - removed the Logger option (retrieve from context)
+- goyave.Registrer doesn't require implementing Composable anymore
+- Composable/Component logics has been removed
+- parse middleware constructor with max upload size parameter
+- auth
+  - jwt authenticator now takes a jwtservice as parameter directly and JWTService is exported
+  - jwt controller now takes a jwtservice as parameter directly and JWTService is exported
+  - jwtservice: GetKey removed, use GetPrivateKey or GetPublicKey instead
+  - authenticator: if it returns an *errors.Error, it is considered system error
+  - config basic authenticator now takes a BasicConfig parameter

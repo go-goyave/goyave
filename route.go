@@ -181,9 +181,6 @@ func (r *Route) CORS(options *cors.Options) *Route {
 // Returns itself.
 func (r *Route) Middleware(middleware ...Middleware) *Route {
 	r.middleware = append(r.middleware, middleware...)
-	for _, m := range middleware {
-		m.Init(r.parent.server)
-	}
 	return r
 }
 

@@ -51,6 +51,9 @@ func (l Logger) Info(ctx context.Context, msg string, data ...any) {
 	if l.slogger == nil {
 		return
 	}
+	// TODO slogger should be retrieved from context here
+	// No need for a slogger function since the context will originate from the server
+	// In non-debug mode, there should be no logs though
 	l.slogger().InfoWithSource(ctx, getSourceCaller(), fmt.Sprintf(msg, data...))
 }
 

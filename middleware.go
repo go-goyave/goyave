@@ -5,8 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/validation"
 )
@@ -17,7 +18,6 @@ import (
 // Example uses are authentication, authorization, logging, panic recovery, CORS,
 // validation, gzip compression.
 type Middleware interface {
-	Composable
 	Handle(next Handler) Handler
 }
 
@@ -72,9 +72,7 @@ func routerHasMiddleware[T Middleware](router *Router) bool {
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
 // If debugging is enabled in the config and the default status handler for the 500 status code
 // had not been changed, the error is also written in the response.
-type recoveryMiddleware struct {
-	Component
-}
+type recoveryMiddleware struct{}
 
 func (m *recoveryMiddleware) Handle(next Handler) Handler {
 	return func(response *Response, request *Request) {
@@ -85,7 +83,7 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 				if e != nil {
 					response.err = e.(*errors.Error)
 				}
-				m.Logger().Error(e)
+				slog.FromContext(request.Context()).Error(e)
 				if !response.wroteHeader {
 					response.status = http.StatusInternalServerError // Force status override if the header hasn't been written yet.
 				}
@@ -110,15 +108,21 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 // For example, if "en-US" and "en-UK" are available and the request accepts "en",
 // "en-US" will be used.
 type languageMiddleware struct {
-	Component
+	languages *lang.Languages
+}
+
+func newLanguageMiddleware(languages *lang.Languages) *languageMiddleware {
+	return &languageMiddleware{
+		languages: languages,
+	}
 }
 
 func (m *languageMiddleware) Handle(next Handler) Handler {
 	return func(response *Response, request *Request) {
 		if header := request.Header().Get("Accept-Language"); len(header) > 0 {
-			request.Lang = m.Lang().DetectLanguage(header)
+			request.Lang = m.languages.DetectLanguage(header)
 		} else {
-			request.Lang = m.Lang().GetDefault()
+			request.Lang = m.languages.GetDefault()
 		}
 		next(response, request)
 	}
@@ -131,7 +135,6 @@ func (m *languageMiddleware) Handle(next Handler) Handler {
 // This data can then be used in a status handler.
 // This middleware requires the parse middleware.
 type validateRequestMiddleware struct {
-	Component
 	BodyRules  RuleSetFunc
 	QueryRules RuleSetFunc
 }
@@ -143,10 +146,6 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 		}
 		contentType := r.Header().Get("Content-Type")
 
-		var db *gorm.DB
-		if m.Server().HasDB() {
-			db = m.DB().WithContext(r.Context())
-		}
 		var errsBag *validation.Errors
 		var queryErrsBag *validation.Errors
 		var errors []error
@@ -157,9 +156,6 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				Rules:                    m.QueryRules(r).AsRules(),
 				ConvertSingleValueArrays: true,
 				Language:                 r.Lang,
-				DB:                       db,
-				Config:                   m.Config(),
-				Logger:                   m.Logger(),
 				Extra:                    extra,
 			}
 			r.Extra[ExtraQueryValidationRules{}] = opt.Rules
@@ -179,9 +175,6 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				Rules:                    m.BodyRules(r).AsRules(),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
 				Language:                 r.Lang,
-				DB:                       db,
-				Config:                   m.Config(),
-				Logger:                   m.Logger(),
 				Extra:                    extra,
 			}
 			r.Extra[ExtraBodyValidationRules{}] = opt.Rules
@@ -210,9 +203,7 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 	}
 }
 
-type corsMiddleware struct {
-	Component
-}
+type corsMiddleware struct{}
 
 func (m *corsMiddleware) Handle(next Handler) Handler {
 	return func(response *Response, request *Request) {

@@ -34,9 +34,8 @@ func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder
 func TestPanicStatusHandler(t *testing.T) {
 	t.Run("no_debug", func(t *testing.T) {
 		req, resp, recorder := prepareStatusHandlerTest()
-		resp.server.config.Set("app.debug", false)
+		resp.server.debug = false
 		handler := &PanicStatusHandler{}
-		handler.Init(resp.server)
 
 		resp.err = errors.New("test error").(*errors.Error)
 		handler.Handle(resp, req)
@@ -50,11 +49,10 @@ func TestPanicStatusHandler(t *testing.T) {
 
 	t.Run("debug", func(t *testing.T) {
 		req, resp, recorder := prepareStatusHandlerTest()
-		resp.server.config.Set("app.debug", true)
+		resp.server.debug = true
 		logBuffer := &bytes.Buffer{}
 		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		handler := &PanicStatusHandler{}
-		handler.Init(resp.server)
 
 		resp.err = errors.New("test error").(*errors.Error)
 		handler.Handle(resp, req)
@@ -72,11 +70,10 @@ func TestPanicStatusHandler(t *testing.T) {
 
 	t.Run("nil_error", func(t *testing.T) {
 		req, resp, recorder := prepareStatusHandlerTest()
-		resp.server.config.Set("app.debug", true)
+		resp.server.debug = true
 		logBuffer := &bytes.Buffer{}
 		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		handler := &PanicStatusHandler{}
-		handler.Init(resp.server)
 
 		handler.Handle(resp, req)
 		res := recorder.Result()
@@ -95,7 +92,6 @@ func TestPanicStatusHandler(t *testing.T) {
 func TestErrorStatusHandler(t *testing.T) {
 	req, resp, recorder := prepareStatusHandlerTest()
 	handler := &ErrorStatusHandler{}
-	handler.Init(resp.server)
 
 	resp.Status(http.StatusNotFound)
 
@@ -112,7 +108,6 @@ func TestErrorStatusHandler(t *testing.T) {
 func TestValidationStatusHandler(t *testing.T) {
 	req, resp, recorder := prepareStatusHandlerTest()
 	handler := &ValidationStatusHandler{}
-	handler.Init(resp.server)
 
 	req.Extra[ExtraValidationError{}] = &validation.Errors{
 		Errors: []string{"The body is required"},
@@ -180,7 +175,6 @@ func TestParseErrorStatusHandler(t *testing.T) {
 			req, resp, recorder := prepareStatusHandlerTest()
 
 			handler := &ParseErrorStatusHandler{}
-			handler.Init(resp.server)
 
 			req.Extra[ExtraParseError{}] = tt.err
 			resp.Status(tt.expectedStatus)
@@ -204,7 +198,6 @@ func TestParseErrorStatusHandlerWithoutExtra(t *testing.T) {
 	req, resp, recorder := prepareStatusHandlerTest()
 
 	handler := &ParseErrorStatusHandler{}
-	handler.Init(resp.server)
 
 	resp.Status(http.StatusBadRequest)
 

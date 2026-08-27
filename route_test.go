@@ -187,9 +187,6 @@ func TestRoute(t *testing.T) {
 
 		route.Middleware(&recoveryMiddleware{}, &languageMiddleware{})
 		assert.Len(t, route.middleware, 2)
-		for _, m := range route.middleware {
-			assert.NotNil(t, m.Server())
-		}
 	})
 
 	t.Run("GetFullURIAndParameters", func(t *testing.T) {

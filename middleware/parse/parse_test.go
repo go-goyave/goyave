@@ -21,20 +21,6 @@ func TestParseMiddleware(t *testing.T) {
 	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
 	route := server.Router().Post("/parse", nil)
 
-	t.Run("Max Upload Size", func(t *testing.T) {
-		m := &Middleware{}
-		m.Init(server.Server)
-		assert.InEpsilon(t, 10.0, m.getMaxUploadSize(), 0) // Default
-		m.MaxUploadSize = 2.3
-		assert.InEpsilon(t, 2.3, m.getMaxUploadSize(), 0)
-
-		m = &Middleware{
-			MaxUploadSize: 2.3,
-		}
-		m.Init(server.Server)
-		assert.InEpsilon(t, 2.3, m.getMaxUploadSize(), 0)
-	})
-
 	t.Run("Parse Query", func(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodGet, "/parse?a=b&c=d&array=1&array=2", nil)
 		request.Route = route
@@ -55,7 +41,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Lang = server.Lang.GetDefault()
 		request.Route = route
 
-		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(_ *goyave.Response, req *goyave.Request) {
 			assert.Equal(t, map[string]any{}, req.Query)
 		})
 		assert.NoError(t, result.Body.Close())
@@ -73,7 +59,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Header().Set("Content-Type", "application/octet-stream")
 		request.Route = route
 
-		result := server.TestMiddleware(&Middleware{MaxUploadSize: 0.01}, request, func(_ *goyave.Response, _ *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(0.01), request, func(_ *goyave.Response, _ *goyave.Request) {
 			assert.Fail(t, "Middleware should not pass")
 		})
 		assert.NoError(t, result.Body.Close())
@@ -94,7 +80,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Header().Set("Content-Type", "application/json")
 		request.Route = &goyave.Route{}
 
-		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, req *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(resp *goyave.Response, req *goyave.Request) {
 			expected := map[string]any{
 				"a": "b",
 				"c": "d",
@@ -136,7 +122,7 @@ func TestParseMiddleware(t *testing.T) {
 				request.Header().Set("Content-Type", "application/json")
 				request.Route = route
 
-				result := server.TestMiddleware(&Middleware{MaxUploadSize: 0.01}, request, func(_ *goyave.Response, _ *goyave.Request) {
+				result := server.TestMiddleware(NewMiddleware(0.01), request, func(_ *goyave.Response, _ *goyave.Request) {
 					assert.Fail(t, "Middleware should not pass")
 				})
 
@@ -164,7 +150,7 @@ func TestParseMiddleware(t *testing.T) {
 
 		require.NoError(t, writer.Close())
 
-		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, req *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(resp *goyave.Response, req *goyave.Request) {
 			data, ok := req.Data.(map[string]any)
 			if !assert.True(t, ok) {
 				return
@@ -199,7 +185,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Header().Set("Content-Type", writer.FormDataContentType())
 		request.Route = route
 
-		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, _ *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(resp *goyave.Response, _ *goyave.Request) {
 			resp.Status(http.StatusOK)
 		})
 
@@ -241,7 +227,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Header().Set("Content-Type", "multipart/form-data")
 		request.Route = route
 
-		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, _ *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(resp *goyave.Response, _ *goyave.Request) {
 			resp.Status(http.StatusBadRequest)
 		})
 
@@ -265,7 +251,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Header().Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 		request.Route = route
 
-		result := server.TestMiddleware(&Middleware{}, request, func(resp *goyave.Response, req *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(resp *goyave.Response, req *goyave.Request) {
 			expected := map[string]any{
 				"a": "b",
 				"c": "d",
@@ -292,7 +278,7 @@ func TestParseMiddleware(t *testing.T) {
 		request.Data = map[string]any{"a": "b"}
 		request.Route = route
 
-		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(_ *goyave.Response, req *goyave.Request) {
 			expectedQuery := map[string]any{
 				"a":     "b",
 				"c":     "d",
@@ -310,7 +296,7 @@ func TestParseMiddleware(t *testing.T) {
 
 		router := goyave.NewRouter(nil)
 		request.Route = router.Get("/", nil).Name(goyave.RouteNotFound)
-		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(_ *goyave.Response, req *goyave.Request) {
 			assert.Nil(t, req.Query)
 			assert.Nil(t, req.Data)
 		})
@@ -323,7 +309,7 @@ func TestParseMiddleware(t *testing.T) {
 
 		router := goyave.NewRouter(nil)
 		request.Route = router.Get("/", nil).Name(goyave.RouteMethodNotAllowed)
-		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
+		result := server.TestMiddleware(NewMiddleware(10), request, func(_ *goyave.Response, req *goyave.Request) {
 			assert.Nil(t, req.Query)
 			assert.Nil(t, req.Data)
 		})

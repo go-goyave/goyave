@@ -493,7 +493,7 @@ func TestResponse(t *testing.T) {
 
 		t.Run("error_on_hijack", func(t *testing.T) {
 			resp, _ := newTestReponse()
-			resp.server.config.Set("app.debug", true)
+			resp.server.debug = true
 			resp.server.Logger = slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 			recorder := httptest.NewRecorder()
 			resp.responseWriter = &hijackableRecorder{recorder}
@@ -525,7 +525,6 @@ func TestResponse(t *testing.T) {
 
 	t.Run("SetWriter_composable", func(t *testing.T) {
 		type composableWriter struct {
-			Component
 			bytes.Buffer
 		}
 
@@ -533,7 +532,6 @@ func TestResponse(t *testing.T) {
 		newWriter := &composableWriter{}
 		resp.SetWriter(newWriter)
 		assert.Equal(t, newWriter, resp.Writer())
-		assert.Equal(t, resp.server, newWriter.server)
 	})
 
 	t.Run("Chained_writer", func(t *testing.T) {
@@ -551,7 +549,7 @@ func TestResponse(t *testing.T) {
 		resp, _ := newTestReponse()
 		logBuffer := &bytes.Buffer{}
 		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
-		resp.server.config.Set("app.debug", false)
+		resp.server.debug = false
 		err := fmt.Errorf("custom error")
 		resp.Error(err)
 
@@ -573,7 +571,7 @@ func TestResponse(t *testing.T) {
 		resp, _ := newTestReponse()
 		logBuffer := &bytes.Buffer{}
 		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
-		resp.server.config.Set("app.debug", false)
+		resp.server.debug = false
 		resp.Error(nil)
 
 		e := resp.GetError()
@@ -618,7 +616,7 @@ func TestResponse(t *testing.T) {
 			resp, recorder := newTestReponse()
 			logBuffer := &bytes.Buffer{}
 			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
-			resp.server.config.Set("app.debug", true)
+			resp.server.debug = true
 			resp.Error(c.err)
 
 			e := resp.GetError()
@@ -651,7 +649,7 @@ func TestResponse(t *testing.T) {
 		resp, recorder := newTestReponse()
 		logBuffer := &bytes.Buffer{}
 		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
-		resp.server.config.Set("app.debug", true)
+		resp.server.debug = true
 		err := fmt.Errorf("custom error")
 		resp.Status(http.StatusForbidden)
 		resp.Error(err)
@@ -684,7 +682,7 @@ func TestResponse(t *testing.T) {
 		resp, recorder := newTestReponse()
 		logBuffer := &bytes.Buffer{}
 		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
-		resp.server.config.Set("app.debug", true)
+		resp.server.debug = true
 		err := fmt.Errorf("custom error")
 		resp.String(http.StatusForbidden, "forbidden")
 		resp.Error(err)

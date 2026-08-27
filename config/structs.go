@@ -1,4 +1,4 @@
-package configv2
+package config
 
 import v "goyave.dev/goyave/v5/validation"
 
@@ -30,8 +30,8 @@ func (s Base) Default() Base {
 
 // App the general application details.
 type App struct {
-	Name        string
-	Environment string
+	Name        string // Not used by the framework but is a very common entry
+	Environment string // Not used by the framework but is a very common entry
 
 	// DefaultLanguage the name of the language to use by default
 	// for logs and for translated responses.
@@ -52,8 +52,6 @@ func (s App) RuleSet() v.RuleSet {
 		{Path: "Name", Rules: v.List{v.Required(), v.String()}},
 		{Path: "Environment", Rules: v.List{v.Required(), v.String()}},
 		{Path: "DefaultLanguage", Rules: v.List{v.Required(), v.String()}},
-		{Path: "Nested", Rules: v.List{v.Required(), v.Object()}},
-		{Path: "Nested.Value", Rules: v.List{v.Required(), v.String()}},
 	}
 }
 

@@ -217,14 +217,11 @@ func TestBasicAuthenticator(t *testing.T) {
 
 func TestConfigBasicAuthenticator(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("auth.basic.username", "johndoe")
-		cfg.Set("auth.basic.password", "secret")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "secret")
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
-		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.Response, request *goyave.Request) {
+		resp := server.TestMiddleware(ConfigBasicAuth(&BasicConfig{"johndoe", "secret"}), request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Equal(t, "johndoe", request.User.(*BasicUser).Name)
 			response.Status(http.StatusOK)
 		})
@@ -234,14 +231,11 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("auth.basic.username", "johndoe")
-		cfg.Set("auth.basic.password", "secret")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "wrong_password")
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
-		resp := server.TestMiddleware(ConfigBasicAuth(), request, func(response *goyave.Response, _ *goyave.Request) {
+		resp := server.TestMiddleware(ConfigBasicAuth(&BasicConfig{"johndoe", "secret"}), request, func(response *goyave.Response, _ *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})
@@ -254,13 +248,10 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("auth.basic.username", "johndoe")
-		cfg.Set("auth.basic.password", "secret")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
+		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
-		resp := server.TestMiddleware(ConfigBasicAuthWithRealm("custom realm"), request, func(response *goyave.Response, _ *goyave.Request) {
+		resp := server.TestMiddleware(ConfigBasicAuthWithRealm(&BasicConfig{"johndoe", "secret"}, "custom realm"), request, func(response *goyave.Response, _ *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")
 			response.Status(http.StatusOK)
 		})

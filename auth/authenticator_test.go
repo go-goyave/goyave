@@ -41,19 +41,21 @@ func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.Response, _ *goy
 }
 
 type TestNoScheme struct {
-	goyave.Component
+	config *BasicConfig
 }
 
 func (a *TestNoScheme) Authenticate(request *goyave.Request) (*BasicUser, error) {
-	return (&ConfigBasicAuthenticator{Component: a.Component}).Authenticate(request)
+	return (&ConfigBasicAuthenticator{config: a.config}).Authenticate(request)
 }
 
 func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser) {
 	cfg := config.LoadDefault()
-	cfg.Set("database.connection", "sqlite3")
-	cfg.Set("database.name", "testauthenticator.db")
-	cfg.Set("database.options", "mode=memory")
-	cfg.Set("app.debug", false)
+	cfg.App.Debug = false
+	// TODO update DB-related tests (use sqlmock?)
+	// cfg.Set("database.connection", "sqlite3")
+	// cfg.Set("database.name", "testauthenticator.db")
+	// cfg.Set("database.options", "mode=memory")
+	// cfg.Set("app.debug", false)
 	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
 	password, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 	user := &TestUser{
@@ -177,10 +179,8 @@ func TestAuthenticator(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })
 
-		server.Config().Set("auth.basic.username", "johndoe")
-		server.Config().Set("auth.basic.password", "secret")
-
-		authenticator := MiddlewareWithRealm(&TestNoScheme{}, "custom realm")
+		config := &BasicConfig{Username: "johndoe", Password: "secret"}
+		authenticator := MiddlewareWithRealm(&TestNoScheme{config: config}, "custom realm")
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "incorrect password")

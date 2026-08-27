@@ -12,7 +12,6 @@ import (
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/middleware/parse"
 	errorutil "goyave.dev/goyave/v5/util/errors"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -25,9 +24,7 @@ type TokenFunc[T any] func(request *goyave.Request, user *T) (string, error)
 // The T parameter represents the user DTO and should not be a pointer. The DTO used should be
 // different from the DTO returned to clients as a response because it needs to contain the user's password.
 type JWTController[T any] struct { // TODO refresh token
-	goyave.Component
-
-	jwtService *JWTService
+	JWTService *JWTService // TODO use interface for JWTService
 
 	UserService UserService[T]
 
@@ -57,24 +54,13 @@ type JWTController[T any] struct { // TODO refresh token
 //
 // The `passwordField` corresponds to the name of T's struct field that holds the user's hashed password.
 // It will be used to compare the password hash with the user input.
-func NewJWTController[T any](userService UserService[T], passwordField string) *JWTController[T] {
+// TODO update examples to show how to create the JWTService
+func NewJWTController[T any](jwtService *JWTService, userService UserService[T], passwordField string) *JWTController[T] {
 	return &JWTController[T]{
+		JWTService:    jwtService,
 		UserService:   userService,
 		PasswordField: passwordField,
 	}
-}
-
-// Init the controller. Automatically registers the `JWTService` if not already registered,
-// using `osfs.FS` as file system for the signing keys.
-func (c *JWTController[T]) Init(server *goyave.Server) {
-	c.Component.Init(server)
-
-	service, ok := server.LookupService(JWTServiceName)
-	if !ok {
-		service = NewJWTService(server.Config(), &osfs.FS{})
-		server.RegisterService(service)
-	}
-	c.jwtService = service.(*JWTService)
 }
 
 // RegisterRoutes register the "/login" route (with validation) on the given router.
@@ -152,5 +138,5 @@ func (c *JWTController[T]) defaultTokenFunc(r *goyave.Request, _ *T) (string, er
 	}
 	body := r.Data.(map[string]any)
 	usernameField := lo.Ternary(c.UsernameRequestField == "", "username", c.UsernameRequestField)
-	return c.jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": body[usernameField]}, signingMethod)
+	return c.JWTService.GenerateTokenWithClaims(jwt.MapClaims{"sub": body[usernameField]}, signingMethod)
 }

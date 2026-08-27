@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/slog"
+	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 	"goyave.dev/goyave/v5/validation"
 )
@@ -20,10 +21,15 @@ import (
 func TestJWTController(t *testing.T) {
 	t.Run("Login", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{user: user}
-		controller := NewJWTController(mockUserService, "Password")
+		controller := NewJWTController(jwtService, mockUserService, "Password")
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
@@ -46,10 +52,15 @@ func TestJWTController(t *testing.T) {
 
 	t.Run("Login_ptr", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[*TestUser]{user: &user}
-		controller := NewJWTController(mockUserService, "Password")
+		controller := NewJWTController(jwtService, mockUserService, "Password")
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
@@ -72,10 +83,15 @@ func TestJWTController(t *testing.T) {
 
 	t.Run("Login_invalid_password", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{user: user}
-		controller := NewJWTController(mockUserService, "Password")
+		controller := NewJWTController(jwtService, mockUserService, "Password")
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
@@ -98,10 +114,15 @@ func TestJWTController(t *testing.T) {
 
 	t.Run("Login_invalid_username", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("test errors: %w", gorm.ErrRecordNotFound)}
-		controller := NewJWTController(mockUserService, "Password")
+		controller := NewJWTController(jwtService, mockUserService, "Password")
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
@@ -126,10 +147,15 @@ func TestJWTController(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		buf := &bytes.Buffer{}
 		server.Logger = slog.New(slog.NewHandler(false, buf))
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{user: user}
-		controller := NewJWTController(mockUserService, "Password")
+		controller := NewJWTController(jwtService, mockUserService, "Password")
 		controller.TokenFunc = func(_ *goyave.Request, _ *TestUser) (string, error) {
 			return "", fmt.Errorf("test error")
 		}
@@ -155,10 +181,15 @@ func TestJWTController(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		buf := &bytes.Buffer{}
 		server.Logger = slog.New(slog.NewHandler(false, buf))
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{user: user}
-		controller := NewJWTController(mockUserService, "NotAField")
+		controller := NewJWTController(jwtService, mockUserService, "NotAField")
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
@@ -181,10 +212,15 @@ func TestJWTController(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
 		buf := &bytes.Buffer{}
 		server.Logger = slog.New(slog.NewHandler(false, buf))
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("service error")}
-		controller := NewJWTController(mockUserService, "NotAField")
+		controller := NewJWTController(jwtService, mockUserService, "NotAField")
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})
@@ -205,10 +241,15 @@ func TestJWTController(t *testing.T) {
 
 	t.Run("Login_with_field_override", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{user: user}
-		controller := NewJWTController(mockUserService, "Password")
+		controller := NewJWTController(jwtService, mockUserService, "Password")
 		controller.UsernameRequestField = "email"
 		controller.PasswordRequestField = "pass"
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
@@ -233,9 +274,14 @@ func TestJWTController(t *testing.T) {
 
 	t.Run("Login_validation", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
 
-		controller := &JWTController[TestUser]{}
+		config := &JWTConfig{
+			Expiry: 300,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
+
+		controller := NewJWTController[TestUser](jwtService, nil, "")
 		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
 			router.Controller(controller)
 		})

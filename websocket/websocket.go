@@ -7,6 +7,7 @@ import (
 	stderrors "errors"
 
 	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 
 	ws "github.com/gorilla/websocket"
@@ -20,8 +21,6 @@ const (
 
 // Controller component for websockets.
 type Controller interface {
-	goyave.Composable
-
 	// Serve is a handler for websocket connections.
 	// The request parameter contains the original upgraded HTTP request.
 	//
@@ -122,10 +121,18 @@ type HeaderUpgrader interface {
 	UpgradeHeaders(r *goyave.Request) http.Header
 }
 
+type Config struct {
+	// CloseTimeout represents the maximum time allowed for the websocket close handshake.
+	CloseTimeout time.Duration // TODO config.Server.WebsocketCloseTimeoutMs may not be accessible
+	// Debug if true, returns error messages to the client in the default upgrade error handler.
+	// If false, returns the standard status text corresponding to the response status.
+	Debug bool
+}
+
 // Upgrader is responsible for the upgrade of HTTP connections to
 // websocket connections.
 type Upgrader struct {
-	goyave.Component
+	Config *Config
 
 	Controller Controller
 
@@ -135,9 +142,10 @@ type Upgrader struct {
 }
 
 // New create a new Upgrader with default settings.
-func New(controller Controller) *Upgrader {
+func New(controller Controller, config *Config) *Upgrader {
 	return &Upgrader{
 		Controller: controller,
+		Config:     config,
 	}
 }
 
@@ -155,7 +163,7 @@ func (u *Upgrader) RegisterRoutes(router *goyave.Router) {
 
 func (u *Upgrader) defaultUpgradeErrorHandler(response *goyave.Response, _ *goyave.Request, status int, reason error) {
 	text := http.StatusText(status)
-	if u.Config().GetBool("app.debug") && reason != nil {
+	if u.Config.Debug && reason != nil {
 		text = reason.Error()
 	}
 	message := map[string]string{
@@ -211,7 +219,6 @@ func (u *Upgrader) makeUpgrader(request *goyave.Request) *ws.Upgrader {
 // that, for example, logging middleware will log the request right away instead of waiting
 // for the websocket connection to be closed.
 func (u *Upgrader) Handler() goyave.Handler {
-	u.Controller.Init(u.Server())
 	return func(response *goyave.Response, request *goyave.Request) {
 		var headers http.Header
 		if headerUpgrader, ok := u.Controller.(HeaderUpgrader); ok {
@@ -229,7 +236,7 @@ func (u *Upgrader) Handler() goyave.Handler {
 }
 
 func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler func(*Conn, *goyave.Request) error) {
-	conn := newConn(c, time.Duration(u.Config().GetInt("server.websocketCloseTimeout"))*time.Second)
+	conn := newConn(c, u.Config.CloseTimeout)
 	panicked := true
 	var err error
 	defer func() { // Panic recovery
@@ -245,7 +252,7 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler func(*Conn
 			if errorHandler, ok := u.Controller.(ErrorHandler); ok {
 				errorHandler.OnError(request, err)
 			} else {
-				u.Logger().Error(err)
+				slog.FromContext(request.Context()).Error(err)
 			}
 			_ = conn.CloseWithError(err)
 		} else {

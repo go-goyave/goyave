@@ -9,8 +9,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
 	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/validation"
 )
 
 // BasicAuthenticator implementation of Authenticator with the Basic
@@ -19,8 +19,6 @@ import (
 // The T parameter represents the user DTO and should not be a pointer. The DTO used should be
 // different from the DTO returned to clients as a response because it needs to contain the user's password.
 type BasicAuthenticator[T any] struct {
-	goyave.Component
-
 	UserService UserService[T]
 
 	// PasswordField the name of T's struct field that holds the user's hashed password.
@@ -94,19 +92,17 @@ func (a *BasicAuthenticator[T]) Scheme() string {
 
 //--------------------------------------------
 
-func init() {
-	config.Register("auth.basic.username", config.Entry{
-		Value:            nil,
-		Type:             reflect.String,
-		IsSlice:          false,
-		AuthorizedValues: []any{},
-	})
-	config.Register("auth.basic.password", config.Entry{
-		Value:            nil,
-		Type:             reflect.String,
-		IsSlice:          false,
-		AuthorizedValues: []any{},
-	})
+type BasicConfig struct {
+	Username string
+	Password string
+}
+
+func (BasicConfig) RuleSet() validation.RuleSet {
+	return validation.RuleSet{
+		{Path: validation.CurrentElement, Rules: validation.List{validation.Object()}},
+		{Path: "Username", Rules: validation.List{validation.Required(), validation.String()}},
+		{Path: "Password", Rules: validation.List{validation.Required(), validation.String()}},
+	}
 }
 
 // BasicUser a simple user for config-based basic authentication.
@@ -117,7 +113,7 @@ type BasicUser struct {
 // ConfigBasicAuthenticator implementation of Authenticator with the Basic
 // authentication method, using username and password from the configuration.
 type ConfigBasicAuthenticator struct {
-	goyave.Component
+	config *BasicConfig
 }
 
 // Authenticate check if the request basic auth header matches the
@@ -129,8 +125,8 @@ func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request) (*Basic
 		return nil, fmt.Errorf("%s", request.Lang.Get("auth.no-credentials-provided"))
 	}
 
-	if subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.username")), []byte(username)) != 1 ||
-		subtle.ConstantTimeCompare([]byte(a.Config().GetString("auth.basic.password")), []byte(password)) != 1 {
+	if subtle.ConstantTimeCompare([]byte(a.config.Username), []byte(username)) != 1 ||
+		subtle.ConstantTimeCompare([]byte(a.config.Password), []byte(password)) != 1 {
 		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
 	}
 
@@ -146,15 +142,19 @@ func (a *ConfigBasicAuthenticator) Scheme() string {
 // ConfigBasicAuth create a new authenticator middleware for
 // config-based Basic authentication. On auth success, the request
 // user is set to a `*BasicUser`.
-// The user is authenticated if the "auth.basic.username" and "auth.basic.password" config entries
+// The user is authenticated if the "config.Username" and "config.Password"
 // match the request's Authorization header.
-func ConfigBasicAuth() *Handler[BasicUser] {
-	return Middleware(&ConfigBasicAuthenticator{})
+func ConfigBasicAuth(config *BasicConfig) *Handler[BasicUser] {
+	return Middleware(&ConfigBasicAuthenticator{
+		config: config,
+	})
 }
 
 // ConfigBasicAuthWithRealm is the same as ConfigBasicAuth but with a custom realm description.
 // The realm describes the protected area and is returned in the `WWW-Authenticate` header
 // when the authentication fails.
-func ConfigBasicAuthWithRealm(realm string) *Handler[BasicUser] {
-	return MiddlewareWithRealm(&ConfigBasicAuthenticator{}, realm)
+func ConfigBasicAuthWithRealm(config *BasicConfig, realm string) *Handler[BasicUser] {
+	return MiddlewareWithRealm(&ConfigBasicAuthenticator{
+		config: config,
+	}, realm)
 }

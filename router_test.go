@@ -18,7 +18,6 @@ import (
 )
 
 type testStatusHandler struct {
-	Component
 	override Handler
 }
 
@@ -36,7 +35,6 @@ func (h *testStatusHandler) Handle(response *Response, request *Request) {
 type extraMiddlewareOrder struct{}
 
 type testMiddleware struct {
-	Component
 	key string
 }
 
@@ -56,7 +54,7 @@ func (m *testMiddleware) Handle(next Handler) Handler {
 
 func prepareRouterTest() *Router {
 	cfg := config.LoadDefault()
-	cfg.Set("app.debug", false)
+	cfg.App.Debug = false
 	server, err := New(Options{Config: cfg})
 	if err != nil {
 		panic(err)
@@ -65,7 +63,6 @@ func prepareRouterTest() *Router {
 }
 
 type testController struct {
-	Component
 	registered bool
 }
 
@@ -98,12 +95,8 @@ func TestRouter(t *testing.T) {
 
 		recoveryMiddleware := findMiddleware[*recoveryMiddleware](router.globalMiddleware.middleware)
 		langMiddleware := findMiddleware[*languageMiddleware](router.globalMiddleware.middleware)
-		if assert.NotNil(t, recoveryMiddleware) {
-			assert.Equal(t, router.server, recoveryMiddleware.server)
-		}
-		if assert.NotNil(t, langMiddleware) {
-			assert.Equal(t, router.server, langMiddleware.server)
-		}
+		assert.NotNil(t, recoveryMiddleware)
+		assert.NotNil(t, langMiddleware)
 	})
 
 	t.Run("ClearRegexCache", func(t *testing.T) {
@@ -161,18 +154,12 @@ func TestRouter(t *testing.T) {
 		router := prepareRouterTest()
 		router.GlobalMiddleware(&corsMiddleware{}, &validateRequestMiddleware{})
 		assert.Len(t, router.globalMiddleware.middleware, 4)
-		for _, m := range router.globalMiddleware.middleware {
-			assert.NotNil(t, m.Server())
-		}
 	})
 
 	t.Run("Middleware", func(t *testing.T) {
 		router := prepareRouterTest()
 		router.Middleware(&corsMiddleware{}, &validateRequestMiddleware{})
 		assert.Len(t, router.middleware, 2)
-		for _, m := range router.middleware {
-			assert.NotNil(t, m.Server())
-		}
 	})
 
 	t.Run("CORS", func(t *testing.T) {
@@ -212,7 +199,6 @@ func TestRouter(t *testing.T) {
 		statusHandler := &testStatusHandler{}
 		router.StatusHandler(statusHandler, 1, 2, 3)
 
-		assert.Equal(t, router.server, statusHandler.server)
 		assert.Equal(t, statusHandler, router.statusHandlers[1])
 		assert.Equal(t, statusHandler, router.statusHandlers[2])
 		assert.Equal(t, statusHandler, router.statusHandlers[3])
@@ -319,7 +305,6 @@ func TestRouter(t *testing.T) {
 		router := prepareRouterTest()
 		ctrl := &testController{}
 		router.Controller(ctrl)
-		assert.Equal(t, router.server, ctrl.server)
 		assert.True(t, ctrl.registered)
 	})
 
@@ -446,10 +431,10 @@ func TestRouter(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.desc, func(t *testing.T) {
 				router := prepareRouterTest()
-				router.server.config.Set("server.proxy.host", "proxy.io")
-				router.server.config.Set("server.proxy.protocol", "http")
-				router.server.config.Set("server.proxy.port", 80)
-				router.server.config.Set("server.proxy.base", "/base")
+				router.server.config.Proxy.Host = "proxy.io"
+				router.server.config.Proxy.Protocol = "http"
+				router.server.config.Proxy.Port = 80
+				router.server.config.Proxy.Base = "/base"
 
 				panicStatusHandler := &testPanicStatusHandler{}
 				router.StatusHandler(panicStatusHandler, http.StatusInternalServerError)

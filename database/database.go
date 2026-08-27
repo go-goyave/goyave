@@ -22,16 +22,10 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
 //	import _ "goyave.dev/goyave/v5/database/dialect/clickhouse"
 //	import _ "goyave.dev/goyave/v5/database/dialect/bigquery"
-func New(cfg *config.Config, logger func() *slog.Logger) (*gorm.DB, error) {
-	driver := cfg.GetString("database.connection")
-
-	if driver == "none" {
-		return nil, errorutil.Errorf("Cannot create DB connection. Database is set to \"none\" in the config")
-	}
-
-	dialect, ok := dialects[driver]
+func New(cfg *config.DatabaseConnection, logger func() *slog.Logger) (*gorm.DB, error) { // TODO logger from context?
+	dialect, ok := dialects[cfg.Dialect]
 	if !ok {
-		return nil, errorutil.Errorf("DB Connection %q not supported, forgotten import?", driver)
+		return nil, errorutil.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)
 	}
 
 	dsn := dialect.buildDSN(cfg)
@@ -51,7 +45,7 @@ func New(cfg *config.Config, logger func() *slog.Logger) (*gorm.DB, error) {
 // defined in the given configuration.
 //
 // This can be used in tests to create a mock connection pool.
-func NewFromDialector(cfg *config.Config, logger func() *slog.Logger, dialector gorm.Dialector) (*gorm.DB, error) {
+func NewFromDialector(cfg *config.DatabaseConnection, logger func() *slog.Logger, dialector gorm.Dialector) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, newConfig(cfg, logger))
 	if err != nil {
 		return nil, errorutil.New(err)
@@ -64,32 +58,37 @@ func NewFromDialector(cfg *config.Config, logger func() *slog.Logger, dialector 
 	return db, initSQLDB(cfg, db)
 }
 
-func newConfig(cfg *config.Config, logger func() *slog.Logger) *gorm.Config {
-	if !cfg.GetBool("app.debug") {
-		// Stay silent about DB operations when not in debug mode
-		logger = nil
-	}
+func newConfig(cfg *config.DatabaseConnection, logger func() *slog.Logger) *gorm.Config {
 	return &gorm.Config{
 		Logger:                                   NewLogger(logger),
-		SkipDefaultTransaction:                   cfg.GetBool("database.config.skipDefaultTransaction"),
-		DryRun:                                   cfg.GetBool("database.config.dryRun"),
-		PrepareStmt:                              cfg.GetBool("database.config.prepareStmt"),
-		DisableNestedTransaction:                 cfg.GetBool("database.config.disableNestedTransaction"),
-		AllowGlobalUpdate:                        cfg.GetBool("database.config.allowGlobalUpdate"),
-		DisableAutomaticPing:                     cfg.GetBool("database.config.disableAutomaticPing"),
-		DisableForeignKeyConstraintWhenMigrating: cfg.GetBool("database.config.disableForeignKeyConstraintWhenMigrating"),
+		SkipDefaultTransaction:                   cfg.GORM.SkipDefaultTransaction,
+		DryRun:                                   cfg.GORM.DryRun,
+		PrepareStmt:                              cfg.GORM.PrepareStmt,
+		PrepareStmtMaxSize:                       cfg.GORM.PrepareStmtMaxSize,
+		PrepareStmtTTL:                           time.Duration(cfg.GORM.PrepareStmtTTL) * time.Second,
+		DisableNestedTransaction:                 cfg.GORM.DisableNestedTransaction,
+		AllowGlobalUpdate:                        cfg.GORM.AllowGlobalUpdate,
+		DisableAutomaticPing:                     cfg.GORM.DisableAutomaticPing,
+		DisableForeignKeyConstraintWhenMigrating: cfg.GORM.DisableForeignKeyConstraintWhenMigrating,
+		IgnoreRelationshipsWhenMigrating:         cfg.GORM.IgnoreRelationshipsWhenMigrating,
+		// DefaultContextTimeout: 0,
+		FullSaveAssociations: cfg.GORM.FullSaveAssociations,
+		QueryFields:          cfg.GORM.QueryFields,
+		CreateBatchSize:      cfg.GORM.CreateBatchSize,
+		TranslateError:       cfg.GORM.TranslateError,
+		PropagateUnscoped:    cfg.GORM.PropagateUnscoped,
 	}
 }
 
-func initTimeoutPlugin(cfg *config.Config, db *gorm.DB) error {
+func initTimeoutPlugin(cfg *config.DatabaseConnection, db *gorm.DB) error {
 	timeoutPlugin := &TimeoutPlugin{
-		ReadTimeout:  time.Duration(cfg.GetInt("database.defaultReadQueryTimeout")) * time.Millisecond,
-		WriteTimeout: time.Duration(cfg.GetInt("database.defaultWriteQueryTimeout")) * time.Millisecond,
+		ReadTimeout:  time.Duration(cfg.DefaultReadQueryTimeoutMs) * time.Millisecond,
+		WriteTimeout: time.Duration(cfg.DefaultWriteQueryTimeoutMs) * time.Millisecond,
 	}
 	return errorutil.New(db.Use(timeoutPlugin))
 }
 
-func initSQLDB(cfg *config.Config, db *gorm.DB) error {
+func initSQLDB(cfg *config.DatabaseConnection, db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {
 		if errors.Is(err, gorm.ErrInvalidDB) {
@@ -97,8 +96,9 @@ func initSQLDB(cfg *config.Config, db *gorm.DB) error {
 		}
 		return errorutil.New(err)
 	}
-	sqlDB.SetMaxOpenConns(cfg.GetInt("database.maxOpenConnections"))
-	sqlDB.SetMaxIdleConns(cfg.GetInt("database.maxIdleConnections"))
-	sqlDB.SetConnMaxLifetime(time.Duration(cfg.GetInt("database.maxLifetime")) * time.Second)
+	sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)
+	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime) * time.Second)
+	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.MaxIdleTime) * time.Second)
 	return nil
 }

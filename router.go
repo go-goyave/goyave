@@ -130,7 +130,7 @@ func NewRouter(server *Server) *Router {
 		router.StatusHandler(&ErrorStatusHandler{}, i)
 	}
 	router.StatusHandler(&ErrorStatusHandler{}, http.StatusNotExtended, http.StatusNetworkAuthenticationRequired)
-	router.GlobalMiddleware(&recoveryMiddleware{}, &languageMiddleware{})
+	router.GlobalMiddleware(&recoveryMiddleware{}, newLanguageMiddleware(server.Lang))
 	return router
 }
 
@@ -208,9 +208,6 @@ func (r *Router) LookupMeta(key string) (any, bool) {
 // Global Middleware are always executed first.
 // Use global middleware for logging and rate limiting for example.
 func (r *Router) GlobalMiddleware(middleware ...Middleware) *Router {
-	for _, m := range middleware {
-		m.Init(r.server)
-	}
 	r.globalMiddleware.middleware = append(r.globalMiddleware.middleware, middleware...)
 	return r
 }
@@ -219,9 +216,6 @@ func (r *Router) GlobalMiddleware(middleware ...Middleware) *Router {
 func (r *Router) Middleware(middleware ...Middleware) *Router {
 	if r.middleware == nil {
 		r.middleware = make([]Middleware, 0, 3)
-	}
-	for _, m := range middleware {
-		m.Init(r.server)
 	}
 	r.middleware = append(r.middleware, middleware...)
 	return r
@@ -256,7 +250,6 @@ func (r *Router) CORS(options *cors.Options) *Router {
 //
 // Codes in the 400 and 500 ranges have a default status handler.
 func (r *Router) StatusHandler(handler StatusHandler, status int, additionalStatuses ...int) {
-	handler.Init(r.server)
 	r.statusHandlers[status] = handler
 	for _, s := range additionalStatuses {
 		r.statusHandlers[s] = handler
@@ -266,7 +259,7 @@ func (r *Router) StatusHandler(handler StatusHandler, status int, additionalStat
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Scheme != "" && req.URL.Scheme != "http" {
-		address := r.server.getProxyAddress(r.server.config) + req.URL.Path
+		address := r.server.getProxyAddress() + req.URL.Path
 		query := req.URL.Query()
 		if len(query) != 0 {
 			address += "?" + query.Encode()
@@ -478,10 +471,16 @@ func (r *Router) registerRoute(methods []string, uri string, handler Handler) *R
 	return route
 }
 
+// Registrer qualifies a controller that registers its routes itself.
+// It is required for controllers to implement this interface if you want
+// to use `router.Controller()`.
+type Registrer interface {
+	RegisterRoutes(router *Router)
+}
+
 // Controller register all routes for a controller implementing the `Registrer` interface.
-// Automatically calls `Init()` and `RegisterRoutes()` on the given controller.
+// Automatically calls `RegisterRoutes()` on the given controller.
 func (r *Router) Controller(controller Registrer) *Router {
-	controller.Init(r.server)
 	controller.RegisterRoutes(r)
 	return r
 }

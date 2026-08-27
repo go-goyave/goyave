@@ -15,12 +15,13 @@ var (
 
 	dialects = map[string]dialect{}
 
-	optionPlaceholders = map[string]string{
-		"{username}": "database.username",
-		"{password}": "database.password",
-		"{host}":     "database.host",
-		"{name}":     "database.name",
-		"{options}":  "database.options",
+	optionPlaceholders = map[string]func(*config.DatabaseConnection) string{
+		"{username}": func(dc *config.DatabaseConnection) string { return dc.Username },
+		"{password}": func(dc *config.DatabaseConnection) string { return dc.Password },
+		"{host}":     func(dc *config.DatabaseConnection) string { return dc.Host },
+		"{port}":     func(dc *config.DatabaseConnection) string { return strconv.Itoa(dc.Port) },
+		"{name}":     func(dc *config.DatabaseConnection) string { return dc.DatabaseName },
+		"{options}":  func(dc *config.DatabaseConnection) string { return dc.Options },
 	}
 )
 
@@ -33,12 +34,11 @@ type dialect struct {
 	template    string
 }
 
-func (d dialect) buildDSN(cfg *config.Config) string {
+func (d dialect) buildDSN(cfg *config.DatabaseConnection) string {
 	connStr := d.template
 	for k, v := range optionPlaceholders {
-		connStr = strings.Replace(connStr, k, cfg.GetString(v), 1)
+		connStr = strings.Replace(connStr, k, v(cfg), 1)
 	}
-	connStr = strings.Replace(connStr, "{port}", strconv.Itoa(cfg.GetInt("database.port")), 1)
 
 	return connStr
 }

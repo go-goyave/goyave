@@ -52,7 +52,7 @@ func (v *UniqueValidator) Validate(ctx *Context) bool {
 	}
 	count := int64(0)
 
-	if err := v.Scope(v.DB(), ctx.Value).Count(&count).Error; err != nil {
+	if err := v.Scope(&gorm.DB{}, ctx.Value).Count(&count).Error; err != nil { // TODO update exist/unique validator
 		ctx.AddError(errors.New(err))
 		return false
 	}
@@ -132,7 +132,8 @@ func (v *ExistsArrayValidator[T]) buildQuery(values []T, condition bool) (*gorm.
 	questionMarks := []string{}
 	params := []any{}
 
-	db := v.DB()
+	// db := v.DB()
+	db := &gorm.DB{} // TODO update Exist/Unique validator
 	dialectorName := db.Name()
 
 	if dialectorName == "clickhouse" {
@@ -205,7 +206,8 @@ func (v *ExistsArrayValidator[T]) buildClickhouseQuery(values []T, condition boo
 		params = append(params, gorm.Expr("(?,?)", transformedValue, i))
 	}
 
-	db := v.DB()
+	// db := v.DB()
+	db := &gorm.DB{} // TODO update exist/unique validator
 	table := db.Statement.Quote(v.Table)
 	column := db.Statement.Quote(v.Column)
 
@@ -233,7 +235,8 @@ func (v *ExistsArrayValidator[T]) validate(ctx *Context, condition bool) bool {
 		return false
 	}
 
-	timeout := v.Config().GetInt("database.defaultReadQueryTimeout")
+	// timeout := v.Config().GetInt("database.defaultReadQueryTimeout")
+	timeout := time.Second * 20
 	if _, hasDeadline := db.Statement.Context.Deadline(); !hasDeadline && timeout > 0 {
 		timeoutCtx, cancel := context.WithTimeout(db.Statement.Context, time.Duration(timeout)*time.Millisecond)
 		defer cancel()

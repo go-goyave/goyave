@@ -1,5 +1,7 @@
 package goyave
 
+// TODO remove this, unnecessary since there is no service container anymore
+
 // Service is the bridge between the REST layer of your application and
 // the domain. It is responsible of the business logic.
 // Services usually bundle a repository interface defining functions

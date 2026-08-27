@@ -8,6 +8,10 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
+// TODO this plugin may not be necessary anymore thanks to gorm setting: DefaultContextTimeout
+// but one caveat: context leaks are possible with gorm's implementation
+// also cannot use a different timeout for read and write requests
+
 const (
 	timeoutCallbackBeforeName = "goyave:timeout_before"
 	timeoutCallbackAfterName  = "goyave:timeout_after"
@@ -85,6 +89,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	}
 
 	// Cannot use it with `Row()` because context is canceled before the call of `rows.Next()`, causing an error.
+	// TODO check it again so it can be used for raw SQL too (or find an alternative)
 	// rowCallback := db.Callback().Row()
 	// if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.readTimeoutBefore); err != nil {
 	// 	return errors.New(err)

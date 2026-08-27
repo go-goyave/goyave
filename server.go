@@ -17,6 +17,7 @@ import (
 
 	stderrors "errors"
 
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
@@ -25,6 +26,7 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
+	"goyave.dev/goyave/v5/validation"
 )
 
 // serverKey is a context key used to store the server instance into its base context.
@@ -35,8 +37,9 @@ type Options struct {
 
 	// Config used by the server and propagated to all its components.
 	// If no configuration is provided, automatically load
-	// the default configuration using `config.Load()`.
-	Config *config.Config
+	// the default configuration using the default configuration source.
+	// TODO only needs App (debug and defaultLanguage) and Server config...
+	Config *config.Base
 
 	// Logger used by the server and propagated to all its components.
 	// If no logger is provided in the options, uses the default logger.
@@ -114,7 +117,8 @@ type Options struct {
 // Server the central component of a Goyave application.
 type Server struct {
 	server *http.Server
-	config *config.Config
+	config *config.Server
+	debug  bool // TODO test this is setup on New
 	Lang   *lang.Languages
 
 	router *Router
@@ -124,6 +128,8 @@ type Server struct {
 
 	// Logger the logger for default output
 	// Writes to stderr by default.
+	// FIXME changing the logger doesn't change the one in the base context
+	// Should we really store the logger here and leave it accessible? we can set it using options
 	Logger *slog.Logger
 
 	host         string
@@ -149,16 +155,22 @@ func New(opts Options) (*Server, error) {
 	cfg := opts.Config
 
 	if opts.Config == nil {
+		var validationErrors *validation.Errors
 		var err error
-		cfg, err = config.Load()
+		cfg, validationErrors, err = config.Load[config.Base](context.Background(), config.Default()) // TODO detach config loading from server
 		if err != nil {
 			return nil, errors.New(err)
+		}
+		if validationErrors != nil {
+			err = errors.New("configuration validation errors")
+			slog.Default().Error(err, "errors", validationErrors) // TODO readability won't be great...
+			return nil, err
 		}
 	}
 
 	slogger := opts.Logger
 	if slogger == nil {
-		slogger = slog.New(slog.NewHandler(cfg.GetBool("app.debug"), os.Stderr))
+		slogger = slog.New(slog.NewHandler(cfg.App.Debug, os.Stderr))
 	}
 
 	langFS := opts.LangFS
@@ -167,21 +179,21 @@ func New(opts Options) (*Server, error) {
 	}
 
 	languages := lang.New()
-	languages.Default = cfg.GetString("app.defaultLanguage")
+	languages.Default = cfg.App.DefaultLanguage
 	if err := languages.LoadAllAvailableLanguages(langFS); err != nil {
 		return nil, err
 	}
 
-	host := cfg.GetString("server.host")
-	port := cfg.GetInt("server.port")
+	host := cfg.Server.Host
+	port := cfg.Server.Port
 
 	server := &Server{
 		server: &http.Server{
 			Addr:                  net.JoinHostPort(host, strconv.Itoa(port)),
-			WriteTimeout:          time.Duration(cfg.GetInt("server.writeTimeout")) * time.Second,
-			ReadTimeout:           time.Duration(cfg.GetInt("server.readTimeout")) * time.Second,
-			ReadHeaderTimeout:     time.Duration(cfg.GetInt("server.readHeaderTimeout")) * time.Second,
-			IdleTimeout:           time.Duration(cfg.GetInt("server.idleTimeout")) * time.Second,
+			WriteTimeout:          time.Duration(cfg.Server.WriteTimeoutMs) * time.Millisecond,
+			ReadTimeout:           time.Duration(cfg.Server.ReadTimeoutMs) * time.Millisecond,
+			ReadHeaderTimeout:     time.Duration(cfg.Server.ReadHeaderTimeoutMs) * time.Millisecond,
+			IdleTimeout:           time.Duration(cfg.Server.IdleTimeoutMs) * time.Millisecond,
 			ConnState:             opts.ConnState,
 			ConnContext:           opts.ConnContext,
 			MaxHeaderBytes:        opts.MaxHeaderBytes,
@@ -192,7 +204,8 @@ func New(opts Options) (*Server, error) {
 		ctx:           context.Background(),
 		baseContext:   opts.BaseContext,
 		listenConfig:  opts.ListenConfig,
-		config:        cfg,
+		config:        &cfg.Server,
+		debug:         cfg.App.Debug,
 		services:      make(map[string]Service),
 		Lang:          languages,
 		stopChannel:   make(chan struct{}, 1),
@@ -206,8 +219,9 @@ func New(opts Options) (*Server, error) {
 	server.refreshURLs()
 	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
 
-	if cfg.GetString("database.connection") != "none" {
-		db, err := database.New(cfg, func() *slog.Logger { return server.Logger })
+	// TODO database connections could be created outside of New? they are only passed to repositories and have nothing to do with the server itself
+	if len(cfg.Database) > 0 {
+		db, err := database.New(&cfg.Database[0], lo.Ternary(cfg.App.Debug, func() *slog.Logger { return server.Logger }, nil))
 		if err != nil {
 			return nil, errors.New(err)
 		}
@@ -227,11 +241,11 @@ func (s *Server) isIPv6(host string) bool {
 	return strings.IndexByte(host, ':') >= 0
 }
 
-func (s *Server) getAddress(cfg *config.Config) string {
+func (s *Server) getAddress() string {
 	shouldShowPort := s.port != 80
-	host := cfg.GetString("server.domain")
+	host := s.config.Domain
 	if len(host) == 0 {
-		host = cfg.GetString("server.host")
+		host = s.config.Host
 		switch host {
 		case "0.0.0.0":
 			host = "127.0.0.1"
@@ -251,36 +265,39 @@ func (s *Server) getAddress(cfg *config.Config) string {
 	return "http://" + host
 }
 
-func (s *Server) getProxyAddress(cfg *config.Config) string {
-	if !cfg.Has("server.proxy.host") {
-		return s.getAddress(cfg)
+func (s *Server) getProxyAddress() string {
+	if len(s.config.Proxy.Host) == 0 {
+		return s.getAddress()
 	}
 
 	var shouldShowPort bool
-	proto := cfg.GetString("server.proxy.protocol")
-	port := cfg.GetInt("server.proxy.port")
+	proto := s.config.Proxy.Protocol
+	port := s.config.Proxy.Port
 	if proto == "https" {
 		shouldShowPort = port != 443
 	} else {
 		shouldShowPort = port != 80
 	}
-	host := cfg.GetString("server.proxy.host")
+	host := s.config.Proxy.Host
 	if shouldShowPort {
 		host = net.JoinHostPort(host, strconv.Itoa(s.port))
 	} else if s.isIPv6(host) {
 		host = "[" + host + "]"
 	}
 
-	return proto + "://" + host + cfg.GetString("server.proxy.base")
+	return proto + "://" + host + s.config.Proxy.Base
 }
 
 func (s *Server) refreshURLs() {
-	s.baseURL = s.getAddress(s.config)
-	s.proxyBaseURL = s.getProxyAddress(s.config)
+	s.baseURL = s.getAddress()
+	s.proxyBaseURL = s.getProxyAddress()
 }
 
 // Service returns the service identified by the given name.
 // Panics if no service could be found with the given name.
+// TODO re-assess the service dependency container (does it belong here, in the Server?)
+// TODO create a simple struct "ServiceContainer" or something that would be passed to the route registration function?
+// The only "challenge" remaining is figuring out a clean way to access the services when creating controllers
 func (s *Server) Service(name string) Service {
 	if s, ok := s.services[name]; ok {
 		return s
@@ -299,6 +316,7 @@ func (s *Server) LookupService(name string) (Service, bool) {
 // RegisterService on this server using its name (returned by `Service.Name()`).
 // A service's name should be unique.
 // `Service.Init(server)` is called on the given service upon registration.
+// TODO remove service container
 func (s *Server) RegisterService(service Service) {
 	s.services[service.Name()] = service
 }
@@ -359,18 +377,13 @@ func (s *Server) ClearShutdownHooks() {
 	s.shutdownHooks = []func(*Server){}
 }
 
-// Config returns the server's config.
-func (s *Server) Config() *config.Config {
-	return s.config
-}
-
-func (s *Server) HasDB() bool {
+func (s *Server) HasDB() bool { // TODO Detach DB from server
 	return s.db != nil
 }
 
 // DB returns the root database instance. Panics if no
 // database connection is set up.
-func (s *Server) DB() *gorm.DB {
+func (s *Server) DB() *gorm.DB { // TODO Detach DB from server
 	if s.db == nil {
 		panic(errors.NewSkip("no database connection", 3))
 	}
@@ -384,7 +397,7 @@ func (s *Server) DB() *gorm.DB {
 // DB so it can be used again out of the transaction.
 //
 // This is used for tests. This operation is not concurrently safe.
-func (s *Server) Transaction(opts ...*sql.TxOptions) func() {
+func (s *Server) Transaction(opts ...*sql.TxOptions) func() { // TODO Detach DB from server
 	if s.db == nil {
 		panic(errors.NewSkip("no database connection", 3))
 	}
@@ -404,12 +417,12 @@ func (s *Server) Transaction(opts ...*sql.TxOptions) func() {
 // This can be used to create a mock DB in tests. Using this function
 // is not recommended outside of tests. Prefer using a custom dialect.
 // This operation is not concurrently safe.
-func (s *Server) ReplaceDB(dialector gorm.Dialector) error {
+func (s *Server) ReplaceDB(dialector gorm.Dialector) error { // TODO Detach DB from server
 	if err := s.CloseDB(); err != nil {
 		return err
 	}
 
-	db, err := database.NewFromDialector(s.config, func() *slog.Logger { return s.Logger }, dialector)
+	db, err := database.NewFromDialector(nil, func() *slog.Logger { return s.Logger }, dialector)
 	if err != nil {
 		return err
 	}
@@ -420,7 +433,7 @@ func (s *Server) ReplaceDB(dialector gorm.Dialector) error {
 
 // CloseDB close the database connection if there is one.
 // Does nothing and returns `nil` if there is no connection.
-func (s *Server) CloseDB() error {
+func (s *Server) CloseDB() error { // TODO Detach DB from server
 	if s.db == nil {
 		return nil
 	}
@@ -470,7 +483,11 @@ func (s *Server) Start() error {
 			panic("server options BaseContext returned a nil context")
 		}
 	}
-	s.ctx = context.WithValue(baseCtx, serverKey{}, s)
+	// Add the server and logger to the context
+	// TODO document slogger added to base context
+	loggerCtx := slog.Context(baseCtx, s.Logger)
+	// TODO add debug too? but context starts to be overloaded...
+	s.ctx = context.WithValue(loggerCtx, serverKey{}, s)
 
 	select {
 	case <-s.ctx.Done():

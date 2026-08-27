@@ -13,24 +13,18 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
-func prepareJWTServiceTest(t *testing.T) (*testutil.TestServer, *JWTService) {
-	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
-	service := NewJWTService(server.Config(), &osfs.FS{})
-	server.RegisterService(service)
-	return server, service
-}
-
 func TestJWTService(t *testing.T) {
 	t.Run("GenerateToken", func(t *testing.T) {
-		server, service := prepareJWTServiceTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
-		server.Config().Set("auth.jwt.expiry", 20)
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		service := NewJWTService(config, &osfs.FS{})
 
 		now := time.Now()
 		expiry := time.Duration(20) * time.Second
@@ -38,7 +32,7 @@ func TestJWTService(t *testing.T) {
 		tokenString, err := service.GenerateToken("johndoe")
 		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
-			return []byte(server.Config().GetString("auth.jwt.secret")), nil
+			return []byte(config.Secret), nil
 		})
 
 		require.NoError(t, err)
@@ -55,9 +49,11 @@ func TestJWTService(t *testing.T) {
 	})
 
 	t.Run("GenerateTokenWithClaims_HS256", func(t *testing.T) {
-		server, service := prepareJWTServiceTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
-		server.Config().Set("auth.jwt.expiry", 20)
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		service := NewJWTService(config, &osfs.FS{})
 
 		now := time.Now()
 		expiry := time.Duration(20) * time.Second
@@ -69,7 +65,7 @@ func TestJWTService(t *testing.T) {
 		tokenString, err := service.GenerateTokenWithClaims(srcClaims, jwt.SigningMethodHS256)
 		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
-			return []byte(server.Config().GetString("auth.jwt.secret")), nil
+			return []byte(config.Secret), nil
 		})
 
 		require.NoError(t, err)
@@ -88,10 +84,14 @@ func TestJWTService(t *testing.T) {
 
 	t.Run("GenerateTokenWithClaims_RSA", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, service := prepareJWTServiceTest(t)
-		server.Config().Set("auth.jwt.rsa.public", path.Join(rootDir, "resources/rsa/public.pem"))
-		server.Config().Set("auth.jwt.rsa.private", path.Join(rootDir, "resources/rsa/private.pem"))
-		server.Config().Set("auth.jwt.expiry", 20)
+		config := &JWTConfig{
+			Expiry: 20,
+			RSA: KeyPairConfig{
+				Public:  path.Join(rootDir, "resources/rsa/public.pem"),
+				Private: path.Join(rootDir, "resources/rsa/private.pem"),
+			},
+		}
+		service := NewJWTService(config, &osfs.FS{})
 
 		now := time.Now()
 		expiry := time.Duration(20) * time.Second
@@ -103,7 +103,7 @@ func TestJWTService(t *testing.T) {
 		tokenString, err := service.GenerateTokenWithClaims(srcClaims, jwt.SigningMethodRS256)
 		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
-			return service.GetKey("auth.jwt.rsa.public")
+			return service.GetPublicKey(jwt.SigningMethodRS256)
 		})
 
 		require.NoError(t, err)
@@ -122,10 +122,14 @@ func TestJWTService(t *testing.T) {
 
 	t.Run("GenerateTokenWithClaims_ECDSA", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, service := prepareJWTServiceTest(t)
-		server.Config().Set("auth.jwt.ecdsa.public", path.Join(rootDir, "resources/ecdsa/public.pem"))
-		server.Config().Set("auth.jwt.ecdsa.private", path.Join(rootDir, "resources/ecdsa/private.pem"))
-		server.Config().Set("auth.jwt.expiry", 20)
+		config := &JWTConfig{
+			Expiry: 20,
+			RSA: KeyPairConfig{
+				Public:  path.Join(rootDir, "resources/ecdsa/public.pem"),
+				Private: path.Join(rootDir, "resources/ecdsa/private.pem"),
+			},
+		}
+		service := NewJWTService(config, &osfs.FS{})
 
 		now := time.Now()
 		expiry := time.Duration(20) * time.Second
@@ -137,7 +141,7 @@ func TestJWTService(t *testing.T) {
 		tokenString, err := service.GenerateTokenWithClaims(srcClaims, jwt.SigningMethodES256)
 		require.NoError(t, err)
 		parsedToken, err := jwt.Parse(tokenString, func(_ *jwt.Token) (any, error) {
-			return service.GetKey("auth.jwt.ecdsa.public")
+			return service.GetPublicKey(jwt.SigningMethodES256)
 		})
 
 		require.NoError(t, err)
@@ -155,8 +159,10 @@ func TestJWTService(t *testing.T) {
 	})
 
 	t.Run("GenerateTokenWithClaims_Unsupported", func(t *testing.T) {
-		server, service := prepareJWTServiceTest(t)
-		server.Config().Set("auth.jwt.expiry", 20)
+		config := &JWTConfig{
+			Expiry: 20,
+		}
+		service := NewJWTService(config, &osfs.FS{})
 
 		_, err := service.GenerateTokenWithClaims(nil, jwt.SigningMethodPS256)
 		require.Error(t, err)
@@ -166,14 +172,16 @@ func TestJWTService(t *testing.T) {
 func TestJWTAuthenticator(t *testing.T) {
 	t.Run("success_hs256", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{user: user}
-		authenticator := Middleware(NewJWTAuthenticator(mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
 
-		// No need to register the JWTService, it should be done automatically
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateToken(user.Email)
+		token, err := jwtService.GenerateToken(user.Email)
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -194,17 +202,20 @@ func TestJWTAuthenticator(t *testing.T) {
 	t.Run("success_rsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.rsa.public", path.Join(rootDir, "resources/rsa/public.pem"))
-		server.Config().Set("auth.jwt.rsa.private", path.Join(rootDir, "resources/rsa/private.pem"))
+		config := &JWTConfig{
+			Expiry: 20,
+			RSA: KeyPairConfig{
+				Public:  path.Join(rootDir, "resources/rsa/public.pem"),
+				Private: path.Join(rootDir, "resources/rsa/private.pem"),
+			},
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{user: user}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.SigningMethod = jwt.SigningMethodRS256
 		authenticator := Middleware(a)
 
-		// No need to register the JWTService, it should be done automatically
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodRS256)
+		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodRS256)
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -225,18 +236,21 @@ func TestJWTAuthenticator(t *testing.T) {
 	t.Run("success_ecdsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.ecdsa.public", path.Join(rootDir, "resources/ecdsa/public.pem"))
-		server.Config().Set("auth.jwt.ecdsa.private", path.Join(rootDir, "resources/ecdsa/private.pem"))
+		config := &JWTConfig{
+			Expiry: 20,
+			RSA: KeyPairConfig{
+				Public:  path.Join(rootDir, "resources/ecdsa/public.pem"),
+				Private: path.Join(rootDir, "resources/ecdsa/private.pem"),
+			},
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{user: user}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.SigningMethod = jwt.SigningMethodES256
 		authenticator := Middleware(a)
 
-		// No need to register the JWTService, it should be done automatically
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodES256)
+		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodES256)
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -256,9 +270,13 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("invalid_token", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer invalidtoken")
@@ -278,14 +296,15 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("token_not_valid_yet", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
 
-		// No need to register the JWTService, it should be done automatically
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{
+		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{
 			"sub": user.Email,
 			"nbf": time.Now().Add(time.Hour).Unix(),
 		}, jwt.SigningMethodHS256)
@@ -309,14 +328,15 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("token_expired", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
 
-		// No need to register the JWTService, it should be done automatically
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{
+		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{
 			"sub": user.Email,
 			"exp": time.Now().Add(-time.Hour).Unix(),
 		}, jwt.SigningMethodHS256)
@@ -340,16 +360,17 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("unknown_user", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{
 			err: gorm.ErrRecordNotFound,
 		}
-		authenticator := Middleware(NewJWTAuthenticator(mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
 
-		// No need to register the JWTService, it should be done automatically
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateToken("notjohndoe@example.org")
+		token, err := jwtService.GenerateToken("notjohndoe@example.org")
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -372,12 +393,15 @@ func TestJWTAuthenticator(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
 		buf := &bytes.Buffer{}
 		server.Logger = slog.New(slog.NewHandler(false, buf))
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("service_error")}
-		authenticator := Middleware(NewJWTAuthenticator(mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
 
-		service := NewJWTService(server.Config(), &osfs.FS{})
-		token, err := service.GenerateToken("notjohndoe@example.org")
+		token, err := jwtService.GenerateToken("notjohndoe@example.org")
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -395,16 +419,20 @@ func TestJWTAuthenticator(t *testing.T) {
 	t.Run("unexpected_method_hmac", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.rsa.public", path.Join(rootDir, "resources/rsa/public.pem"))
-		server.Config().Set("auth.jwt.rsa.private", path.Join(rootDir, "resources/rsa/private.pem"))
+		config := &JWTConfig{
+			Expiry: 20,
+			RSA: KeyPairConfig{
+				Public:  path.Join(rootDir, "resources/rsa/public.pem"),
+				Private: path.Join(rootDir, "resources/rsa/private.pem"),
+			},
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.SigningMethod = jwt.SigningMethodHS256
 		authenticator := Middleware(a)
 
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateTokenWithClaims(jwt.MapClaims{"sub": "johndoe@example.org"}, jwt.SigningMethodRS256)
+		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": "johndoe@example.org"}, jwt.SigningMethodRS256)
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -425,15 +453,17 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("unexpected_method_rsa", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.SigningMethod = jwt.SigningMethodRS256
 		authenticator := Middleware(a)
 
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateToken("johndoe@example.org")
+		token, err := jwtService.GenerateToken("johndoe@example.org")
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -454,15 +484,17 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("unexpected_method_ecdsa", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.SigningMethod = jwt.SigningMethodES256
 		authenticator := Middleware(a)
 
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateToken("johndoe@example.org")
+		token, err := jwtService.GenerateToken("johndoe@example.org")
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -483,15 +515,17 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("unsupported_method", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.SigningMethod = jwt.SigningMethodPS256
 		authenticator := Middleware(a)
 
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateToken("johndoe@example.org")
+		token, err := jwtService.GenerateToken("johndoe@example.org")
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -504,9 +538,13 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("no_auth", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
@@ -525,18 +563,19 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("optional_success", func(t *testing.T) {
 		server, user := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{
 			user: user,
 		}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.Optional = true
 		authenticator := Middleware(a)
 
-		// No need to register the JWTService, it should be done automatically
-		service := NewJWTService(server.Config(), &osfs.FS{})
-
-		token, err := service.GenerateToken(user.Email)
+		token, err := jwtService.GenerateToken(user.Email)
 		require.NoError(t, err)
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
@@ -555,9 +594,13 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("optional_invalid_token", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.Optional = true
 		authenticator := MiddlewareWithRealm(a, "custom realm")
 
@@ -579,9 +622,13 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("optional_no_auth", func(t *testing.T) {
 		server, _ := prepareAuthenticatorTest(t)
-		server.Config().Set("auth.jwt.secret", "secret")
+		config := &JWTConfig{
+			Expiry: 20,
+			Secret: "secret",
+		}
+		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService)
 		a.Optional = true
 		authenticator := Middleware(a)
 

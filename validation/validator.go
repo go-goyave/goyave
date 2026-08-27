@@ -6,10 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/walk"
 )
@@ -47,54 +44,22 @@ type ErrorResponse struct {
 // including the accessors necessary for validation.
 // Validators must implement this interface so they
 // have access to DB, Config, Language and Logger.
+// TODO remove composable
 type Composable interface {
-	DB() *gorm.DB
-	Config() *config.Config
 	Lang() *lang.Language
-	Logger() *slog.Logger
 }
 
 type component struct {
-	db     *gorm.DB
-	config *config.Config
-	lang   *lang.Language
-	logger *slog.Logger
-}
-
-// DB get the database instance given through the validation Options.
-// Panics if there is none.
-func (c *component) DB() *gorm.DB {
-	if c.db == nil {
-		panic(errors.NewSkip("DB is not set in validation options", 3))
-	}
-	return c.db
-}
-
-// Config get the configuration given through the validation Options.
-// Panics if there is none.
-func (c *component) Config() *config.Config {
-	if c.config == nil {
-		panic(errors.NewSkip("Config is not set in validation options", 3))
-	}
-	return c.config
+	lang *lang.Language
 }
 
 // Lang get the language given through the validation Options.
 // Panics if there is none.
-func (c *component) Lang() *lang.Language {
+func (c *component) Lang() *lang.Language { // TODO language passed through the context?
 	if c.lang == nil {
 		panic(errors.NewSkip("Language is not set in validation options", 3))
 	}
 	return c.lang
-}
-
-// Logger get the Logger given through the validation Options.
-// Panics if there is none.
-func (c *component) Logger() *slog.Logger {
-	if c.logger == nil {
-		panic(errors.NewSkip("Logger is not set in validation options", 3))
-	}
-	return c.logger
 }
 
 // Options all the parameters required by `Validate()`.
@@ -126,9 +91,6 @@ type Options struct {
 	// Language used for translating validation error messages.
 	// Defaults to `lang.Default`.
 	Language *lang.Language
-	DB       *gorm.DB
-	Config   *config.Config
-	Logger   *slog.Logger
 
 	// ConvertSingleValueArrays set to true to convert fields that are expected
 	// to be an array into an array with a single value.

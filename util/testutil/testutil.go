@@ -23,7 +23,6 @@ import (
 )
 
 type copyRequestMiddleware struct {
-	goyave.Component
 	request *goyave.Request
 }
 
@@ -53,12 +52,18 @@ type TestServer struct {
 // A default logger redirecting the output to `testing.T.Log()` is used.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
+// TODO it doesn't let users chose the configuration sources and format nor the configuration type
 func NewTestServer(t *testing.T, configFileName string) *TestServer {
 	rootDirectory := FindRootDirectory()
 	cfgPath := path.Join(rootDirectory, configFileName)
-	cfg, err := config.LoadFrom(cfgPath)
+	cfg, validationErrors, err := config.Load[config.Base](t.Context(), config.FromFile(&osfs.FS{}, cfgPath, config.UnsmarshalReadJSON()))
 	if err != nil {
 		panic(errors.New(err))
+	}
+	if validationErrors != nil {
+		slog.New(slog.NewHandler(true, t.Output())).Error(errors.New("configuration validation errors"), "errors", validationErrors)
+		t.FailNow()
+		return nil
 	}
 
 	return NewTestServerWithOptions(t, goyave.Options{Config: cfg})
@@ -72,11 +77,17 @@ func NewTestServer(t *testing.T, configFileName string) *TestServer {
 // output to `io.Discard` is used.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
+// TODO it doesn't let users chose the configuration sources and format nor the configuration type
 func NewTestServerWithOptions(t *testing.T, opts goyave.Options) *TestServer {
 	if opts.Config == nil {
-		cfg, err := config.Load()
+		cfg, validationErrors, err := config.Load[config.Base](t.Context(), config.Default())
 		if err != nil {
 			panic(errors.New(err))
+		}
+		if validationErrors != nil {
+			slog.New(slog.NewHandler(true, t.Output())).Error(errors.New("configuration validation errors"), "errors", validationErrors)
+			t.FailNow()
+			return nil
 		}
 		opts.Config = cfg
 	}

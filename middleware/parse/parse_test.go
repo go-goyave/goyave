@@ -11,14 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
 func TestParseMiddleware(t *testing.T) {
-	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
+	server := testutil.NewTestServer(t, goyave.Options{})
 	route := server.Router().Post("/parse", nil)
 
 	t.Run("Parse Query", func(t *testing.T) {

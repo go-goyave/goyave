@@ -31,38 +31,22 @@ func (m *testMiddleware) Handle(_ goyave.Handler) goyave.Handler {
 
 func TestTestServer(t *testing.T) {
 	t.Run("NewTestServer", func(t *testing.T) {
-		server := NewTestServer(t, "resources/custom_config.json")
-		assert.Equal(t, "value", server.Config().Get("custom-entry"))
+		server := NewTestServer(t, goyave.Options{})
+		assert.Equal(t, "http://[::1]:0", server.BaseURL()) // Check default config loaded
 		assert.Equal(t, slog.DiscardLogger(), server.Logger)
+		assert.NotNil(t, server.Lang)
 	})
 
-	t.Run("NewTestServerWithOptions", func(t *testing.T) {
+	t.Run("NewTestServer_custom_config", func(t *testing.T) {
 		cfg := config.LoadDefault()
-		cfg.Set("test-entry", "test-value")
-
-		server := NewTestServerWithOptions(t, goyave.Options{Config: cfg})
-
-		assert.NotNil(t, server.Lang)
-		assert.Equal(t, "test-value", server.Config().Get("test-entry"))
-		assert.Equal(t, slog.DiscardLogger(), server.Logger)
-	})
-
-	t.Run("NewTestServer_AutoConfig", func(t *testing.T) {
-		t.Setenv("GOYAVE_ENV", "test")
-		server := NewTestServerWithOptions(t, goyave.Options{})
-
-		assert.NotNil(t, server.Lang)
-		assert.Equal(t, "test-value", server.Config().Get("test-entry"))
-
-		assert.Panics(t, func() {
-			// Config file not found
-			t.Setenv("GOYAVE_ENV", "")
-			NewTestServerWithOptions(t, goyave.Options{})
-		})
+		cfg.Server.Host = "0.0.0.0"
+		cfg.Server.Port = 8888
+		server := NewTestServer(t, goyave.Options{Config: cfg})
+		assert.Equal(t, "http://127.0.0.1:8888", server.BaseURL())
 	})
 
 	t.Run("TestRequest", func(t *testing.T) {
-		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
+		server := NewTestServer(t, goyave.Options{})
 		server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 			r.Get("/route", func(resp *goyave.Response, _ *goyave.Request) {
 				resp.String(http.StatusOK, "OK")
@@ -78,7 +62,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("TestMiddleware", func(t *testing.T) {
-		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
+		server := NewTestServer(t, goyave.Options{})
 
 		request := server.NewTestRequest(http.MethodGet, "/route", nil)
 		request.Data = map[string]any{"key": "value"}
@@ -111,7 +95,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestRequest", func(t *testing.T) {
-		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
+		server := NewTestServer(t, goyave.Options{})
 		body := bytes.NewBufferString("body")
 		req := server.NewTestRequest(http.MethodPost, "/uri", body)
 
@@ -126,7 +110,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestResponse", func(t *testing.T) {
-		server := NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, &bytes.Buffer{}))})
+		server := NewTestServer(t, goyave.Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, &bytes.Buffer{}))})
 		req := server.NewTestRequest(http.MethodGet, "/uri", nil)
 		resp, recorder := server.NewTestResponse(req)
 

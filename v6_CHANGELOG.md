@@ -13,6 +13,7 @@
     - added Gorm settings: FullSaveAssociations, PrepareStmtMaxSize, PrepareStmtTTL, IgnoreRelationshipsWhenMigrating, QueryFields, CreateBatchSize, TranslateError, PropagateUnscoped
     - server options now take a *config.Base
     - testutil.Server lets you choose source and config type 
+    - section and field names are now in PascalCase
 - slog:
   - global default logger
   - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context
@@ -34,3 +35,11 @@
   - jwtservice: GetKey removed, use GetPrivateKey or GetPublicKey instead
   - authenticator: if it returns an *errors.Error, it is considered system error
   - config basic authenticator now takes a BasicConfig parameter
+- testutil
+  - NewTestServer removed. NewTestServerWithOptions renamed NewTestServer.
+  - NewTestServer doesn't load configuration from files anymore. It only loads the default values `config.LoadDefault()` (but replace port with 0 for auto assignment) if no Config is provided in the options.
+  - TODO document how to test log output and how to output logs to testing.T.Output
+
+
+TODO docs pass with links
+TODO cleanup resources directory

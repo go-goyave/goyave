@@ -41,7 +41,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -72,7 +72,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -103,7 +103,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -142,7 +142,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -183,7 +183,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -205,7 +205,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -226,7 +226,7 @@ func TestMiddleware(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg})
 		buffer := bytes.NewBufferString("")
 		server.Logger = slog.New(slog.NewHandler(false, buffer))
 
@@ -259,7 +259,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts

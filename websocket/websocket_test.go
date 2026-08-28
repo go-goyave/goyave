@@ -214,7 +214,7 @@ func TestDefaultUpgradeErrorHandler(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			opts, cfg := prepareTestConfig()
 			cfg.Debug = c.debug
-			server := testutil.NewTestServerWithOptions(t, opts)
+			server := testutil.NewTestServer(t, opts)
 			req := server.NewTestRequest(http.MethodGet, "/websocket", nil)
 			resp, recorder := server.NewTestResponse(req)
 
@@ -282,7 +282,7 @@ func TestUpgrade(t *testing.T) {
 
 	var routeURL string
 	opts, cfg := prepareTestConfig()
-	server := testutil.NewTestServerWithOptions(t, opts)
+	server := testutil.NewTestServer(t, opts)
 	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t:  t,
@@ -336,7 +336,7 @@ func TestUpgrade(t *testing.T) {
 
 func TestUpgradeError(t *testing.T) {
 	opts, cfg := prepareTestConfig()
-	server := testutil.NewTestServerWithOptions(t, opts)
+	server := testutil.NewTestServer(t, opts)
 	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
@@ -360,7 +360,7 @@ func TestUpgradeError(t *testing.T) {
 
 func TestRegistrer(t *testing.T) {
 	opts, cfg := prepareTestConfig()
-	server := testutil.NewTestServerWithOptions(t, opts)
+	server := testutil.NewTestServer(t, opts)
 	upgrader := New(&testControllerRegistrer{
 		registerRoute: func(router *goyave.Router, handler goyave.Handler) {
 			router.Get("", handler).SetMeta("key", "value").Name("websocket")
@@ -391,7 +391,7 @@ func TestCloseHandshakeTimeout(t *testing.T) {
 
 	var routeURL string
 	opts, cfg := prepareTestConfig()
-	server := testutil.NewTestServerWithOptions(t, opts)
+	server := testutil.NewTestServer(t, opts)
 	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t:  t,
@@ -500,7 +500,7 @@ func TestGracefulClose(t *testing.T) {
 
 			var routeURL string
 			opts, cfg := prepareTestConfig()
-			server := testutil.NewTestServerWithOptions(t, opts)
+			server := testutil.NewTestServer(t, opts)
 			server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
 				var ctrl Controller = &testController{
 					t:     t,
@@ -567,7 +567,7 @@ func TestCloseConnectionClosed(t *testing.T) {
 
 	var routeURL string
 	opts, cfg := prepareTestConfig()
-	server := testutil.NewTestServerWithOptions(t, opts)
+	server := testutil.NewTestServer(t, opts)
 	server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,
@@ -623,7 +623,7 @@ func TestCloseWriteTimeout(t *testing.T) {
 
 	var routeURL string
 	opts, cfg := prepareTestConfig()
-	server := testutil.NewTestServerWithOptions(t, opts)
+	server := testutil.NewTestServer(t, opts)
 	server.RegisterRoutes(func(s *goyave.Server, r *goyave.Router) {
 		upgrader := New(&testController{
 			t: t,

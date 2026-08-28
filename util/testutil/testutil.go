@@ -45,51 +45,22 @@ type TestServer struct {
 	*goyave.Server
 }
 
-// NewTestServer creates a new server using the given config file. The config path is relative to
-// the project's directory. If not nil, the given `routeRegistrer` function is called to register
-// routes without starting the server.
-//
-// A default logger redirecting the output to `testing.T.Log()` is used.
-//
-// Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
-// TODO it doesn't let users chose the configuration sources and format nor the configuration type
-func NewTestServer(t *testing.T, configFileName string) *TestServer {
-	rootDirectory := FindRootDirectory()
-	cfgPath := path.Join(rootDirectory, configFileName)
-	cfg, validationErrors, err := config.Load[config.Base](t.Context(), config.FromFile(&osfs.FS{}, cfgPath, config.UnsmarshalReadJSON()))
-	if err != nil {
-		panic(errors.New(err))
-	}
-	if validationErrors != nil {
-		slog.New(slog.NewHandler(true, t.Output())).Error(errors.New("configuration validation errors"), "errors", validationErrors)
-		t.FailNow()
-		return nil
-	}
-
-	return NewTestServerWithOptions(t, goyave.Options{Config: cfg})
-}
-
-// NewTestServerWithOptions creates a new server using the given options.
+// NewTestServer creates a new server using the given options.
 // If not nil, the given `routeRegistrer` function is called to register
 // routes without starting the server.
 //
-// By default, if no `Logger` is given in the options, a default logger redirecting the
-// output to `io.Discard` is used.
+// By default, if no `Config` is given in the options, the default [config.Base] is loaded.
+// The port is replaced with 0 for auto assignment, which allows parallel tests with different
+// instances of [TestServer].
+//
+// By default, if no [slog.Logger] is given in the options, a default logger redirecting the
+// output to [io.Discard] is used.
 //
 // Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
-// TODO it doesn't let users chose the configuration sources and format nor the configuration type
-func NewTestServerWithOptions(t *testing.T, opts goyave.Options) *TestServer {
+func NewTestServer(t *testing.T, opts goyave.Options) *TestServer {
 	if opts.Config == nil {
-		cfg, validationErrors, err := config.Load[config.Base](t.Context(), config.Default())
-		if err != nil {
-			panic(errors.New(err))
-		}
-		if validationErrors != nil {
-			slog.New(slog.NewHandler(true, t.Output())).Error(errors.New("configuration validation errors"), "errors", validationErrors)
-			t.FailNow()
-			return nil
-		}
-		opts.Config = cfg
+		opts.Config = config.LoadDefault()
+		opts.Config.Server.Port = 0 // Auto-assign port
 	}
 
 	if opts.Logger == nil {
@@ -185,7 +156,7 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // so all functions of `*goyave.Response` can be used safely.
 func NewTestResponse(request *goyave.Request) (*goyave.Response, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
-	return goyave.NewResponse(NewTestServerWithOptions(nil, goyave.Options{Config: config.LoadDefault()}).Server, request, recorder), recorder
+	return goyave.NewResponse(NewTestServer(nil, goyave.Options{}).Server, request, recorder), recorder
 }
 
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created

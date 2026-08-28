@@ -56,7 +56,7 @@ func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser) {
 	// cfg.Set("database.name", "testauthenticator.db")
 	// cfg.Set("database.options", "mode=memory")
 	// cfg.Set("app.debug", false)
-	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: cfg})
+	server := testutil.NewTestServer(t, goyave.Options{Config: cfg})
 	password, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 	user := &TestUser{
 		Name:     "johndoe",

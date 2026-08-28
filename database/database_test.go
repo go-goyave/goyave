@@ -2,9 +2,12 @@ package database
 
 import (
 	"bytes"
+	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -25,13 +28,44 @@ func openDummy(dsn string) gorm.Dialector {
 	}
 }
 
+var testConnectionConfig = &config.DatabaseConnection{
+	Dialect:                    "dummy",
+	Host:                       "localhost",
+	Port:                       5432,
+	DatabaseName:               "dbname",
+	Username:                   "user",
+	Password:                   "secret",
+	Options:                    "option=value",
+	MaxOpenConnections:         123,
+	MaxIdleConnections:         123,
+	MaxLifetime:                123,
+	MaxIdleTime:                123,
+	DefaultReadQueryTimeoutMs:  123,
+	DefaultWriteQueryTimeoutMs: 123,
+	GORM: config.GORM{
+		SkipDefaultTransaction:                   true,
+		PrepareStmtMaxSize:                       123,
+		PrepareStmtTTL:                           123,
+		CreateBatchSize:                          123,
+		PrepareStmt:                              false,
+		DryRun:                                   true,
+		DisableNestedTransaction:                 true,
+		AllowGlobalUpdate:                        true,
+		DisableAutomaticPing:                     true,
+		FullSaveAssociations:                     true,
+		QueryFields:                              true,
+		PropagateUnscoped:                        true,
+		TranslateError:                           true,
+		DisableForeignKeyConstraintWhenMigrating: true,
+		IgnoreRelationshipsWhenMigrating:         true,
+	},
+}
+
 func TestNewDatabase(t *testing.T) {
 	RegisterDialect("dummy", "host={host} port={port} user={username} dbname={name} password={password} {options}", openDummy)
-	RegisterDialect("sqlite3_test", "file:{name}?{options}", sqlite.Open)
 	t.Cleanup(func() {
 		mu.Lock()
 		delete(dialects, "dummy")
-		delete(dialects, "sqlite3_test")
 		mu.Unlock()
 	})
 
@@ -42,30 +76,8 @@ func TestNewDatabase(t *testing.T) {
 	})
 
 	t.Run("New", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("app.debug", true)
-		cfg.Set("database.connection", "dummy")
-		cfg.Set("database.host", "localhost")
-		cfg.Set("database.port", 5432)
-		cfg.Set("database.name", "dbname")
-		cfg.Set("database.username", "user")
-		cfg.Set("database.password", "secret")
-		cfg.Set("database.options", "option=value")
-		cfg.Set("database.maxOpenConnections", 123)
-		cfg.Set("database.maxIdleConnections", 123)
-		cfg.Set("database.maxLifetime", 123)
-		cfg.Set("database.defaultReadQueryTimeout", 123)
-		cfg.Set("database.defaultWriteQueryTimeout", 123)
-		cfg.Set("database.config.skipDefaultTransaction", true)
-		cfg.Set("database.config.dryRun", true)
-		cfg.Set("database.config.prepareStmt", false)
-		cfg.Set("database.config.disableNestedTransaction", true)
-		cfg.Set("database.config.allowGlobalUpdate", true)
-		cfg.Set("database.config.disableAutomaticPing", true)
-		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
-
 		slogger := slog.New(slog.NewHandler(true, &bytes.Buffer{}))
-		db, err := New(cfg, func() *slog.Logger { return slogger })
+		db, err := New(testConnectionConfig, func() *slog.Logger { return slogger })
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
@@ -77,15 +89,22 @@ func TestNewDatabase(t *testing.T) {
 			}
 		}
 
-		dbConfig := db.Config
 		// Can't check log level (gorm logger unexported)
-		assert.True(t, dbConfig.SkipDefaultTransaction)
-		assert.True(t, dbConfig.DryRun)
-		assert.False(t, dbConfig.PrepareStmt)
-		assert.True(t, dbConfig.DisableNestedTransaction)
-		assert.True(t, dbConfig.AllowGlobalUpdate)
-		assert.True(t, dbConfig.DisableAutomaticPing)
-		assert.True(t, dbConfig.DisableAutomaticPing)
+		assert.Equal(t, testConnectionConfig.GORM.SkipDefaultTransaction, db.SkipDefaultTransaction)
+		assert.Equal(t, testConnectionConfig.GORM.AllowGlobalUpdate, db.AllowGlobalUpdate)
+		assert.Equal(t, testConnectionConfig.GORM.CreateBatchSize, db.CreateBatchSize)
+		assert.Equal(t, testConnectionConfig.GORM.DisableAutomaticPing, db.DisableAutomaticPing)
+		assert.Equal(t, testConnectionConfig.GORM.DisableForeignKeyConstraintWhenMigrating, db.DisableForeignKeyConstraintWhenMigrating)
+		assert.Equal(t, testConnectionConfig.GORM.DisableNestedTransaction, db.DisableNestedTransaction)
+		assert.Equal(t, testConnectionConfig.GORM.DryRun, db.DryRun)
+		assert.Equal(t, testConnectionConfig.GORM.FullSaveAssociations, db.FullSaveAssociations)
+		assert.Equal(t, testConnectionConfig.GORM.IgnoreRelationshipsWhenMigrating, db.IgnoreRelationshipsWhenMigrating)
+		assert.Equal(t, testConnectionConfig.GORM.PrepareStmt, db.PrepareStmt)
+		assert.Equal(t, testConnectionConfig.GORM.PrepareStmtMaxSize, db.PrepareStmtMaxSize)
+		assert.Equal(t, time.Duration(testConnectionConfig.GORM.PrepareStmtTTL)*time.Second, db.PrepareStmtTTL)
+		assert.Equal(t, testConnectionConfig.GORM.PropagateUnscoped, db.PropagateUnscoped)
+		assert.Equal(t, testConnectionConfig.GORM.QueryFields, db.QueryFields)
+		assert.Equal(t, testConnectionConfig.GORM.TranslateError, db.TranslateError)
 
 		// Cannot check the max open conns, idle conns and lifetime
 
@@ -97,82 +116,44 @@ func TestNewDatabase(t *testing.T) {
 				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.WriteTimeout)
 			}
 		}
+
+		assert.Equal(t, "dummy", db.Name())
 	})
 
 	t.Run("silent", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
-		cfg.Set("database.connection", "dummy")
-		cfg.Set("database.host", "localhost")
-		cfg.Set("database.port", 5432)
-		cfg.Set("database.name", "dbname")
-		cfg.Set("database.username", "user")
-		cfg.Set("database.password", "secret")
-		cfg.Set("database.options", "option=value")
-		cfg.Set("database.maxOpenConnections", 123)
-		cfg.Set("database.maxIdleConnections", 123)
-		cfg.Set("database.maxLifetime", 123)
-		cfg.Set("database.defaultReadQueryTimeout", 123)
-		cfg.Set("database.defaultWriteQueryTimeout", 123)
-		cfg.Set("database.config.skipDefaultTransaction", true)
-		cfg.Set("database.config.dryRun", true)
-		cfg.Set("database.config.prepareStmt", false)
-		cfg.Set("database.config.disableNestedTransaction", true)
-		cfg.Set("database.config.allowGlobalUpdate", true)
-		cfg.Set("database.config.disableAutomaticPing", true)
-		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
-
-		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
-		db, err := New(cfg, func() *slog.Logger { return logger })
+		db, err := New(testConnectionConfig, nil)
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
-		if assert.NotNil(t, db.Logger) {
-			// Logging is disable when app.debug is false
-			l, ok := db.Logger.(*Logger)
-			if assert.True(t, ok) {
-				assert.Nil(t, l.slogger)
-			}
+		require.NotNil(t, db.Logger)
+		l, ok := db.Logger.(*Logger)
+		if assert.True(t, ok) {
+			assert.Nil(t, l.slogger)
 		}
 	})
 
 	t.Run("NewFromDialector", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("app.debug", true)
-		cfg.Set("database.connection", "dummy")
-		cfg.Set("database.host", "localhost")
-		cfg.Set("database.port", 5432)
-		cfg.Set("database.name", "dbname")
-		cfg.Set("database.username", "user")
-		cfg.Set("database.password", "secret")
-		cfg.Set("database.options", "option=value")
-		cfg.Set("database.maxOpenConnections", 123)
-		cfg.Set("database.maxIdleConnections", 123)
-		cfg.Set("database.maxLifetime", 123)
-		cfg.Set("database.defaultReadQueryTimeout", 123)
-		cfg.Set("database.defaultWriteQueryTimeout", 123)
-		cfg.Set("database.config.skipDefaultTransaction", true)
-		cfg.Set("database.config.dryRun", true)
-		cfg.Set("database.config.prepareStmt", false)
-		cfg.Set("database.config.disableNestedTransaction", true)
-		cfg.Set("database.config.allowGlobalUpdate", true)
-		cfg.Set("database.config.disableAutomaticPing", true)
-		cfg.Set("database.config.disableForeignKeyConstraintWhenMigrating", true)
-
 		dialector := &DummyDialector{}
-		db, err := NewFromDialector(cfg, nil, dialector)
+		db, err := NewFromDialector(testConnectionConfig, nil, dialector)
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
-		dbConfig := db.Config
 		// Can't check log level (gorm logger unexported)
-		assert.True(t, dbConfig.SkipDefaultTransaction)
-		assert.True(t, dbConfig.DryRun)
-		assert.False(t, dbConfig.PrepareStmt)
-		assert.True(t, dbConfig.DisableNestedTransaction)
-		assert.True(t, dbConfig.AllowGlobalUpdate)
-		assert.True(t, dbConfig.DisableAutomaticPing)
-		assert.True(t, dbConfig.DisableAutomaticPing)
+		assert.Equal(t, testConnectionConfig.GORM.SkipDefaultTransaction, db.SkipDefaultTransaction)
+		assert.Equal(t, testConnectionConfig.GORM.AllowGlobalUpdate, db.AllowGlobalUpdate)
+		assert.Equal(t, testConnectionConfig.GORM.CreateBatchSize, db.CreateBatchSize)
+		assert.Equal(t, testConnectionConfig.GORM.DisableAutomaticPing, db.DisableAutomaticPing)
+		assert.Equal(t, testConnectionConfig.GORM.DisableForeignKeyConstraintWhenMigrating, db.DisableForeignKeyConstraintWhenMigrating)
+		assert.Equal(t, testConnectionConfig.GORM.DisableNestedTransaction, db.DisableNestedTransaction)
+		assert.Equal(t, testConnectionConfig.GORM.DryRun, db.DryRun)
+		assert.Equal(t, testConnectionConfig.GORM.FullSaveAssociations, db.FullSaveAssociations)
+		assert.Equal(t, testConnectionConfig.GORM.IgnoreRelationshipsWhenMigrating, db.IgnoreRelationshipsWhenMigrating)
+		assert.Equal(t, testConnectionConfig.GORM.PrepareStmt, db.PrepareStmt)
+		assert.Equal(t, testConnectionConfig.GORM.PrepareStmtMaxSize, db.PrepareStmtMaxSize)
+		assert.Equal(t, time.Duration(testConnectionConfig.GORM.PrepareStmtTTL)*time.Second, db.PrepareStmtTTL)
+		assert.Equal(t, testConnectionConfig.GORM.PropagateUnscoped, db.PropagateUnscoped)
+		assert.Equal(t, testConnectionConfig.GORM.QueryFields, db.QueryFields)
+		assert.Equal(t, testConnectionConfig.GORM.TranslateError, db.TranslateError)
 
 		// Cannot check the max open conns, idle conns and lifetime
 
@@ -184,36 +165,52 @@ func TestNewDatabase(t *testing.T) {
 				assert.Equal(t, 123*time.Millisecond, timeoutPlugin.WriteTimeout)
 			}
 		}
-	})
 
-	t.Run("New_connection_none", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("database.connection", "none")
-		db, err := New(cfg, nil)
-		assert.Nil(t, db)
-		require.Error(t, err)
-		assert.Equal(t, "Cannot create DB connection. Database is set to \"none\" in the config", err.Error())
+		assert.Equal(t, "dummy", db.Name())
 	})
 
 	t.Run("New_unknown_driver", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("database.connection", "notadriver")
+		cfg := &config.DatabaseConnection{
+			Dialect: "notadriver",
+		}
 		db, err := New(cfg, nil)
 		assert.Nil(t, db)
 		require.Error(t, err)
-		assert.Equal(t, "DB Connection \"notadriver\" not supported, forgotten import?", err.Error())
+		assert.Equal(t, "DB dialect \"notadriver\" not supported, forgotten import?", err.Error())
 	})
 
 	t.Run("SQLite_query", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
-		cfg.Set("database.connection", "sqlite3_test")
-		cfg.Set("database.name", "database_test.db")
-		cfg.Set("database.options", "mode=memory")
+		cfg := &config.DatabaseConnection{
+			Dialect:            "sqlmock",
+			DatabaseName:       "paginator_test.db",
+			MaxIdleConnections: 1,
+			GORM:               config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
+		}
 
-		db, err := New(cfg, nil)
+		mockDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
 		require.NoError(t, err)
-		require.NotNil(t, db)
+
+		dialector := &sqlite.Dialector{
+			DriverName: "sqlite3_timeout_test",
+			DSN:        fmt.Sprintf("file:%s?%s", cfg.DatabaseName, cfg.Options),
+			Conn:       mockDB,
+		}
+
+		t.Cleanup(func() {
+			mock.ExpectClose()
+			assert.NoError(t, mockDB.Close())
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+
+		// The SQLite dialector selects the sqlite version first to know which callback clauses it can use.
+		mock.ExpectQuery(regexp.QuoteMeta(`select sqlite_version()`)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("3.53.4"))
+
+		db, err := NewFromDialector(cfg, nil, dialector)
+		if err != nil {
+			require.NoError(t, err)
+		}
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT name FROM `pragma_database_list`")).WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("main"))
 
 		dbNames := []string{}
 		res := db.Table("pragma_database_list").Select("name").Find(&dbNames)

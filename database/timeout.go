@@ -38,8 +38,8 @@ type timeoutContext struct {
 // context having the configured timeout. The context is replaced in a "before" callback
 // on all GORM operations. In a "after" callback, the new context is canceled.
 //
-// The `ReadTimeout` is applied on the `Query` and `Raw` GORM callbacks. The `WriteTimeout`
-// is applied on the rest of the callbacks.
+// The [TimeoutPlugin.ReadTimeout] is applied on the `Query` and `Raw` GORM callbacks.
+// The [TimeoutPlugin.WriteTimeout] is applied on the rest of the callbacks.
 //
 // Supports all GORM operations except `Scan()`.
 //
@@ -88,15 +88,13 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 		return errors.New(err)
 	}
 
-	// Cannot use it with `Row()` because context is canceled before the call of `rows.Next()`, causing an error.
-	// TODO check it again so it can be used for raw SQL too (or find an alternative)
-	// rowCallback := db.Callback().Row()
-	// if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.readTimeoutBefore); err != nil {
-	// 	return errors.New(err)
-	// }
-	// if err := rowCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-	// 	return errors.New(err)
-	// }
+	rowCallback := db.Callback().Row()
+	if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.readTimeoutBefore); err != nil {
+		return errors.New(err)
+	}
+	if err := rowCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
+		return errors.New(err)
+	}
 
 	rawCallback := db.Callback().Raw()
 	if err := rawCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {

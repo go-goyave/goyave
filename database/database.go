@@ -71,7 +71,7 @@ func newConfig(cfg *config.DatabaseConnection, logger func() *slog.Logger) *gorm
 		DisableAutomaticPing:                     cfg.GORM.DisableAutomaticPing,
 		DisableForeignKeyConstraintWhenMigrating: cfg.GORM.DisableForeignKeyConstraintWhenMigrating,
 		IgnoreRelationshipsWhenMigrating:         cfg.GORM.IgnoreRelationshipsWhenMigrating,
-		// DefaultContextTimeout: 0,
+		// DefaultContextTimeout: 0, // Handled by the timeout plugin
 		FullSaveAssociations: cfg.GORM.FullSaveAssociations,
 		QueryFields:          cfg.GORM.QueryFields,
 		CreateBatchSize:      cfg.GORM.CreateBatchSize,

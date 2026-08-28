@@ -43,7 +43,7 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-// NewPaginator create a new Paginator.
+// NewPaginator create a new [Paginator].
 //
 // Given DB transaction can contain clauses already, such as WHERE, if you want to
 // filter results.
@@ -51,11 +51,6 @@ func paginateScope(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 //	articles := []model.Article{}
 //	tx := db.Where("title LIKE ?", "%"+sqlutil.EscapeLike(search)+"%")
 //	paginator := database.NewPaginator(tx, page, pageSize, &articles)
-//	err := paginator.Find()
-//	if response.WriteDBError(err) {
-//		return
-//	}
-//	response.JSON(http.StatusOK, paginator)
 func NewPaginator[T any](db *gorm.DB, page, pageSize int, dest *[]T) *Paginator[T] {
 	return &Paginator[T]{
 		DB:          db,
@@ -66,7 +61,7 @@ func NewPaginator[T any](db *gorm.DB, page, pageSize int, dest *[]T) *Paginator[
 }
 
 // Raw set a raw SQL query and count query.
-// The Paginator will execute the raw queries instead of automatically creating them.
+// The [Paginator] will execute the raw queries instead of automatically creating them.
 // The raw query should not contain the "LIMIT" and "OFFSET" clauses, they will be added automatically.
 // The count query should return a single number (`COUNT(*)` for example).
 func (p *Paginator[T]) Raw(query string, vars []any, countQuery string, countVars []any) *Paginator[T] {
@@ -105,16 +100,16 @@ func (p *Paginator[T]) updatePageInfo(db *gorm.DB) error {
 	return nil
 }
 
-// UpdatePageInfo executes count request to calculate the `Total` and `MaxPage`.
+// UpdatePageInfo executes count request to calculate the [Paginator.Total] and [Paginator.MaxPage].
 // When calling this function manually, it is advised to use a transaction that is calling
-// `Find()` too, to avoid inconsistencies.
+// [Paginator.Find] too, to avoid inconsistencies.
 func (p *Paginator[T]) UpdatePageInfo() error {
 	return p.updatePageInfo(p.DB)
 }
 
 // Find requests page information (total records and max page) if not already fetched using
-// `UpdatePageInfo()` and executes the query. The `Paginator` struct is updated automatically,
-// as well as the destination slice given in `NewPaginator()`.
+// [Paginator.UpdatePageInfo] and executes the query. The [Paginator] struct is updated automatically,
+// as well as the destination slice given in [NewPaginator].
 //
 // The two queries are executed inside a transaction.
 func (p *Paginator[T]) Find() error {
@@ -124,6 +119,10 @@ func (p *Paginator[T]) Find() error {
 			if err != nil {
 				return errors.New(err)
 			}
+		}
+
+		if p.Total == 0 {
+			return nil
 		}
 
 		if p.rawQuery != "" {

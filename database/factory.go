@@ -55,11 +55,11 @@ func (f *Factory[T]) Generate(count int) []*T {
 
 // Save generate a number of records using the given factory,
 // insert them in the database and return the inserted records.
-func (f *Factory[T]) Save(db *gorm.DB, count int) []*T {
+func (f *Factory[T]) Save(db *gorm.DB, count int) ([]*T, error) {
 	records := f.Generate(count)
 
 	if err := db.CreateInBatches(records, f.BatchSize).Error; err != nil {
-		panic(errors.New(err))
+		return nil, errors.New(err)
 	}
-	return records
+	return records, nil
 }

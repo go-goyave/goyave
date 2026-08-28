@@ -4,6 +4,7 @@ go 1.27
 
 require (
 	github.com/Code-Hex/uniseg v0.2.0
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/andybalholm/brotli v1.2.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0

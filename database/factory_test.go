@@ -1,8 +1,11 @@
 package database
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -61,28 +64,52 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("Save", func(t *testing.T) {
-		RegisterDialect("sqlite3_factory_test", "file:{name}?{options}", sqlite.Open)
+		cfg := &config.DatabaseConnection{
+			Dialect:            "sqlmock",
+			DatabaseName:       "paginator_test.db",
+			MaxIdleConnections: 1,
+			GORM:               config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
+		}
+
+		mockDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
+		require.NoError(t, err)
+
+		dialector := &sqlite.Dialector{
+			DriverName: "sqlite3_timeout_test",
+			DSN:        fmt.Sprintf("file:%s?%s", cfg.DatabaseName, cfg.Options),
+			Conn:       mockDB,
+		}
+
+		// The SQLite dialector selects the sqlite version first to know which callback clauses it can use.
+		mock.ExpectQuery(regexp.QuoteMeta(`select sqlite_version()`)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("3.53.4"))
+
 		t.Cleanup(func() {
-			mu.Lock()
-			delete(dialects, "sqlite3_factory_test")
-			mu.Unlock()
+			mock.ExpectClose()
+			assert.NoError(t, mockDB.Close())
+			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 
-		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
-		cfg.Set("database.connection", "sqlite3_factory_test")
-		cfg.Set("database.name", "factory_test.db")
-		cfg.Set("database.options", "mode=memory")
-		db, err := New(cfg, nil)
+		db, err := NewFromDialector(cfg, nil, dialector)
 		require.NoError(t, err)
-		require.NoError(t, db.AutoMigrate(&TestUser{}))
+
+		want := []*TestUser{
+			userGenerator(),
+			userGenerator(),
+			userGenerator(),
+		}
+		mock.ExpectBegin() // Factory creates in batches so GORM does it in a transaction
+		mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO `test_users` (`name`,`email`) VALUES (?,?),(?,?),(?,?) RETURNING `id`")).
+			WithArgs(want[0].Name, want[0].Email, want[1].Name, want[1].Email, want[2].Name, want[2].Email).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2).AddRow(3))
+		mock.ExpectCommit()
 
 		factory := NewFactory(userGenerator)
-		records := factory.Save(db, 3)
+		records, err := factory.Save(db, 3)
+		require.NoError(t, err)
 
-		results := []*TestUser{}
-		res := db.Find(&results)
-		require.NoError(t, res.Error)
-		assert.Equal(t, records, results)
+		for i, u := range want {
+			u.ID = uint(i + 1)
+		}
+		assert.Equal(t, want, records)
 	})
 }

@@ -2,12 +2,15 @@ package database
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
-	"os"
+	"math"
+	"regexp"
 	"testing"
+	"testing/synctest"
 	"time"
 
-	"github.com/samber/lo"
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -15,43 +18,45 @@ import (
 	"goyave.dev/goyave/v5/config"
 )
 
-func prepareTimeoutTest(dbName string) *gorm.DB {
-	cfg := config.LoadDefault()
-	cfg.Set("app.debug", false)
-	cfg.Set("database.connection", "sqlite3_timeout_test")
-	cfg.Set("database.name", fmt.Sprintf("timeout_test_%s.db", dbName))
-	cfg.Set("database.options", "mode=memory")
-	cfg.Set("database.defaultReadQueryTimeout", 5)
-	cfg.Set("database.defaultWriteQueryTimeout", 5)
-	db, err := New(cfg, nil)
+func prepareTimeoutTest(t *testing.T, timeout int) (*gorm.DB, sqlmock.Sqlmock) {
+	cfg := &config.DatabaseConnection{
+		Dialect:                    "sqlmock",
+		DatabaseName:               fmt.Sprintf("timeout_test_%s.db", t.Name()),
+		DefaultReadQueryTimeoutMs:  timeout,
+		DefaultWriteQueryTimeoutMs: timeout,
+		MaxIdleConnections:         1,             // TODO document this is important for tests overwise the mock connection gets closed
+		GORM:                       config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
+	}
+
+	mockDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
+	require.NoError(t, err)
+
+	dialector := &sqlite.Dialector{
+		DriverName: "sqlite3_timeout_test",
+		DSN:        fmt.Sprintf("file:%s?%s", cfg.DatabaseName, cfg.Options),
+		Conn:       mockDB,
+	}
+
+	t.Cleanup(func() {
+		mock.ExpectClose()
+		assert.NoError(t, mockDB.Close())
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	// The SQLite dialector selects the sqlite version first to know which callback clauses it can use.
+	mock.ExpectQuery(regexp.QuoteMeta(`select sqlite_version()`)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("3.53.4"))
+
+	db, err := NewFromDialector(cfg, nil, dialector)
 	if err != nil {
-		panic(err)
+		require.NoError(t, err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	if err := db.Session(&gorm.Session{NewDB: true, Context: ctx}).AutoMigrate(&TestUser{}); err != nil {
-		cancel()
-		panic(err)
-	}
-	cancel()
-
-	author := userGenerator()
-	if err := db.Create(author).Error; err != nil {
-		panic(err)
-	}
-	return db
+	return db, mock
 }
 
 func TestTimeoutPlugin(t *testing.T) {
-	RegisterDialect("sqlite3_timeout_test", "file:{name}?{options}", sqlite.Open)
-	t.Cleanup(func() {
-		mu.Lock()
-		delete(dialects, "sqlite3_timeout_test")
-		mu.Unlock()
-	})
-
 	t.Run("Callbacks", func(t *testing.T) {
-		db := prepareTimeoutTest(t.Name())
+		db, _ := prepareTimeoutTest(t, 5)
 
 		callbacks := db.Callback()
 
@@ -75,120 +80,184 @@ func TestTimeoutPlugin(t *testing.T) {
 	})
 
 	t.Run("timeout", func(t *testing.T) {
-		db := prepareTimeoutTest(t.Name())
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
 
-		// Generate a huge WHERE condition to artificially make the query very long
-		args := lo.RepeatBy(20000, func(index int) string {
-			return fmt.Sprintf("foobar_%d@example.org", index)
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(time.Millisecond * 6)
+
+			users := []*TestUser{}
+			res := db.Select("id").Where("email", "johndoe@example.org").Find(&users)
+			require.Error(t, res.Error)
+			assert.ErrorIs(t, res.Error, sqlmock.ErrCancelled) // not context.DeadlineExceeded because sqlMock checks `<-ctx.Done()`
 		})
+	})
 
-		users := []*TestUser{}
-		res := db.Select("*").Where("email IN (?)", args).Find(&users)
-		require.Error(t, res.Error)
-		assert.Equal(t, "context deadline exceeded", res.Error.Error())
+	t.Run("timeout_Exec", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
+
+			mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET updated_at = NOW()")).
+				WillDelayFor(time.Millisecond * 6).WillReturnResult(driver.ResultNoRows)
+
+			res := db.Exec("UPDATE users SET updated_at = NOW()")
+			require.Error(t, res.Error)
+			assert.ErrorIs(t, res.Error, sqlmock.ErrCancelled) // not context.DeadlineExceeded because sqlMock checks `<-ctx.Done()`
+		})
+	})
+
+	t.Run("timeout_Scan", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(time.Millisecond * 6)
+
+			users := []*TestUser{}
+			res := db.Raw("SELECT `id` FROM `test_users` WHERE `email` = ?", "johndoe@example.org").Scan(&users)
+			require.Error(t, res.Error)
+			assert.ErrorIs(t, res.Error, sqlmock.ErrCancelled) // not context.DeadlineExceeded because sqlMock checks `<-ctx.Done()`
+		})
+	})
+
+	// This test fails currently because: https://github.com/go-gorm/gorm/pull/7809#issuecomment-5452508771
+	t.Run("no_timeout_Scan", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(time.Millisecond * 6)
+
+			users := []*TestUser{}
+			res := db.Raw("SELECT `id` FROM `test_users` WHERE `email` = ?", "johndoe@example.org").Scan(&users)
+			require.NoError(t, res.Error)
+			want := []*TestUser{{ID: 1}}
+			assert.Equal(t, want, users)
+		})
 	})
 
 	t.Run("re-use_statement", func(t *testing.T) {
-		db := prepareTimeoutTest(t.Name())
+		synctest.Test(t, func(t *testing.T) {
+			// The statement is re-used for consecutive queries.
+			// Each individual query in the transaction is supposed to have its own timeout
+			// so if the two queries together exceed the configured timeout, there should be no error.
+			db, mock := prepareTimeoutTest(t, 5)
 
-		users := []*TestUser{}
-		db = db.Select("*").Where("email", "johndoe@example.org").Find(&users)
-		require.NoError(t, db.Error)
-		db = db.Select("*").Where("email", "johndoe@example.org").Find(&users)
-		require.NoError(t, db.Error)
+			for range 2 {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+					WithArgs("johndoe@example.org").
+					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+					WillDelayFor(time.Millisecond * 4)
+			}
+
+			users := []*TestUser{}
+			db = db.Select("id").Where("email", "johndoe@example.org").Find(&users)
+			require.NoError(t, db.Error)
+			db = db.Find(&users)
+			require.NoError(t, db.Error)
+		})
 	})
 
 	t.Run("dont_override_predefined_context", func(t *testing.T) {
-		db := prepareTimeoutTest(t.Name())
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
 
-		// Generate a huge WHERE condition to artificially make the query very long
-		args := lo.RepeatBy(20000, func(index int) string {
-			return fmt.Sprintf("foobar_%d@example.org", index)
+			users := []*TestUser{}
+			ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
+			defer cancel()
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(time.Millisecond * 9)
+
+			// The context is replaced with a longer timeout so the query can be completed.
+			res := db.WithContext(ctx).Select("id").Where("email", "johndoe@example.org").Find(&users)
+			require.NoError(t, res.Error)
 		})
-
-		users := []*TestUser{}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		// The context is replaced with a longer timeout so the query can be completed.
-		res := db.WithContext(ctx).Select("*").Where("email IN (?)", args).Find(&users)
-		require.NoError(t, res.Error)
 	})
 
 	t.Run("disabled", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
-		cfg.Set("database.connection", "sqlite3_timeout_test")
-		cfg.Set("database.name", "timeout_test_disabled.db")
-		cfg.Set("database.options", "mode=memory")
-		cfg.Set("database.defaultReadQueryTimeout", 0)
-		cfg.Set("database.defaultWriteQueryTimeout", 0)
-		db, err := New(cfg, nil)
-		if err != nil {
-			panic(err)
-		}
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 0)
 
-		if err := db.AutoMigrate(&TestUser{}); err != nil {
-			panic(err)
-		}
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(math.MaxInt64)
 
-		// Generate a huge WHERE condition to artificially make the query very long
-		args := lo.RepeatBy(20000, func(index int) string {
-			return fmt.Sprintf("foobar_%d@example.org", index)
+			users := []*TestUser{}
+			res := db.Select("id").Where("email", "johndoe@example.org").Find(&users)
+			require.NoError(t, res.Error)
 		})
-
-		users := []*TestUser{}
-		res := db.Select("*").Where("email IN (?)", args).Find(&users)
-		require.NoError(t, res.Error)
 	})
 
 	t.Run("transaction_many_queries", func(t *testing.T) {
-		t.Cleanup(func() {
-			// The DB is not in memory here
-			if err := os.Remove("timeout_many_queries_test.db"); err != nil {
-				panic(err)
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
+
+			mock.ExpectBegin()
+			for i := range 3 {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+					WithArgs(fmt.Sprintf("johndoe%d@example.org", i)).
+					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1)).
+					WillDelayFor(time.Millisecond * 4)
 			}
-		})
-		cfg := config.LoadDefault()
-		cfg.Set("app.debug", false)
-		cfg.Set("database.connection", "sqlite3_timeout_test")
-		cfg.Set("database.name", "timeout_many_queries_test.db")
-		cfg.Set("database.defaultReadQueryTimeout", 200)
-		cfg.Set("database.defaultWriteQueryTimeout", 200)
-		db, err := New(cfg, nil)
-		if err != nil {
-			panic(err)
-		}
+			mock.ExpectCommit()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
-		if err := db.WithContext(ctx).AutoMigrate(&TestUser{}); err != nil {
-			panic(err)
-		}
-		defer cancel()
-
-		author := userGenerator()
-		if err := db.Create(author).Error; err != nil {
-			panic(err)
-		}
-
-		// The timeout should be per query
-		// If we execute a lot of queries that take a cumulated time
-		// superior to the configured timeout, we should have no error.
-
-		// Generate a huge WHERE condition to artificially make the query long
-		args := lo.RepeatBy(1000, func(index int) string {
-			return fmt.Sprintf("foobar_%d@example.org", index)
-		})
-		err = db.Transaction(func(_ *gorm.DB) error {
-			for range 5000 {
-				users := []*TestUser{}
-				res := db.Select("*").Where("email IN (?)", args).Find(&users)
-				if res.Error != nil {
-					return res.Error
+			// Each individual query in the transaction is supposed to have its own timeout.
+			// If we execute a lot of queries that take a cumulated time
+			// superior to the configured timeout, we should have no error.
+			err := db.Transaction(func(tx *gorm.DB) error {
+				for i := range 3 {
+					users := []*TestUser{}
+					res := tx.Select("id").Where("email", fmt.Sprintf("johndoe%d@example.org", i)).Find(&users)
+					if res.Error != nil {
+						return res.Error
+					}
 				}
-			}
-			return nil
+				return nil
+			})
+			require.NoError(t, err)
 		})
-		require.NoError(t, err)
 	})
+
+	t.Run("transaction_one_timeout", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
+
+			mock.ExpectBegin()
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe0@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(time.Millisecond * 3)
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe1@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2)).
+				WillDelayFor(time.Millisecond * 6)
+			// Don't expect a third query since second will timeout.
+			mock.ExpectRollback()
+
+			err := db.Transaction(func(tx *gorm.DB) error {
+				for i := range 3 {
+					users := []*TestUser{}
+					res := tx.Select("id").Where("email", fmt.Sprintf("johndoe%d@example.org", i)).Find(&users)
+					if res.Error != nil {
+						return res.Error
+					}
+				}
+				return nil
+			})
+			require.ErrorIs(t, err, sqlmock.ErrCancelled) // not context.DeadlineExceeded because sqlMock checks `<-ctx.Done()`
+		})
+	})
+
+	// TODO test Exec
+	// TODO test Raw/Scan
 }

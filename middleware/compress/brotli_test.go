@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
@@ -47,7 +46,7 @@ func TestBrotliEncoder(t *testing.T) {
 }
 
 func TestBrotliCompression(t *testing.T) {
-	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
+	server := testutil.NewTestServer(t, goyave.Options{})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")

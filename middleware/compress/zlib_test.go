@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
@@ -41,7 +40,7 @@ func TestZlibEncoder(t *testing.T) {
 }
 
 func TestZlibCompression(t *testing.T) {
-	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
+	server := testutil.NewTestServer(t, goyave.Options{})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")
@@ -69,7 +68,7 @@ func TestZlibCompression(t *testing.T) {
 }
 
 func TestZlibCompressionNoDict(t *testing.T) {
-	server := testutil.NewTestServerWithOptions(t, goyave.Options{Config: config.LoadDefault()})
+	server := testutil.NewTestServer(t, goyave.Options{})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")

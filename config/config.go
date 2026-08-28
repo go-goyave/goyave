@@ -209,6 +209,8 @@ func Load[T Section](ctx context.Context, sources ...Source) (*T, *validation.Er
 	return loaded, nil, nil
 }
 
+// LoadDefault returns the default values for the [Base] config.
+// Configuration files are not loaded by calling this function.
 func LoadDefault() *Base {
 	cfg := Base{}.Default()
 	return &cfg

@@ -527,7 +527,7 @@ func (s *Server) Start() error {
 // RegisterRoutes runs the given `routeRegistrer` function with this Server and its router.
 // The router's regex cache is cleared after the `routeRegistrer` function returns.
 // This method should only be called once.
-func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *Router)) {
+func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *Router)) { // TODO remove this method and let users register their routes however they like. Clear the regex cache on Start instead
 	if s.router.regexCache == nil {
 		panic(errors.NewSkip("router's regex cache has already been cleared, did you call RegisterRoutes twice?", 3))
 	}

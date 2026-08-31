@@ -114,7 +114,7 @@ func TestTimeoutPlugin(t *testing.T) {
 
 			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
 				WithArgs("johndoe@example.org").
-				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2)).
 				WillDelayFor(time.Millisecond * 6)
 
 			users := []*TestUser{}
@@ -124,20 +124,19 @@ func TestTimeoutPlugin(t *testing.T) {
 		})
 	})
 
-	// This test fails currently because: https://github.com/go-gorm/gorm/pull/7809#issuecomment-5452508771
 	t.Run("no_timeout_Scan", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			db, mock := prepareTimeoutTest(t, 5)
 
 			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
 				WithArgs("johndoe@example.org").
-				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
-				WillDelayFor(time.Millisecond * 6)
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2)).
+				WillDelayFor(time.Millisecond * 4)
 
 			users := []*TestUser{}
 			res := db.Raw("SELECT `id` FROM `test_users` WHERE `email` = ?", "johndoe@example.org").Scan(&users)
 			require.NoError(t, res.Error)
-			want := []*TestUser{{ID: 1}}
+			want := []*TestUser{{ID: 1}, {ID: 2}}
 			assert.Equal(t, want, users)
 		})
 	})
@@ -258,6 +257,146 @@ func TestTimeoutPlugin(t *testing.T) {
 		})
 	})
 
-	// TODO test Exec
-	// TODO test Raw/Scan
+	t.Run("row", func(t *testing.T) {
+		// Timeout shouldn't be applied because the callbacks return (and thus the context is canceled)
+		// before row is scanned.
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(time.Millisecond * 6)
+
+			row := db.Model(&TestUser{}).Select("id").Where("email", "johndoe@example.org").Row()
+			var id int64
+			require.NoError(t, row.Scan(&id))
+			assert.Equal(t, int64(1), id)
+		})
+	})
+
+	t.Run("row_custom_timeout", func(t *testing.T) {
+		// Timeout shouldn't be applied because the callbacks return (and thus the context is canceled)
+		// before row is scanned.
+		synctest.Test(t, func(t *testing.T) {
+			db, mock := prepareTimeoutTest(t, 5)
+
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+				WithArgs("johndoe@example.org").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+				WillDelayFor(time.Millisecond * 11)
+
+			ctx, cancel := context.WithTimeout(t.Context(), time.Millisecond*10)
+			defer cancel()
+			row := db.WithContext(ctx).Model(&TestUser{}).Select("id").Where("email", "johndoe@example.org").Row()
+			var id int64
+			require.ErrorIs(t, row.Scan(&id), sqlmock.ErrCancelled) // not context.DeadlineExceeded because sqlMock checks `<-ctx.Done()`
+		})
+	})
+
+	t.Run("rows", func(t *testing.T) {
+		// Timeout shouldn't be applied because the callbacks return (and thus the context is canceled)
+		// before rows are scanned.
+		cases := []struct {
+			desc            string
+			delay           time.Duration
+			delayScan       time.Duration
+			contextTimeout  time.Duration
+			wantTimeout     bool
+			wantScanTimeout bool
+		}{
+			{
+				desc:            "ok",
+				delay:           time.Millisecond * 4,
+				delayScan:       0,
+				wantTimeout:     false,
+				wantScanTimeout: false,
+			},
+			{
+				desc:            "no_timeout_applied",
+				delay:           time.Millisecond * 6,
+				delayScan:       0,
+				wantTimeout:     false,
+				wantScanTimeout: false,
+			},
+			{
+				desc:            "scan_no_timeout",
+				delay:           time.Millisecond * 3,
+				delayScan:       time.Millisecond,
+				wantTimeout:     false,
+				wantScanTimeout: false,
+			},
+			{
+				desc:            "scan_no_timeout_applied",
+				delay:           time.Millisecond * 4,
+				delayScan:       time.Millisecond * 2,
+				wantTimeout:     false,
+				wantScanTimeout: false,
+			},
+			{
+				desc:            "sql_timeout",
+				delay:           time.Millisecond * 6,
+				delayScan:       0,
+				contextTimeout:  time.Millisecond * 5,
+				wantTimeout:     true,
+				wantScanTimeout: false,
+			},
+			{
+				desc:            "scan_timeout",
+				delay:           time.Millisecond * 4,
+				delayScan:       time.Millisecond * 2,
+				contextTimeout:  time.Millisecond * 5,
+				wantTimeout:     false,
+				wantScanTimeout: true,
+			},
+		}
+
+		for _, c := range cases {
+			t.Run(c.desc, func(t *testing.T) {
+				synctest.Test(t, func(t *testing.T) {
+					db, mock := prepareTimeoutTest(t, 5)
+
+					mock.ExpectQuery(regexp.QuoteMeta("SELECT `id` FROM `test_users` WHERE `email` = ?")).
+						WithArgs("johndoe@example.org").
+						WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).
+						WillDelayFor(c.delay)
+
+					if c.contextTimeout != 0 {
+						ctx, cancel := context.WithTimeout(t.Context(), c.contextTimeout)
+						defer cancel()
+						db = db.WithContext(ctx)
+					}
+
+					rows, err := db.Model(&TestUser{}).Select("id").Where("email", "johndoe@example.org").Rows()
+					if c.wantTimeout {
+						require.ErrorIs(t, err, sqlmock.ErrCancelled) // not context.DeadlineExceeded because sqlMock checks `<-ctx.Done()`
+						return
+					} else {
+						require.NoError(t, err)
+					}
+					defer func() { require.NoError(t, rows.Close()) }()
+					var ids []int64
+					for rows.Next() {
+						if c.delayScan != 0 {
+							time.Sleep(c.delayScan)
+						}
+						var id int64
+						err := rows.Scan(&id)
+						if c.wantScanTimeout {
+							require.ErrorIs(t, err, context.DeadlineExceeded)
+						} else {
+							require.NoError(t, err)
+						}
+						ids = append(ids, id)
+					}
+					if c.wantScanTimeout {
+						require.ErrorIs(t, rows.Err(), context.DeadlineExceeded)
+					} else {
+						require.NoError(t, rows.Err())
+						assert.Equal(t, []int64{1}, ids)
+					}
+				})
+			})
+		}
+	})
 }

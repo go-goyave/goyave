@@ -41,7 +41,8 @@ type timeoutContext struct {
 // The [TimeoutPlugin.ReadTimeout] is applied on the `Query` and `Raw` GORM callbacks.
 // The [TimeoutPlugin.WriteTimeout] is applied on the rest of the callbacks.
 //
-// Supports all GORM operations except `Scan()`.
+// Supports all GORM operations except `Row()` and `Rows()`. For these operations, developers
+// need to control the timeout context themselves using [context.WithTimeout] and [gorm.DB.WithContext].
 //
 // A timeout duration inferior or equal to 0 disables the plugin for the relevant operations.
 type TimeoutPlugin struct {
@@ -89,7 +90,7 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	}
 
 	rowCallback := db.Callback().Row()
-	if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.readTimeoutBefore); err != nil {
+	if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.readRowTimeoutBefore); err != nil {
 		return errors.New(err)
 	}
 	if err := rowCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
@@ -104,6 +105,15 @@ func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 		return errors.New(err)
 	}
 	return nil
+}
+
+func (p *TimeoutPlugin) readRowTimeoutBefore(db *gorm.DB) {
+	_, okRows := db.Get("rows")          // db.Row() or db.Rows()
+	_, okScanDest := db.Get("scan-dest") // db.Scan()
+	if okRows && !okScanDest {
+		return
+	}
+	p.timeoutBefore(db, p.ReadTimeout)
 }
 
 func (p *TimeoutPlugin) readTimeoutBefore(db *gorm.DB) {

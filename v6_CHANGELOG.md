@@ -42,7 +42,7 @@
 - Improved documentation by using links
 - Paginator: fetch query isn't executed anymore if the count query returns 0.
 - Factory Save now returns an error
-- Database timeout plugin now works on Scan too
+- Database timeout plugin now works on Scan too. It doesn't work on Row() and Rows().
 
 TODO docs pass with links
 TODO cleanup resources directory

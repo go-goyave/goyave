@@ -172,6 +172,34 @@ func TestRecoveryMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, response.status)
 	})
 
+	t.Run("empty_slice_panic", func(t *testing.T) {
+		logBuffer := &bytes.Buffer{}
+		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
+		if err != nil {
+			panic(err)
+		}
+		middleware := &recoveryMiddleware{}
+		middleware.Init(server)
+
+		handler := middleware.Handle(func(_ *Response, _ *Request) {
+			panic([]error{})
+		})
+
+		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		response := NewResponse(server, request, httptest.NewRecorder())
+
+		require.NotPanics(t, func() {
+			handler(response, request)
+		})
+
+		assert.Nil(t, response.GetError())
+		assert.Regexp(t,
+			`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"<nil>"}\n`,
+			logBuffer.String(),
+		)
+		assert.Equal(t, http.StatusInternalServerError, response.status)
+	})
+
 	t.Run("panic_status_override", func(t *testing.T) {
 		// Even if the response status is already set, the recovery middleware
 		// should always force it to 500.

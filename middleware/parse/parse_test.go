@@ -274,6 +274,7 @@ func TestParseMiddleware(t *testing.T) {
 			"h": []string{"i", "j"},
 		}
 		request := testutil.NewTestRequest(http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request.Header().Set("Content-Type", "application/json")
 		request.Data = map[string]any{"a": "b"}
 		request.Route = route
 
@@ -289,11 +290,32 @@ func TestParseMiddleware(t *testing.T) {
 		assert.NoError(t, result.Body.Close())
 	})
 
+	t.Run("Query already parsed", func(t *testing.T) {
+		data := map[string]any{
+			"a": "b",
+			"c": "d",
+			"e": map[string]any{
+				"f": "g",
+			},
+			"h": []any{"i", "j"},
+		}
+		request := testutil.NewTestRequest(http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request.Header().Set("Content-Type", "application/json")
+		request.Query = map[string]any{"old": "value"}
+		request.Route = route
+
+		result := server.TestMiddleware(NewMiddleware(10), request, func(_ *goyave.Response, req *goyave.Request) {
+			assert.Equal(t, map[string]any{"old": "value"}, req.Query)
+			assert.Equal(t, data, req.Data) // Body parsed but not query
+		})
+		assert.NoError(t, result.Body.Close())
+	})
+
 	t.Run("Skip if route not found", func(t *testing.T) {
 		data := map[string]any{"a": "b"}
-		request := testutil.NewTestRequest(http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request := testutil.NewTestRequest(http.MethodPost, "/unknown?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
 
-		router := goyave.NewRouter(nil)
+		router := server.Router()
 		request.Route = router.Get("/", nil).Name(goyave.RouteNotFound)
 		result := server.TestMiddleware(NewMiddleware(10), request, func(_ *goyave.Response, req *goyave.Request) {
 			assert.Nil(t, req.Query)
@@ -306,7 +328,7 @@ func TestParseMiddleware(t *testing.T) {
 		data := map[string]any{"a": "b"}
 		request := testutil.NewTestRequest(http.MethodPatch, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
 
-		router := goyave.NewRouter(nil)
+		router := server.Router()
 		request.Route = router.Get("/", nil).Name(goyave.RouteMethodNotAllowed)
 		result := server.TestMiddleware(NewMiddleware(10), request, func(_ *goyave.Response, req *goyave.Request) {
 			assert.Nil(t, req.Query)

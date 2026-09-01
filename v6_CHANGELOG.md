@@ -29,6 +29,7 @@
 - goyave.Registrer doesn't require implementing Composable anymore
 - Composable/Component logics has been removed
 - parse middleware constructor with max upload size parameter
+- parse middleware doesn't parse query a second time if it's already parsed
 - auth
   - jwt authenticator now takes a jwtservice as parameter directly and JWTService is exported
   - jwt controller now takes a jwtservice as parameter directly and JWTService is exported

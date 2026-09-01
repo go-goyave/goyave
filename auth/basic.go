@@ -68,6 +68,10 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 		panic(errorutil.New(err))
 	}
 
+	if notFound {
+		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
+	}
+
 	t := reflect.Indirect(reflect.ValueOf(user))
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
@@ -77,7 +81,7 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 		panic(errorutil.Errorf("could not find valid field/column %q in type %T", a.PasswordField, user))
 	}
 
-	if notFound || bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
 		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
 	}
 

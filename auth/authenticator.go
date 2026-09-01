@@ -23,14 +23,11 @@ type Authenticator[T any] interface {
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and returns it.
 	// If no user can be authenticated, returns the error detailing why the
-	// authentication failed. The error message is already localized.
+	// authentication failed. The error message is expected to be already localized.
 	//
 	// If the returned error is of type `*errors.Error`, it will be considered
 	// as a system error. Other error types don't need to be wrapped as they
 	// will only be used for the message returned in the response.
-	//
-	// If an unexpected error happens (e.g.: database error), this
-	// method should panic instead of returning an error.
 	Authenticate(request *goyave.Request) (*T, error)
 }
 

@@ -107,9 +107,7 @@ func NewRouter(server *Server) *Router {
 		prefix:         "",
 		statusHandlers: make(map[int]StatusHandler, 41),
 		namedRoutes:    make(map[string]*Route, 5),
-		middlewareHolder: middlewareHolder{
-			middleware: nil,
-		},
+		middleware:     nil,
 		globalMiddleware: &middlewareHolder{
 			middleware: make([]Middleware, 0, 2),
 		},

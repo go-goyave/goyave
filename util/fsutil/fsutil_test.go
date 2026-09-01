@@ -444,7 +444,11 @@ func TestMarshalFile(t *testing.T) {
 
 		_, err := typeutil.Convert[*testDTO](data)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot unmarshal number into Go struct field testDTO.files of type []fsutil.File")
+		// The error message format depends on the Go version: it names the
+		// struct field either "testDTO.files" or ".files". Only assert on
+		// the stable parts.
+		assert.Contains(t, err.Error(), "cannot unmarshal number into Go struct field")
+		assert.Contains(t, err.Error(), "[]fsutil.File")
 	})
 
 	t.Run("unmarshal_nocache", func(t *testing.T) {

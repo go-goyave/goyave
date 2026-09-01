@@ -117,6 +117,9 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 }
 
 func parseQuery(request *goyave.Request) error {
+	if request.Query != nil {
+		return nil
+	}
 	queryParams, err := url.ParseQuery(request.URL().RawQuery)
 	if err == nil {
 		request.Query = make(map[string]any, len(queryParams))

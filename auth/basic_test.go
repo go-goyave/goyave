@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
@@ -61,6 +62,26 @@ func TestBasicAuthenticator(t *testing.T) {
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth(user.Email, "wrong password")
+		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
+		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
+			assert.Fail(t, "middleware passed despite failed authentication")
+			response.Status(http.StatusOK)
+		})
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		body, err := testutil.ReadJSONBody[map[string]string](resp.Body)
+		assert.NoError(t, resp.Body.Close())
+		require.NoError(t, err)
+		assert.Equal(t, map[string]string{"error": server.Lang.GetDefault().Get("auth.invalid-credentials")}, body)
+		assert.Equal(t, `Basic realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
+	})
+
+	t.Run("not_found", func(t *testing.T) {
+		server, user := prepareAuthenticatorTest(t)
+		mockUserService := &MockUserService[TestUser]{err: gorm.ErrRecordNotFound}
+		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
+
+		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
+		request.Request().SetBasicAuth(user.Email, "secret")
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
 		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, _ *goyave.Request) {
 			assert.Fail(t, "middleware passed despite failed authentication")

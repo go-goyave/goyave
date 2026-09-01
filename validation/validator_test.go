@@ -707,8 +707,8 @@ func TestValidate(t *testing.T) {
 						addedValidationErrors: []AddedValidationError[string]{
 							{Path: walk.MustParse("property"), Error: "added error"},
 							{Path: walk.MustParse("object.addedProp"), Error: "added error"},
-							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("array"), Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}, Error: "added error"},
-							{Path: &walk.Path{Type: walk.PathTypeArray, Name: lo.ToPtr("narray"), Index: lo.ToPtr(0), Next: &walk.Path{Type: walk.PathTypeArray, Index: lo.ToPtr(3), Next: &walk.Path{Type: walk.PathTypeElement}}}, Error: "added error"},
+							{Path: &walk.Path{Type: walk.PathTypeArray, Name: new("array"), Index: new(3), Next: &walk.Path{Type: walk.PathTypeElement}}, Error: "added error"},
+							{Path: &walk.Path{Type: walk.PathTypeArray, Name: new("narray"), Index: new(0), Next: &walk.Path{Type: walk.PathTypeArray, Index: new(3), Next: &walk.Path{Type: walk.PathTypeElement}}}, Error: "added error"},
 						},
 					}}},
 				},
@@ -772,8 +772,8 @@ func TestValidate(t *testing.T) {
 							{
 								Path: &walk.Path{
 									Type:  walk.PathTypeArray,
-									Name:  lo.ToPtr("array"),
-									Index: lo.ToPtr(0),
+									Name:  new("array"),
+									Index: new(0),
 									Next:  &walk.Path{Type: walk.PathTypeElement},
 								},
 								Error: &Errors{
@@ -783,11 +783,11 @@ func TestValidate(t *testing.T) {
 							{
 								Path: &walk.Path{
 									Type:  walk.PathTypeArray,
-									Name:  lo.ToPtr("narray"),
-									Index: lo.ToPtr(0),
+									Name:  new("narray"),
+									Index: new(0),
 									Next: &walk.Path{
 										Type:  walk.PathTypeArray,
-										Index: lo.ToPtr(2),
+										Index: new(2),
 										Next:  &walk.Path{Type: walk.PathTypeElement},
 									},
 								},

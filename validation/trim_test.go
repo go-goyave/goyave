@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,11 +21,11 @@ func TestTrimValidator(t *testing.T) {
 		value any
 		want  *string
 	}{
-		{value: "string", want: lo.ToPtr("string")},
-		{value: "", want: lo.ToPtr("")},
-		{value: "\t\n\v\f\r ", want: lo.ToPtr("")},
-		{value: "\t\n\v\f\r hello\t\n\v\f\r ", want: lo.ToPtr("hello")},
-		{value: "hello\t\n\v\f\r ", want: lo.ToPtr("hello")},
+		{value: "string", want: new("string")},
+		{value: "", want: new("")},
+		{value: "\t\n\v\f\r ", want: new("")},
+		{value: "\t\n\v\f\r hello\t\n\v\f\r ", want: new("hello")},
+		{value: "hello\t\n\v\f\r ", want: new("hello")},
 		{value: 'a'},
 		{value: 2},
 		{value: 2.5},

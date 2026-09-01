@@ -287,8 +287,7 @@ func (a *adapter) getCheckOriginFunc() func(r *http.Request) bool {
 // IsCloseError returns true if the error is one of the following close errors:
 // CloseNormalClosure (1000), CloseGoingAway (1001) or CloseNoStatusReceived (1005)
 func IsCloseError(err error) bool {
-	var closeError *ws.CloseError
-	if stderrors.As(err, &closeError) {
+	if closeError, ok := stderrors.AsType[*ws.CloseError](err); ok {
 		err = closeError
 	}
 	return ws.IsCloseError(err,

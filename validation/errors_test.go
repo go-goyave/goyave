@@ -3,7 +3,6 @@ package validation
 import (
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v5/util/walk"
 )
@@ -72,7 +71,7 @@ func TestErrors(t *testing.T) {
 		errs := &Errors{}
 
 		p := walk.MustParse("root.array[]")
-		p.Next.Index = lo.ToPtr(3)
+		p.Next.Index = new(3)
 		errs.Add(p, "message")
 
 		expected := &Errors{
@@ -104,8 +103,8 @@ func TestErrors(t *testing.T) {
 		assert.Equal(t, expected, errs)
 
 		p = walk.MustParse("root.array[][]")
-		p.Next.Index = lo.ToPtr(4)
-		p.Next.Next.Index = lo.ToPtr(5)
+		p.Next.Index = new(4)
+		p.Next.Next.Index = new(5)
 		errs.Add(p, "third message")
 
 		expected = &Errors{
@@ -133,7 +132,7 @@ func TestErrors(t *testing.T) {
 		errs := &Errors{}
 
 		p := walk.MustParse("root[]")
-		p.Index = lo.ToPtr(3)
+		p.Index = new(3)
 		errs.Add(p, "message")
 		errs.Add(p, "second message")
 
@@ -238,7 +237,7 @@ func TestErrors(t *testing.T) {
 				mergeErrs: mergeErrs(),
 				path: &walk.Path{
 					Type:  walk.PathTypeArray,
-					Index: lo.ToPtr(3),
+					Index: new(3),
 					Next:  &walk.Path{Type: walk.PathTypeElement},
 				},
 				want: &Errors{
@@ -269,8 +268,8 @@ func TestErrors(t *testing.T) {
 				mergeErrs: mergeErrs(),
 				path: &walk.Path{
 					Type:  walk.PathTypeArray,
-					Index: lo.ToPtr(2),
-					Next:  &walk.Path{Type: walk.PathTypeObject, Next: &walk.Path{Type: walk.PathTypeElement, Name: lo.ToPtr("property")}},
+					Index: new(2),
+					Next:  &walk.Path{Type: walk.PathTypeObject, Next: &walk.Path{Type: walk.PathTypeElement, Name: new("property")}},
 				},
 				want: &Errors{
 					Fields: FieldsErrors{
@@ -307,7 +306,7 @@ func TestErrors(t *testing.T) {
 					Type: walk.PathTypeObject,
 					Next: &walk.Path{
 						Type: walk.PathTypeElement,
-						Name: lo.ToPtr("field"),
+						Name: new("field"),
 					},
 				},
 				want: &Errors{
@@ -361,10 +360,10 @@ func TestErrors(t *testing.T) {
 					Type: walk.PathTypeObject,
 					Next: &walk.Path{
 						Type: walk.PathTypeObject,
-						Name: lo.ToPtr("mergeObject"),
+						Name: new("mergeObject"),
 						Next: &walk.Path{
 							Type: walk.PathTypeElement,
-							Name: lo.ToPtr("mergeProp"),
+							Name: new("mergeProp"),
 						},
 					},
 				},
@@ -403,8 +402,8 @@ func TestErrors(t *testing.T) {
 					Type: walk.PathTypeObject,
 					Next: &walk.Path{
 						Type:  walk.PathTypeArray,
-						Name:  lo.ToPtr("mergeArray"),
-						Index: lo.ToPtr(4),
+						Name:  new("mergeArray"),
+						Index: new(4),
 						Next:  &walk.Path{Type: walk.PathTypeElement},
 					},
 				},

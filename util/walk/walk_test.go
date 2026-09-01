@@ -4,21 +4,16 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func strPtr(s string) *string {
-	return &s
-}
-
 func TestPathHasArray(t *testing.T) {
 	path := &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("array"),
+			Name: new("array"),
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeElement,
@@ -32,10 +27,10 @@ func TestPathHasArray(t *testing.T) {
 
 func TestPathLastParent(t *testing.T) {
 	path := &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("array"),
+			Name: new("array"),
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeElement,
@@ -49,10 +44,10 @@ func TestPathLastParent(t *testing.T) {
 
 func TestPathTail(t *testing.T) {
 	path := &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("array"),
+			Name: new("array"),
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeElement,
@@ -66,10 +61,10 @@ func TestPathTail(t *testing.T) {
 func TestPathClone(t *testing.T) {
 	i := 1
 	path := &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name:  strPtr("array"),
+			Name:  new("array"),
 			Type:  PathTypeArray,
 			Index: &i,
 			Next: &Path{
@@ -144,15 +139,15 @@ func TestParse(t *testing.T) {
 	path, err := Parse("object.array[].field")
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("array"),
+			Name: new("array"),
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field"),
+					Name: new("field"),
 					Type: PathTypeElement,
 				},
 			},
@@ -162,7 +157,7 @@ func TestParse(t *testing.T) {
 	path, err = Parse("array[][]")
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("array"),
+		Name: new("array"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeArray,
@@ -175,10 +170,10 @@ func TestParse(t *testing.T) {
 	path, err = Parse("object.field")
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("field"),
+			Name: new("field"),
 			Type: PathTypeElement,
 		},
 	}, path)
@@ -186,14 +181,14 @@ func TestParse(t *testing.T) {
 	path, err = Parse("array[][].field")
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("array"),
+		Name: new("array"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field"),
+					Name: new("field"),
 					Type: PathTypeElement,
 				},
 			},
@@ -203,14 +198,14 @@ func TestParse(t *testing.T) {
 	path, err = Parse("array[][].field[]")
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("array"),
+		Name: new("array"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field"),
+					Name: new("field"),
 					Type: PathTypeArray,
 					Next: &Path{
 						Type: PathTypeElement,
@@ -223,13 +218,13 @@ func TestParse(t *testing.T) {
 	path, err = Parse("object.*.prop")
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
 			Name: wildcard,
 			Type: PathTypeObject,
 			Next: &Path{
-				Name: strPtr("prop"),
+				Name: new("prop"),
 				Type: PathTypeElement,
 			},
 		},
@@ -240,7 +235,7 @@ func TestParse(t *testing.T) {
 	path, err = Parse("")
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr(""),
+		Name: new(""),
 		Type: PathTypeElement,
 		Next: nil,
 	}, path)
@@ -263,7 +258,7 @@ func TestEscapedParse(t *testing.T) {
 	path, err := Parse(`object\*field`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object*field"),
+		Name: new("object*field"),
 		Type: PathTypeElement,
 		Next: nil,
 	}, path)
@@ -271,7 +266,7 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`object\.*field`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object.*field"),
+		Name: new("object.*field"),
 		Type: PathTypeElement,
 		Next: nil,
 	}, path)
@@ -279,10 +274,10 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`object.\*field`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("*field"),
+			Name: new("*field"),
 			Type: PathTypeElement,
 		},
 	}, path)
@@ -290,11 +285,11 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`object.\*`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
 			Type: PathTypeElement,
-			Name: strPtr("*"),
+			Name: new("*"),
 		},
 	}, path)
 	assert.NotSame(t, path.Next.Name, wildcard)
@@ -303,13 +298,13 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`object.\*.field`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("*"),
+			Name: new("*"),
 			Type: PathTypeObject,
 			Next: &Path{
-				Name: strPtr("field"),
+				Name: new("field"),
 				Type: PathTypeElement,
 			},
 		},
@@ -318,10 +313,10 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`object.\.`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("."),
+			Name: new("."),
 			Type: PathTypeElement,
 		},
 	}, path)
@@ -329,14 +324,14 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`\[]`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("[]"),
+		Name: new("[]"),
 		Type: PathTypeElement,
 	}, path)
 
 	path, err = Parse(`path\\to\\element`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr(`path\to\element`),
+		Name: new(`path\to\element`),
 		Type: PathTypeElement,
 		Next: nil,
 	}, path)
@@ -344,7 +339,7 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`abc\[[]`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("abc["),
+		Name: new("abc["),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeElement,
@@ -358,14 +353,14 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`array[][].field\[]`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("array"),
+		Name: new("array"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field[]"),
+					Name: new("field[]"),
 					Type: PathTypeElement,
 					Next: nil,
 				},
@@ -376,10 +371,10 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`array\[\].b`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("array[]"),
+		Name: new("array[]"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("b"),
+			Name: new("b"),
 			Type: PathTypeElement,
 			Next: nil,
 		},
@@ -388,10 +383,10 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`object\..b`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("object."),
+		Name: new("object."),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("b"),
+			Name: new("b"),
 			Type: PathTypeElement,
 			Next: nil,
 		},
@@ -400,14 +395,14 @@ func TestEscapedParse(t *testing.T) {
 	path, err = Parse(`array[][].field\[tx\]`)
 	require.NoError(t, err)
 	assert.Equal(t, &Path{
-		Name: strPtr("array"),
+		Name: new("array"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field[tx]"),
+					Name: new("field[tx]"),
 					Type: PathTypeElement,
 					Next: nil,
 				},
@@ -419,15 +414,15 @@ func TestEscapedParse(t *testing.T) {
 func TestMustParse(t *testing.T) {
 	path := MustParse("object.array[].field")
 	assert.Equal(t, &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("array"),
+			Name: new("array"),
 			Type: PathTypeArray,
 			Next: &Path{
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field"),
+					Name: new("field"),
 					Type: PathTypeElement,
 				},
 			},
@@ -478,7 +473,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  data[""],
 			Parent: data,
 			Path: &Path{
-				Name: strPtr(""),
+				Name: new(""),
 				Type: PathTypeElement,
 			},
 			Name:  "",
@@ -500,7 +495,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  data["object"],
 			Parent: data,
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeElement,
 			},
 			Name:  "object",
@@ -522,9 +517,9 @@ func TestPathWalk(t *testing.T) {
 			Value:  5,
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("field")},
+				Next: &Path{Name: new("field")},
 			},
 			Name:  "field",
 			Index: -1,
@@ -543,9 +538,9 @@ func TestPathWalk(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("field")},
+				Next: &Path{Name: new("field")},
 			},
 			Name:  "field",
 			Index: -1,
@@ -567,9 +562,9 @@ func TestPathWalk(t *testing.T) {
 			Value:  5,
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("field")},
+				Next: &Path{Name: new("field")},
 			},
 			Name:  "field",
 			Index: -1,
@@ -579,9 +574,9 @@ func TestPathWalk(t *testing.T) {
 			Value:  "6",
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("field2")},
+				Next: &Path{Name: new("field2")},
 			},
 			Name:  "field2",
 			Index: -1,
@@ -604,9 +599,9 @@ func TestPathWalk(t *testing.T) {
 			Value:  "abc",
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("*")},
+				Next: &Path{Name: new("*")},
 			},
 			Name:  "*",
 			Index: -1,
@@ -627,7 +622,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{Name: wildcard},
 			},
@@ -653,12 +648,12 @@ func TestPathWalk(t *testing.T) {
 			Value:  5,
 			Parent: data["object"].(map[string]any)["field"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field"),
+					Name: new("field"),
 					Type: PathTypeObject,
-					Next: &Path{Name: strPtr("prop")},
+					Next: &Path{Name: new("prop")},
 				},
 			},
 			Name:  "prop",
@@ -669,12 +664,12 @@ func TestPathWalk(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"].(map[string]any)["field2"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name: strPtr("field2"),
+					Name: new("field2"),
 					Type: PathTypeObject,
-					Next: &Path{Name: strPtr("prop")},
+					Next: &Path{Name: new("prop")},
 				},
 			},
 			Name:  "prop",
@@ -695,7 +690,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  3,
 			Parent: data,
 			Path: &Path{
-				Name: strPtr("prop1"),
+				Name: new("prop1"),
 				Type: PathTypeElement,
 			},
 			Name:  "prop1",
@@ -706,7 +701,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  4,
 			Parent: data,
 			Path: &Path{
-				Name: strPtr("prop2"),
+				Name: new("prop2"),
 				Type: PathTypeElement,
 			},
 			Name:  "prop2",
@@ -731,7 +726,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  "a",
 			Parent: data["array"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &i,
 				Next:  &Path{},
@@ -744,7 +739,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  "b",
 			Parent: data["array"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &j,
 				Next:  &Path{},
@@ -757,7 +752,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  "c",
 			Parent: data["array"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &k,
 				Next:  &Path{},
@@ -783,7 +778,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  nil,
 			Parent: data["array"].([][]string)[0],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &i,
 				Next: &Path{
@@ -799,7 +794,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  "a",
 			Parent: data["array"].([][]string)[1],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &j,
 				Next: &Path{
@@ -816,7 +811,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  "b",
 			Parent: data["array"].([][]string)[1],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &j,
 				Next: &Path{
@@ -833,7 +828,7 @@ func TestPathWalk(t *testing.T) {
 			Value:  "c",
 			Parent: data["array"].([][]string)[2],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &k,
 				Next: &Path{
@@ -864,13 +859,13 @@ func TestPathWalk(t *testing.T) {
 			Value:  nil,
 			Parent: data["array"].([]map[string]any)[0]["field"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &i,
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name: strPtr("field"),
+						Name: new("field"),
 						Type: PathTypeArray,
 						Next: &Path{},
 					},
@@ -884,13 +879,13 @@ func TestPathWalk(t *testing.T) {
 			Value:  "a",
 			Parent: data["array"].([]map[string]any)[1]["field"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &j,
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name:  strPtr("field"),
+						Name:  new("field"),
 						Type:  PathTypeArray,
 						Index: &i,
 						Next:  &Path{},
@@ -905,13 +900,13 @@ func TestPathWalk(t *testing.T) {
 			Value:  "b",
 			Parent: data["array"].([]map[string]any)[1]["field"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &j,
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name:  strPtr("field"),
+						Name:  new("field"),
 						Type:  PathTypeArray,
 						Index: &j,
 						Next:  &Path{},
@@ -926,13 +921,13 @@ func TestPathWalk(t *testing.T) {
 			Value:  nil,
 			Parent: data["array"].([]map[string]any)[2],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &k,
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name:  strPtr("field"),
+						Name:  new("field"),
 						Type:  PathTypeArray,
 						Index: &m,
 						Next:  &Path{},
@@ -947,13 +942,13 @@ func TestPathWalk(t *testing.T) {
 			Value:  "c",
 			Parent: data["array"].([]map[string]any)[3]["field"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &l,
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name:  strPtr("field"),
+						Name:  new("field"),
 						Type:  PathTypeArray,
 						Index: &i,
 						Next:  &Path{},
@@ -974,12 +969,12 @@ func TestPathWalk(t *testing.T) {
 			Value:  []string{},
 			Parent: data["array"].([]map[string]any)[0],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &i,
 				Next: &Path{
 					Type: PathTypeObject,
-					Next: &Path{Name: strPtr("field")},
+					Next: &Path{Name: new("field")},
 				},
 			},
 			Name:  "field",
@@ -990,12 +985,12 @@ func TestPathWalk(t *testing.T) {
 			Value:  []string{"a", "b"},
 			Parent: data["array"].([]map[string]any)[1],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &j,
 				Next: &Path{
 					Type: PathTypeObject,
-					Next: &Path{Name: strPtr("field")},
+					Next: &Path{Name: new("field")},
 				},
 			},
 			Name:  "field",
@@ -1006,12 +1001,12 @@ func TestPathWalk(t *testing.T) {
 			Value:  nil,
 			Parent: data["array"].([]map[string]any)[2],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &k,
 				Next: &Path{
 					Type: PathTypeObject,
-					Next: &Path{Name: strPtr("field")},
+					Next: &Path{Name: new("field")},
 				},
 			},
 			Name:  "field",
@@ -1022,12 +1017,12 @@ func TestPathWalk(t *testing.T) {
 			Value:  []string{"c"},
 			Parent: data["array"].([]map[string]any)[3],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &l,
 				Next: &Path{
 					Type: PathTypeObject,
-					Next: &Path{Name: strPtr("field")},
+					Next: &Path{Name: new("field")},
 				},
 			},
 			Name:  "field",
@@ -1046,11 +1041,11 @@ func TestPathWalk(t *testing.T) {
 			Path: &Path{
 				Name:  nil,
 				Type:  PathTypeArray,
-				Index: lo.ToPtr(0),
+				Index: new(0),
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name: strPtr("value"),
+						Name: new("value"),
 						Type: PathTypeElement,
 					},
 				},
@@ -1065,11 +1060,11 @@ func TestPathWalk(t *testing.T) {
 			Path: &Path{
 				Name:  nil,
 				Type:  PathTypeArray,
-				Index: lo.ToPtr(1),
+				Index: new(1),
 				Next: &Path{
 					Type: PathTypeObject,
 					Next: &Path{
-						Name: strPtr("value"),
+						Name: new("value"),
 						Type: PathTypeElement,
 					},
 				},
@@ -1093,7 +1088,7 @@ func TestPathWalkWildcardEmptyObject(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{Name: wildcard},
 			},
@@ -1111,12 +1106,12 @@ func TestPathWalkWildcardEmptyObject(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
 					Name: wildcard,
 					Type: PathTypeObject,
-					Next: &Path{Name: strPtr("prop")},
+					Next: &Path{Name: new("prop")},
 				},
 			},
 			Name:  "*",
@@ -1140,7 +1135,7 @@ func TestPathWalkEmptyArray(t *testing.T) {
 			Parent: data.(map[string]any)["array"],
 			Name:   "",
 			Path: &Path{
-				Name: strPtr("array"),
+				Name: new("array"),
 				Type: PathTypeArray,
 				Next: &Path{},
 			},
@@ -1159,7 +1154,7 @@ func TestPathWalkEmptyArray(t *testing.T) {
 			Parent: data.(map[string]any)["narray"],
 			Name:   "",
 			Path: &Path{
-				Name: strPtr("narray"),
+				Name: new("narray"),
 				Type: PathTypeArray,
 				Next: &Path{},
 			},
@@ -1179,7 +1174,7 @@ func TestPathWalkEmptyArray(t *testing.T) {
 			Parent: data,
 			Name:   "array",
 			Path: &Path{
-				Name: strPtr("array"),
+				Name: new("array"),
 				Type: PathTypeElement,
 				Next: nil,
 			},
@@ -1223,9 +1218,9 @@ func TestPathWalkNotFoundInObject(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
-				Next: &Path{Name: strPtr("notafield")},
+				Next: &Path{Name: new("notafield")},
 			},
 			Name:  "notafield",
 			Index: -1,
@@ -1245,7 +1240,7 @@ func TestPathWalkNotFoundInArray(t *testing.T) {
 			Value:  nil,
 			Parent: data["array"],
 			Path: &Path{
-				Name: strPtr("array"),
+				Name: new("array"),
 				Type: PathTypeArray,
 				Next: &Path{},
 			},
@@ -1277,10 +1272,10 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"].(map[string]any)["field"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name:  strPtr("field"),
+					Name:  new("field"),
 					Type:  PathTypeArray,
 					Index: &i,
 					Next:  &Path{},
@@ -1294,10 +1289,10 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"].(map[string]any)["field"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name:  strPtr("field"),
+					Name:  new("field"),
 					Type:  PathTypeArray,
 					Index: &j,
 					Next:  &Path{},
@@ -1316,10 +1311,10 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"].(map[string]any)["array"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name:  strPtr("array"),
+					Name:  new("array"),
 					Type:  PathTypeArray,
 					Index: &i,
 					Next:  &Path{},
@@ -1333,10 +1328,10 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			Value:  "a",
 			Parent: data["object"].(map[string]any)["array"].([]any)[1],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name:  strPtr("array"),
+					Name:  new("array"),
 					Type:  PathTypeArray,
 					Index: &j,
 					Next: &Path{
@@ -1354,10 +1349,10 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			Value:  "b",
 			Parent: data["object"].(map[string]any)["array"].([]any)[1],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name:  strPtr("array"),
+					Name:  new("array"),
 					Type:  PathTypeArray,
 					Index: &j,
 					Next: &Path{
@@ -1375,10 +1370,10 @@ func TestPathWalkSliceExpected(t *testing.T) {
 			Value:  nil,
 			Parent: data["object"].(map[string]any)["array"],
 			Path: &Path{
-				Name: strPtr("object"),
+				Name: new("object"),
 				Type: PathTypeObject,
 				Next: &Path{
-					Name:  strPtr("array"),
+					Name:  new("array"),
 					Type:  PathTypeArray,
 					Index: &k,
 					Next:  &Path{},
@@ -1406,13 +1401,13 @@ func TestPathWalkWithIndex(t *testing.T) {
 
 	i := 1
 	path := &Path{
-		Name:  strPtr("array"),
+		Name:  new("array"),
 		Type:  PathTypeArray,
 		Index: &i,
 		Next: &Path{
 			Type: PathTypeObject,
 			Next: &Path{
-				Name:  strPtr("field"),
+				Name:  new("field"),
 				Type:  PathTypeArray,
 				Index: &i,
 				Next:  &Path{},
@@ -1453,13 +1448,13 @@ func TestPathWalkWithIndexOutOfBounds(t *testing.T) {
 	i := 1
 	j := 5
 	path := &Path{
-		Name:  strPtr("array"),
+		Name:  new("array"),
 		Type:  PathTypeArray,
 		Index: &i,
 		Next: &Path{
 			Type: PathTypeObject,
 			Next: &Path{
-				Name:  strPtr("field"),
+				Name:  new("field"),
 				Type:  PathTypeArray,
 				Index: &j,
 				Next:  &Path{},
@@ -1490,13 +1485,13 @@ func TestPathWalkMissingObject(t *testing.T) {
 	data := map[string]any{}
 
 	path := &Path{
-		Name: strPtr("object"),
+		Name: new("object"),
 		Type: PathTypeObject,
 		Next: &Path{
 			Type: PathTypeObject,
-			Name: strPtr("subobject"),
+			Name: new("subobject"),
 			Next: &Path{
-				Name: strPtr("field"),
+				Name: new("field"),
 				Type: PathTypeElement,
 			},
 		},
@@ -1562,7 +1557,7 @@ func TestPathWalkBreak(t *testing.T) {
 			Value:  "a",
 			Parent: data["array"],
 			Path: &Path{
-				Name:  strPtr("array"),
+				Name:  new("array"),
 				Type:  PathTypeArray,
 				Index: &i,
 				Next:  &Path{},
@@ -1591,9 +1586,9 @@ func TestPathFirst(t *testing.T) {
 		Value:  data["object"].(map[string]any)["field"],
 		Parent: data["object"],
 		Path: &Path{
-			Name: strPtr("object"),
+			Name: new("object"),
 			Type: PathTypeObject,
-			Next: &Path{Name: strPtr("field")},
+			Next: &Path{Name: new("field")},
 		},
 		Name:  "field",
 		Index: -1,
@@ -1609,9 +1604,9 @@ func TestPathFirst(t *testing.T) {
 		Value:  nil,
 		Parent: data["object"],
 		Path: &Path{
-			Name: strPtr("object"),
+			Name: new("object"),
 			Type: PathTypeObject,
-			Next: &Path{Name: strPtr("not_a_field")},
+			Next: &Path{Name: new("not_a_field")},
 		},
 		Name:  "not_a_field",
 		Index: -1,
@@ -1627,9 +1622,9 @@ func TestPathFirst(t *testing.T) {
 		Value:  data["object"].(map[string]any)["field"],
 		Parent: data["object"],
 		Path: &Path{
-			Name: strPtr("object"),
+			Name: new("object"),
 			Type: PathTypeObject,
-			Next: &Path{Name: strPtr("field")},
+			Next: &Path{Name: new("field")},
 		},
 		Name:  "field",
 		Index: -1,
@@ -1640,9 +1635,9 @@ func TestPathFirst(t *testing.T) {
 		Value:  data["object"].(map[string]any)["field2"],
 		Parent: data["object"],
 		Path: &Path{
-			Name: strPtr("object"),
+			Name: new("object"),
 			Type: PathTypeObject,
-			Next: &Path{Name: strPtr("field2")},
+			Next: &Path{Name: new("field2")},
 		},
 		Name:  "field2",
 		Index: -1,
@@ -1664,7 +1659,7 @@ func TestPathFirst(t *testing.T) {
 		Value:  "a",
 		Parent: data["array"],
 		Path: &Path{
-			Name:  strPtr("array"),
+			Name:  new("array"),
 			Type:  PathTypeArray,
 			Index: &i,
 			Next:  &Path{},
@@ -1679,13 +1674,13 @@ func TestPathFirst(t *testing.T) {
 
 func TestPathSetAllMissingIndexes(t *testing.T) {
 	path := &Path{
-		Name: strPtr("array"),
+		Name: new("array"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeObject,
-			Name: strPtr("object"),
+			Name: new("object"),
 			Next: &Path{
-				Name: strPtr("field"),
+				Name: new("field"),
 				Type: PathTypeArray,
 				Next: &Path{},
 			},
@@ -1724,10 +1719,10 @@ func TestPathTruncate(t *testing.T) {
 	assert.Equal(t, path, truncated)
 	truncated = path.Truncate(2)
 	expected := &Path{
-		Name: strPtr("a"),
+		Name: new("a"),
 		Type: PathTypeObject,
 		Next: &Path{
-			Name: strPtr("b"),
+			Name: new("b"),
 			Type: PathTypeElement,
 		},
 	}
@@ -1736,12 +1731,12 @@ func TestPathTruncate(t *testing.T) {
 	path, _ = Parse("a[].b.c")
 	truncated = path.Truncate(3)
 	expected = &Path{
-		Name: strPtr("a"),
+		Name: new("a"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeObject,
 			Next: &Path{
-				Name: strPtr("b"),
+				Name: new("b"),
 				Type: PathTypeElement,
 			},
 		},
@@ -1751,7 +1746,7 @@ func TestPathTruncate(t *testing.T) {
 	path, _ = Parse("array[][]")
 	truncated = path.Truncate(2)
 	expected = &Path{
-		Name: strPtr("array"),
+		Name: new("array"),
 		Type: PathTypeArray,
 		Next: &Path{
 			Type: PathTypeElement,
@@ -1780,13 +1775,13 @@ func TestPathString(t *testing.T) {
 
 	i := 1
 	path = &Path{
-		Name:  strPtr("array"),
+		Name:  new("array"),
 		Type:  PathTypeArray,
 		Index: &i,
 		Next: &Path{
 			Type: PathTypeObject,
 			Next: &Path{
-				Name:  strPtr("field"),
+				Name:  new("field"),
 				Type:  PathTypeArray,
 				Index: &i,
 				Next:  &Path{},

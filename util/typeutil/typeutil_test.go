@@ -3,7 +3,6 @@ package typeutil
 import (
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -289,7 +288,7 @@ func TestCopy(t *testing.T) {
 			desc: "undefined_nil",
 			model: &TestStruct{
 				A:   "not nil",
-				Ptr: lo.ToPtr("not nil"),
+				Ptr: new("not nil"),
 			},
 			dto: struct {
 				A   Undefined[*string]
@@ -325,7 +324,7 @@ func TestCopy(t *testing.T) {
 			dto: struct {
 				Undefined Undefined[*string]
 			}{
-				Undefined: NewUndefined(lo.ToPtr("override")),
+				Undefined: NewUndefined(new("override")),
 			},
 			want: &TestStruct{
 				Undefined: NewUndefined("override"),
@@ -339,7 +338,7 @@ func TestCopy(t *testing.T) {
 			dto: struct {
 				Undefined *string
 			}{
-				Undefined: lo.ToPtr("override"),
+				Undefined: new("override"),
 			},
 			want: &TestStruct{
 				Undefined: NewUndefined("override"),
@@ -353,7 +352,7 @@ func TestCopy(t *testing.T) {
 			dto: struct {
 				Undefined Undefined[*string]
 			}{
-				Undefined: NewUndefined(lo.ToPtr("override")),
+				Undefined: NewUndefined(new("override")),
 			},
 			want: &TestStruct{
 				Undefined: NewUndefined("override"),

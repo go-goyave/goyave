@@ -7,7 +7,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/samber/lo"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
@@ -41,7 +40,7 @@ const (
 	ElementNotFound
 )
 
-var wildcard = lo.ToPtr("*")
+var wildcard = new("*")
 
 var (
 	// EscapeChars the list of characters that can be escaped using a backslash `\` when

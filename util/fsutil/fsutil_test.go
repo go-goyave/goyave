@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/util/errors"
@@ -109,7 +108,7 @@ func TestGetMIMEType(t *testing.T) {
 		{
 			path:     "resources/img/logo/goyave_16.png",
 			wantMIME: "image/png",
-			wantSize: lo.ToPtr(int64(630)),
+			wantSize: new(int64(630)),
 			wantErr:  false,
 		},
 		{
@@ -150,7 +149,7 @@ func TestGetMIMEType(t *testing.T) {
 		{
 			path:     "doesn't exist",
 			wantMIME: "",
-			wantSize: lo.ToPtr(int64(0)),
+			wantSize: new(int64(0)),
 			wantErr:  true,
 		},
 	}

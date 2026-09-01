@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/copier"
@@ -66,7 +65,7 @@ func TestUndefined(t *testing.T) {
 		u.Unset()
 		assert.Equal(t, Undefined[string]{}, u)
 
-		uPtr := NewUndefined(lo.ToPtr("hello"))
+		uPtr := NewUndefined(new("hello"))
 		uPtr.Unset()
 		assert.Equal(t, Undefined[*string]{}, uPtr)
 	})
@@ -188,9 +187,9 @@ func TestUndefined(t *testing.T) {
 			want      any
 			wantErr   error
 		}{
-			{undefined: &Undefined[string]{}, value: "hello", want: lo.ToPtr(NewUndefined("hello"))},
-			{undefined: &Undefined[string]{}, value: lo.ToPtr("hello"), want: lo.ToPtr(NewUndefined("hello"))},
-			{undefined: &Undefined[testInt64]{}, value: int64(123), want: lo.ToPtr(NewUndefined(testInt64{Val: 123}))},
+			{undefined: &Undefined[string]{}, value: "hello", want: new(NewUndefined("hello"))},
+			{undefined: &Undefined[string]{}, value: new("hello"), want: new(NewUndefined("hello"))},
+			{undefined: &Undefined[testInt64]{}, value: int64(123), want: new(NewUndefined(testInt64{Val: 123}))},
 			{undefined: &Undefined[testInt64]{}, value: "hello", want: &Undefined[testInt64]{Present: true}, wantErr: fmt.Errorf("src \"hello\" is not int64")}, // Error coming from testInt64
 			{undefined: &Undefined[testInt64]{}, value: testInt64{Val: 111}, want: &Undefined[testInt64]{Present: true, Val: testInt64{Val: 111}}},
 			{undefined: &Undefined[testInt64]{}, value: Undefined[testInt64]{Val: testInt64{Val: 222}}, want: &Undefined[testInt64]{Present: true, Val: testInt64{Val: 222}}},
@@ -198,14 +197,14 @@ func TestUndefined(t *testing.T) {
 			{undefined: &Undefined[int64]{}, value: "hello", want: &Undefined[int64]{Present: true}, wantErr: fmt.Errorf("typeutil.Undefined: Scan() incompatible types (src: string, dst: int64)")}, // Error coming from Undefined
 			{undefined: &Undefined[int64]{Val: 123}, value: nil, want: &Undefined[int64]{Present: true, Val: 0}},
 			{undefined: &Undefined[int64]{Val: 123}, value: (*int64)(nil), want: &Undefined[int64]{Present: true, Val: 0}},
-			{undefined: &Undefined[int64]{Val: 0}, value: lo.ToPtr(int64(123)), want: &Undefined[int64]{Present: true, Val: 123}},
+			{undefined: &Undefined[int64]{Val: 0}, value: new(int64(123)), want: &Undefined[int64]{Present: true, Val: 123}},
 			{undefined: &Undefined[int64]{Val: 0}, value: &Undefined[int64]{Present: true, Val: 456}, want: &Undefined[int64]{Present: true, Val: 456}},
 			{undefined: &Undefined[int64]{Val: 0}, value: Undefined[int64]{Present: true, Val: 789}, want: &Undefined[int64]{Present: true, Val: 789}},
 			{undefined: &Undefined[int64]{Val: 34}, value: &Undefined[int64]{}, want: &Undefined[int64]{Present: true}},
 			{undefined: &Undefined[int64]{Val: 56}, value: Undefined[int64]{}, want: &Undefined[int64]{Present: true}},
 			{undefined: &Undefined[int64]{Val: 12}, value: (*Undefined[int64])(nil), want: &Undefined[int64]{Present: true, Val: 0}},
-			{undefined: &Undefined[*int64]{Val: lo.ToPtr(int64(123))}, value: nil, want: &Undefined[*int64]{Present: true, Val: nil}},
-			{undefined: &Undefined[*int64]{Val: lo.ToPtr(int64(123))}, value: (*int64)(nil), want: &Undefined[*int64]{Present: true, Val: nil}},
+			{undefined: &Undefined[*int64]{Val: new(int64(123))}, value: nil, want: &Undefined[*int64]{Present: true, Val: nil}},
+			{undefined: &Undefined[*int64]{Val: new(int64(123))}, value: (*int64)(nil), want: &Undefined[*int64]{Present: true, Val: nil}},
 		}
 
 		for _, c := range cases {

@@ -618,7 +618,7 @@ func getFieldType(value reflect.Value) string {
 		return FieldTypeArray
 	default:
 		if value.IsValid() {
-			if _, ok := value.Interface().(map[string]any); ok {
+			if _, ok := reflect.TypeAssert[map[string]any](value); ok {
 				return FieldTypeObject
 			}
 		}

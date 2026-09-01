@@ -163,7 +163,7 @@ func StructValue(v any) slog.Value {
 }
 
 func structValue(v reflect.Value) slog.Value {
-	if valuer, ok := v.Interface().(slog.LogValuer); ok {
+	if valuer, ok := reflect.TypeAssert[slog.LogValuer](v); ok {
 		return valuer.LogValue()
 	}
 	var attrs []slog.Attr

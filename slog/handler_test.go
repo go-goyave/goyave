@@ -380,6 +380,7 @@ func TestDevModeHandlerFormat(t *testing.T) {
 				desc: "generic_struct_conversion",
 				r: func() slog.Record {
 					type strct struct {
+						Zero     *struct{}
 						Subgroup struct {
 							Attr3 string
 						}
@@ -398,7 +399,7 @@ func TestDevModeHandlerFormat(t *testing.T) {
 					r.AddAttrs(slog.Any("struct", s))
 					return r
 				},
-				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%sstruct: \n  %sSubgroup: \n    %sAttr3: %sval3\n  %sAttr1: %sval1\n  %sAttr2: %s123\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, WhiteBold, WhiteBold, Reset, WhiteBold, Reset, WhiteBold, Reset),
+				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%sstruct: \n  %sZero: %s<nil>\n  %sSubgroup: \n    %sAttr3: %sval3\n  %sAttr1: %sval1\n  %sAttr2: %s123\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, WhiteBold, Reset, WhiteBold, WhiteBold, Reset, WhiteBold, Reset, WhiteBold, Reset),
 			},
 			{
 				desc: "map_conversion",

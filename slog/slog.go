@@ -163,6 +163,10 @@ func StructValue(v any) slog.Value {
 }
 
 func structValue(v reflect.Value) slog.Value {
+	if !v.IsValid() {
+		return slog.StringValue("<nil>")
+	}
+
 	if valuer, ok := reflect.TypeAssert[slog.LogValuer](v); ok {
 		return valuer.LogValue()
 	}

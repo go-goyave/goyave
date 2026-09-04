@@ -39,6 +39,7 @@
 - testutil
   - NewTestServer removed. NewTestServerWithOptions renamed NewTestServer.
   - NewTestServer doesn't load configuration from files anymore. It only loads the default values `config.LoadDefault()` (but replace port with 0 for auto assignment) if no Config is provided in the options.
+  - NewTestRequest now sets the language to `lang.Default`.
   - TODO document how to test log output and how to output logs to testing.T.Output
 - Improved documentation by using links
 - Paginator: fetch query isn't executed anymore if the count query returns 0.

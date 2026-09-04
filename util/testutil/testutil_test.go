@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
@@ -138,6 +139,7 @@ func TestNewTestRequest(t *testing.T) {
 
 	assert.Equal(t, http.MethodPost, req.Method())
 	assert.Equal(t, "/uri", req.URL().String())
+	assert.Equal(t, lang.Default, req.Lang)
 	assert.NotNil(t, req.Extra)
 
 	b, err := io.ReadAll(req.Body())

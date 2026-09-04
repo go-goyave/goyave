@@ -16,6 +16,7 @@ import (
 
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
@@ -139,7 +140,9 @@ func FindRootDirectory() string {
 // usin the `httptest` package.
 func NewTestRequest(method, uri string, body io.Reader) *goyave.Request {
 	req := httptest.NewRequest(method, uri, body)
-	return goyave.NewRequest(req)
+	request := goyave.NewRequest(req)
+	request.Lang = lang.Default
+	return request
 }
 
 // NewTestRequest create a new `goyave.Request` with an underlying HTTP request created

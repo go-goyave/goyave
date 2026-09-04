@@ -21,6 +21,21 @@ func (t testLogValuer) LogValue() slog.Value {
 	return slog.StringValue(fmt.Sprintf("value_%d", t))
 }
 
+type logValuerStruct struct{}
+
+func (logValuerStruct) LogValue() slog.Value {
+	return slog.StringValue("struct_valuer")
+}
+
+type recursiveStruct struct {
+	Attr1 string
+	Child *recursiveChild
+}
+type recursiveChild struct {
+	Attr2  string
+	Parent *recursiveStruct
+}
+
 func TestNewHandler(t *testing.T) {
 	cases := []struct {
 		want    any
@@ -402,6 +417,23 @@ func TestDevModeHandlerFormat(t *testing.T) {
 				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%sstruct: \n  %sZero: %s<nil>\n  %sSubgroup: \n    %sAttr3: %sval3\n  %sAttr1: %sval1\n  %sAttr2: %s123\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, WhiteBold, Reset, WhiteBold, WhiteBold, Reset, WhiteBold, Reset, WhiteBold, Reset),
 			},
 			{
+				desc: "recursive_struct",
+				r: func() slog.Record {
+					r := slog.NewRecord(time, slog.LevelError, "message", pc)
+					child := &recursiveChild{
+						Attr2: "val2",
+					}
+					s := &recursiveStruct{
+						Attr1: "val1",
+						Child: child,
+					}
+					child.Parent = s
+					r.AddAttrs(slog.Any("struct", s))
+					return r
+				},
+				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%sstruct: \n  %sAttr1: %sval1\n  %sChild: \n    %sAttr2: %sval2\n    %sParent: %s<already_seen>\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, WhiteBold, Reset, WhiteBold, WhiteBold, Reset, WhiteBold, Reset),
+			},
+			{
 				desc: "map_conversion",
 				r: func() slog.Record {
 					r := slog.NewRecord(time, slog.LevelError, "message", pc)
@@ -423,6 +455,35 @@ func TestDevModeHandlerFormat(t *testing.T) {
 					return r
 				},
 				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%slogvalue: %svalue_123\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, Reset),
+			},
+			{
+				desc: "logvaluer_raw",
+				r: func() slog.Record {
+					r := slog.NewRecord(time, slog.LevelError, "message", pc)
+					r.AddAttrs(slog.Any("logvalue", testLogValuer(123)))
+					return r
+				},
+				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%slogvalue: %svalue_123\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, Reset),
+			},
+			{
+				desc: "logvaluer_struct_field",
+				r: func() slog.Record {
+					r := slog.NewRecord(time, slog.LevelError, "message", pc)
+					s := &struct {
+						LogValueInt       testLogValuer
+						LogValueIntPtr    *testLogValuer
+						LogValueStruct    logValuerStruct
+						LogValueStructPtr *logValuerStruct
+					}{
+						LogValueInt:       123,
+						LogValueIntPtr:    new(testLogValuer(456)),
+						LogValueStruct:    logValuerStruct{},
+						LogValueStructPtr: &logValuerStruct{},
+					}
+					r.AddAttrs(slog.Any("struct", s))
+					return r
+				},
+				want: fmt.Sprintf("\n%s ERROR %s 2023/04/09 15:04:05.123456%s (%s)%s\n%smessage%s\n%sstruct: \n  %sLogValueInt: %svalue_123\n  %sLogValueIntPtr: %svalue_456\n  %sLogValueStruct: %sstruct_valuer\n  %sLogValueStructPtr: %sstruct_valuer\n", BGRed+WhiteBold, Reset, Gray, expectedSource, Reset, Red, Reset, WhiteBold, WhiteBold, Reset, WhiteBold, Reset, WhiteBold, Reset, WhiteBold, Reset),
 			},
 		}
 

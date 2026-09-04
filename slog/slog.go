@@ -159,12 +159,31 @@ func (l *Logger) handleReason(ctx context.Context, reason error, trace *slog.Att
 // If the given value implements `slog.LogValuer`, this value is returned instead.
 // Returns AnyValue if the type is not supported.
 func StructValue(v any) slog.Value {
-	return structValue(reflect.Indirect(reflect.ValueOf(v)))
+	seen := map[uintptr]struct{}{}
+	value := reflect.ValueOf(v)
+	if value.Kind() == reflect.Pointer && value.IsValid() {
+		ptr := value.Pointer()
+		seen[ptr] = struct{}{}
+	}
+	return structValue(reflect.Indirect(value), seen)
 }
 
-func structValue(v reflect.Value) slog.Value {
+func structValue(v reflect.Value, seen map[uintptr]struct{}) slog.Value {
 	if !v.IsValid() {
 		return slog.StringValue("<nil>")
+	}
+
+	if v.Kind() == reflect.Pointer {
+		ptr := v.Pointer()
+		if ptr == 0 {
+			return slog.StringValue("<nil>")
+		}
+		if _, ok := seen[ptr]; ok {
+			return slog.StringValue("<already_seen>")
+		}
+		seen[ptr] = struct{}{}
+
+		v = v.Elem()
 	}
 
 	if valuer, ok := reflect.TypeAssert[slog.LogValuer](v); ok {
@@ -182,7 +201,7 @@ func structValue(v reflect.Value) slog.Value {
 			if !fieldType.IsExported() {
 				continue
 			}
-			attrs = append(attrs, slog.Any(fieldType.Name, structValue(fieldValue)))
+			attrs = append(attrs, slog.Any(fieldType.Name, structValue(fieldValue, seen)))
 		}
 	case reflect.Map:
 		iter := v.MapRange()
@@ -190,7 +209,7 @@ func structValue(v reflect.Value) slog.Value {
 			key := iter.Key()
 			value := iter.Value()
 
-			attrs = append(attrs, slog.Any(fmt.Sprintf("%s", key.Interface()), structValue(value)))
+			attrs = append(attrs, slog.Any(fmt.Sprintf("%s", key.Interface()), structValue(value, seen)))
 		}
 	default:
 		return slog.AnyValue(v.Interface())

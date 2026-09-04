@@ -206,7 +206,8 @@ func printAttr(attr slog.Attr, buf *bytes.Buffer, indent int) {
 	buf.WriteString(attr.Key)
 	buf.WriteString(": ")
 
-	if attr.Value.Kind() == slog.KindAny {
+	kind := attr.Value.Kind()
+	if kind == slog.KindAny || kind == slog.KindLogValuer {
 		// This may be a struct or map, convert it if needed
 		attr.Value = StructValue(attr.Value.Any())
 	}

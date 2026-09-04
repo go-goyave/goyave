@@ -53,6 +53,10 @@ linters:
         path: _test\.go
       - path: (.+)\.go$
         text: should have a package comment
+      - linters:
+          - govet
+        path: _test\.go
+        text: fieldalignment
     paths:
       - .github
       - resources

@@ -6,6 +6,7 @@ import (
 	"io"
 	"reflect"
 	"runtime"
+	"strconv"
 	"time"
 
 	"log/slog"
@@ -209,7 +210,12 @@ func structValue(v reflect.Value, seen map[uintptr]struct{}) slog.Value {
 			key := iter.Key()
 			value := iter.Value()
 
-			attrs = append(attrs, slog.Any(fmt.Sprintf("%s", key.Interface()), structValue(value, seen)))
+			attrs = append(attrs, slog.Any(fmt.Sprintf("%v", key.Interface()), structValue(value, seen)))
+		}
+	case reflect.Slice, reflect.Array:
+		len := v.Len()
+		for i := range len {
+			attrs = append(attrs, slog.Any(strconv.Itoa(i), structValue(v.Index(i), seen)))
 		}
 	default:
 		return slog.AnyValue(v.Interface())

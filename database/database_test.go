@@ -1,7 +1,6 @@
 package database
 
 import (
-	"bytes"
 	"fmt"
 	"regexp"
 	"testing"
@@ -14,7 +13,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/slog"
 )
 
 type DummyDialector struct {
@@ -42,6 +40,7 @@ var testConnectionConfig = &config.DatabaseConnection{
 	MaxIdleTime:                123,
 	DefaultReadQueryTimeoutMs:  123,
 	DefaultWriteQueryTimeoutMs: 123,
+	Debug:                      true,
 	GORM: config.GORM{
 		SkipDefaultTransaction:                   true,
 		PrepareStmtMaxSize:                       123,
@@ -76,17 +75,12 @@ func TestNewDatabase(t *testing.T) {
 	})
 
 	t.Run("New", func(t *testing.T) {
-		slogger := slog.New(slog.NewHandler(true, &bytes.Buffer{}))
-		db, err := New(testConnectionConfig, func() *slog.Logger { return slogger })
+		db, err := New(testConnectionConfig)
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
 		if assert.NotNil(t, db.Logger) {
-			// Logging is enabled when app.debug is true
-			l, ok := db.Logger.(*Logger)
-			if assert.True(t, ok) {
-				assert.NotNil(t, l.slogger)
-			}
+			assert.IsType(t, &Logger{}, db.Logger)
 		}
 
 		// Can't check log level (gorm logger unexported)
@@ -121,20 +115,19 @@ func TestNewDatabase(t *testing.T) {
 	})
 
 	t.Run("silent", func(t *testing.T) {
-		db, err := New(testConnectionConfig, nil)
+		cfg := *testConnectionConfig
+		cfg.Debug = false
+		db, err := New(&cfg)
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
 		require.NotNil(t, db.Logger)
-		l, ok := db.Logger.(*Logger)
-		if assert.True(t, ok) {
-			assert.Nil(t, l.slogger)
-		}
+		assert.IsType(t, &DiscardLogger{}, db.Logger)
 	})
 
 	t.Run("NewFromDialector", func(t *testing.T) {
 		dialector := &DummyDialector{}
-		db, err := NewFromDialector(testConnectionConfig, nil, dialector)
+		db, err := NewFromDialector(testConnectionConfig, dialector)
 		require.NoError(t, err)
 		require.NotNil(t, db)
 
@@ -172,8 +165,9 @@ func TestNewDatabase(t *testing.T) {
 	t.Run("New_unknown_driver", func(t *testing.T) {
 		cfg := &config.DatabaseConnection{
 			Dialect: "notadriver",
+			Debug:   false,
 		}
-		db, err := New(cfg, nil)
+		db, err := New(cfg)
 		assert.Nil(t, db)
 		require.Error(t, err)
 		assert.Equal(t, "DB dialect \"notadriver\" not supported, forgotten import?", err.Error())
@@ -184,6 +178,7 @@ func TestNewDatabase(t *testing.T) {
 			Dialect:            "sqlmock",
 			DatabaseName:       "paginator_test.db",
 			MaxIdleConnections: 1,
+			Debug:              false,
 			GORM:               config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 		}
 
@@ -205,7 +200,7 @@ func TestNewDatabase(t *testing.T) {
 		// The SQLite dialector selects the sqlite version first to know which callback clauses it can use.
 		mock.ExpectQuery(regexp.QuoteMeta(`select sqlite_version()`)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("3.53.4"))
 
-		db, err := NewFromDialector(cfg, nil, dialector)
+		db, err := NewFromDialector(cfg, dialector)
 		if err != nil {
 			require.NoError(t, err)
 		}

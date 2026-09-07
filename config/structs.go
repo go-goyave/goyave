@@ -196,6 +196,9 @@ type DatabaseConnection struct {
 	// DefaultWriteQueryTimeoutMs the maximum execution time for write queries (in milliseconds).
 	// Recommended default value is 40000ms.
 	DefaultWriteQueryTimeoutMs int
+
+	// Debug true to log all queries.
+	Debug bool
 }
 
 func (s DatabaseConnection) RuleSet() v.RuleSet {
@@ -214,6 +217,7 @@ func (s DatabaseConnection) RuleSet() v.RuleSet {
 		{Path: "MaxIdleTime", Rules: v.List{v.Required(), v.Int(), v.Min(0)}},
 		{Path: "DefaultReadQueryTimeoutMs", Rules: v.List{v.Required(), v.Int(), v.Min(0)}},
 		{Path: "DefaultWriteQueryTimeoutMs", Rules: v.List{v.Required(), v.Int(), v.Min(0)}},
+		{Path: "Debug", Rules: v.List{v.Required(), v.Bool()}},
 		{Path: "GORM", Rules: s.GORM.RuleSet()},
 	}
 }
@@ -233,6 +237,7 @@ func (s DatabaseConnection) Default() DatabaseConnection {
 		MaxIdleTime:                0,
 		DefaultReadQueryTimeoutMs:  20000, // 20s
 		DefaultWriteQueryTimeoutMs: 40000, // 40s
+		Debug:                      true,
 		GORM:                       s.GORM.Default(),
 	}
 }

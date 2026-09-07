@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/slog"
 
 	errorutil "goyave.dev/goyave/v5/util/errors"
 )
@@ -22,14 +22,14 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
 //	import _ "goyave.dev/goyave/v5/database/dialect/clickhouse"
 //	import _ "goyave.dev/goyave/v5/database/dialect/bigquery"
-func New(cfg *config.DatabaseConnection, logger func() *slog.Logger) (*gorm.DB, error) { // TODO logger from context? the logger func makes no sense anymore since server unexported Logger
+func New(cfg *config.DatabaseConnection) (*gorm.DB, error) {
 	dialect, ok := dialects[cfg.Dialect]
 	if !ok {
 		return nil, errorutil.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)
 	}
 
 	dsn := dialect.buildDSN(cfg)
-	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg, logger))
+	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg))
 	if err != nil {
 		return nil, errorutil.New(err)
 	}
@@ -45,8 +45,8 @@ func New(cfg *config.DatabaseConnection, logger func() *slog.Logger) (*gorm.DB, 
 // defined in the given configuration.
 //
 // This can be used in tests to create a mock connection pool.
-func NewFromDialector(cfg *config.DatabaseConnection, logger func() *slog.Logger, dialector gorm.Dialector) (*gorm.DB, error) {
-	db, err := gorm.Open(dialector, newConfig(cfg, logger))
+func NewFromDialector(cfg *config.DatabaseConnection, dialector gorm.Dialector) (*gorm.DB, error) {
+	db, err := gorm.Open(dialector, newConfig(cfg))
 	if err != nil {
 		return nil, errorutil.New(err)
 	}
@@ -58,9 +58,15 @@ func NewFromDialector(cfg *config.DatabaseConnection, logger func() *slog.Logger
 	return db, initSQLDB(cfg, db)
 }
 
-func newConfig(cfg *config.DatabaseConnection, logger func() *slog.Logger) *gorm.Config {
+func newConfig(cfg *config.DatabaseConnection) *gorm.Config {
+	var logger logger.Interface
+	if cfg.Debug {
+		logger = NewLogger()
+	} else {
+		logger = NewDiscardLogger()
+	}
 	return &gorm.Config{
-		Logger:                                   NewLogger(logger),
+		Logger:                                   logger,
 		SkipDefaultTransaction:                   cfg.GORM.SkipDefaultTransaction,
 		DryRun:                                   cfg.GORM.DryRun,
 		PrepareStmt:                              cfg.GORM.PrepareStmt,

@@ -72,9 +72,14 @@ func (w *Writer) Close() error {
 	}
 	message, attrs := w.formatter(ctx)
 
-	// TODO Previously we only printed the message in dev mode to avoid clutter.
-	// Passing around the debug config entry isn't as easy now, so let's print them anyway.
-	slog.FromContext(w.request.Context()).Info(message, lo.Map(attrs, func(a stdslog.Attr, _ int) any { return a })...)
+	logger := slog.FromContext(w.request.Context())
+	if _, ok := logger.Handler().(*slog.DevModeHandler); ok {
+		// In dev mode, we don't display the additional attributes to avoid clutter.
+		// They are redundant with the message itself and not necessary.
+		logger.Info(message)
+	} else {
+		logger.Info(message, lo.Map(attrs, func(a stdslog.Attr, _ int) any { return a })...)
+	}
 
 	return errors.New(w.CommonWriter.Close())
 }

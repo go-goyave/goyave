@@ -18,6 +18,7 @@
 - slog:
   - global default logger
   - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context
+  - skip the log earlier if log level not enabled for better performance
 - server:
   - added options for MaxHeaderValueCount and DisableClientPriority
   - Config accessor removed
@@ -60,6 +61,7 @@
 - Factory Save now returns an error
 - Database timeout plugin now works on Scan too. It doesn't work on Row() and Rows().
 - Database New and NewFromDialector don't take a logger as parameter anymore. Logs are defined by config DatabaseConnection.Debug now.
+- Common/Combined log formatters: fix nested quotes for the URL field
 
 TODO docs pass with links
 TODO cleanup resources directory

@@ -61,7 +61,7 @@ func TestWriter(t *testing.T) {
 
 		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":13}}\n`,
-				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13`),
+				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET /log HTTP/1.1\" 200 13`),
 			),
 			buffer.String(),
 		)
@@ -92,7 +92,7 @@ func TestWriter(t *testing.T) {
 
 		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":13}}\n`,
-				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13`),
+				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET /log HTTP/1.1\" 200 13`),
 			),
 			buffer.String(),
 		)
@@ -130,7 +130,7 @@ func TestWriter(t *testing.T) {
 
 		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":13}}\n`,
-				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13`),
+				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET /log HTTP/1.1\" 200 13`),
 			),
 			buffer.String(),
 		)
@@ -142,7 +142,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(true, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -168,8 +168,8 @@ func TestWriter(t *testing.T) {
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 
 		assert.Regexp(t,
-			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted (FIXME: details are not omitted anymore in dev mode...)
-				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13`),
+			fmt.Sprintf("\n%s INFO %s \\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}%s \\(.+\\)%s\n192.0.2.1 - - \\[23/Mar/2020:13:58:26 \\+0000\\] \"GET /log HTTP/1.1\" 200 13%s\n",
+				regexp.QuoteMeta(slog.BGGray+slog.WhiteBold), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Gray), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Reset), // Same thing but details are omitted
 			),
 			buffer.String(),
 		)
@@ -194,7 +194,7 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":11}}\n`,
-				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11`),
+				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET /log HTTP/1.1\" 200 11`),
 			),
 			buffer.String(),
 		)
@@ -205,7 +205,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(true, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -215,8 +215,8 @@ func TestMiddleware(t *testing.T) {
 		_ = httpResponse.Body.Close()
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 		assert.Regexp(t,
-			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted (FIXME: details are not omitted anymore in dev mode...)
-				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11`),
+			fmt.Sprintf("\n%s INFO %s \\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}%s \\(.+\\)%s\n192.0.2.1 - - \\[23/Mar/2020:13:58:26 \\+0000\\] \"GET /log HTTP/1.1\" 200 11%s\n",
+				regexp.QuoteMeta(slog.BGGray+slog.WhiteBold), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Gray), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Reset), // Same thing but details are omitted
 			),
 			buffer.String(),
 		)
@@ -246,7 +246,7 @@ func TestMiddleware(t *testing.T) {
 
 		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s","details":{"host":"192\.0\.2\.1","username":"-","time":"2020-03-23T13:58:26\.371Z","method":"GET","uri":"/log","proto":"HTTP/1\.1","status":200,"length":11,"referrer":"%s","userAgent":"%s"}}\n`,
-				regexp.QuoteMeta(fmt.Sprintf(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11 \"%s\" \"%s\"`, referrer, userAgent)),
+				regexp.QuoteMeta(fmt.Sprintf(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET /log HTTP/1.1\" 200 11 \"%s\" \"%s\"`, referrer, userAgent)),
 				regexp.QuoteMeta(referrer),
 				regexp.QuoteMeta(userAgent),
 			),
@@ -259,7 +259,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: slog.New(slog.NewHandler(true, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -276,8 +276,8 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 
 		assert.Regexp(t,
-			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted (FIXME: details are not omitted anymore in dev mode...)
-				regexp.QuoteMeta(fmt.Sprintf(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11 \"%s\" \"%s\"`, referrer, userAgent)),
+			fmt.Sprintf("\n%s INFO %s \\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}%s \\(.+\\)%s\n192.0.2.1 - - \\[23/Mar/2020:13:58:26 \\+0000\\] \"GET /log HTTP/1.1\" 200 11 \"%s\" \"%s\"%s\n",
+				regexp.QuoteMeta(slog.BGGray+slog.WhiteBold), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Gray), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(referrer), regexp.QuoteMeta(userAgent), regexp.QuoteMeta(slog.Reset), // Same thing but details are omitted
 			),
 			buffer.String(),
 		)

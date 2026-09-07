@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 )
@@ -122,7 +123,7 @@ func TestJWTService(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
 		config := &JWTConfig{
 			Expiry: 20,
-			RSA: KeyPairConfig{
+			ECDSA: KeyPairConfig{
 				Public:  path.Join(rootDir, "resources/ecdsa/public.pem"),
 				Private: path.Join(rootDir, "resources/ecdsa/private.pem"),
 			},
@@ -177,7 +178,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{user: user}
-		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 
 		token, err := jwtService.GenerateToken(user.Email)
 		require.NoError(t, err)
@@ -209,8 +210,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{user: user}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
-		a.SigningMethod = jwt.SigningMethodRS256
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodRS256)
 		authenticator := Middleware(a)
 
 		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodRS256)
@@ -236,7 +236,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		server, user, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
-			RSA: KeyPairConfig{
+			ECDSA: KeyPairConfig{
 				Public:  path.Join(rootDir, "resources/ecdsa/public.pem"),
 				Private: path.Join(rootDir, "resources/ecdsa/private.pem"),
 			},
@@ -244,8 +244,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		jwtService := NewJWTService(config, &osfs.FS{})
 
 		mockUserService := &MockUserService[TestUser]{user: user}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
-		a.SigningMethod = jwt.SigningMethodES256
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodES256)
 		authenticator := Middleware(a)
 
 		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": user.Email}, jwt.SigningMethodES256)
@@ -274,7 +273,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer invalidtoken")
@@ -300,7 +299,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 
 		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{
 			"sub": user.Email,
@@ -332,7 +331,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 
 		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{
 			"sub": user.Email,
@@ -366,7 +365,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		mockUserService := &MockUserService[TestUser]{
 			err: gorm.ErrRecordNotFound,
 		}
-		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 
 		token, err := jwtService.GenerateToken("notjohndoe@example.org")
 		require.NoError(t, err)
@@ -395,7 +394,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("service_error")}
-		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 
 		token, err := jwtService.GenerateToken("notjohndoe@example.org")
 		require.NoError(t, err)
@@ -424,8 +423,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
-		a.SigningMethod = jwt.SigningMethodHS256
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256)
 		authenticator := Middleware(a)
 
 		token, err := jwtService.GenerateTokenWithClaims(jwt.MapClaims{"sub": "johndoe@example.org"}, jwt.SigningMethodRS256)
@@ -455,8 +453,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
-		a.SigningMethod = jwt.SigningMethodRS256
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodRS256)
 		authenticator := Middleware(a)
 
 		token, err := jwtService.GenerateToken("johndoe@example.org")
@@ -486,8 +483,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
-		a.SigningMethod = jwt.SigningMethodES256
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodES256)
 		authenticator := Middleware(a)
 
 		token, err := jwtService.GenerateToken("johndoe@example.org")
@@ -509,7 +505,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		assert.Equal(t, `Bearer realm="Authorization required", charset="UTF-8"`, resp.Header.Get("WWW-Authenticate"))
 	})
 
-	t.Run("unsupported_method", func(t *testing.T) {
+	t.Run("unsupported_algorithm", func(t *testing.T) {
 		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
@@ -517,8 +513,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
-		a.SigningMethod = jwt.SigningMethodPS256
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodPS256)
 		authenticator := Middleware(a)
 
 		token, err := jwtService.GenerateToken("johndoe@example.org")
@@ -527,9 +522,11 @@ func TestJWTAuthenticator(t *testing.T) {
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().Header.Set("Authorization", "Bearer "+token)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
-		assert.Panics(t, func() {
-			_, _ = authenticator.Authenticate(request)
-		})
+		user, err := authenticator.Authenticate(request)
+		assert.Nil(t, user)
+		var goyaveErr *errors.Error
+		assert.ErrorAs(t, err, &goyaveErr)
+		assert.ErrorContains(t, err, "unsupported JWT Signing method")
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
@@ -540,7 +537,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService))
+		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
@@ -567,7 +564,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		mockUserService := &MockUserService[TestUser]{
 			user: user,
 		}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256)
 		a.Optional = true
 		authenticator := Middleware(a)
 
@@ -596,7 +593,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256)
 		a.Optional = true
 		authenticator := MiddlewareWithRealm(a, "custom realm")
 
@@ -624,7 +621,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{}
-		a := NewJWTAuthenticator(jwtService, mockUserService)
+		a := NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256)
 		a.Optional = true
 		authenticator := Middleware(a)
 

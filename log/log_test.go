@@ -168,7 +168,7 @@ func TestWriter(t *testing.T) {
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 
 		assert.Regexp(t,
-			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted (FIXME: details are not omitted anymore in dev mode...)
 				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 13`),
 			),
 			buffer.String(),
@@ -215,7 +215,7 @@ func TestMiddleware(t *testing.T) {
 		_ = httpResponse.Body.Close()
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 		assert.Regexp(t,
-			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted (FIXME: details are not omitted anymore in dev mode...)
 				regexp.QuoteMeta(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11`),
 			),
 			buffer.String(),
@@ -226,9 +226,9 @@ func TestMiddleware(t *testing.T) {
 		ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
-		server := testutil.NewTestServer(t, goyave.Options{Config: cfg})
 		buffer := bytes.NewBufferString("")
-		server.Logger = slog.New(slog.NewHandler(false, buffer))
+		logger := slog.New(slog.NewHandler(false, buffer))
+		server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: logger})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -276,7 +276,7 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 
 		assert.Regexp(t,
-			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted
+			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","source":{"function":".+","file":".+","line":\d+},"msg":"%s"}\n`, // Same thing but details are omitted (FIXME: details are not omitted anymore in dev mode...)
 				regexp.QuoteMeta(fmt.Sprintf(`192.0.2.1 - - [23/Mar/2020:13:58:26 +0000] \"GET \"/log\" HTTP/1.1\" 200 11 \"%s\" \"%s\"`, referrer, userAgent)),
 			),
 			buffer.String(),

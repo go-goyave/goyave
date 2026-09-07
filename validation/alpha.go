@@ -18,7 +18,7 @@ func (v *AlphaValidator) Name() string { return "alpha" }
 
 // Alpha the field under validation must be an alphabetic string.
 func Alpha() *AlphaValidator {
-	return &AlphaValidator{RegexValidator: RegexValidator{Regexp: alphaRegex}}
+	return &AlphaValidator{Regexp: alphaRegex}
 }
 
 //------------------------------
@@ -33,7 +33,7 @@ func (v *AlphaNumValidator) Name() string { return "alpha_num" }
 
 // AlphaNum the field under validation must an alphabetic-numeric string.
 func AlphaNum() *AlphaNumValidator {
-	return &AlphaNumValidator{RegexValidator: RegexValidator{Regexp: alphaNumRegex}}
+	return &AlphaNumValidator{Regexp: alphaNumRegex}
 }
 
 //------------------------------
@@ -50,5 +50,5 @@ func (v *AlphaDashValidator) Name() string { return "alpha_dash" }
 // AlphaDash the field under validation must be a string made
 // of alphabetic-numeric characters, dashes or underscores.
 func AlphaDash() *AlphaDashValidator {
-	return &AlphaDashValidator{RegexValidator: RegexValidator{Regexp: alphaDashRegex}}
+	return &AlphaDashValidator{Regexp: alphaDashRegex}
 }

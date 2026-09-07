@@ -53,7 +53,7 @@ func TestZlibCompression(t *testing.T) {
 		},
 	}
 
-	request := testutil.NewTestRequest(http.MethodGet, "/zlib", nil)
+	request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/zlib", nil)
 	request.Header().Set("Accept-Encoding", "deflate")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 
@@ -81,7 +81,7 @@ func TestZlibCompressionNoDict(t *testing.T) {
 		},
 	}
 
-	request := testutil.NewTestRequest(http.MethodGet, "/zlib", nil)
+	request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/zlib", nil)
 	request.Header().Set("Accept-Encoding", "deflate")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 

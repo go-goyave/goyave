@@ -56,7 +56,7 @@ func TestZstdCompression(t *testing.T) {
 		},
 	}
 
-	request := testutil.NewTestRequest(http.MethodGet, "/zstd", nil)
+	request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/zstd", nil)
 	request.Header().Set("Accept-Encoding", "zstd")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 

@@ -30,15 +30,15 @@ type ExtraJWTClaims struct{}
 
 // TODO JWT config struct
 type JWTConfig struct {
-	// Expiry defined the number of seconds a token is valid for.
-	// Defaults to 300s.
-	Expiry int
-
 	// Secret the secret value used for HMAC signatures.
 	Secret string
 
 	RSA   KeyPairConfig
 	ECDSA KeyPairConfig
+
+	// Expiry defined the number of seconds a token is valid for.
+	// Defaults to 300s.
+	Expiry int
 }
 
 func (c JWTConfig) RuleSet() validation.RuleSet {
@@ -155,9 +155,7 @@ func (s *JWTService) getKey(filePath string) ([]byte, error) {
 		return nil, errorutil.New(err)
 	}
 
-	if err == nil {
-		s.cache.Store(filePath, key)
-	}
+	s.cache.Store(filePath, key)
 	return key, errorutil.New(err)
 }
 

@@ -204,7 +204,7 @@ func (r *Response) Flush() {
 	switch flusher := r.writer.(type) {
 	case Flusher:
 		if err := flusher.Flush(); err != nil {
-			r.server.Logger.Error(errorutil.New(err))
+			r.server.logger.Error(errorutil.New(err))
 		}
 	case http.Flusher:
 		flusher.Flush()
@@ -401,7 +401,7 @@ func (r *Response) Download(fs fs.StatFS, file string, fileName string) {
 // write to the response, or use your error status handler.
 func (r *Response) Error(err any) {
 	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
-	r.server.Logger.Error(e)
+	r.server.logger.Error(e)
 	r.error(e)
 }
 

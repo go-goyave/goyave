@@ -24,7 +24,8 @@ func prepareTimeoutTest(t *testing.T, timeout int) (*gorm.DB, sqlmock.Sqlmock) {
 		DatabaseName:               fmt.Sprintf("timeout_test_%s.db", t.Name()),
 		DefaultReadQueryTimeoutMs:  timeout,
 		DefaultWriteQueryTimeoutMs: timeout,
-		MaxIdleConnections:         1,             // TODO document this is important for tests overwise the mock connection gets closed
+		MaxIdleConnections:         1, // TODO document this is important for tests overwise the mock connection gets closed
+		Debug:                      false,
 		GORM:                       config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 	}
 
@@ -46,7 +47,7 @@ func prepareTimeoutTest(t *testing.T, timeout int) (*gorm.DB, sqlmock.Sqlmock) {
 	// The SQLite dialector selects the sqlite version first to know which callback clauses it can use.
 	mock.ExpectQuery(regexp.QuoteMeta(`select sqlite_version()`)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("3.53.4"))
 
-	db, err := NewFromDialector(cfg, nil, dialector)
+	db, err := NewFromDialector(cfg, dialector)
 	if err != nil {
 		require.NoError(t, err)
 	}

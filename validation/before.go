@@ -26,7 +26,7 @@ func (v *BeforeValidator) Name() string { return "before" }
 
 // Before the field under validation must be a date (`time.Time`) before the given date.
 func Before(date time.Time) *BeforeValidator {
-	return &BeforeValidator{DateComparisonValidator: DateComparisonValidator{Date: date}}
+	return &BeforeValidator{Date: date}
 }
 
 //------------------------------
@@ -49,7 +49,7 @@ func (v *BeforeEqualValidator) Name() string { return "before_equal" }
 
 // BeforeEqual the field under validation must be a date (`time.Time`) before or equal to the given date.
 func BeforeEqual(date time.Time) *BeforeEqualValidator {
-	return &BeforeEqualValidator{DateComparisonValidator: DateComparisonValidator{Date: date}}
+	return &BeforeEqualValidator{Date: date}
 }
 
 //------------------------------
@@ -77,7 +77,7 @@ func BeforeField(path string) *BeforeFieldValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.BeforeField: path parse error: %w", err), 3))
 	}
-	return &BeforeFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
+	return &BeforeFieldValidator{Path: p}
 }
 
 //------------------------------
@@ -105,5 +105,5 @@ func BeforeEqualField(path string) *BeforeEqualFieldValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.BeforeEqualField: path parse error: %w", err), 3))
 	}
-	return &BeforeEqualFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
+	return &BeforeEqualFieldValidator{Path: p}
 }

@@ -50,7 +50,7 @@ func TestGzipCompression(t *testing.T) {
 		},
 	}
 
-	request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+	request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 	request.Header().Set("Accept-Encoding", "gzip")
 	result := server.TestMiddleware(compressMiddleware, request, handler)
 

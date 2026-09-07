@@ -16,8 +16,10 @@ import (
 	"goyave.dev/goyave/v5/validation"
 )
 
-func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder) {
-	server, err := New(Options{Config: config.LoadDefault()})
+func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder, *bytes.Buffer) {
+	logBuffer := &bytes.Buffer{}
+	logger := slog.New(slog.NewHandler(false, logBuffer))
+	server, err := New(Options{Config: config.LoadDefault(), Logger: logger})
 	if err != nil {
 		panic(err)
 	}
@@ -28,12 +30,12 @@ func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder
 
 	recorder := httptest.NewRecorder()
 	resp := NewResponse(server, req, recorder)
-	return req, resp, recorder
+	return req, resp, recorder, logBuffer
 }
 
 func TestPanicStatusHandler(t *testing.T) {
 	t.Run("no_debug", func(t *testing.T) {
-		req, resp, recorder := prepareStatusHandlerTest()
+		req, resp, recorder, _ := prepareStatusHandlerTest()
 		resp.server.debug = false
 		handler := &PanicStatusHandler{}
 
@@ -48,10 +50,8 @@ func TestPanicStatusHandler(t *testing.T) {
 	})
 
 	t.Run("debug", func(t *testing.T) {
-		req, resp, recorder := prepareStatusHandlerTest()
+		req, resp, recorder, logBuffer := prepareStatusHandlerTest()
 		resp.server.debug = true
-		logBuffer := &bytes.Buffer{}
-		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		handler := &PanicStatusHandler{}
 
 		resp.err = errors.New("test error").(*errors.Error)
@@ -69,10 +69,8 @@ func TestPanicStatusHandler(t *testing.T) {
 	})
 
 	t.Run("nil_error", func(t *testing.T) {
-		req, resp, recorder := prepareStatusHandlerTest()
+		req, resp, recorder, logBuffer := prepareStatusHandlerTest()
 		resp.server.debug = true
-		logBuffer := &bytes.Buffer{}
-		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
 		handler := &PanicStatusHandler{}
 
 		handler.Handle(resp, req)
@@ -90,7 +88,7 @@ func TestPanicStatusHandler(t *testing.T) {
 }
 
 func TestErrorStatusHandler(t *testing.T) {
-	req, resp, recorder := prepareStatusHandlerTest()
+	req, resp, recorder, _ := prepareStatusHandlerTest()
 	handler := &ErrorStatusHandler{}
 
 	resp.Status(http.StatusNotFound)
@@ -106,7 +104,7 @@ func TestErrorStatusHandler(t *testing.T) {
 }
 
 func TestValidationStatusHandler(t *testing.T) {
-	req, resp, recorder := prepareStatusHandlerTest()
+	req, resp, recorder, _ := prepareStatusHandlerTest()
 	handler := &ValidationStatusHandler{}
 
 	req.Extra[ExtraValidationError{}] = &validation.Errors{
@@ -172,7 +170,7 @@ func TestParseErrorStatusHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, resp, recorder := prepareStatusHandlerTest()
+			req, resp, recorder, _ := prepareStatusHandlerTest()
 
 			handler := &ParseErrorStatusHandler{}
 
@@ -195,7 +193,7 @@ func TestParseErrorStatusHandler(t *testing.T) {
 }
 
 func TestParseErrorStatusHandlerWithoutExtra(t *testing.T) {
-	req, resp, recorder := prepareStatusHandlerTest()
+	req, resp, recorder, _ := prepareStatusHandlerTest()
 
 	handler := &ParseErrorStatusHandler{}
 

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/testutil"
 
 	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
@@ -48,15 +50,17 @@ func (a *TestNoScheme) Authenticate(request *goyave.Request) (*BasicUser, error)
 	return (&ConfigBasicAuthenticator{config: a.config}).Authenticate(request)
 }
 
-func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser) {
+func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser, *bytes.Buffer) {
 	cfg := config.LoadDefault()
 	cfg.App.Debug = false
+	logBuffer := &bytes.Buffer{}
+	logger := slog.New(slog.NewHandler(false, logBuffer))
 	// TODO update DB-related tests (use sqlmock?)
 	// cfg.Set("database.connection", "sqlite3")
 	// cfg.Set("database.name", "testauthenticator.db")
 	// cfg.Set("database.options", "mode=memory")
 	// cfg.Set("app.debug", false)
-	server := testutil.NewTestServer(t, goyave.Options{Config: cfg})
+	server := testutil.NewTestServer(t, goyave.Options{Config: cfg, Logger: logger})
 	password, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 	user := &TestUser{
 		Name:     "johndoe",
@@ -64,12 +68,12 @@ func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser) {
 		Password: string(password),
 	}
 
-	return server, user
+	return server, user, logBuffer
 }
 
 func TestAuthenticator(t *testing.T) {
 	t.Run("Middleware", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
@@ -105,7 +109,7 @@ func TestAuthenticator(t *testing.T) {
 	})
 
 	t.Run("NoAuth", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
@@ -134,7 +138,7 @@ func TestAuthenticator(t *testing.T) {
 	})
 
 	t.Run("MiddlewareUnauthorizer", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
@@ -155,7 +159,7 @@ func TestAuthenticator(t *testing.T) {
 	})
 
 	t.Run("MiddlewareWithRealm", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
@@ -176,7 +180,7 @@ func TestAuthenticator(t *testing.T) {
 	})
 
 	t.Run("MiddlewareWithRealmNoScheme", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		t.Cleanup(func() { server.CloseDB() })
 
 		config := &BasicConfig{Username: "johndoe", Password: "secret"}

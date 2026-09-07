@@ -87,10 +87,8 @@ func TestRoute(t *testing.T) {
 	t.Run("ValidateBody", func(t *testing.T) {
 		router := prepareRouteTest()
 		route := &Route{
-			parent: router,
-			middlewareHolder: middlewareHolder{
-				middleware: []Middleware{},
-			},
+			parent:     router,
+			middleware: []Middleware{},
 		}
 
 		route.ValidateBody(routeTestValidationRules)
@@ -111,10 +109,8 @@ func TestRoute(t *testing.T) {
 	t.Run("ValidateQuery", func(t *testing.T) {
 		router := prepareRouteTest()
 		route := &Route{
-			parent: router,
-			middlewareHolder: middlewareHolder{
-				middleware: []Middleware{},
-			},
+			parent:     router,
+			middleware: []Middleware{},
 		}
 
 		route.ValidateQuery(routeTestValidationRules)
@@ -135,12 +131,10 @@ func TestRoute(t *testing.T) {
 	t.Run("CORS", func(t *testing.T) {
 		router := prepareRouteTest()
 		route := &Route{
-			parent:  router,
-			methods: []string{http.MethodGet},
-			Meta:    make(map[string]any),
-			middlewareHolder: middlewareHolder{
-				middleware: []Middleware{},
-			},
+			parent:     router,
+			methods:    []string{http.MethodGet},
+			Meta:       make(map[string]any),
+			middleware: []Middleware{},
 		}
 
 		opts := cors.Default()
@@ -163,12 +157,10 @@ func TestRoute(t *testing.T) {
 			router := prepareRouteTest()
 			router.CORS(cors.Default())
 			route := &Route{
-				parent:  router,
-				methods: []string{http.MethodGet},
-				Meta:    make(map[string]any),
-				middlewareHolder: middlewareHolder{
-					middleware: []Middleware{},
-				},
+				parent:     router,
+				methods:    []string{http.MethodGet},
+				Meta:       make(map[string]any),
+				middleware: []Middleware{},
 			}
 			route.CORS(opts)
 			middleware := findMiddleware[*corsMiddleware](route.middleware)
@@ -179,10 +171,8 @@ func TestRoute(t *testing.T) {
 	t.Run("Middleware", func(t *testing.T) {
 		router := prepareRouteTest()
 		route := &Route{
-			parent: router,
-			middlewareHolder: middlewareHolder{
-				middleware: []Middleware{},
-			},
+			parent:     router,
+			middleware: []Middleware{},
 		}
 
 		route.Middleware(&recoveryMiddleware{}, &languageMiddleware{})
@@ -220,7 +210,7 @@ func TestRoute(t *testing.T) {
 		route := subrouter.Route([]string{http.MethodGet}, "/{name}/accessories", nil)
 
 		uri := route.BuildURL("123", "keyboard")
-		assert.Equal(t, "http://127.0.0.1:8080/product/123/keyboard/accessories", uri)
+		assert.Equal(t, "http://[::1]:8080/product/123/keyboard/accessories", uri)
 	})
 
 	t.Run("BuildProxyURL", func(t *testing.T) {
@@ -229,7 +219,7 @@ func TestRoute(t *testing.T) {
 		route := subrouter.Route([]string{http.MethodGet}, "/{name}/accessories", nil)
 
 		uri := route.BuildProxyURL("123", "keyboard")
-		assert.Equal(t, "http://127.0.0.1:8080/product/123/keyboard/accessories", uri)
+		assert.Equal(t, "http://[::1]:8080/product/123/keyboard/accessories", uri)
 	})
 
 	t.Run("GetFullURI", func(t *testing.T) {

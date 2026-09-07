@@ -21,7 +21,7 @@ func TestParseMiddleware(t *testing.T) {
 	route := server.Router().Post("/parse", nil)
 
 	t.Run("Parse Query", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/parse?a=b&c=d&array=1&array=2", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/parse?a=b&c=d&array=1&array=2", nil)
 		request.Route = route
 
 		result := server.TestMiddleware(&Middleware{}, request, func(_ *goyave.Response, req *goyave.Request) {
@@ -36,7 +36,7 @@ func TestParseMiddleware(t *testing.T) {
 	})
 
 	t.Run("Parse Query Error", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/parse?inv;alid", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/parse?inv;alid", nil)
 		request.Lang = server.Lang.GetDefault()
 		request.Route = route
 
@@ -54,7 +54,7 @@ func TestParseMiddleware(t *testing.T) {
 	})
 
 	t.Run("Entity Too Large", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodPost, "/parse", strings.NewReader(strings.Repeat("a", 1024*1024)))
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse", strings.NewReader(strings.Repeat("a", 1024*1024)))
 		request.Header().Set("Content-Type", "application/octet-stream")
 		request.Route = route
 
@@ -75,7 +75,7 @@ func TestParseMiddleware(t *testing.T) {
 			"h": []string{"i", "j"},
 		}
 
-		request := testutil.NewTestRequest(http.MethodPost, "/parse", testutil.ToJSON(data))
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse", testutil.ToJSON(data))
 		request.Header().Set("Content-Type", "application/json")
 		request.Route = &goyave.Route{}
 
@@ -116,7 +116,7 @@ func TestParseMiddleware(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				request := testutil.NewTestRequest(http.MethodPost, "/parse", bytes.NewBuffer(tt.body))
+				request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse", bytes.NewBuffer(tt.body))
 				request.Lang = server.Lang.GetDefault()
 				request.Header().Set("Content-Type", "application/json")
 				request.Route = route
@@ -143,7 +143,7 @@ func TestParseMiddleware(t *testing.T) {
 		require.NoError(t, testutil.WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
 		require.NoError(t, writer.WriteField("email", "johndoe@example.org"))
 
-		request := testutil.NewTestRequest(http.MethodPost, "/parse", body)
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse", body)
 		request.Header().Set("Content-Type", writer.FormDataContentType())
 		request.Route = route
 
@@ -179,7 +179,7 @@ func TestParseMiddleware(t *testing.T) {
 		// Write empty body, which is not allowed for content multipart.
 		writer := multipart.NewWriter(nil)
 
-		request := testutil.NewTestRequest(http.MethodPost, "/parse", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse", nil)
 		request.Lang = server.Lang.GetDefault()
 		request.Header().Set("Content-Type", writer.FormDataContentType())
 		request.Route = route
@@ -221,7 +221,7 @@ func TestParseMiddleware(t *testing.T) {
 		require.NoError(t, err)
 
 		// Use the response body from our test server as the request body for our middleware
-		request := testutil.NewTestRequest(http.MethodPost, "/parse", resp.Body)
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse", resp.Body)
 		request.Lang = server.Lang.GetDefault()
 		request.Header().Set("Content-Type", "multipart/form-data")
 		request.Route = route
@@ -246,7 +246,7 @@ func TestParseMiddleware(t *testing.T) {
 	t.Run("Form URL-encoded", func(t *testing.T) {
 		data := "a=b&c=d&h=i&h=j"
 
-		request := testutil.NewTestRequest(http.MethodPost, "/parse", strings.NewReader(data))
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse", strings.NewReader(data))
 		request.Header().Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 		request.Route = route
 
@@ -273,7 +273,7 @@ func TestParseMiddleware(t *testing.T) {
 			},
 			"h": []string{"i", "j"},
 		}
-		request := testutil.NewTestRequest(http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
 		request.Header().Set("Content-Type", "application/json")
 		request.Data = map[string]any{"a": "b"}
 		request.Route = route
@@ -299,7 +299,7 @@ func TestParseMiddleware(t *testing.T) {
 			},
 			"h": []any{"i", "j"},
 		}
-		request := testutil.NewTestRequest(http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
 		request.Header().Set("Content-Type", "application/json")
 		request.Query = map[string]any{"old": "value"}
 		request.Route = route
@@ -313,7 +313,7 @@ func TestParseMiddleware(t *testing.T) {
 
 	t.Run("Skip if route not found", func(t *testing.T) {
 		data := map[string]any{"a": "b"}
-		request := testutil.NewTestRequest(http.MethodPost, "/unknown?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request := testutil.NewTestRequest(t.Context(), http.MethodPost, "/unknown?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
 
 		router := server.Router()
 		request.Route = router.Get("/", nil).Name(goyave.RouteNotFound)
@@ -326,7 +326,7 @@ func TestParseMiddleware(t *testing.T) {
 
 	t.Run("Skip if route method not allowed", func(t *testing.T) {
 		data := map[string]any{"a": "b"}
-		request := testutil.NewTestRequest(http.MethodPatch, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
+		request := testutil.NewTestRequest(t.Context(), http.MethodPatch, "/parse?a=b&c=d&array=1&array=2", testutil.ToJSON(data))
 
 		router := server.Router()
 		request.Route = router.Get("/", nil).Name(goyave.RouteMethodNotAllowed)

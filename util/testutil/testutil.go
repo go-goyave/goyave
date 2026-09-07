@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"io/fs"
@@ -68,6 +69,10 @@ func NewTestServer(t *testing.T, opts goyave.Options) *TestServer {
 		opts.Logger = slog.DiscardLogger()
 	}
 
+	if opts.Context == nil {
+		opts.Context = t.Context()
+	}
+
 	srv, err := goyave.New(opts)
 	if err != nil {
 		panic(err)
@@ -111,9 +116,9 @@ func (s *TestServer) TestMiddleware(middleware goyave.Middleware, request *goyav
 
 // CloseDB close the server DB if one is open. It is a good practice to always
 // call this in a test `Cleanup` function when using a database.
-func (s *TestServer) CloseDB() {
+func (s *TestServer) CloseDB() { // TODO detach DB from Server
 	if err := s.Server.CloseDB(); err != nil {
-		s.Logger.Error(err)
+		s.Logger().Error(err)
 	}
 }
 
@@ -138,8 +143,8 @@ func FindRootDirectory() string {
 
 // NewTestRequest create a new `goyave.Request` with an underlying HTTP request created
 // usin the `httptest` package.
-func NewTestRequest(method, uri string, body io.Reader) *goyave.Request {
-	req := httptest.NewRequest(method, uri, body)
+func NewTestRequest(ctx context.Context, method, uri string, body io.Reader) *goyave.Request {
+	req := httptest.NewRequestWithContext(ctx, method, uri, body)
 	request := goyave.NewRequest(req)
 	request.Lang = lang.Default
 	return request
@@ -149,7 +154,7 @@ func NewTestRequest(method, uri string, body io.Reader) *goyave.Request {
 // usin the `httptest` package. This function sets the request language using the default
 // language of the server.
 func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.Request {
-	req := NewTestRequest(method, uri, body)
+	req := NewTestRequest(s.Context(), method, uri, body) // TODO use server context
 	req.Lang = s.Lang.GetDefault()
 	return req
 }
@@ -159,7 +164,10 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // so all functions of `*goyave.Response` can be used safely.
 func NewTestResponse(request *goyave.Request) (*goyave.Response, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
-	return goyave.NewResponse(NewTestServer(nil, goyave.Options{}).Server, request, recorder), recorder
+	opts := goyave.Options{
+		Context: request.Context(),
+	}
+	return goyave.NewResponse(NewTestServer(nil, opts).Server, request, recorder), recorder
 }
 
 // NewTestResponse create a new `goyave.Response` with an underlying HTTP response recorder created

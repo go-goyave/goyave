@@ -22,8 +22,10 @@ import (
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
-func newTestReponse() (*Response, *httptest.ResponseRecorder) {
-	server, err := New(Options{Config: config.LoadDefault()})
+func newTestReponse() (*Response, *httptest.ResponseRecorder, *bytes.Buffer) {
+	logBuffer := &bytes.Buffer{}
+	logger := slog.New(slog.NewHandler(false, logBuffer))
+	server, err := New(Options{Config: config.LoadDefault(), Logger: logger})
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +33,7 @@ func newTestReponse() (*Response, *httptest.ResponseRecorder) {
 	req := NewRequest(httpReq)
 	recorder := httptest.NewRecorder()
 	resp := NewResponse(server, req, recorder)
-	return resp, recorder
+	return resp, recorder, logBuffer
 }
 
 type hijackableRecorder struct {
@@ -75,7 +77,7 @@ func (r *testChainedWriterHTTPFlusher) Flush() {
 
 func TestResponse(t *testing.T) {
 	t.Run("NewResponse", func(t *testing.T) {
-		resp, _ := newTestReponse()
+		resp, _, _ := newTestReponse()
 		assert.NotNil(t, resp.server)
 		assert.NotNil(t, resp.request)
 		assert.NotNil(t, resp.writer)
@@ -89,7 +91,7 @@ func TestResponse(t *testing.T) {
 	t.Run("Status", func(t *testing.T) {
 		// The status header should not be written right away when
 		// defining the status.
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.Status(http.StatusForbidden)
 		assert.Equal(t, http.StatusForbidden, resp.status)
 		assert.Equal(t, http.StatusForbidden, resp.GetStatus())
@@ -106,7 +108,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("WriteHeader", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.WriteHeader(http.StatusNoContent)
 
 		res := recorder.Result()
@@ -122,7 +124,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Header", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.Header().Set("X-Test", "value")
 		resp.WriteHeader(http.StatusOK)
 
@@ -133,7 +135,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("IsEmpty", func(t *testing.T) {
-		resp, _ := newTestReponse()
+		resp, _, _ := newTestReponse()
 		resp.Status(http.StatusOK)
 		assert.True(t, resp.IsEmpty())
 		resp.WriteHeader(http.StatusOK)
@@ -214,7 +216,7 @@ func TestResponse(t *testing.T) {
 
 		for _, c := range cases {
 			t.Run(c.desc, func(t *testing.T) {
-				resp, recorder := newTestReponse()
+				resp, recorder, _ := newTestReponse()
 				if c.setup != nil {
 					c.setup(resp)
 				}
@@ -323,7 +325,7 @@ func TestResponse(t *testing.T) {
 
 		for _, c := range cases {
 			t.Run(c.desc, func(t *testing.T) {
-				resp, recorder := newTestReponse()
+				resp, recorder, _ := newTestReponse()
 				if c.setup != nil {
 					c.setup(resp)
 				}
@@ -344,7 +346,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("JSON", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.JSON(http.StatusOK, map[string]any{"hello": "world"})
 
 		res := recorder.Result()
@@ -357,14 +359,14 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("JSON_error", func(t *testing.T) {
-		resp, _ := newTestReponse()
+		resp, _, _ := newTestReponse()
 		assert.Panics(t, func() {
 			resp.JSON(http.StatusOK, make(chan struct{}))
 		})
 	})
 
 	t.Run("JSON_doesnt_override_written_status", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.WriteHeader(http.StatusCreated)
 		resp.JSON(http.StatusOK, map[string]any{"hello": "world"})
 
@@ -376,7 +378,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("JSON_override_status_before_write", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.Status(http.StatusNoContent)
 		resp.JSON(http.StatusCreated, map[string]any{"hello": "world"})
 
@@ -388,7 +390,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("String", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.String(http.StatusOK, "hello world")
 
 		res := recorder.Result()
@@ -400,7 +402,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("String_doesnt_override_written_status", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.WriteHeader(http.StatusCreated)
 		resp.String(http.StatusOK, "hello world")
 
@@ -411,7 +413,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("String_override_status_before_write", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.Status(http.StatusNoContent)
 		resp.String(http.StatusCreated, "hello world")
 
@@ -422,7 +424,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Cookie", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		resp.Cookie(&http.Cookie{
 			Name:  "cookie-name",
 			Value: "test",
@@ -437,7 +439,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Write", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		_, _ = resp.Write([]byte("hello world"))
 
 		res := recorder.Result()
@@ -450,7 +452,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("PreWrite_called_once", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		newWriter := &testChainedWriter{
 			ResponseRecorder: recorder,
 		}
@@ -469,7 +471,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Hijack", func(t *testing.T) {
-		resp, _ := newTestReponse()
+		resp, _, _ := newTestReponse()
 		resp.responseWriter = &hijackableRecorder{httptest.NewRecorder()}
 
 		assert.False(t, resp.hijacked)
@@ -483,7 +485,7 @@ func TestResponse(t *testing.T) {
 		assert.True(t, resp.Hijacked())
 
 		t.Run("not_hijackable", func(t *testing.T) {
-			resp, _ := newTestReponse()
+			resp, _, _ := newTestReponse()
 
 			c, b, err := resp.Hijack()
 			require.ErrorIs(t, err, ErrNotHijackable)
@@ -491,10 +493,9 @@ func TestResponse(t *testing.T) {
 			assert.Nil(t, b)
 		})
 
-		t.Run("error_on_hijack", func(t *testing.T) {
-			resp, _ := newTestReponse()
+		t.Run("error_after_hijack", func(t *testing.T) {
+			resp, _, _ := newTestReponse()
 			resp.server.debug = true
-			resp.server.Logger = slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 			recorder := httptest.NewRecorder()
 			resp.responseWriter = &hijackableRecorder{recorder}
 
@@ -517,7 +518,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("SetWriter", func(t *testing.T) {
-		resp, _ := newTestReponse()
+		resp, _, _ := newTestReponse()
 		newWriter := &bytes.Buffer{}
 		resp.SetWriter(newWriter)
 		assert.Equal(t, newWriter, resp.Writer())
@@ -528,14 +529,14 @@ func TestResponse(t *testing.T) {
 			bytes.Buffer
 		}
 
-		resp, _ := newTestReponse()
+		resp, _, _ := newTestReponse()
 		newWriter := &composableWriter{}
 		resp.SetWriter(newWriter)
 		assert.Equal(t, newWriter, resp.Writer())
 	})
 
 	t.Run("Chained_writer", func(t *testing.T) {
-		resp, _ := newTestReponse()
+		resp, _, _ := newTestReponse()
 		newWriter := &testChainedWriter{}
 		resp.SetWriter(newWriter)
 
@@ -546,9 +547,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Error_no_debug", func(t *testing.T) {
-		resp, _ := newTestReponse()
-		logBuffer := &bytes.Buffer{}
-		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+		resp, _, logBuffer := newTestReponse()
 		resp.server.debug = false
 		err := fmt.Errorf("custom error")
 		resp.Error(err)
@@ -568,9 +567,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Error_no_debug_nil", func(t *testing.T) {
-		resp, _ := newTestReponse()
-		logBuffer := &bytes.Buffer{}
-		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+		resp, _, _ := newTestReponse()
 		resp.server.debug = false
 		resp.Error(nil)
 
@@ -613,9 +610,7 @@ func TestResponse(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			resp, recorder := newTestReponse()
-			logBuffer := &bytes.Buffer{}
-			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+			resp, recorder, logBuffer := newTestReponse()
 			resp.server.debug = true
 			resp.Error(c.err)
 
@@ -646,9 +641,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Error_with_debug_and_custom_status", func(t *testing.T) {
-		resp, recorder := newTestReponse()
-		logBuffer := &bytes.Buffer{}
-		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+		resp, recorder, logBuffer := newTestReponse()
 		resp.server.debug = true
 		err := fmt.Errorf("custom error")
 		resp.Status(http.StatusForbidden)
@@ -679,9 +672,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("Error_with_debug_and_not_empty", func(t *testing.T) {
-		resp, recorder := newTestReponse()
-		logBuffer := &bytes.Buffer{}
-		resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+		resp, recorder, logBuffer := newTestReponse()
 		resp.server.debug = true
 		err := fmt.Errorf("custom error")
 		resp.String(http.StatusForbidden, "forbidden")
@@ -712,15 +703,13 @@ func TestResponse(t *testing.T) {
 
 	t.Run("WriteDBError", func(t *testing.T) {
 		t.Run("ErrRecordNotFound", func(t *testing.T) {
-			resp, _ := newTestReponse()
+			resp, _, _ := newTestReponse()
 			assert.True(t, resp.WriteDBError(fmt.Errorf("%w", gorm.ErrRecordNotFound)))
 			assert.Equal(t, http.StatusNotFound, resp.status)
 		})
 
 		t.Run("DBError", func(t *testing.T) {
-			resp, recorder := newTestReponse()
-			logBuffer := &bytes.Buffer{}
-			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+			resp, recorder, _ := newTestReponse()
 			assert.True(t, resp.WriteDBError(fmt.Errorf("random db error")))
 
 			res := recorder.Result()
@@ -734,13 +723,13 @@ func TestResponse(t *testing.T) {
 		})
 
 		t.Run("no_error", func(t *testing.T) {
-			resp, _ := newTestReponse()
+			resp, _, _ := newTestReponse()
 			assert.False(t, resp.WriteDBError(nil))
 		})
 	})
 
 	t.Run("Flush", func(t *testing.T) {
-		resp, recorder := newTestReponse()
+		resp, recorder, _ := newTestReponse()
 		newWriter := &testChainedWriter{
 			ResponseRecorder: recorder,
 		}
@@ -756,9 +745,7 @@ func TestResponse(t *testing.T) {
 		assert.Nil(t, newWriter.prewritten)
 
 		t.Run("error", func(t *testing.T) {
-			resp, recorder := newTestReponse()
-			logBuffer := &bytes.Buffer{}
-			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+			resp, recorder, logBuffer := newTestReponse()
 			newWriter := &testChainedWriter{
 				ResponseRecorder: recorder,
 				flushErr:         fmt.Errorf("test error"),
@@ -769,9 +756,7 @@ func TestResponse(t *testing.T) {
 		})
 
 		t.Run("http.Flusher", func(t *testing.T) {
-			resp, recorder := newTestReponse()
-			logBuffer := &bytes.Buffer{}
-			resp.server.Logger = slog.New(slog.NewHandler(false, logBuffer))
+			resp, recorder, logBuffer := newTestReponse()
 			newWriter := &testChainedWriterHTTPFlusher{
 				testChainedWriter: &testChainedWriter{
 					ResponseRecorder: recorder,

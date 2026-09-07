@@ -117,7 +117,7 @@ func GreaterThan(path string) *GreaterThanValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.GreaterThan: path parse error: %w", err), 3))
 	}
-	return &GreaterThanValidator{ComparisonValidator: ComparisonValidator{Path: p}}
+	return &GreaterThanValidator{Path: p}
 }
 
 //------------------------------
@@ -151,7 +151,7 @@ func GreaterThanEqual(path string) *GreaterThanEqualValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.GreaterThanEqual: path parse error: %w", err), 3))
 	}
-	return &GreaterThanEqualValidator{ComparisonValidator: ComparisonValidator{Path: p}}
+	return &GreaterThanEqualValidator{Path: p}
 }
 
 //------------------------------
@@ -185,7 +185,7 @@ func LowerThan(path string) *LowerThanValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.LowerThan: path parse error: %w", err), 3))
 	}
-	return &LowerThanValidator{ComparisonValidator: ComparisonValidator{Path: p}}
+	return &LowerThanValidator{Path: p}
 }
 
 //------------------------------
@@ -219,5 +219,5 @@ func LowerThanEqual(path string) *LowerThanEqualValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.LowerThanEqual: path parse error: %w", err), 3))
 	}
-	return &LowerThanEqualValidator{ComparisonValidator: ComparisonValidator{Path: p}}
+	return &LowerThanEqualValidator{Path: p}
 }

@@ -355,16 +355,14 @@ func (r *Router) Subrouter(prefix string) *Router {
 	}
 
 	router := &Router{
-		server:         r.server,
-		parent:         r,
-		prefix:         prefix,
-		statusHandlers: maps.Clone(r.statusHandlers),
-		Meta:           make(map[string]any),
-		namedRoutes:    r.namedRoutes,
-		routes:         make([]*Route, 0, 5), // Typical CRUD has 5 routes
-		middlewareHolder: middlewareHolder{
-			middleware: nil,
-		},
+		server:           r.server,
+		parent:           r,
+		prefix:           prefix,
+		statusHandlers:   maps.Clone(r.statusHandlers),
+		Meta:             make(map[string]any),
+		namedRoutes:      r.namedRoutes,
+		routes:           make([]*Route, 0, 5), // Typical CRUD has 5 routes
+		middleware:       nil,
 		globalMiddleware: r.globalMiddleware,
 		regexCache:       r.regexCache,
 	}
@@ -508,7 +506,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	handler(response, request)
 
 	if err := r.finalize(match, response, request); err != nil {
-		r.server.Logger.Error(err)
+		r.server.logger.Error(err)
 	}
 
 	if !response.hijacked {

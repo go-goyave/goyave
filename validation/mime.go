@@ -68,5 +68,5 @@ func (v *ImageValidator) Name() string { return "image" }
 //
 // Accepted MIME types are defined by `ImageMIMETypes`.
 func Image() *ImageValidator {
-	return &ImageValidator{MIMEValidator: MIMEValidator{MIMETypes: ImageMIMETypes}}
+	return &ImageValidator{MIMETypes: ImageMIMETypes}
 }

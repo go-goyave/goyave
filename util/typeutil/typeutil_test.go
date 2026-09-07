@@ -31,7 +31,7 @@ func TestConvert(t *testing.T) {
 	}{
 		{
 			value:   map[string]any{"p": "p", "a": "hello", "b": 0.3, "d": []string{"world"}, "c": 456, "nested": map[string]any{"c": 123}},
-			want:    &TestStruct{Promoted: Promoted{P: "p"}, A: "hello", B: 0.3, D: []string{"world"}, Nested: Nested{C: 123}},
+			want:    &TestStruct{P: "p", A: "hello", B: 0.3, D: []string{"world"}, Nested: Nested{C: 123}},
 			wantErr: false,
 		},
 		{value: &TestStruct{A: "hello"}, want: &TestStruct{A: "hello"}, wantErr: false},
@@ -168,9 +168,7 @@ func TestCopy(t *testing.T) {
 			desc: "promoted",
 			model: &TestStruct{
 				A: "test",
-				Promoted: Promoted{
-					P: "promoted",
-				},
+				P: "promoted",
 			},
 			dto: struct {
 				A string
@@ -178,18 +176,14 @@ func TestCopy(t *testing.T) {
 			}{A: "override", P: "promoted override"},
 			want: &TestStruct{
 				A: "override",
-				Promoted: Promoted{
-					P: "promoted override",
-				},
+				P: "promoted override",
 			},
 		},
 		{
 			desc: "promoted_dto",
 			model: &TestStruct{
 				A: "test",
-				Promoted: Promoted{
-					P: "promoted",
-				},
+				P: "promoted",
 			},
 			dto: struct {
 				A        string
@@ -203,9 +197,7 @@ func TestCopy(t *testing.T) {
 			}},
 			want: &TestStruct{
 				A: "override",
-				Promoted: Promoted{
-					P: "promoted override",
-				},
+				P: "promoted override",
 			},
 		},
 		{

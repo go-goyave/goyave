@@ -133,7 +133,7 @@ func TestGetMIMEType(t *testing.T) {
 		},
 		{
 			path:     "config/config.test.json",
-			wantMIME: "application/json",
+			wantMIME: "application/json; charset=utf-8",
 			wantErr:  false,
 		},
 		{

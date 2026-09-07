@@ -49,7 +49,7 @@ type SchemeAuthenticator interface {
 //
 // If the record could not be found, the error returned should be of type `gorm.ErrRecordNotFound`.
 type UserService[T any] interface {
-	FindByUsername(ctx context.Context, username any) (*T, error)
+	FindByUsername(ctx context.Context, username any) (*T, error) // TODO think again about this interface so username can be a generic type and rename FindBySubject or something.
 }
 
 // Unauthorizer can be implemented by Authenticators to define custom behavior

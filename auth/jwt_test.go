@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"path"
@@ -13,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 )
@@ -171,7 +169,7 @@ func TestJWTService(t *testing.T) {
 
 func TestJWTAuthenticator(t *testing.T) {
 	t.Run("success_hs256", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 20,
@@ -201,7 +199,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("success_rsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			RSA: KeyPairConfig{
@@ -235,7 +233,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("success_ecdsa", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			RSA: KeyPairConfig{
@@ -269,7 +267,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("invalid_token", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -295,7 +293,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("token_not_valid_yet", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -327,7 +325,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("token_expired", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -359,7 +357,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unknown_user", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -390,9 +388,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("service_error", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
-		buf := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, buf))
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -418,7 +414,7 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	t.Run("unexpected_method_hmac", func(t *testing.T) {
 		rootDir := testutil.FindRootDirectory()
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			RSA: KeyPairConfig{
@@ -452,7 +448,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unexpected_method_rsa", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -483,7 +479,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unexpected_method_ecdsa", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -514,7 +510,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unsupported_method", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -537,7 +533,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -562,7 +558,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_success", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -593,7 +589,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_invalid_token", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",
@@ -621,7 +617,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_no_auth", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 		config := &JWTConfig{
 			Expiry: 20,
 			Secret: "secret",

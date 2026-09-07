@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"testing"
@@ -10,13 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/testutil"
 )
 
 func TestBasicAuthenticator(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
@@ -35,7 +33,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("success_ptr", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[*TestUser]{user: &user}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
@@ -55,7 +53,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
@@ -75,7 +73,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("not_found", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{err: gorm.ErrRecordNotFound}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
@@ -95,9 +93,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("service_error", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
-		buf := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, buf))
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("service_error")}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
@@ -114,7 +110,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_success", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
 		a := NewBasicAuthenticator(mockUserService, "Password")
 		a.Optional = true
@@ -135,7 +131,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_wrong_password", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
 		a := NewBasicAuthenticator(mockUserService, "Password")
 		a.Optional = true
@@ -157,7 +153,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("optional_no_auth", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
 		a := NewBasicAuthenticator(mockUserService, "Password")
 		a.Optional = true
@@ -175,7 +171,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
 		a := NewBasicAuthenticator(mockUserService, "Password")
 		authenticator := Middleware(a)
@@ -195,9 +191,7 @@ func TestBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("non-existing_password_field", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
-		buf := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, buf))
+		server, user, _ := prepareAuthenticatorTest(t)
 		mockUserService := &MockUserService[TestUser]{user: user}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "NotAColumn"))
 

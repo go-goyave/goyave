@@ -15,7 +15,7 @@ func TestCommonFormatter(t *testing.T) {
 	ts := lo.Must(time.Parse(time.RFC3339, "2020-03-23T13:58:26.371Z"))
 
 	t.Run("no_user", func(t *testing.T) {
-		req := testutil.NewTestRequest(http.MethodGet, "/log", nil)
+		req := testutil.NewTestRequest(t.Context(), http.MethodGet, "/log", nil)
 		req.Now = ts
 		ctx := &Context{
 			Request: req,
@@ -37,7 +37,7 @@ func TestCommonFormatter(t *testing.T) {
 	})
 
 	t.Run("user", func(t *testing.T) {
-		req := testutil.NewTestRequest(http.MethodGet, "http://user@localhost/log", nil)
+		req := testutil.NewTestRequest(t.Context(), http.MethodGet, "http://user@localhost/log", nil)
 		req.Now = ts
 		ctx := &Context{
 			Request: req,
@@ -59,7 +59,7 @@ func TestCommonFormatter(t *testing.T) {
 	})
 
 	t.Run("inavlid_ipv6", func(t *testing.T) {
-		req := testutil.NewTestRequest(http.MethodGet, "/log", nil)
+		req := testutil.NewTestRequest(t.Context(), http.MethodGet, "/log", nil)
 		req.Now = ts
 		ctx := &Context{
 			Request: req,
@@ -82,7 +82,7 @@ func TestCommonFormatter(t *testing.T) {
 	})
 
 	t.Run("http2", func(t *testing.T) {
-		req := testutil.NewTestRequest(http.MethodConnect, "/log", nil)
+		req := testutil.NewTestRequest(t.Context(), http.MethodConnect, "/log", nil)
 		req.Now = ts
 		ctx := &Context{
 			Request: req,
@@ -106,7 +106,7 @@ func TestCommonFormatter(t *testing.T) {
 	})
 
 	t.Run("no_request_uri", func(t *testing.T) {
-		req := testutil.NewTestRequest(http.MethodGet, "/log", nil)
+		req := testutil.NewTestRequest(t.Context(), http.MethodGet, "/log", nil)
 		req.Now = ts
 		ctx := &Context{
 			Request: req,
@@ -131,7 +131,7 @@ func TestCommonFormatter(t *testing.T) {
 func TestCombinedFormatter(t *testing.T) {
 	ts := lo.Must(time.Parse("2006-01-02T15:04:05.000Z", "2020-03-23T13:58:26.371Z"))
 
-	req := testutil.NewTestRequest(http.MethodGet, "/log", nil)
+	req := testutil.NewTestRequest(t.Context(), http.MethodGet, "/log", nil)
 	req.Now = ts
 	ctx := &Context{
 		Request: req,

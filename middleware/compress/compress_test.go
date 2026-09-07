@@ -87,7 +87,7 @@ func TestCompressMiddleware(t *testing.T) {
 	}
 
 	t.Run("No compression", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 
 		result := server.TestMiddleware(compressMiddleware, request, handler)
 
@@ -104,7 +104,7 @@ func TestCompressMiddleware(t *testing.T) {
 	})
 
 	t.Run("Accept all", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "*")
 		result := server.TestMiddleware(compressMiddleware, request, handler)
 
@@ -125,7 +125,7 @@ func TestCompressMiddleware(t *testing.T) {
 	})
 
 	t.Run("Unsupported encoding", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "bz")
 
 		result := server.TestMiddleware(compressMiddleware, request, handler)
@@ -142,7 +142,7 @@ func TestCompressMiddleware(t *testing.T) {
 	})
 
 	t.Run("Upgrade", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "gzip")
 		request.Header().Set("Upgrade", "example/1, foo/2")
 
@@ -161,7 +161,7 @@ func TestCompressMiddleware(t *testing.T) {
 	})
 
 	t.Run("Write file", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "gzip")
 		result := server.TestMiddleware(compressMiddleware, request, func(r *goyave.Response, _ *goyave.Request) {
 			r.File(&osfs.FS{}, "../../resources/custom_config.json")
@@ -184,7 +184,7 @@ func TestCompressMiddleware(t *testing.T) {
 	})
 
 	t.Run("No content", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "gzip")
 		result := server.TestMiddleware(compressMiddleware, request, func(r *goyave.Response, _ *goyave.Request) {
 			r.Status(http.StatusNoContent)
@@ -347,7 +347,7 @@ func TestEncoderPriority(t *testing.T) {
 			middleware := &Middleware{
 				Encoders: c.encoders,
 			}
-			request := testutil.NewTestRequest(http.MethodGet, "/", nil)
+			request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/", nil)
 			request.Header().Set("Accept-Encoding", c.acceptEncoding)
 			response, _ := testutil.NewTestResponse(request)
 			e := middleware.getEncoder(response, request)

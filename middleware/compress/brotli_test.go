@@ -62,7 +62,7 @@ func TestBrotliCompression(t *testing.T) {
 		},
 	}
 
-	request := testutil.NewTestRequest(http.MethodGet, "/brotli", nil)
+	request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/brotli", nil)
 	request.Header().Set("Accept-Encoding", "br")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 

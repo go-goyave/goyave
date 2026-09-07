@@ -512,9 +512,6 @@ func TestValidateMiddleware(t *testing.T) {
 			}
 			server, err := New(opts)
 			require.NoError(t, err)
-			defer func() {
-				assert.NoError(t, server.CloseDB())
-			}()
 
 			m := &validateRequestMiddleware{
 				QueryRules: c.queryRules,

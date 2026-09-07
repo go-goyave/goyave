@@ -68,6 +68,7 @@ func TestFactory(t *testing.T) {
 			Dialect:            "sqlmock",
 			DatabaseName:       "paginator_test.db",
 			MaxIdleConnections: 1,
+			Debug:              false,
 			GORM:               config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 		}
 
@@ -89,7 +90,7 @@ func TestFactory(t *testing.T) {
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 
-		db, err := NewFromDialector(cfg, nil, dialector)
+		db, err := NewFromDialector(cfg, dialector)
 		require.NoError(t, err)
 
 		want := []*TestUser{

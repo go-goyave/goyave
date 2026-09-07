@@ -17,7 +17,7 @@ import (
 	errorutil "goyave.dev/goyave/v5/util/errors"
 )
 
-// TODO feature support for golang-jwt/jwt/v5
+// TODO feature support for golang-jwt/jwt/v5 + more flexibility (more signing methods, don't assume HS256 would be the default everywhere, OIDC discovery, OAuth compatibility or overkill?)
 
 const (
 	// JWTServiceName identifier for the `JWTService`.
@@ -28,7 +28,7 @@ const (
 // key can be used to retrieve the JWT claims in the request's `Extra`.
 type ExtraJWTClaims struct{}
 
-// TODO JWT config struct
+// JWTConfig settings for token generation.
 type JWTConfig struct {
 	// Secret the secret value used for HMAC signatures.
 	Secret string
@@ -243,7 +243,6 @@ type JWTAuthenticator[T any] struct {
 	UserService UserService[T]
 
 	// SigningMethod expected by this authenticator when parsing JWT.
-	// Defaults to HMAC.
 	SigningMethod jwt.SigningMethod
 
 	// ClaimName the name of the claim used to retrieve the user.
@@ -259,10 +258,11 @@ type JWTAuthenticator[T any] struct {
 // NewJWTAuthenticator create a new authenticator for the JSON Web Token authentication flow.
 //
 // The T parameter represents the user DTO and should not be a pointer.
-func NewJWTAuthenticator[T any](jwtService *JWTService, userService UserService[T]) *JWTAuthenticator[T] {
+func NewJWTAuthenticator[T any](jwtService *JWTService, userService UserService[T], signingMethod jwt.SigningMethod) *JWTAuthenticator[T] {
 	return &JWTAuthenticator[T]{
-		JWTService:  jwtService,
-		UserService: userService,
+		JWTService:    jwtService,
+		UserService:   userService,
+		SigningMethod: signingMethod,
 	}
 }
 
@@ -306,8 +306,8 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 }
 
 func (a *JWTAuthenticator[T]) makeError(language *lang.Language, err error) error {
-	if _, ok := err.(*errorutil.Error); ok { // System error
-		return err
+	if _, ok := errors.AsType[*errorutil.Error](err); ok { // System error
+		return errorutil.New(err)
 	}
 	switch {
 	case errors.Is(err, jwt.ErrTokenNotValidYet):

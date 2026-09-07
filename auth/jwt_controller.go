@@ -65,7 +65,7 @@ func NewJWTController[T any](jwtService *JWTService, userService UserService[T],
 
 // RegisterRoutes register the "/login" route (with validation) on the given router.
 func (c *JWTController[T]) RegisterRoutes(router *goyave.Router) {
-	router.Post("/login", c.Login).SetMeta(MetaAuth, false).Middleware(&parse.Middleware{}).ValidateBody(c.validationRules)
+	router.Post("/login", c.Login).SetMeta(MetaAuth, false).Middleware(parse.NewMiddleware(1)).ValidateBody(c.validationRules)
 }
 
 func (c *JWTController[T]) validationRules(_ *goyave.Request) validation.RuleSet {

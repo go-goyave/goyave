@@ -42,6 +42,7 @@
 - parse middleware doesn't parse query a second time if it's already parsed
 - auth
   - jwt authenticator now takes a jwtservice as parameter directly and JWTService is exported
+  - jwt authenticator now takes a signingMethod parameter
   - jwt controller now takes a jwtservice as parameter directly and JWTService is exported
   - jwtservice: GetKey removed, use GetPrivateKey or GetPublicKey instead
   - authenticator: if it returns an *errors.Error, it is considered system error

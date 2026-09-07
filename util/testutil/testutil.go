@@ -57,8 +57,6 @@ type TestServer struct {
 //
 // By default, if no [slog.Logger] is given in the options, a default logger redirecting the
 // output to [io.Discard] is used.
-//
-// Automatically closes the DB connection (if there is one) using a test `Cleanup` function.
 func NewTestServer(t *testing.T, opts goyave.Options) *TestServer {
 	if opts.Config == nil {
 		opts.Config = config.LoadDefault()
@@ -84,9 +82,6 @@ func NewTestServer(t *testing.T, opts goyave.Options) *TestServer {
 	}
 
 	s := &TestServer{srv}
-	if t != nil {
-		t.Cleanup(func() { s.CloseDB() })
-	}
 	return s
 }
 
@@ -112,14 +107,6 @@ func (s *TestServer) TestMiddleware(middleware goyave.Middleware, request *goyav
 	router.Route([]string{request.Method()}, request.Request().URL.Path, procedure).Middleware(middleware)
 	router.ServeHTTP(recorder, request.Request())
 	return recorder.Result()
-}
-
-// CloseDB close the server DB if one is open. It is a good practice to always
-// call this in a test `Cleanup` function when using a database.
-func (s *TestServer) CloseDB() { // TODO detach DB from Server
-	if err := s.Server.CloseDB(); err != nil {
-		s.Logger().Error(err)
-	}
 }
 
 // FindRootDirectory find relative path to the project's root directory based on the

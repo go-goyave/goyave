@@ -16,10 +16,7 @@ import (
 
 	stderrors "errors"
 
-	"github.com/samber/lo"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errors"
@@ -132,7 +129,6 @@ type Server struct {
 	Lang   *lang.Languages
 
 	router *Router
-	db     *gorm.DB
 
 	services map[string]Service
 
@@ -158,7 +154,7 @@ type Server struct {
 
 	state atomic.Uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
 
-	debug bool // TODO test this is setup on New
+	debug bool
 }
 
 // New create a new `Server` using the given options.
@@ -236,15 +232,6 @@ func New(opts Options) (*Server, error) {
 	server.server.BaseContext = server.internalBaseContext
 	server.refreshURLs()
 	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
-
-	// TODO database connections could be created outside of New? they are only passed to repositories and have nothing to do with the server itself
-	if len(cfg.Database) > 0 {
-		db, err := database.New(&cfg.Database[0], lo.Ternary(cfg.App.Debug, func() *slog.Logger { return server.logger }, nil))
-		if err != nil {
-			return nil, errors.New(err)
-		}
-		server.db = db
-	}
 
 	server.router = NewRouter(server)
 	server.server.Handler = server.router
@@ -403,42 +390,13 @@ func (s *Server) ClearStartupHooks() {
 // in a goroutine, meaning that the shutdown process can be blocked by your
 // shutdown hooks. It is your responsibility to implement a timeout mechanism
 // inside your hook if necessary.
-func (s *Server) RegisterShutdownHook(hook func(*Server)) {
+func (s *Server) RegisterShutdownHook(hook func(*Server)) { // TODO closing database should be a shutdown hook or defer
 	s.shutdownHooks = append(s.shutdownHooks, hook)
 }
 
 // ClearShutdownHooks removes all shutdown hooks.
 func (s *Server) ClearShutdownHooks() {
 	s.shutdownHooks = []func(*Server){}
-}
-
-func (s *Server) HasDB() bool { // TODO Detach DB from server
-	return s.db != nil
-}
-
-// DB returns the root database instance. Panics if no
-// database connection is set up.
-func (s *Server) DB() *gorm.DB { // TODO Detach DB from server
-	if s.db == nil {
-		panic(errors.NewSkip("no database connection", 3))
-	}
-	return s.db
-}
-
-// CloseDB close the database connection if there is one.
-// Does nothing and returns `nil` if there is no connection.
-func (s *Server) CloseDB() error { // TODO Detach DB from server
-	if s.db == nil {
-		return nil
-	}
-	db, err := s.db.DB()
-	if err != nil {
-		if stderrors.Is(err, gorm.ErrInvalidDB) {
-			return nil
-		}
-		return errors.New(err)
-	}
-	return errors.New(db.Close())
 }
 
 // Router returns the root router.
@@ -484,9 +442,6 @@ func (s *Server) Start() error {
 	defer func() {
 		for _, hook := range s.shutdownHooks {
 			hook(s)
-		}
-		if err := s.CloseDB(); err != nil {
-			s.logger.Error(err)
 		}
 	}()
 

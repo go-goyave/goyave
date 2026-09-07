@@ -59,6 +59,7 @@
 - Paginator: fetch query isn't executed anymore if the count query returns 0.
 - Factory Save now returns an error
 - Database timeout plugin now works on Scan too. It doesn't work on Row() and Rows().
+- Database New and NewFromDialector don't take a logger as parameter anymore. Logs are defined by config DatabaseConnection.Debug now.
 
 TODO docs pass with links
 TODO cleanup resources directory

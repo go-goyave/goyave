@@ -69,9 +69,6 @@ func TestServer(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// TODO update test
-		// assert.Equal(t, "test", s.Config().GetString("app.name"))
-		assert.Nil(t, s.db)
 		assert.NotNil(t, s.router)
 
 		assert.True(t, s.debug)
@@ -93,7 +90,6 @@ func TestServer(t *testing.T) {
 		assert.Same(t, customListenConfig, s.listenConfig)
 		assert.Equal(t, "http://[::1]:8080", s.BaseURL())
 		assert.Equal(t, "http://[::1]:8080", s.ProxyBaseURL())
-		assert.NoError(t, s.CloseDB())
 		assert.NotNil(t, s.logger)
 
 		// Logger and Server added to context
@@ -135,11 +131,6 @@ func TestServer(t *testing.T) {
 	t.Run("NewWithOptions", func(t *testing.T) {
 		database.RegisterDialect("sqlite3_server_test", "file:{name}?{options}", sqlite.Open)
 		cfg := config.LoadDefault()
-		// TODO update DB tests
-		// cfg.Set("app.name", "test_with_config")
-		// cfg.Set("database.connection", "sqlite3_server_test")
-		// cfg.Set("database.name", "sqlite3_server_test.db")
-		// cfg.Set("database.options", "mode=memory")
 
 		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
 		langEmbed, err := fsutil.NewEmbed(resources).Sub("resources/lang")
@@ -152,19 +143,11 @@ func TestServer(t *testing.T) {
 
 		server, err := New(opts)
 		require.NoError(t, err)
-		defer func() {
-			require.NoError(t, server.CloseDB())
-		}()
 
 		assert.Equal(t, logger, server.Logger())
 		assert.ElementsMatch(t, []string{"en-US", "en-UK"}, server.Lang.GetAvailableLanguages())
 		assert.Equal(t, "load US", server.Lang.Get("en-US", "test-load"))
 		assert.Equal(t, "load UK", server.Lang.Get("en-UK", "test-load"))
-		// TODO fix DB test
-		// assert.NotNil(t, server.DB())
-		// assert.True(t, server.HasDB())
-
-		assert.NoError(t, server.CloseDB())
 	})
 
 	t.Run("Host", func(t *testing.T) {
@@ -323,14 +306,8 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "http://[::1]:8080", server.ProxyBaseURL())
 		assert.False(t, server.IsReady())
 		assert.NotNil(t, server.Router())
-		assert.False(t, server.HasDB())
 		assert.Equal(t, server.ctx, server.Context())
 		assert.Equal(t, server.logger, server.Logger())
-
-		// No DB
-		assert.Panics(t, func() {
-			server.DB()
-		})
 	})
 
 	t.Run("Start", func(t *testing.T) {

@@ -21,7 +21,7 @@
 - server:
   - added options for MaxHeaderValueCount and DisableClientPriority
   - Config accessor removed
-  - DB accessor removed (DB detached from server)
+  - DB detached from server. Connections are managed independently from server. This was out of responsility bounds for the server
   - Context accessor added
   - Context option added (so the context can be enriched before the server is started, useful for initialization phase and tests)
   - BaseContext option now takes a parent context as parameter

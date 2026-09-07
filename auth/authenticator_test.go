@@ -74,7 +74,6 @@ func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser, *b
 func TestAuthenticator(t *testing.T) {
 	t.Run("Middleware", func(t *testing.T) {
 		server, user, _ := prepareAuthenticatorTest(t)
-		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
@@ -110,7 +109,6 @@ func TestAuthenticator(t *testing.T) {
 
 	t.Run("NoAuth", func(t *testing.T) {
 		server, user, _ := prepareAuthenticatorTest(t)
-		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
@@ -139,7 +137,6 @@ func TestAuthenticator(t *testing.T) {
 
 	t.Run("MiddlewareUnauthorizer", func(t *testing.T) {
 		server, user, _ := prepareAuthenticatorTest(t)
-		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		authenticator := Middleware(&TestBasicUnauthorizer{BasicAuthenticator: NewBasicAuthenticator(mockUserService, "Password")})
@@ -160,7 +157,6 @@ func TestAuthenticator(t *testing.T) {
 
 	t.Run("MiddlewareWithRealm", func(t *testing.T) {
 		server, user, _ := prepareAuthenticatorTest(t)
-		t.Cleanup(func() { server.CloseDB() })
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		authenticator := MiddlewareWithRealm(&TestBasicUnauthorizer{BasicAuthenticator: NewBasicAuthenticator(mockUserService, "Password")}, "custom realm")
@@ -181,7 +177,6 @@ func TestAuthenticator(t *testing.T) {
 
 	t.Run("MiddlewareWithRealmNoScheme", func(t *testing.T) {
 		server, user, _ := prepareAuthenticatorTest(t)
-		t.Cleanup(func() { server.CloseDB() })
 
 		config := &BasicConfig{Username: "johndoe", Password: "secret"}
 		authenticator := MiddlewareWithRealm(&TestNoScheme{config: config}, "custom realm")

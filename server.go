@@ -453,6 +453,8 @@ func (s *Server) Start() error {
 		return errors.New("server was already started")
 	}
 
+	s.router.ClearRegexCache()
+
 	defer func() {
 		s.state.Store(3)
 		// Notify the shutdown is complete so Stop() can return
@@ -463,7 +465,7 @@ func (s *Server) Start() error {
 	var ln net.Listener
 	var err error
 	if s.listenConfig != nil {
-		ln, err = s.listenConfig.Listen(context.Background(), "tcp", s.server.Addr)
+		ln, err = s.listenConfig.Listen(s.ctx, "tcp", s.server.Addr)
 	} else {
 		ln, err = net.Listen("tcp", s.server.Addr)
 	}
@@ -504,17 +506,6 @@ func (s *Server) Start() error {
 		return errors.New(err)
 	}
 	return nil
-}
-
-// RegisterRoutes runs the given `routeRegistrer` function with this Server and its router.
-// The router's regex cache is cleared after the `routeRegistrer` function returns.
-// This method should only be called once.
-func (s *Server) RegisterRoutes(routeRegistrer func(*Server, *Router)) { // TODO remove this method and let users register their routes however they like. Clear the regex cache on Start instead
-	if s.router.regexCache == nil {
-		panic(errors.NewSkip("router's regex cache has already been cleared, did you call RegisterRoutes twice?", 3))
-	}
-	routeRegistrer(s, s.router)
-	s.router.ClearRegexCache()
 }
 
 // Stop gracefully shuts down the server without interrupting any

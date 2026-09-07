@@ -165,6 +165,7 @@ func (l *Languages) GetAvailableLanguages() []string {
 // A language given a quality value of 0 is not acceptable (RFC 9110 section 12.4.2)
 // and is never used, unless it is the default language and no other language matched.
 func (l *Languages) DetectLanguage(lang string) *Language {
+	// TODO golang.org/x/text/language.ParseAcceptLanguage
 	values := httputil.ParseMultiValuesHeader(lang)
 	for _, lang := range values {
 		if lang.Priority == 0 { // Not acceptable according to RFC 9110

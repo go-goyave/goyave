@@ -163,6 +163,7 @@ func (l *Languages) GetAvailableLanguages() []string {
 // and if none are available, the default language will be used.
 // If no variant is given (for example "en"), the first available variant will be used.
 func (l *Languages) DetectLanguage(lang string) *Language {
+	// TODO golang.org/x/text/language.ParseAcceptLanguage
 	values := httputil.ParseMultiValuesHeader(lang)
 	for _, lang := range values {
 		if lang.Value == "*" { // Accept anything, so return default language

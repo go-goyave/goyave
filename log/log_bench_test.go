@@ -17,11 +17,10 @@ func BenchmarkServeHTTPWithLogs(b *testing.B) {
 	logger := slog.New(slog.NewHandler(false, io.Discard))
 	s, _ := goyave.New(goyave.Options{Config: cfg, Logger: logger})
 
-	s.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-		r.GlobalMiddleware(CombinedLogMiddleware())
-		r.Get("/user/{id}", func(r *goyave.Response, req *goyave.Request) {
-			r.String(http.StatusOK, req.RouteParams["id"])
-		})
+	r := s.Router()
+	r.GlobalMiddleware(CombinedLogMiddleware())
+	r.Get("/user/{id}", func(r *goyave.Response, req *goyave.Request) {
+		r.String(http.StatusOK, req.RouteParams["id"])
 	})
 
 	req := httptest.NewRequestWithContext(s.Context(), http.MethodGet, "/user/1", nil)

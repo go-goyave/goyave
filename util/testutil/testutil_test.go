@@ -49,10 +49,8 @@ func TestTestServer(t *testing.T) {
 
 	t.Run("TestRequest", func(t *testing.T) {
 		server := NewTestServer(t, goyave.Options{})
-		server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-			r.Get("/route", func(resp *goyave.Response, _ *goyave.Request) {
-				resp.String(http.StatusOK, "OK")
-			})
+		server.Router().Get("/route", func(resp *goyave.Response, _ *goyave.Request) {
+			resp.String(http.StatusOK, "OK")
 		})
 
 		resp := server.TestRequest(httptest.NewRequest(http.MethodGet, "/route", nil))

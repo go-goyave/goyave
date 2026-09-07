@@ -29,9 +29,7 @@ func TestJWTController(t *testing.T) {
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		controller := NewJWTController(jwtService, mockUserService, "Password")
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"username": user.Email,
@@ -60,9 +58,7 @@ func TestJWTController(t *testing.T) {
 
 		mockUserService := &MockUserService[*TestUser]{user: &user}
 		controller := NewJWTController(jwtService, mockUserService, "Password")
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"username": user.Email,
@@ -91,9 +87,7 @@ func TestJWTController(t *testing.T) {
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		controller := NewJWTController(jwtService, mockUserService, "Password")
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"username": user.Email,
@@ -122,9 +116,7 @@ func TestJWTController(t *testing.T) {
 
 		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("test errors: %w", gorm.ErrRecordNotFound)}
 		controller := NewJWTController(jwtService, mockUserService, "Password")
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"username": "wrong username",
@@ -156,9 +148,7 @@ func TestJWTController(t *testing.T) {
 		controller.TokenFunc = func(_ *goyave.Request, _ *TestUser) (string, error) {
 			return "", fmt.Errorf("test error")
 		}
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"username": user.Email,
@@ -185,9 +175,7 @@ func TestJWTController(t *testing.T) {
 
 		mockUserService := &MockUserService[TestUser]{user: user}
 		controller := NewJWTController(jwtService, mockUserService, "NotAField")
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"username": user.Email,
@@ -214,9 +202,7 @@ func TestJWTController(t *testing.T) {
 
 		mockUserService := &MockUserService[TestUser]{err: fmt.Errorf("service error")}
 		controller := NewJWTController(jwtService, mockUserService, "NotAField")
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"username": user.Email,
@@ -245,9 +231,7 @@ func TestJWTController(t *testing.T) {
 		controller := NewJWTController(jwtService, mockUserService, "Password")
 		controller.UsernameRequestField = "email"
 		controller.PasswordRequestField = "pass"
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{
 			"email": user.Email,
@@ -275,9 +259,7 @@ func TestJWTController(t *testing.T) {
 		jwtService := NewJWTService(config, &osfs.FS{})
 
 		controller := NewJWTController[TestUser](jwtService, nil, "")
-		server.RegisterRoutes(func(_ *goyave.Server, router *goyave.Router) {
-			router.Controller(controller)
-		})
+		server.Router().Controller(controller)
 
 		data := map[string]any{}
 		body, err := json.Marshal(data)

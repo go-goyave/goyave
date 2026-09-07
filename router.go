@@ -134,7 +134,7 @@ func NewRouter(server *Server) *Router {
 
 // ClearRegexCache set internal router's regex cache used for route parameters optimisation to nil
 // so it can be garbage collected.
-// You don't need to call this function if you are using `server.RegisterRoutes`.
+// This method is automatically called on [Server.Start].
 func (r *Router) ClearRegexCache() {
 	r.regexCache = nil
 	for _, subrouter := range r.subrouters {

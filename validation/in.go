@@ -164,5 +164,5 @@ func NotInField[T comparable](path string) *NotInFieldValidator[T] {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.NotInField: path parse error: %w", err), 3))
 	}
-	return &NotInFieldValidator[T]{InFieldValidator: InFieldValidator[T]{Path: p}}
+	return &NotInFieldValidator[T]{Path: p}
 }

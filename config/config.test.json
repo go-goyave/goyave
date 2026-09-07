@@ -12,7 +12,7 @@
         "A": "",
         "B": 6.999
     },
-    "Connections": [
+    "CustomConnections": [
         {
             "Driver": "postgres",
             "Host": "127.0.0.1",

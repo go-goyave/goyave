@@ -55,7 +55,7 @@ func TestLzwCompression(t *testing.T) {
 		},
 	}
 
-	request := testutil.NewTestRequest(http.MethodGet, "/lzw", nil)
+	request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/lzw", nil)
 	request.Header().Set("Accept-Encoding", "compress")
 	result := server.TestMiddleware(compressMiddleWare, request, handler)
 

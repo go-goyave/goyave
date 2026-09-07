@@ -26,7 +26,7 @@ func (v *AfterValidator) Name() string { return "after" }
 
 // After the field under validation must be a date (`time.Time`) before the given date.
 func After(date time.Time) *AfterValidator {
-	return &AfterValidator{DateComparisonValidator: DateComparisonValidator{Date: date}}
+	return &AfterValidator{Date: date}
 }
 
 //------------------------------
@@ -49,7 +49,7 @@ func (v *AfterEqualValidator) Name() string { return "after_equal" }
 
 // AfterEqual the field under validation must be a date (`time.Time`) after or equal to the given date.
 func AfterEqual(date time.Time) *AfterEqualValidator {
-	return &AfterEqualValidator{DateComparisonValidator: DateComparisonValidator{Date: date}}
+	return &AfterEqualValidator{Date: date}
 }
 
 //------------------------------
@@ -77,7 +77,7 @@ func AfterField(path string) *AfterFieldValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.AfterField: path parse error: %w", err), 3))
 	}
-	return &AfterFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
+	return &AfterFieldValidator{Path: p}
 }
 
 //------------------------------
@@ -105,5 +105,5 @@ func AfterEqualField(path string) *AfterEqualFieldValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.AfterEqualField: path parse error: %w", err), 3))
 	}
-	return &AfterEqualFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
+	return &AfterEqualFieldValidator{Path: p}
 }

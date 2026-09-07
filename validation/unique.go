@@ -100,7 +100,7 @@ func (v *ExistsValidator) Name() string { return "exists" }
 //		return db.Model(&model.User{}).Where(clause.PrimaryKey, val)
 //	 })
 func Exists(scope func(db *gorm.DB, val any) *gorm.DB) *ExistsValidator {
-	return &ExistsValidator{UniqueValidator: UniqueValidator{Scope: scope}}
+	return &ExistsValidator{Scope: scope}
 }
 
 //------------------------------
@@ -313,10 +313,8 @@ func (v *UniqueArrayValidator[T]) Name() string { return "unique" }
 // Postgres to prevent some type errors.
 func UniqueArray[T any](table, column string, transform func(val T) clause.Expr) *UniqueArrayValidator[T] {
 	return &UniqueArrayValidator[T]{
-		ExistsArrayValidator: ExistsArrayValidator[T]{
-			Table:     table,
-			Column:    column,
-			Transform: transform,
-		},
+		Table:     table,
+		Column:    column,
+		Transform: transform,
 	}
 }

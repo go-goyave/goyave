@@ -48,13 +48,9 @@ func TestHasMiddleware(t *testing.T) {
 	t.Run("routeHasMiddleware", func(t *testing.T) {
 		route := &Route{
 			parent: &Router{
-				middlewareHolder: middlewareHolder{
-					middleware: []Middleware{&languageMiddleware{}},
-				},
+				middleware: []Middleware{&languageMiddleware{}},
 			},
-			middlewareHolder: middlewareHolder{
-				middleware: []Middleware{&recoveryMiddleware{}},
-			},
+			middleware: []Middleware{&recoveryMiddleware{}},
 		}
 
 		assert.True(t, routeHasMiddleware[*recoveryMiddleware](route))
@@ -67,14 +63,10 @@ func TestHasMiddleware(t *testing.T) {
 				globalMiddleware: &middlewareHolder{
 					middleware: []Middleware{&testMiddleware{}},
 				},
-				middlewareHolder: middlewareHolder{
-					middleware: []Middleware{&languageMiddleware{}},
-				},
+				middleware: []Middleware{&languageMiddleware{}},
 			},
 			globalMiddleware: &middlewareHolder{},
-			middlewareHolder: middlewareHolder{
-				middleware: []Middleware{&recoveryMiddleware{}},
-			},
+			middleware:       []Middleware{&recoveryMiddleware{}},
 		}
 
 		assert.True(t, routerHasMiddleware[*recoveryMiddleware](router))
@@ -87,10 +79,13 @@ func TestHasMiddleware(t *testing.T) {
 func TestRecoveryMiddleware(t *testing.T) {
 	t.Run("panic", func(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
-		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
-		if err != nil {
-			panic(err)
+		opts := Options{
+			Context: t.Context(),
+			Config:  config.LoadDefault(),
+			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
+		server, err := New(opts)
+		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
 		panicErr := fmt.Errorf("test error")
@@ -98,7 +93,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(panicErr)
 		})
 
-		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		request := NewRequest(httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil))
 		response := NewResponse(server, request, httptest.NewRecorder())
 
 		handler(response, request)
@@ -119,15 +114,18 @@ func TestRecoveryMiddleware(t *testing.T) {
 
 	t.Run("no_panic", func(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
-		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
-		if err != nil {
-			panic(err)
+		opts := Options{
+			Context: t.Context(),
+			Config:  config.LoadDefault(),
+			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
+		server, err := New(opts)
+		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
 		handler := middleware.Handle(func(_ *Response, _ *Request) {})
 
-		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		request := NewRequest(httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil))
 		response := NewResponse(server, request, httptest.NewRecorder())
 
 		handler(response, request)
@@ -139,10 +137,13 @@ func TestRecoveryMiddleware(t *testing.T) {
 
 	t.Run("nil_panic", func(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
-		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
-		if err != nil {
-			panic(err)
+		opts := Options{
+			Context: t.Context(),
+			Config:  config.LoadDefault(),
+			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
+		server, err := New(opts)
+		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
 		handler := middleware.Handle(func(_ *Response, _ *Request) {
@@ -150,7 +151,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 			panic(nil)
 		})
 
-		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		request := NewRequest(httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil))
 		response := NewResponse(server, request, httptest.NewRecorder())
 
 		handler(response, request)
@@ -171,18 +172,20 @@ func TestRecoveryMiddleware(t *testing.T) {
 
 	t.Run("empty_slice_panic", func(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
-		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
-		if err != nil {
-			panic(err)
+		opts := Options{
+			Context: t.Context(),
+			Config:  config.LoadDefault(),
+			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
+		server, err := New(opts)
+		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
-		middleware.Init(server)
 
 		handler := middleware.Handle(func(_ *Response, _ *Request) {
 			panic([]error{})
 		})
 
-		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		request := NewRequest(httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil))
 		response := NewResponse(server, request, httptest.NewRecorder())
 
 		require.NotPanics(t, func() {
@@ -201,17 +204,20 @@ func TestRecoveryMiddleware(t *testing.T) {
 		// Even if the response status is already set, the recovery middleware
 		// should always force it to 500.
 		logBuffer := &bytes.Buffer{}
-		server, err := New(Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, logBuffer))})
-		if err != nil {
-			panic(err)
+		opts := Options{
+			Context: t.Context(),
+			Config:  config.LoadDefault(),
+			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
+		server, err := New(opts)
+		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
 		handler := middleware.Handle(func(r *Response, _ *Request) {
 			r.JSON(http.StatusOK, make(chan struct{})) // Unsupported type for JSON encoding, status is set to 200 before writing
 		})
 
-		request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+		request := NewRequest(httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil))
 		response := NewResponse(server, request, httptest.NewRecorder())
 
 		handler(response, request)
@@ -232,7 +238,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 }
 
 func TestLanguageMiddleware(t *testing.T) {
-	server, err := New(Options{Config: config.LoadDefault()})
+	server, err := New(Options{Context: t.Context(), Config: config.LoadDefault()})
 	require.NoError(t, err)
 	middleware := newLanguageMiddleware(server.Lang)
 
@@ -255,7 +261,7 @@ func TestLanguageMiddleware(t *testing.T) {
 				executed = true
 			})
 
-			request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+			request := NewRequest(httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil))
 			if c.lang != "" {
 				request.Header().Set("Accept-Language", c.lang)
 			}
@@ -498,12 +504,14 @@ func TestValidateMiddleware(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			cfg := config.LoadDefault()
-			buffer := &bytes.Buffer{}
-			server, err := New(Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
-			if err != nil {
-				panic(err)
+			logBuffer := &bytes.Buffer{}
+			opts := Options{
+				Context: t.Context(),
+				Config:  config.LoadDefault(),
+				Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 			}
+			server, err := New(opts)
+			require.NoError(t, err)
 			defer func() {
 				assert.NoError(t, server.CloseDB())
 			}()
@@ -513,7 +521,7 @@ func TestValidateMiddleware(t *testing.T) {
 				BodyRules:  c.bodyRules,
 			}
 
-			request := NewRequest(httptest.NewRequest(http.MethodGet, "/test", nil))
+			request := NewRequest(httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil))
 			request.WithContext(context.WithValue(request.Context(), testCtxKey{}, "test-value"))
 			request.Lang = server.Lang.GetDefault()
 			request.Query = c.query

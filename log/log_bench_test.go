@@ -24,7 +24,7 @@ func BenchmarkServeHTTPWithLogs(b *testing.B) {
 		})
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/user/1", nil)
+	req := httptest.NewRequestWithContext(s.Context(), http.MethodGet, "/user/1", nil)
 
 	b.ReportAllocs()
 	b.ResetTimer()

@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -34,7 +35,7 @@ func TestTestServer(t *testing.T) {
 	t.Run("NewTestServer", func(t *testing.T) {
 		server := NewTestServer(t, goyave.Options{})
 		assert.Equal(t, "http://[::1]:0", server.BaseURL()) // Check default config loaded
-		assert.Equal(t, slog.DiscardLogger(), server.Logger)
+		assert.Equal(t, slog.DiscardLogger(), server.Logger())
 		assert.NotNil(t, server.Lang)
 	})
 
@@ -134,8 +135,10 @@ func TestFindRootDirectory(t *testing.T) {
 }
 
 func TestNewTestRequest(t *testing.T) {
+	type testKey struct{}
+	ctx := context.WithValue(t.Context(), testKey{}, "ctx-value")
 	body := bytes.NewBufferString("body")
-	req := NewTestRequest(http.MethodPost, "/uri", body)
+	req := NewTestRequest(ctx, http.MethodPost, "/uri", body)
 
 	assert.Equal(t, http.MethodPost, req.Method())
 	assert.Equal(t, "/uri", req.URL().String())
@@ -145,10 +148,12 @@ func TestNewTestRequest(t *testing.T) {
 	b, err := io.ReadAll(req.Body())
 	require.NoError(t, err)
 	assert.Equal(t, "body", string(b))
+
+	assert.Equal(t, "ctx-value", req.Context().Value(testKey{}))
 }
 
 func TestNewTestResponse(t *testing.T) {
-	req := NewTestRequest(http.MethodGet, "/uri", nil)
+	req := NewTestRequest(t.Context(), http.MethodGet, "/uri", nil)
 	resp, recorder := NewTestResponse(req)
 
 	resp.String(http.StatusOK, "hello")
@@ -176,7 +181,7 @@ func TestWriteMultipartFile(t *testing.T) {
 	require.NoError(t, WriteMultipartFile(writer, &osfs.FS{}, "../../resources/img/logo/goyave_16.png", "profile_picture", "goyave_16.png"))
 	require.NoError(t, writer.Close())
 
-	req := NewTestRequest(http.MethodPost, "/uri", body)
+	req := NewTestRequest(t.Context(), http.MethodPost, "/uri", body)
 	req.Header().Set("Content-Type", writer.FormDataContentType())
 	require.NoError(t, req.Request().ParseMultipartForm(1024*1024*1024))
 

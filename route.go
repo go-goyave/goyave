@@ -41,12 +41,10 @@ type RuleSetFunc func(*Request) validation.RuleSet
 // Thus, custom status handlers can use language and body.
 func newRoute(handler Handler, name string) *Route {
 	return &Route{
-		name:    name,
-		handler: handler,
-		Meta:    make(map[string]any),
-		middlewareHolder: middlewareHolder{
-			middleware: nil,
-		},
+		name:       name,
+		handler:    handler,
+		Meta:       make(map[string]any),
+		middleware: nil,
 	}
 }
 

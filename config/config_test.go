@@ -21,8 +21,8 @@ import (
 var embedCfgJSON []byte
 
 type CustomConfig struct {
-	Connections   []Connection
-	CustomSection CustomSection
+	CustomConnections []Connection
+	CustomSection     CustomSection
 	Base
 	CustomField int
 }
@@ -39,8 +39,8 @@ func (s CustomConfig) RuleSet() v.RuleSet {
 		{Path: "CustomSection", Rules: v.List{v.Required(), v.Object()}},
 		{Path: "CustomSection.A", Rules: v.List{v.Required(), v.String()}},
 		{Path: "CustomSection.B", Rules: v.List{v.Required(), v.Float64()}},
-		{Path: "Connections", Rules: v.List{v.Required(), v.Array()}},
-		{Path: "Connections[]", Rules: Connection{}.RuleSet()},
+		{Path: "CustomConnections", Rules: v.List{v.Required(), v.Array()}},
+		{Path: "CustomConnections[]", Rules: Connection{}.RuleSet()},
 	}
 }
 
@@ -52,7 +52,7 @@ func (s CustomConfig) Default() CustomConfig {
 			// A: "default A", // A doesn't have a default value so should be undefined
 			B: 1.2,
 		},
-		Connections: []Connection{Connection{}.Default()},
+		CustomConnections: []Connection{Connection{}.Default()},
 	}
 }
 
@@ -95,12 +95,14 @@ func TestLoad(t *testing.T) {
 			DefaultLanguage: "fr-FR",
 			Debug:           false,
 		},
+		Server:   Server{}.Default(),
+		Database: []DatabaseConnection{},
 		CustomSection: CustomSection{
 			A: typeutil.NewUndefined(""),
 			B: 6.999,
 		},
 		CustomField: 13,
-		Connections: []Connection{
+		CustomConnections: []Connection{
 			{
 				Driver: "postgres",
 				Host:   "127.0.0.1",

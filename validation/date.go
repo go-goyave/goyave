@@ -144,7 +144,7 @@ func (v *DateEqualsValidator) Name() string { return "date_equals" }
 
 // DateEquals the field under validation must be a date (`time.Time`) equal to the given date.
 func DateEquals(date time.Time) *DateEqualsValidator {
-	return &DateEqualsValidator{DateComparisonValidator: DateComparisonValidator{Date: date}}
+	return &DateEqualsValidator{Date: date}
 }
 
 //------------------------------
@@ -172,5 +172,5 @@ func DateEqualsField(path string) *DateEqualsFieldValidator {
 	if err != nil {
 		panic(errors.NewSkip(fmt.Errorf("validation.DateEqualsField: path parse error: %w", err), 3))
 	}
-	return &DateEqualsFieldValidator{DateFieldComparisonValidator: DateFieldComparisonValidator{Path: p}}
+	return &DateEqualsFieldValidator{Path: p}
 }

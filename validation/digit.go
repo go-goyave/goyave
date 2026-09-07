@@ -15,5 +15,5 @@ func (v *DigitsValidator) Name() string { return "digits" }
 
 // Digits the field under validation must be a string that only contains digits.
 func Digits() *DigitsValidator {
-	return &DigitsValidator{RegexValidator: RegexValidator{Regexp: digitsRegex}}
+	return &DigitsValidator{Regexp: digitsRegex}
 }

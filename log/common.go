@@ -53,13 +53,12 @@ func CommonLogFormatter(ctx *Context) (string, []slog.Attr) {
 		username,
 		ctx.Request.Now.Format(TimestampFormat),
 		req.Method,
-		strconv.QuoteToASCII(uri),
+		escapeToASCII(uri),
 		req.Proto,
 		ctx.Status,
 		ctx.Length,
 	)
 
-	// TODO figure out a way to identify a Group for no-display in dev mode? to avoid clutter
 	details := slog.Group("details",
 		slog.String("host", host),
 		slog.String("username", username),
@@ -72,6 +71,11 @@ func CommonLogFormatter(ctx *Context) (string, []slog.Attr) {
 	)
 
 	return message, []slog.Attr{details}
+}
+
+func escapeToASCII(s string) string {
+	quoted := strconv.QuoteToASCII(s)
+	return quoted[1 : len(quoted)-1]
 }
 
 // CombinedLogFormatter build a log entry using the Combined Log Format.

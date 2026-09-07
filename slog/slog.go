@@ -95,11 +95,15 @@ func (l *Logger) logError(ctx context.Context, source uintptr, err error, args .
 }
 
 func (l *Logger) log(ctx context.Context, level slog.Level, source uintptr, msg string, args ...any) {
-	r := l.makeRecord(level, msg, source, args...)
-
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	handler := l.Handler()
+	if !handler.Enabled(ctx, level) {
+		return
+	}
+	r := l.makeRecord(level, msg, source, args...)
 
 	_ = l.Handler().Handle(ctx, r)
 }

@@ -11,10 +11,8 @@ import (
 func BenchmarkServeHTTP(b *testing.B) {
 	s, _ := New(Options{Config: config.LoadDefault()})
 
-	s.RegisterRoutes(func(_ *Server, r *Router) {
-		r.Get("/user/{id}", func(r *Response, req *Request) {
-			r.String(http.StatusOK, req.RouteParams["id"])
-		})
+	s.router.Get("/user/{id}", func(r *Response, req *Request) {
+		r.String(http.StatusOK, req.RouteParams["id"])
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/user/1", nil)

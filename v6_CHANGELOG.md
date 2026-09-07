@@ -29,6 +29,8 @@
   - Transaction mode removed. Use sqlmock instead
   - ReplaceDB removed. Use sqlmock instead
   - Logger is now an accessor function, not a field. Field unexported. Set the logger with Options instead.
+  - Removed the RegisterRoutes method. Unnecessary complexity. Register routes using `server.Router()` instead. You can more easily pass your services to your controllers too
+  - Router regex cache is cleared on Start.
 - websocket: New() now takes a configuration struct as parameter
 - validation:
   - no more access to Config and DB

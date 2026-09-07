@@ -333,22 +333,6 @@ func TestServer(t *testing.T) {
 		})
 	})
 
-	t.Run("RegisterRoutes", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
-		require.NoError(t, err)
-
-		server.RegisterRoutes(func(_ *Server, router *Router) {
-			router.Get("/", func(_ *Response, _ *Request) {}).Name("base")
-		})
-		assert.NotNil(t, server.router.GetRoute("base"))
-
-		t.Run("panic_if_called_twice", func(t *testing.T) {
-			assert.PanicsWithError(t, "router's regex cache has already been cleared, did you call RegisterRoutes twice?", func() {
-				server.RegisterRoutes(func(_ *Server, _ *Router) {})
-			})
-		})
-	})
-
 	t.Run("Start", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Server.Port = 8888
@@ -385,11 +369,9 @@ func TestServer(t *testing.T) {
 			assert.False(t, server.IsReady())
 		})
 
-		server.RegisterRoutes(func(_ *Server, router *Router) {
-			router.Get("/", func(r *Response, _ *Request) {
-				r.String(http.StatusOK, "hello world")
-			}).Name("base")
-		})
+		server.Router().Get("/", func(r *Response, _ *Request) {
+			r.String(http.StatusOK, "hello world")
+		}).Name("base")
 
 		go func() {
 			err := server.Start()
@@ -435,11 +417,9 @@ func TestServer(t *testing.T) {
 			wg.Done()
 		})
 
-		server.RegisterRoutes(func(_ *Server, router *Router) {
-			router.Get("/", func(r *Response, _ *Request) {
-				r.String(http.StatusOK, "hello world")
-			}).Name("base")
-		})
+		server.Router().Get("/", func(r *Response, _ *Request) {
+			r.String(http.StatusOK, "hello world")
+		}).Name("base")
 
 		go func() {
 			err := server.Start()
@@ -609,14 +589,12 @@ func TestServer(t *testing.T) {
 			wg.Done()
 		})
 
-		server.RegisterRoutes(func(_ *Server, router *Router) {
-			router.Get("/", func(r *Response, req *Request) {
-				ctx := req.Context()
-				assert.Equal(t, server, ServerFromContext(ctx))
-				assert.Equal(t, server.Logger(), slog.FromContext(ctx))
-				r.String(http.StatusOK, fmt.Sprintf("%v|%v|%v", ctx.Value(rootContextKey{}), ctx.Value(baseContextKey{}), ctx.Value(connContextKey{})))
-			}).Name("base")
-		})
+		server.Router().Get("/", func(r *Response, req *Request) {
+			ctx := req.Context()
+			assert.Equal(t, server, ServerFromContext(ctx))
+			assert.Equal(t, server.Logger(), slog.FromContext(ctx))
+			r.String(http.StatusOK, fmt.Sprintf("%v|%v|%v", ctx.Value(rootContextKey{}), ctx.Value(baseContextKey{}), ctx.Value(connContextKey{})))
+		}).Name("base")
 
 		go func() {
 			err := server.Start()
@@ -697,11 +675,9 @@ func TestServer(t *testing.T) {
 			wg.Done()
 		})
 
-		server.RegisterRoutes(func(_ *Server, router *Router) {
-			router.Get("/", func(r *Response, _ *Request) {
-				r.String(http.StatusOK, "hello world")
-			}).Name("base")
-		})
+		server.Router().Get("/", func(r *Response, _ *Request) {
+			r.String(http.StatusOK, "hello world")
+		}).Name("base")
 
 		go func() {
 			err := server.Start()

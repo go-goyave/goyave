@@ -281,21 +281,19 @@ func TestUpgrade(t *testing.T) {
 	var routeURL string
 	opts, cfg := prepareTestConfig()
 	server := testutil.NewTestServer(t, opts)
-	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-		upgrader := New(&testController{
-			t:  t,
-			wg: &wg,
-			checkOrigin: func(_ *goyave.Request) bool {
-				return true
-			},
-			upgradeHeaders: func(_ *goyave.Request) http.Header {
-				headers := http.Header{}
-				headers.Add("X-Test", "Value")
-				return headers
-			},
-		}, cfg)
-		r.Subrouter("/websocket").Controller(upgrader)
-	})
+	upgrader := New(&testController{
+		t:  t,
+		wg: &wg,
+		checkOrigin: func(_ *goyave.Request) bool {
+			return true
+		},
+		upgradeHeaders: func(_ *goyave.Request) http.Header {
+			headers := http.Header{}
+			headers.Add("X-Test", "Value")
+			return headers
+		},
+	}, cfg)
+	server.Router().Subrouter("/websocket").Controller(upgrader)
 
 	server.RegisterStartupHook(func(s *goyave.Server) {
 		defer func() {
@@ -335,15 +333,13 @@ func TestUpgrade(t *testing.T) {
 func TestUpgradeError(t *testing.T) {
 	opts, cfg := prepareTestConfig()
 	server := testutil.NewTestServer(t, opts)
-	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-		upgrader := New(&testController{
-			t: t,
-			checkOrigin: func(_ *goyave.Request) bool {
-				return true
-			},
-		}, cfg)
-		r.Subrouter("/websocket").Controller(upgrader)
-	})
+	upgrader := New(&testController{
+		t: t,
+		checkOrigin: func(_ *goyave.Request) bool {
+			return true
+		},
+	}, cfg)
+	server.Router().Subrouter("/websocket").Controller(upgrader)
 
 	resp := server.TestRequest(httptest.NewRequest(http.MethodGet, "/websocket", nil))
 
@@ -390,19 +386,17 @@ func TestCloseHandshakeTimeout(t *testing.T) {
 	var routeURL string
 	opts, cfg := prepareTestConfig()
 	server := testutil.NewTestServer(t, opts)
-	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-		upgrader := New(&testController{
-			t:  t,
-			wg: &wg,
-			serve: func(_ *Conn, _ *goyave.Request) error {
-				return nil // Immediately return to trigger the close handshake
-			},
-			checkOrigin: func(_ *goyave.Request) bool {
-				return true
-			},
-		}, cfg)
-		r.Subrouter("/websocket").Controller(upgrader)
-	})
+	upgrader := New(&testController{
+		t:  t,
+		wg: &wg,
+		serve: func(_ *Conn, _ *goyave.Request) error {
+			return nil // Immediately return to trigger the close handshake
+		},
+		checkOrigin: func(_ *goyave.Request) bool {
+			return true
+		},
+	}, cfg)
+	server.Router().Subrouter("/websocket").Controller(upgrader)
 
 	server.RegisterStartupHook(func(s *goyave.Server) {
 		defer func() {
@@ -501,25 +495,23 @@ func TestGracefulClose(t *testing.T) {
 			buf := &bytes.Buffer{}
 			opts.Logger = slog.New(stdslog.NewJSONHandler(buf, &stdslog.HandlerOptions{Level: stdslog.LevelInfo}))
 			server := testutil.NewTestServer(t, opts)
-			server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-				var ctrl Controller = &testController{
-					t:     t,
-					wg:    &wg,
-					serve: c.serve,
+			var ctrl Controller = &testController{
+				t:     t,
+				wg:    &wg,
+				serve: c.serve,
 
-					checkOrigin: func(_ *goyave.Request) bool {
-						return true
-					},
+				checkOrigin: func(_ *goyave.Request) bool {
+					return true
+				},
+			}
+			if c.errorHandler != nil {
+				ctrl = &testControllerWithErrorHandler{
+					testController: *ctrl.(*testController),
+					onError:        c.errorHandler,
 				}
-				if c.errorHandler != nil {
-					ctrl = &testControllerWithErrorHandler{
-						testController: *ctrl.(*testController),
-						onError:        c.errorHandler,
-					}
-				}
-				upgrader := New(ctrl, cfg)
-				r.Subrouter("/websocket").Controller(upgrader)
-			})
+			}
+			upgrader := New(ctrl, cfg)
+			server.Router().Subrouter("/websocket").Controller(upgrader)
 
 			server.RegisterStartupHook(func(s *goyave.Server) {
 				defer func() {
@@ -566,26 +558,24 @@ func TestCloseConnectionClosed(t *testing.T) {
 	var routeURL string
 	opts, cfg := prepareTestConfig()
 	server := testutil.NewTestServer(t, opts)
-	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-		upgrader := New(&testController{
-			t: t,
-			checkOrigin: func(_ *goyave.Request) bool {
-				return true
-			},
-		}, cfg)
-		r.Subrouter("/websocket").Get("", func(response *goyave.Response, request *goyave.Request) {
-			defer wg.Done()
-			c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
-			assert.NoError(t, err)
-			response.Status(http.StatusSwitchingProtocols)
+	upgrader := New(&testController{
+		t: t,
+		checkOrigin: func(_ *goyave.Request) bool {
+			return true
+		},
+	}, cfg)
+	server.Router().Subrouter("/websocket").Get("", func(response *goyave.Response, request *goyave.Request) {
+		defer wg.Done()
+		c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
+		assert.NoError(t, err)
+		response.Status(http.StatusSwitchingProtocols)
 
-			conn := newConn(c, time.Second)
+		conn := newConn(c, time.Second)
 
-			assert.NoError(t, conn.Conn.Close()) // Connection closed right away, server wont be able to write anymore
-			err = conn.CloseNormal()
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "use of closed network connection")
-		})
+		assert.NoError(t, conn.Conn.Close()) // Connection closed right away, server wont be able to write anymore
+		err = conn.CloseNormal()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "use of closed network connection")
 	})
 
 	server.RegisterStartupHook(func(s *goyave.Server) {
@@ -622,25 +612,23 @@ func TestCloseWriteTimeout(t *testing.T) {
 	var routeURL string
 	opts, cfg := prepareTestConfig()
 	server := testutil.NewTestServer(t, opts)
-	server.RegisterRoutes(func(_ *goyave.Server, r *goyave.Router) {
-		upgrader := New(&testController{
-			t: t,
-			checkOrigin: func(_ *goyave.Request) bool {
-				return true
-			},
-		}, cfg)
-		r.Subrouter("/websocket").Get("", func(response *goyave.Response, request *goyave.Request) {
-			defer wg.Done()
-			c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
-			assert.NoError(t, err)
-			response.Status(http.StatusSwitchingProtocols)
+	upgrader := New(&testController{
+		t: t,
+		checkOrigin: func(_ *goyave.Request) bool {
+			return true
+		},
+	}, cfg)
+	server.Router().Subrouter("/websocket").Get("", func(response *goyave.Response, request *goyave.Request) {
+		defer wg.Done()
+		c, err := upgrader.makeUpgrader(request).Upgrade(response, request.Request(), nil)
+		assert.NoError(t, err)
+		response.Status(http.StatusSwitchingProtocols)
 
-			conn := newConn(c, time.Second)
-			conn.closeTimeout = -1 * time.Second
+		conn := newConn(c, time.Second)
+		conn.closeTimeout = -1 * time.Second
 
-			// No error expected, the connection should close as normal without waiting
-			assert.NoError(t, conn.CloseNormal())
-		})
+		// No error expected, the connection should close as normal without waiting
+		assert.NoError(t, conn.CloseNormal())
 	})
 
 	server.RegisterStartupHook(func(s *goyave.Server) {

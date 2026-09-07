@@ -22,7 +22,7 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
 //	import _ "goyave.dev/goyave/v5/database/dialect/clickhouse"
 //	import _ "goyave.dev/goyave/v5/database/dialect/bigquery"
-func New(cfg *config.DatabaseConnection, logger func() *slog.Logger) (*gorm.DB, error) { // TODO logger from context?
+func New(cfg *config.DatabaseConnection, logger func() *slog.Logger) (*gorm.DB, error) { // TODO logger from context? the logger func makes no sense anymore since server unexported Logger
 	dialect, ok := dialects[cfg.Dialect]
 	if !ok {
 		return nil, errorutil.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)

@@ -14,6 +14,7 @@
     - server options now take a *config.Base
     - testutil.Server lets you choose source and config type 
     - section and field names are now in PascalCase
+    - default values changed (host is now [::1])
 - slog:
   - global default logger
   - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context
@@ -21,6 +22,13 @@
   - added options for MaxHeaderValueCount and DisableClientPriority
   - Config accessor removed
   - DB accessor removed (DB detached from server)
+  - Context accessor added
+  - Context option added (so the context can be enriched before the server is started, useful for initialization phase and tests)
+  - BaseContext option now takes a parent context as parameter
+  - error returned if the server is started with a canceled context now contains context.Canceled in the chain
+  - Transaction mode removed. Use sqlmock instead
+  - ReplaceDB removed. Use sqlmock instead
+  - Logger is now an accessor function, not a field. Field unexported. Set the logger with Options instead.
 - websocket: New() now takes a configuration struct as parameter
 - validation:
   - no more access to Config and DB
@@ -40,6 +48,9 @@
   - NewTestServer removed. NewTestServerWithOptions renamed NewTestServer.
   - NewTestServer doesn't load configuration from files anymore. It only loads the default values `config.LoadDefault()` (but replace port with 0 for auto assignment) if no Config is provided in the options.
   - NewTestRequest now sets the language to `lang.Default`.
+  - NewTestServer uses `t.Context()` by default.
+  - NewTestRequest now takes a context parameter
+  - test server NewTestRequest uses the server's context
   - TODO document how to test log output and how to output logs to testing.T.Output
 - Improved documentation by using links
 - Paginator: fetch query isn't executed anymore if the count query returns 0.

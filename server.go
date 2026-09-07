@@ -2,7 +2,6 @@ package goyave
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"net"
@@ -42,7 +41,8 @@ type Options struct {
 	Config *config.Base
 
 	// Logger used by the server and propagated to all its components.
-	// If no logger is provided in the options, uses the default logger.
+	// If no logger is provided in the options, a new [slog.Logger] outputting
+	// to [os.Stderr] is created. The handler used depends on the [config.App.Debug] value.
 	Logger *slog.Logger
 
 	// LangFS the file system from which the language files
@@ -65,21 +65,32 @@ type Options struct {
 	// `http.ConnState` type and associated constants for details.
 	ConnState func(net.Conn, http.ConnState)
 
-	// Context optionnally defines a function that returns the base context
+	// Context optionally defines the server's root context.
+	//
+	// This context is enriched with the server's logger and the server instance.
+	// The server can thus be retrieved using [ServerFromContext].
+	//
+	// If no given, defaults to [context.Background].
+	Context context.Context
+
+	// BaseContext optionally defines a function that returns the base context
 	// for the server. It will be used as base context for all incoming requests.
+	//
+	// The `parent` parameter is the server's root context. See [Options.Context].
 	//
 	// The provided `net.Listener` is the specific Listener that's
 	// about to start accepting requests.
 	//
-	// If not given, the default is `context.Background()`.
-	//
-	// The context returned then has a the server instance added to it as a value.
-	// The server can thus be retrieved using `goyave.ServerFromContext(ctx)`.
+	// If not given, the default is the server's context.
 	//
 	// If the context is canceled, the server won't shut down automatically, you are
 	// responsible of calling `server.Stop()` if you want this to happen. Otherwise the
 	// server will continue serving requests, at the risk of generating "context canceled" errors.
-	BaseContext func(net.Listener) context.Context
+	//
+	// It is not recommended to return a context that is canceled when the server shutdown is requested
+	// because that would prevent finishing to handle ongoing requests gracefully.
+	// If you want to control shutdown this way, this function should use [context.WithoutCancel].
+	BaseContext func(parent context.Context, ln net.Listener) context.Context
 
 	// ConnContext optionally specifies a function that modifies
 	// the context used for a new connection `c`. The provided context
@@ -118,7 +129,6 @@ type Options struct {
 type Server struct {
 	server *http.Server
 	config *config.Server
-	debug  bool // TODO test this is setup on New
 	Lang   *lang.Languages
 
 	router *Router
@@ -126,11 +136,11 @@ type Server struct {
 
 	services map[string]Service
 
-	// Logger the logger for default output
+	// logger the logger for default output
 	// Writes to stderr by default.
-	// FIXME changing the logger doesn't change the one in the base context
-	// Should we really store the logger here and leave it accessible? we can set it using options
-	Logger *slog.Logger
+	logger *slog.Logger
+
+	ctx context.Context
 
 	host         string
 	baseURL      string
@@ -139,8 +149,7 @@ type Server struct {
 	stopChannel chan struct{}
 	sigChannel  chan os.Signal
 
-	ctx           context.Context
-	baseContext   func(net.Listener) context.Context
+	baseContext   func(context.Context, net.Listener) context.Context
 	listenConfig  *net.ListenConfig
 	startupHooks  []func(*Server)
 	shutdownHooks []func(*Server)
@@ -148,6 +157,8 @@ type Server struct {
 	port int
 
 	state atomic.Uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
+
+	debug bool // TODO test this is setup on New
 }
 
 // New create a new `Server` using the given options.
@@ -187,6 +198,13 @@ func New(opts Options) (*Server, error) {
 	host := cfg.Server.Host
 	port := cfg.Server.Port
 
+	ctx := context.Background()
+	if opts.Context != nil {
+		ctx = opts.Context
+	}
+	ctx = slog.Context(ctx, slogger)
+	// TODO add debug too? but context starts to be overloaded...
+
 	server := &Server{
 		server: &http.Server{
 			Addr:                  net.JoinHostPort(host, strconv.Itoa(port)),
@@ -201,7 +219,6 @@ func New(opts Options) (*Server, error) {
 			HTTP2:                 opts.HTTP2,
 			DisableClientPriority: opts.DisableClientPriority,
 		},
-		ctx:           context.Background(),
 		baseContext:   opts.BaseContext,
 		listenConfig:  opts.ListenConfig,
 		config:        &cfg.Server,
@@ -213,15 +230,16 @@ func New(opts Options) (*Server, error) {
 		shutdownHooks: []func(*Server){},
 		host:          host,
 		port:          port,
-		Logger:        slogger,
+		logger:        slogger,
 	}
+	server.ctx = context.WithValue(ctx, serverKey{}, server)
 	server.server.BaseContext = server.internalBaseContext
 	server.refreshURLs()
 	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
 
 	// TODO database connections could be created outside of New? they are only passed to repositories and have nothing to do with the server itself
 	if len(cfg.Database) > 0 {
-		db, err := database.New(&cfg.Database[0], lo.Ternary(cfg.App.Debug, func() *slog.Logger { return server.Logger }, nil))
+		db, err := database.New(&cfg.Database[0], lo.Ternary(cfg.App.Debug, func() *slog.Logger { return server.logger }, nil))
 		if err != nil {
 			return nil, errors.New(err)
 		}
@@ -233,8 +251,15 @@ func New(opts Options) (*Server, error) {
 	return server, nil
 }
 
-func (s *Server) internalBaseContext(_ net.Listener) context.Context {
-	return s.ctx
+func (s *Server) internalBaseContext(ln net.Listener) context.Context {
+	ctx := s.ctx
+	if s.baseContext != nil {
+		ctx = s.baseContext(s.ctx, ln)
+		if ctx == nil {
+			panic("server options BaseContext returned a nil context")
+		}
+	}
+	return ctx
 }
 
 func (s *Server) isIPv6(host string) bool {
@@ -331,6 +356,16 @@ func (s *Server) Port() int {
 	return s.port
 }
 
+// Context returns the server's root context, enriched with the server's logger and the server instance.
+func (s *Server) Context() context.Context {
+	return s.ctx
+}
+
+// Logger returns the server's logger.
+func (s *Server) Logger() *slog.Logger {
+	return s.logger
+}
+
 // BaseURL returns the base URL of your application.
 // If "server.domain" is set in the config, uses it instead
 // of an IP address.
@@ -390,47 +425,6 @@ func (s *Server) DB() *gorm.DB { // TODO Detach DB from server
 	return s.db
 }
 
-// Transaction makes it so all DB requests are run inside a transaction.
-//
-// Returns the rollback function. When you are done, call this function to
-// complete the transaction and roll it back. This will also restore the original
-// DB so it can be used again out of the transaction.
-//
-// This is used for tests. This operation is not concurrently safe.
-func (s *Server) Transaction(opts ...*sql.TxOptions) func() { // TODO Detach DB from server
-	if s.db == nil {
-		panic(errors.NewSkip("no database connection", 3))
-	}
-	ogDB := s.db
-	s.db = s.db.Begin(opts...)
-	return func() {
-		err := s.db.Rollback().Error
-		s.db = ogDB
-		if err != nil {
-			panic(errors.New(err))
-		}
-	}
-}
-
-// ReplaceDB manually replace the automatic DB connection.
-// If a connection already exists, closes it before discarding it.
-// This can be used to create a mock DB in tests. Using this function
-// is not recommended outside of tests. Prefer using a custom dialect.
-// This operation is not concurrently safe.
-func (s *Server) ReplaceDB(dialector gorm.Dialector) error { // TODO Detach DB from server
-	if err := s.CloseDB(); err != nil {
-		return err
-	}
-
-	db, err := database.NewFromDialector(nil, func() *slog.Logger { return s.Logger }, dialector)
-	if err != nil {
-		return err
-	}
-
-	s.db = db
-	return nil
-}
-
 // CloseDB close the database connection if there is one.
 // Does nothing and returns `nil` if there is no connection.
 func (s *Server) CloseDB() error { // TODO Detach DB from server
@@ -476,22 +470,10 @@ func (s *Server) Start() error {
 	if err != nil {
 		return errors.New(err)
 	}
-	baseCtx := context.Background()
-	if s.baseContext != nil {
-		baseCtx = s.baseContext(ln)
-		if baseCtx == nil {
-			panic("server options BaseContext returned a nil context")
-		}
-	}
-	// Add the server and logger to the context
-	// TODO document slogger added to base context
-	loggerCtx := slog.Context(baseCtx, s.Logger)
-	// TODO add debug too? but context starts to be overloaded...
-	s.ctx = context.WithValue(loggerCtx, serverKey{}, s)
 
 	select {
 	case <-s.ctx.Done():
-		return errors.New("cannot start the server, context is canceled")
+		return errors.New([]any{"cannot start the server, context is canceled", context.Canceled})
 	default:
 	}
 
@@ -502,7 +484,7 @@ func (s *Server) Start() error {
 			hook(s)
 		}
 		if err := s.CloseDB(); err != nil {
-			s.Logger.Error(err)
+			s.logger.Error(err)
 		}
 	}()
 
@@ -565,7 +547,7 @@ func (s *Server) Stop() {
 	defer cancel()
 	err := s.server.Shutdown(ctx)
 	if err != nil {
-		s.Logger.Error(errors.NewSkip(err, 3))
+		s.logger.Error(errors.NewSkip(err, 3))
 	}
 
 	<-s.stopChannel // Wait for stop channel before returning
@@ -597,7 +579,7 @@ type errLogWriter struct {
 }
 
 func (w errLogWriter) Write(p []byte) (n int, err error) {
-	w.server.Logger.Error(fmt.Errorf("%s", p))
+	w.server.logger.Error(fmt.Errorf("%s", p))
 	return len(p), nil
 }
 

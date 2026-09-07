@@ -43,6 +43,7 @@ type App struct {
 	//    for structured logs instead of JSON.
 	//  - error details will be sent in the HTTP responses.
 	// This setting should be set to false in production.
+	// TODO very inconvenient to share this everywhere...
 	Debug bool
 }
 
@@ -91,6 +92,7 @@ type Server struct {
 	IdleTimeoutMs int
 	// WebsocketCloseTimeoutMs represents the maximum time allowed for the websocket
 	// close handshake (in milliseconds).
+	// TODO move this to the websocket config section?
 	WebsocketCloseTimeoutMs int
 }
 

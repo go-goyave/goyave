@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 	"goyave.dev/goyave/v5/validation"
@@ -20,7 +19,7 @@ import (
 
 func TestJWTController(t *testing.T) {
 	t.Run("Login", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -51,7 +50,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_ptr", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -82,7 +81,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_invalid_password", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -113,7 +112,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_invalid_username", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -144,9 +143,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_token_func_error", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
-		buf := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, buf))
+		server, user, logBuffer := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -174,13 +171,11 @@ func TestJWTController(t *testing.T) {
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
-		assert.NotEmpty(t, buf.String())
+		assert.NotEmpty(t, logBuffer.String())
 	})
 
 	t.Run("Login_non-existing_password_field", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
-		buf := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, buf))
+		server, user, logBuffer := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -205,13 +200,11 @@ func TestJWTController(t *testing.T) {
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
-		assert.NotEmpty(t, buf.String())
+		assert.NotEmpty(t, logBuffer.String())
 	})
 
 	t.Run("Login_service_error", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
-		buf := &bytes.Buffer{}
-		server.Logger = slog.New(slog.NewHandler(false, buf))
+		server, user, logBuffer := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -236,11 +229,11 @@ func TestJWTController(t *testing.T) {
 		resp := server.TestRequest(request)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.NoError(t, resp.Body.Close())
-		assert.NotEmpty(t, buf.String())
+		assert.NotEmpty(t, logBuffer.String())
 	})
 
 	t.Run("Login_with_field_override", func(t *testing.T) {
-		server, user := prepareAuthenticatorTest(t)
+		server, user, _ := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,
@@ -273,7 +266,7 @@ func TestJWTController(t *testing.T) {
 	})
 
 	t.Run("Login_validation", func(t *testing.T) {
-		server, _ := prepareAuthenticatorTest(t)
+		server, _, _ := prepareAuthenticatorTest(t)
 
 		config := &JWTConfig{
 			Expiry: 300,

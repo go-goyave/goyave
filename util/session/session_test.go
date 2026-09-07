@@ -84,12 +84,11 @@ func (d *testDialector) RollbackTo(_ *gorm.DB, name string) error {
 }
 
 func TestGormSession(t *testing.T) {
-	cfg := config.LoadDefault()
-	// TODO update session test
-	// cfg.Set("database.config.disableAutomaticPing", true)
+	cfg := config.DatabaseConnection{}.Default()
+	cfg.GORM.DisableAutomaticPing = true
 
 	t.Run("New", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{})
+		db, err := database.NewFromDialector(&cfg, nil, &testDialector{})
 		require.NoError(t, err)
 
 		opts := &sql.TxOptions{
@@ -106,7 +105,7 @@ func TestGormSession(t *testing.T) {
 	})
 
 	t.Run("Manual", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{})
+		db, err := database.NewFromDialector(&cfg, nil, &testDialector{})
 		require.NoError(t, err)
 		committer := newTestConnPool()
 		db.Statement.ConnPool = committer
@@ -133,7 +132,7 @@ func TestGormSession(t *testing.T) {
 	})
 
 	t.Run("Begin_error", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{})
+		db, err := database.NewFromDialector(&cfg, nil, &testDialector{})
 		require.NoError(t, err)
 		beginErr := fmt.Errorf("begin error")
 		committer := &testConnPool{
@@ -155,7 +154,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("Nested_manual", func(t *testing.T) {
 		dialector := &testDialector{}
-		db, err := database.NewFromDialector(cfg, nil, dialector)
+		db, err := database.NewFromDialector(&cfg, nil, dialector)
 		require.NoError(t, err)
 		committer := newTestConnPool()
 		db.Statement.ConnPool = committer
@@ -190,7 +189,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("Nested_manual_DisableNestedTransactions", func(t *testing.T) {
 		dialector := &testDialector{}
-		db, err := database.NewFromDialector(cfg, nil, dialector)
+		db, err := database.NewFromDialector(&cfg, nil, dialector)
 		db.DisableNestedTransaction = true
 		require.NoError(t, err)
 		committer := newTestConnPool()
@@ -228,7 +227,7 @@ func TestGormSession(t *testing.T) {
 		dialector := &testDialector{
 			savepointErr: savepointErr,
 		}
-		db, err := database.NewFromDialector(cfg, nil, dialector)
+		db, err := database.NewFromDialector(&cfg, nil, dialector)
 		require.NoError(t, err)
 		committer := newTestConnPool()
 		db.Statement.ConnPool = committer
@@ -243,7 +242,7 @@ func TestGormSession(t *testing.T) {
 	})
 
 	t.Run("Transaction", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{})
+		db, err := database.NewFromDialector(&cfg, nil, &testDialector{})
 		require.NoError(t, err)
 		committer := newTestConnPool()
 		db.Statement.ConnPool = committer
@@ -267,7 +266,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("Nested_Transaction", func(t *testing.T) {
 		dialector := &testDialector{}
-		db, err := database.NewFromDialector(cfg, nil, dialector)
+		db, err := database.NewFromDialector(&cfg, nil, dialector)
 		require.NoError(t, err)
 		committer := newTestConnPool()
 		db.Statement.ConnPool = committer
@@ -304,7 +303,7 @@ func TestGormSession(t *testing.T) {
 		dialector := &testDialector{
 			savepointErr: fmt.Errorf("savepoint err"),
 		}
-		db, err := database.NewFromDialector(cfg, nil, dialector)
+		db, err := database.NewFromDialector(&cfg, nil, dialector)
 		require.NoError(t, err)
 		committer := newTestConnPool()
 		db.Statement.ConnPool = committer
@@ -322,7 +321,7 @@ func TestGormSession(t *testing.T) {
 
 	t.Run("Nested_Transaction_DisableNestedTransaction", func(t *testing.T) {
 		dialector := &testDialector{}
-		db, err := database.NewFromDialector(cfg, nil, dialector)
+		db, err := database.NewFromDialector(&cfg, nil, dialector)
 		db.DisableNestedTransaction = true
 		require.NoError(t, err)
 		committer := newTestConnPool()
@@ -352,7 +351,7 @@ func TestGormSession(t *testing.T) {
 	})
 
 	t.Run("TransactionError", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{})
+		db, err := database.NewFromDialector(&cfg, nil, &testDialector{})
 		require.NoError(t, err)
 		committer := newTestConnPool()
 		db.Statement.ConnPool = committer
@@ -372,7 +371,7 @@ func TestGormSession(t *testing.T) {
 	})
 
 	t.Run("Transaction_Commit_error", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{})
+		db, err := database.NewFromDialector(&cfg, nil, &testDialector{})
 		require.NoError(t, err)
 		commitErr := fmt.Errorf("commit error")
 		committer := newTestConnPool()
@@ -387,9 +386,9 @@ func TestGormSession(t *testing.T) {
 	})
 
 	t.Run("DB", func(t *testing.T) {
-		db, err := database.NewFromDialector(cfg, nil, &testDialector{id: "in_context"})
+		db, err := database.NewFromDialector(&cfg, nil, &testDialector{id: "in_context"})
 		require.NoError(t, err)
-		fallback, err := database.NewFromDialector(cfg, nil, &testDialector{id: "fallback"})
+		fallback, err := database.NewFromDialector(&cfg, nil, &testDialector{id: "fallback"})
 		require.NoError(t, err)
 
 		valueCtx := context.WithValue(context.Background(), testKey{}, "testvalue")

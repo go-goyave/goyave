@@ -328,6 +328,16 @@ func TestEncoderPriority(t *testing.T) {
 		},
 		{
 			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip;q=1, br;q=0.9",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip; q=0.9, br;q=0.8",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
 			acceptEncoding: "",
 			want:           nil,
 		},

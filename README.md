@@ -88,6 +88,7 @@ A big "Thank you" to the Goyave contributors:
 - [pn03](https://github.com/pn03) (Bigquery dialect)
 - [Supakorn Ieamgomol](https://github.com/Supakornn) (Server `net.ListenConfig`)
 - [Yo Sev](https://github.com/YoSev) (Embedded FS static serving compatibility on Windows)
+- [MaxFreedomPollard](https://github.com/MaxFreedomPollard) (Multi-value header parsing RFC compliance)
 
 ## License
 

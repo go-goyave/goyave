@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -433,5 +434,25 @@ func TestErrors(t *testing.T) {
 				assert.Equal(t, c.want, errs)
 			})
 		}
+	})
+
+	t.Run("slog", func(t *testing.T) {
+		e := &Errors{
+			Fields: FieldsErrors{
+				"fieldName": &Errors{
+					Errors: []string{"invalid"},
+				},
+			},
+			Elements: ArrayErrors{
+				1: &Errors{
+					Errors: []string{"array errors"},
+				},
+			},
+			Errors: []string{"invalid root"},
+		}
+		assert.Equal(t, "validation errors", e.Error())
+		v := e.LogValue()
+		want := slog.StructValue(e)
+		assert.Equal(t, want.Group(), v.Group())
 	})
 }

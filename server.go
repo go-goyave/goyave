@@ -22,7 +22,6 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
-	"goyave.dev/goyave/v5/validation"
 )
 
 // serverKey is a context key used to store the server instance into its base context.
@@ -162,16 +161,10 @@ func New(opts Options) (*Server, error) {
 	cfg := opts.Config
 
 	if opts.Config == nil {
-		var validationErrors *validation.Errors
 		var err error
-		cfg, validationErrors, err = config.Load[config.Base](context.Background(), config.Default()) // TODO detach config loading from server
+		cfg, err = config.Load[config.Base](context.Background(), config.Default()) // TODO detach config loading from server
 		if err != nil {
 			return nil, errors.New(err)
-		}
-		if validationErrors != nil {
-			err = errors.New("configuration validation errors")
-			slog.Default().Error(err, "errors", validationErrors) // TODO readability won't be great...
-			return nil, err
 		}
 	}
 

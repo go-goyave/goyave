@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"goyave.dev/goyave/v5/slog"
@@ -81,12 +80,11 @@ func (s Connection) Default() Connection {
 
 func TestLoad(t *testing.T) {
 	_ = os.Setenv("ENV_TEST", "3")
-	cfg, validationErrors, err := Load[CustomConfig](t.Context(), FromBytes(embedCfgJSON, UnsmarshalJSON()))
+	cfg, err := Load[CustomConfig](t.Context(), FromBytes(embedCfgJSON, UnsmarshalJSON()))
 	logger := slog.New(slog.NewHandler(true, t.Output()))
-	require.NoError(t, err)
-	if !assert.Nil(t, validationErrors) {
-		logger.Error(fmt.Errorf("configuration validation errors"), "errors", validationErrors)
-	}
+	var validationErr *v.Errors
+	require.ErrorAs(t, err, &validationErr)
+	logger.Error(fmt.Errorf("configuration validation errors"), "errors", validationErr)
 
 	want := &CustomConfig{
 		App: App{

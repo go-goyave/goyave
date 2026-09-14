@@ -29,14 +29,7 @@ type serverKey struct{}
 
 // Options represent server creation options.
 type Options struct {
-
-	// Config used by the server and propagated to all its components.
-	// If no configuration is provided, automatically load
-	// the default configuration using the default configuration source.
-	// TODO only needs App (debug and defaultLanguage) and Server config...
-	Config *config.Base
-
-	// Logger used by the server and propagated to all its components.
+	// Logger used by the server.
 	// If no logger is provided in the options, a new [slog.Logger] outputting
 	// to [os.Stderr] is created. The handler used depends on the [config.App.Debug] value.
 	Logger *slog.Logger
@@ -157,17 +150,7 @@ type Server struct {
 }
 
 // New create a new `Server` using the given options.
-func New(opts Options) (*Server, error) {
-	cfg := opts.Config
-
-	if opts.Config == nil {
-		var err error
-		cfg, err = config.Load[config.Base](context.Background(), config.Default()) // TODO detach config loading from server
-		if err != nil {
-			return nil, errors.New(err)
-		}
-	}
-
+func New(cfg *config.Base, opts Options) (*Server, error) {
 	slogger := opts.Logger
 	if slogger == nil {
 		slogger = slog.New(slog.NewHandler(cfg.App.Debug, os.Stderr))

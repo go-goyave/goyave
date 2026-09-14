@@ -210,7 +210,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 func TestConfigBasicAuthenticator(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		server := testutil.NewTestServer(t, goyave.Options{})
+		server := testutil.NewTestServer(t, testutil.Options{})
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "secret")
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
@@ -224,7 +224,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {
-		server := testutil.NewTestServer(t, goyave.Options{})
+		server := testutil.NewTestServer(t, testutil.Options{})
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Request().SetBasicAuth("johndoe", "wrong_password")
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
@@ -241,7 +241,7 @@ func TestConfigBasicAuthenticator(t *testing.T) {
 	})
 
 	t.Run("no_auth", func(t *testing.T) {
-		server := testutil.NewTestServer(t, goyave.Options{})
+		server := testutil.NewTestServer(t, testutil.Options{})
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
 		resp := server.TestMiddleware(ConfigBasicAuthWithRealm(&BasicConfig{"johndoe", "secret"}, "custom realm"), request, func(response *goyave.Response, _ *goyave.Request) {

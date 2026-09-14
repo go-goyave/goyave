@@ -166,7 +166,7 @@ func TestStaticHandler(t *testing.T) {
 	for _, c := range cases {
 		t.Run(strings.ReplaceAll(c.uri, "/", "_"), func(t *testing.T) {
 			cfg := config.LoadDefault()
-			srv, err := New(Options{Config: cfg})
+			srv, err := New(cfg, Options{})
 			require.NoError(t, err)
 
 			request := NewRequest(httptest.NewRequest(http.MethodGet, "/static"+c.uri, nil))
@@ -214,7 +214,7 @@ func TestStaticHandlerBounds(t *testing.T) {
 	for _, c := range cases {
 		t.Run(strings.ReplaceAll(c, "/", "_"), func(t *testing.T) {
 			cfg := config.LoadDefault()
-			srv, err := New(Options{Config: cfg})
+			srv, err := New(cfg, Options{})
 			require.NoError(t, err)
 
 			request := NewRequest(httptest.NewRequest(http.MethodGet, "/static"+c, nil))

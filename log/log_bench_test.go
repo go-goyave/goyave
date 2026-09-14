@@ -15,7 +15,7 @@ func BenchmarkServeHTTPWithLogs(b *testing.B) {
 	cfg := config.LoadDefault()
 	cfg.App.Debug = false
 	logger := slog.New(slog.NewHandler(false, io.Discard))
-	s, _ := goyave.New(goyave.Options{Config: cfg, Logger: logger})
+	s, _ := goyave.New(cfg, goyave.Options{Logger: logger})
 
 	r := s.Router()
 	r.GlobalMiddleware(CombinedLogMiddleware())

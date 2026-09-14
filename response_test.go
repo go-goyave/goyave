@@ -25,7 +25,7 @@ import (
 func newTestReponse() (*Response, *httptest.ResponseRecorder, *bytes.Buffer) {
 	logBuffer := &bytes.Buffer{}
 	logger := slog.New(slog.NewHandler(false, logBuffer))
-	server, err := New(Options{Config: config.LoadDefault(), Logger: logger})
+	server, err := New(config.LoadDefault(), Options{Logger: logger})
 	if err != nil {
 		panic(err)
 	}

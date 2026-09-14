@@ -3,7 +3,6 @@ package goyave
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -41,31 +40,20 @@ func (s *DummyService) Name() string {
 
 func TestServer(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
-		// Create a test config file (with only the app name)
-		data, err := json.Marshal(map[string]any{"app": map[string]any{"name": "test"}})
-		if err != nil {
-			panic(err)
-		}
-		if err := os.WriteFile("config.json", data, 0644); err != nil {
-			panic(err)
-		}
-		t.Cleanup(func() {
-			if err := os.Remove("config.json"); err != nil {
-				panic(err)
-			}
-		})
-
 		http2Cfg := &http.HTTP2Config{}
 		customListenConfig := &net.ListenConfig{
 			KeepAlive: 1 * time.Minute,
 		}
-		s, err := New(Options{
-			MaxHeaderBytes: 123,
-			ConnState:      func(_ net.Conn, _ http.ConnState) {},
-			BaseContext:    func(_ context.Context, _ net.Listener) context.Context { return t.Context() },
-			ConnContext:    func(ctx context.Context, _ net.Conn) context.Context { return ctx },
-			HTTP2:          http2Cfg,
-			ListenConfig:   customListenConfig,
+		cfg := config.LoadDefault()
+		s, err := New(cfg, Options{
+			MaxHeaderBytes:        123,
+			MaxHeaderValueCount:   123,
+			DisableClientPriority: true,
+			ConnState:             func(_ net.Conn, _ http.ConnState) {},
+			BaseContext:           func(_ context.Context, _ net.Listener) context.Context { return t.Context() },
+			ConnContext:           func(ctx context.Context, _ net.Conn) context.Context { return ctx },
+			HTTP2:                 http2Cfg,
+			ListenConfig:          customListenConfig,
 		})
 		require.NoError(t, err)
 
@@ -82,6 +70,8 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, 10*time.Second, s.server.ReadHeaderTimeout)
 		assert.Equal(t, 20*time.Second, s.server.IdleTimeout)
 		assert.Equal(t, 123, s.server.MaxHeaderBytes)
+		assert.Equal(t, 123, s.server.MaxHeaderValueCount)
+		assert.True(t, s.server.DisableClientPriority)
 		assert.NotNil(t, s.server.ConnState)
 		assert.NotNil(t, s.server.ConnContext)
 		assert.NotNil(t, s.baseContext)
@@ -99,33 +89,10 @@ func TestServer(t *testing.T) {
 		t.Run("ipv6_host", func(t *testing.T) {
 			cfg := config.LoadDefault()
 			cfg.Server.Host = "::"
-			s, err = New(Options{Config: cfg})
+			s, err = New(cfg, Options{})
 			require.NoError(t, err)
 			assert.Equal(t, "[::]:8080", s.server.Addr)
 		})
-	})
-
-	t.Run("New_invalid_config", func(t *testing.T) {
-		// Create a test config file (with only the app name)
-		path := "config.json"
-		if err := os.WriteFile(path, []byte(`{"invalid"}`), 0644); err != nil {
-			panic(err)
-		}
-		t.Cleanup(func() {
-			if err := os.Remove(path); err != nil {
-				panic(err)
-			}
-		})
-
-		s, err := New(Options{})
-		if assert.Error(t, err) {
-			var goyaveErr *errors.Error
-			if assert.ErrorAs(t, err, &goyaveErr) {
-				assert.ErrorContains(t, goyaveErr, "failed to unmarshal config")
-				assert.ErrorContains(t, goyaveErr, "invalid character '}'")
-			}
-		}
-		assert.Nil(t, s)
 	})
 
 	t.Run("NewWithOptions", func(t *testing.T) {
@@ -136,12 +103,11 @@ func TestServer(t *testing.T) {
 		langEmbed, err := fsutil.NewEmbed(resources).Sub("resources/lang")
 		require.NoError(t, err)
 		opts := Options{
-			Config: cfg,
 			Logger: logger,
 			LangFS: langEmbed,
 		}
 
-		server, err := New(opts)
+		server, err := New(cfg, opts)
 		require.NoError(t, err)
 
 		assert.Equal(t, logger, server.Logger())
@@ -274,7 +240,7 @@ func TestServer(t *testing.T) {
 	t.Run("Service", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Name = "test"
-		server, err := New(Options{Config: cfg})
+		server, err := New(cfg, Options{})
 		require.NoError(t, err)
 
 		service := &DummyService{}
@@ -297,7 +263,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("Accessors", func(t *testing.T) {
 		cfg := config.LoadDefault()
-		server, err := New(Options{Config: cfg})
+		server, err := New(cfg, Options{})
 		require.NoError(t, err)
 
 		assert.Equal(t, "[::1]:8080", server.Host())
@@ -313,7 +279,7 @@ func TestServer(t *testing.T) {
 	t.Run("Start", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Server.Port = 8888
-		server, err := New(Options{Config: cfg})
+		server, err := New(cfg, Options{})
 		require.NoError(t, err)
 
 		startupHookExecuted := false
@@ -366,7 +332,7 @@ func TestServer(t *testing.T) {
 	t.Run("StartWithAutoPort", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Server.Port = 0
-		server, err := New(Options{Config: cfg})
+		server, err := New(cfg, Options{})
 		require.NoError(t, err)
 
 		startupHookExecuted := false
@@ -411,7 +377,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("Start_already_running", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		server, err := New(config.LoadDefault(), Options{})
 		require.NoError(t, err)
 		server.state.Store(2) // Simulate the server already running
 		err = server.Start()
@@ -423,7 +389,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("Start_stopped", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		server, err := New(config.LoadDefault(), Options{})
 		require.NoError(t, err)
 		server.state.Store(3) // Simulate stopped server
 		err = server.Start()
@@ -435,14 +401,14 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("Stop_not_started", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		server, err := New(config.LoadDefault(), Options{})
 		assert.NoError(t, err)
 		server.Stop()
 		// Nothing happens
 	})
 
 	t.Run("Stop_already_stopped", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		server, err := New(config.LoadDefault(), Options{})
 		assert.NoError(t, err)
 		server.state.Store(3)
 		server.Stop()
@@ -452,7 +418,7 @@ func TestServer(t *testing.T) {
 	t.Run("Stop_twice", func(t *testing.T) {
 		// This test is for rare but possible cases of concurrent calls of
 		// Stop(). There should be no error (sigChannel: close of closed channel)
-		server, err := New(Options{Config: config.LoadDefault()})
+		server, err := New(config.LoadDefault(), Options{})
 		require.NoError(t, err)
 		server.sigChannel = make(chan os.Signal, 64)
 		assert.NotPanics(t, func() {
@@ -463,7 +429,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("StartupHooks", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		server, err := New(config.LoadDefault(), Options{})
 		require.NoError(t, err)
 
 		server.RegisterStartupHook(func(_ *Server) {})
@@ -475,7 +441,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("ShutdownHooks", func(t *testing.T) {
-		server, err := New(Options{Config: config.LoadDefault()})
+		server, err := New(config.LoadDefault(), Options{})
 		require.NoError(t, err)
 
 		server.RegisterShutdownHook(func(_ *Server) {})
@@ -489,7 +455,7 @@ func TestServer(t *testing.T) {
 	t.Run("SignalHook", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Server.Port = 8889
-		server, err := New(Options{Config: cfg})
+		server, err := New(cfg, Options{})
 		require.NoError(t, err)
 		server.RegisterSignalHook()
 
@@ -530,8 +496,7 @@ func TestServer(t *testing.T) {
 
 		cfg := config.LoadDefault()
 		cfg.Server.Port = 0
-		server, err := New(Options{
-			Config:  cfg,
+		server, err := New(cfg, Options{
 			Context: rootCtx,
 			BaseContext: func(ctx context.Context, _ net.Listener) context.Context {
 				return context.WithValue(ctx, baseContextKey{}, "base-ctx-value")
@@ -588,8 +553,7 @@ func TestServer(t *testing.T) {
 	t.Run("NilBaseContext", func(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Server.Port = 0
-		server, err := New(Options{
-			Config: cfg,
+		server, err := New(cfg, Options{
 			BaseContext: func(_ context.Context, _ net.Listener) context.Context {
 				return nil
 			},
@@ -607,8 +571,7 @@ func TestServer(t *testing.T) {
 		cfg.Server.Port = 0
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		server, err := New(Options{
-			Config:  cfg,
+		server, err := New(cfg, Options{
 			Context: ctx,
 		})
 		require.NoError(t, err)
@@ -627,8 +590,7 @@ func TestServer(t *testing.T) {
 			KeepAlive: 1 * time.Minute,
 		}
 
-		server, err := New(Options{
-			Config:       cfg,
+		server, err := New(cfg, Options{
 			ListenConfig: customListenConfig,
 		})
 		require.NoError(t, err)
@@ -683,8 +645,7 @@ func TestServer(t *testing.T) {
 			},
 		}
 
-		server, err := New(Options{
-			Config:       cfg,
+		server, err := New(cfg, Options{
 			ListenConfig: customListenConfig,
 		})
 		require.NoError(t, err)
@@ -702,7 +663,7 @@ func TestNoServerFromContext(t *testing.T) {
 func TestErrLogWriter(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0, 1024))
 	logger := slog.New(slog.NewHandler(false, buf))
-	s, err := New(Options{Config: config.LoadDefault(), Logger: logger})
+	s, err := New(config.LoadDefault(), Options{Logger: logger})
 	require.NoError(t, err)
 
 	w := &errLogWriter{

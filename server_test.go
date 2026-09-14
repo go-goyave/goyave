@@ -597,7 +597,8 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Panics(t, func() {
-			_ = server.Start() // TODO only called on new connection now
+			// std http.Server calls BaseContext on start
+			_ = server.Start()
 		})
 	})
 

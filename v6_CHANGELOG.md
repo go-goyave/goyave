@@ -37,6 +37,7 @@
   - no more access to Config and DB
   - removed the Composable interface, dependencies are passed directly
   - removed the Logger option (retrieve from context)
+  - validation.Errors now implements `error` and `slog.LogValuer` for better display in logs.
 - goyave.Registrer doesn't require implementing Composable anymore
 - Composable/Component logics has been removed
 - parse middleware constructor with max upload size parameter

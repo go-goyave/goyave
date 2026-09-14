@@ -39,7 +39,7 @@ func TestLzwEncoder(t *testing.T) {
 }
 
 func TestLzwCompression(t *testing.T) {
-	server := testutil.NewTestServer(t, goyave.Options{})
+	server := testutil.NewTestServer(t, testutil.Options{})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")

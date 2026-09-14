@@ -81,10 +81,9 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Config:  config.LoadDefault(),
 			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
-		server, err := New(opts)
+		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
@@ -116,10 +115,9 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Config:  config.LoadDefault(),
 			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
-		server, err := New(opts)
+		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
@@ -139,10 +137,9 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Config:  config.LoadDefault(),
 			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
-		server, err := New(opts)
+		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
@@ -174,10 +171,9 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Config:  config.LoadDefault(),
 			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
-		server, err := New(opts)
+		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
@@ -206,10 +202,9 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Config:  config.LoadDefault(),
 			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 		}
-		server, err := New(opts)
+		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
 		middleware := &recoveryMiddleware{}
 
@@ -238,7 +233,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 }
 
 func TestLanguageMiddleware(t *testing.T) {
-	server, err := New(Options{Context: t.Context(), Config: config.LoadDefault()})
+	server, err := New(config.LoadDefault(), Options{Context: t.Context()})
 	require.NoError(t, err)
 	middleware := newLanguageMiddleware(server.Lang)
 
@@ -507,10 +502,9 @@ func TestValidateMiddleware(t *testing.T) {
 			logBuffer := &bytes.Buffer{}
 			opts := Options{
 				Context: t.Context(),
-				Config:  config.LoadDefault(),
 				Logger:  slog.New(slog.NewHandler(false, logBuffer)),
 			}
-			server, err := New(opts)
+			server, err := New(config.LoadDefault(), opts)
 			require.NoError(t, err)
 
 			m := &validateRequestMiddleware{

@@ -23,10 +23,10 @@ import (
 	stdslog "log/slog"
 )
 
-func prepareTestConfig() (goyave.Options, *Config) {
+func prepareTestConfig() (testutil.Options, *Config) {
 	serverCfg := config.LoadDefault()
 	serverCfg.Server.Port = 0
-	serverOpts := goyave.Options{
+	serverOpts := testutil.Options{
 		Config: serverCfg,
 	}
 	cfg := &Config{

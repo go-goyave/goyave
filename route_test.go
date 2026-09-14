@@ -12,7 +12,7 @@ import (
 )
 
 func prepareRouteTest() *Router {
-	server, err := New(Options{Config: config.LoadDefault()})
+	server, err := New(config.LoadDefault(), Options{})
 	if err != nil {
 		panic(err)
 	}

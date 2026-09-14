@@ -11,7 +11,6 @@
     - server timeout configuration entries are now in ms
     - added SQL connection's max idle time setting.
     - added Gorm settings: FullSaveAssociations, PrepareStmtMaxSize, PrepareStmtTTL, IgnoreRelationshipsWhenMigrating, QueryFields, CreateBatchSize, TranslateError, PropagateUnscoped
-    - server options now take a *config.Base
     - testutil.Server lets you choose source and config type 
     - section and field names are now in PascalCase
     - default values changed (host is now [::1])
@@ -20,6 +19,7 @@
   - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context
   - skip the log earlier if log level not enabled for better performance
 - server:
+  - New server take a *config.Base and options. Server doesn't auto load the configuration anymore.
   - added options for MaxHeaderValueCount and DisableClientPriority
   - Config accessor removed
   - DB detached from server. Connections are managed independently from server. This was out of responsility bounds for the server
@@ -56,6 +56,7 @@
   - NewTestServer uses `t.Context()` by default.
   - NewTestRequest now takes a context parameter
   - test server NewTestRequest uses the server's context
+  - NewTestServer takes testutil.Options instead of goyave.Options.
   - TODO document how to test log output and how to output logs to testing.T.Output
 - Improved documentation by using links
 - Paginator: fetch query isn't executed anymore if the count query returns 0.

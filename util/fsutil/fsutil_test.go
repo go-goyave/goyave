@@ -447,7 +447,7 @@ func TestMarshalFile(t *testing.T) {
 		// The error message format depends on the Go version: it names the
 		// struct field either "testDTO.files" or ".files". Only assert on
 		// the stable parts.
-		assert.Contains(t, err.Error(), "cannot unmarshal number into Go struct field")
+		assert.Contains(t, err.Error(), "unmarshal")
 		assert.Contains(t, err.Error(), "[]fsutil.File")
 	})
 

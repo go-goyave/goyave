@@ -198,7 +198,7 @@ func Load[T Section](ctx context.Context, sources ...Source) (*T, error) {
 		return nil, errors.New(errsBag)
 	}
 
-	loaded, err := typeutil.Convert[*T](cfg) // FIXME config should be case-sensitive
+	loaded, err := typeutil.Convert[*T](cfg)
 	if err != nil {
 		return nil, errors.Errorf("failed to convert config map to struct: %w", err)
 	}

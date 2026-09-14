@@ -1,8 +1,7 @@
 package typeutil
 
 import (
-	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 
 	"goyave.dev/copier"
 	"goyave.dev/goyave/v5/util/errors"
@@ -10,28 +9,24 @@ import (
 
 // Convert anything into the desired type using JSON marshaling and unmarshaling.
 // TODO interface so the marshaler/unmarshaler can be swapped?
-// TODO Convert options (case sensitive, ...)
-func Convert[T any](data any) (T, error) {
+func Convert[T any](data any, opts ...json.Options) (T, error) {
 	if v, ok := data.(T); ok {
 		return v, nil
 	}
 
 	var result T
-	buffer := &bytes.Buffer{}
-	decoder := json.NewDecoder(buffer)
-	writer := json.NewEncoder(buffer)
-
-	if err := writer.Encode(data); err != nil {
+	buf, err := json.Marshal(data, opts...)
+	if err != nil {
 		return result, errors.NewSkip(err, 3)
 	}
-	err := decoder.Decode(&result)
+	err = json.Unmarshal(buf, &result, opts...)
 	return result, errors.NewSkip(err, 3)
 }
 
 // MustConvert anything into the desired type using JSON marshaling and unmarshaling.
 // Panics if it fails.
-func MustConvert[T any](data any) T {
-	res, err := Convert[T](data)
+func MustConvert[T any](data any, opts ...json.Options) T {
+	res, err := Convert[T](data, opts...)
 	if err != nil {
 		panic(err)
 	}

@@ -40,7 +40,7 @@ func TestZlibEncoder(t *testing.T) {
 }
 
 func TestZlibCompression(t *testing.T) {
-	server := testutil.NewTestServer(t, goyave.Options{})
+	server := testutil.NewTestServer(t, testutil.Options{})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")
@@ -68,7 +68,7 @@ func TestZlibCompression(t *testing.T) {
 }
 
 func TestZlibCompressionNoDict(t *testing.T) {
-	server := testutil.NewTestServer(t, goyave.Options{})
+	server := testutil.NewTestServer(t, testutil.Options{})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")

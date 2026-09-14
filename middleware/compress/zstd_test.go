@@ -38,7 +38,7 @@ func TestZstdEncoder(t *testing.T) {
 }
 
 func TestZstdCompression(t *testing.T) {
-	server := testutil.NewTestServer(t, goyave.Options{})
+	server := testutil.NewTestServer(t, testutil.Options{})
 
 	handler := func(resp *goyave.Response, _ *goyave.Request) {
 		resp.Header().Set("Content-Length", "1234")

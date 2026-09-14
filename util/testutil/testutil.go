@@ -42,6 +42,12 @@ func (m *copyRequestMiddleware) Handle(next goyave.Handler) goyave.Handler {
 	}
 }
 
+// Options extension of the server's [goyave.Options].
+type Options struct {
+	Config *config.Base
+	goyave.Options
+}
+
 // TestServer extension of `goyave.Server` providing useful functions for testing.
 type TestServer struct {
 	*goyave.Server
@@ -57,7 +63,7 @@ type TestServer struct {
 //
 // By default, if no [slog.Logger] is given in the options, a default logger redirecting the
 // output to [io.Discard] is used.
-func NewTestServer(t *testing.T, opts goyave.Options) *TestServer {
+func NewTestServer(t *testing.T, opts Options) *TestServer {
 	if opts.Config == nil {
 		opts.Config = config.LoadDefault()
 		opts.Config.Server.Port = 0 // Auto-assign port
@@ -71,7 +77,7 @@ func NewTestServer(t *testing.T, opts goyave.Options) *TestServer {
 		opts.Context = t.Context()
 	}
 
-	srv, err := goyave.New(opts)
+	srv, err := goyave.New(opts.Config, opts.Options)
 	if err != nil {
 		panic(err)
 	}
@@ -151,7 +157,7 @@ func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.
 // so all functions of `*goyave.Response` can be used safely.
 func NewTestResponse(request *goyave.Request) (*goyave.Response, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
-	opts := goyave.Options{
+	opts := Options{
 		Context: request.Context(),
 	}
 	return goyave.NewResponse(NewTestServer(nil, opts).Server, request, recorder), recorder

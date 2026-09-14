@@ -17,7 +17,7 @@ import (
 )
 
 func TestParseMiddleware(t *testing.T) {
-	server := testutil.NewTestServer(t, goyave.Options{})
+	server := testutil.NewTestServer(t, testutil.Options{})
 	route := server.Router().Post("/parse", nil)
 
 	t.Run("Parse Query", func(t *testing.T) {

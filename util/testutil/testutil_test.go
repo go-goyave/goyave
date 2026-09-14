@@ -33,7 +33,7 @@ func (m *testMiddleware) Handle(_ goyave.Handler) goyave.Handler {
 
 func TestTestServer(t *testing.T) {
 	t.Run("NewTestServer", func(t *testing.T) {
-		server := NewTestServer(t, goyave.Options{})
+		server := NewTestServer(t, Options{})
 		assert.Equal(t, "http://[::1]:0", server.BaseURL()) // Check default config loaded
 		assert.Equal(t, slog.DiscardLogger(), server.Logger())
 		assert.NotNil(t, server.Lang)
@@ -43,12 +43,12 @@ func TestTestServer(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.Server.Host = "0.0.0.0"
 		cfg.Server.Port = 8888
-		server := NewTestServer(t, goyave.Options{Config: cfg})
+		server := NewTestServer(t, Options{Config: cfg})
 		assert.Equal(t, "http://127.0.0.1:8888", server.BaseURL())
 	})
 
 	t.Run("TestRequest", func(t *testing.T) {
-		server := NewTestServer(t, goyave.Options{})
+		server := NewTestServer(t, Options{})
 		server.Router().Get("/route", func(resp *goyave.Response, _ *goyave.Request) {
 			resp.String(http.StatusOK, "OK")
 		})
@@ -62,7 +62,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("TestMiddleware", func(t *testing.T) {
-		server := NewTestServer(t, goyave.Options{})
+		server := NewTestServer(t, Options{})
 
 		request := server.NewTestRequest(http.MethodGet, "/route", nil)
 		request.Data = map[string]any{"key": "value"}
@@ -95,7 +95,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestRequest", func(t *testing.T) {
-		server := NewTestServer(t, goyave.Options{})
+		server := NewTestServer(t, Options{})
 		body := bytes.NewBufferString("body")
 		req := server.NewTestRequest(http.MethodPost, "/uri", body)
 
@@ -110,7 +110,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestResponse", func(t *testing.T) {
-		server := NewTestServer(t, goyave.Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, &bytes.Buffer{}))})
+		server := NewTestServer(t, Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, &bytes.Buffer{}))})
 		req := server.NewTestRequest(http.MethodGet, "/uri", nil)
 		resp, recorder := server.NewTestResponse(req)
 

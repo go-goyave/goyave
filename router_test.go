@@ -55,7 +55,7 @@ func (m *testMiddleware) Handle(next Handler) Handler {
 func prepareRouterTest() *Router {
 	cfg := config.LoadDefault()
 	cfg.App.Debug = false
-	server, err := New(Options{Config: cfg})
+	server, err := New(cfg, Options{})
 	if err != nil {
 		panic(err)
 	}

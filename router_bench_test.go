@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkServeHTTP(b *testing.B) {
-	s, _ := New(Options{Config: config.LoadDefault()})
+	s, _ := New(config.LoadDefault(), Options{})
 
 	s.router.Get("/user/{id}", func(r *Response, req *Request) {
 		r.String(http.StatusOK, req.RouteParams["id"])

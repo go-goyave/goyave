@@ -1,6 +1,9 @@
 package validation
 
 import (
+	stdslog "log/slog"
+
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -102,6 +105,14 @@ func (e *Errors) Merge(path *walk.Path, errors *Errors) {
 		}
 		e.Fields.Merge(path.Next, errors)
 	}
+}
+
+func (e *Errors) Error() string {
+	return "validation errors"
+}
+
+func (e *Errors) LogValue() stdslog.Value {
+	return slog.StructValue(e)
 }
 
 // Add an error message to the element identified by the given path.

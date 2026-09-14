@@ -106,15 +106,10 @@ type DefaultValuer[T Section] interface {
 //	var embedCfgJSON []byte
 //
 //	logger := slog.New(slog.NewHandler(true, os.Stderr))
-//	cfg, validationErrors, err := Load[CustomConfig](context.Background(), config.FromBytes(embedCfgJSON, config.UnsmarshalJSON()))
+//	cfg, err := Load[CustomConfig](context.Background(), config.FromBytes(embedCfgJSON, config.UnsmarshalJSON()))
 //
 //	if err != nil {
 //		logger.Error(err)
-//		return
-//	}
-//
-//	if validationErrors != nil {
-//		logger.Error(fmt.Errorf("configuration validation errors"), "errors", validationErrors)
 //		return
 //	}
 //
@@ -164,7 +159,9 @@ type DefaultValuer[T Section] interface {
 //	}
 //
 // Validation occurs only once on the result of all merges.
-func Load[T Section](ctx context.Context, sources ...Source) (*T, *validation.Errors, error) {
+//
+// The returned error can be of type [*validation.Errors].
+func Load[T Section](ctx context.Context, sources ...Source) (*T, error) {
 	if len(sources) == 0 {
 		sources = []Source{Default()}
 	}
@@ -175,13 +172,13 @@ func Load[T Section](ctx context.Context, sources ...Source) (*T, *validation.Er
 	}
 	cfg, err := typeutil.Convert[map[string]any](defaultCfg)
 	if err != nil {
-		return nil, nil, errors.New([]error{errors.New("failed to convert default config to map; T must be a structure"), errors.New(err)})
+		return nil, errors.New([]error{errors.New("failed to convert default config to map; T must be a structure"), errors.New(err)})
 	}
 
 	for _, source := range sources {
 		raw, err := source.Read()
 		if err != nil {
-			return nil, nil, errors.New([]error{errors.New("failed to unmarshal config"), errors.New(err)})
+			return nil, errors.New([]error{errors.New("failed to unmarshal config"), errors.New(err)})
 		}
 		mapMerge(cfg, raw)
 	}
@@ -194,19 +191,19 @@ func Load[T Section](ctx context.Context, sources ...Source) (*T, *validation.Er
 	}
 	errsBag, errs := validation.Validate(opt)
 	if errs != nil {
-		return nil, nil, errors.New(append([]error{errors.Errorf("failed to validate config")}, errs...))
+		return nil, errors.New(append([]error{errors.Errorf("failed to validate config")}, errs...))
 	}
 
 	if errsBag != nil {
-		return nil, errsBag, nil
+		return nil, errors.New(errsBag)
 	}
 
-	loaded, err := typeutil.Convert[*T](cfg)
+	loaded, err := typeutil.Convert[*T](cfg) // FIXME config should be case-sensitive
 	if err != nil {
-		return nil, nil, errors.Errorf("failed to convert config map to struct: %w", err)
+		return nil, errors.Errorf("failed to convert config map to struct: %w", err)
 	}
 
-	return loaded, nil, nil
+	return loaded, nil
 }
 
 // LoadDefault returns the default values for the [Base] config.

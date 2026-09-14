@@ -7,23 +7,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type Nested struct {
+	C uint `json:"c"`
+}
+
+type Promoted struct {
+	P string `json:"p"`
+}
+
+type TestStruct struct {
+	Promoted
+	A      string   `json:"a"`
+	D      []string `json:"d"`
+	B      float64  `json:"b"`
+	Nested Nested   `json:"nested"`
+}
+
 func TestConvert(t *testing.T) {
-	type Nested struct {
-		C uint `json:"c"`
-	}
-
-	type Promoted struct {
-		P string `json:"p"`
-	}
-
-	type TestStruct struct {
-		Promoted
-		A      string   `json:"a"`
-		D      []string `json:"d"`
-		B      float64  `json:"b"`
-		Nested Nested   `json:"nested"`
-	}
-
 	cases := []struct {
 		value   any
 		want    any

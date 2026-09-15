@@ -142,6 +142,23 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 	})
 
+	t.Run("Rejected encoding", func(t *testing.T) {
+		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request.Header().Set("Accept-Encoding", "gzip;q=0")
+
+		result := server.TestMiddleware(compressMiddleware, request, handler)
+
+		body, err := io.ReadAll(result.Body)
+		if err != nil {
+			panic(err)
+		}
+		assert.NoError(t, result.Body.Close())
+		assert.Equal(t, "hello world", string(body)) // Not compressed
+		assert.Empty(t, result.Header.Get("Content-Encoding"))
+		assert.Empty(t, result.Header.Get("Vary"))
+		assert.Equal(t, http.StatusOK, result.StatusCode)
+	})
+
 	t.Run("Upgrade", func(t *testing.T) {
 		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "gzip")
@@ -335,6 +352,71 @@ func TestEncoderPriority(t *testing.T) {
 			encoders:       []Encoder{br, zstd, gzip},
 			acceptEncoding: "gzip; q=0.9, br;q=0.8",
 			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip;q=0",
+			want:           nil,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip;q=0.000",
+			want:           nil,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip; Q = 0",
+			want:           nil,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip;q=0.001",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "gzip;q=0, br",
+			want:           br,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "br;q=0, zstd;q=0, gzip;q=0",
+			want:           nil,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "*;q=0",
+			want:           nil,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "*;q=0, gzip",
+			want:           gzip,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "br;q=0, *",
+			want:           zstd,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "br;q=0, *;q=0.5",
+			want:           zstd,
+		},
+		{
+			encoders:       []Encoder{br, zstd, gzip},
+			acceptEncoding: "br;q=0, zstd;q=0, gzip;q=0, *",
+			want:           nil,
+		},
+		{
+			encoders:       []Encoder{gzip},
+			acceptEncoding: "gzip;q=0, *",
+			want:           nil,
+		},
+		{
+			encoders:       []Encoder{},
+			acceptEncoding: "*",
+			want:           nil,
 		},
 		{
 			encoders:       []Encoder{br, zstd, gzip},

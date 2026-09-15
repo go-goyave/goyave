@@ -3,6 +3,7 @@ package compress
 import (
 	"io"
 	"net/http"
+	"slices"
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v5"
@@ -89,8 +90,16 @@ func (w *compressWriter) Close() error {
 // the headers are taken into account.
 //
 // In case of equal priority, the encoding that is the earliest in the slice is chosen.
-// If the header's value is `*` and no encoding already matched,
-// the first element of the slice is used.
+// If the header's value is `*` and no encoding already matched, the earliest element
+// of the slice that the header doesn't explicitly reject is used.
+//
+// An encoding is rejected when it is given a quality value of 0, which means
+// "not acceptable" as defined by RFC 9110 section 12.4.2. Section 12.5.3 applies
+// that rule to `Accept-Encoding`: a listed content coding is acceptable unless it
+// is accompanied by a qvalue of 0. A rejected encoding is never chosen, and neither
+// is an encoding whose quality value could not be parsed. `*;q=0` therefore disables
+// compression entirely, unless the header also gives a non-zero quality value to an
+// encoding present in the `Encoders` slice.
 //
 // If none of the accepted encodings are available in the `Encoders` slice, then the
 // response will not be compressed and the middleware immediately passes.
@@ -103,6 +112,11 @@ func (w *compressWriter) Close() error {
 // and set the `Content-Type` header using `http.DetectContentType()`.
 //
 // The middleware ignores hijacked responses or requests containing the `Upgrade` header.
+//
+// See:
+//
+//   - https://datatracker.ietf.org/doc/html/rfc9110#section-12.4.2
+//   - https://datatracker.ietf.org/doc/html/rfc9110#section-12.5.3
 //
 // **Example:**
 //
@@ -145,7 +159,16 @@ func (m *Middleware) getEncoder(response *goyave.Response, request *goyave.Reque
 	if response.Hijacked() || request.Header().Get("Upgrade") != "" {
 		return nil
 	}
-	acceptedEncodings := httputil.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
+	values := httputil.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
+
+	// A quality value of 0 means the encoding is not acceptable
+	// (RFC 9110 sections 12.4.2 and 12.5.3).
+	// The values are sorted by descending priority, so the rejected ones are all at the end.
+	acceptedEncodings := values
+	var rejectedEncodings []httputil.HeaderValue
+	if i := slices.IndexFunc(values, func(h httputil.HeaderValue) bool { return h.Priority == 0 }); i != -1 {
+		acceptedEncodings, rejectedEncodings = values[:i], values[i:]
+	}
 	if len(acceptedEncodings) == 0 {
 		return nil
 	}
@@ -162,7 +185,15 @@ func (m *Middleware) getEncoder(response *goyave.Response, request *goyave.Reque
 
 		hasWildCard := lo.ContainsBy(h, func(h httputil.HeaderValue) bool { return h.Value == "*" })
 		if hasWildCard {
-			return m.Encoders[0]
+			// The wildcard only matches the encodings that are not explicitly
+			// listed in the header, so a rejected encoding is skipped.
+			w, ok := lo.Find(m.Encoders, func(w Encoder) bool {
+				return !lo.ContainsBy(rejectedEncodings, func(h httputil.HeaderValue) bool { return h.Value == w.Encoding() })
+			})
+			if ok {
+				return w
+			}
+			return nil
 		}
 	}
 

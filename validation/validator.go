@@ -40,28 +40,6 @@ type ErrorResponse struct {
 	Query *Errors `json:"query,omitempty"`
 }
 
-// Composable is a partial clone of `goyave.Component`, only
-// including the accessors necessary for validation.
-// Validators must implement this interface so they
-// have access to DB, Config, Language and Logger.
-// TODO remove composable
-type Composable interface {
-	Lang() *lang.Language
-}
-
-type component struct {
-	lang *lang.Language
-}
-
-// Lang get the language given through the validation Options.
-// Panics if there is none.
-func (c *component) Lang() *lang.Language { // TODO language passed through the context?
-	if c.lang == nil {
-		panic(errors.NewSkip("Language is not set in validation options", 3))
-	}
-	return c.lang
-}
-
 // Options all the parameters required by `Validate()`.
 //
 // Only `Data`, `Rules` and `Language` are mandatory. However, it is recommended
@@ -88,9 +66,9 @@ type Options struct {
 	// type should be a pointer or interface.
 	Extra map[any]any
 
-	// Language used for translating validation error messages.
+	// Lang used for translating validation error messages.
 	// Defaults to `lang.Default`.
-	Language *lang.Language
+	Lang *lang.Language
 
 	// ConvertSingleValueArrays set to true to convert fields that are expected
 	// to be an array into an array with a single value.
@@ -134,6 +112,8 @@ type Context struct {
 	mergeErrors           []AddedValidationError[*Errors]
 	fieldName             string
 	Now                   time.Time
+
+	Lang *lang.Language
 
 	path *walk.Path
 
@@ -250,8 +230,8 @@ func Validate(options *Options) (*Errors, []error) {
 	if options.Extra == nil {
 		options.Extra = map[any]any{}
 	}
-	if options.Language == nil {
-		options.Language = lang.Default
+	if options.Lang == nil {
+		options.Lang = lang.Default
 	}
 	if options.Context == nil {
 		options.Context = context.Background()
@@ -352,11 +332,11 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				Field:     field,
 				fieldName: fieldName,
 				Now:       v.now,
+				Lang:      v.options.Lang,
 				Name:      c.Name,
 				path:      errorPath,
 				Invalid:   !valid,
 			}
-			validator.Init(v.options)
 			ok := validator.Validate(ctx)
 			if len(ctx.errors) > 0 {
 				valid = false
@@ -366,7 +346,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 			if !ok {
 				valid = false
 				if translatedFieldName == "" {
-					translatedFieldName = translateFieldName(v.options.Language, fieldName)
+					translatedFieldName = translateFieldName(v.options.Lang, fieldName)
 				}
 				message := v.getMessage(ctx, translatedFieldName, validator)
 				if v.isRootElement(fieldName, errorPath) {
@@ -445,7 +425,7 @@ func (v *validator) processAddedErrors(ctx *Context, parentPath *walk.Path, c *w
 	}
 	if len(ctx.arrayElementErrors) > 0 {
 		errorPath := ctx.Field.getErrorPath(parentPath, c)
-		message := v.options.Language.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, translateFieldName(v.options.Language, ctx.fieldName), validator)...)
+		message := v.options.Lang.Get(v.getLangEntry(ctx, validator)+".element", v.processPlaceholders(ctx, translateFieldName(v.options.Lang, ctx.fieldName), validator)...)
 		for _, index := range ctx.arrayElementErrors {
 			i := index
 			elementPath := errorPath.Clone()
@@ -496,7 +476,7 @@ func (v *validator) processPlaceholders(ctx *Context, translatedFieldName string
 
 func (v *validator) getMessage(ctx *Context, translatedFieldName string, validator Validator) string {
 	langEntry := v.getLangEntry(ctx, validator)
-	return v.options.Language.Get(langEntry, v.processPlaceholders(ctx, translatedFieldName, validator)...)
+	return v.options.Lang.Get(langEntry, v.processPlaceholders(ctx, translatedFieldName, validator)...)
 }
 
 // findTypeValidator find the expected type of a field for a given array dimension.

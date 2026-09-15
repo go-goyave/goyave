@@ -119,9 +119,9 @@ func (v *InFieldValidator[T]) Validate(ctx *Context) bool {
 func (v *InFieldValidator[T]) Name() string { return "in_field" }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *InFieldValidator[T]) MessagePlaceholders(_ *Context) []string {
+func (v *InFieldValidator[T]) MessagePlaceholders(c *Context) []string {
 	return []string{
-		":other", GetFieldName(v.Lang(), v.Path),
+		":other", GetFieldName(c.Lang, v.Path),
 	}
 }
 

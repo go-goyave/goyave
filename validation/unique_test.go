@@ -52,7 +52,7 @@ func openTestDialector(name string) func(dsn string) gorm.Dialector {
 	}
 }
 
-func prepareUniqueTest(t *testing.T, dialectorName string) *Options {
+func prepareUniqueTest(t *testing.T, dialectorName string) *gorm.DB {
 	// dialect := fmt.Sprintf("sqlite3_%s_test", t.Name())
 	// database.RegisterDialect(dialect, "file:{name}?{options}", openTestDialector(dialectorName)) // TODO use sqlmock instead of sqlite DB
 	// cfg := config.LoadDefault()
@@ -73,10 +73,7 @@ func prepareUniqueTest(t *testing.T, dialectorName string) *Options {
 		assert.FailNow(t, err.Error())
 	}
 
-	return &Options{
-		// DB: db,
-		// Config: cfg,
-	}
+	return db
 }
 
 func TestUniqueValidator(t *testing.T) {
@@ -147,7 +144,7 @@ func TestUniqueValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t, dialectorNameSQLite)
+			_ = prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := (&gorm.DB{}).Create(c.records).Error; err != nil { // TODO update exist/unique validator test
 					assert.FailNow(t, err.Error())
@@ -157,7 +154,6 @@ func TestUniqueValidator(t *testing.T) {
 			v := Unique(func(db *gorm.DB, val any) *gorm.DB {
 				return db.Model(&uniqueTestModel{}).Where(c.column, val)
 			})
-			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -237,7 +233,7 @@ func TestExistsValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t, dialectorNameSQLite)
+			_ = prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := (&gorm.DB{}).Create(c.records).Error; err != nil {
 					assert.FailNow(t, err.Error())
@@ -247,7 +243,6 @@ func TestExistsValidator(t *testing.T) {
 			v := Exists(func(db *gorm.DB, val any) *gorm.DB {
 				return db.Model(&uniqueTestModel{}).Where(c.column, val)
 			})
-			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -372,7 +367,7 @@ func TestUniqueArrayValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t, dialectorNameSQLite)
+			_ = prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := (&gorm.DB{}).Create(c.records).Error; err != nil { // TODO update exist/unique validator test
 					assert.FailNow(t, err.Error())
@@ -380,7 +375,6 @@ func TestUniqueArrayValidator(t *testing.T) {
 			}
 
 			v := UniqueArray(c.table, c.column, c.transform)
-			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -407,9 +401,8 @@ func TestUniqueArrayValidator(t *testing.T) {
 
 		for _, c := range cases {
 			t.Run(c.dialect, func(t *testing.T) {
-				opts := prepareUniqueTest(t, c.dialect)
+				_ = prepareUniqueTest(t, c.dialect)
 				v := UniqueArray[int]("models", "name", nil)
-				v.Init(opts)
 
 				tx, _ := v.buildQuery([]int{2, 7, 6}, false)
 
@@ -535,7 +528,7 @@ func TestExistsArrayValidator(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			opts := prepareUniqueTest(t, dialectorNameSQLite)
+			_ = prepareUniqueTest(t, dialectorNameSQLite)
 			if len(c.records) > 0 {
 				if err := (&gorm.DB{}).Create(c.records).Error; err != nil { // TODO update exist/unique validator test
 					assert.FailNow(t, err.Error())
@@ -543,7 +536,6 @@ func TestExistsArrayValidator(t *testing.T) {
 			}
 
 			v := ExistsArray(c.table, c.column, c.transform)
-			v.Init(opts)
 
 			ctx := &Context{
 				Invalid: !c.valid,
@@ -570,9 +562,8 @@ func TestExistsArrayValidator(t *testing.T) {
 
 		for _, c := range cases {
 			t.Run(c.dialect, func(t *testing.T) {
-				opts := prepareUniqueTest(t, c.dialect)
+				_ = prepareUniqueTest(t, c.dialect)
 				v := ExistsArray[int]("models", "name", nil)
-				v.Init(opts)
 
 				tx, _ := v.buildQuery([]int{2, 7, 6}, true)
 
@@ -602,12 +593,11 @@ func TestBuildQueryValidatorWithTransform(t *testing.T) {
 
 		for _, c := range cases {
 			t.Run(c.dialect, func(t *testing.T) {
-				opts := prepareUniqueTest(t, c.dialect)
+				_ = prepareUniqueTest(t, c.dialect)
 				transform := func(val int) clause.Expr {
 					return gorm.Expr("?", val-1)
 				}
 				v := ExistsArray("models", "name", transform)
-				v.Init(opts)
 
 				tx, _ := v.buildQuery([]int{2, 7, 6}, true)
 
@@ -623,10 +613,9 @@ func TestBuildQueryValidatorWithTransform(t *testing.T) {
 func TestClickhouseUnsupportedType(t *testing.T) {
 	t.SkipNow() // TODO skipped test
 	// TODO update test
-	opts := prepareUniqueTest(t, dialectorNameClickhouse)
+	_ = prepareUniqueTest(t, dialectorNameClickhouse)
 	// opts.Config.Set("database.connection", "clickhouse")
 	v := ExistsArray[struct{}]("models", "name", nil)
-	v.Init(opts)
 
 	ctx := &Context{
 		Value: []struct{}{{}, {}},

@@ -10,15 +10,14 @@ import (
 	"goyave.dev/goyave/v5/util/walk"
 )
 
-// Ruler adapter interface to make allow both RuleSet and Rules to
-// be used when calling `Validate()`.
+// Ruler adapter interface to allow both [RuleSet] and [Rules] to
+// be used when calling [Validate].
 type Ruler interface {
 	AsRules() Rules
 }
 
-// Validator is a Component validating a field value.
-// A validator should not be re-usable or usable concurrently. They are meant to be
-// scoped to a single field validation in a single request.
+// Validator validates a field value.
+// Implementation instances should be re-usable concurrently.
 type Validator interface {
 	// Validate checks the field under validation satisfies this validator's criteria.
 	// If necessary, replaces the [Context.Value] with a converted value (see [Validator.IsType]).
@@ -106,7 +105,13 @@ type FieldRules struct {
 }
 
 // RuleSet definition of the validation rules applied on each field in the request.
-// RuleSets are not meant to be re-used across multiple requests nor used concurrently.
+//
+// RuleSets cannot be used as-is for validation, they need to be converted to [Rules] first.
+// They are however a much more convenient way to define validation rules and suited for
+// dynamic rules generation as opposed to [Rules].
+//
+// If your RuleSet isn't generated conditionally, it is recommended to convert it to [Rules] once
+// at startup using [RuleSet.AsRules]. See [Rules] for more details.
 type RuleSet []*FieldRules
 
 func (r RuleSet) convert(path string, _ *FieldRules, _ uint) Rules {
@@ -241,8 +246,13 @@ func includeElementsKeys(paths map[string]struct{}, path string, elementField *F
 	includeElementsKeys(paths, elementPath, elementField.Elements)
 }
 
-// Rules is the result of the transformation of RuleSet using `AsRules()`.
-// It is a format that is more easily machine-readable than RuleSet.
+// Rules is the result of the transformation of [RuleSet] using [Ruler.AsRules].
+// It is a format that is more easily machine-readable than [RuleSet].
+//
+// Rules can be used for concurrent validation requests. Prefer using this type
+// and generating it once at startup using [RuleSet.AsRules] in order to improve performance.
+// This avoids needing to allocate, regenerate and reconvert the [RuleSet] to [Rules] for every requests, which is inefficient.
+// However, if the [RuleSet] is built conditionally (dynamic), regenerating for every request is required.
 type Rules []*Field
 
 // AsRules returns itself.

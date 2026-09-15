@@ -26,6 +26,8 @@ func String() *StringValidator {
 	return &StringValidator{}
 }
 
+// TODO StringAlias validator (generic String validator that converts to custom type alias)
+
 //------------------------------
 
 // StartsWithValidator the field under validation must be a string starting

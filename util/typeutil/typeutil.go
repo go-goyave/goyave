@@ -8,7 +8,6 @@ import (
 )
 
 // Convert anything into the desired type using JSON marshaling and unmarshaling.
-// TODO interface so the marshaler/unmarshaler can be swapped?
 func Convert[T any](data any, opts ...json.Options) (T, error) {
 	if v, ok := data.(T); ok {
 		return v, nil

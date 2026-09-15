@@ -92,11 +92,6 @@ func NewJWTService(config *JWTConfig, fs fs.FS) *JWTService {
 	}
 }
 
-// Name returns the name of the service.
-func (s *JWTService) Name() string {
-	return JWTServiceName
-}
-
 // GenerateToken generate a new JWT.
 // The token is created using the HMAC SHA256 method and signed using
 // the `Secret` config entry.

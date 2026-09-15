@@ -30,14 +30,6 @@ import (
 //go:embed resources
 var resources embed.FS
 
-type DummyService struct {
-	AppName string
-}
-
-func (s *DummyService) Name() string {
-	return "dummy"
-}
-
 func TestServer(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
 		http2Cfg := &http.HTTP2Config{}
@@ -234,30 +226,6 @@ func TestServer(t *testing.T) {
 			cfg.Proxy.Base = "/base"
 			server := &Server{config: &cfg, port: 80}
 			assert.Equal(t, "http://[::ffff:c0a8:10b]/base", server.getProxyAddress())
-		})
-	})
-
-	t.Run("Service", func(t *testing.T) {
-		cfg := config.LoadDefault()
-		cfg.App.Name = "test"
-		server, err := New(cfg, Options{})
-		require.NoError(t, err)
-
-		service := &DummyService{}
-		server.RegisterService(service)
-		assert.Equal(t, map[string]Service{"dummy": service}, server.services)
-		assert.Equal(t, service, server.Service("dummy"))
-
-		s, ok := server.LookupService("dummy")
-		assert.Equal(t, service, s)
-		assert.True(t, ok)
-
-		s, ok = server.LookupService("not_a_service")
-		assert.Nil(t, s)
-		assert.False(t, ok)
-
-		assert.Panics(t, func() {
-			server.Service("not_a_service")
 		})
 	})
 

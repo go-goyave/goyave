@@ -33,7 +33,7 @@ var _ routeMatcher = (*Route)(nil) // implements routeMatcher
 // This function is called for every validated request.
 // The returned value is expected to be fresh, not re-used across
 // multiple requests nor concurrently.
-type RuleSetFunc func(*Request) validation.RuleSet
+type RuleSetFunc func(*Request) validation.Ruler
 
 // newRoute create a new route without any settings except its handler.
 // This is used to generate a fake route for the Method Not Allowed and Not Found handlers.

@@ -122,8 +122,6 @@ type Server struct {
 
 	router *Router
 
-	services map[string]Service
-
 	// logger the logger for default output
 	// Writes to stderr by default.
 	logger *slog.Logger
@@ -195,7 +193,6 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 		listenConfig:  opts.ListenConfig,
 		config:        &cfg.Server,
 		debug:         cfg.App.Debug,
-		services:      make(map[string]Service),
 		Lang:          languages,
 		stopChannel:   make(chan struct{}, 1),
 		startupHooks:  []func(*Server){},
@@ -281,34 +278,6 @@ func (s *Server) refreshURLs() {
 	s.proxyBaseURL = s.getProxyAddress()
 }
 
-// Service returns the service identified by the given name.
-// Panics if no service could be found with the given name.
-// TODO re-assess the service dependency container (does it belong here, in the Server?)
-// TODO create a simple struct "ServiceContainer" or something that would be passed to the route registration function?
-// The only "challenge" remaining is figuring out a clean way to access the services when creating controllers
-func (s *Server) Service(name string) Service {
-	if s, ok := s.services[name]; ok {
-		return s
-	}
-	panic(errors.Errorf("service %q does not exist", name))
-}
-
-// LookupService search for a service by its name. If the service
-// identified by the given name exists, it is returned with the `true` boolean.
-// Otherwise returns `nil` and `false`.
-func (s *Server) LookupService(name string) (Service, bool) {
-	service, ok := s.services[name]
-	return service, ok
-}
-
-// RegisterService on this server using its name (returned by `Service.Name()`).
-// A service's name should be unique.
-// `Service.Init(server)` is called on the given service upon registration.
-// TODO remove service container
-func (s *Server) RegisterService(service Service) {
-	s.services[service.Name()] = service
-}
-
 // Host returns the hostname and port the server is running on.
 func (s *Server) Host() string {
 	return net.JoinHostPort(s.host, strconv.Itoa(s.port))
@@ -366,7 +335,7 @@ func (s *Server) ClearStartupHooks() {
 // in a goroutine, meaning that the shutdown process can be blocked by your
 // shutdown hooks. It is your responsibility to implement a timeout mechanism
 // inside your hook if necessary.
-func (s *Server) RegisterShutdownHook(hook func(*Server)) { // TODO closing database should be a shutdown hook or defer
+func (s *Server) RegisterShutdownHook(hook func(*Server)) { // TODO closing database should be a shutdown hook
 	s.shutdownHooks = append(s.shutdownHooks, hook)
 }
 

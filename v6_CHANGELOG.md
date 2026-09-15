@@ -68,7 +68,10 @@
   - Convert doesn't use an intermediary buffer anymore, slightly improving performance in most common scenarios.
   - Convert now uses json v2
   - Convert now supports json v2 marshal/unmarshal options
+- services
+  - service container removed in favor of compile-time and explicit wiring. If a service is unavailable or doesn't implement the interface defined by the dependent, your projet won't compile. This is as opposed to using the container with which the type assertion is done at runtime and could generate panics.
 
 TODO docs pass with links
 TODO cleanup resources directory
 TODO document how to use database.New with sqlmock (NewFromDialector)
+TODO deprecation notices for v5.

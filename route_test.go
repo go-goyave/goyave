@@ -19,12 +19,12 @@ func prepareRouteTest() *Router {
 	return NewRouter(server)
 }
 
-func routeTestValidationRules(_ *Request) validation.RuleSet {
-	return validation.RuleSet{
+func routeTestValidationRules(_ *Request) validation.Ruler {
+	return (validation.RuleSet{
 		{Path: "field", Rules: validation.List{
 			validation.Required(),
 		}},
-	}
+	}).AsRules()
 }
 
 func TestRoute(t *testing.T) {

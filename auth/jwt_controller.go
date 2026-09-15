@@ -68,7 +68,7 @@ func (c *JWTController[T]) RegisterRoutes(router *goyave.Router) {
 	router.Post("/login", c.Login).SetMeta(MetaAuth, false).Middleware(parse.NewMiddleware(1)).ValidateBody(c.validationRules)
 }
 
-func (c *JWTController[T]) validationRules(_ *goyave.Request) validation.RuleSet {
+func (c *JWTController[T]) validationRules(_ *goyave.Request) validation.Ruler {
 	return validation.RuleSet{
 		{Path: validation.CurrentElement, Rules: validation.List{
 			validation.Required(),

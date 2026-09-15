@@ -160,6 +160,7 @@ func (Proxy) Default() Proxy {
 
 // DatabaseConnection configuration for a single database connection.
 type DatabaseConnection struct {
+	// TODO ID string
 	// Dialect the name of the SQL dialect (e.g.: "postgres")
 	Dialect      string
 	Host         string

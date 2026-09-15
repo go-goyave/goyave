@@ -284,8 +284,8 @@ func (v *testValidator) Name() string {
 func TestValidateMiddleware(t *testing.T) {
 	cases := []struct {
 		next              func(*Response, *Request)
-		queryRules        func(*Request) validation.RuleSet
-		bodyRules         func(*Request) validation.RuleSet
+		queryRules        func(*Request) validation.Ruler
+		bodyRules         func(*Request) validation.Ruler
 		headers           map[string]string
 		query             map[string]any
 		data              any
@@ -298,7 +298,7 @@ func TestValidateMiddleware(t *testing.T) {
 	}{
 		{
 			desc: "query_ok",
-			queryRules: func(_ *Request) validation.RuleSet {
+			queryRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
 			query:        map[string]any{"param": "6"},
@@ -311,7 +311,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_nok",
-			queryRules: func(_ *Request) validation.RuleSet {
+			queryRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Min(5)}}}
 			},
 			query:        map[string]any{"param": "v"},
@@ -323,7 +323,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_error",
-			queryRules: func(_ *Request) validation.RuleSet {
+			queryRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 1"), fmt.Errorf("test error 2"))
@@ -338,7 +338,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_validation_options",
-			queryRules: func(request *Request) validation.RuleSet {
+			queryRules: func(request *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
@@ -357,7 +357,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_convert_single_value_arrays",
-			queryRules: func(_ *Request) validation.RuleSet {
+			queryRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			query:        map[string]any{"param": "v"},
@@ -370,7 +370,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_ok",
-			bodyRules: func(_ *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
 			data:         map[string]any{"param": "6"},
@@ -383,7 +383,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_nok",
-			bodyRules: func(_ *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Min(5)}}}
 			},
 			data:         map[string]any{"param": "v"},
@@ -395,7 +395,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_error",
-			bodyRules: func(_ *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 1"), fmt.Errorf("test error 2"))
@@ -410,7 +410,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_validation_options",
-			bodyRules: func(request *Request) validation.RuleSet {
+			bodyRules: func(request *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
@@ -429,7 +429,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_convert_single_value_arrays",
-			bodyRules: func(_ *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			data:         map[string]any{"param": "v"},
@@ -442,7 +442,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "body_dont_convert_single_value_arrays",
-			bodyRules: func(_ *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Array()}}}
 			},
 			headers:      map[string]string{"Content-Type": "application/json; charset=utf-8"},
@@ -455,10 +455,10 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_and_body_ok",
-			queryRules: func(_ *Request) validation.RuleSet {
+			queryRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
-			bodyRules: func(_ *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), validation.Int(), validation.Min(5)}}}
 			},
 			query:        map[string]any{"param": "6"},
@@ -473,7 +473,7 @@ func TestValidateMiddleware(t *testing.T) {
 		},
 		{
 			desc: "query_and_body_error",
-			queryRules: func(_ *Request) validation.RuleSet {
+			queryRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 1"))
@@ -481,7 +481,7 @@ func TestValidateMiddleware(t *testing.T) {
 					},
 				}}}}
 			},
-			bodyRules: func(_ *Request) validation.RuleSet {
+			bodyRules: func(_ *Request) validation.Ruler {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
 					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						ctx.AddError(fmt.Errorf("test error 2"))

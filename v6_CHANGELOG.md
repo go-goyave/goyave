@@ -40,6 +40,9 @@
   - the language is now retrieved from the validation context, not from the validator
   - for uniformity, the Language option has been renamed to Lang
   - validation.Errors now implements `error` and `slog.LogValuer` for better display in logs.
+  - rulesets and validators can be re-used and used concurrently now. A ruleset doesn't need to be re-instanciated for every request unless it's a dynamic ruleset
+    - route ValidateBody/ValidateQuery now take a validation.Ruler instead of RuleSet to support both use-cases.
+    - except for rare and specific use-cases, rulesets are now declared as top-level variables and converted once to Rules. The resulting instance is then re-used for all requests. This is much faster since allocation, generation and conversions are now necessary only once at startup. Overall memory usage of large applications should also be significantly lowered due to this change.
 - goyave.Registrer doesn't require implementing Composable anymore
 - Composable/Component logics has been removed
 - parse middleware constructor with max upload size parameter

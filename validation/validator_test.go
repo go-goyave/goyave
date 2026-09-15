@@ -20,14 +20,14 @@ type extraKey struct{}
 
 type testValidator struct {
 	placeholders func(ctx *Context) []string
-	validateFunc func(c component, ctx *Context) bool
+	validateFunc func(v Validator, ctx *Context) bool
 	BaseValidator
 	isType          bool
 	isTypeDependent bool
 }
 
 func (v *testValidator) Validate(ctx *Context) bool {
-	return v.validateFunc(v.component, ctx)
+	return v.validateFunc(v, ctx)
 }
 
 func (v *testValidator) IsTypeDependent() bool {
@@ -47,19 +47,6 @@ func (v *testValidator) MessagePlaceholders(ctx *Context) []string {
 
 func (v *testValidator) Name() string {
 	return "test_validator"
-}
-
-func TestComponent(t *testing.T) {
-	c := &component{
-		lang: lang.New().GetDefault(),
-	}
-
-	assert.Equal(t, c.lang, c.Lang())
-
-	t.Run("unset", func(t *testing.T) {
-		c := &component{}
-		assert.Panics(t, func() { c.Lang() })
-	})
 }
 
 func TestContext(t *testing.T) {
@@ -141,17 +128,22 @@ func TestGetFieldType(t *testing.T) {
 
 func TestValidateExtraNotNil(t *testing.T) {
 	options := &Options{
-		Data:     nil,
-		Language: lang.New().GetDefault(),
+		Data: nil,
+		Lang: lang.New().GetDefault(),
 		Rules: RuleSet{
 			{Path: CurrentElement, Rules: List{Required()}},
 		},
 	}
-	Validate(options)
+	vErrs, errs := Validate(options)
+	require.NotNil(t, vErrs) // The body is required
+	require.Empty(t, errs)
 	assert.NotNil(t, options.Extra)
 }
 
 func TestValidate(t *testing.T) {
+	testLang := lang.New()
+	require.NoError(t, testLang.Load(osfs.New("."), "en-US", "../resources/lang/en-US"))
+
 	cases := []struct {
 		desc                 string
 		wantData             any
@@ -162,8 +154,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "nil_data",
 			options: &Options{
-				Data:     nil,
-				Language: lang.New().GetDefault(),
+				Data: nil,
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required()}},
 					{Path: "property", Rules: List{Required()}},
@@ -178,15 +170,12 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "context",
 			options: &Options{
-				Data:     map[string]any{"property": "value"},
-				Extra:    map[any]any{extraKey{}: "value"},
-				Language: lang.New().GetDefault(),
+				Data:  map[string]any{"property": "value"},
+				Extra: map[any]any{extraKey{}: "value"},
+				Lang:  testLang.GetLanguage("en-US"),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{&testValidator{
-						validateFunc: func(c component, ctx *Context) bool {
-							// Validator init called
-							assert.NotNil(t, c.lang)
-
+						validateFunc: func(_ Validator, ctx *Context) bool {
 							// Context content
 							assert.Equal(t, map[any]any{extraKey{}: "value"}, ctx.Extra)
 							assert.Equal(t, map[string]any{"property": "value"}, ctx.Data)
@@ -197,6 +186,7 @@ func TestValidate(t *testing.T) {
 							assert.False(t, ctx.Now.IsZero())
 							assert.False(t, ctx.Invalid)
 							assert.Equal(t, walk.MustParse("property"), ctx.Path())
+							assert.Equal(t, testLang.GetLanguage("en-US"), ctx.Lang)
 							return true
 						},
 					}}},
@@ -209,7 +199,7 @@ func TestValidate(t *testing.T) {
 				Now: lo.Must(time.Parse(time.RFC3339, "2023-06-28T00:00:00Z")),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{&testValidator{
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ Validator, ctx *Context) bool {
 							assert.Equal(t, lo.Must(time.Parse(time.RFC3339, "2023-06-28T00:00:00Z")), ctx.Now)
 							return true
 						},
@@ -220,8 +210,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "absent_parent_not_found",
 			options: &Options{
-				Data:     map[string]any{"property": "value"},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": "value"},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required()}},
 					{Path: "object", Rules: List{Required()}},
@@ -241,8 +231,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "absent_not_required",
 			options: &Options{
-				Data:     map[string]any{"property": "value"},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": "value"},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required()}},
 					{Path: "object", Rules: List{Object()}},
@@ -253,9 +243,9 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "absent_required_if",
 			options: &Options{
-				Data:     map[string]any{"property": "value", "object": map[string]any{}},
-				Language: lang.New().GetDefault(),
-				Extra:    map[any]any{extraKey{}: "value"},
+				Data:  map[string]any{"property": "value", "object": map[string]any{}},
+				Lang:  lang.New().GetDefault(),
+				Extra: map[any]any{extraKey{}: "value"},
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required()}},
 					{Path: "object", Rules: List{Object()}},
@@ -291,8 +281,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_absent_not_required",
 			options: &Options{
-				Data:     nil,
-				Language: lang.New().GetDefault(),
+				Data: nil,
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Object()}},
 					{Path: "property", Rules: List{Required()}},
@@ -302,8 +292,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_absent_required",
 			options: &Options{
-				Data:     nil,
-				Language: lang.New().GetDefault(),
+				Data: nil,
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Object()}},
 					{Path: "property", Rules: List{Required()}},
@@ -316,8 +306,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_nullable",
 			options: &Options{
-				Data:     nil,
-				Language: lang.New().GetDefault(),
+				Data: nil,
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Nullable(), Object()}},
 					{Path: "property", Rules: List{Required()}},
@@ -327,8 +317,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "absent_nullable_not_required",
 			options: &Options{
-				Data:     map[string]any{},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{String(), Nullable()}},
 				},
@@ -337,8 +327,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "nil_delete_from_parent",
 			options: &Options{
-				Data:     map[string]any{"property": nil},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": nil},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required(), String()}},
 				},
@@ -355,8 +345,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "nil_delete_from_parent_not_validated",
 			options: &Options{
-				Data:     map[string]any{"property": nil},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": nil},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{String()}},
 				},
@@ -366,8 +356,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "nil_nullable_dont_delete_from_parent",
 			options: &Options{
-				Data:     map[string]any{"property": nil},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": nil},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required(), Nullable()}},
 				},
@@ -377,8 +367,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_array",
 			options: &Options{
-				Data:     []any{"a", "b", "c"},
-				Language: lang.New().GetDefault(),
+				Data: []any{"a", "b", "c"},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Array()}},
 					{Path: "[]", Rules: List{String()}},
@@ -389,8 +379,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_object_array",
 			options: &Options{
-				Data:     []any{map[string]any{"value": "a"}, map[string]any{"value": "b"}},
-				Language: lang.New().GetDefault(),
+				Data: []any{map[string]any{"value": "a"}, map[string]any{"value": "b"}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Array()}},
 					{Path: "[]", Rules: List{Object()}},
@@ -402,8 +392,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_object_array_with_error",
 			options: &Options{
-				Data:     []any{map[string]any{"value": "a"}, map[string]any{"value": "b"}, "c"},
-				Language: lang.New().GetDefault(),
+				Data: []any{map[string]any{"value": "a"}, map[string]any{"value": "b"}, "c"},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Array()}},
 					{Path: "[]", Rules: List{Object()}},
@@ -421,8 +411,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_object_array_with_deep_error",
 			options: &Options{
-				Data:     []any{map[string]any{"value": "a"}},
-				Language: lang.New().GetDefault(),
+				Data: []any{map[string]any{"value": "a"}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Array()}},
 					{Path: "[]", Rules: List{Object()}},
@@ -444,8 +434,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_n_array",
 			options: &Options{
-				Data:     [][]any{{"a", "b"}, {"c", ""}},
-				Language: lang.New().GetDefault(),
+				Data: [][]any{{"a", "b"}, {"c", ""}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Array()}},
 					{Path: "[]", Rules: List{Array()}},
@@ -457,8 +447,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_string",
 			options: &Options{
-				Data:     "foobar",
-				Language: lang.New().GetDefault(),
+				Data: "foobar",
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), String()}},
 				},
@@ -468,8 +458,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_number",
 			options: &Options{
-				Data:     "123",
-				Language: lang.New().GetDefault(),
+				Data: "123",
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Int()}},
 				},
@@ -479,13 +469,13 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "composition_context_data", // We expect the ctx.Data to be the data relative to the composed RuleSet (prefixDepth)
 			options: &Options{
-				Data:     map[string]any{"object": map[string]any{"property": "value"}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"object": map[string]any{"property": "value"}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "object", Rules: RuleSet{
 						{Path: CurrentElement, Rules: List{Required(), Object()}},
 						{Path: "property", Rules: List{Required(), String(), &testValidator{
-							validateFunc: func(_ component, ctx *Context) bool {
+							validateFunc: func(_ Validator, ctx *Context) bool {
 								assert.Equal(t, map[string]any{"property": "value"}, ctx.Data)
 								return true
 							},
@@ -497,26 +487,26 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "composition_context_data_array",
 			options: &Options{
-				Data:     map[string]any{"composedArray": [][]string{{"a"}}, "array": [][]string{{"b"}}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"composedArray": [][]string{{"a"}}, "array": [][]string{{"b"}}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "composedArray", Rules: RuleSet{
 						{Path: CurrentElement, Rules: List{Required(), Array(), &testValidator{
-							validateFunc: func(_ component, ctx *Context) bool {
+							validateFunc: func(_ Validator, ctx *Context) bool {
 								assert.Equal(t, [][]string{{"a"}}, ctx.Data)
 								return true
 							},
 						}}},
 						{Path: "[]", Rules: RuleSet{
 							{Path: CurrentElement, Rules: List{Required(), Array(), &testValidator{
-								validateFunc: func(_ component, ctx *Context) bool {
+								validateFunc: func(_ Validator, ctx *Context) bool {
 									assert.Equal(t, []string{"a"}, ctx.Data)
 									return true
 								},
 							}}},
 							{Path: "[]", Rules: RuleSet{
 								{Path: CurrentElement, Rules: List{Required(), String(), &testValidator{
-									validateFunc: func(_ component, ctx *Context) bool {
+									validateFunc: func(_ Validator, ctx *Context) bool {
 										assert.Equal(t, "a", ctx.Data)
 										return true
 									},
@@ -527,7 +517,7 @@ func TestValidate(t *testing.T) {
 					{Path: "array", Rules: List{Required(), Array()}},
 					{Path: "array[]", Rules: List{Required(), Array()}},
 					{Path: "array[][]", Rules: List{Required(), String(), &testValidator{
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ Validator, ctx *Context) bool {
 							assert.Equal(t, map[string]any{"composedArray": [][]string{{"a"}}, "array": [][]string{{"b"}}}, ctx.Data)
 							return true
 						},
@@ -539,8 +529,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "non-nullable_nil_array_element",
 			options: &Options{
-				Data:     map[string]any{"array": []any{"a", nil, "b"}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"array": []any{"a", nil, "b"}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "array", Rules: List{Required(), Array()}},
 					{Path: "array[]", Rules: List{Required()}},
@@ -559,8 +549,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "nil_array_element",
 			options: &Options{
-				Data:     map[string]any{"array": []any{"a", nil, "b"}, "nullableArray": []any{"a", nil, "b"}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"array": []any{"a", nil, "b"}, "nullableArray": []any{"a", nil, "b"}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "array", Rules: List{Required(), Array()}},
 					{Path: "array[]", Rules: List{Required()}},
@@ -624,7 +614,7 @@ func TestValidate(t *testing.T) {
 				Data: map[string]any{"property": "a"},
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required(), &testValidator{
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ Validator, ctx *Context) bool {
 							ctx.AddError(fmt.Errorf("test error 1"), fmt.Errorf("test error 2"))
 							return true
 						},
@@ -636,8 +626,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "validation_errors",
 			options: &Options{
-				Data:     map[string]any{"property": "a", "object": map[string]any{"property": "c"}, "array": []any{"d"}, "narray": []any{[]any{1, "e", 3}}, "number": 0},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": "a", "object": map[string]any{"property": "c"}, "array": []any{"d"}, "narray": []any{[]any{1, "e", 3}}, "number": 0},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required(), Int()}},
 					{Path: "number", Rules: List{Required(), Int(), Between(1, 4)}},
@@ -681,8 +671,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "added_errors",
 			options: &Options{
-				Data:     map[string]any{},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{&addErrorValidator{
 						addedValidationErrors: []AddedValidationError[string]{
@@ -722,8 +712,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "merge_errors",
 			options: &Options{
-				Data:     map[string]any{"property": "a", "object": map[string]any{"property": "c"}, "array": []any{"d"}, "narray": []any{[]any{1, "e", 3}}, "number": 0},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": "a", "object": map[string]any{"property": "c"}, "array": []any{"d"}, "narray": []any{[]any{1, "e", 3}}, "number": 0},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required(), Int()}},
 					{Path: "number", Rules: List{Required(), Int(), Between(1, 4)}},
@@ -816,11 +806,11 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "array_elements_validation_errors",
 			options: &Options{
-				Data:     map[string]any{"array": []any{"d", "e", "f"}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"array": []any{"d", "e", "f"}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "array", Rules: List{Required(), Array(), &testValidator{
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ Validator, ctx *Context) bool {
 							ctx.AddArrayElementValidationErrors(2, 3)
 							return true
 						},
@@ -842,11 +832,11 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "root_array_elements_validation_errors",
 			options: &Options{
-				Data:     []any{"d", "e", "f"},
-				Language: lang.New().GetDefault(),
+				Data: []any{"d", "e", "f"},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: CurrentElement, Rules: List{Required(), Array(), &testValidator{
-						validateFunc: func(_ component, ctx *Context) bool {
+						validateFunc: func(_ Validator, ctx *Context) bool {
 							ctx.AddArrayElementValidationErrors(2, 3)
 							return true
 						},
@@ -864,8 +854,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "type_conversion",
 			options: &Options{
-				Data:     map[string]any{"property": "123", "object": map[string]any{"property": "456"}, "array": []any{"7"}, "narray": []any{[]any{1, "8", 3}}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"property": "123", "object": map[string]any{"property": "456"}, "array": []any{"7"}, "narray": []any{[]any{1, "8", 3}}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required(), Int()}},
 					{Path: "object", Rules: List{Required(), Object()}},
@@ -882,8 +872,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "empty_array",
 			options: &Options{
-				Data:     map[string]any{"narray": []any{}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"narray": []any{}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "narray", Rules: List{Required(), Array()}},
 					{Path: "narray[]", Rules: List{Array()}},
@@ -895,8 +885,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "empty_narray",
 			options: &Options{
-				Data:     map[string]any{"narray": []any{[]any{}}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"narray": []any{[]any{}}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "narray", Rules: List{Required(), Array()}},
 					{Path: "narray[]", Rules: List{Array()}},
@@ -908,8 +898,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "nil_array",
 			options: &Options{
-				Data:     map[string]any{"narray": nil},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"narray": nil},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "narray", Rules: List{Required(), Nullable(), Array()}},
 					{Path: "narray[]", Rules: List{Required(), Array()}},
@@ -921,48 +911,48 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "type-dependent",
 			options: &Options{
-				Data:     map[string]any{"guessString": "string", "guessNumeric": 1, "guessArray": []string{}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"guessString": "string", "guessNumeric": 1, "guessArray": []string{}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "string", Rules: List{Required(), String(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, _ *Context) bool {
+						validateFunc: func(_ Validator, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "integer", Rules: List{Required(), Int(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, _ *Context) bool {
+						validateFunc: func(_ Validator, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "float", Rules: List{Required(), Float64(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, _ *Context) bool {
+						validateFunc: func(_ Validator, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "array", Rules: List{Required(), Array(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, _ *Context) bool {
+						validateFunc: func(_ Validator, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "guessString", Rules: List{Required(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, _ *Context) bool {
+						validateFunc: func(_ Validator, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "guessNumeric", Rules: List{Required(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, _ *Context) bool {
+						validateFunc: func(_ Validator, _ *Context) bool {
 							return false
 						},
 					}}},
 					{Path: "guessArray", Rules: List{Required(), &testValidator{
 						isTypeDependent: true,
-						validateFunc: func(_ component, _ *Context) bool {
+						validateFunc: func(_ Validator, _ *Context) bool {
 							return false
 						},
 					}}},
@@ -983,8 +973,8 @@ func TestValidate(t *testing.T) {
 		{
 			desc: "expect_array_got_map",
 			options: &Options{
-				Data:     map[string]any{"array": map[string]any{"key": "value"}},
-				Language: lang.New().GetDefault(),
+				Data: map[string]any{"array": map[string]any{"key": "value"}},
+				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "array", Rules: List{Required(), Array()}},
 					{Path: "array[]", Rules: List{Int()}},
@@ -1157,7 +1147,7 @@ func TestValidateMessageOverride(t *testing.T) {
 		Data: map[string]any{
 			"field": "str",
 		},
-		Language: lang.GetDefault(),
+		Lang: lang.GetDefault(),
 		Rules: RuleSet{
 			{
 				Path:  "field",

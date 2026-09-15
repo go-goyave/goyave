@@ -118,9 +118,9 @@ func (v *DateFieldComparisonValidator) validate(ctx *Context, comparisonFunc fun
 }
 
 // MessagePlaceholders returns the ":date" placeholder.
-func (v *DateFieldComparisonValidator) MessagePlaceholders(_ *Context) []string {
+func (v *DateFieldComparisonValidator) MessagePlaceholders(c *Context) []string {
 	return []string{
-		":date", GetFieldName(v.Lang(), v.Path),
+		":date", GetFieldName(c.Lang, v.Path),
 	}
 }
 

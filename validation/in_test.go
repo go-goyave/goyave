@@ -90,12 +90,11 @@ func TestNotInValidator(t *testing.T) {
 func TestInFieldValidator(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
 		v := InField[string]("field")
-		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
 		assert.Equal(t, "in_field", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{Lang: &lang.Language{}}))
 
 		assert.Panics(t, func() {
 			InField[string](".path[")
@@ -126,12 +125,12 @@ func TestInFieldValidator(t *testing.T) {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := InField[string]("field")
-			v.lang = &lang.Language{}
 			ctx := &Context{
 				Data: map[string]any{
 					"field": c.field,
 				},
 				Value: c.value,
+				Lang:  &lang.Language{},
 			}
 			assert.Equal(t, c.want, v.Validate(ctx))
 		})
@@ -152,12 +151,11 @@ func TestInFieldValidator(t *testing.T) {
 func TestNotInFieldValidator(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
 		v := NotInField[string]("field")
-		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
 		assert.Equal(t, "not_in_field", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{Lang: &lang.Language{}}))
 
 		assert.Panics(t, func() {
 			NotInField[string](".path[")
@@ -187,12 +185,12 @@ func TestNotInFieldValidator(t *testing.T) {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("Validate_%v_%t", c.value, c.want), func(t *testing.T) {
 			v := NotInField[string]("field")
-			v.lang = &lang.Language{}
 			ctx := &Context{
 				Data: map[string]any{
 					"field": c.field,
 				},
 				Value: c.value,
+				Lang:  &lang.Language{},
 			}
 			assert.Equal(t, c.want, v.Validate(ctx))
 		})

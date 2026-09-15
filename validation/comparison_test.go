@@ -23,12 +23,11 @@ func TestGreaterThanValidator(t *testing.T) {
 	path := "object.field[]"
 	t.Run("Constructor", func(t *testing.T) {
 		v := GreaterThan(path)
-		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
 		assert.Equal(t, "greater_than", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{Lang: &lang.Language{}}))
 
 		assert.Panics(t, func() {
 			GreaterThan("invalid[path.")
@@ -173,12 +172,11 @@ func TestGreaterThanEqualValidator(t *testing.T) {
 	path := "object.field[]"
 	t.Run("Constructor", func(t *testing.T) {
 		v := GreaterThanEqual(path)
-		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
 		assert.Equal(t, "greater_than_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{Lang: &lang.Language{}}))
 
 		assert.Panics(t, func() {
 			GreaterThanEqual("invalid[path.")
@@ -349,12 +347,11 @@ func TestLowerThanValidator(t *testing.T) {
 	path := "object.field[]"
 	t.Run("Constructor", func(t *testing.T) {
 		v := LowerThan(path)
-		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
 		assert.Equal(t, "lower_than", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{Lang: &lang.Language{}}))
 
 		assert.Panics(t, func() {
 			LowerThan("invalid[path.")
@@ -499,12 +496,11 @@ func TestLowerThanEqualValidator(t *testing.T) {
 	path := "object.field[]"
 	t.Run("Constructor", func(t *testing.T) {
 		v := LowerThanEqual(path)
-		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
 		assert.Equal(t, "lower_than_equal", v.Name())
 		assert.False(t, v.IsType())
 		assert.True(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{Lang: &lang.Language{}}))
 
 		assert.Panics(t, func() {
 			LowerThanEqual("invalid[path.")

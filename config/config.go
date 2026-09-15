@@ -184,10 +184,10 @@ func Load[T Section](ctx context.Context, sources ...Source) (*T, error) {
 	}
 
 	opt := &validation.Options{
-		Context:  ctx,
-		Data:     cfg,
-		Rules:    defaultCfg.RuleSet(),
-		Language: lang.Default,
+		Context: ctx,
+		Data:    cfg,
+		Rules:   defaultCfg.RuleSet(),
+		Lang:    lang.Default,
 	}
 	errsBag, errs := validation.Validate(opt)
 	if errs != nil {

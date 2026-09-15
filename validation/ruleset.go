@@ -20,16 +20,8 @@ type Ruler interface {
 // A validator should not be re-usable or usable concurrently. They are meant to be
 // scoped to a single field validation in a single request.
 type Validator interface {
-	Composable
-
-	// init unexported method to force compositing with `BaseValidator`.
-	init(opts *Options)
-
-	// Init the validator with the resources required by the `Composable` interface.
-	Init(opts *Options)
-
 	// Validate checks the field under validation satisfies this validator's criteria.
-	// If necessary, replaces the `Context.Value` with a converted value (see `IsType()`).
+	// If necessary, replaces the [Context.Value] with a converted value (see [Validator.IsType]).
 	Validate(ctx *Context) bool
 
 	// Name returns the string name of the validator.
@@ -53,7 +45,7 @@ type Validator interface {
 
 	// MessagePlaceholders returns an associative slice of placeholders and their replacement.
 	// This is use to generate the validation error message. An empty slice can be returned.
-	// See `lang.Language.Get()` for more details.
+	// See [lang.Language.Get] for more details.
 	MessagePlaceholders(ctx *Context) []string
 
 	overrideMessage(langEntry string)
@@ -63,19 +55,7 @@ type Validator interface {
 // BaseValidator composable structure that implements the basic functions required to
 // satisfy the `Validator` interface.
 type BaseValidator struct {
-	component
 	messageOverride string
-}
-
-func (v *BaseValidator) init(options *Options) {
-	v.component = component{
-		lang: options.Language,
-	}
-}
-
-// Init the validator with the resources required by the `Composable` interface.
-func (v *BaseValidator) Init(options *Options) {
-	v.init(options)
 }
 
 // IsTypeDependent returns false.

@@ -80,9 +80,9 @@ func (v *ComparisonValidator) validate(ctx *Context, comparisonFunc func(size1, 
 func (v *ComparisonValidator) IsTypeDependent() bool { return true }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *ComparisonValidator) MessagePlaceholders(_ *Context) []string {
+func (v *ComparisonValidator) MessagePlaceholders(c *Context) []string {
 	return []string{
-		":other", GetFieldName(v.Lang(), v.Path),
+		":other", GetFieldName(c.Lang, v.Path),
 	}
 }
 

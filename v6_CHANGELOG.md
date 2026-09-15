@@ -37,6 +37,8 @@
   - no more access to Config and DB
   - removed the Composable interface, dependencies are passed directly
   - removed the Logger option (retrieve from context)
+  - the language is now retrieved from the validation context, not from the validator
+  - for uniformity, the Language option has been renamed to Lang
   - validation.Errors now implements `error` and `slog.LogValuer` for better display in logs.
 - goyave.Registrer doesn't require implementing Composable anymore
 - Composable/Component logics has been removed

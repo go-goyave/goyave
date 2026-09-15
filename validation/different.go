@@ -62,9 +62,9 @@ func (v *DifferentValidator) Validate(ctx *Context) bool {
 func (v *DifferentValidator) Name() string { return "different" }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *DifferentValidator) MessagePlaceholders(_ *Context) []string {
+func (v *DifferentValidator) MessagePlaceholders(c *Context) []string {
 	return []string{
-		":other", GetFieldName(v.Lang(), v.Path),
+		":other", GetFieldName(c.Lang, v.Path),
 	}
 }
 

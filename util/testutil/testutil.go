@@ -147,7 +147,7 @@ func NewTestRequest(ctx context.Context, method, uri string, body io.Reader) *go
 // usin the `httptest` package. This function sets the request language using the default
 // language of the server.
 func (s *TestServer) NewTestRequest(method, uri string, body io.Reader) *goyave.Request {
-	req := NewTestRequest(s.Context(), method, uri, body) // TODO use server context
+	req := NewTestRequest(s.Context(), method, uri, body)
 	req.Lang = s.Lang.GetDefault()
 	return req
 }

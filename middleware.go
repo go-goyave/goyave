@@ -155,7 +155,7 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				Data:                     r.Query,
 				Rules:                    m.QueryRules(r).AsRules(),
 				ConvertSingleValueArrays: true,
-				Language:                 r.Lang,
+				Lang:                     r.Lang,
 				Extra:                    extra,
 			}
 			r.Extra[ExtraQueryValidationRules{}] = opt.Rules
@@ -174,7 +174,7 @@ func (m *validateRequestMiddleware) Handle(next Handler) Handler {
 				Data:                     r.Data,
 				Rules:                    m.BodyRules(r).AsRules(),
 				ConvertSingleValueArrays: !strings.HasPrefix(contentType, "application/json"),
-				Language:                 r.Lang,
+				Lang:                     r.Lang,
 				Extra:                    extra,
 			}
 			r.Extra[ExtraBodyValidationRules{}] = opt.Rules

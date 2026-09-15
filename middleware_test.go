@@ -340,9 +340,9 @@ func TestValidateMiddleware(t *testing.T) {
 			desc: "query_validation_options",
 			queryRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
-					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
+					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
-						assert.NotNil(t, v.Lang())
+						assert.Equal(t, request.Lang, ctx.Lang)
 						assert.Equal(t, "test-value", ctx.Context.Value(testCtxKey{}))
 						return false
 					},
@@ -412,9 +412,9 @@ func TestValidateMiddleware(t *testing.T) {
 			desc: "body_validation_options",
 			bodyRules: func(request *Request) validation.RuleSet {
 				return validation.RuleSet{{Path: "param", Rules: validation.List{validation.Required(), &testValidator{
-					validateFunc: func(v *testValidator, ctx *validation.Context) bool {
+					validateFunc: func(_ *testValidator, ctx *validation.Context) bool {
 						assert.Equal(t, request, ctx.Extra[validation.ExtraRequest{}])
-						assert.NotNil(t, v.Lang())
+						assert.Equal(t, request.Lang, ctx.Lang)
 						assert.Equal(t, "test-value", ctx.Context.Value(testCtxKey{}))
 						return false
 					},

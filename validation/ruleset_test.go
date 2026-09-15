@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -371,12 +370,6 @@ func TestRules(t *testing.T) {
 
 func TestBaseValidator(t *testing.T) {
 	v := &BaseValidator{}
-
-	opts := &Options{
-		Language: lang.Default,
-	}
-	v.Init(opts)
-	assert.Same(t, opts.Language, v.lang)
 
 	assert.False(t, v.IsTypeDependent())
 	assert.False(t, v.IsType())

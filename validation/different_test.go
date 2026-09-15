@@ -11,12 +11,11 @@ func TestDifferentValidator(t *testing.T) {
 	path := "object.field[]"
 	t.Run("Constructor", func(t *testing.T) {
 		v := Different(path)
-		v.lang = &lang.Language{}
 		assert.NotNil(t, v)
 		assert.Equal(t, "different", v.Name())
 		assert.False(t, v.IsType())
 		assert.False(t, v.IsTypeDependent())
-		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{}))
+		assert.Equal(t, []string{":other", "field"}, v.MessagePlaceholders(&Context{Lang: &lang.Language{}}))
 
 		assert.Panics(t, func() {
 			Different("invalid[path.")

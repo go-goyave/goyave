@@ -62,9 +62,9 @@ func (v *SameValidator) Validate(ctx *Context) bool {
 func (v *SameValidator) Name() string { return "same" }
 
 // MessagePlaceholders returns the ":other" placeholder.
-func (v *SameValidator) MessagePlaceholders(_ *Context) []string {
+func (v *SameValidator) MessagePlaceholders(c *Context) []string {
 	return []string{
-		":other", GetFieldName(v.Lang(), v.Path),
+		":other", GetFieldName(c.Lang, v.Path),
 	}
 }
 

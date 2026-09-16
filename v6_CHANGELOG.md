@@ -43,6 +43,7 @@
   - rulesets and validators can be re-used and used concurrently now. A ruleset doesn't need to be re-instanciated for every request unless it's a dynamic ruleset
     - route ValidateBody/ValidateQuery now take a validation.Ruler instead of RuleSet to support both use-cases.
     - except for rare and specific use-cases, rulesets are now declared as top-level variables and converted once to Rules. The resulting instance is then re-used for all requests. This is much faster since allocation, generation and conversions are now necessary only once at startup. Overall memory usage of large applications should also be significantly lowered due to this change.
+  - Unique/Exist/UniqueArray/ExistArray modified to take a function as parameter (often a service method). Decoupling DB from presentation layer.
 - goyave.Registrer doesn't require implementing Composable anymore
 - Composable/Component logics has been removed
 - parse middleware constructor with max upload size parameter
@@ -64,10 +65,12 @@
   - NewTestServer takes testutil.Options instead of goyave.Options.
   - TODO document how to test log output and how to output logs to testing.T.Output
 - Improved documentation by using links
-- Paginator: fetch query isn't executed anymore if the count query returns 0.
-- Factory Save now returns an error
-- Database timeout plugin now works on Scan too. It doesn't work on Row() and Rows().
-- Database New and NewFromDialector don't take a logger as parameter anymore. Logs are defined by config DatabaseConnection.Debug now.
+- Database:
+  - Paginator: fetch query isn't executed anymore if the count query returns 0.
+  - Factory Save now returns an error
+  - Database timeout plugin now works on Scan too. It doesn't work on Row() and Rows().
+  - Database New and NewFromDialector don't take a logger as parameter anymore. Logs are defined by config DatabaseConnection.Debug now.
+  - Database Exist/Unique added: helpers to avoid having to implement simple exist/unique queries (especially for checking slices)
 - Common/Combined log formatters: fix nested quotes for the URL field
 - typeutil:
   - Convert doesn't use an intermediary buffer anymore, slightly improving performance in most common scenarios.

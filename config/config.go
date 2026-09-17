@@ -242,7 +242,7 @@ func sliceMerge(dst []any, src any) any {
 	}
 	for i, v := range srcSlice {
 		if i >= len(dst) {
-			dst = append(dst, v)
+			dst = append(dst, expandEnv(v))
 			continue
 		}
 		switch dstVal := dst[i].(type) {

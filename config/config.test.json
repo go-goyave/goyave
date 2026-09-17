@@ -7,10 +7,11 @@
             "Value": "bla"
         }
     },
-    "CustomField": "1${ENV_TEST}",
+    "CustomField": "interpolated:${TEST_VAR} | multiple: ${TEST_VAR}/${TEST_VAR_2}",
     "CustomSection": {
         "A": "",
-        "B": 6.999
+        "B": 6.999,
+        "Number": "${NUMBER}"
     },
     "CustomConnections": [
         {
@@ -23,5 +24,19 @@
             "Host": "127.0.0.1",
             "Port": 65535
         }
+    ],
+    "Slice": [
+        "value 1",
+        "${TEST_VAR_3}"
+    ],
+    "TwoDimSlice": [
+        [],
+        [
+            "${TEST_VAR_4}",
+            "${TEST_VAR_5}"
+        ],
+        [
+            "appended"
+        ]
     ]
 }

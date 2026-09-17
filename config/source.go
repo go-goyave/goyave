@@ -132,16 +132,16 @@ func FromFile(fs fs.FS, fileName string, fn UnmarshalReadFunc) Source {
 }
 
 // Default source loads default config and the config.json file in the current working directory.
-// If the "GOYAVE_ENV" env variable is set, the config file will be picked like so:
+// If the "ENV" env variable is set, the config file will be picked like so:
 //   - "production": "config.production.json"
 //   - "test": "config.test.json"
 //   - By default: "config.json"
 func Default() Source {
-	return FromFile(&osfs.FS{}, getConfigFilePath(), UnsmarshalReadJSON())
+	return FromFile(&osfs.FS{}, getConfigFilePath(os.Getenv("ENV")), UnsmarshalReadJSON())
 }
 
-func getConfigFilePath() string {
-	env := strings.ToLower(os.Getenv("GOYAVE_ENV"))
+func getConfigFilePath(env string) string {
+	env = strings.ToLower(env)
 	if env == "local" || env == "localhost" || env == "" {
 		return "config.json"
 	}

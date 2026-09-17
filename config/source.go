@@ -88,8 +88,11 @@ type fileSource struct {
 func (s fileSource) Read() (any, error) {
 	var raw any
 
-	reader, err := s.fs.Open(s.fileName) // TODO skip if the file doesn't exist?
+	reader, err := s.fs.Open(s.fileName)
 	if err != nil {
+		// We don't want to silently skip the source if the file doesn't exist
+		// because we don't want silent failures/fallbacks.
+		// If this specific need arises, a new Source can be implemented.
 		return nil, errors.New(err)
 	}
 

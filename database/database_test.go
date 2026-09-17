@@ -12,7 +12,6 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
-	"goyave.dev/goyave/v5/config"
 )
 
 type DummyDialector struct {
@@ -26,7 +25,7 @@ func openDummy(dsn string) gorm.Dialector {
 	}
 }
 
-var testConnectionConfig = &config.DatabaseConnection{
+var testConnectionConfig = &Config{
 	Dialect:                    "dummy",
 	Host:                       "localhost",
 	Port:                       5432,
@@ -41,7 +40,7 @@ var testConnectionConfig = &config.DatabaseConnection{
 	DefaultReadQueryTimeoutMs:  123,
 	DefaultWriteQueryTimeoutMs: 123,
 	Debug:                      true,
-	GORM: config.GORM{
+	GORM: GORMConfig{
 		SkipDefaultTransaction:                   true,
 		PrepareStmtMaxSize:                       123,
 		PrepareStmtTTL:                           123,
@@ -163,7 +162,7 @@ func TestNewDatabase(t *testing.T) {
 	})
 
 	t.Run("New_unknown_driver", func(t *testing.T) {
-		cfg := &config.DatabaseConnection{
+		cfg := &Config{
 			Dialect: "notadriver",
 			Debug:   false,
 		}
@@ -174,12 +173,12 @@ func TestNewDatabase(t *testing.T) {
 	})
 
 	t.Run("SQLite_query", func(t *testing.T) {
-		cfg := &config.DatabaseConnection{
+		cfg := &Config{
 			Dialect:            "sqlmock",
 			DatabaseName:       "paginator_test.db",
 			MaxIdleConnections: 1,
 			Debug:              false,
-			GORM:               config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
+			GORM:               GORMConfig{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 		}
 
 		mockDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))

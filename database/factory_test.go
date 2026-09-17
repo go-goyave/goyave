@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
-	"goyave.dev/goyave/v5/config"
 )
 
 type TestUser struct {
@@ -64,12 +63,12 @@ func TestFactory(t *testing.T) {
 	})
 
 	t.Run("Save", func(t *testing.T) {
-		cfg := &config.DatabaseConnection{
+		cfg := &Config{
 			Dialect:            "sqlmock",
 			DatabaseName:       "paginator_test.db",
 			MaxIdleConnections: 1,
 			Debug:              false,
-			GORM:               config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
+			GORM:               GORMConfig{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 		}
 
 		mockDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))

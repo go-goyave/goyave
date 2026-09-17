@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/config"
 )
 
 type TestArticle struct {
@@ -63,12 +62,12 @@ func generateRowsWithAuthor(count int) (*sqlmock.Rows, *sqlmock.Rows, []*TestArt
 }
 
 func preparePaginatorTest(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
-	cfg := &config.DatabaseConnection{
+	cfg := &Config{
 		Dialect:            "sqlmock",
 		DatabaseName:       "paginator_test.db",
 		MaxIdleConnections: 1,
 		Debug:              false,
-		GORM:               config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
+		GORM:               GORMConfig{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 	}
 
 	mockDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))

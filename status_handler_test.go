@@ -46,7 +46,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		assert.NoError(t, res.Body.Close())
 		require.NoError(t, err)
 
-		assert.Equal(t, `{"error":"Internal Server Error"}`+"\n", string(body))
+		assert.Equal(t, `{"error":"Internal Server Error"}`, string(body))
 	})
 
 	t.Run("debug", func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		assert.NoError(t, res.Body.Close())
 		require.NoError(t, err)
 
-		assert.Equal(t, `{"error":"test error"}`+"\n", string(body))
+		assert.Equal(t, `{"error":"test error"}`, string(body))
 
 		// Error and stacktrace already printed by the recovery middleware or `response.Error`
 		// (those are not executed in this test, thus leaving the log buffer empty)
@@ -79,7 +79,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		assert.NoError(t, res.Body.Close())
 		require.NoError(t, err)
 
-		assert.Equal(t, `{"error":null}`+"\n", string(body))
+		assert.Equal(t, `{"error":null}`, string(body))
 
 		// Error and stacktrace are not printed to console because recovery middleware
 		// is not executed (no error raised, we just set the response status to 500 for example)
@@ -100,7 +100,7 @@ func TestErrorStatusHandler(t *testing.T) {
 	assert.NoError(t, res.Body.Close())
 	require.NoError(t, err)
 
-	assert.Equal(t, `{"error":"Not Found"}`+"\n", string(body))
+	assert.Equal(t, `{"error":"Not Found"}`, string(body))
 }
 
 func TestValidationStatusHandler(t *testing.T) {
@@ -126,7 +126,7 @@ func TestValidationStatusHandler(t *testing.T) {
 	assert.NoError(t, res.Body.Close())
 	require.NoError(t, err)
 
-	assert.Equal(t, `{"error":{"body":{"fields":{"field":{"errors":["The field is required"]}},"errors":["The body is required"]},"query":{"fields":{"query":{"errors":["The query is required"]}}}}}`+"\n", string(body))
+	assert.Equal(t, `{"error":{"body":{"fields":{"field":{"errors":["The field is required"]}},"errors":["The body is required"]},"query":{"fields":{"query":{"errors":["The query is required"]}}}}}`, string(body))
 }
 
 func TestParseErrorStatusHandler(t *testing.T) {
@@ -185,7 +185,7 @@ func TestParseErrorStatusHandler(t *testing.T) {
 			assert.NoError(t, res.Body.Close())
 			require.NoError(t, err)
 
-			expectedResponse := fmt.Sprintf(`{"error":"%s"}`, tt.expectedMessage) + "\n"
+			expectedResponse := fmt.Sprintf(`{"error":"%s"}`, tt.expectedMessage)
 			assert.Equal(t, expectedResponse, string(body))
 			assert.Equal(t, tt.expectedStatus, res.StatusCode)
 		})
@@ -207,7 +207,7 @@ func TestParseErrorStatusHandlerWithoutExtra(t *testing.T) {
 	assert.NoError(t, res.Body.Close())
 	require.NoError(t, err)
 
-	expectedResponse := fmt.Sprintf(`{"error":"%s"}`, "Bad Request") + "\n"
+	expectedResponse := fmt.Sprintf(`{"error":"%s"}`, "Bad Request")
 	assert.Equal(t, expectedResponse, string(body))
 	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 }

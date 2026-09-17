@@ -355,7 +355,7 @@ func TestResponse(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
-		assert.Equal(t, "{\"hello\":\"world\"}\n", string(body))
+		assert.Equal(t, "{\"hello\":\"world\"}", string(body))
 	})
 
 	t.Run("JSON_error", func(t *testing.T) {
@@ -634,7 +634,7 @@ func TestResponse(t *testing.T) {
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
 			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 			assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
-			assert.Equal(t, "{\"error\":"+c.expectedMessage+"}\n", string(body))
+			assert.Equal(t, "{\"error\":"+c.expectedMessage+"}", string(body))
 
 			assert.Regexp(t, c.expectedLog(e), logBuffer.String())
 		}
@@ -661,7 +661,7 @@ func TestResponse(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, resp.status)
 		assert.Equal(t, http.StatusForbidden, res.StatusCode)
 		assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
-		assert.Equal(t, "{\"error\":\"custom error\"}\n", string(body))
+		assert.Equal(t, "{\"error\":\"custom error\"}", string(body))
 
 		assert.Regexp(t,
 			fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
@@ -719,7 +719,7 @@ func TestResponse(t *testing.T) {
 			assert.Equal(t, http.StatusInternalServerError, resp.status)
 			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 			assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
-			assert.Equal(t, "{\"error\":\"random db error\"}\n", string(body))
+			assert.Equal(t, "{\"error\":\"random db error\"}", string(body))
 		})
 
 		t.Run("no_error", func(t *testing.T) {

@@ -2,7 +2,7 @@ package goyave
 
 import (
 	"bufio"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -313,12 +313,13 @@ func (r *Response) Status(status int) {
 
 // JSON write json data as a response.
 // Also sets the "Content-Type" header automatically.
-func (r *Response) JSON(responseCode int, data any) {
+func (r *Response) JSON(responseCode int, data any, opts ...json.Options) {
 	if !r.wroteHeader {
 		r.responseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 		r.status = responseCode
 	}
-	if err := json.NewEncoder(r).Encode(data); err != nil {
+
+	if err := json.MarshalWrite(r, data, opts...); err != nil {
 		panic(errorutil.NewSkip(err, 3))
 	}
 }

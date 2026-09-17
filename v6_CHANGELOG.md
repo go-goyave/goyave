@@ -14,6 +14,7 @@
     - testutil.Server lets you choose source and config type 
     - section and field names are now in PascalCase
     - default values changed (host is now [::1])
+    - database config is not included in the default config. If you use a database, you can add it with composing `database.Config` in your config struct. Use a `map[string]database.Config` if you need multiple connections.
 - slog:
   - global default logger
   - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context

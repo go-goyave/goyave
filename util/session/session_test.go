@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/utils/tests"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/util/errors"
 )
@@ -84,7 +83,7 @@ func (d *testDialector) RollbackTo(_ *gorm.DB, name string) error {
 }
 
 func TestGormSession(t *testing.T) {
-	cfg := config.DatabaseConnection{}.Default()
+	cfg := database.Config{}.Default()
 	cfg.Debug = false
 	cfg.GORM.DisableAutomaticPing = true
 

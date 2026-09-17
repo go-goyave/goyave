@@ -8,10 +8,6 @@ import (
 	"goyave.dev/goyave/v5/util/errors"
 )
 
-// TODO this plugin may not be necessary anymore thanks to gorm setting: DefaultContextTimeout
-// but one caveat: context leaks are possible with gorm's implementation
-// also cannot use a different timeout for read and write requests
-
 const (
 	timeoutCallbackBeforeName = "goyave:timeout_before"
 	timeoutCallbackAfterName  = "goyave:timeout_after"
@@ -38,6 +34,10 @@ type timeoutContext struct {
 // context having the configured timeout. The context is replaced in a "before" callback
 // on all GORM operations. In a "after" callback, the new context is canceled.
 //
+// The timeout applied is per-query. If you re-use the statement or run a long transaction,
+// a timeout error will only be generated if one query took too long to execute, not the
+// entire transaction.
+//
 // The [TimeoutPlugin.ReadTimeout] is applied on the `Query` and `Raw` GORM callbacks.
 // The [TimeoutPlugin.WriteTimeout] is applied on the rest of the callbacks.
 //
@@ -45,6 +45,9 @@ type timeoutContext struct {
 // need to control the timeout context themselves using [context.WithTimeout] and [gorm.DB.WithContext].
 //
 // A timeout duration inferior or equal to 0 disables the plugin for the relevant operations.
+//
+// This plugin allows a different timeout on read and write operations as opposed to
+// [gorm.DB.DefaultContextTimeout] option.
 type TimeoutPlugin struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration

@@ -77,6 +77,7 @@ func newConfig(cfg *Config) *gorm.Config {
 		DisableForeignKeyConstraintWhenMigrating: cfg.GORM.DisableForeignKeyConstraintWhenMigrating,
 		IgnoreRelationshipsWhenMigrating:         cfg.GORM.IgnoreRelationshipsWhenMigrating,
 		// DefaultContextTimeout: 0, // Handled by the timeout plugin
+		// DefaultTransactionTimeout: 0, // Newly added option but also suffering from context leak
 		FullSaveAssociations: cfg.GORM.FullSaveAssociations,
 		QueryFields:          cfg.GORM.QueryFields,
 		CreateBatchSize:      cfg.GORM.CreateBatchSize,

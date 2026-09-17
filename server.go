@@ -173,7 +173,6 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 		ctx = opts.Context
 	}
 	ctx = slog.Context(ctx, slogger)
-	// TODO add debug too? but context starts to be overloaded...
 
 	server := &Server{
 		server: &http.Server{

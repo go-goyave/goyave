@@ -18,6 +18,7 @@ import (
 )
 
 // TODO feature support for golang-jwt/jwt/v5 + more flexibility (more signing methods, don't assume HS256 would be the default everywhere, OIDC discovery, OAuth compatibility or overkill?)
+// Basic OAuth compatibility would make the JWTController better. Currently it's very basic.
 
 const (
 	// JWTServiceName identifier for the `JWTService`.

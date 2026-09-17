@@ -39,7 +39,6 @@ type App struct {
 	//    for structured logs instead of JSON.
 	//  - error details will be sent in the HTTP responses.
 	// This setting should be set to false in production.
-	// TODO very inconvenient to share this everywhere...
 	Debug bool
 }
 

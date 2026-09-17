@@ -93,8 +93,7 @@ func TestLoad(t *testing.T) {
 			DefaultLanguage: "fr-FR",
 			Debug:           false,
 		},
-		Server:   Server{}.Default(),
-		Database: []DatabaseConnection{},
+		Server: Server{}.Default(),
 		CustomSection: CustomSection{
 			A: typeutil.NewUndefined(""),
 			B: 6.999,

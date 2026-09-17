@@ -15,18 +15,17 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/config"
 )
 
 func prepareTimeoutTest(t *testing.T, timeout int) (*gorm.DB, sqlmock.Sqlmock) {
-	cfg := &config.DatabaseConnection{
+	cfg := &Config{
 		Dialect:                    "sqlmock",
 		DatabaseName:               fmt.Sprintf("timeout_test_%s.db", t.Name()),
 		DefaultReadQueryTimeoutMs:  timeout,
 		DefaultWriteQueryTimeoutMs: timeout,
 		MaxIdleConnections:         1, // TODO document this is important for tests overwise the mock connection gets closed
 		Debug:                      false,
-		GORM:                       config.GORM{}, // Disabling PrepareStmt is important to avoid errors caused by mock
+		GORM:                       GORMConfig{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 	}
 
 	mockDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))

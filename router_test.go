@@ -364,21 +364,21 @@ func TestRouter(t *testing.T) {
 				requestMethod:  http.MethodGet,
 				requestURL:     "/forbidden",
 				expectedStatus: http.StatusForbidden,
-				expectedBody:   "{\"error\":\"Forbidden\"}\n",
+				expectedBody:   "{\"error\":\"Forbidden\"}",
 			},
 			{
 				desc:           "not_found",
 				requestMethod:  http.MethodGet,
 				requestURL:     "/not_found",
 				expectedStatus: http.StatusNotFound,
-				expectedBody:   "{\"error\":\"Not Found\"}\n",
+				expectedBody:   "{\"error\":\"Not Found\"}",
 			},
 			{
 				desc:           "method_not_allowed",
 				requestMethod:  http.MethodPatch,
 				requestURL:     "/empty",
 				expectedStatus: http.StatusMethodNotAllowed,
-				expectedBody:   "{\"error\":\"Method Not Allowed\"}\n",
+				expectedBody:   "{\"error\":\"Method Not Allowed\"}",
 			},
 			{
 				desc:           "middleware_order",
@@ -399,7 +399,7 @@ func TestRouter(t *testing.T) {
 				requestMethod:            http.MethodGet,
 				requestURL:               "/statushandler/error",
 				expectedStatus:           http.StatusInternalServerError,
-				expectedBody:             "{\"error\":\"Internal Server Error\"}\n",
+				expectedBody:             "{\"error\":\"Internal Server Error\"}",
 				expectPanicStatusHandler: true,
 			},
 			{
@@ -415,7 +415,7 @@ func TestRouter(t *testing.T) {
 				requestMethod:            http.MethodGet,
 				requestURL:               "/statushandler/error-after-write-500-header",
 				expectedStatus:           http.StatusInternalServerError,
-				expectedBody:             "{\"error\":\"Internal Server Error\"}\n",
+				expectedBody:             "{\"error\":\"Internal Server Error\"}",
 				expectPanicStatusHandler: true,
 			},
 			{

@@ -15,6 +15,7 @@
     - section and field names are now in PascalCase
     - default values changed (host is now [::1])
     - database config is not included in the default config. If you use a database, you can add it with composing `database.Config` in your config struct. Use a `map[string]database.Config` if you need multiple connections.
+    - GOYAVE_ENV renamed to ENV. Only effective when using the default source.
 - slog:
   - global default logger
   - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context
@@ -79,6 +80,8 @@
   - Convert now supports json v2 marshal/unmarshal options
 - services
   - service container removed in favor of compile-time and explicit wiring. If a service is unavailable or doesn't implement the interface defined by the dependent, your projet won't compile. This is as opposed to using the container with which the type assertion is done at runtime and could generate panics.
+- Response.JSON now uses json v2 and accepts variadic json options.
+  - JSON response bodies do not end with \n anymore as a result.
 
 TODO docs pass with links
 TODO cleanup resources directory

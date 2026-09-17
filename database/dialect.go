@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/util/errors"
 )
 
@@ -15,13 +14,13 @@ var (
 
 	dialects = map[string]dialect{}
 
-	optionPlaceholders = map[string]func(*config.DatabaseConnection) string{
-		"{username}": func(dc *config.DatabaseConnection) string { return dc.Username },
-		"{password}": func(dc *config.DatabaseConnection) string { return dc.Password },
-		"{host}":     func(dc *config.DatabaseConnection) string { return dc.Host },
-		"{port}":     func(dc *config.DatabaseConnection) string { return strconv.Itoa(dc.Port) },
-		"{name}":     func(dc *config.DatabaseConnection) string { return dc.DatabaseName },
-		"{options}":  func(dc *config.DatabaseConnection) string { return dc.Options },
+	optionPlaceholders = map[string]func(*Config) string{
+		"{username}": func(dc *Config) string { return dc.Username },
+		"{password}": func(dc *Config) string { return dc.Password },
+		"{host}":     func(dc *Config) string { return dc.Host },
+		"{port}":     func(dc *Config) string { return strconv.Itoa(dc.Port) },
+		"{name}":     func(dc *Config) string { return dc.DatabaseName },
+		"{options}":  func(dc *Config) string { return dc.Options },
 	}
 )
 
@@ -34,7 +33,7 @@ type dialect struct {
 	template    string
 }
 
-func (d dialect) buildDSN(cfg *config.DatabaseConnection) string {
+func (d dialect) buildDSN(cfg *Config) string {
 	connStr := d.template
 	for k, v := range optionPlaceholders {
 		connStr = strings.Replace(connStr, k, v(cfg), 1)

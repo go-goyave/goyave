@@ -6,7 +6,6 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"goyave.dev/goyave/v5/config"
 
 	errorutil "goyave.dev/goyave/v5/util/errors"
 )
@@ -22,7 +21,7 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
 //	import _ "goyave.dev/goyave/v5/database/dialect/clickhouse"
 //	import _ "goyave.dev/goyave/v5/database/dialect/bigquery"
-func New(cfg *config.DatabaseConnection) (*gorm.DB, error) {
+func New(cfg *Config) (*gorm.DB, error) {
 	dialect, ok := dialects[cfg.Dialect]
 	if !ok {
 		return nil, errorutil.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)
@@ -45,7 +44,7 @@ func New(cfg *config.DatabaseConnection) (*gorm.DB, error) {
 // defined in the given configuration.
 //
 // This can be used in tests to create a mock connection pool.
-func NewFromDialector(cfg *config.DatabaseConnection, dialector gorm.Dialector) (*gorm.DB, error) {
+func NewFromDialector(cfg *Config, dialector gorm.Dialector) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, newConfig(cfg))
 	if err != nil {
 		return nil, errorutil.New(err)
@@ -58,7 +57,7 @@ func NewFromDialector(cfg *config.DatabaseConnection, dialector gorm.Dialector) 
 	return db, initSQLDB(cfg, db)
 }
 
-func newConfig(cfg *config.DatabaseConnection) *gorm.Config {
+func newConfig(cfg *Config) *gorm.Config {
 	var logger logger.Interface
 	if cfg.Debug {
 		logger = NewLogger()
@@ -86,7 +85,7 @@ func newConfig(cfg *config.DatabaseConnection) *gorm.Config {
 	}
 }
 
-func initTimeoutPlugin(cfg *config.DatabaseConnection, db *gorm.DB) error {
+func initTimeoutPlugin(cfg *Config, db *gorm.DB) error {
 	timeoutPlugin := &TimeoutPlugin{
 		ReadTimeout:  time.Duration(cfg.DefaultReadQueryTimeoutMs) * time.Millisecond,
 		WriteTimeout: time.Duration(cfg.DefaultWriteQueryTimeoutMs) * time.Millisecond,
@@ -94,7 +93,7 @@ func initTimeoutPlugin(cfg *config.DatabaseConnection, db *gorm.DB) error {
 	return errorutil.New(db.Use(timeoutPlugin))
 }
 
-func initSQLDB(cfg *config.DatabaseConnection, db *gorm.DB) error {
+func initSQLDB(cfg *Config, db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {
 		if errors.Is(err, gorm.ErrInvalidDB) {

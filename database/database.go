@@ -1,13 +1,13 @@
 package database
 
 import (
-	"errors"
+	stderrors "errors"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errors"
 )
 
 // New create a new connection pool using the settings defined in the given configuration.
@@ -24,17 +24,17 @@ import (
 func New(cfg *Config) (*gorm.DB, error) {
 	dialect, ok := dialects[cfg.Dialect]
 	if !ok {
-		return nil, errorutil.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)
+		return nil, errors.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)
 	}
 
 	dsn := dialect.buildDSN(cfg)
 	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg))
 	if err != nil {
-		return nil, errorutil.New(err)
+		return nil, errors.New(err)
 	}
 
 	if err := initTimeoutPlugin(cfg, db); err != nil {
-		return db, errorutil.New(err)
+		return db, errors.New(err)
 	}
 
 	return db, initSQLDB(cfg, db)
@@ -47,11 +47,11 @@ func New(cfg *Config) (*gorm.DB, error) {
 func NewFromDialector(cfg *Config, dialector gorm.Dialector) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, newConfig(cfg))
 	if err != nil {
-		return nil, errorutil.New(err)
+		return nil, errors.New(err)
 	}
 
 	if err := initTimeoutPlugin(cfg, db); err != nil {
-		return db, errorutil.New(err)
+		return db, errors.New(err)
 	}
 
 	return db, initSQLDB(cfg, db)
@@ -91,20 +91,32 @@ func initTimeoutPlugin(cfg *Config, db *gorm.DB) error {
 		ReadTimeout:  time.Duration(cfg.DefaultReadQueryTimeoutMs) * time.Millisecond,
 		WriteTimeout: time.Duration(cfg.DefaultWriteQueryTimeoutMs) * time.Millisecond,
 	}
-	return errorutil.New(db.Use(timeoutPlugin))
+	return errors.New(db.Use(timeoutPlugin))
 }
 
 func initSQLDB(cfg *Config, db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {
-		if errors.Is(err, gorm.ErrInvalidDB) {
+		if stderrors.Is(err, gorm.ErrInvalidDB) {
 			return nil
 		}
-		return errorutil.New(err)
+		return errors.New(err)
 	}
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime) * time.Second)
 	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.MaxIdleTime) * time.Second)
 	return nil
+}
+
+// Close the [*sql.DB] used by the GORM instance.
+func Close(db *gorm.DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		if stderrors.Is(err, gorm.ErrInvalidDB) {
+			return nil
+		}
+		return errors.New(err)
+	}
+	return errors.New(sqlDB.Close())
 }

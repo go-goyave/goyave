@@ -162,9 +162,14 @@ func (l *Languages) GetAvailableLanguages() []string {
 // If multiple languages are given, the first available language will be used,
 // and if none are available, the default language will be used.
 // If no variant is given (for example "en"), the first available variant will be used.
+// A language given a quality value of 0 is not acceptable (RFC 9110 section 12.4.2)
+// and is never used, unless it is the default language and no other language matched.
 func (l *Languages) DetectLanguage(lang string) *Language {
 	values := httputil.ParseMultiValuesHeader(lang)
 	for _, lang := range values {
+		if lang.Priority == 0 { // Not acceptable according to RFC 9110
+			continue
+		}
 		if lang.Value == "*" { // Accept anything, so return default language
 			break
 		}

@@ -11,7 +11,7 @@ import (
 
 	"log/slog"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Colors and formats
@@ -132,7 +132,7 @@ func (h *DevModeHandler) Handle(_ context.Context, r slog.Record) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	_, err := h.w.Write(buf.Bytes())
-	return errors.New(err)
+	return errwrap.New(err)
 }
 
 // levelColor return a color for the tag describing the level in the output.

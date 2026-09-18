@@ -4,7 +4,7 @@ import (
 	"encoding/json/v2"
 
 	"goyave.dev/copier"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Convert anything into the desired type using JSON marshaling and unmarshaling.
@@ -16,10 +16,10 @@ func Convert[T any](data any, opts ...json.Options) (T, error) {
 	var result T
 	buf, err := json.Marshal(data, opts...)
 	if err != nil {
-		return result, errors.NewSkip(err, 3)
+		return result, errwrap.NewSkip(err, 3)
 	}
 	err = json.Unmarshal(buf, &result, opts...)
-	return result, errors.NewSkip(err, 3)
+	return result, errwrap.NewSkip(err, 3)
 }
 
 // MustConvert anything into the desired type using JSON marshaling and unmarshaling.
@@ -40,7 +40,7 @@ func MustConvert[T any](data any, opts ...json.Options) T {
 func Copy[T, D any](model *T, dto D) *T {
 	err := copier.CopyWithOption(model, dto, copier.Option{IgnoreEmpty: true, DeepCopy: true, CaseSensitive: true})
 	if err != nil {
-		panic(errors.NewSkip(err, 3))
+		panic(errwrap.NewSkip(err, 3))
 	}
 	return model
 }

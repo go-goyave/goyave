@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Session aims at facilitating business transactions while abstracting the underlying mechanism,
@@ -73,7 +73,7 @@ func (s Gorm) Begin(ctx context.Context) (Session, error) {
 	}
 	tx := db.Begin(s.TxOptions)
 	if tx.Error != nil {
-		return nil, errors.NewSkip(tx.Error, 3)
+		return nil, errwrap.NewSkip(tx.Error, 3)
 	}
 	return Gorm{
 		ctx:       context.WithValue(ctx, dbKey{}, tx),
@@ -91,7 +91,7 @@ func (s Gorm) nestedBegin(db *gorm.DB) (Session, error) {
 
 	nestedSession.savepoint = fmt.Sprintf("sp%p", nestedSession.ctx)
 	if !db.DisableNestedTransaction {
-		err := errors.NewSkip(db.SavePoint(nestedSession.savepoint).Error, 3)
+		err := errwrap.NewSkip(db.SavePoint(nestedSession.savepoint).Error, 3)
 		if err != nil {
 			return nil, err
 		}
@@ -107,9 +107,9 @@ func (s Gorm) Rollback() error {
 		if s.db.DisableNestedTransaction {
 			return nil
 		}
-		return errors.NewSkip(s.db.RollbackTo(s.savepoint).Error, 3)
+		return errwrap.NewSkip(s.db.RollbackTo(s.savepoint).Error, 3)
 	}
-	return errors.NewSkip(s.db.Rollback().Error, 3)
+	return errwrap.NewSkip(s.db.Rollback().Error, 3)
 }
 
 // Commit the changes in the transaction. This action is final.
@@ -119,7 +119,7 @@ func (s Gorm) Commit() error {
 	if s.savepoint != "" {
 		return nil
 	}
-	return errors.NewSkip(s.db.Commit().Error, 3)
+	return errwrap.NewSkip(s.db.Commit().Error, 3)
 }
 
 // Context returns the session's context. If it's the root session, `context.Background()`
@@ -145,17 +145,17 @@ func (s Gorm) Transaction(ctx context.Context, f func(context.Context) error) er
 
 	tx = tx.Begin(s.TxOptions)
 	if tx.Error != nil {
-		return errors.New(tx.Error)
+		return errwrap.New(tx.Error)
 	}
 	c := context.WithValue(ctx, dbKey{}, tx)
-	err := errors.New(f(c))
+	err := errwrap.New(f(c))
 	if err != nil {
 		tx.Rollback()
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	err = tx.Commit().Error
 	if err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	return nil
 }
@@ -166,7 +166,7 @@ func (s Gorm) nestedTransaction(tx *gorm.DB, f func(context.Context) error) erro
 	if !tx.DisableNestedTransaction {
 		err := tx.SavePoint(savepoint).Error
 		if err != nil {
-			return errors.New(err)
+			return errwrap.New(err)
 		}
 	}
 	c := context.WithValue(tx.Statement.Context, dbKey{}, tx)
@@ -176,7 +176,7 @@ func (s Gorm) nestedTransaction(tx *gorm.DB, f func(context.Context) error) erro
 			tx.RollbackTo(savepoint)
 		}
 	}()
-	err = errors.New(f(c))
+	err = errwrap.New(f(c))
 	panicked = false
 	return err
 }

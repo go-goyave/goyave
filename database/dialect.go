@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 var (
@@ -62,7 +62,7 @@ func RegisterDialect(name, template string, initializer DialectorInitializer) {
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := dialects[name]; ok {
-		panic(errors.Errorf("dialect %q already exists", name))
+		panic(errwrap.Errorf("dialect %q already exists", name))
 	}
 	dialects[name] = dialect{initializer, template}
 }

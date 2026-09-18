@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // PathType type of the element being explored.
@@ -513,10 +513,10 @@ func createPathScanner(path string) *bufio.Scanner {
 	scanner := bufio.NewScanner(strings.NewReader(path))
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
 		if len(path) == 0 {
-			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path is empty)", path)
+			return len(data), data[:], errwrap.Errorf("illegal syntax: \"%s\" (path is empty)", path)
 		}
 		if path[0] == '.' {
-			return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path cannot start with a dot)", path)
+			return len(data), data[:], errwrap.Errorf("illegal syntax: \"%s\" (path cannot start with a dot)", path)
 		}
 		for width, i := 0, 0; i < len(data); i += width {
 			var r rune
@@ -525,7 +525,7 @@ func createPathScanner(path string) *bufio.Scanner {
 			if i+width < len(data) {
 				next, nextWidth := utf8.DecodeRune(data[i+width:])
 				if syntaxErr := checkSyntax(r, next); syntaxErr != nil {
-					return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (%w)", path, syntaxErr)
+					return len(data), data[:], errwrap.Errorf("illegal syntax: \"%s\" (%w)", path, syntaxErr)
 				}
 
 				if _, escapeNext := EscapeChars[next]; r == '\\' && escapeNext {
@@ -541,7 +541,7 @@ func createPathScanner(path string) *bufio.Scanner {
 					return i + width, data[:i+width], nil
 				}
 			} else if r == '.' || r == '[' || r == '\\' {
-				return len(data), data[:], errors.Errorf("illegal syntax: \"%s\" (path cannot end with a dot, an open bracket or a backslash)", path)
+				return len(data), data[:], errwrap.Errorf("illegal syntax: \"%s\" (path cannot end with a dot, an open bracket or a backslash)", path)
 			}
 		}
 		if atEOF && len(data) > 0 {

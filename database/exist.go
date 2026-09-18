@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // clickhouseTypes mapping of Go types to Clickhouse types can be found here:
@@ -69,7 +69,7 @@ func NewExist[T any](table, column string) Exist[T] {
 func (e Exist[T]) Check(db *gorm.DB, key T) (bool, error) {
 	exists, err := e.check(db, key)
 	if err != nil {
-		return false, errors.New(err)
+		return false, errwrap.New(err)
 	}
 	return exists, nil
 }
@@ -83,7 +83,7 @@ func (e Exist[T]) check(db *gorm.DB, key T) (bool, error) {
 	}
 	err := db.Table(e.Table).Where(e.Column, transformedValue).Count(&count).Error
 	if err != nil {
-		return false, errors.New(err)
+		return false, errwrap.New(err)
 	}
 	return count != 0, nil
 }
@@ -101,12 +101,12 @@ func (e Exist[T]) CheckSlice(db *gorm.DB, keys []T) ([]int, error) {
 func (e Exist[T]) checkSlice(db *gorm.DB, keys []T, exist bool) ([]int, error) {
 	query, err := e.buildSliceQuery(db, keys, exist)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, errwrap.New(err)
 	}
 
 	var results []int
 	if err := query.Find(&results).Error; err != nil {
-		return nil, errors.New(err)
+		return nil, errwrap.New(err)
 	}
 	return results, nil
 }
@@ -182,7 +182,7 @@ func (e Exist[T]) buildClickhouseSliceQuery(db *gorm.DB, values []T, condition b
 	var zeroVal T
 	paramType, ok := clickhouseTypes[reflect.TypeOf(zeroVal)]
 	if !ok && e.Transform == nil {
-		return nil, errors.Errorf("database.Exist: value of type T (%T) is not supported for Clickhouse. You must provide a Transform function", zeroVal)
+		return nil, errwrap.Errorf("database.Exist: value of type T (%T) is not supported for Clickhouse. You must provide a Transform function", zeroVal)
 	}
 
 	for i, val := range values {
@@ -236,7 +236,7 @@ func NewUnique[T any](table, column string) Unique[T] {
 func (u Unique[T]) Check(db *gorm.DB, key T) (bool, error) {
 	exists, err := u.check(db, key)
 	if err != nil {
-		return false, errors.New(err)
+		return false, errwrap.New(err)
 	}
 	return !exists, nil
 }

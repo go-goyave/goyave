@@ -23,7 +23,7 @@ import (
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
@@ -351,7 +351,7 @@ func TestServer(t *testing.T) {
 		err = server.Start()
 		if assert.Error(t, err) {
 			assert.Equal(t, "server was already started", err.Error())
-			_, ok := err.(*errors.Error)
+			_, ok := err.(*errwrap.Error)
 			assert.True(t, ok)
 		}
 	})
@@ -363,7 +363,7 @@ func TestServer(t *testing.T) {
 		err = server.Start()
 		if assert.Error(t, err) {
 			assert.Equal(t, "server was already started", err.Error())
-			_, ok := err.(*errors.Error)
+			_, ok := err.(*errwrap.Error)
 			assert.True(t, ok)
 		}
 	})

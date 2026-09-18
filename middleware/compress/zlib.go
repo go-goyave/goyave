@@ -4,7 +4,7 @@ import (
 	"compress/zlib"
 	"io"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Zlib encoder for the deflate format using Go's standard `compress/zlib` package.
@@ -27,7 +27,7 @@ func (w *Zlib) Encoding() string {
 func (w *Zlib) NewWriter(wr io.Writer) io.WriteCloser {
 	writer, err := zlib.NewWriterLevelDict(wr, w.Level, w.Dict)
 	if err != nil {
-		panic(errors.New(err))
+		panic(errwrap.New(err))
 	}
 	return writer
 }

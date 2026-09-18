@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // MetaAuth the authentication middleware will only authenticate the user
@@ -25,7 +25,7 @@ type Authenticator[T any] interface {
 	// If no user can be authenticated, returns the error detailing why the
 	// authentication failed. The error message is expected to be already localized.
 	//
-	// If the returned error is of type `*errors.Error`, it will be considered
+	// If the returned error is of type [*errwrap.Error], it will be considered
 	// as a system error. Other error types don't need to be wrapped as they
 	// will only be used for the message returned in the response.
 	Authenticate(request *goyave.Request) (*T, error)
@@ -94,7 +94,7 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 
 		user, err := m.Authenticate(request)
 		if err != nil {
-			if _, ok := err.(*errors.Error); ok { // System error (failed to read key for example)
+			if _, ok := err.(*errwrap.Error); ok { // System error (failed to read key for example)
 				response.Error(err)
 				return
 			}

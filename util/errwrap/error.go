@@ -1,4 +1,4 @@
-package errors
+package errwrap
 
 import (
 	"encoding/json"
@@ -23,32 +23,32 @@ type Error struct {
 	callerFrames FrameStack
 }
 
-// New create a new `*Error`. Collects the function callers.
+// New create a new [*Error]. Collects the function callers.
 //
-// If the given reason is already of type `*Error`, returns it without change.
-// If the reason is a slice of `error`, joins them using std's `errors.Join`.
+// If the given reason is already of type [*Error], returns it without change.
+// If the reason is a slice of [error], joins them using std's [errors.Join].
 //
 // If the given reason is `nil`, returns `nil`. If the reason is `[]error`, `[]*Error` or `[]any`,
 // the `nil` elements are ignored. `nil` is returned if the reason is an empty slice.
 //
-// If the reason is anything other than an `error`, `[]error`, `*Error`, `[]*Error`,
-// `[]any`, it will be wrapped in a `Reason` structure, allowing to preserve
+// If the reason is anything other than an [error], `[]error`, `*Error`, `[]*Error`,
+// `[]any`, it will be wrapped in a [Reason] structure, allowing to preserve
 // its JSON marshaling behavior.
 func New(reason any) error {
 	return NewSkip(reason, 3)
 }
 
-// NewSkip create a new `*Error`. Collects the function callers, skipping the given
+// NewSkip create a new [*Error]. Collects the function callers, skipping the given
 // amount of frames.
 //
-// If the given reason is already of type `*Error`, returns it without change.
-// If the reason is a slice of `error`, joins them using std's `errors.Join`.
+// If the given reason is already of type [*Error], returns it without change.
+// If the reason is a slice of [error], joins them using std's [errors.Join].
 //
 // If the given reason is `nil`, returns `nil`. If the reason is `[]error`, `[]*Error` or `[]any`,
 // the `nil` elements are ignored. `nil` is returned if the reason is an empty slice.
 //
-// If the reason is anything other than an `error`, `[]error`, `*Error`, `[]*Error`,
-// `[]any`, it will be wrapped in a `Reason` structure, allowing to preserve
+// If the reason is anything other than an [error], `[]error`, `*Error`, `[]*Error`,
+// `[]any`, it will be wrapped in a [Reason] structure, allowing to preserve
 // its JSON marshaling behavior.
 func NewSkip(reason any, skip int) error {
 	if reason == nil {
@@ -72,7 +72,7 @@ func NewSkip(reason any, skip int) error {
 
 // Errorf is a shortcut for `errors.New(fmt.Errorf("format", args))`.
 // Be careful when using this, this will result in losing the callers of
-// the original error if one of the `args` is of type `*errors.Error`.
+// the original error if one of the `args` is of type [*Error].
 func Errorf(format string, args ...any) error {
 	return NewSkip(fmt.Errorf(format, args...), 3)
 }
@@ -114,7 +114,7 @@ func toErr(reason any) []error {
 
 func (e Error) Error() string {
 	if len(e.reasons) == 0 {
-		return "goyave.dev/goyave/util/errors.Error: the Error doesn't wrap any reason (empty reasons slice)"
+		return "goyave.dev/goyave/util/errwrap.Error: the Error doesn't wrap any reason (empty reasons slice)"
 	}
 	return strings.Join(lo.Map(e.reasons, func(e error, _ int) string {
 		if e == nil {
@@ -165,12 +165,12 @@ func (e Error) Len() int {
 	return len(e.reasons)
 }
 
-// Callers returns the function callers collected at the time of creation of the `Error`.
+// Callers returns the function callers collected at the time of creation of the [Error].
 func (e Error) Callers() []uintptr {
 	return e.callers
 }
 
-// StackFrames returns the parsed `FrameStack` for this error.
+// StackFrames returns the parsed [FrameStack] for this error.
 func (e Error) StackFrames() FrameStack {
 	if e.callerFrames == nil {
 		frames := runtime.CallersFrames(e.callers)
@@ -227,7 +227,7 @@ func (s FrameStack) String() string {
 
 // Reason wrapper around any type of error Reason. This allows json marshaling of the Reason
 // instead of losing the original data using `%v` format.
-// Calling `Error()` on this structure returns the original data formatted with `%v`.
+// Calling [Reason.Error] on this structure returns the original data formatted with `%v`.
 type Reason struct {
 	reason any
 }

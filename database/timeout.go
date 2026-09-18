@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 const (
@@ -62,50 +62,50 @@ func (p *TimeoutPlugin) Name() string {
 func (p *TimeoutPlugin) Initialize(db *gorm.DB) error {
 	createCallback := db.Callback().Create()
 	if err := createCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	if err := createCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	queryCallback := db.Callback().Query()
 	if err := queryCallback.Before("*").Register(timeoutCallbackBeforeName, p.readTimeoutBefore); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	if err := queryCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	deleteCallback := db.Callback().Delete()
 	if err := deleteCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	if err := deleteCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	updateCallback := db.Callback().Update()
 	if err := updateCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	if err := updateCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	rowCallback := db.Callback().Row()
 	if err := rowCallback.Before("*").Register(timeoutCallbackBeforeName, p.readRowTimeoutBefore); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	if err := rowCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	rawCallback := db.Callback().Raw()
 	if err := rawCallback.Before("*").Register(timeoutCallbackBeforeName, p.writeTimeoutBefore); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	if err := rawCallback.After("*").Register(timeoutCallbackAfterName, p.timeoutAfter); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	return nil
 }

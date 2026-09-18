@@ -14,7 +14,7 @@ import (
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
 
@@ -66,13 +66,13 @@ func (w CommonWriter) PreWrite(b []byte) {
 
 func (w CommonWriter) Write(b []byte) (int, error) {
 	n, err := w.wr.Write(b)
-	return n, errorutil.New(err)
+	return n, errwrap.New(err)
 }
 
 // Close the underlying writer if it implements `io.Closer`.
 func (w CommonWriter) Close() error {
 	if wr, ok := w.wr.(io.Closer); ok {
-		return errorutil.New(wr.Close())
+		return errwrap.New(wr.Close())
 	}
 	return nil
 }
@@ -81,7 +81,7 @@ func (w CommonWriter) Close() error {
 func (w *CommonWriter) Flush() error {
 	switch flusher := w.wr.(type) {
 	case Flusher:
-		return errorutil.New(flusher.Flush())
+		return errwrap.New(flusher.Flush())
 	case http.Flusher:
 		flusher.Flush()
 	}
@@ -101,7 +101,7 @@ type Response struct {
 	responseWriter http.ResponseWriter
 	server         *Server
 	request        *Request
-	err            *errorutil.Error
+	err            *errwrap.Error
 	status         int
 
 	// Used to check if controller didn't write anything so
@@ -165,7 +165,7 @@ func (r *Response) PreWrite(b []byte) {
 func (r *Response) Write(data []byte) (int, error) {
 	r.PreWrite(data)
 	n, err := r.writer.Write(data)
-	return n, errorutil.New(err)
+	return n, errwrap.New(err)
 }
 
 // WriteHeader sends an HTTP response header with the provided
@@ -204,7 +204,7 @@ func (r *Response) Flush() {
 	switch flusher := r.writer.(type) {
 	case Flusher:
 		if err := flusher.Flush(); err != nil {
-			r.server.logger.Error(errorutil.New(err))
+			r.server.logger.Error(errwrap.New(err))
 		}
 	case http.Flusher:
 		flusher.Flush()
@@ -236,7 +236,7 @@ func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if e == nil {
 		r.hijacked = true
 	}
-	return c, b, errorutil.New(e)
+	return c, b, errwrap.New(e)
 }
 
 // Hijacked returns true if the underlying connection has been successfully hijacked
@@ -266,7 +266,7 @@ func (r *Response) SetWriter(writer io.Writer) {
 
 func (r *Response) close() error {
 	if wr, ok := r.writer.(io.Closer); ok {
-		return errorutil.New(wr.Close())
+		return errwrap.New(wr.Close())
 	}
 	return nil
 }
@@ -291,12 +291,12 @@ func (r *Response) IsHeaderWritten() bool {
 	return r.wroteHeader
 }
 
-// GetError return the `*errors.Error` that occurred in the process of this response, or `nil`.
+// GetError return the [*errwrap.Error] that occurred in the process of this response, or `nil`.
 // The error can be set by:
 //   - Calling `Response.Error()`
 //   - The recovery middleware
 //   - The status handler for the 500 status code, if the error is not already set
-func (r *Response) GetError() *errorutil.Error {
+func (r *Response) GetError() *errwrap.Error {
 	return r.err
 }
 
@@ -320,7 +320,7 @@ func (r *Response) JSON(responseCode int, data any, opts ...json.Options) {
 	}
 
 	if err := json.MarshalWrite(r, data, opts...); err != nil {
-		panic(errorutil.NewSkip(err, 3))
+		panic(errwrap.NewSkip(err, 3))
 	}
 }
 
@@ -330,7 +330,7 @@ func (r *Response) String(responseCode int, message string) {
 		r.status = responseCode
 	}
 	if _, err := r.Write([]byte(message)); err != nil {
-		panic(errorutil.NewSkip(err, 3))
+		panic(errwrap.NewSkip(err, 3))
 	}
 }
 
@@ -359,7 +359,7 @@ func (r *Response) writeFile(fs fs.StatFS, file string, disposition string) {
 		} else {
 			contentType, err = fsutil.DetectContentType(readSeeker, file)
 			if err != nil {
-				panic(errorutil.NewSkip(err, 4))
+				panic(errwrap.NewSkip(err, 4))
 			}
 		}
 	}
@@ -367,7 +367,7 @@ func (r *Response) writeFile(fs fs.StatFS, file string, disposition string) {
 	header.Set("Content-Length", strconv.FormatInt(size, 10))
 	header.Set("Content-Type", contentType)
 	if _, err := io.Copy(r, f); err != nil {
-		panic(errorutil.NewSkip(err, 4))
+		panic(errwrap.NewSkip(err, 4))
 	}
 }
 
@@ -401,15 +401,15 @@ func (r *Response) Download(fs fs.StatFS, file string, fileName string) {
 // If debugging is not enabled, only the status code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err any) {
-	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
+	e := errwrap.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
 	r.server.logger.Error(e)
 	r.error(e)
 }
 
 func (r *Response) error(err any) {
-	e := errorutil.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
+	e := errwrap.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
 	if e != nil {
-		r.err = e.(*errorutil.Error)
+		r.err = e.(*errwrap.Error)
 	} else {
 		r.err = nil
 	}
@@ -446,7 +446,7 @@ func (r *Response) WriteDBError(err error) bool {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			r.Status(http.StatusNotFound)
 		} else {
-			r.Error(errorutil.NewSkip(err, 3))
+			r.Error(errwrap.NewSkip(err, 3))
 		}
 		return true
 	}

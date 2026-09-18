@@ -15,7 +15,7 @@ import (
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/testutil"
 
 	ws "github.com/gorilla/websocket"
@@ -129,8 +129,8 @@ func TestIsCloseError(t *testing.T) {
 		{err: &ws.CloseError{Code: ws.CloseAbnormalClosure}, want: false},
 		{err: &ws.CloseError{Code: ws.CloseProtocolError}, want: false},
 		{err: fmt.Errorf("wrap: %w", &ws.CloseError{Code: ws.CloseProtocolError}), want: false},
-		{err: errors.New(&ws.CloseError{Code: ws.CloseNormalClosure}), want: true},
-		{err: errors.New(&ws.CloseError{Code: ws.CloseProtocolError}), want: false},
+		{err: errwrap.New(&ws.CloseError{Code: ws.CloseNormalClosure}), want: true},
+		{err: errwrap.New(&ws.CloseError{Code: ws.CloseProtocolError}), want: false},
 	}
 
 	for _, c := range cases {
@@ -459,7 +459,7 @@ func TestGracefulClose(t *testing.T) {
 		{
 			desc: "normal_error",
 			serve: func(_ *Conn, _ *goyave.Request) error {
-				return errors.New("websocket handler error")
+				return errwrap.New("websocket handler error")
 			},
 			expectedError: &ws.CloseError{Code: ws.CloseInternalServerErr, Text: http.StatusText(http.StatusInternalServerError)},
 			expectedLogs:  regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","msg":"websocket handler error","trace":".+"}\n`),
@@ -467,7 +467,7 @@ func TestGracefulClose(t *testing.T) {
 		{
 			desc: "error_handler",
 			serve: func(_ *Conn, _ *goyave.Request) error {
-				return errors.New("websocket handler error")
+				return errwrap.New("websocket handler error")
 			},
 			errorHandler: func(_ *testControllerWithErrorHandler, req *goyave.Request, _ error) {
 				slog.FromContext(req.Context()).Info("message override")

@@ -12,7 +12,7 @@ import (
 
 	"log/slog"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 type unwrapper interface {
@@ -20,7 +20,7 @@ type unwrapper interface {
 }
 
 // Logger an extension of standard `*slog.Logger` overriding the `Error()` and `ErrorCtx()`
-// functions so they take an error as parameter and handle `*errors.Error` gracefully.
+// functions so they take an error as parameter and handle [*errwrap.Error] gracefully.
 type Logger struct {
 	*slog.Logger
 }
@@ -82,7 +82,7 @@ func (l *Logger) logError(ctx context.Context, source uintptr, err error, args .
 	}
 
 	switch e := err.(type) {
-	case *errors.Error:
+	case *errwrap.Error:
 		l.handleError(ctx, e, r)
 	case unwrapper:
 		l.handleReason(ctx, err, nil, r)
@@ -119,7 +119,7 @@ func (l *Logger) makeRecord(level slog.Level, msg string, pc uintptr, args ...an
 	return r
 }
 
-func (l *Logger) handleError(ctx context.Context, err *errors.Error, record slog.Record) {
+func (l *Logger) handleError(ctx context.Context, err *errwrap.Error, record slog.Record) {
 	trace := slog.String("trace", err.StackFrames().String())
 	if err.Len() == 0 {
 		record.AddAttrs(trace)
@@ -140,9 +140,9 @@ func (l *Logger) handleReason(ctx context.Context, reason error, trace *slog.Att
 		clone.Message = reason.Error()
 	}
 	switch e := reason.(type) {
-	case *errors.Error:
+	case *errwrap.Error:
 		l.handleError(ctx, e, clone)
-	case errors.Reason:
+	case errwrap.Reason:
 		if trace != nil {
 			clone.AddAttrs(*trace)
 		}

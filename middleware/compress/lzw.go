@@ -4,7 +4,7 @@ import (
 	"compress/lzw"
 	"io"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // LZW encoder for the compress format using Go's standard `compress/lzw` package.
@@ -36,7 +36,7 @@ func (w *LZW) NewWriter(wr io.Writer) io.WriteCloser {
 		w.LitWidth = 8
 	}
 	if w.LitWidth < 2 || w.LitWidth > 8 {
-		panic(errors.New("LitWidth must be in range [2, 8]"))
+		panic(errwrap.New("LitWidth must be in range [2, 8]"))
 	}
 	return lzw.NewWriter(wr, w.Order, w.LitWidth)
 }

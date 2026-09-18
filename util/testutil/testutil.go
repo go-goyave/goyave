@@ -19,7 +19,7 @@ import (
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
@@ -174,7 +174,7 @@ func (s *TestServer) NewTestResponse(request *goyave.Request) (*goyave.Response,
 func ReadJSONBody[T any](body io.Reader) (T, error) {
 	var data T
 	err := json.NewDecoder(body).Decode(&data)
-	return data, errors.New(err)
+	return data, errwrap.New(err)
 }
 
 // WriteMultipartFile reads a file from the given FS and writes it to the given multipart writer.
@@ -182,23 +182,23 @@ func WriteMultipartFile(writer *multipart.Writer, filesystem fs.FS, path, fieldN
 	var file fs.File
 	file, err = filesystem.Open(path)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 		return
 	}
 	defer func() {
 		e := file.Close()
 		if err == nil && e != nil {
-			err = errors.New(e)
+			err = errwrap.New(e)
 		}
 	}()
 	part, err := writer.CreateFormFile(fieldName, fileName)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 		return
 	}
 	_, err = io.Copy(part, file)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 	}
 	return
 }
@@ -215,18 +215,18 @@ func CreateTestFiles(fs fs.FS, paths ...string) ([]fsutil.File, error) {
 	writer := multipart.NewWriter(body)
 	for _, p := range paths {
 		if err := WriteMultipartFile(writer, fs, p, fieldName, filepath.Base(p)); err != nil {
-			return nil, errors.New(err)
+			return nil, errwrap.New(err)
 		}
 	}
 	err := writer.Close()
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, errwrap.New(err)
 	}
 
 	reader := multipart.NewReader(body, writer.Boundary())
 	form, err := reader.ReadForm(math.MaxInt64 - 1)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, errwrap.New(err)
 	}
 	return fsutil.ParseMultipartFiles(form.File[fieldName])
 }
@@ -236,7 +236,7 @@ func CreateTestFiles(fs fs.FS, paths ...string) ([]fsutil.File, error) {
 func ToJSON(data any) *bytes.Reader {
 	res, err := json.Marshal(data)
 	if err != nil {
-		panic(errors.New(err))
+		panic(errwrap.New(err))
 	}
 	return bytes.NewReader(res)
 }

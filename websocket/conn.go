@@ -2,7 +2,7 @@ package websocket
 
 import (
 	"context"
-	stderrors "errors"
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -10,7 +10,7 @@ import (
 
 	ws "github.com/gorilla/websocket"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Conn represents a WebSocket connection.
@@ -89,9 +89,9 @@ func (c *Conn) Close(code int, message string) error {
 		deadline := time.Now().Add(c.closeTimeout)
 		m := ws.FormatCloseMessage(code, message)
 		writeErr := c.WriteControl(ws.CloseMessage, m, deadline)
-		if writeErr != nil && !stderrors.Is(writeErr, ws.ErrCloseSent) {
+		if writeErr != nil && !errors.Is(writeErr, ws.ErrCloseSent) {
 			if strings.Contains(writeErr.Error(), "use of closed network connection") {
-				err = errors.New(writeErr)
+				err = errwrap.New(writeErr)
 			}
 			return
 		}
@@ -105,7 +105,7 @@ func (c *Conn) Close(code int, message string) error {
 			close(c.waitClose)
 		}
 
-		err = errors.New(c.Conn.Close())
+		err = errwrap.New(c.Conn.Close())
 	})
 
 	return err

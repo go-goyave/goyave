@@ -18,7 +18,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
@@ -578,23 +578,23 @@ func TestResponse(t *testing.T) {
 
 	t.Run("Error_with_debug", func(t *testing.T) {
 		cases := []struct {
-			expectedLog     func(e *errorutil.Error) *regexp.Regexp
+			expectedLog     func(e *errwrap.Error) *regexp.Regexp
 			err             any
 			expectedMessage string
 		}{
-			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`, expectedLog: func(e *errwrap.Error) *regexp.Regexp {
 				return regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 						regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
 					))
 			}},
-			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`, expectedLog: func(e *errwrap.Error) *regexp.Regexp {
 				return regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s,"reason":{"key":"value"}}\n`,
 						regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
 					))
 			}},
-			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`, expectedLog: func(e *errwrap.Error) *regexp.Regexp {
 				reasons := e.Unwrap()
 				stacktrace := regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String()))))
 				return regexp.MustCompile(
@@ -604,7 +604,7 @@ func TestResponse(t *testing.T) {
 					),
 				)
 			}},
-			{err: nil, expectedMessage: `null`, expectedLog: func(_ *errorutil.Error) *regexp.Regexp {
+			{err: nil, expectedMessage: `null`, expectedLog: func(_ *errwrap.Error) *regexp.Regexp {
 				return regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"<nil>"}\n`)
 			}},
 		}

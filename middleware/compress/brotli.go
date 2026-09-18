@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/andybalholm/brotli"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Brotli encoder for the br compression format
@@ -26,11 +26,11 @@ func (w *Brotli) Encoding() string {
 // Compression Quality and LGWin provided in the Brotli encoder
 func (w *Brotli) NewWriter(wr io.Writer) io.WriteCloser {
 	if w.Quality < brotli.BestSpeed || w.Quality > brotli.BestCompression {
-		panic(errors.New("Brotli Compression Level must be in range [0, 11]"))
+		panic(errwrap.New("brotli Compression Level must be in range [0, 11]"))
 	}
 	if w.LGWin != 0 {
 		if w.LGWin < 10 || w.LGWin > 24 {
-			panic(errors.New("Brotli LGWin must be either 0 or within range [10, 24]"))
+			panic(errwrap.New("brotli LGWin must be either 0 or within range [10, 24]"))
 		}
 	}
 	return brotli.NewWriterOptions(wr, brotli.WriterOptions{

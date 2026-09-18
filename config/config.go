@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/typeutil"
 	"goyave.dev/goyave/v5/validation"
 )
@@ -172,13 +172,13 @@ func Load[T Section](ctx context.Context, sources ...Source) (*T, error) {
 	}
 	cfg, err := typeutil.Convert[map[string]any](defaultCfg)
 	if err != nil {
-		return nil, errors.New([]error{errors.New("failed to convert default config to map; T must be a structure"), errors.New(err)})
+		return nil, errwrap.New([]error{errwrap.New("failed to convert default config to map; T must be a structure"), errwrap.New(err)})
 	}
 
 	for _, source := range sources {
 		raw, err := source.Read()
 		if err != nil {
-			return nil, errors.New([]error{errors.New("failed to unmarshal config"), errors.New(err)})
+			return nil, errwrap.New([]error{errwrap.New("failed to unmarshal config"), errwrap.New(err)})
 		}
 		mapMerge(cfg, raw)
 	}
@@ -191,16 +191,16 @@ func Load[T Section](ctx context.Context, sources ...Source) (*T, error) {
 	}
 	errsBag, errs := validation.Validate(opt)
 	if errs != nil {
-		return nil, errors.New(append([]error{errors.Errorf("failed to validate config")}, errs...))
+		return nil, errwrap.New(append([]error{errwrap.Errorf("failed to validate config")}, errs...))
 	}
 
 	if errsBag != nil {
-		return nil, errors.New(errsBag)
+		return nil, errwrap.New(errsBag)
 	}
 
 	loaded, err := typeutil.Convert[*T](cfg)
 	if err != nil {
-		return nil, errors.Errorf("failed to convert config map to struct: %w", err)
+		return nil, errwrap.Errorf("failed to convert config map to struct: %w", err)
 	}
 
 	return loaded, nil

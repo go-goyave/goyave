@@ -6,7 +6,7 @@ import (
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/httputil"
 )
 
@@ -54,11 +54,11 @@ func (w *compressWriter) PreWrite(b []byte) {
 
 func (w *compressWriter) Flush() error {
 	if err := w.CommonWriter.Flush(); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	switch flusher := w.childWriter.(type) {
 	case goyave.Flusher:
-		return errors.New(flusher.Flush())
+		return errwrap.New(flusher.Flush())
 	case http.Flusher:
 		flusher.Flush()
 	}
@@ -72,10 +72,10 @@ func (w *compressWriter) Close() error {
 			r.Reset(io.Discard)
 		}
 	}
-	err := errors.New(w.CommonWriter.Close())
+	err := errwrap.New(w.CommonWriter.Close())
 
 	if wr, ok := w.childWriter.(io.Closer); ok {
-		return errors.New(wr.Close())
+		return errwrap.New(wr.Close())
 	}
 
 	return err

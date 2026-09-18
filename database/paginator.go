@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Paginator structure containing pagination information and result records.
@@ -89,7 +89,7 @@ func (p *Paginator[T]) updatePageInfo(db *gorm.DB) error {
 		res = db.Model(p.Records).Count(&count)
 	}
 	if res.Error != nil {
-		return errors.New(res.Error)
+		return errwrap.New(res.Error)
 	}
 	p.Total = count
 	p.MaxPage = int64(math.Ceil(float64(count) / float64(p.PageSize)))
@@ -117,7 +117,7 @@ func (p *Paginator[T]) Find() error {
 		if !p.loadedPageInfo {
 			err := p.updatePageInfo(tx)
 			if err != nil {
-				return errors.New(err)
+				return errwrap.New(err)
 			}
 		}
 
@@ -132,7 +132,7 @@ func (p *Paginator[T]) Find() error {
 		}
 		if p.DB.Error != nil {
 			p.loadedPageInfo = false // Invalidate previous page info.
-			return errors.New(p.DB.Error)
+			return errwrap.New(p.DB.Error)
 		}
 		return nil
 	})

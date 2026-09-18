@@ -8,7 +8,7 @@ import (
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v5/cors"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -84,11 +84,11 @@ func (r *Route) makeParameters(match []string) map[string]string {
 // Returns itself.
 func (r *Route) Name(name string) *Route {
 	if r.name != "" {
-		panic(errors.NewSkip("route name is already set", 3))
+		panic(errwrap.NewSkip("route name is already set", 3))
 	}
 
 	if _, ok := r.parent.namedRoutes[name]; ok {
-		panic(errors.NewSkip(fmt.Errorf("route %q already exists", name), 3))
+		panic(errwrap.NewSkip(fmt.Errorf("route %q already exists", name), 3))
 	}
 
 	r.name = name
@@ -204,7 +204,7 @@ func (r *Route) BuildURI(parameters ...string) string {
 	fullURI, fullParameters := r.GetFullURIAndParameters()
 
 	if len(parameters) != len(fullParameters) {
-		panic(errors.Errorf("BuildURI: route has %d parameters, %d given", len(fullParameters), len(parameters)))
+		panic(errwrap.Errorf("BuildURI: route has %d parameters, %d given", len(fullParameters), len(parameters)))
 	}
 
 	var builder strings.Builder

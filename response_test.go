@@ -701,6 +701,60 @@ func TestResponse(t *testing.T) {
 		)
 	})
 
+	t.Run("ClientError", func(t *testing.T) {
+		cases := []struct {
+			desc       string
+			err        any
+			wantStatus int
+			wantBody   []byte
+		}{
+			{
+				desc:       "wrapped",
+				err:        errwrap.New(BadRequest("custom message")),
+				wantStatus: http.StatusBadRequest,
+				wantBody:   []byte(`{"error":"custom message"}`),
+			},
+			{
+				desc:       "not_wrapped",
+				err:        BadRequest("custom message"),
+				wantStatus: http.StatusBadRequest,
+				wantBody:   []byte(`{"error":"custom message"}`),
+			},
+			{
+				desc:       "status_handler_empty_message",
+				err:        BadRequest(""),
+				wantStatus: http.StatusBadRequest,
+				wantBody:   nil, // Nothing written to the body, status handler will take care of it.
+			},
+		}
+
+		for _, c := range cases {
+			t.Run(c.desc, func(t *testing.T) {
+				resp, recorder, logBuffer := newTestReponse()
+
+				resp.Error(c.err)
+
+				res := recorder.Result()
+				body, err := io.ReadAll(res.Body)
+				assert.NoError(t, res.Body.Close())
+				require.NoError(t, err)
+				assert.Equal(t, c.wantStatus, resp.GetStatus())
+				if c.wantBody == nil {
+					// Nothing written to the request
+					assert.False(t, resp.wroteHeader)
+					assert.Empty(t, body)
+				} else {
+					assert.True(t, resp.wroteHeader)
+					assert.Equal(t, c.wantBody, body)
+					assert.Equal(t, c.wantStatus, res.StatusCode)
+				}
+				assert.Empty(t, logBuffer)     // No logs should be written for a client error (4xx)
+				assert.Nil(t, resp.GetError()) // Should not be considered a response error
+			})
+		}
+		// TODO ClientError test (wrapped, not wrapped, status handler if empty message)
+	})
+
 	t.Run("WriteDBError", func(t *testing.T) {
 		t.Run("ErrRecordNotFound", func(t *testing.T) {
 			resp, _, _ := newTestReponse()

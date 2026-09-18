@@ -273,7 +273,7 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 		if a.Optional {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("%s", request.Lang.Get("auth.no-credentials-provided"))
+		return nil, goyave.Unauthorized(request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	token, err := jwt.Parse(tokenString, a.JWTService.keyFunc(a.SigningMethod))
@@ -289,7 +289,7 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 			user, err := a.UserService.FindByUsername(request.Context(), claims[claimName])
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
+					return nil, goyave.Unauthorized(request.Lang.Get("auth.invalid-credentials"))
 				}
 				return nil, errwrap.New(err)
 			}
@@ -307,11 +307,11 @@ func (a *JWTAuthenticator[T]) makeError(language *lang.Language, err error) erro
 	}
 	switch {
 	case errors.Is(err, jwt.ErrTokenNotValidYet):
-		return fmt.Errorf("%s", language.Get("auth.jwt-not-valid-yet"))
+		return goyave.Unauthorized(language.Get("auth.jwt-not-valid-yet"))
 	case errors.Is(err, jwt.ErrTokenExpired):
-		return fmt.Errorf("%s", language.Get("auth.jwt-expired"))
+		return goyave.Unauthorized(language.Get("auth.jwt-expired"))
 	default:
-		return fmt.Errorf("%s", language.Get("auth.jwt-invalid"))
+		return goyave.Unauthorized(language.Get("auth.jwt-invalid"))
 	}
 }
 

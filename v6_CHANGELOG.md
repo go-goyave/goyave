@@ -55,7 +55,8 @@
   - jwt authenticator now takes a signingMethod parameter
   - jwt controller now takes a jwtservice as parameter directly and JWTService is exported
   - jwtservice: GetKey removed, use GetPrivateKey or GetPublicKey instead
-  - authenticator: if it returns an *errors.Error, it is considered system error
+  - authenticator: encourage the use of ClientError. *errwrap.Error is now considered a system error. Don't use panic inside authenticators anymore.
+  - Unauthorizer.OnUnauthorized now takes a ClientError as parameter instead of `error`. Implementations should use `err.Message()` instead of `err.Error()`.
   - config basic authenticator now takes a BasicConfig parameter
 - testutil
   - NewTestServer removed. NewTestServerWithOptions renamed NewTestServer.
@@ -81,9 +82,11 @@
   - Convert now supports json v2 marshal/unmarshal options
 - services
   - service container removed in favor of compile-time and explicit wiring. If a service is unavailable or doesn't implement the interface defined by the dependent, your projet won't compile. This is as opposed to using the container with which the type assertion is done at runtime and could generate panics.
-- Response.JSON now uses json v2 and accepts variadic json options.
-  - JSON response bodies do not end with \n anymore as a result.
+- Response:
+  - Response.JSON now uses json v2 and accepts variadic json options. JSON response bodies do not end with \n anymore as a result.
+  - If Response.Error receives a ClientError, it won't return 500. Instead it builds a response based on the client error details. If the client error doesn't have a message specified, only set the status and let the status handler manage it (default behavior).
 - util/errors renamed to errwrap to avoid package name collisions with std and dependency confusion
+- added ClientError which provide a way for services to return standardized client errors without leaking into the presentation / HTTP layer.
 
 TODO docs pass with links
 TODO cleanup resources directory

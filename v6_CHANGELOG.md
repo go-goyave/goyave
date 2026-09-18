@@ -73,6 +73,7 @@
   - Database timeout plugin now works on Scan too. It doesn't work on Row() and Rows().
   - Database New and NewFromDialector don't take a logger as parameter anymore. Logs are defined by config DatabaseConnection.Debug now.
   - Database Exist/Unique added: helpers to avoid having to implement simple exist/unique queries (especially for checking slices)
+  - Added helper Close to close the db used by a GORM instance.
 - Common/Combined log formatters: fix nested quotes for the URL field
 - typeutil:
   - Convert doesn't use an intermediary buffer anymore, slightly improving performance in most common scenarios.

@@ -3,7 +3,6 @@ package auth
 import (
 	"crypto/subtle"
 	"errors"
-	"fmt"
 	"reflect"
 
 	"golang.org/x/crypto/bcrypt"
@@ -56,18 +55,18 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 		if a.Optional {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("%s", request.Lang.Get("auth.no-credentials-provided"))
+		return nil, goyave.Unauthorized(request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	user, err := a.UserService.FindByUsername(request.Context(), username)
 
 	notFound := errors.Is(err, gorm.ErrRecordNotFound)
 	if err != nil && !notFound {
-		panic(errwrap.New(err))
+		return nil, errwrap.New(err)
 	}
 
 	if notFound {
-		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
+		return nil, goyave.Unauthorized(request.Lang.Get("auth.invalid-credentials"))
 	}
 
 	t := reflect.Indirect(reflect.ValueOf(user))
@@ -76,11 +75,11 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 	}
 	pass := t.FieldByName(a.PasswordField)
 	if pass.Kind() == reflect.Invalid {
-		panic(errwrap.Errorf("could not find valid field/column %q in type %T", a.PasswordField, user))
+		return nil, errwrap.Errorf("could not find valid field/column %q in type %T", a.PasswordField, user)
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {
-		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
+		return nil, goyave.Unauthorized(request.Lang.Get("auth.invalid-credentials"))
 	}
 
 	return user, nil
@@ -122,12 +121,12 @@ func (a *ConfigBasicAuthenticator) Authenticate(request *goyave.Request) (*Basic
 	username, password, ok := request.BasicAuth()
 
 	if !ok {
-		return nil, fmt.Errorf("%s", request.Lang.Get("auth.no-credentials-provided"))
+		return nil, goyave.Unauthorized(request.Lang.Get("auth.no-credentials-provided"))
 	}
 
 	if subtle.ConstantTimeCompare([]byte(a.config.Username), []byte(username)) != 1 ||
 		subtle.ConstantTimeCompare([]byte(a.config.Password), []byte(password)) != 1 {
-		return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
+		return nil, goyave.Unauthorized(request.Lang.Get("auth.invalid-credentials"))
 	}
 
 	return &BasicUser{

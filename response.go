@@ -401,6 +401,10 @@ func (r *Response) Download(fs fs.StatFS, file string, fileName string) {
 // If debugging is not enabled, only the status code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err any) {
+	if r.handleClientError(err) {
+		return
+	}
+
 	e := errwrap.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
 	r.server.logger.Error(e)
 	r.error(e)
@@ -425,6 +429,26 @@ func (r *Response) error(err any) {
 
 	// Don't set r.empty to false to let error status handler process the error
 	r.Status(http.StatusInternalServerError)
+}
+
+func (r *Response) handleClientError(err any) bool {
+	e, ok := err.(error)
+	if !ok {
+		return false
+	}
+	clientErr, ok := errors.AsType[ClientError](e)
+	if !ok {
+		return false
+	}
+	r.Status(clientErr.Code())
+	message := clientErr.Message()
+	if message == "" {
+		// No message, let the status handler process it.
+		return true
+	}
+
+	r.JSON(clientErr.Code(), map[string]any{"error": message})
+	return true
 }
 
 // WriteDBError takes an error and automatically writes HTTP status code 404 Not Found

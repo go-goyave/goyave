@@ -174,6 +174,12 @@ func (suite *LangTestSuite) TestDetectLanguage() {
 	suite.Equal(l.languages["en-US"], l.DetectLanguage("*"))
 	suite.Equal(l.languages["en-US"], l.DetectLanguage("notalang"))
 	suite.Equal(l.languages["en-US"], l.DetectLanguage(""))
+
+	// A quality value of 0 means "not acceptable"
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("fr-FR;q=0"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("fr;q=0"))
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("notalang, fr-FR;q=0"))
+	suite.Equal(l.languages["fr-FR"], l.DetectLanguage("en-US;q=0, fr-FR;q=0.1"))
 }
 
 func (suite *LangTestSuite) TestLanguagesGet() {

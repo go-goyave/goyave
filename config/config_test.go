@@ -13,8 +13,6 @@ import (
 	_ "embed"
 )
 
-// TODO full tests for configv2
-
 //go:embed config.test.json
 var embedCfgJSON []byte
 

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/walk"
@@ -55,7 +55,7 @@ func TestContext(t *testing.T) {
 		c.AddError(fmt.Errorf("err1"), fmt.Errorf("err2"), fmt.Errorf("err3"))
 		assert.Len(t, c.errors, 3)
 		for i, e := range c.Errors() {
-			err, ok := e.(*errors.Error)
+			err, ok := e.(*errwrap.Error)
 			if assert.True(t, ok) {
 				assert.Equal(t, []error{fmt.Errorf("err%d", i+1)}, err.Unwrap())
 			}
@@ -1014,7 +1014,7 @@ func TestValidate(t *testing.T) {
 			assert.Equal(t, c.wantValidationErrors, validationErrors)
 			assert.Len(t, errs, len(c.wantErrors))
 			for i, e := range errs {
-				err, ok := e.(*errors.Error)
+				err, ok := e.(*errwrap.Error)
 				if assert.True(t, ok) {
 					assert.Equal(t, []error{c.wantErrors[i]}, err.Unwrap())
 				}

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/testutil"
 )
@@ -524,7 +524,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: true}}
 		user, err := authenticator.Authenticate(request)
 		assert.Nil(t, user)
-		var goyaveErr *errors.Error
+		var goyaveErr *errwrap.Error
 		assert.ErrorAs(t, err, &goyaveErr)
 		assert.ErrorContains(t, err, "unsupported JWT Signing method")
 	})

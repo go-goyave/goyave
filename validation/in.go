@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -130,7 +130,7 @@ func (v *InFieldValidator[T]) MessagePlaceholders(c *Context) []string {
 func InField[T comparable](path string) *InFieldValidator[T] {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(errors.NewSkip(fmt.Errorf("validation.InField: path parse error: %w", err), 3))
+		panic(errwrap.NewSkip(fmt.Errorf("validation.InField: path parse error: %w", err), 3))
 	}
 	return &InFieldValidator[T]{Path: p}
 }
@@ -162,7 +162,7 @@ func (v *NotInFieldValidator[T]) Name() string { return "not_in_field" }
 func NotInField[T comparable](path string) *NotInFieldValidator[T] {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(errors.NewSkip(fmt.Errorf("validation.NotInField: path parse error: %w", err), 3))
+		panic(errwrap.NewSkip(fmt.Errorf("validation.NotInField: path parse error: %w", err), 3))
 	}
 	return &NotInFieldValidator[T]{Path: p}
 }

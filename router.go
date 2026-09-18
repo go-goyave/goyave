@@ -12,7 +12,7 @@ import (
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v5/cors"
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Common route meta keys.
@@ -543,7 +543,7 @@ func (r *Router) finalize(match *routeMatch, response *Response, request *Reques
 		response.WriteHeader(response.status)
 	}
 
-	return errorutil.New(response.close())
+	return errwrap.New(response.close())
 }
 
 func (r *Router) getStatusHandler(match *routeMatch, status int) (StatusHandler, bool) {

@@ -14,12 +14,12 @@ import (
 	"syscall"
 	"time"
 
-	stderrors "errors"
+	"errors"
 
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
@@ -352,7 +352,7 @@ func (s *Server) Router() *Router {
 func (s *Server) Start() error {
 	swapped := s.state.CompareAndSwap(0, 1)
 	if !swapped {
-		return errors.New("server was already started")
+		return errwrap.New("server was already started")
 	}
 
 	s.router.ClearRegexCache()
@@ -372,12 +372,12 @@ func (s *Server) Start() error {
 		ln, err = net.Listen("tcp", s.server.Addr)
 	}
 	if err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	select {
 	case <-s.ctx.Done():
-		return errors.New([]any{"cannot start the server, context is canceled", context.Canceled})
+		return errwrap.New([]any{"cannot start the server, context is canceled", context.Canceled})
 	default:
 	}
 
@@ -400,9 +400,9 @@ func (s *Server) Start() error {
 			}
 		}
 	}(s)
-	if err := s.server.Serve(ln); err != nil && !stderrors.Is(err, http.ErrServerClosed) {
+	if err := s.server.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		s.state.Store(3)
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	return nil
 }
@@ -437,7 +437,7 @@ func (s *Server) Stop() {
 	defer cancel()
 	err := s.server.Shutdown(ctx)
 	if err != nil {
-		s.logger.Error(errors.NewSkip(err, 3))
+		s.logger.Error(errwrap.NewSkip(err, 3))
 	}
 
 	<-s.stopChannel // Wait for stop channel before returning

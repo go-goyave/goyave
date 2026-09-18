@@ -3,7 +3,7 @@ package database
 import (
 	"gorm.io/gorm"
 	"goyave.dev/copier"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Factory an object used to generate records or seed the database.
@@ -45,7 +45,7 @@ func (f *Factory[T]) Generate(count int) []*T {
 		record := f.generator()
 		if f.override != nil {
 			if err := copier.CopyWithOption(record, f.override, copier.Option{IgnoreEmpty: true, DeepCopy: true, CaseSensitive: true}); err != nil {
-				panic(errors.NewSkip(err, 3))
+				panic(errwrap.NewSkip(err, 3))
 			}
 		}
 		slice = append(slice, record)
@@ -59,7 +59,7 @@ func (f *Factory[T]) Save(db *gorm.DB, count int) ([]*T, error) {
 	records := f.Generate(count)
 
 	if err := db.CreateInBatches(records, f.BatchSize).Error; err != nil {
-		return nil, errors.New(err)
+		return nil, errwrap.New(err)
 	}
 	return records, nil
 }

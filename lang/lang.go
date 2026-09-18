@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 	"goyave.dev/goyave/v5/util/httputil"
 )
@@ -41,7 +41,7 @@ func (l *Languages) LoadAllAvailableLanguages(fs fsutil.FS) error {
 	if wd, ok := fs.(fsutil.WorkingDirFS); ok {
 		workingDir, err := wd.Getwd()
 		if err != nil {
-			return errors.New(err)
+			return errwrap.New(err)
 		}
 		langDirectory = workingDir + "/resources/lang"
 	}
@@ -57,7 +57,7 @@ func (l *Languages) LoadDirectory(fs fsutil.FS, directory string) error {
 
 	files, err := fs.ReadDir(directory)
 	if err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	for _, f := range files {
@@ -86,7 +86,7 @@ func (l *Languages) Load(fs fsutil.FS, language, path string) error {
 		return l.load(fs, language, path)
 	}
 
-	return errors.Errorf("failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path)
+	return errwrap.Errorf("failed loading language \"%s\", directory \"%s\" doesn't exist or is not readable", language, path)
 }
 
 func (l *Languages) load(fs fsutil.FS, lang string, path string) error {
@@ -219,13 +219,13 @@ func readLangFile(fs fsutil.FS, path string, dest any) (err error) {
 	defer func() {
 		closeErr := langFile.Close()
 		if err == nil && closeErr != nil {
-			err = errors.New(closeErr)
+			err = errwrap.New(closeErr)
 		}
 	}()
 
 	err = json.NewDecoder(langFile).Decode(&dest)
 	if err != nil {
-		err = errors.Errorf("failed to load language file %s: %w", path, err)
+		err = errwrap.Errorf("failed to load language file %s: %w", path, err)
 	}
 	return
 }

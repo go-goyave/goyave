@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 
 	"goyave.dev/copier"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Undefined utility type wrapping a generic value used to differentiate
@@ -64,7 +64,7 @@ func (u *Undefined[T]) Unset() {
 // On successful unmarshal of the underlying value, sets the `Present` field to `true`.
 func (u *Undefined[T]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &u.Val); err != nil {
-		return errors.Errorf("typeutil.Undefined: couldn't unmarshal JSON: %w", err)
+		return errwrap.Errorf("typeutil.Undefined: couldn't unmarshal JSON: %w", err)
 	}
 
 	u.Present = true
@@ -77,7 +77,7 @@ func (u *Undefined[T]) UnmarshalJSON(data []byte) error {
 func (u Undefined[T]) MarshalJSON() ([]byte, error) {
 	data, err := json.Marshal(u.Val)
 	if err != nil {
-		return nil, errors.Errorf("typeutil.Undefined: couldn't JSON marshal: %w", err)
+		return nil, errwrap.Errorf("typeutil.Undefined: couldn't JSON marshal: %w", err)
 	}
 	return data, nil
 }
@@ -90,13 +90,13 @@ func (u *Undefined[T]) UnmarshalText(text []byte) error {
 	u.Present = len(text) > 0
 	if textUnmarshaler, ok := any(&u.Val).(encoding.TextUnmarshaler); ok {
 		if err := textUnmarshaler.UnmarshalText(text); err != nil {
-			return errors.New(err)
+			return errwrap.New(err)
 		}
 		u.Present = true
 		return nil
 	}
 
-	return errors.New("typeutil.Undefined: cannot unmarshal text: underlying value doesn't implement encoding.TextUnmarshaler")
+	return errwrap.New("typeutil.Undefined: cannot unmarshal text: underlying value doesn't implement encoding.TextUnmarshaler")
 }
 
 // IsZero returns true for non-present values.
@@ -117,7 +117,7 @@ func (u Undefined[T]) Value() (driver.Value, error) {
 
 	if valuer, ok := any(u.Val).(driver.Valuer); ok {
 		v, err := valuer.Value()
-		return v, errors.New(err)
+		return v, errwrap.New(err)
 	}
 	return u.Val, nil
 }
@@ -160,10 +160,10 @@ func (u *Undefined[T]) Scan(src any) error {
 		}
 	default:
 		if scanner, ok := any(&u.Val).(sql.Scanner); ok {
-			return errors.New(scanner.Scan(src))
+			return errwrap.New(scanner.Scan(src))
 		}
 		var t T
-		return errors.Errorf("typeutil.Undefined: Scan() incompatible types (src: %T, dst: %T)", src, t)
+		return errwrap.Errorf("typeutil.Undefined: Scan() incompatible types (src: %T, dst: %T)", src, t)
 	}
 	return nil
 }

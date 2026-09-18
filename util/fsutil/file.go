@@ -10,7 +10,7 @@ import (
 	pathutil "path"
 
 	"github.com/google/uuid"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // marshalCache temporarily stores files' `*multipart.FileHeader`. This type
@@ -63,7 +63,7 @@ func (file File) MarshalJSON() ([]byte, error) {
 func (file *File) UnmarshalJSON(data []byte) error {
 	var v marshaledFile
 	if err := json.Unmarshal(data, &v); err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 
 	file.MIMEType = v.MIMEType
@@ -72,7 +72,7 @@ func (file *File) UnmarshalJSON(data []byte) error {
 	header, ok := marshalCache[v.Header]
 	cacheMu.RUnlock()
 	if !ok {
-		return errors.New("cannot unmarshal fsutil.File: multipart header not found in cache")
+		return errwrap.New("cannot unmarshal fsutil.File: multipart header not found in cache")
 	}
 
 	cacheMu.Lock()
@@ -101,7 +101,7 @@ func (file *File) Save(fs WritableFS, path string, name string) (filename string
 
 	if mkdirFS, ok := fs.(MkdirFS); ok {
 		if err = mkdirFS.MkdirAll(path, os.ModePerm); err != nil {
-			err = errors.New(err)
+			err = errwrap.New(err)
 			return
 		}
 	}
@@ -109,31 +109,31 @@ func (file *File) Save(fs WritableFS, path string, name string) (filename string
 	var f multipart.File
 	f, err = file.Header.Open()
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 		return
 	}
 	defer func() {
 		closeError := f.Close()
 		if err == nil && closeError != nil {
-			err = errors.New(closeError)
+			err = errwrap.New(closeError)
 		}
 	}()
 
 	var writer io.ReadWriteCloser
 	writer, err = fs.OpenFile(pathutil.Join(path, filename), os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 		return
 	}
 	defer func() {
 		closeError := writer.Close()
 		if err == nil && closeError != nil {
-			err = errors.New(closeError)
+			err = errwrap.New(closeError)
 		}
 	}()
 	_, err = io.Copy(writer, f)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 	}
 	return
 }
@@ -147,16 +147,16 @@ func ParseMultipartFiles(headers []*multipart.FileHeader) ([]File, error) {
 		if fh.Size != 0 {
 			f, err := fh.Open()
 			if err != nil {
-				return nil, errors.New(err)
+				return nil, errwrap.New(err)
 			}
 
 			mimeType, err = DetectContentType(f, "")
 			if err != nil {
 				_ = f.Close()
-				return nil, errors.New(err)
+				return nil, errwrap.New(err)
 			}
 			if err := f.Close(); err != nil {
-				return nil, errors.New(err)
+				return nil, errwrap.New(err)
 			}
 		}
 

@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 type testValuerError struct{}
@@ -92,7 +92,7 @@ func TestLogger(t *testing.T) {
 			},
 			{
 				desc: "nil Error",
-				f:    func() { l.Error(errors.New(nil), slog.String("attr", "val")) },
+				f:    func() { l.Error(errwrap.New(nil), slog.String("attr", "val")) },
 				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%s<nil>%s\n%sattr: %sval\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},
 			{
@@ -110,18 +110,18 @@ func TestLogger(t *testing.T) {
 			},
 			{
 				desc: "errors.Error",
-				f:    func() { l.Error(errors.New("err message"), slog.String("attr", "val")) },
+				f:    func() { l.Error(errwrap.New("err message"), slog.String("attr", "val")) },
 				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%serr message%s\n%sattr: %sval\n%strace: \n%s(.|\n)+\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},
 			{
 				desc: "errors.Error_empty",
-				f:    func() { l.Error(&errors.Error{}, slog.String("attr", "val")) },
-				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%sgoyave.dev/goyave/util/errors\.Error: the Error doesn't wrap any reason \(empty reasons slice\)%s\n%sattr: %sval\n%strace: %s\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
+				f:    func() { l.Error(&errwrap.Error{}, slog.String("attr", "val")) },
+				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%sgoyave.dev/goyave/util/errwrap\.Error: the Error doesn't wrap any reason \(empty reasons slice\)%s\n%sattr: %sval\n%strace: %s\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},
 			{
 				desc: "errors.Error_multiple", // We expect three separated messages to be printed
 				f: func() {
-					l.Error(errors.New([]any{fmt.Errorf("err message"), errors.New("nested error"), "reason"}), slog.String("attr", "val"))
+					l.Error(errwrap.New([]any{fmt.Errorf("err message"), errwrap.New("nested error"), "reason"}), slog.String("attr", "val"))
 				},
 				want: regexp.MustCompile(fmt.Sprintf(
 					`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%serr message%s\n%sattr: %sval\n%strace: \n%s(.|\n)+\n\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%snested error%s\n%sattr: %sval\n%strace: \n%s(.|\n)+\n\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%sreason%s\n%sattr: %sval\n%strace: \n%s(.|\n)+\n`,
@@ -132,7 +132,7 @@ func TestLogger(t *testing.T) {
 			},
 			{
 				desc: "Valuer",
-				f:    func() { l.Error(errors.New(testValuerError{}), slog.String("attr", "val")) },
+				f:    func() { l.Error(errwrap.New(testValuerError{}), slog.String("attr", "val")) },
 				want: regexp.MustCompile(fmt.Sprintf(`\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%stest error%s\n%sattr: %sval\n%strace: \n%s(.|\n)+\n%sreason: %stest value\n`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), expectedSource, regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},
 			{
@@ -170,7 +170,7 @@ func TestLogger(t *testing.T) {
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
 		l := New(slog.NewJSONHandler(buf, &slog.HandlerOptions{AddSource: true}))
 
-		err := errors.New("reason")
+		err := errwrap.New("reason")
 		r := regexp.MustCompile(fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":"%s","line":%d},"msg":"reason","trace":".+","reason":"reason"}\n`, regexp.QuoteMeta(file), line))
 
 		l.ErrorWithSource(context.Background(), pc, err)

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
@@ -40,7 +40,7 @@ func UnsmarshalReadAll(fn UnmarshalFunc) UnmarshalReadFunc {
 	return func(in io.Reader, out any) error {
 		data, err := io.ReadAll(in)
 		if err != nil {
-			return errors.New(err)
+			return errwrap.New(err)
 		}
 		return fn(data, out)
 	}
@@ -65,7 +65,7 @@ type bytesSource struct {
 func (s bytesSource) Read() (any, error) {
 	var raw any
 	err := s.fn(s.b, &raw)
-	return raw, errors.New(err)
+	return raw, errwrap.New(err)
 }
 
 type readerSource struct {
@@ -76,7 +76,7 @@ type readerSource struct {
 func (s readerSource) Read() (any, error) {
 	var raw any
 	err := s.fn(s.r, &raw)
-	return raw, errors.New(err)
+	return raw, errwrap.New(err)
 }
 
 type fileSource struct {
@@ -93,12 +93,12 @@ func (s fileSource) Read() (any, error) {
 		// We don't want to silently skip the source if the file doesn't exist
 		// because we don't want silent failures/fallbacks.
 		// If this specific need arises, a new Source can be implemented.
-		return nil, errors.New(err)
+		return nil, errwrap.New(err)
 	}
 
 	err = s.fn(reader, &raw)
 	errClose := reader.Close()
-	return raw, errors.New([]error{errors.New(err), errors.New(errClose)})
+	return raw, errwrap.New([]error{errwrap.New(err), errwrap.New(errClose)})
 }
 
 // FromBytes returns a configuration Source that unmarshals the given bytes directly.

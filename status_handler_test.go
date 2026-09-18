@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -39,7 +39,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		resp.server.debug = false
 		handler := &PanicStatusHandler{}
 
-		resp.err = errors.New("test error").(*errors.Error)
+		resp.err = errwrap.New("test error").(*errwrap.Error)
 		handler.Handle(resp, req)
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
@@ -54,7 +54,7 @@ func TestPanicStatusHandler(t *testing.T) {
 		resp.server.debug = true
 		handler := &PanicStatusHandler{}
 
-		resp.err = errors.New("test error").(*errors.Error)
+		resp.err = errwrap.New("test error").(*errwrap.Error)
 		handler.Handle(resp, req)
 		res := recorder.Result()
 		body, err := io.ReadAll(res.Body)
@@ -162,7 +162,7 @@ func TestParseErrorStatusHandler(t *testing.T) {
 		},
 		{
 			name:            "OtherError",
-			err:             errors.New("some.other.error"),
+			err:             errwrap.New("some.other.error"),
 			expectedMessage: "some.other.error",
 			expectedStatus:  http.StatusBadRequest,
 		},

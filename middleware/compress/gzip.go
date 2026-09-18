@@ -4,7 +4,7 @@ import (
 	"compress/gzip"
 	"io"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Gzip encoder for the gzip format using Go's standard `compress/gzip` package.
@@ -25,7 +25,7 @@ func (w *Gzip) Encoding() string {
 func (w *Gzip) NewWriter(wr io.Writer) io.WriteCloser {
 	writer, err := gzip.NewWriterLevel(wr, w.Level)
 	if err != nil {
-		panic(errors.New(err))
+		panic(errwrap.New(err))
 	}
 	return writer
 }

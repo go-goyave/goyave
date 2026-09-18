@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/middleware/parse"
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -98,7 +98,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 
 	notFound := errors.Is(err, gorm.ErrRecordNotFound)
 	if err != nil && !notFound {
-		response.Error(errorutil.New(err))
+		response.Error(errwrap.New(err))
 		return
 	}
 
@@ -113,7 +113,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 	}
 	pass := t.FieldByName(c.PasswordField)
 	if pass.Kind() == reflect.Invalid {
-		response.Error(errorutil.Errorf("Could not find valid field/column %q in type %T", c.PasswordField, user))
+		response.Error(errwrap.Errorf("Could not find valid field/column %q in type %T", c.PasswordField, user))
 		return
 	}
 
@@ -121,7 +121,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 		tokenFunc := lo.Ternary(c.TokenFunc == nil, c.defaultTokenFunc, c.TokenFunc)
 		token, err := tokenFunc(request, user)
 		if err != nil {
-			response.Error(errorutil.New(err))
+			response.Error(errwrap.New(err))
 			return
 		}
 		response.JSON(http.StatusOK, map[string]string{"token": token})

@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/utils/tests"
 	"goyave.dev/goyave/v5/database"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 var (
@@ -364,7 +364,7 @@ func TestGormSession(t *testing.T) {
 			return fmt.Errorf("test err")
 		})
 		require.Error(t, err)
-		assert.Equal(t, errors.New(fmt.Errorf("test err")).Error(), err.Error())
+		assert.Equal(t, errwrap.New(fmt.Errorf("test err")).Error(), err.Error())
 		assert.Equal(t, "testvalue", ctxValue)
 		assert.True(t, committer.testTxCommitter.rolledback)
 		assert.False(t, committer.testTxCommitter.committed)

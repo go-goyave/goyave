@@ -38,8 +38,8 @@ type TestBasicUnauthorizer struct {
 	*BasicAuthenticator[TestUser]
 }
 
-func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.Response, _ *goyave.Request, err error) {
-	response.JSON(http.StatusUnauthorized, map[string]string{"custom error key": err.Error()})
+func (a *TestBasicUnauthorizer) OnUnauthorized(response *goyave.Response, _ *goyave.Request, err goyave.ClientError) {
+	response.JSON(http.StatusUnauthorized, map[string]string{"custom error key": err.Message()})
 }
 
 type TestNoScheme struct {
@@ -55,11 +55,6 @@ func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser, *b
 	cfg.App.Debug = false
 	logBuffer := &bytes.Buffer{}
 	logger := slog.New(slog.NewHandler(false, logBuffer))
-	// TODO update DB-related tests (use sqlmock?)
-	// cfg.Set("database.connection", "sqlite3")
-	// cfg.Set("database.name", "testauthenticator.db")
-	// cfg.Set("database.options", "mode=memory")
-	// cfg.Set("app.debug", false)
 	server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: logger})
 	password, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 	user := &TestUser{

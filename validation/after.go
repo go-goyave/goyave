@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -75,7 +75,7 @@ func (v *AfterFieldValidator) Name() string { return "after" }
 func AfterField(path string) *AfterFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(errors.NewSkip(fmt.Errorf("validation.AfterField: path parse error: %w", err), 3))
+		panic(errwrap.NewSkip(fmt.Errorf("validation.AfterField: path parse error: %w", err), 3))
 	}
 	return &AfterFieldValidator{Path: p}
 }
@@ -103,7 +103,7 @@ func (v *AfterEqualFieldValidator) Name() string { return "after_equal" }
 func AfterEqualField(path string) *AfterEqualFieldValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(errors.NewSkip(fmt.Errorf("validation.AfterEqualField: path parse error: %w", err), 3))
+		panic(errwrap.NewSkip(fmt.Errorf("validation.AfterEqualField: path parse error: %w", err), 3))
 	}
 	return &AfterEqualFieldValidator{Path: p}
 }

@@ -6,7 +6,7 @@ import (
 	"slices"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -219,7 +219,7 @@ func (r Rules) checkDuplicates() {
 		path := f.Path.String()
 		includeElementsKeys(paths, path, f.Elements)
 		if _, exists := paths[path]; exists {
-			panic(errors.Errorf("validation.RuleSet: duplicate path \"%s\" in rule set", path))
+			panic(errwrap.Errorf("validation.RuleSet: duplicate path \"%s\" in rule set", path))
 		}
 		var parentPath string
 		depth := f.Path.Depth()
@@ -231,7 +231,7 @@ func (r Rules) checkDuplicates() {
 		if f.Path.Tail().IsWildcard() {
 			wildcardPaths[parentPath] = struct{}{}
 		} else if _, exists := wildcardPaths[parentPath]; exists {
-			panic(errors.Errorf("validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"%s\")", path))
+			panic(errwrap.Errorf("validation.RuleSet: cannot validate an object property with both the wildcard (*) and specific property paths (at \"%s\")", path))
 		}
 		paths[path] = struct{}{}
 	}

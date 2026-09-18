@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 var contentTypeByExtension = map[string]string{
@@ -102,14 +102,14 @@ var contentTypeByExtension = map[string]string{
 // This function is not safe for concurrent use.
 func AddExtensionType(ext, mimeType string) error {
 	if !strings.HasPrefix(ext, ".") {
-		return errors.Errorf("fsutil: extension %q missing leading dot", ext)
+		return errwrap.Errorf("fsutil: extension %q missing leading dot", ext)
 	}
 	_, params, err := mime.ParseMediaType(mimeType)
 	if err != nil {
-		return errors.New(err)
+		return errwrap.New(err)
 	}
 	if len(params) > 0 {
-		return errors.Errorf("fsutil: MIME type %q contains a parameter", mimeType)
+		return errwrap.Errorf("fsutil: MIME type %q contains a parameter", mimeType)
 	}
 	contentTypeByExtension[ext] = mimeType
 	return nil
@@ -134,20 +134,20 @@ func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64,
 	var f fs.File
 	f, err = filesystem.Open(file)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 		return
 	}
 	defer func() {
 		errClose := f.Close()
 		if err == nil && errClose != nil {
-			err = errors.New(errClose)
+			err = errwrap.New(errClose)
 		}
 	}()
 
 	var stat fs.FileInfo
 	stat, err = f.Stat()
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 		return
 	}
 
@@ -160,7 +160,7 @@ func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64,
 
 	contentType, err = DetectContentType(f, file)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 	}
 
 	return
@@ -182,12 +182,12 @@ func DetectContentType(r io.Reader, fileName string) (string, error) {
 	buffer := make([]byte, 512)
 	_, err := r.Read(buffer)
 	if err != nil {
-		return "", errors.New(err)
+		return "", errwrap.New(err)
 	}
 	if seeker, ok := r.(io.Seeker); ok {
 		_, err = seeker.Seek(0, io.SeekStart)
 		if err != nil {
-			return "", errors.New(err)
+			return "", errwrap.New(err)
 		}
 	}
 
@@ -372,14 +372,14 @@ func NewEmbed(fs fs.ReadDirFS) Embed {
 // ErrInvalid or ErrNotExist.
 func (e Embed) Open(name string) (fs.File, error) {
 	f, err := e.FS.Open(name)
-	return f, errors.NewSkip(err, 3)
+	return f, errwrap.NewSkip(err, 3)
 }
 
 // ReadDir reads the named directory
 // and returns a list of directory entries sorted by filename.
 func (e Embed) ReadDir(name string) ([]fs.DirEntry, error) {
 	entries, err := e.FS.ReadDir(name)
-	return entries, errors.NewSkip(err, 3)
+	return entries, errwrap.NewSkip(err, 3)
 }
 
 // Stat returns a FileInfo describing the file.
@@ -389,18 +389,18 @@ func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
 	}
 	f, err := e.FS.Open(name)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, errwrap.New(err)
 	}
 	defer func() {
 		e := f.Close()
 		if err == nil && e != nil {
-			err = errors.New(&fs.PathError{Op: "close", Path: name, Err: e})
+			err = errwrap.New(&fs.PathError{Op: "close", Path: name, Err: e})
 		}
 	}()
 
 	fileinfo, err = f.Stat()
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 	}
 	return
 }
@@ -410,11 +410,11 @@ func (e Embed) Stat(name string) (fileinfo fs.FileInfo, err error) {
 func (e Embed) Sub(dir string) (Embed, error) {
 	sub, err := fs.Sub(e.FS, dir)
 	if err != nil {
-		return Embed{}, errors.NewSkip(err, 3)
+		return Embed{}, errwrap.NewSkip(err, 3)
 	}
 	subFS, ok := sub.(fs.ReadDirFS)
 	if !ok {
-		return Embed{}, errors.NewSkip("fsutil.Embed: cannot Sub, underlying sub FS doesn't implement fsutil.FS", 3)
+		return Embed{}, errwrap.NewSkip("fsutil.Embed: cannot Sub, underlying sub FS doesn't implement fsutil.FS", 3)
 	}
 	return Embed{FS: subFS}, nil
 }

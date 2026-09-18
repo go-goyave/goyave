@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	stderrors "errors"
+	"errors"
 
 	"goyave.dev/goyave/v5"
 	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 
 	ws "github.com/gorilla/websocket"
 )
@@ -241,7 +241,7 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler func(*Conn
 	var err error
 	defer func() { // Panic recovery
 		if panicReason := recover(); panicReason != nil || panicked {
-			err = errors.NewSkip(panicReason, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
+			err = errwrap.NewSkip(panicReason, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
 		}
 
 		if IsCloseError(err) {
@@ -262,7 +262,7 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler func(*Conn
 
 	err = handler(conn, request)
 	if err != nil {
-		err = errors.New(err)
+		err = errwrap.New(err)
 	}
 	panicked = false
 }
@@ -275,7 +275,7 @@ type adapter struct {
 
 func (a *adapter) onError(w http.ResponseWriter, _ *http.Request, status int, reason error) {
 	if status == http.StatusInternalServerError {
-		panic(errors.New(reason))
+		panic(errwrap.New(reason))
 	}
 	w.Header().Set("Sec-Websocket-Version", "13")
 	a.upgradeErrorHandler(w.(*goyave.Response), a.request, status, reason)
@@ -294,7 +294,7 @@ func (a *adapter) getCheckOriginFunc() func(r *http.Request) bool {
 // IsCloseError returns true if the error is one of the following close errors:
 // CloseNormalClosure (1000), CloseGoingAway (1001) or CloseNoStatusReceived (1005)
 func IsCloseError(err error) bool {
-	if closeError, ok := stderrors.AsType[*ws.CloseError](err); ok {
+	if closeError, ok := errors.AsType[*ws.CloseError](err); ok {
 		err = closeError
 	}
 	return ws.IsCloseError(err,

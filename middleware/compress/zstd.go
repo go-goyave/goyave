@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/klauspost/compress/zstd"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // Zstd encoder for the Zstandard compression algorithm
@@ -24,7 +24,7 @@ func (w *Zstd) Encoding() string {
 func (w *Zstd) NewWriter(wr io.Writer) io.WriteCloser {
 	writer, err := zstd.NewWriter(wr, w.Options...)
 	if err != nil {
-		panic(errors.New(err))
+		panic(errwrap.New(err))
 	}
 	return writer
 }

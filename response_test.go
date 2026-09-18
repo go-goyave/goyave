@@ -18,7 +18,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/slog"
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 )
 
@@ -578,23 +578,23 @@ func TestResponse(t *testing.T) {
 
 	t.Run("Error_with_debug", func(t *testing.T) {
 		cases := []struct {
-			expectedLog     func(e *errorutil.Error) *regexp.Regexp
+			expectedLog     func(e *errwrap.Error) *regexp.Regexp
 			err             any
 			expectedMessage string
 		}{
-			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+			{err: fmt.Errorf("custom error"), expectedMessage: `"custom error"`, expectedLog: func(e *errwrap.Error) *regexp.Regexp {
 				return regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s}\n`,
 						regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
 					))
 			}},
-			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+			{err: map[string]any{"key": "value"}, expectedMessage: `{"key":"value"}`, expectedLog: func(e *errwrap.Error) *regexp.Regexp {
 				return regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"%s","trace":%s,"reason":{"key":"value"}}\n`,
 						regexp.QuoteMeta(e.Error()), regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String())))),
 					))
 			}},
-			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`, expectedLog: func(e *errorutil.Error) *regexp.Regexp {
+			{err: []error{fmt.Errorf("custom error 1"), fmt.Errorf("custom error 2")}, expectedMessage: `["custom error 1","custom error 2"]`, expectedLog: func(e *errwrap.Error) *regexp.Regexp {
 				reasons := e.Unwrap()
 				stacktrace := regexp.QuoteMeta(string(lo.Must(json.Marshal(e.StackFrames().String()))))
 				return regexp.MustCompile(
@@ -604,7 +604,7 @@ func TestResponse(t *testing.T) {
 					),
 				)
 			}},
-			{err: nil, expectedMessage: `null`, expectedLog: func(_ *errorutil.Error) *regexp.Regexp {
+			{err: nil, expectedMessage: `null`, expectedLog: func(_ *errwrap.Error) *regexp.Regexp {
 				return regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","source":{"function":".+","file":".+","line":\d+},"msg":"<nil>"}\n`)
 			}},
 		}
@@ -699,6 +699,60 @@ func TestResponse(t *testing.T) {
 			),
 			logBuffer.String(),
 		)
+	})
+
+	t.Run("ClientError", func(t *testing.T) {
+		cases := []struct {
+			desc       string
+			err        any
+			wantStatus int
+			wantBody   []byte
+		}{
+			{
+				desc:       "wrapped",
+				err:        errwrap.New(BadRequest("custom message")),
+				wantStatus: http.StatusBadRequest,
+				wantBody:   []byte(`{"error":"custom message"}`),
+			},
+			{
+				desc:       "not_wrapped",
+				err:        BadRequest("custom message"),
+				wantStatus: http.StatusBadRequest,
+				wantBody:   []byte(`{"error":"custom message"}`),
+			},
+			{
+				desc:       "status_handler_empty_message",
+				err:        BadRequest(""),
+				wantStatus: http.StatusBadRequest,
+				wantBody:   nil, // Nothing written to the body, status handler will take care of it.
+			},
+		}
+
+		for _, c := range cases {
+			t.Run(c.desc, func(t *testing.T) {
+				resp, recorder, logBuffer := newTestReponse()
+
+				resp.Error(c.err)
+
+				res := recorder.Result()
+				body, err := io.ReadAll(res.Body)
+				assert.NoError(t, res.Body.Close())
+				require.NoError(t, err)
+				assert.Equal(t, c.wantStatus, resp.GetStatus())
+				if c.wantBody == nil {
+					// Nothing written to the request
+					assert.False(t, resp.wroteHeader)
+					assert.Empty(t, body)
+				} else {
+					assert.True(t, resp.wroteHeader)
+					assert.Equal(t, c.wantBody, body)
+					assert.Equal(t, c.wantStatus, res.StatusCode)
+				}
+				assert.Empty(t, logBuffer)     // No logs should be written for a client error (4xx)
+				assert.Nil(t, resp.GetError()) // Should not be considered a response error
+			})
+		}
+		// TODO ClientError test (wrapped, not wrapped, status handler if empty message)
 	})
 
 	t.Run("WriteDBError", func(t *testing.T) {

@@ -2,11 +2,10 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"net/http"
 
 	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/errors"
 )
 
 // MetaAuth the authentication middleware will only authenticate the user
@@ -22,12 +21,13 @@ const defaultRealm = "Authorization required"
 type Authenticator[T any] interface {
 	// Authenticate fetch the user corresponding to the credentials
 	// found in the given request and returns it.
-	// If no user can be authenticated, returns the error detailing why the
-	// authentication failed. The error message is expected to be already localized.
+	// If no user can be authenticated, returns the [goyave.ClientError] detailing why the
+	// authentication failed.
 	//
-	// If the returned error is of type `*errors.Error`, it will be considered
-	// as a system error. Other error types don't need to be wrapped as they
-	// will only be used for the message returned in the response.
+	// Any returned error that doesn't implement [goyave.ClientError] will be considered
+	// as a system error and result in a 500 response.
+	// Errors caused by missing or invalid credentials should be of type [goyave.UnauthorizedError].
+	// [goyave.ClientError] don't need to be wrapped using [errwrap.New] since they're not internal errors.
 	Authenticate(request *goyave.Request) (*T, error)
 }
 
@@ -55,7 +55,7 @@ type UserService[T any] interface {
 // Unauthorizer can be implemented by Authenticators to define custom behavior
 // when authentication fails.
 type Unauthorizer interface {
-	OnUnauthorized(response *goyave.Response, request *goyave.Request, err error)
+	OnUnauthorized(response *goyave.Response, request *goyave.Request, err goyave.ClientError)
 }
 
 // Handler a middleware that automatically sets the request's `User` if the
@@ -75,14 +75,15 @@ type Handler[T any] struct {
 }
 
 // Handle on success, set the request's `User` to the user returned by the authenticator
-// and inject it in the request's `context.Context`. The user can be retrieved from the
-// context using `UserFromContext`.
+// and inject it in the request's [context.Context]. The user can be retrieved from the
+// context using [UserFromContext].
 //
 // Blocks if the authentication is not successful.
-// If the authenticator implements `SchemeAuthenticator`, add the `WWW-Authenticate` header
+// If the authenticator implements [SchemeAuthenticator], add the `WWW-Authenticate` header
 // to the response.
-// If the authenticator implements `Unauthorizer`, `OnUnauthorized` is called,
-// otherwise returns a default `401 Unauthorized` error.
+// If the authenticator implements [Unauthorizer], [Unauthorizer.OnUnauthorized] is called,
+// otherwise the error is returned with [goyave.Response.Error].
+//
 // If the matched route doesn't contain the `MetaAuth` or if it's not equal to `true`,
 // the middleware is skipped.
 func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
@@ -94,7 +95,9 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 
 		user, err := m.Authenticate(request)
 		if err != nil {
-			if _, ok := err.(*errors.Error); ok { // System error (failed to read key for example)
+			clientErr, ok := errors.AsType[goyave.ClientError](err)
+			if !ok {
+				// System error, report, return 500 and early return.
 				response.Error(err)
 				return
 			}
@@ -102,10 +105,10 @@ func (m *Handler[T]) Handle(next goyave.Handler) goyave.Handler {
 				response.Header().Set("WWW-Authenticate", authenticateHeader)
 			}
 			if unauthorizer, ok := m.Authenticator.(Unauthorizer); ok {
-				unauthorizer.OnUnauthorized(response, request, err)
+				unauthorizer.OnUnauthorized(response, request, clientErr)
 				return
 			}
-			response.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+			response.Error(clientErr) // Let the response handle the ClientError.
 			return
 		}
 		request.User = user

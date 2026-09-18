@@ -3,7 +3,6 @@ package compress
 import (
 	"io"
 	"net/http"
-	"slices"
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v5"
@@ -156,22 +155,16 @@ func (m *Middleware) Handle(next goyave.Handler) goyave.Handler {
 }
 
 func (m *Middleware) getEncoder(response *goyave.Response, request *goyave.Request) Encoder {
-	if response.Hijacked() || request.Header().Get("Upgrade") != "" {
+	if len(m.Encoders) == 0 || response.Hijacked() || request.Header().Get("Upgrade") != "" {
 		return nil
 	}
 	values := httputil.ParseMultiValuesHeader(request.Header().Get("Accept-Encoding"))
 
 	// A quality value of 0 means the encoding is not acceptable
 	// (RFC 9110 sections 12.4.2 and 12.5.3).
-	// The values are sorted by descending priority, so the rejected ones are all at the end.
-	acceptedEncodings := values
-	var rejectedEncodings []httputil.HeaderValue
-	if i := slices.IndexFunc(values, func(h httputil.HeaderValue) bool { return h.Priority == 0 }); i != -1 {
-		acceptedEncodings, rejectedEncodings = values[:i], values[i:]
-	}
-	if len(acceptedEncodings) == 0 {
-		return nil
-	}
+	acceptedEncodings, rejectedEncodings := lo.FilterReject(values, func(v httputil.HeaderValue, _ int) bool {
+		return v.Priority != 0
+	})
 	groupedByPriority := lo.PartitionBy(acceptedEncodings, func(h httputil.HeaderValue) float64 {
 		return h.Priority
 	})

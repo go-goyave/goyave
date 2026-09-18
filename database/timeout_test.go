@@ -23,7 +23,7 @@ func prepareTimeoutTest(t *testing.T, timeout int) (*gorm.DB, sqlmock.Sqlmock) {
 		DatabaseName:               fmt.Sprintf("timeout_test_%s.db", t.Name()),
 		DefaultReadQueryTimeoutMs:  timeout,
 		DefaultWriteQueryTimeoutMs: timeout,
-		MaxIdleConnections:         1, // TODO document this is important for tests otherwise the mock connection gets closed
+		MaxIdleConnections:         1,
 		Debug:                      false,
 		GORM:                       GORMConfig{}, // Disabling PrepareStmt is important to avoid errors caused by mock
 	}

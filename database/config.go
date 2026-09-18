@@ -23,6 +23,9 @@ type Config struct {
 	// MaxIdleConnections the maximum number of connections in the idle connection pool.
 	// If equal to 0, no idle connections are retained.
 	// Recommended default value is 20.
+	//
+	// In tests using the database (mocked or not), it is recommended to set this value
+	// to at least one; otherwise the test connection would be closed.
 	MaxIdleConnections int
 	// MaxLifetime the maximum time (in seconds) a connection may be reused.
 	// Expired connections may be closed lazily before reuse.

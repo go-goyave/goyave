@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // FS implementation of [fsutil.FS] for the local OS file system.
@@ -30,7 +30,7 @@ func New(baseDir string) *FS {
 // If there is an error, it will be of type [*os.PathError].
 func (f *FS) Open(name string) (fs.File, error) {
 	file, err := os.Open(path.Join(f.dir, name))
-	return file, errors.NewSkip(err, 3)
+	return file, errwrap.NewSkip(err, 3)
 }
 
 // OpenFile is the generalized open call. It opens the named file with specified flag
@@ -40,7 +40,7 @@ func (f *FS) Open(name string) (fs.File, error) {
 // If there is an error, it will be of type [*os.PathError].
 func (f *FS) OpenFile(name string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error) {
 	rwc, err := os.OpenFile(path.Join(f.dir, name), flag, perm)
-	return rwc, errors.NewSkip(err, 3)
+	return rwc, errwrap.NewSkip(err, 3)
 }
 
 // ReadDir reads the named directory,
@@ -50,14 +50,14 @@ func (f *FS) OpenFile(name string, flag int, perm fs.FileMode) (io.ReadWriteClos
 // along with the error.
 func (f *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 	entries, err := os.ReadDir(path.Join(f.dir, name))
-	return entries, errors.NewSkip(err, 3)
+	return entries, errwrap.NewSkip(err, 3)
 }
 
 // Stat returns a FileInfo describing the named file.
 // If there is an error, it will be of type [*os.PathError].
 func (f *FS) Stat(name string) (fs.FileInfo, error) {
 	info, err := os.Stat(path.Join(f.dir, name))
-	return info, errors.NewSkip(err, 3)
+	return info, errwrap.NewSkip(err, 3)
 }
 
 // Getwd returns a rooted path name corresponding to the
@@ -66,7 +66,7 @@ func (f *FS) Stat(name string) (fs.FileInfo, error) {
 // Getwd may return any one of them.
 func (*FS) Getwd() (string, error) {
 	wd, err := os.Getwd()
-	return wd, errors.NewSkip(err, 3)
+	return wd, errwrap.NewSkip(err, 3)
 }
 
 // FileExists returns true if the file at the given path exists and is readable.
@@ -93,20 +93,20 @@ func (f *FS) IsDirectory(name string) bool {
 // If path is already a directory, [*FS.MkdirAll] does nothing
 // and returns `nil`.
 func (f *FS) MkdirAll(name string, perm fs.FileMode) error {
-	return errors.NewSkip(os.MkdirAll(path.Join(f.dir, name), perm), 3)
+	return errwrap.NewSkip(os.MkdirAll(path.Join(f.dir, name), perm), 3)
 }
 
 // Mkdir creates a new directory with the specified name and permission
 // bits (before umask).
 // If there is an error, it will be of type [*os.PathError].
 func (f *FS) Mkdir(name string, perm fs.FileMode) error {
-	return errors.NewSkip(os.Mkdir(path.Join(f.dir, name), perm), 3)
+	return errwrap.NewSkip(os.Mkdir(path.Join(f.dir, name), perm), 3)
 }
 
 // Remove removes the named file or (empty) directory.
 // If there is an error, it will be of type [*os.PathError].
 func (f *FS) Remove(name string) error {
-	return errors.NewSkip(os.Remove(path.Join(f.dir, name)), 3)
+	return errwrap.NewSkip(os.Remove(path.Join(f.dir, name)), 3)
 }
 
 // RemoveAll removes the element at the given path and any children it contains.
@@ -115,7 +115,7 @@ func (f *FS) Remove(name string) error {
 // returns `nil` (no error).
 // If there is an error, it will be of type [*os.PathError].
 func (f *FS) RemoveAll(name string) error {
-	return errors.NewSkip(os.RemoveAll(path.Join(f.dir, name)), 3)
+	return errwrap.NewSkip(os.RemoveAll(path.Join(f.dir, name)), 3)
 }
 
 // Sub returns an [*FS] corresponding to the subtree rooted at this fs's dir.

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -77,7 +77,7 @@ func (v *SameValidator) MessagePlaceholders(c *Context) []string {
 func Same(path string) *SameValidator {
 	p, err := walk.Parse(path)
 	if err != nil {
-		panic(errors.NewSkip(fmt.Errorf("validation.Same: path parse error: %w", err), 3))
+		panic(errwrap.NewSkip(fmt.Errorf("validation.Same: path parse error: %w", err), 3))
 	}
 	return &SameValidator{Path: p}
 }

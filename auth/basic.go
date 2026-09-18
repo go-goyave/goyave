@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5"
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -63,7 +63,7 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 
 	notFound := errors.Is(err, gorm.ErrRecordNotFound)
 	if err != nil && !notFound {
-		panic(errorutil.New(err))
+		panic(errwrap.New(err))
 	}
 
 	if notFound {
@@ -76,7 +76,7 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 	}
 	pass := t.FieldByName(a.PasswordField)
 	if pass.Kind() == reflect.Invalid {
-		panic(errorutil.Errorf("could not find valid field/column %q in type %T", a.PasswordField, user))
+		panic(errwrap.Errorf("could not find valid field/column %q in type %T", a.PasswordField, user))
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(pass.String()), []byte(password)) != nil {

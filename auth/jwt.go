@@ -14,7 +14,7 @@ import (
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/validation"
 
-	errorutil "goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 )
 
 // TODO feature support for golang-jwt/jwt/v5 + more flexibility (more signing methods, don't assume HS256 would be the default everywhere, OIDC discovery, OAuth compatibility or overkill?)
@@ -131,7 +131,7 @@ func (s *JWTService) GenerateTokenWithClaims(claims jwt.MapClaims, signingMethod
 		return "", err
 	}
 	result, err := token.SignedString(key)
-	return result, errorutil.New(err)
+	return result, errwrap.New(err)
 }
 
 // getKey read the file from the service's filesystem and returns the raw data.
@@ -148,11 +148,11 @@ func (s *JWTService) getKey(filePath string) ([]byte, error) {
 
 	key, err := fs.ReadFile(s.fs, filePath)
 	if err != nil {
-		return nil, errorutil.New(err)
+		return nil, errwrap.New(err)
 	}
 
 	s.cache.Store(filePath, key)
-	return key, errorutil.New(err)
+	return key, errwrap.New(err)
 }
 
 // GetPrivateKey loads the private key that corresponds to the given `signingMethod`.
@@ -161,19 +161,19 @@ func (s *JWTService) GetPrivateKey(signingMethod jwt.SigningMethod) (any, error)
 	case *jwt.SigningMethodRSA:
 		key, err := s.getKey(s.config.RSA.Private)
 		if err != nil {
-			return nil, errorutil.New(err)
+			return nil, errwrap.New(err)
 		}
 		return jwt.ParseRSAPrivateKeyFromPEM(key)
 	case *jwt.SigningMethodECDSA:
 		key, err := s.getKey(s.config.ECDSA.Private)
 		if err != nil {
-			return nil, errorutil.New(err)
+			return nil, errwrap.New(err)
 		}
 		return jwt.ParseECPrivateKeyFromPEM(key)
 	case *jwt.SigningMethodHMAC:
 		return []byte(s.config.Secret), nil
 	default:
-		return nil, errorutil.New("unsupported JWT signing method: " + signingMethod.Alg())
+		return nil, errwrap.New("unsupported JWT signing method: " + signingMethod.Alg())
 	}
 }
 
@@ -183,19 +183,19 @@ func (s *JWTService) GetPublicKey(signingMethod jwt.SigningMethod) (any, error) 
 	case *jwt.SigningMethodRSA:
 		key, err := s.getKey(s.config.RSA.Public)
 		if err != nil {
-			return nil, errorutil.New(err)
+			return nil, errwrap.New(err)
 		}
 		return jwt.ParseRSAPublicKeyFromPEM(key)
 	case *jwt.SigningMethodECDSA:
 		key, err := s.getKey(s.config.ECDSA.Public)
 		if err != nil {
-			return nil, errorutil.New(err)
+			return nil, errwrap.New(err)
 		}
 		return jwt.ParseECPublicKeyFromPEM(key)
 	case *jwt.SigningMethodHMAC:
 		return []byte(s.config.Secret), nil
 	default:
-		return nil, errorutil.New("unsupported JWT signing method: " + signingMethod.Alg())
+		return nil, errwrap.New("unsupported JWT signing method: " + signingMethod.Alg())
 	}
 }
 
@@ -215,7 +215,7 @@ func (s *JWTService) keyFunc(signingMethod jwt.SigningMethod) jwt.Keyfunc {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
 		default:
-			return nil, errorutil.New("unsupported JWT Signing method: " + signingMethod.Alg())
+			return nil, errwrap.New("unsupported JWT Signing method: " + signingMethod.Alg())
 		}
 		return s.GetPublicKey(signingMethod)
 	}
@@ -224,7 +224,7 @@ func (s *JWTService) keyFunc(signingMethod jwt.SigningMethod) jwt.Keyfunc {
 // Parse a JWT in string form using the given signingMethod. If the JWT isn't signed with the same
 // method, an error is returned.
 //
-// Note that only errors of type `*errors.Error` returned by this function should be considered as
+// Note that only errors of type [*errwrap.Error] returned by this function should be considered as
 // system errors. Other error types simply represent user errors (invalid token, unexpected signing method, ...)
 func (s *JWTService) Parse(tokenString string, signingMethod jwt.SigningMethod) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, s.keyFunc(signingMethod))
@@ -291,7 +291,7 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					return nil, fmt.Errorf("%s", request.Lang.Get("auth.invalid-credentials"))
 				}
-				return nil, errorutil.New(err)
+				return nil, errwrap.New(err)
 			}
 
 			return user, nil
@@ -302,8 +302,8 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 }
 
 func (a *JWTAuthenticator[T]) makeError(language *lang.Language, err error) error {
-	if _, ok := errors.AsType[*errorutil.Error](err); ok { // System error
-		return errorutil.New(err)
+	if _, ok := errors.AsType[*errwrap.Error](err); ok { // System error
+		return errwrap.New(err)
 	}
 	switch {
 	case errors.Is(err, jwt.ErrTokenNotValidYet):

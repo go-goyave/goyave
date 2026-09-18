@@ -8,7 +8,7 @@ import (
 	"goyave.dev/goyave/v5/cors"
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/validation"
 )
 
@@ -79,9 +79,9 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 		panicked := true
 		defer func() {
 			if err := recover(); err != nil || panicked {
-				e := errors.NewSkip(err, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
+				e := errwrap.NewSkip(err, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
 				if e != nil {
-					response.err = e.(*errors.Error)
+					response.err = e.(*errwrap.Error)
 				}
 				slog.FromContext(request.Context()).Error(e)
 				if !response.wroteHeader {

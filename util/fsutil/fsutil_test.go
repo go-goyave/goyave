@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil/osfs"
 	"goyave.dev/goyave/v5/util/typeutil"
 )
@@ -627,7 +627,7 @@ func TestEmbed(t *testing.T) {
 	stat, err = e.Stat("notadir/osfs.go")
 	assert.Nil(t, stat)
 	if assert.Error(t, err) {
-		e, ok := err.(*errors.Error)
+		e, ok := err.(*errwrap.Error)
 		if assert.True(t, ok) {
 			var fsErr *fs.PathError
 			if assert.ErrorAs(t, e, &fsErr) {

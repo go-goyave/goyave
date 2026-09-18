@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/util/errors"
+	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/walk"
 )
 
@@ -132,7 +132,7 @@ type Context struct {
 // when there has been an operation error (such as a database error).
 func (c *Context) AddError(err ...error) {
 	for _, e := range err {
-		c.errors = append(c.errors, errors.NewSkip(e, 3)) // Skipped: runtime.Callers, NewSkip, this func
+		c.errors = append(c.errors, errwrap.NewSkip(e, 3)) // Skipped: runtime.Callers, NewSkip, this func
 	}
 }
 

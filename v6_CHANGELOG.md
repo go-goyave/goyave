@@ -83,6 +83,7 @@
   - service container removed in favor of compile-time and explicit wiring. If a service is unavailable or doesn't implement the interface defined by the dependent, your projet won't compile. This is as opposed to using the container with which the type assertion is done at runtime and could generate panics.
 - Response.JSON now uses json v2 and accepts variadic json options.
   - JSON response bodies do not end with \n anymore as a result.
+- util/errors renamed to errwrap to avoid package name collisions with std and dependency confusion
 
 TODO docs pass with links
 TODO cleanup resources directory

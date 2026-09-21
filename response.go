@@ -394,10 +394,19 @@ func (r *Response) Download(fs fs.StatFS, file string, fileName string) {
 	r.writeFile(fs, file, fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 }
 
-// Error print the error in the console and return it with an error code 500 (or previously defined
-// status code using `response.Status()`).
-// If debugging is enabled in the config, the error is also written in the response
-// and the stacktrace is printed in the console.
+// Error handles generic errors.
+//
+// If the given error is a [ClientError], sets the status using [ClientError.Code]. If a non-empty
+// [ClientError.Message] is available, a JSON response is generated from it. If the message is empty,
+// nothing is written to the response so the status handling corresponding to the [ClientError.Code]
+// can be executed.
+//
+// For any other type, the given error is wrapped using [errwrap.New].
+// The error and its stacktrace are then written in the logs and a 500 response is generated (or previously
+// defined status code using [response.Status]).
+//
+// If debugging is enabled in the config, a JSON response with the error message is generated.
+//
 // If debugging is not enabled, only the status code is set, which means you can still
 // write to the response, or use your error status handler.
 func (r *Response) Error(err any) {

@@ -19,7 +19,7 @@ type unwrapper interface {
 	Unwrap() []error
 }
 
-// Logger an extension of standard `*slog.Logger` overriding the `Error()` and `ErrorCtx()`
+// Logger an extension of standard [*slog.Logger] overriding the [slog.Logger.Error] and [slog.Logger.ErrorContext]
 // functions so they take an error as parameter and handle [*errwrap.Error] gracefully.
 type Logger struct {
 	*slog.Logger
@@ -40,32 +40,32 @@ func (l *Logger) With(args ...any) *Logger {
 	return &Logger{Logger: l.Logger.With(args...)}
 }
 
-// DebugWithSource logs at `LevelDebug`. The given source will be used instead of the automatically collecting it from the caller.
+// DebugWithSource logs at [slog.LevelDebug]. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) DebugWithSource(ctx context.Context, source uintptr, msg string, args ...any) {
 	l.log(ctx, slog.LevelDebug, source, msg, args...)
 }
 
-// InfoWithSource logs at `LevelInfo`. The given source will be used instead of the automatically collecting it from the caller.
+// InfoWithSource logs at [slog.LevelInfo]. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) InfoWithSource(ctx context.Context, source uintptr, msg string, args ...any) {
 	l.log(ctx, slog.LevelInfo, source, msg, args...)
 }
 
-// WarnWithSource logs at `LevelWarn`. The given source will be used instead of the automatically collecting it from the caller.
+// WarnWithSource logs at [slog.LevelWarn]. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) WarnWithSource(ctx context.Context, source uintptr, msg string, args ...any) {
 	l.log(ctx, slog.LevelWarn, source, msg, args...)
 }
 
-// Error logs the given error at `LevelError`.
+// Error logs the given error at [slog.LevelError].
 func (l *Logger) Error(err error, args ...any) {
 	l.logError(context.Background(), 0, err, args...)
 }
 
-// ErrorCtx logs the given error at `LevelError` with the given context.
-func (l *Logger) ErrorCtx(ctx context.Context, err error, args ...any) {
+// ErrorContext logs the given error at [slog.LevelError] with the given context.
+func (l *Logger) ErrorContext(ctx context.Context, err error, args ...any) {
 	l.logError(ctx, 0, err, args...)
 }
 
-// ErrorWithSource logs at `LevelError`. The given source will be used instead of the automatically collecting it from the caller.
+// ErrorWithSource logs at [slog.LevelError]. The given source will be used instead of the automatically collecting it from the caller.
 func (l *Logger) ErrorWithSource(ctx context.Context, source uintptr, err error, args ...any) {
 	l.logError(ctx, source, err, args...)
 }
@@ -161,8 +161,8 @@ func (l *Logger) handleReason(ctx context.Context, reason error, trace *slog.Att
 	}
 }
 
-// StructValue recursively convert a structure, structure pointer or map to a `slog.GroupValue`.
-// If the given value implements `slog.LogValuer`, this value is returned instead.
+// StructValue recursively convert a structure, structure pointer or map to a [slog.GroupValue].
+// If the given value implements [slog.LogValuer], this value is returned instead.
 // Returns AnyValue if the type is not supported.
 func StructValue(v any) slog.Value {
 	seen := map[uintptr]struct{}{}
@@ -236,7 +236,7 @@ func DiscardLogger() *Logger {
 var defaultLogger = New(NewHandler(false, os.Stderr))
 
 // Default returns the default global logger.
-// This logger uses the JSON handler and outputs to `os.Stderr`.
+// This logger uses the JSON handler and outputs to [os.Stderr].
 func Default() *Logger {
 	return defaultLogger
 }
@@ -252,7 +252,7 @@ func SetDefault(logger *Logger) {
 type loggerCtxKey struct{}
 
 // Context inject the given logger as a context value. The logger
-// can be retrieved from the returned context using `FromContext`.
+// can be retrieved from the returned context using [FromContext].
 func Context(ctx context.Context, logger *Logger) context.Context {
 	return context.WithValue(ctx, loggerCtxKey{}, logger)
 }
@@ -260,7 +260,7 @@ func Context(ctx context.Context, logger *Logger) context.Context {
 // FromContext return the logger stored in the context. If there
 // is no logger in the context, returns the default logger instead.
 //
-// The default logger uses the JSON handler and outputs to `os.Stderr`.
+// The default logger uses the JSON handler and outputs to [os.Stderr].
 func FromContext(ctx context.Context) *Logger {
 	if u, ok := ctx.Value(loggerCtxKey{}).(*Logger); ok {
 		return u

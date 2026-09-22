@@ -26,6 +26,7 @@ func New(cfg *Config) (*gorm.DB, error) {
 	if !ok {
 		return nil, errwrap.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)
 	}
+	// TODO otel integration
 
 	dsn := dialect.buildDSN(cfg)
 	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg))

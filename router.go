@@ -11,7 +11,10 @@ import (
 	"slices"
 
 	"github.com/samber/lo"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/internal/otel"
+	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errwrap"
 )
 
@@ -256,6 +259,7 @@ func (r *Router) StatusHandler(handler StatusHandler, status int, additionalStat
 
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	req = r.otel(req)
 	if req.URL.Scheme != "" && req.URL.Scheme != "http" {
 		address := r.server.getProxyAddress() + req.URL.Path
 		query := req.URL.Query()
@@ -263,12 +267,24 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			address += "?" + query.Encode()
 		}
 		http.Redirect(w, req, address, http.StatusPermanentRedirect)
+		if r.server.tracer != nil {
+			otel.EndSpan(req.Context(), http.StatusPermanentRedirect)
+		}
 		return
 	}
 
 	match := routeMatch{currentPath: req.URL.Path}
 	r.match(req.Method, &match)
 	r.requestHandler(&match, w, req)
+}
+
+func (r *Router) otel(req *http.Request) *http.Request {
+	if r.server.tracer != nil {
+		otelCtx := otel.StartSpan(req.Context(), r.server.tracer, req)
+		req = req.WithContext(slog.Context(otelCtx, slog.FromContext(otelCtx)))
+		// Span is finished after the [Router.ServeHTTP] method returns.
+	}
+	return req
 }
 
 // TODO export RouteMatch and add Match with string param function
@@ -482,6 +498,12 @@ func (r *Router) Controller(controller Registrer) *Router {
 }
 
 func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
+	if r.server.tracer != nil {
+		uri := match.route.GetFullURI()
+		if uri != "" {
+			otel.AddAttr(rawRequest.Context(), semconv.HTTPRoute(uri))
+		}
+	}
 	request := NewRequest(rawRequest)
 	request.Route = match.route
 	if match.parameters == nil {
@@ -517,6 +539,11 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 
 // finalize the request's life-cycle.
 func (r *Router) finalize(match *routeMatch, response *Response, request *Request) error {
+	if r.server.tracer != nil {
+		// Use a defer function so in case a status handler panics, the span is still ended properly.
+		defer otel.EndSpan(request.Context(), response.status)
+	}
+
 	if response.empty {
 		if response.status == 0 {
 			// If the response is empty, return status 204 to

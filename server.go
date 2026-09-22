@@ -16,7 +16,9 @@ import (
 
 	"errors"
 
+	"go.opentelemetry.io/otel/trace"
 	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errwrap"
@@ -42,6 +44,9 @@ type Options struct {
 
 	// HTTP2 configures HTTP/2 connections.
 	HTTP2 *http.HTTP2Config
+
+	// TracerProvider if given, enables tracing using OpenTelemetry.
+	TracerProvider trace.TracerProvider
 
 	// ListenConfig optionally specifies the configuration for the network listener.
 	// If not provided, the default net.ListenConfig is used.
@@ -87,6 +92,9 @@ type Options struct {
 	// be retrieved using `goyave.ServerFromContext(ctx)`.
 	ConnContext func(ctx context.Context, c net.Conn) context.Context
 
+	// TracerOptions options for the OpenTelemetry tracer.
+	TracerOptions []trace.TracerOption
+
 	// MaxHeaderBytes controls the maximum number of bytes the
 	// server will read parsing the request header's keys and
 	// values, including the request line. It does not limit the
@@ -128,6 +136,8 @@ type Server struct {
 
 	ctx context.Context
 
+	tracer trace.Tracer
+
 	host         string
 	baseURL      string
 	proxyBaseURL string
@@ -149,10 +159,16 @@ type Server struct {
 
 // New create a new `Server` using the given options.
 func New(cfg *config.Base, opts Options) (*Server, error) {
+	ctx := context.Background()
+	if opts.Context != nil {
+		ctx = opts.Context
+	}
+
 	slogger := opts.Logger
 	if slogger == nil {
-		slogger = slog.New(slog.NewHandler(cfg.App.Debug, os.Stderr))
+		slogger = slog.New(slog.NewHandler(cfg.App.Debug, os.Stderr)).WithContext(ctx)
 	}
+	ctx = slog.Context(ctx, slogger)
 
 	langFS := opts.LangFS
 	if langFS == nil {
@@ -165,14 +181,13 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 		return nil, err
 	}
 
+	var tracer trace.Tracer
+	if opts.TracerProvider != nil {
+		tracer = otel.Tracer(opts.TracerProvider, opts.TracerOptions...)
+	}
+
 	host := cfg.Server.Host
 	port := cfg.Server.Port
-
-	ctx := context.Background()
-	if opts.Context != nil {
-		ctx = opts.Context
-	}
-	ctx = slog.Context(ctx, slogger)
 
 	server := &Server{
 		server: &http.Server{
@@ -199,6 +214,7 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 		host:          host,
 		port:          port,
 		logger:        slogger,
+		tracer:        tracer,
 	}
 	server.ctx = context.WithValue(ctx, serverKey{}, server)
 	server.server.BaseContext = server.internalBaseContext

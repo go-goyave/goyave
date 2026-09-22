@@ -17,9 +17,12 @@
     - database config is not included in the default config. If you use a database, you can add it with composing `database.Config` in your config struct. Use a `map[string]database.Config` if you need multiple connections.
     - GOYAVE_ENV renamed to ENV. Only effective when using the default source.
 - slog:
-  - global default logger
-  - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context
+  - global default logger. The default handler is json if the ENV variable is equal to "prod" or "production" (case-insensitive), else it's dev mode.
+  - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context.
+  - A context is now attached to a logger. This context is used by default for log operations that don't specify a context (`Info`, `Warn`, etc...).
+  - Added missing WithGroup method.
   - skip the log earlier if log level not enabled for better performance
+  - slog.New now takes slog.Option variadic parameter. For now it's mostly for OpenTelemetry configuration.
 - server:
   - New server take a *config.Base and options. Server doesn't auto load the configuration anymore.
   - added options for MaxHeaderValueCount and DisableClientPriority
@@ -87,6 +90,10 @@
   - If Response.Error receives a ClientError, it won't return 500. Instead it builds a response based on the client error details. If the client error doesn't have a message specified, only set the status and let the status handler manage it (default behavior).
 - util/errors renamed to errwrap to avoid package name collisions with std and dependency confusion
 - added ClientError which provide a way for services to return standardized client errors without leaking into the presentation / HTTP layer.
+- OpenTelemetry integration:
+  - Logs via slog
+  - Tracing via server Options.TracerProvider
+  - Metrics (TODO)
 
 TODO docs pass with links
 TODO cleanup resources directory

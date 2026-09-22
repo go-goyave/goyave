@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"regexp"
 	"runtime"
@@ -19,9 +20,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"gorm.io/driver/sqlite"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
@@ -38,6 +47,7 @@ func TestServer(t *testing.T) {
 		}
 		cfg := config.LoadDefault()
 		s, err := New(cfg, Options{
+			Context:               t.Context(),
 			MaxHeaderBytes:        123,
 			MaxHeaderValueCount:   123,
 			DisableClientPriority: true,
@@ -76,7 +86,7 @@ func TestServer(t *testing.T) {
 
 		// Logger and Server added to context
 		assert.Equal(t, s.logger, slog.FromContext(s.Context()))
-		assert.Equal(t, s, ServerFromContext(s.Context()))
+		assert.Same(t, s, ServerFromContext(s.Context()))
 
 		t.Run("ipv6_host", func(t *testing.T) {
 			cfg := config.LoadDefault()
@@ -95,8 +105,10 @@ func TestServer(t *testing.T) {
 		langEmbed, err := fsutil.NewEmbed(resources).Sub("resources/lang")
 		require.NoError(t, err)
 		opts := Options{
-			Logger: logger,
-			LangFS: langEmbed,
+			Logger:         logger,
+			LangFS:         langEmbed,
+			TracerProvider: noop.NewTracerProvider(),
+			TracerOptions:  []trace.TracerOption{trace.WithInstrumentationAttributes(attribute.Bool("test", true))},
 		}
 
 		server, err := New(cfg, opts)
@@ -106,6 +118,7 @@ func TestServer(t *testing.T) {
 		assert.ElementsMatch(t, []string{"en-US", "en-UK"}, server.Lang.GetAvailableLanguages())
 		assert.Equal(t, "load US", server.Lang.Get("en-US", "test-load"))
 		assert.Equal(t, "load UK", server.Lang.Get("en-UK", "test-load"))
+		assert.NotNil(t, server.tracer)
 	})
 
 	t.Run("Host", func(t *testing.T) {
@@ -649,4 +662,144 @@ func TestErrLogWriter(t *testing.T) {
 		),
 		buf.String(),
 	)
+}
+
+func TestOpenTelemetry(t *testing.T) {
+	t.Run("OK", func(t *testing.T) {
+		spanRecorder := prepareOpenTelemetryTest(t, func(response *Response, request *Request) {
+			span := trace.SpanFromContext(request.Context())
+			span.SetAttributes(attribute.Bool("handler_reached", true))
+			response.Status(http.StatusOK)
+		})
+
+		spans := spanRecorder.Ended()
+		require.Len(t, spans, 1)
+		span := spans[0]
+		assert.Equal(t, otel.SpanNameServe, span.Name())
+
+		wantAttrs := []attribute.KeyValue{
+			semconv.HTTPRequestMethodGet,
+			semconv.HTTPRoute("/uri/{param}"),
+			attribute.Bool("handler_reached", true),
+			semconv.HTTPResponseStatusCode(http.StatusOK),
+		}
+		assert.Equal(t, wantAttrs, span.Attributes())
+		events := span.Events()
+		assert.Empty(t, events)
+
+		scope := span.InstrumentationScope()
+		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))
+		assert.Equal(t, wantInstrumentationAttrs, scope.Attributes)
+		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+		assert.Equal(t, otel.Version, scope.Version)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		spanRecorder := prepareOpenTelemetryTest(t, func(response *Response, _ *Request) {
+			response.Error("test error")
+		})
+
+		spans := spanRecorder.Ended()
+		require.Len(t, spans, 1)
+		span := spans[0]
+		assert.Equal(t, otel.SpanNameServe, span.Name())
+
+		status := span.Status()
+		assert.Equal(t, codes.Error, status.Code)
+		assert.Equal(t, "test error", status.Description)
+
+		wantAttrs := []attribute.KeyValue{
+			semconv.HTTPRequestMethodGet,
+			semconv.HTTPRoute("/uri/{param}"),
+			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
+		}
+		assert.Equal(t, wantAttrs, span.Attributes())
+		events := span.Events()
+		if assert.Len(t, events, 1) {
+			errEvent := events[0]
+			assert.Equal(t, semconv.ExceptionEventName, errEvent.Name)
+			assert.NotZero(t, errEvent.Time)
+			require.Len(t, errEvent.Attributes, 3)
+			stackTraceAttr := errEvent.Attributes[0]
+			typeAttr := errEvent.Attributes[1]
+			messageAttr := errEvent.Attributes[2]
+			assert.Equal(t, semconv.ExceptionStacktraceKey, stackTraceAttr.Key)
+			assert.NotEmpty(t, stackTraceAttr.Value.AsString())
+
+			assert.Equal(t, semconv.ExceptionType("*errwrap.Error"), typeAttr)
+			assert.Equal(t, semconv.ExceptionMessage("test error"), messageAttr)
+		}
+
+		scope := span.InstrumentationScope()
+		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))
+		assert.Equal(t, wantInstrumentationAttrs, scope.Attributes)
+		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+		assert.Equal(t, otel.Version, scope.Version)
+	})
+
+	t.Run("panic", func(t *testing.T) {
+		spanRecorder := prepareOpenTelemetryTest(t, func(_ *Response, _ *Request) {
+			panic("test error")
+		})
+
+		spans := spanRecorder.Ended()
+		require.Len(t, spans, 1)
+		span := spans[0]
+		assert.Equal(t, otel.SpanNameServe, span.Name())
+
+		status := span.Status()
+		assert.Equal(t, codes.Error, status.Code)
+		assert.Equal(t, "test error", status.Description)
+
+		wantAttrs := []attribute.KeyValue{
+			semconv.HTTPRequestMethodGet,
+			semconv.HTTPRoute("/uri/{param}"),
+			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
+		}
+		assert.Equal(t, wantAttrs, span.Attributes())
+		events := span.Events()
+		if assert.Len(t, events, 1) {
+			errEvent := events[0]
+			assert.Equal(t, semconv.ExceptionEventName, errEvent.Name)
+			assert.NotZero(t, errEvent.Time)
+			require.Len(t, errEvent.Attributes, 3)
+			stackTraceAttr := errEvent.Attributes[0]
+			typeAttr := errEvent.Attributes[1]
+			messageAttr := errEvent.Attributes[2]
+			assert.Equal(t, semconv.ExceptionStacktraceKey, stackTraceAttr.Key)
+			assert.NotEmpty(t, stackTraceAttr.Value.AsString())
+
+			assert.Equal(t, semconv.ExceptionType("*errwrap.Error"), typeAttr)
+			assert.Equal(t, semconv.ExceptionMessage("test error"), messageAttr)
+		}
+
+		scope := span.InstrumentationScope()
+		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))
+		assert.Equal(t, wantInstrumentationAttrs, scope.Attributes)
+		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+		assert.Equal(t, otel.Version, scope.Version)
+	})
+}
+
+func prepareOpenTelemetryTest(t *testing.T, handler Handler) *tracetest.SpanRecorder {
+	spanRecorder := tracetest.NewSpanRecorder()
+	traceProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSpanProcessor(spanRecorder),
+	)
+	opts := Options{
+		TracerProvider: traceProvider,
+		TracerOptions:  []trace.TracerOption{trace.WithInstrumentationAttributes(attribute.Bool("test", true))},
+		Logger:         slog.DiscardLogger(),
+	}
+	server, err := New(config.LoadDefault(), opts)
+	require.NoError(t, err)
+
+	router := server.Router()
+	router.Get("/uri/{param}", handler)
+
+	httpRecorder := httptest.NewRecorder()
+	request := httptest.NewRequestWithContext(server.ctx, http.MethodGet, "/uri/test", nil)
+	router.ServeHTTP(httpRecorder, request)
+
+	return spanRecorder
 }

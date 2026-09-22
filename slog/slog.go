@@ -8,10 +8,13 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"log/slog"
 
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/util/errwrap"
 )
 
@@ -23,21 +26,70 @@ type unwrapper interface {
 // functions so they take an error as parameter and handle [*errwrap.Error] gracefully.
 type Logger struct {
 	*slog.Logger
+	ctx context.Context
 }
 
 // New creates a new Logger with the given non-nil Handler and a nil context.
-func New(h slog.Handler) *Logger {
-	return &Logger{Logger: slog.New(h)}
+func New(h slog.Handler, opts ...Option) *Logger {
+	options := &options{}
+	for _, o := range opts {
+		o(options)
+	}
+
+	handler := h
+	if options.enableOpenTelemetry {
+		handler = slog.NewMultiHandler(h, otelslog.NewHandler(otel.LoggerName, options.otelOptions...))
+	}
+
+	return &Logger{
+		Logger: slog.New(handler),
+		ctx:    options.ctx,
+	}
 }
 
-// With returns a new Logger that includes the given arguments, converted to
-// Attrs as in [Logger.Log].
-// The Attrs will be added to each output from the Logger.
-// The new Logger shares the old Logger's context.
-// The new Logger's handler is the result of calling WithAttrs on the receiver's
+// WithContext returns a new [*Logger] with the given context attached.
+// This context will be used by default for logging operations that don't specify a
+// context (such as [Logger.Info], [Logger.Warn], [Logger.Error], ...)
+func (l *Logger) WithContext(ctx context.Context) *Logger {
+	return &Logger{
+		Logger: l.Logger,
+		ctx:    ctx,
+	}
+}
+
+// With returns a new [Logger] that includes the given arguments, converted to
+// [slog.Attr] as in [Logger.Log].
+// The [slog.Attr] will be added to each output from the [Logger].
+// The new [Logger] shares the old Logger's context.
+// The new [Logger]'s handler is the result of calling [slog.Logger.With] on the receiver's
 // handler.
 func (l *Logger) With(args ...any) *Logger {
-	return &Logger{Logger: l.Logger.With(args...)}
+	return &Logger{Logger: l.Logger.With(args...), ctx: l.ctx}
+}
+
+// WithGroup returns a new [Logger] that starts a group, if name is non-empty.
+// The keys of all attributes added to the [Logger] will be qualified by the given
+// name. (How that qualification happens depends on the [slog.Handler.WithGroup]
+// method of the [Logger]'s [slog.Handler].)
+//
+// If name is empty, [Logger.WithGroup] returns the receiver.
+func (l *Logger) WithGroup(name string) *Logger {
+	return &Logger{Logger: l.Logger.WithGroup(name), ctx: l.ctx}
+}
+
+// Debug logs at [slog.LevelDebug].
+func (l *Logger) Debug(msg string, args ...any) {
+	l.log(l.ctx, slog.LevelDebug, 0, msg, args...)
+}
+
+// Info logs at [slog.LevelInfo].
+func (l *Logger) Info(msg string, args ...any) {
+	l.log(l.ctx, slog.LevelInfo, 0, msg, args...)
+}
+
+// Warn logs at [slog.LevelWarn].
+func (l *Logger) Warn(msg string, args ...any) {
+	l.log(l.ctx, slog.LevelWarn, 0, msg, args...)
 }
 
 // DebugWithSource logs at [slog.LevelDebug]. The given source will be used instead of the automatically collecting it from the caller.
@@ -57,7 +109,7 @@ func (l *Logger) WarnWithSource(ctx context.Context, source uintptr, msg string,
 
 // Error logs the given error at [slog.LevelError].
 func (l *Logger) Error(err error, args ...any) {
-	l.logError(context.Background(), 0, err, args...)
+	l.logError(l.ctx, 0, err, args...)
 }
 
 // ErrorContext logs the given error at [slog.LevelError] with the given context.
@@ -233,7 +285,12 @@ func DiscardLogger() *Logger {
 	return &Logger{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
 }
 
-var defaultLogger = New(NewHandler(false, os.Stderr))
+var defaultLogger = New(NewHandler(!isProduction(), os.Stderr))
+
+func isProduction() bool {
+	env := strings.ToLower(os.Getenv("ENV"))
+	return env == "prod" || env == "production"
+}
 
 // Default returns the default global logger.
 // This logger uses the JSON handler and outputs to [os.Stderr].
@@ -253,8 +310,10 @@ type loggerCtxKey struct{}
 
 // Context inject the given logger as a context value. The logger
 // can be retrieved from the returned context using [FromContext].
+//
+// The given context is attached to the logger using [Logger.WithContext].
 func Context(ctx context.Context, logger *Logger) context.Context {
-	return context.WithValue(ctx, loggerCtxKey{}, logger)
+	return context.WithValue(ctx, loggerCtxKey{}, logger.WithContext(ctx))
 }
 
 // FromContext return the logger stored in the context. If there

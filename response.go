@@ -14,6 +14,7 @@ import (
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
+	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
@@ -415,6 +416,9 @@ func (r *Response) Error(err any) {
 	}
 
 	e := errwrap.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
+	if r.server.tracer != nil {
+		otel.SpanError(r.request.Context(), e)
+	}
 	r.server.logger.Error(e)
 	r.error(e)
 }
@@ -474,6 +478,8 @@ func (r *Response) handleClientError(err any) bool {
 //	    }
 //	    response.JSON(http.StatusOK, product)
 //	}
+//
+// TODO remove this, this is redundant with NotFoundError (and the docs are incorrect)
 func (r *Response) WriteDBError(err error) bool {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

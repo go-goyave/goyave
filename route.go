@@ -236,7 +236,7 @@ func (r *Route) GetName() string {
 // The returned URI is relative to the parent router of this route, it is NOT
 // the full path to this route.
 //
-// Note that this URI may contain route parameters in their définition format.
+// Note that this URI may contain route parameters in their definition format.
 // Use the request's URI if you want to see the URI as it was requested by the client.
 func (r *Route) GetURI() string {
 	return r.uri
@@ -244,7 +244,7 @@ func (r *Route) GetURI() string {
 
 // GetFullURI get the full URI of this route.
 //
-// Note that this URI may contain route parameters in their définition format.
+// Note that this URI may contain route parameters in their definition format.
 // Use the request's URI if you want to see the URI as it was requested by the client.
 func (r *Route) GetFullURI() string {
 	router := r.parent

@@ -663,6 +663,11 @@ func TestCORSMiddleware(t *testing.T) {
 				}
 			})
 
+			server := &Server{
+				router: &Router{},
+			}
+			server.router.server = server
+
 			request := c.req()
 			request.Route = &Route{
 				Meta: map[string]any{
@@ -670,13 +675,13 @@ func TestCORSMiddleware(t *testing.T) {
 				},
 			}
 			recorder := httptest.NewRecorder()
-			response := NewResponse(nil, request, recorder)
+			response := NewResponse(server, request, recorder)
 			match := &routeMatch{
 				route: request.Route,
 			}
 
 			handler(response, request)
-			require.NoError(t, (&Router{}).finalize(match, response, request))
+			require.NoError(t, server.router.finalize(match, response, request))
 			resp := recorder.Result()
 			assert.Equal(t, c.expectedStatusCode, resp.StatusCode)
 			assert.Equal(t, c.expectedHeaders, resp.Header)

@@ -73,13 +73,7 @@ func (w *Writer) Close() error {
 	message, attrs := w.formatter(ctx)
 
 	logger := slog.FromContext(w.request.Context())
-	if _, ok := logger.Handler().(*slog.DevModeHandler); ok {
-		// In dev mode, we don't display the additional attributes to avoid clutter.
-		// They are redundant with the message itself and not necessary.
-		logger.Info(message)
-	} else {
-		logger.Info(message, lo.Map(attrs, func(a stdslog.Attr, _ int) any { return a })...)
-	}
+	logger.Info(message, lo.Map(attrs, func(a stdslog.Attr, _ int) any { return a })...) // TODO clutters a lot in dev mode
 
 	return errwrap.New(w.CommonWriter.Close())
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"goyave.dev/goyave/v5/cors"
+	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errwrap"
@@ -79,11 +80,15 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 		panicked := true
 		defer func() {
 			if err := recover(); err != nil || panicked {
+				ctx := request.Context()
 				e := errwrap.NewSkip(err, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
 				if e != nil {
 					response.err = e.(*errwrap.Error)
+					if response.server.tracer != nil {
+						otel.SpanError(ctx, response.err)
+					}
 				}
-				slog.FromContext(request.Context()).Error(e)
+				slog.FromContext(ctx).Error(e)
 				if !response.wroteHeader {
 					response.status = http.StatusInternalServerError // Force status override if the header hasn't been written yet.
 				}

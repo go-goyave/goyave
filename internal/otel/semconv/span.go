@@ -40,16 +40,12 @@ func Method(method string, attrs *[]attribute.KeyValue) {
 		return
 	}
 
-	// Note: Goyave method matching is case-sensitive
-	if attr, ok := methods[strings.ToUpper(method)]; ok {
-		*attrs = append(*attrs,
-			attr,
-			semconv.HTTPRequestMethodOriginal(method),
-		)
-		return
-	}
-
 	*attrs = append(*attrs, semconv.HTTPRequestMethodOther)
+
+	// Note: Goyave method matching is case-sensitive
+	if _, ok := methods[strings.ToUpper(method)]; ok {
+		*attrs = append(*attrs, semconv.HTTPRequestMethodOriginal(method))
+	}
 }
 
 func ServerAddress(request *http.Request, attrs *[]attribute.KeyValue) {
@@ -218,5 +214,15 @@ func SplitHostPort(hostport string) (string, string, error) {
 	return host, port, nil
 }
 
-// TODO tests and build the final slice
-// TODO benchmark and optimize allocations (slice pool)
+func SpanName(method, route string) string {
+	_, ok := methods[method]
+	if !ok {
+		method = "HTTP"
+	}
+
+	if route == "" {
+		return method
+	}
+
+	return method + " " + route
+}

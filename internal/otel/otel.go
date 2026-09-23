@@ -19,8 +19,6 @@ const (
 	OpenTelemetryTracerName = "goyave.dev/goyave/v6"
 	OpenTelemetryMeterName  = "goyave.dev/goyave/v6"
 
-	SpanNameServe = "goyave.serve"
-
 	EventNameWriteHeader = "goyave.response.write_header"
 
 	Version = "0.1.0"
@@ -35,7 +33,7 @@ func Tracer(provider trace.TracerProvider) trace.Tracer {
 // StartSpan adds an OpenTelemetry span to the trace with the given name.
 // TODO span filters and custom attributes
 func StartSpan(ctx context.Context, tracer trace.Tracer, request *http.Request) context.Context {
-	ctx, _ = tracer.Start(ctx, SpanNameServe, // TODO span name Method+Route
+	ctx, _ = tracer.Start(ctx, semconv.SpanName(request.Method, ""),
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(semconv.SpanAttrs(request)...),
 		// Custom options not allowed, only the Goyave instrumentation needs to be in control of them.
@@ -59,6 +57,16 @@ func EndSpan(ctx context.Context, err error, status int) {
 func AddAttr(ctx context.Context, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attrs...)
+}
+
+// SetRoute adds OpenTelemetry http.route attribute to the current span
+// and renames it according to the spec("{method} {target}").
+func SetRoute(ctx context.Context, method, route string) {
+	span := trace.SpanFromContext(ctx)
+	span.SetName(semconv.SpanName(method, route))
+	if route != "" {
+		span.SetAttributes(otelsemconv.HTTPRoute(route))
+	}
 }
 
 // Meter returns an OpenTelemetry meter configured for Goyave.

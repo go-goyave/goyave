@@ -752,7 +752,6 @@ func TestResponse(t *testing.T) {
 				assert.Nil(t, resp.GetError()) // Should not be considered a response error
 			})
 		}
-		// TODO ClientError test (wrapped, not wrapped, status handler if empty message)
 	})
 
 	t.Run("WriteDBError", func(t *testing.T) {

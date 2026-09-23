@@ -198,9 +198,7 @@ func (l *Logger) handleReason(ctx context.Context, reason error, trace *slog.Att
 		if trace != nil {
 			clone.AddAttrs(*trace)
 		}
-		if _, isDevMode := l.Handler().(*DevModeHandler); !isDevMode {
-			clone.AddAttrs(slog.Any("reason", e.Value()))
-		}
+		clone.AddAttrs(slog.Any("reason", StructValue(e.Value())))
 		_ = l.Handler().Handle(ctx, clone)
 	default:
 		if trace != nil {

@@ -24,6 +24,9 @@ type HeaderValue struct {
 // parameter have a priority of 1, the default given by the RFC. If the
 // quality value cannot be parsed, the priority is 0.
 //
+// A priority of 0 means that the value is "not acceptable": it is still
+// returned, at the end of the slice, but it should not be selected.
+//
 // Parameters other than "q" are supported, for example the "charset" of a
 // media type. They are ignored: they don't change the priority, and they are
 // not part of the returned value, which only contains what is located before

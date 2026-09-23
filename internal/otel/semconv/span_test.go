@@ -411,3 +411,43 @@ func TestSpanAttrs(t *testing.T) {
 
 	assert.Equal(t, want, SpanAttrs(request))
 }
+
+func TestSpanName(t *testing.T) {
+	cases := []struct {
+		desc   string
+		method string
+		uri    string
+		want   string
+	}{
+		{
+			desc:   "OK",
+			method: http.MethodPost,
+			uri:    "/test/{param}",
+			want:   "POST /test/{param}",
+		},
+		{
+			desc:   "wrong_method_case",
+			method: "PoSt",
+			uri:    "/test/{param}",
+			want:   "HTTP /test/{param}",
+		},
+		{
+			desc:   "other_method",
+			method: "NOT_A_METHOD",
+			uri:    "/test/{param}",
+			want:   "HTTP /test/{param}",
+		},
+		{
+			desc:   "empty_route",
+			method: http.MethodPost,
+			uri:    "",
+			want:   "POST",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			assert.Equal(t, c.want, SpanName(c.method, c.uri))
+		})
+	}
+}

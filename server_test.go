@@ -676,7 +676,7 @@ func TestOpenTelemetry(t *testing.T) {
 		spans := spanRecorder.Ended()
 		require.Len(t, spans, 1)
 		span := spans[0]
-		assert.Equal(t, otel.SpanNameServe, span.Name())
+		assert.Equal(t, "GET /uri/{param}", span.Name())
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
@@ -709,7 +709,7 @@ func TestOpenTelemetry(t *testing.T) {
 		spans := spanRecorder.Ended()
 		require.Len(t, spans, 1)
 		span := spans[0]
-		assert.Equal(t, otel.SpanNameServe, span.Name())
+		assert.Equal(t, "GET /uri/{param}", span.Name())
 
 		status := span.Status()
 		assert.Equal(t, codes.Error, status.Code)
@@ -743,7 +743,7 @@ func TestOpenTelemetry(t *testing.T) {
 		spans := spanRecorder.Ended()
 		require.Len(t, spans, 1)
 		span := spans[0]
-		assert.Equal(t, otel.SpanNameServe, span.Name())
+		assert.Equal(t, "GET /uri/{param}", span.Name())
 
 		status := span.Status()
 		assert.Equal(t, codes.Error, status.Code)

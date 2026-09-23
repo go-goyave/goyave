@@ -572,6 +572,14 @@ func (r *Router) finalize(match *routeMatch, response *Response, request *Reques
 			otel.EndSpan(request.Context(), response.err, response.status)
 		}
 	}
+	if r.server.meters != nil {
+		r.server.meters.RecordMetrics(request.Context(), otel.ServerMetricData{
+			Request:    request.httpRequest,
+			Route:      request.Route.GetFullURI(),
+			ServerAddr: r.server.host,
+			ServerPort: r.server.port,
+		})
+	}
 	return errwrap.New(response.close())
 }
 

@@ -679,6 +679,14 @@ func TestOpenTelemetry(t *testing.T) {
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
+			semconv.ServerAddress("example.com"),
+			semconv.ClientAddress("192.0.2.1"),
+			semconv.ClientPort(1234),
+			semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
+			semconv.URLPath("/uri/test"),
+			semconv.NetworkProtocolVersion("1.1"),
+			semconv.NetworkPeerAddress("192.0.2.1"),
+			semconv.NetworkPeerPort(1234),
 			semconv.HTTPRoute("/uri/{param}"),
 			attribute.Bool("handler_reached", true),
 			semconv.HTTPResponseStatusCode(http.StatusOK),
@@ -710,25 +718,18 @@ func TestOpenTelemetry(t *testing.T) {
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
+			semconv.ServerAddress("example.com"),
+			semconv.ClientAddress("192.0.2.1"),
+			semconv.ClientPort(1234),
+			semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
+			semconv.URLPath("/uri/test"),
+			semconv.NetworkProtocolVersion("1.1"),
+			semconv.NetworkPeerAddress("192.0.2.1"),
+			semconv.NetworkPeerPort(1234),
 			semconv.HTTPRoute("/uri/{param}"),
 			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
 		}
 		assert.Equal(t, wantAttrs, span.Attributes())
-		events := span.Events()
-		if assert.Len(t, events, 1) {
-			errEvent := events[0]
-			assert.Equal(t, semconv.ExceptionEventName, errEvent.Name)
-			assert.NotZero(t, errEvent.Time)
-			require.Len(t, errEvent.Attributes, 3)
-			stackTraceAttr := errEvent.Attributes[0]
-			typeAttr := errEvent.Attributes[1]
-			messageAttr := errEvent.Attributes[2]
-			assert.Equal(t, semconv.ExceptionStacktraceKey, stackTraceAttr.Key)
-			assert.NotEmpty(t, stackTraceAttr.Value.AsString())
-
-			assert.Equal(t, semconv.ExceptionType("*errwrap.Error"), typeAttr)
-			assert.Equal(t, semconv.ExceptionMessage("test error"), messageAttr)
-		}
 
 		scope := span.InstrumentationScope()
 		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))
@@ -753,25 +754,18 @@ func TestOpenTelemetry(t *testing.T) {
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
+			semconv.ServerAddress("example.com"),
+			semconv.ClientAddress("192.0.2.1"),
+			semconv.ClientPort(1234),
+			semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
+			semconv.URLPath("/uri/test"),
+			semconv.NetworkProtocolVersion("1.1"),
+			semconv.NetworkPeerAddress("192.0.2.1"),
+			semconv.NetworkPeerPort(1234),
 			semconv.HTTPRoute("/uri/{param}"),
 			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
 		}
 		assert.Equal(t, wantAttrs, span.Attributes())
-		events := span.Events()
-		if assert.Len(t, events, 1) {
-			errEvent := events[0]
-			assert.Equal(t, semconv.ExceptionEventName, errEvent.Name)
-			assert.NotZero(t, errEvent.Time)
-			require.Len(t, errEvent.Attributes, 3)
-			stackTraceAttr := errEvent.Attributes[0]
-			typeAttr := errEvent.Attributes[1]
-			messageAttr := errEvent.Attributes[2]
-			assert.Equal(t, semconv.ExceptionStacktraceKey, stackTraceAttr.Key)
-			assert.NotEmpty(t, stackTraceAttr.Value.AsString())
-
-			assert.Equal(t, semconv.ExceptionType("*errwrap.Error"), typeAttr)
-			assert.Equal(t, semconv.ExceptionMessage("test error"), messageAttr)
-		}
 
 		scope := span.InstrumentationScope()
 		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))

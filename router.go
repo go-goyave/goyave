@@ -268,7 +268,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 		http.Redirect(w, req, address, http.StatusPermanentRedirect)
 		if r.server.tracer != nil {
-			otel.EndSpan(req.Context(), http.StatusPermanentRedirect)
+			otel.EndSpan(req.Context(), nil, http.StatusPermanentRedirect)
 		}
 		return
 	}
@@ -539,11 +539,6 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 
 // finalize the request's life-cycle.
 func (r *Router) finalize(match *routeMatch, response *Response, request *Request) error {
-	if r.server.tracer != nil {
-		// Use a defer function so in case a status handler panics, the span is still ended properly.
-		defer otel.EndSpan(request.Context(), response.status)
-	}
-
 	if response.empty {
 		if response.status == 0 {
 			// If the response is empty, return status 204 to
@@ -570,6 +565,13 @@ func (r *Router) finalize(match *routeMatch, response *Response, request *Reques
 		response.WriteHeader(response.status)
 	}
 
+	if r.server.tracer != nil {
+		if response.err == nil { // Avoids nil of type *errwrap.Error comparison with nil of type error
+			otel.EndSpan(request.Context(), nil, response.status)
+		} else {
+			otel.EndSpan(request.Context(), response.err, response.status)
+		}
+	}
 	return errwrap.New(response.close())
 }
 

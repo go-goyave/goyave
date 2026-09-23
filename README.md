@@ -43,7 +43,7 @@ You can also take a look at the [example project](https://github.com/go-goyave/g
 
 ## Features
 
-Routing, Controllers, Middleware, Request parsing, Advanced validation, Business transactions, Authentication, Configuration, Testing utilities, Database support and ORM, Localization, Advanced error handling, Structured logging, CORS, Support for file systems, Websockets, Dynamic filtering and pagination using query parameters, DTO conversion and model mapping, and the list goes on...
+Routing, Controllers, Middleware, Request parsing, Advanced validation, Business transactions, Authentication, Configuration, Testing utilities, Database support and ORM, Localization, Advanced error handling, Structured logging, CORS, Support for file systems, Websockets, OpenTelemetry, Dynamic filtering and pagination using query parameters, DTO conversion and model mapping, and the list goes on...
 
 If you want to learn more, all features are documented on [goyave.dev](https://goyave.dev/). 
 

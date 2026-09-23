@@ -11,7 +11,6 @@ import (
 	"slices"
 
 	"github.com/samber/lo"
-	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"goyave.dev/goyave/v5/cors"
 	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/slog"
@@ -499,10 +498,7 @@ func (r *Router) Controller(controller Registrer) *Router {
 
 func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
 	if r.server.tracer != nil {
-		uri := match.route.GetFullURI()
-		if uri != "" {
-			otel.AddAttr(rawRequest.Context(), semconv.HTTPRoute(uri))
-		}
+		otel.SetRoute(rawRequest.Context(), rawRequest.Method, match.route.GetFullURI())
 	}
 	request := NewRequest(rawRequest)
 	request.Route = match.route

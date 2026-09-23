@@ -16,6 +16,8 @@ import (
 
 	"errors"
 
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"goyave.dev/goyave/v5/config"
 	"goyave.dev/goyave/v5/internal/otel"
@@ -28,6 +30,18 @@ import (
 
 // serverKey is a context key used to store the server instance into its base context.
 type serverKey struct{}
+
+// OpenTelemetryOptions for enabling and tweaking the native OpenTelemetry integration.
+type OpenTelemetryOptions struct {
+	// TracerProvider if given, enables tracing using OpenTelemetry.
+	TracerProvider trace.TracerProvider
+
+	// MeterProvider if given, enables metric reporting using OpenTelemetry.
+	MeterProvider metric.MeterProvider
+
+	// TracePropagators if given, enables span propagation across this process's boundaries.
+	TracePropagators []propagation.TextMapPropagator
+}
 
 // Options represent server creation options.
 type Options struct {
@@ -44,9 +58,6 @@ type Options struct {
 
 	// HTTP2 configures HTTP/2 connections.
 	HTTP2 *http.HTTP2Config
-
-	// TracerProvider if given, enables tracing using OpenTelemetry.
-	TracerProvider trace.TracerProvider
 
 	// ListenConfig optionally specifies the configuration for the network listener.
 	// If not provided, the default net.ListenConfig is used.
@@ -92,8 +103,7 @@ type Options struct {
 	// be retrieved using `goyave.ServerFromContext(ctx)`.
 	ConnContext func(ctx context.Context, c net.Conn) context.Context
 
-	// TracerOptions options for the OpenTelemetry tracer.
-	TracerOptions []trace.TracerOption
+	OpenTelemetry OpenTelemetryOptions
 
 	// MaxHeaderBytes controls the maximum number of bytes the
 	// server will read parsing the request header's keys and
@@ -134,6 +144,8 @@ type Server struct {
 	// Writes to stderr by default.
 	logger *slog.Logger
 
+	meters *otel.HTTPServerMeters
+
 	ctx context.Context
 
 	tracer trace.Tracer
@@ -157,7 +169,7 @@ type Server struct {
 	debug bool
 }
 
-// New create a new `Server` using the given options.
+// New create a new [*Server] using the given options.
 func New(cfg *config.Base, opts Options) (*Server, error) {
 	ctx := context.Background()
 	if opts.Context != nil {
@@ -182,8 +194,17 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 	}
 
 	var tracer trace.Tracer
-	if opts.TracerProvider != nil {
-		tracer = otel.Tracer(opts.TracerProvider, opts.TracerOptions...)
+	if opts.OpenTelemetry.TracerProvider != nil {
+		tracer = otel.Tracer(opts.OpenTelemetry.TracerProvider)
+	}
+
+	var meters *otel.HTTPServerMeters
+	if opts.OpenTelemetry.MeterProvider != nil {
+		var err error
+		meters, err = otel.NewHTTPServerMeter(otel.Meter(opts.OpenTelemetry.MeterProvider))
+		if err != nil {
+			return nil, errwrap.New(err)
+		}
 	}
 
 	host := cfg.Server.Host
@@ -215,6 +236,7 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 		port:          port,
 		logger:        slogger,
 		tracer:        tracer,
+		meters:        meters,
 	}
 	server.ctx = context.WithValue(ctx, serverKey{}, server)
 	server.server.BaseContext = server.internalBaseContext

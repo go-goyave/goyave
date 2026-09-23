@@ -105,10 +105,11 @@ func TestServer(t *testing.T) {
 		langEmbed, err := fsutil.NewEmbed(resources).Sub("resources/lang")
 		require.NoError(t, err)
 		opts := Options{
-			Logger:         logger,
-			LangFS:         langEmbed,
-			TracerProvider: noop.NewTracerProvider(),
-			TracerOptions:  []trace.TracerOption{trace.WithInstrumentationAttributes(attribute.Bool("test", true))},
+			Logger: logger,
+			LangFS: langEmbed,
+			OpenTelemetry: OpenTelemetryOptions{
+				TracerProvider: noop.NewTracerProvider(),
+			},
 		}
 
 		server, err := New(cfg, opts)
@@ -696,8 +697,6 @@ func TestOpenTelemetry(t *testing.T) {
 		assert.Empty(t, events)
 
 		scope := span.InstrumentationScope()
-		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))
-		assert.Equal(t, wantInstrumentationAttrs, scope.Attributes)
 		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
 		assert.Equal(t, otel.Version, scope.Version)
 	})
@@ -732,8 +731,6 @@ func TestOpenTelemetry(t *testing.T) {
 		assert.Equal(t, wantAttrs, span.Attributes())
 
 		scope := span.InstrumentationScope()
-		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))
-		assert.Equal(t, wantInstrumentationAttrs, scope.Attributes)
 		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
 		assert.Equal(t, otel.Version, scope.Version)
 	})
@@ -768,8 +765,6 @@ func TestOpenTelemetry(t *testing.T) {
 		assert.Equal(t, wantAttrs, span.Attributes())
 
 		scope := span.InstrumentationScope()
-		wantInstrumentationAttrs := attribute.NewSet(attribute.Bool("test", true))
-		assert.Equal(t, wantInstrumentationAttrs, scope.Attributes)
 		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
 		assert.Equal(t, otel.Version, scope.Version)
 	})
@@ -781,9 +776,10 @@ func prepareOpenTelemetryTest(t *testing.T, handler Handler) *tracetest.SpanReco
 		sdktrace.WithSpanProcessor(spanRecorder),
 	)
 	opts := Options{
-		TracerProvider: traceProvider,
-		TracerOptions:  []trace.TracerOption{trace.WithInstrumentationAttributes(attribute.Bool("test", true))},
-		Logger:         slog.DiscardLogger(),
+		OpenTelemetry: OpenTelemetryOptions{
+			TracerProvider: traceProvider,
+		},
+		Logger: slog.DiscardLogger(),
 	}
 	server, err := New(config.LoadDefault(), opts)
 	require.NoError(t, err)

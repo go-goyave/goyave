@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"goyave.dev/goyave/v5/cors"
-	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/lang"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errwrap"
@@ -84,9 +83,6 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 				e := errwrap.NewSkip(err, 4) // Skipped: runtime.Callers, NewSkip, this func, runtime.panic
 				if e != nil {
 					response.err = e.(*errwrap.Error)
-					if response.server.tracer != nil {
-						otel.SpanError(ctx, response.err)
-					}
 				}
 				slog.FromContext(ctx).Error(e)
 				if !response.wroteHeader {

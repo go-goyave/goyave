@@ -14,7 +14,6 @@ import (
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/util/errwrap"
 	"goyave.dev/goyave/v5/util/fsutil"
 )
@@ -416,9 +415,6 @@ func (r *Response) Error(err any) {
 	}
 
 	e := errwrap.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
-	if r.server.tracer != nil {
-		otel.SpanError(r.request.Context(), e)
-	}
 	r.server.logger.Error(e)
 	r.error(e)
 }

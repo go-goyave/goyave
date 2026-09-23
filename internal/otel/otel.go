@@ -2,11 +2,9 @@ package otel
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	otelsemconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
@@ -43,28 +41,12 @@ func StartSpan(ctx context.Context, tracer trace.Tracer, request *http.Request) 
 	return ctx
 }
 
-// SpanError record an error event in the current OpenTelemetry span.
-func SpanError(ctx context.Context, err error) {
-	if err == nil {
-		return
-	}
+// EndSpan ends an OpenTelemetry span with the given error and http status code.
+func EndSpan(ctx context.Context, err error, status int) {
 	span := trace.SpanFromContext(ctx)
-
-	span.SetStatus(codes.Error, err.Error())
-	span.SetAttributes(otelsemconv.ErrorType(err))
-
-	opts := []trace.EventOption{}
-	wrapped, ok := errors.AsType[*errwrap.Error](err)
-	if ok {
-		opts = append(opts, trace.WithAttributes(otelsemconv.ExceptionStacktrace(wrapped.StackFrames().String())))
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
 	}
-	// TODO unwrap errors and add as attributes
-	span.RecordError(err, opts...)
-}
-
-// EndSpan ends an OpenTelemetry span with the given error.
-func EndSpan(ctx context.Context, status int) {
-	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(otelsemconv.HTTPResponseStatusCode(status))
 	span.End()
 }

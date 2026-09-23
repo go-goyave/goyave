@@ -23,6 +23,7 @@
   - Added missing WithGroup method.
   - skip the log earlier if log level not enabled for better performance
   - slog.New now takes slog.Option variadic parameter. For now it's mostly for OpenTelemetry configuration.
+  - generic errwrap.Reason now always displayed as StructValue in logs (better support for rich logs in OpenTelemetry)
 - server:
   - New server take a *config.Base and options. Server doesn't auto load the configuration anymore.
   - added options for MaxHeaderValueCount and DisableClientPriority

@@ -180,6 +180,9 @@ func (suite *LangTestSuite) TestDetectLanguage() {
 	suite.Equal(l.languages["en-US"], l.DetectLanguage("fr;q=0"))
 	suite.Equal(l.languages["en-US"], l.DetectLanguage("notalang, fr-FR;q=0"))
 	suite.Equal(l.languages["fr-FR"], l.DetectLanguage("en-US;q=0, fr-FR;q=0.1"))
+
+	// With every language rejected, the default language is still the fallback
+	suite.Equal(l.languages["en-US"], l.DetectLanguage("en-US;q=0"))
 }
 
 func (suite *LangTestSuite) TestLanguagesGet() {

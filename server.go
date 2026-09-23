@@ -178,7 +178,7 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 	languages := lang.New()
 	languages.Default = cfg.App.DefaultLanguage
 	if err := languages.LoadAllAvailableLanguages(langFS); err != nil {
-		return nil, err
+		return nil, errwrap.New(err)
 	}
 
 	var tracer trace.Tracer
@@ -350,7 +350,7 @@ func (s *Server) ClearStartupHooks() {
 // in a goroutine, meaning that the shutdown process can be blocked by your
 // shutdown hooks. It is your responsibility to implement a timeout mechanism
 // inside your hook if necessary.
-func (s *Server) RegisterShutdownHook(hook func(*Server)) { // TODO closing database should be a shutdown hook
+func (s *Server) RegisterShutdownHook(hook func(*Server)) {
 	s.shutdownHooks = append(s.shutdownHooks, hook)
 }
 

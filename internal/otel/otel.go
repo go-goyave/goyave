@@ -8,8 +8,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	otelsemconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
+	"goyave.dev/goyave/v5/internal/otel/semconv"
 	"goyave.dev/goyave/v5/util/errwrap"
 )
 
@@ -32,14 +33,13 @@ func Tracer(provider trace.TracerProvider, opts ...trace.TracerOption) trace.Tra
 }
 
 // StartSpan adds an OpenTelemetry span to the trace with the given name.
+// TODO span filters and custom attributes
 func StartSpan(ctx context.Context, tracer trace.Tracer, request *http.Request) context.Context {
-	ctx, _ = tracer.Start(ctx, SpanNameServe,
+	ctx, _ = tracer.Start(ctx, SpanNameServe, // TODO span name Method+Route
 		trace.WithSpanKind(trace.SpanKindServer),
-		trace.WithAttributes(
-			semconv.HTTPRequestMethodKey.String(request.Method),
-		),
+		trace.WithAttributes(semconv.SpanAttrs(request)...),
 	)
-	// TODO parent span retrieved from request headers?
+	// TODO parent span retrieved from request headers? -> Propagator
 	return ctx
 }
 
@@ -51,20 +51,21 @@ func SpanError(ctx context.Context, err error) {
 	span := trace.SpanFromContext(ctx)
 
 	span.SetStatus(codes.Error, err.Error())
+	span.SetAttributes(otelsemconv.ErrorType(err))
 
 	opts := []trace.EventOption{}
 	wrapped, ok := errors.AsType[*errwrap.Error](err)
 	if ok {
-		opts = append(opts, trace.WithAttributes(semconv.ExceptionStacktrace(wrapped.StackFrames().String())))
+		opts = append(opts, trace.WithAttributes(otelsemconv.ExceptionStacktrace(wrapped.StackFrames().String())))
 	}
-
+	// TODO unwrap errors and add as attributes
 	span.RecordError(err, opts...)
 }
 
 // EndSpan ends an OpenTelemetry span with the given error.
 func EndSpan(ctx context.Context, status int) {
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(semconv.HTTPResponseStatusCode(status))
+	span.SetAttributes(otelsemconv.HTTPResponseStatusCode(status))
 	span.End()
 }
 
@@ -78,11 +79,5 @@ func AddAttr(ctx context.Context, attrs ...attribute.KeyValue) {
 func Meter(provider metric.MeterProvider, opts ...metric.MeterOption) metric.Meter {
 	return provider.Meter(OpenTelemetryMeterName, append([]metric.MeterOption{metric.WithInstrumentationVersion(Version)}, opts...)...)
 }
-
-// TODO support metrics
-// - requestBodySizeHistogram (parse middleware)
-// - responseBodySizeHistogram (Response)
-// - requestDurationHistogram (Router)
-// - optional support for active_requests
 
 // TODO docs testutil.NewServer

@@ -31,12 +31,17 @@ import (
 // serverKey is a context key used to store the server instance into its base context.
 type serverKey struct{}
 
-// OpenTelemetryOptions for enabling and tweaking the native OpenTelemetry integration.
+// TraceFilter allow or disallow a [*Request] to be traced with OpenTelemetry.
+type TraceFilter func(*Request) bool
+
+// OpenTelemetryOptions for enabling the native OpenTelemetry integration.
 type OpenTelemetryOptions struct {
 	// TracerProvider if given, enables tracing using OpenTelemetry.
+	// See https://opentelemetry.io/docs/concepts/signals/traces/
 	TracerProvider trace.TracerProvider
 
 	// MeterProvider if given, enables metric reporting using OpenTelemetry.
+	// See https://opentelemetry.io/docs/concepts/signals/metrics/
 	MeterProvider metric.MeterProvider
 
 	// Propagators if given, enables span propagation across this process's boundaries.
@@ -48,6 +53,9 @@ type OpenTelemetryOptions struct {
 	//   - https://www.w3.org/TR/baggage/
 	//   - https://opentelemetry.io/docs/concepts/signals/baggage/
 	Propagators propagation.TextMapPropagator
+
+	// TraceFilters don't start a tracing span if any of these [TraceFilter] return false.
+	TraceFilters []TraceFilter
 }
 
 // Options represent server creation options.
@@ -169,6 +177,8 @@ type Server struct {
 	startupHooks  []func(*Server)
 	shutdownHooks []func(*Server)
 
+	otelFilters []TraceFilter
+
 	port int
 
 	state atomic.Uint32 // 0 -> created, 1 -> preparing, 2 -> ready, 3 -> stopped
@@ -245,6 +255,7 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 		otelTracer:      tracer,
 		otelMeters:      meters,
 		otelPropagators: opts.OpenTelemetry.Propagators,
+		otelFilters:     opts.OpenTelemetry.TraceFilters,
 	}
 	server.ctx = context.WithValue(ctx, serverKey{}, server)
 	server.server.BaseContext = server.internalBaseContext

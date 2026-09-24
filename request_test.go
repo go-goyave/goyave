@@ -3,6 +3,7 @@ package goyave
 import (
 	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,6 +19,7 @@ func TestRequest(t *testing.T) {
 		r := NewRequest(httpReq)
 
 		assert.Equal(t, httpReq, r.httpRequest)
+		assert.IsType(t, &lazyCountReader{}, httpReq.Body)
 		assert.True(t, r.Now.IsZero())
 		assert.NotNil(t, r.Extra)
 	})
@@ -91,5 +93,17 @@ func TestRequest(t *testing.T) {
 
 		ctx2 := r.Context()
 		assert.Equal(t, "value", ctx2.Value(key))
+	})
+
+	t.Run("BodySize", func(t *testing.T) {
+		data := []byte{1, 2, 3, 4, 5}
+		httpReq := httptest.NewRequest(http.MethodPost, "/test", bytes.NewReader(data))
+		r := NewRequest(httpReq)
+		assert.Equal(t, int64(0), r.BodySize())
+
+		_, err := io.ReadAll(r.Body())
+		assert.NoError(t, err)
+
+		assert.Equal(t, int64(len(data)), r.BodySize())
 	})
 }

@@ -67,7 +67,7 @@ func CommonLogFormatter(ctx *Context) (string, []slog.Attr) {
 		slog.String("uri", uri),
 		slog.String("proto", req.Proto),
 		slog.Int("status", ctx.Status),
-		slog.Int("length", ctx.Length),
+		slog.Int64("length", ctx.Length),
 	)
 
 	return message, []slog.Attr{details}

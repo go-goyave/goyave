@@ -14,6 +14,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"embed"
@@ -24,9 +25,12 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/semconv/v1.43.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 	"gorm.io/driver/sqlite"
@@ -669,179 +673,262 @@ func TestErrLogWriter(t *testing.T) {
 
 func TestOpenTelemetry(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		spanRecorder := prepareOpenTelemetryTest(t, "/uri/test", func(response *Response, request *Request) {
-			span := trace.SpanFromContext(request.Context())
-			span.SetAttributes(attribute.Bool("handler_reached", true))
+		synctest.Test(t, func(t *testing.T) {
+			spanRecorder, metrics := prepareOpenTelemetryTest(t, "/uri/test", func(response *Response, request *Request) {
+				// Drain the body to see if the request body size metric is reported
+				_, _ = io.ReadAll(request.Body())
 
-			bag := baggage.FromContext(request.Context())
-			assert.Equal(t, "alice", bag.Member("userId").Value())
-			assert.Equal(t, "false", bag.Member("isProduction").Value())
-			response.Status(http.StatusOK)
+				span := trace.SpanFromContext(request.Context())
+				span.SetAttributes(attribute.Bool("handler_reached", true))
+
+				bag := baggage.FromContext(request.Context())
+				assert.Equal(t, "alice", bag.Member("userId").Value())
+				assert.Equal(t, "false", bag.Member("isProduction").Value())
+
+				// Advance clock to check the request duration metric
+				time.Sleep(time.Second*3 + time.Millisecond*200)
+
+				response.String(http.StatusOK, "hello world")
+			})
+
+			spans := spanRecorder.Ended()
+			require.Len(t, spans, 1)
+			span := spans[0]
+			assert.Equal(t, "GET /uri/{param}", span.Name())
+
+			status := span.Status()
+			assert.Equal(t, codes.Unset, status.Code)
+			assert.Empty(t, status.Description)
+
+			parent := span.Parent()
+			assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+			assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+			assert.Equal(t, "01", parent.TraceFlags().String())
+			assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+			assert.True(t, parent.IsRemote())
+
+			wantAttrs := []attribute.KeyValue{
+				semconv.HTTPRequestMethodGet,
+				semconv.HTTPRoute("/uri/{param}"),
+				semconv.ServerAddress("example.com"),
+				semconv.ClientAddress("192.0.2.1"),
+				semconv.ClientPort(1234),
+				semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
+				semconv.URLPath("/uri/test"),
+				semconv.NetworkProtocolVersion("1.1"),
+				semconv.NetworkPeerAddress("192.0.2.1"),
+				semconv.NetworkPeerPort(1234),
+				attribute.Bool("handler_reached", true),
+				semconv.HTTPResponseStatusCode(http.StatusOK),
+			}
+			assert.Equal(t, wantAttrs, span.Attributes())
+			events := span.Events()
+			assert.Empty(t, events)
+
+			scope := span.InstrumentationScope()
+			assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+			assert.Equal(t, otel.Version, scope.Version)
+
+			if assert.Len(t, metrics.ScopeMetrics, 1) {
+				sm := metrics.ScopeMetrics[0]
+				assert.Equal(t, otel.OpenTelemetryMeterName, sm.Scope.Name)
+				assert.Equal(t, otel.Version, sm.Scope.Version)
+
+				if assert.Len(t, sm.Metrics, 3) {
+					requestBodySizeMetric := sm.Metrics[0]
+					responseBodySizeMetric := sm.Metrics[1]
+					requestDurationMetric := sm.Metrics[2]
+
+					assertIntMetric(t, requestBodySizeMetric, httpconv.ServerRequestBodySize{}.Name(), 5, http.StatusOK, nil, false)
+					assertIntMetric(t, responseBodySizeMetric, httpconv.ServerResponseBodySize{}.Name(), 11, http.StatusOK, nil, false)
+					assertDurationMetric(t, requestDurationMetric, httpconv.ServerRequestDuration{}.Name(), 3.2, http.StatusOK, nil, false)
+				}
+			}
 		})
-
-		spans := spanRecorder.Ended()
-		require.Len(t, spans, 1)
-		span := spans[0]
-		assert.Equal(t, "GET /uri/{param}", span.Name())
-
-		status := span.Status()
-		assert.Equal(t, codes.Unset, status.Code)
-		assert.Empty(t, status.Description)
-
-		parent := span.Parent()
-		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
-		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
-		assert.Equal(t, "01", parent.TraceFlags().String())
-		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
-		assert.True(t, parent.IsRemote())
-
-		wantAttrs := []attribute.KeyValue{
-			semconv.HTTPRequestMethodGet,
-			semconv.HTTPRoute("/uri/{param}"),
-			semconv.ServerAddress("example.com"),
-			semconv.ClientAddress("192.0.2.1"),
-			semconv.ClientPort(1234),
-			semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
-			semconv.URLPath("/uri/test"),
-			semconv.NetworkProtocolVersion("1.1"),
-			semconv.NetworkPeerAddress("192.0.2.1"),
-			semconv.NetworkPeerPort(1234),
-			attribute.Bool("handler_reached", true),
-			semconv.HTTPResponseStatusCode(http.StatusOK),
-		}
-		assert.Equal(t, wantAttrs, span.Attributes())
-		events := span.Events()
-		assert.Empty(t, events)
-
-		scope := span.InstrumentationScope()
-		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
-		assert.Equal(t, otel.Version, scope.Version)
 	})
 
 	t.Run("error", func(t *testing.T) {
-		spanRecorder := prepareOpenTelemetryTest(t, "/uri/test", func(response *Response, _ *Request) {
-			response.Error("test error")
+		synctest.Test(t, func(t *testing.T) {
+			spanRecorder, metrics := prepareOpenTelemetryTest(t, "/uri/test", func(response *Response, _ *Request) {
+				time.Sleep(time.Second*3 + time.Millisecond*200)
+				response.Error("test error")
+			})
+
+			spans := spanRecorder.Ended()
+			require.Len(t, spans, 1)
+			span := spans[0]
+			assert.Equal(t, "GET /uri/{param}", span.Name())
+
+			status := span.Status()
+			assert.Equal(t, codes.Error, status.Code)
+			assert.Equal(t, "test error", status.Description)
+
+			parent := span.Parent()
+			assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+			assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+			assert.Equal(t, "01", parent.TraceFlags().String())
+			assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+			assert.True(t, parent.IsRemote())
+
+			wantAttrs := []attribute.KeyValue{
+				semconv.HTTPRequestMethodGet,
+				semconv.HTTPRoute("/uri/{param}"),
+				semconv.ServerAddress("example.com"),
+				semconv.ClientAddress("192.0.2.1"),
+				semconv.ClientPort(1234),
+				semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
+				semconv.URLPath("/uri/test"),
+				semconv.NetworkProtocolVersion("1.1"),
+				semconv.NetworkPeerAddress("192.0.2.1"),
+				semconv.NetworkPeerPort(1234),
+				semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
+			}
+			assert.Equal(t, wantAttrs, span.Attributes())
+
+			scope := span.InstrumentationScope()
+			assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+			assert.Equal(t, otel.Version, scope.Version)
+
+			if assert.Len(t, metrics.ScopeMetrics, 1) {
+				sm := metrics.ScopeMetrics[0]
+				assert.Equal(t, otel.OpenTelemetryMeterName, sm.Scope.Name)
+				assert.Equal(t, otel.Version, sm.Scope.Version)
+
+				if assert.Len(t, sm.Metrics, 3) {
+					requestBodySizeMetric := sm.Metrics[0]
+					responseBodySizeMetric := sm.Metrics[1]
+					requestDurationMetric := sm.Metrics[2]
+
+					assertIntMetric(t, requestBodySizeMetric, httpconv.ServerRequestBodySize{}.Name(), 0, http.StatusInternalServerError, &errwrap.Error{}, false)
+					assertIntMetric(t, responseBodySizeMetric, httpconv.ServerResponseBodySize{}.Name(), 22, http.StatusInternalServerError, &errwrap.Error{}, false)
+					assertDurationMetric(t, requestDurationMetric, httpconv.ServerRequestDuration{}.Name(), 3.2, http.StatusInternalServerError, &errwrap.Error{}, false)
+				}
+			}
 		})
-
-		spans := spanRecorder.Ended()
-		require.Len(t, spans, 1)
-		span := spans[0]
-		assert.Equal(t, "GET /uri/{param}", span.Name())
-
-		status := span.Status()
-		assert.Equal(t, codes.Error, status.Code)
-		assert.Equal(t, "test error", status.Description)
-
-		parent := span.Parent()
-		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
-		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
-		assert.Equal(t, "01", parent.TraceFlags().String())
-		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
-		assert.True(t, parent.IsRemote())
-
-		wantAttrs := []attribute.KeyValue{
-			semconv.HTTPRequestMethodGet,
-			semconv.HTTPRoute("/uri/{param}"),
-			semconv.ServerAddress("example.com"),
-			semconv.ClientAddress("192.0.2.1"),
-			semconv.ClientPort(1234),
-			semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
-			semconv.URLPath("/uri/test"),
-			semconv.NetworkProtocolVersion("1.1"),
-			semconv.NetworkPeerAddress("192.0.2.1"),
-			semconv.NetworkPeerPort(1234),
-			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
-		}
-		assert.Equal(t, wantAttrs, span.Attributes())
-
-		scope := span.InstrumentationScope()
-		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
-		assert.Equal(t, otel.Version, scope.Version)
 	})
 
 	t.Run("panic", func(t *testing.T) {
-		spanRecorder := prepareOpenTelemetryTest(t, "/uri/test", func(_ *Response, _ *Request) {
-			panic("test error")
+		synctest.Test(t, func(t *testing.T) {
+			spanRecorder, metrics := prepareOpenTelemetryTest(t, "/uri/test", func(_ *Response, _ *Request) {
+				time.Sleep(time.Second*3 + time.Millisecond*200)
+				panic("test error")
+			})
+
+			spans := spanRecorder.Ended()
+			require.Len(t, spans, 1)
+			span := spans[0]
+			assert.Equal(t, "GET /uri/{param}", span.Name())
+
+			status := span.Status()
+			assert.Equal(t, codes.Error, status.Code)
+			assert.Equal(t, "test error", status.Description)
+
+			parent := span.Parent()
+			assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+			assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+			assert.Equal(t, "01", parent.TraceFlags().String())
+			assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+			assert.True(t, parent.IsRemote())
+
+			wantAttrs := []attribute.KeyValue{
+				semconv.HTTPRequestMethodGet,
+				semconv.HTTPRoute("/uri/{param}"),
+				semconv.ServerAddress("example.com"),
+				semconv.ClientAddress("192.0.2.1"),
+				semconv.ClientPort(1234),
+				semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
+				semconv.URLPath("/uri/test"),
+				semconv.NetworkProtocolVersion("1.1"),
+				semconv.NetworkPeerAddress("192.0.2.1"),
+				semconv.NetworkPeerPort(1234),
+				semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
+			}
+			assert.Equal(t, wantAttrs, span.Attributes())
+
+			scope := span.InstrumentationScope()
+			assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+			assert.Equal(t, otel.Version, scope.Version)
+
+			if assert.Len(t, metrics.ScopeMetrics, 1) {
+				sm := metrics.ScopeMetrics[0]
+				assert.Equal(t, otel.OpenTelemetryMeterName, sm.Scope.Name)
+				assert.Equal(t, otel.Version, sm.Scope.Version)
+
+				if assert.Len(t, sm.Metrics, 3) {
+					requestBodySizeMetric := sm.Metrics[0]
+					responseBodySizeMetric := sm.Metrics[1]
+					requestDurationMetric := sm.Metrics[2]
+
+					assertIntMetric(t, requestBodySizeMetric, httpconv.ServerRequestBodySize{}.Name(), 0, http.StatusInternalServerError, &errwrap.Error{}, false)
+					assertIntMetric(t, responseBodySizeMetric, httpconv.ServerResponseBodySize{}.Name(), 22, http.StatusInternalServerError, &errwrap.Error{}, false)
+					assertDurationMetric(t, requestDurationMetric, httpconv.ServerRequestDuration{}.Name(), 3.2, http.StatusInternalServerError, &errwrap.Error{}, false)
+				}
+			}
 		})
-
-		spans := spanRecorder.Ended()
-		require.Len(t, spans, 1)
-		span := spans[0]
-		assert.Equal(t, "GET /uri/{param}", span.Name())
-
-		status := span.Status()
-		assert.Equal(t, codes.Error, status.Code)
-		assert.Equal(t, "test error", status.Description)
-
-		parent := span.Parent()
-		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
-		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
-		assert.Equal(t, "01", parent.TraceFlags().String())
-		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
-		assert.True(t, parent.IsRemote())
-
-		wantAttrs := []attribute.KeyValue{
-			semconv.HTTPRequestMethodGet,
-			semconv.HTTPRoute("/uri/{param}"),
-			semconv.ServerAddress("example.com"),
-			semconv.ClientAddress("192.0.2.1"),
-			semconv.ClientPort(1234),
-			semconv.URLFull("/uri/test"), // In a test environment, we don't have a full URL with proto and host.
-			semconv.URLPath("/uri/test"),
-			semconv.NetworkProtocolVersion("1.1"),
-			semconv.NetworkPeerAddress("192.0.2.1"),
-			semconv.NetworkPeerPort(1234),
-			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
-		}
-		assert.Equal(t, wantAttrs, span.Attributes())
-
-		scope := span.InstrumentationScope()
-		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
-		assert.Equal(t, otel.Version, scope.Version)
 	})
 
 	t.Run("protocol_redirect", func(t *testing.T) {
-		spanRecorder := prepareOpenTelemetryTest(t, "https://example.com:8080/uri/test", func(_ *Response, _ *Request) {
-			panic("test error") // Should not happen
+		synctest.Test(t, func(t *testing.T) {
+			spanRecorder, metrics := prepareOpenTelemetryTest(t, "https://example.com:8080/uri/test", func(_ *Response, _ *Request) {
+				// We shouldn't reach this handler, the expected request duration is therefore 0
+				time.Sleep(time.Second*3 + time.Millisecond*200)
+				panic("test error")
+			})
+
+			spans := spanRecorder.Ended()
+			require.Len(t, spans, 1)
+			span := spans[0]
+			assert.Equal(t, "GET", span.Name())
+
+			status := span.Status()
+			assert.Equal(t, codes.Unset, status.Code)
+			assert.Empty(t, status.Description)
+
+			parent := span.Parent()
+			assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+			assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+			assert.Equal(t, "01", parent.TraceFlags().String())
+			assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+			assert.True(t, parent.IsRemote())
+
+			wantAttrs := []attribute.KeyValue{
+				semconv.HTTPRequestMethodGet,
+				semconv.URLScheme("https"),
+				semconv.ServerAddress("example.com"),
+				semconv.ServerPort(8080),
+				semconv.ClientAddress("192.0.2.1"),
+				semconv.ClientPort(1234),
+				semconv.URLFull("https://example.com:8080/uri/test"),
+				semconv.URLPath("/uri/test"),
+				semconv.NetworkProtocolVersion("1.1"),
+				semconv.NetworkPeerAddress("192.0.2.1"),
+				semconv.NetworkPeerPort(1234),
+				semconv.HTTPResponseStatusCode(http.StatusPermanentRedirect),
+			}
+			assert.Equal(t, wantAttrs, span.Attributes())
+			events := span.Events()
+			assert.Empty(t, events)
+
+			scope := span.InstrumentationScope()
+			assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+			assert.Equal(t, otel.Version, scope.Version)
+
+			if assert.Len(t, metrics.ScopeMetrics, 1) {
+				sm := metrics.ScopeMetrics[0]
+				assert.Equal(t, otel.OpenTelemetryMeterName, sm.Scope.Name)
+				assert.Equal(t, otel.Version, sm.Scope.Version)
+
+				if assert.Len(t, sm.Metrics, 3) {
+					requestBodySizeMetric := sm.Metrics[0]
+					responseBodySizeMetric := sm.Metrics[1]
+					requestDurationMetric := sm.Metrics[2]
+
+					assertIntMetric(t, requestBodySizeMetric, httpconv.ServerRequestBodySize{}.Name(), 0, http.StatusPermanentRedirect, nil, true)
+					assertIntMetric(t, responseBodySizeMetric, httpconv.ServerResponseBodySize{}.Name(), 62, http.StatusPermanentRedirect, nil, true)
+					assertDurationMetric(t, requestDurationMetric, httpconv.ServerRequestDuration{}.Name(), 0, http.StatusPermanentRedirect, nil, true)
+				}
+			}
 		})
-
-		spans := spanRecorder.Ended()
-		require.Len(t, spans, 1)
-		span := spans[0]
-		assert.Equal(t, "GET", span.Name())
-
-		status := span.Status()
-		assert.Equal(t, codes.Unset, status.Code)
-		assert.Empty(t, status.Description)
-
-		parent := span.Parent()
-		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
-		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
-		assert.Equal(t, "01", parent.TraceFlags().String())
-		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
-		assert.True(t, parent.IsRemote())
-
-		wantAttrs := []attribute.KeyValue{
-			semconv.HTTPRequestMethodGet,
-			semconv.URLScheme("https"),
-			semconv.ServerAddress("example.com"),
-			semconv.ServerPort(8080),
-			semconv.ClientAddress("192.0.2.1"),
-			semconv.ClientPort(1234),
-			semconv.URLFull("https://example.com:8080/uri/test"),
-			semconv.URLPath("/uri/test"),
-			semconv.NetworkProtocolVersion("1.1"),
-			semconv.NetworkPeerAddress("192.0.2.1"),
-			semconv.NetworkPeerPort(1234),
-			semconv.HTTPResponseStatusCode(http.StatusPermanentRedirect),
-		}
-		assert.Equal(t, wantAttrs, span.Attributes())
-		events := span.Events()
-		assert.Empty(t, events)
-
-		scope := span.InstrumentationScope()
-		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
-		assert.Equal(t, otel.Version, scope.Version)
 	})
 
 	t.Run("filter", func(t *testing.T) {
@@ -891,7 +978,7 @@ func TestOpenTelemetry(t *testing.T) {
 
 		for _, c := range cases {
 			t.Run(c.desc, func(t *testing.T) {
-				spanRecorder := prepareOpenTelemetryTest(t, "/test/url", func(_ *Response, _ *Request) {}, c.filters...)
+				spanRecorder, _ := prepareOpenTelemetryTest(t, "/test/url", func(_ *Response, _ *Request) {}, c.filters...)
 
 				spans := spanRecorder.Ended()
 				if c.wantSpan {
@@ -904,21 +991,30 @@ func TestOpenTelemetry(t *testing.T) {
 	})
 }
 
-func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler, traceFilters ...TraceFilter) *tracetest.SpanRecorder {
+func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler, traceFilters ...TraceFilter) (*tracetest.SpanRecorder, *metricdata.ResourceMetrics) {
 	spanRecorder := tracetest.NewSpanRecorder()
 	traceProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSpanProcessor(spanRecorder),
 	)
+	meterReader := sdkmetric.NewManualReader()
+	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(meterReader))
 	propagator := propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
 	)
+
+	t.Cleanup(func() {
+		_ = traceProvider.Shutdown(t.Context())
+		_ = meterProvider.Shutdown(t.Context())
+		_ = meterReader.Shutdown(t.Context())
+	})
+
 	opts := Options{
 		OpenTelemetry: OpenTelemetryOptions{
 			TracerProvider: traceProvider,
-			// TODO metrics test
-			Propagators:  propagator,
-			TraceFilters: traceFilters,
+			MeterProvider:  meterProvider,
+			Propagators:    propagator,
+			TraceFilters:   traceFilters,
 		},
 		Logger: slog.DiscardLogger(),
 	}
@@ -929,11 +1025,90 @@ func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler, traceFi
 	router.Get("/uri/{param}", handler)
 
 	httpRecorder := httptest.NewRecorder()
-	request := httptest.NewRequestWithContext(server.ctx, http.MethodGet, url, nil)
+	request := httptest.NewRequestWithContext(server.ctx, http.MethodGet, url, bytes.NewReader([]byte{1, 2, 3, 4, 5}))
 	request.Header.Set("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
 	request.Header.Set("tracestate", "congo=t61rcWkgMzE")
 	request.Header.Set("baggage", "userId=alice,isProduction=false")
 	router.ServeHTTP(httpRecorder, request)
 
-	return spanRecorder
+	var metrics metricdata.ResourceMetrics
+	err = meterReader.Collect(t.Context(), &metrics)
+	require.NoError(t, err)
+
+	return spanRecorder, &metrics
+}
+
+func assertIntMetric(t *testing.T, metric metricdata.Metrics, wantKey string, wantValue int64, wantStatus int, err error, skipAttrsCheck bool) {
+	assert.Equal(t, string(wantKey), metric.Name)
+
+	requestBodySizeHist := metric.Data.(metricdata.Histogram[int64])
+	if !assert.Len(t, requestBodySizeHist.DataPoints, 1) {
+		return
+	}
+	dp := requestBodySizeHist.DataPoints[0]
+
+	if !skipAttrsCheck {
+		assertMetricAttrs(t, dp, wantStatus, err)
+	}
+	assert.Equal(t, uint64(1), dp.Count)
+
+	bounds := []float64{
+		0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000,
+	}
+	assert.Equal(t, bounds, dp.Bounds)
+
+	min, _ := dp.Min.Value()
+	max, _ := dp.Max.Value()
+	assert.Equal(t, wantValue, min)
+	assert.Equal(t, wantValue, max)
+	assert.Equal(t, wantValue, dp.Sum)
+}
+
+func assertDurationMetric(t *testing.T, metric metricdata.Metrics, wantKey string, wantValue float64, wantStatus int, err error, skipAttrsCheck bool) {
+	assert.Equal(t, string(wantKey), metric.Name)
+
+	requestBodySizeHist := metric.Data.(metricdata.Histogram[float64])
+	if !assert.Len(t, requestBodySizeHist.DataPoints, 1) {
+		return
+	}
+	dp := requestBodySizeHist.DataPoints[0]
+
+	if !skipAttrsCheck {
+		assertMetricAttrs(t, dp, wantStatus, err)
+	}
+	assert.Equal(t, uint64(1), dp.Count)
+
+	bounds := []float64{
+		0.005, 0.01, 0.025, 0.05, 0.075, 0.1,
+		0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
+	}
+	assert.Equal(t, bounds, dp.Bounds)
+
+	min, _ := dp.Min.Value()
+	max, _ := dp.Max.Value()
+	if wantValue == 0 {
+		assert.InDelta(t, 0, min, 0)
+		assert.InDelta(t, 0, max, 0)
+		assert.InDelta(t, 0, dp.Sum, 0)
+	} else {
+		assert.InDelta(t, wantValue, min, 0.00000001)
+		assert.InDelta(t, wantValue, max, 0.00000001)
+		assert.InDelta(t, wantValue, dp.Sum, 0.00000001)
+	}
+}
+
+func assertMetricAttrs[T int64 | float64](t *testing.T, dp metricdata.HistogramDataPoint[T], status int, err error) {
+	wantAttrs := []attribute.KeyValue{
+		semconv.HTTPRequestMethodGet,
+		semconv.HTTPRoute("/uri/{param}"),
+		semconv.NetworkProtocolVersion("1.1"),
+		semconv.ServerAddress("example.com"),
+	}
+	if err != nil {
+		wantAttrs = append(wantAttrs, semconv.ErrorType(err))
+	}
+	wantAttrs = append(wantAttrs, semconv.HTTPResponseStatusCode(status))
+	set := attribute.NewSet(wantAttrs...)
+
+	assert.Equal(t, set, dp.Attributes)
 }

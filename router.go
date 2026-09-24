@@ -266,7 +266,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			address += "?" + query.Encode()
 		}
 		http.Redirect(w, req, address, http.StatusPermanentRedirect)
-		if r.server.tracer != nil {
+		if r.server.otelTracer != nil {
 			otel.EndSpan(req.Context(), nil, http.StatusPermanentRedirect)
 		}
 		return
@@ -278,8 +278,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) otel(req *http.Request) *http.Request {
-	if r.server.tracer != nil {
-		otelCtx := otel.StartSpan(req.Context(), r.server.tracer, req)
+	if r.server.otelTracer != nil {
+		spanData := otel.SpanData{
+			Request:     req,
+			Propagators: r.server.otelPropagators,
+		}
+		otelCtx := otel.StartSpan(req.Context(), r.server.otelTracer, spanData)
 		req = req.WithContext(slog.Context(otelCtx, slog.FromContext(otelCtx)))
 		// Span is finished after the [Router.ServeHTTP] method returns.
 	}
@@ -497,7 +501,7 @@ func (r *Router) Controller(controller Registrer) *Router {
 }
 
 func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
-	if r.server.tracer != nil {
+	if r.server.otelTracer != nil {
 		otel.SetRoute(rawRequest.Context(), rawRequest.Method, match.route.GetFullURI())
 	}
 	request := NewRequest(rawRequest)
@@ -561,15 +565,15 @@ func (r *Router) finalize(match *routeMatch, response *Response, request *Reques
 		response.WriteHeader(response.status)
 	}
 
-	if r.server.tracer != nil {
+	if r.server.otelTracer != nil {
 		if response.err == nil { // Avoids nil of type *errwrap.Error comparison with nil of type error
 			otel.EndSpan(request.Context(), nil, response.status)
 		} else {
 			otel.EndSpan(request.Context(), response.err, response.status)
 		}
 	}
-	if r.server.meters != nil {
-		r.server.meters.RecordMetrics(request.Context(), otel.ServerMetricData{
+	if r.server.otelMeters != nil {
+		r.server.otelMeters.RecordMetrics(request.Context(), otel.ServerMetricData{
 			Request:    request.httpRequest,
 			Route:      request.Route.GetFullURI(),
 			ServerAddr: r.server.host,

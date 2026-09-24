@@ -291,7 +291,12 @@ func (r *Router) otel(req *Request) {
 	if r.server.otelTracer == nil {
 		return
 	}
-	// TODO filter
+
+	for _, f := range r.server.otelFilters {
+		if !f(req) {
+			return
+		}
+	}
 
 	route := ""
 	if req.Route != nil {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
@@ -107,20 +108,23 @@ func NewHTTPServerMeter(meter metric.Meter) (*HTTPServerMeters, error) {
 	}, nil
 }
 
-func (m *HTTPServerMeters) RecordMetrics(ctx context.Context, data ServerMetricData) { // TODO pass necessary request (request, response)
-	// attributes := n.MetricAttributes(md.ServerName, md.Req, md.StatusCode, md.Route, md.AdditionalAttributes)
-	// o := metric.WithAttributeSet(attribute.NewSet(attributes...))
-
-	// m.requestBodySizeHistogram.Inst().Record(ctx, requestSize, o...)
-	// m.responseBodySizeHistogram.Inst().Record(ctx, responseSize, o...)
-	// m.requestDurationHistogram.Inst().Record(ctx, float64(requestDuration)/float64(time.Second), o...)
+type ServerMetricData struct {
+	Error           error
+	Request         *http.Request
+	Route           string
+	RequestDuration time.Duration
+	RequestSize     int64
+	ResponseSize    int64
+	ResponseStatus  int
 }
 
-type ServerMetricData struct {
-	Request    *http.Request
-	Route      string
-	ServerAddr string
-	ServerPort int
+func (m *HTTPServerMeters) RecordMetrics(ctx context.Context, data ServerMetricData) {
+	attrs := semconv.MetricAttrs(data.Request, data.Route, data.ResponseStatus, data.Error)
+	measureOpt := metric.WithAttributeSet(attribute.NewSet(attrs...))
+
+	m.requestBodySizeHistogram.Inst().Record(ctx, data.RequestSize, measureOpt)
+	m.responseBodySizeHistogram.Inst().Record(ctx, data.ResponseSize, measureOpt)
+	m.requestDurationHistogram.Inst().Record(ctx, float64(data.RequestDuration)/float64(time.Second), measureOpt)
 }
 
 // TODO docs testutil.NewServer (mock providers)

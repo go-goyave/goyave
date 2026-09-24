@@ -32,7 +32,7 @@ func TestCommonFormatter(t *testing.T) {
 			slog.String("uri", "/log"),
 			slog.String("proto", "HTTP/1.1"),
 			slog.Int("status", 204),
-			slog.Int("length", 5),
+			slog.Int64("length", 5),
 		)}, attrs)
 	})
 
@@ -54,7 +54,7 @@ func TestCommonFormatter(t *testing.T) {
 			slog.String("uri", "/🧪"),
 			slog.String("proto", "HTTP/1.1"),
 			slog.Int("status", 204),
-			slog.Int("length", 5),
+			slog.Int64("length", 5),
 		)}, attrs)
 	})
 
@@ -76,7 +76,7 @@ func TestCommonFormatter(t *testing.T) {
 			slog.String("uri", "/log"),
 			slog.String("proto", "HTTP/1.1"),
 			slog.Int("status", 204),
-			slog.Int("length", 5),
+			slog.Int64("length", 5),
 		)}, attrs)
 	})
 
@@ -99,7 +99,7 @@ func TestCommonFormatter(t *testing.T) {
 			slog.String("uri", "/log"),
 			slog.String("proto", "HTTP/1.1"),
 			slog.Int("status", 204),
-			slog.Int("length", 5),
+			slog.Int64("length", 5),
 		)}, attrs)
 	})
 
@@ -123,7 +123,7 @@ func TestCommonFormatter(t *testing.T) {
 			slog.String("uri", "/log"),
 			slog.String("proto", "HTTP/2.0"),
 			slog.Int("status", 204),
-			slog.Int("length", 5),
+			slog.Int64("length", 5),
 		)}, attrs)
 	})
 
@@ -146,7 +146,7 @@ func TestCommonFormatter(t *testing.T) {
 			slog.String("uri", "/log"),
 			slog.String("proto", "HTTP/1.1"),
 			slog.Int("status", 204),
-			slog.Int("length", 5),
+			slog.Int64("length", 5),
 		)}, attrs)
 	})
 }
@@ -174,7 +174,7 @@ func TestCombinedFormatter(t *testing.T) {
 		slog.String("uri", "/log"),
 		slog.String("proto", "HTTP/1.1"),
 		slog.Int("status", 204),
-		slog.Int("length", 5),
+		slog.Int64("length", 5),
 		slog.String("referrer", referrer),
 		slog.String("userAgent", userAgent),
 	)}, attrs)

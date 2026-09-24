@@ -24,7 +24,7 @@ func TestMethod(t *testing.T) {
 		{
 			desc:   "wrong_case",
 			method: "PoSt",
-			want:   []attribute.KeyValue{semconv.HTTPRequestMethodPost, semconv.HTTPRequestMethodOriginal("PoSt")},
+			want:   []attribute.KeyValue{semconv.HTTPRequestMethodOther, semconv.HTTPRequestMethodOriginal("PoSt")},
 		},
 		{
 			desc:   "other",
@@ -37,6 +37,33 @@ func TestMethod(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			attrs := []attribute.KeyValue{}
 			Method(c.method, &attrs)
+			assert.Equal(t, c.want, attrs)
+		})
+	}
+}
+
+func TestRoute(t *testing.T) {
+	cases := []struct {
+		desc  string
+		route string
+		want  []attribute.KeyValue
+	}{
+		{
+			desc:  "empty",
+			route: "",
+			want:  []attribute.KeyValue{},
+		},
+		{
+			desc:  "OK",
+			route: "/test/{param}",
+			want:  []attribute.KeyValue{semconv.HTTPRoute("/test/{param}")},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			attrs := []attribute.KeyValue{}
+			Route(c.route, &attrs)
 			assert.Equal(t, c.want, attrs)
 		})
 	}
@@ -395,8 +422,11 @@ func TestSpanAttrs(t *testing.T) {
 		Proto: "HTTP/2",
 	}
 
+	route := "/test/{param}"
+
 	want := []attribute.KeyValue{
 		semconv.HTTPRequestMethodGet,
+		semconv.HTTPRoute("/test/{param}"),
 		semconv.URLScheme("https"),
 		semconv.ServerAddress("example.org"),
 		semconv.ServerPort(443),
@@ -409,7 +439,7 @@ func TestSpanAttrs(t *testing.T) {
 		semconv.NetworkPeerPort(44444),
 	}
 
-	assert.Equal(t, want, SpanAttrs(request))
+	assert.Equal(t, want, SpanAttrs(request, route))
 }
 
 func TestSpanName(t *testing.T) {

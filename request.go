@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"goyave.dev/goyave/v5/lang"
@@ -97,6 +98,7 @@ func (r *Request) reset(httpRequest *http.Request) {
 	r.Route = nil
 	r.RouteParams = nil
 	r.User = nil
+	httpRequest.Body = &lazyCountReader{ReadCloser: httpRequest.Body}
 }
 
 func makeCleanRequest(httpRequest *http.Request, startTime time.Time, route *Route, routeParameters map[string]string) *Request {
@@ -206,6 +208,8 @@ func (r *Request) BearerToken() (string, bool) {
 // Body the request body.
 // Always non-nil, but will return EOF immediately when no body is present.
 // The server will close the request body so handlers don't need to.
+//
+// Do not use the request body if you are inside a websocket handler.
 func (r *Request) Body() io.ReadCloser {
 	return r.httpRequest.Body
 }
@@ -227,4 +231,28 @@ func (r *Request) Context() context.Context {
 func (r *Request) WithContext(ctx context.Context) *Request {
 	r.httpRequest = r.httpRequest.WithContext(ctx)
 	return r
+}
+
+// BodySize returns the request body size (in bytes).
+// The value is lazily obtained on body read. The returned value will only
+// be correct after the request's body reader has been drained.
+func (r *Request) BodySize() int64 {
+	reader, ok := r.httpRequest.Body.(*lazyCountReader)
+	if !ok {
+		return -1
+	}
+	return reader.size.Load()
+}
+
+// lazyCountReader wrapper around request.Body to lazily count the request's body size.
+// In the case of a hijack, the reported size will be the amount of bytes read before the hijack.
+type lazyCountReader struct {
+	io.ReadCloser
+	size atomic.Int64
+}
+
+func (r *lazyCountReader) Read(p []byte) (int, error) {
+	n, err := r.ReadCloser.Read(p)
+	r.size.Add(int64(n))
+	return n, err
 }

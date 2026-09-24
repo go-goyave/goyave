@@ -51,7 +51,6 @@ func TestWriter(t *testing.T) {
 
 		i, err := resp.Write([]byte("body response"))
 		assert.Equal(t, 13, i)
-		assert.Equal(t, 13, writer.length)
 		assert.NoError(t, err)
 
 		assert.NoError(t, writer.Close())
@@ -82,7 +81,6 @@ func TestWriter(t *testing.T) {
 
 		i, err := resp.Write([]byte("body response"))
 		assert.Equal(t, 13, i)
-		assert.Equal(t, 13, writer.length)
 		assert.NoError(t, err)
 
 		assert.NoError(t, writer.Close())
@@ -120,7 +118,6 @@ func TestWriter(t *testing.T) {
 		i, err := resp.Write([]byte("body response"))
 		assert.True(t, child.preWritten)
 		assert.Equal(t, 13, i)
-		assert.Equal(t, 13, writer.length)
 		assert.NoError(t, err)
 
 		assert.NoError(t, writer.Close())
@@ -159,7 +156,6 @@ func TestWriter(t *testing.T) {
 		i, err := resp.Write([]byte("body response"))
 		assert.True(t, child.preWritten)
 		assert.Equal(t, 13, i)
-		assert.Equal(t, 13, writer.length)
 		assert.NoError(t, err)
 
 		assert.NoError(t, writer.Close())

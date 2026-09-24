@@ -821,6 +821,15 @@ func TestResponse(t *testing.T) {
 			assert.Empty(t, logBuffer.String())
 		})
 	})
+
+	t.Run("Size", func(t *testing.T) {
+		resp, _, _ := newTestReponse()
+
+		data := []byte{1, 2, 3, 4, 5}
+		_, err := resp.Write(data)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(len(data)), resp.Size())
+	})
 }
 
 type httpFlusher struct {

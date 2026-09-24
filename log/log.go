@@ -15,7 +15,7 @@ import (
 type Context struct {
 	Request *goyave.Request
 	Status  int
-	Length  int
+	Length  int64
 }
 
 // Formatter is a function that builds a log entry.
@@ -35,7 +35,6 @@ type Writer struct {
 	formatter Formatter
 	request   *goyave.Request
 	response  *goyave.Response
-	length    int
 }
 
 var _ io.Closer = (*Writer)(nil)
@@ -54,21 +53,13 @@ func NewWriter(response *goyave.Response, request *goyave.Request, formatter For
 	return writer
 }
 
-// Write writes the data as a response and keeps its length in memory
-// for later logging.
-func (w *Writer) Write(b []byte) (int, error) {
-	w.length += len(b)
-	n, err := w.CommonWriter.Write(b)
-	return n, errwrap.New(err)
-}
-
 // Close the writer and its child ResponseWriter, flushing response
 // output to the logs.
 func (w *Writer) Close() error {
 	ctx := &Context{
 		Request: w.request,
 		Status:  w.response.GetStatus(),
-		Length:  w.length,
+		Length:  w.response.Size(),
 	}
 	message, attrs := w.formatter(ctx)
 

@@ -267,18 +267,19 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// because it is recommended to host behind a reverse proxy.
 		// Redirect to the configured proxy (or direct HTTP host).
 		request := makeCleanRequest(req, now, unsupportedProtocolRoute, nil)
-		defer requestPool.Put(request)
-		r.otel(request)
+		response := NewResponse(r.server, request, w)
+		r.startOTel(request)
 
 		address := r.server.getProxyAddress() + req.URL.Path
 		query := req.URL.Query()
 		if len(query) != 0 {
 			address += "?" + query.Encode()
 		}
-		http.Redirect(w, req, address, http.StatusPermanentRedirect)
-		if r.server.otelTracer != nil {
-			otel.EndSpan(request.Context(), nil, http.StatusPermanentRedirect)
-		}
+		http.Redirect(response, req, address, http.StatusPermanentRedirect)
+
+		r.endOTel(request, response)
+		requestPool.Put(request)
+		responsePool.Put(response)
 		return
 	}
 
@@ -287,7 +288,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.requestHandler(&match, w, req, now)
 }
 
-func (r *Router) otel(req *Request) {
+func (r *Router) startOTel(req *Request) {
 	if r.server.otelTracer == nil {
 		return
 	}
@@ -312,6 +313,27 @@ func (r *Router) otel(req *Request) {
 	otelCtx := otel.StartSpan(req.Context(), r.server.otelTracer, spanData)
 	req.WithContext(slog.Context(otelCtx, slog.FromContext(otelCtx)))
 	// Span is finished after the [Router.ServeHTTP] method returns.
+}
+
+func (r *Router) endOTel(request *Request, response *Response) {
+	var err error // Avoids nil of type *errwrap.Error comparison with nil of type error in the otel package
+	if response.err != nil {
+		err = response.err
+	}
+	if r.server.otelTracer != nil {
+		otel.EndSpan(request.Context(), err, response.status)
+	}
+	if r.server.otelMeters != nil {
+		r.server.otelMeters.RecordMetrics(request.Context(), otel.ServerMetricData{
+			Request:         request.httpRequest,
+			Route:           request.Route.GetFullURI(),
+			ResponseStatus:  response.status,
+			RequestSize:     request.BodySize(),
+			ResponseSize:    response.size,
+			RequestDuration: time.Since(request.Now),
+			Error:           err,
+		})
+	}
 }
 
 // TODO export RouteMatch and add Match with string param function
@@ -527,7 +549,7 @@ func (r *Router) Controller(controller Registrer) *Router {
 func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request, startTime time.Time) {
 	request := makeCleanRequest(rawRequest, startTime, match.route, match.parameters)
 
-	r.otel(request)
+	r.startOTel(request)
 
 	response := NewResponse(r.server, request, w)
 	handler := match.route.handler
@@ -583,21 +605,7 @@ func (r *Router) finalize(match *routeMatch, response *Response, request *Reques
 		response.WriteHeader(response.status)
 	}
 
-	if r.server.otelTracer != nil {
-		if response.err == nil { // Avoids nil of type *errwrap.Error comparison with nil of type error
-			otel.EndSpan(request.Context(), nil, response.status)
-		} else {
-			otel.EndSpan(request.Context(), response.err, response.status)
-		}
-	}
-	if r.server.otelMeters != nil {
-		r.server.otelMeters.RecordMetrics(request.Context(), otel.ServerMetricData{
-			Request:    request.httpRequest,
-			Route:      request.Route.GetFullURI(),
-			ServerAddr: r.server.host,
-			ServerPort: r.server.port,
-		})
-	}
+	r.endOTel(request, response)
 	return errwrap.New(response.close())
 }
 

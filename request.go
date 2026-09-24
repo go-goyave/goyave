@@ -88,7 +88,7 @@ func NewRequest(httpRequest *http.Request) *Request {
 
 func (r *Request) reset(httpRequest *http.Request) {
 	r.httpRequest = httpRequest
-	r.Now = time.Now()
+	r.Now = time.Time{}
 	r.Extra = map[any]any{}
 	r.cookies = nil
 	r.Data = nil
@@ -97,6 +97,18 @@ func (r *Request) reset(httpRequest *http.Request) {
 	r.Route = nil
 	r.RouteParams = nil
 	r.User = nil
+}
+
+func makeCleanRequest(httpRequest *http.Request, startTime time.Time, route *Route, routeParameters map[string]string) *Request {
+	request := NewRequest(httpRequest)
+	request.Now = startTime
+	request.Route = route
+	if routeParameters == nil {
+		request.RouteParams = map[string]string{}
+	} else {
+		request.RouteParams = routeParameters
+	}
+	return request
 }
 
 // Request return the raw http request.
@@ -198,7 +210,7 @@ func (r *Request) Body() io.ReadCloser {
 	return r.httpRequest.Body
 }
 
-// Context returns the request's context. To change the context, use `WithContext`.
+// Context returns the request's context. To change the context, use [Request.WithContext].
 //
 // The returned context is always non-nil; it defaults to the
 // background context.
@@ -209,7 +221,7 @@ func (r *Request) Context() context.Context {
 	return r.httpRequest.Context()
 }
 
-// WithContext creates a shallow copy of the underlying `*http.Request` with
+// WithContext creates a shallow copy of the underlying [*http.Request] with
 // its context changed to `ctx` then returns itself.
 // The provided ctx must be non-nil.
 func (r *Request) WithContext(ctx context.Context) *Request {

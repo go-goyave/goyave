@@ -18,8 +18,9 @@ func BenchmarkSpanAttrs(b *testing.B) {
 		},
 		Proto: "HTTP/2",
 	}
+	route := "/test/{param}"
 	b.ReportAllocs()
 	for b.Loop() {
-		SpanAttrs(request)
+		SpanAttrs(request, route)
 	}
 }

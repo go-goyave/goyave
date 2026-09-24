@@ -669,12 +669,13 @@ func TestErrLogWriter(t *testing.T) {
 
 func TestOpenTelemetry(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		spanRecorder := prepareOpenTelemetryTest(t, func(response *Response, request *Request) {
+		spanRecorder := prepareOpenTelemetryTest(t, "/uri/test", func(response *Response, request *Request) {
 			span := trace.SpanFromContext(request.Context())
 			span.SetAttributes(attribute.Bool("handler_reached", true))
 
 			bag := baggage.FromContext(request.Context())
-			assert.Equal(t, "userId=alice,isProduction=false", bag.String())
+			assert.Equal(t, "alice", bag.Member("userId").Value())
+			assert.Equal(t, "false", bag.Member("isProduction").Value())
 			response.Status(http.StatusOK)
 		})
 
@@ -696,6 +697,7 @@ func TestOpenTelemetry(t *testing.T) {
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
+			semconv.HTTPRoute("/uri/{param}"),
 			semconv.ServerAddress("example.com"),
 			semconv.ClientAddress("192.0.2.1"),
 			semconv.ClientPort(1234),
@@ -704,7 +706,6 @@ func TestOpenTelemetry(t *testing.T) {
 			semconv.NetworkProtocolVersion("1.1"),
 			semconv.NetworkPeerAddress("192.0.2.1"),
 			semconv.NetworkPeerPort(1234),
-			semconv.HTTPRoute("/uri/{param}"),
 			attribute.Bool("handler_reached", true),
 			semconv.HTTPResponseStatusCode(http.StatusOK),
 		}
@@ -718,7 +719,7 @@ func TestOpenTelemetry(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
-		spanRecorder := prepareOpenTelemetryTest(t, func(response *Response, _ *Request) {
+		spanRecorder := prepareOpenTelemetryTest(t, "/uri/test", func(response *Response, _ *Request) {
 			response.Error("test error")
 		})
 
@@ -740,6 +741,7 @@ func TestOpenTelemetry(t *testing.T) {
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
+			semconv.HTTPRoute("/uri/{param}"),
 			semconv.ServerAddress("example.com"),
 			semconv.ClientAddress("192.0.2.1"),
 			semconv.ClientPort(1234),
@@ -748,7 +750,6 @@ func TestOpenTelemetry(t *testing.T) {
 			semconv.NetworkProtocolVersion("1.1"),
 			semconv.NetworkPeerAddress("192.0.2.1"),
 			semconv.NetworkPeerPort(1234),
-			semconv.HTTPRoute("/uri/{param}"),
 			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
 		}
 		assert.Equal(t, wantAttrs, span.Attributes())
@@ -759,7 +760,7 @@ func TestOpenTelemetry(t *testing.T) {
 	})
 
 	t.Run("panic", func(t *testing.T) {
-		spanRecorder := prepareOpenTelemetryTest(t, func(_ *Response, _ *Request) {
+		spanRecorder := prepareOpenTelemetryTest(t, "/uri/test", func(_ *Response, _ *Request) {
 			panic("test error")
 		})
 
@@ -781,6 +782,7 @@ func TestOpenTelemetry(t *testing.T) {
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
+			semconv.HTTPRoute("/uri/{param}"),
 			semconv.ServerAddress("example.com"),
 			semconv.ClientAddress("192.0.2.1"),
 			semconv.ClientPort(1234),
@@ -789,7 +791,6 @@ func TestOpenTelemetry(t *testing.T) {
 			semconv.NetworkProtocolVersion("1.1"),
 			semconv.NetworkPeerAddress("192.0.2.1"),
 			semconv.NetworkPeerPort(1234),
-			semconv.HTTPRoute("/uri/{param}"),
 			semconv.HTTPResponseStatusCode(http.StatusInternalServerError),
 		}
 		assert.Equal(t, wantAttrs, span.Attributes())
@@ -798,9 +799,53 @@ func TestOpenTelemetry(t *testing.T) {
 		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
 		assert.Equal(t, otel.Version, scope.Version)
 	})
+
+	t.Run("protocol_redirect", func(t *testing.T) {
+		spanRecorder := prepareOpenTelemetryTest(t, "https://example.com:8080/uri/test", func(_ *Response, _ *Request) {
+			panic("test error") // Should not happen
+		})
+
+		spans := spanRecorder.Ended()
+		require.Len(t, spans, 1)
+		span := spans[0]
+		assert.Equal(t, "GET", span.Name())
+
+		status := span.Status()
+		assert.Equal(t, codes.Unset, status.Code)
+		assert.Empty(t, status.Description)
+
+		parent := span.Parent()
+		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+		assert.Equal(t, "01", parent.TraceFlags().String())
+		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+		assert.True(t, parent.IsRemote())
+
+		wantAttrs := []attribute.KeyValue{
+			semconv.HTTPRequestMethodGet,
+			semconv.URLScheme("https"),
+			semconv.ServerAddress("example.com"),
+			semconv.ServerPort(8080),
+			semconv.ClientAddress("192.0.2.1"),
+			semconv.ClientPort(1234),
+			semconv.URLFull("https://example.com:8080/uri/test"),
+			semconv.URLPath("/uri/test"),
+			semconv.NetworkProtocolVersion("1.1"),
+			semconv.NetworkPeerAddress("192.0.2.1"),
+			semconv.NetworkPeerPort(1234),
+			semconv.HTTPResponseStatusCode(http.StatusPermanentRedirect),
+		}
+		assert.Equal(t, wantAttrs, span.Attributes())
+		events := span.Events()
+		assert.Empty(t, events)
+
+		scope := span.InstrumentationScope()
+		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
+		assert.Equal(t, otel.Version, scope.Version)
+	})
 }
 
-func prepareOpenTelemetryTest(t *testing.T, handler Handler) *tracetest.SpanRecorder {
+func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler) *tracetest.SpanRecorder {
 	spanRecorder := tracetest.NewSpanRecorder()
 	traceProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSpanProcessor(spanRecorder),
@@ -824,7 +869,7 @@ func prepareOpenTelemetryTest(t *testing.T, handler Handler) *tracetest.SpanReco
 	router.Get("/uri/{param}", handler)
 
 	httpRecorder := httptest.NewRecorder()
-	request := httptest.NewRequestWithContext(server.ctx, http.MethodGet, "/uri/test", nil)
+	request := httptest.NewRequestWithContext(server.ctx, http.MethodGet, url, nil)
 	request.Header.Set("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
 	request.Header.Set("tracestate", "congo=t61rcWkgMzE")
 	request.Header.Set("baggage", "userId=alice,isProduction=false")

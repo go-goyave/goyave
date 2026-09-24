@@ -18,7 +18,7 @@ func TestRequest(t *testing.T) {
 		r := NewRequest(httpReq)
 
 		assert.Equal(t, httpReq, r.httpRequest)
-		assert.False(t, r.Now.IsZero())
+		assert.True(t, r.Now.IsZero())
 		assert.NotNil(t, r.Extra)
 	})
 

@@ -39,8 +39,15 @@ type OpenTelemetryOptions struct {
 	// MeterProvider if given, enables metric reporting using OpenTelemetry.
 	MeterProvider metric.MeterProvider
 
-	// TracePropagators if given, enables span propagation across this process's boundaries.
-	TracePropagators []propagation.TextMapPropagator
+	// Propagators if given, enables span propagation across this process's boundaries.
+	// This allows span parent/child relationship to be preserved if the request is coming
+	// from another of your services. This relationship is identified by the "traceparent"
+	// and "tracestate" headers. See
+	//   - https://www.w3.org/TR/trace-context/
+	//   - https://opentelemetry.io/docs/concepts/context-propagation/
+	//   - https://www.w3.org/TR/baggage/
+	//   - https://opentelemetry.io/docs/concepts/signals/baggage/
+	Propagators propagation.TextMapPropagator
 }
 
 // Options represent server creation options.
@@ -144,11 +151,11 @@ type Server struct {
 	// Writes to stderr by default.
 	logger *slog.Logger
 
-	meters *otel.HTTPServerMeters
+	otelMeters      *otel.HTTPServerMeters
+	otelPropagators propagation.TextMapPropagator
+	otelTracer      trace.Tracer
 
 	ctx context.Context
-
-	tracer trace.Tracer
 
 	host         string
 	baseURL      string
@@ -224,19 +231,20 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 			HTTP2:                 opts.HTTP2,
 			DisableClientPriority: opts.DisableClientPriority,
 		},
-		baseContext:   opts.BaseContext,
-		listenConfig:  opts.ListenConfig,
-		config:        &cfg.Server,
-		debug:         cfg.App.Debug,
-		Lang:          languages,
-		stopChannel:   make(chan struct{}, 1),
-		startupHooks:  []func(*Server){},
-		shutdownHooks: []func(*Server){},
-		host:          host,
-		port:          port,
-		logger:        slogger,
-		tracer:        tracer,
-		meters:        meters,
+		baseContext:     opts.BaseContext,
+		listenConfig:    opts.ListenConfig,
+		config:          &cfg.Server,
+		debug:           cfg.App.Debug,
+		Lang:            languages,
+		stopChannel:     make(chan struct{}, 1),
+		startupHooks:    []func(*Server){},
+		shutdownHooks:   []func(*Server){},
+		host:            host,
+		port:            port,
+		logger:          slogger,
+		otelTracer:      tracer,
+		otelMeters:      meters,
+		otelPropagators: opts.OpenTelemetry.Propagators,
 	}
 	server.ctx = context.WithValue(ctx, serverKey{}, server)
 	server.server.BaseContext = server.internalBaseContext

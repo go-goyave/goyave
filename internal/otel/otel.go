@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 	otelsemconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/semconv/v1.43.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
@@ -30,16 +31,24 @@ func Tracer(provider trace.TracerProvider) trace.Tracer {
 	return provider.Tracer(OpenTelemetryTracerName, trace.WithInstrumentationVersion(Version))
 }
 
+type SpanData struct {
+	Request     *http.Request
+	Propagators propagation.TextMapPropagator
+	// Filters []Filter
+}
+
 // StartSpan adds an OpenTelemetry span to the trace with the given name.
-// TODO span filters and custom attributes
-func StartSpan(ctx context.Context, tracer trace.Tracer, request *http.Request) context.Context {
-	ctx, _ = tracer.Start(ctx, semconv.SpanName(request.Method, ""),
+// TODO span filters
+func StartSpan(ctx context.Context, tracer trace.Tracer, spanData SpanData) context.Context {
+	if spanData.Propagators != nil {
+		ctx = spanData.Propagators.Extract(spanData.Request.Context(), propagation.HeaderCarrier(spanData.Request.Header))
+	}
+	ctx, _ = tracer.Start(ctx, semconv.SpanName(spanData.Request.Method, ""),
 		trace.WithSpanKind(trace.SpanKindServer),
-		trace.WithAttributes(semconv.SpanAttrs(request)...),
+		trace.WithAttributes(semconv.SpanAttrs(spanData.Request)...),
 		// Custom options not allowed, only the Goyave instrumentation needs to be in control of them.
 		// Custom attributes can be added to the span later if developers chose to do so.
 	)
-	// TODO parent span retrieved from request headers? -> Propagator
 	return ctx
 }
 
@@ -128,4 +137,5 @@ type ServerMetricData struct {
 	ServerPort int
 }
 
-// TODO docs testutil.NewServer
+// TODO docs testutil.NewServer (mock providers)
+// TODO docs propagation and baggage

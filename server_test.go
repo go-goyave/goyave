@@ -21,7 +21,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
@@ -119,7 +121,7 @@ func TestServer(t *testing.T) {
 		assert.ElementsMatch(t, []string{"en-US", "en-UK"}, server.Lang.GetAvailableLanguages())
 		assert.Equal(t, "load US", server.Lang.Get("en-US", "test-load"))
 		assert.Equal(t, "load UK", server.Lang.Get("en-UK", "test-load"))
-		assert.NotNil(t, server.tracer)
+		assert.NotNil(t, server.otelTracer)
 	})
 
 	t.Run("Host", func(t *testing.T) {
@@ -670,6 +672,9 @@ func TestOpenTelemetry(t *testing.T) {
 		spanRecorder := prepareOpenTelemetryTest(t, func(response *Response, request *Request) {
 			span := trace.SpanFromContext(request.Context())
 			span.SetAttributes(attribute.Bool("handler_reached", true))
+
+			bag := baggage.FromContext(request.Context())
+			assert.Equal(t, "userId=alice,isProduction=false", bag.String())
 			response.Status(http.StatusOK)
 		})
 
@@ -677,6 +682,17 @@ func TestOpenTelemetry(t *testing.T) {
 		require.Len(t, spans, 1)
 		span := spans[0]
 		assert.Equal(t, "GET /uri/{param}", span.Name())
+
+		status := span.Status()
+		assert.Equal(t, codes.Unset, status.Code)
+		assert.Empty(t, status.Description)
+
+		parent := span.Parent()
+		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+		assert.Equal(t, "01", parent.TraceFlags().String())
+		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+		assert.True(t, parent.IsRemote())
 
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
@@ -715,6 +731,13 @@ func TestOpenTelemetry(t *testing.T) {
 		assert.Equal(t, codes.Error, status.Code)
 		assert.Equal(t, "test error", status.Description)
 
+		parent := span.Parent()
+		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+		assert.Equal(t, "01", parent.TraceFlags().String())
+		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+		assert.True(t, parent.IsRemote())
+
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
 			semconv.ServerAddress("example.com"),
@@ -749,6 +772,13 @@ func TestOpenTelemetry(t *testing.T) {
 		assert.Equal(t, codes.Error, status.Code)
 		assert.Equal(t, "test error", status.Description)
 
+		parent := span.Parent()
+		assert.Equal(t, "0af7651916cd43dd8448eb211c80319c", parent.TraceID().String())
+		assert.Equal(t, "b7ad6b7169203331", parent.SpanID().String())
+		assert.Equal(t, "01", parent.TraceFlags().String())
+		assert.Equal(t, "congo=t61rcWkgMzE", parent.TraceState().String())
+		assert.True(t, parent.IsRemote())
+
 		wantAttrs := []attribute.KeyValue{
 			semconv.HTTPRequestMethodGet,
 			semconv.ServerAddress("example.com"),
@@ -775,9 +805,15 @@ func prepareOpenTelemetryTest(t *testing.T, handler Handler) *tracetest.SpanReco
 	traceProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSpanProcessor(spanRecorder),
 	)
+	propagator := propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	)
 	opts := Options{
 		OpenTelemetry: OpenTelemetryOptions{
 			TracerProvider: traceProvider,
+			// TODO metrics test
+			Propagators: propagator,
 		},
 		Logger: slog.DiscardLogger(),
 	}
@@ -789,6 +825,9 @@ func prepareOpenTelemetryTest(t *testing.T, handler Handler) *tracetest.SpanReco
 
 	httpRecorder := httptest.NewRecorder()
 	request := httptest.NewRequestWithContext(server.ctx, http.MethodGet, "/uri/test", nil)
+	request.Header.Set("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+	request.Header.Set("tracestate", "congo=t61rcWkgMzE")
+	request.Header.Set("baggage", "userId=alice,isProduction=false")
 	router.ServeHTTP(httpRecorder, request)
 
 	return spanRecorder

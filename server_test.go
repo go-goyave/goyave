@@ -843,9 +843,68 @@ func TestOpenTelemetry(t *testing.T) {
 		assert.Equal(t, otel.OpenTelemetryTracerName, scope.Name)
 		assert.Equal(t, otel.Version, scope.Version)
 	})
+
+	t.Run("filter", func(t *testing.T) {
+		filterTrue := func(_ *Request) bool {
+			return true
+		}
+		filterFalse := func(_ *Request) bool {
+			return false
+		}
+
+		cases := []struct {
+			desc     string
+			filters  []TraceFilter
+			wantSpan bool
+		}{
+			{
+				desc:     "no_filter",
+				filters:  nil,
+				wantSpan: true,
+			},
+			{
+				desc:     "filter_true",
+				filters:  []TraceFilter{filterTrue},
+				wantSpan: true,
+			},
+			{
+				desc:     "many_filter_true",
+				filters:  []TraceFilter{filterTrue, filterTrue},
+				wantSpan: true,
+			},
+			{
+				desc:     "filter_false",
+				filters:  []TraceFilter{filterFalse},
+				wantSpan: false,
+			},
+			{
+				desc:     "filter_first_false",
+				filters:  []TraceFilter{filterFalse, filterTrue},
+				wantSpan: false,
+			},
+			{
+				desc:     "filter_second_false",
+				filters:  []TraceFilter{filterTrue, filterFalse},
+				wantSpan: false,
+			},
+		}
+
+		for _, c := range cases {
+			t.Run(c.desc, func(t *testing.T) {
+				spanRecorder := prepareOpenTelemetryTest(t, "/test/url", func(_ *Response, _ *Request) {}, c.filters...)
+
+				spans := spanRecorder.Ended()
+				if c.wantSpan {
+					require.Len(t, spans, 1)
+				} else {
+					require.Empty(t, spans)
+				}
+			})
+		}
+	})
 }
 
-func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler) *tracetest.SpanRecorder {
+func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler, traceFilters ...TraceFilter) *tracetest.SpanRecorder {
 	spanRecorder := tracetest.NewSpanRecorder()
 	traceProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSpanProcessor(spanRecorder),
@@ -858,7 +917,8 @@ func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler) *tracet
 		OpenTelemetry: OpenTelemetryOptions{
 			TracerProvider: traceProvider,
 			// TODO metrics test
-			Propagators: propagator,
+			Propagators:  propagator,
+			TraceFilters: traceFilters,
 		},
 		Logger: slog.DiscardLogger(),
 	}

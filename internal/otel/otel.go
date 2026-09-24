@@ -3,8 +3,8 @@ package otel
 import (
 	"context"
 	"net/http"
+	"time"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
@@ -32,22 +32,24 @@ func Tracer(provider trace.TracerProvider) trace.Tracer {
 }
 
 type SpanData struct {
+	StartTime   time.Time
 	Request     *http.Request
 	Propagators propagation.TextMapPropagator
-	// Filters []Filter
+	Route       string
 }
 
 // StartSpan adds an OpenTelemetry span to the trace with the given name.
-// TODO span filters
 func StartSpan(ctx context.Context, tracer trace.Tracer, spanData SpanData) context.Context {
 	if spanData.Propagators != nil {
-		ctx = spanData.Propagators.Extract(spanData.Request.Context(), propagation.HeaderCarrier(spanData.Request.Header))
+		ctx = spanData.Propagators.Extract(ctx, propagation.HeaderCarrier(spanData.Request.Header))
 	}
-	ctx, _ = tracer.Start(ctx, semconv.SpanName(spanData.Request.Method, ""),
+
+	// Custom options not allowed, only the Goyave instrumentation needs to be in control of them.
+	// Custom attributes can be added to the span later if developers chose to do so.
+	ctx, _ = tracer.Start(ctx, semconv.SpanName(spanData.Request.Method, spanData.Route),
 		trace.WithSpanKind(trace.SpanKindServer),
-		trace.WithAttributes(semconv.SpanAttrs(spanData.Request)...),
-		// Custom options not allowed, only the Goyave instrumentation needs to be in control of them.
-		// Custom attributes can be added to the span later if developers chose to do so.
+		trace.WithAttributes(semconv.SpanAttrs(spanData.Request, spanData.Route)...),
+		trace.WithTimestamp(spanData.StartTime),
 	)
 	return ctx
 }
@@ -60,22 +62,6 @@ func EndSpan(ctx context.Context, err error, status int) {
 	}
 	span.SetAttributes(otelsemconv.HTTPResponseStatusCode(status))
 	span.End()
-}
-
-// AddAttr adds OpenTelemetry attributes to the current span.
-func AddAttr(ctx context.Context, attrs ...attribute.KeyValue) {
-	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attrs...)
-}
-
-// SetRoute adds OpenTelemetry http.route attribute to the current span
-// and renames it according to the spec("{method} {target}").
-func SetRoute(ctx context.Context, method, route string) {
-	span := trace.SpanFromContext(ctx)
-	span.SetName(semconv.SpanName(method, route))
-	if route != "" {
-		span.SetAttributes(otelsemconv.HTTPRoute(route))
-	}
 }
 
 // Meter returns an OpenTelemetry meter configured for Goyave.

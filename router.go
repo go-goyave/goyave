@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"maps"
 	"slices"
@@ -24,8 +25,9 @@ const (
 
 // Special route names.
 const (
-	RouteMethodNotAllowed = "goyave.method-not-allowed"
-	RouteNotFound         = "goyave.not-found"
+	RouteMethodNotAllowed    = "goyave.method-not-allowed"
+	RouteNotFound            = "goyave.not-found"
+	RouteUnsupportedProtocol = "goyave.unsupported-protocol"
 )
 
 var (
@@ -38,6 +40,7 @@ var (
 	notFoundRoute = newRoute(func(response *Response, _ *Request) {
 		response.Status(http.StatusNotFound)
 	}, RouteNotFound)
+	unsupportedProtocolRoute = newRoute(nil, RouteNotFound)
 )
 
 // Handler responds to an HTTP request.
@@ -258,8 +261,15 @@ func (r *Router) StatusHandler(handler StatusHandler, status int, additionalStat
 
 // ServeHTTP dispatches the handler registered in the matched route.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	req = r.otel(req)
+	now := time.Now()
 	if req.URL.Scheme != "" && req.URL.Scheme != "http" {
+		// The server is requested using https, which we don't support
+		// because it is recommended to host behind a reverse proxy.
+		// Redirect to the configured proxy (or direct HTTP host).
+		request := makeCleanRequest(req, now, unsupportedProtocolRoute, nil)
+		defer requestPool.Put(request)
+		r.otel(request)
+
 		address := r.server.getProxyAddress() + req.URL.Path
 		query := req.URL.Query()
 		if len(query) != 0 {
@@ -267,27 +277,36 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 		http.Redirect(w, req, address, http.StatusPermanentRedirect)
 		if r.server.otelTracer != nil {
-			otel.EndSpan(req.Context(), nil, http.StatusPermanentRedirect)
+			otel.EndSpan(request.Context(), nil, http.StatusPermanentRedirect)
 		}
 		return
 	}
 
 	match := routeMatch{currentPath: req.URL.Path}
 	r.match(req.Method, &match)
-	r.requestHandler(&match, w, req)
+	r.requestHandler(&match, w, req, now)
 }
 
-func (r *Router) otel(req *http.Request) *http.Request {
-	if r.server.otelTracer != nil {
-		spanData := otel.SpanData{
-			Request:     req,
-			Propagators: r.server.otelPropagators,
-		}
-		otelCtx := otel.StartSpan(req.Context(), r.server.otelTracer, spanData)
-		req = req.WithContext(slog.Context(otelCtx, slog.FromContext(otelCtx)))
-		// Span is finished after the [Router.ServeHTTP] method returns.
+func (r *Router) otel(req *Request) {
+	if r.server.otelTracer == nil {
+		return
 	}
-	return req
+	// TODO filter
+
+	route := ""
+	if req.Route != nil {
+		route = req.Route.GetFullURI()
+	}
+
+	spanData := otel.SpanData{
+		StartTime:   req.Now,
+		Request:     req.httpRequest,
+		Route:       route,
+		Propagators: r.server.otelPropagators,
+	}
+	otelCtx := otel.StartSpan(req.Context(), r.server.otelTracer, spanData)
+	req.WithContext(slog.Context(otelCtx, slog.FromContext(otelCtx)))
+	// Span is finished after the [Router.ServeHTTP] method returns.
 }
 
 // TODO export RouteMatch and add Match with string param function
@@ -500,17 +519,11 @@ func (r *Router) Controller(controller Registrer) *Router {
 	return r
 }
 
-func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request) {
-	if r.server.otelTracer != nil {
-		otel.SetRoute(rawRequest.Context(), rawRequest.Method, match.route.GetFullURI())
-	}
-	request := NewRequest(rawRequest)
-	request.Route = match.route
-	if match.parameters == nil {
-		request.RouteParams = map[string]string{}
-	} else {
-		request.RouteParams = match.parameters
-	}
+func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawRequest *http.Request, startTime time.Time) {
+	request := makeCleanRequest(rawRequest, startTime, match.route, match.parameters)
+
+	r.otel(request)
+
 	response := NewResponse(r.server, request, w)
 	handler := match.route.handler
 

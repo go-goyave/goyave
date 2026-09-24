@@ -23,9 +23,10 @@ var methods = map[string]attribute.KeyValue{
 	http.MethodTrace:   semconv.HTTPRequestMethodTrace,
 }
 
-func SpanAttrs(request *http.Request) []attribute.KeyValue {
-	attrs := make([]attribute.KeyValue, 0, 12) // Max possible length
+func SpanAttrs(request *http.Request, route string) []attribute.KeyValue {
+	attrs := make([]attribute.KeyValue, 0, 13) // Max possible length
 	Method(request.Method, &attrs)
+	Route(route, &attrs)
 	ServerAddress(request, &attrs)
 	ClientAddress(request, &attrs)
 	URL(request.URL, &attrs)
@@ -46,6 +47,13 @@ func Method(method string, attrs *[]attribute.KeyValue) {
 	if _, ok := methods[strings.ToUpper(method)]; ok {
 		*attrs = append(*attrs, semconv.HTTPRequestMethodOriginal(method))
 	}
+}
+
+func Route(route string, attrs *[]attribute.KeyValue) {
+	if route == "" {
+		return
+	}
+	*attrs = append(*attrs, semconv.HTTPRoute(route))
 }
 
 func ServerAddress(request *http.Request, attrs *[]attribute.KeyValue) {

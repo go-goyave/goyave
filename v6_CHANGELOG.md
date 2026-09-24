@@ -94,7 +94,11 @@
 - OpenTelemetry integration:
   - Logs via slog
   - Tracing via server Options.TracerProvider
+  - Propagation and baggage
   - Metrics (TODO)
+- Request
+  - Request.Now is now more accurate because the time is recorded earlier in the lifecycle.
+  - NewRequest now sets the Request time to 0 instead of now.
 
 TODO docs pass with links
 TODO cleanup resources directory

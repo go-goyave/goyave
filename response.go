@@ -104,6 +104,8 @@ type Response struct {
 	err            *errwrap.Error
 	status         int
 
+	size int64
+
 	// Used to check if controller didn't write anything so
 	// core can write default 204 No Content.
 	// See RFC 7231, 6.3.5
@@ -132,6 +134,7 @@ func (r *Response) reset(server *Server, request *Request, writer http.ResponseW
 	r.request = request
 	r.err = nil
 	r.status = 0
+	r.size = 0
 	r.empty = true
 	r.wroteHeader = false
 	r.hijacked = false
@@ -165,6 +168,7 @@ func (r *Response) PreWrite(b []byte) {
 func (r *Response) Write(data []byte) (int, error) {
 	r.PreWrite(data)
 	n, err := r.writer.Write(data)
+	r.size += int64(n)
 	return n, errwrap.New(err)
 }
 
@@ -298,6 +302,11 @@ func (r *Response) IsHeaderWritten() bool {
 //   - The status handler for the 500 status code, if the error is not already set
 func (r *Response) GetError() *errwrap.Error {
 	return r.err
+}
+
+// Size returns the number of bytes written to the response body.
+func (r *Response) Size() int64 {
+	return r.size
 }
 
 // --------------------------------------

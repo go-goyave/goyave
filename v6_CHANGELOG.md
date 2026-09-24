@@ -79,7 +79,9 @@
   - Database New and NewFromDialector don't take a logger as parameter anymore. Logs are defined by config DatabaseConnection.Debug now.
   - Database Exist/Unique added: helpers to avoid having to implement simple exist/unique queries (especially for checking slices)
   - Added helper Close to close the db used by a GORM instance.
-- Common/Combined log formatters: fix nested quotes for the URL field
+- Common/Combined log formatters
+  - fix nested quotes for the URL field
+  - log.Context.Length is now int64 instead of int. It sources the value from response.Size() instead of counting itself.
 - typeutil:
   - Convert doesn't use an intermediary buffer anymore, slightly improving performance in most common scenarios.
   - Convert now uses json v2
@@ -89,6 +91,7 @@
 - Response:
   - Response.JSON now uses json v2 and accepts variadic json options. JSON response bodies do not end with \n anymore as a result.
   - If Response.Error receives a ClientError, it won't return 500. Instead it builds a response based on the client error details. If the client error doesn't have a message specified, only set the status and let the status handler manage it (default behavior).
+  - Added Response.Size to get the number of bytes written to the body
 - util/errors renamed to errwrap to avoid package name collisions with std and dependency confusion
 - added ClientError which provide a way for services to return standardized client errors without leaking into the presentation / HTTP layer.
 - OpenTelemetry integration:
@@ -99,6 +102,7 @@
 - Request
   - Request.Now is now more accurate because the time is recorded earlier in the lifecycle.
   - NewRequest now sets the Request time to 0 instead of now.
+  - New BodySize method to retrieve the request body size in bytes (lazily counted)
 
 TODO docs pass with links
 TODO cleanup resources directory

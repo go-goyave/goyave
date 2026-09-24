@@ -10,7 +10,7 @@ import (
 //
 // Only the first element is considered: later elements are added by
 // proxies further from the client and would carry internal hostnames.
-func parseForwardedHeader(h http.Header, parameterName string) string { // TODO move this to httputil?
+func parseForwardedHeader(h http.Header, parameterName string) string {
 	for _, line := range h.Values("Forwarded") {
 		for _, elem := range splitUnquoted(line, ',') {
 			if strings.TrimSpace(elem) == "" {

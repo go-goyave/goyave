@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/otel/log"
 )
 
 type options struct {
-	ctx                 context.Context
-	otelOptions         []otelslog.Option
-	enableOpenTelemetry bool
+	otelProvider log.LoggerProvider
+	ctx          context.Context
+	otelOptions  []otelslog.Option
 }
 
 // Option defines a logger setting.
@@ -24,12 +25,12 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-// WithOpenTelemetry enables or disables OpenTelemetry logs.
-// When enabled, the [slog.Handler] is wrapped into a [*slog.MultiHandler] and
+// WithOpenTelemetryProvider enables OpenTelemetry logs.
+// When provided, the [slog.Handler] is wrapped into a [*slog.MultiHandler] and
 // an [*otelslog.Handler] is added. To configure the otelslog handler, use [WithOpenTelemetryOptions].
-func WithOpenTelemetry(enabled bool) Option {
+func WithOpenTelemetryProvider(provider log.LoggerProvider) Option {
 	return func(o *options) {
-		o.enableOpenTelemetry = enabled
+		o.otelProvider = provider
 	}
 }
 

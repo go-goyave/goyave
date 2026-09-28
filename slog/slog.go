@@ -13,7 +13,6 @@ import (
 
 	"log/slog"
 
-	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/util/errwrap"
 )
@@ -37,8 +36,8 @@ func New(h slog.Handler, opts ...Option) *Logger {
 	}
 
 	handler := h
-	if options.enableOpenTelemetry {
-		handler = slog.NewMultiHandler(h, otelslog.NewHandler(otel.LoggerName, options.otelOptions...))
+	if options.otelProvider != nil {
+		handler = slog.NewMultiHandler(h, otel.Logger(options.otelProvider, options.otelOptions...))
 	}
 
 	return &Logger{

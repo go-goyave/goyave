@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	otelsemconv "go.opentelemetry.io/otel/semconv/v1.43.0"
@@ -125,6 +127,17 @@ func (m *HTTPServerMeters) RecordMetrics(ctx context.Context, data ServerMetricD
 	m.requestBodySizeHistogram.Inst().Record(ctx, data.RequestSize, measureOpt)
 	m.responseBodySizeHistogram.Inst().Record(ctx, data.ResponseSize, measureOpt)
 	m.requestDurationHistogram.Inst().Record(ctx, float64(data.RequestDuration)/float64(time.Second), measureOpt)
+}
+
+// Logger returns a new OpenTelemetry slog handler.
+func Logger(provider log.LoggerProvider, opts ...otelslog.Option) *otelslog.Handler {
+	o := append([]otelslog.Option{
+		otelslog.WithLoggerProvider(provider),
+		otelslog.WithSource(true),
+		otelslog.WithSchemaURL(otelsemconv.SchemaURL),
+		otelslog.WithVersion(Version),
+	}, opts...)
+	return otelslog.NewHandler(LoggerName, o...)
 }
 
 // TODO docs testutil.NewServer (mock providers)

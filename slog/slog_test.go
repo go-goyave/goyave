@@ -11,9 +11,15 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log/logtest"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/util/errwrap"
 )
 
@@ -290,14 +296,41 @@ func TestLogger(t *testing.T) {
 		assert.Equal(t, t.Context(), l2.ctx)
 	})
 
-	t.Run("Options", func(t *testing.T) {
+	t.Run("OpenTelemetry", func(t *testing.T) {
+		recorder := logtest.NewRecorder()
+
 		opts := []Option{
 			WithContext(t.Context()),
-			WithOpenTelemetry(true),
+			WithOpenTelemetryProvider(recorder),
 			WithOpenTelemetryOptions(otelslog.WithAttributes(attribute.Bool("test", true))),
 		}
 		logger := New(NewDevModeHandler(io.Discard, nil), opts...)
 		assert.Equal(t, t.Context(), logger.ctx)
-		assert.IsType(t, &slog.MultiHandler{}, logger.Handler()) // Cannot really check the rest unfortunately
+		assert.IsType(t, &slog.MultiHandler{}, logger.Handler())
+
+		logger.Info("test message", "attr", "value")
+
+		recording := recorder.Result()
+
+		wantScope := logtest.Scope{
+			Name:       otel.LoggerName,
+			Version:    otel.Version,
+			SchemaURL:  semconv.SchemaURL,
+			Attributes: attribute.NewSet(attribute.Bool("test", true)),
+		}
+
+		require.Contains(t, recording, wantScope)
+		records := recording[wantScope]
+
+		require.Len(t, records, 1)
+		record := records[0]
+		assert.Equal(t, t.Context(), record.Context)
+		assert.Equal(t, log.SeverityInfo, record.Severity)
+		assert.True(t, lo.ContainsBy(record.Attributes, func(a attribute.KeyValue) bool { return a.Key == semconv.CodeFilePathKey }))
+		assert.True(t, lo.ContainsBy(record.Attributes, func(a attribute.KeyValue) bool { return a.Key == semconv.CodeFunctionNameKey }))
+		assert.True(t, lo.ContainsBy(record.Attributes, func(a attribute.KeyValue) bool { return a.Key == semconv.CodeLineNumberKey }))
+		assert.Contains(t, record.Attributes, attribute.String("attr", "value"))
+
+		// No need to assert more, this would be like re-testing otelslog...
 	})
 }

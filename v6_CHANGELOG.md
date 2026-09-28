@@ -77,8 +77,11 @@
   - Factory Save now returns an error
   - Database timeout plugin now works on Scan too. It doesn't work on Row() and Rows().
   - Database New and NewFromDialector don't take a logger as parameter anymore. Logs are defined by config DatabaseConnection.Debug now.
+  - Database New takes variadic Option for OpenTelemetry configuration. This may be extended in the future. (Logic: settings that cannot be serialized use this pattern, the rest use the regular config system)
   - Database Exist/Unique added: helpers to avoid having to implement simple exist/unique queries (especially for checking slices)
   - Added helper Close to close the db used by a GORM instance.
+  - Database logs now retrieve the slogger from the context.
+  - Dialects are now structures implementing database.Dialect, giving more options for creating the dialector. This also allows the database package to open the connection itself for open telemetry driver wrapping. The DSN templating system is removed. 
 - Common/Combined log formatters
   - fix nested quotes for the URL field
   - log.Context.Length is now int64 instead of int. It sources the value from response.Size() instead of counting itself.
@@ -98,7 +101,8 @@
   - Logs via slog
   - Tracing via server Options.TracerProvider
   - Propagation and baggage
-  - Metrics (TODO)
+  - Metrics
+  - Database tracing using otelsql
 - Request
   - Request.Now is now more accurate because the time is recorded earlier in the lifecycle.
   - NewRequest now sets the Request time to 0 instead of now.

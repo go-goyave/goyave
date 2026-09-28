@@ -29,7 +29,7 @@ const (
 // Tracer returns an OpenTelemetry tracer configured for Goyave.
 func Tracer(provider trace.TracerProvider) trace.Tracer {
 	// Custom options not allowed, only the Goyave instrumentation needs to be in control of them.
-	return provider.Tracer(OpenTelemetryTracerName, trace.WithInstrumentationVersion(Version))
+	return provider.Tracer(OpenTelemetryTracerName, trace.WithInstrumentationVersion(Version), trace.WithSchemaURL(otelsemconv.SchemaURL))
 }
 
 type SpanData struct {
@@ -68,7 +68,7 @@ func EndSpan(ctx context.Context, err error, status int) {
 // Meter returns an OpenTelemetry meter configured for Goyave.
 func Meter(provider metric.MeterProvider) metric.Meter {
 	// Custom options not allowed, only the Goyave instrumentation needs to be in control of them.
-	return provider.Meter(OpenTelemetryMeterName, metric.WithInstrumentationVersion(Version))
+	return provider.Meter(OpenTelemetryMeterName, metric.WithInstrumentationVersion(Version), metric.WithSchemaURL(otelsemconv.SchemaURL))
 }
 
 type HTTPServerMeters struct {
@@ -79,7 +79,7 @@ type HTTPServerMeters struct {
 
 // NewHTTPServerMeter returns a structure holding the histograms for all HTTP server metrics.
 func NewHTTPServerMeter(meter metric.Meter) (*HTTPServerMeters, error) {
-	requestBodySizeHistogram, err := httpconv.NewServerRequestBodySize(meter) // FIXME should be defined in the parse middleware
+	requestBodySizeHistogram, err := httpconv.NewServerRequestBodySize(meter)
 	if err != nil {
 		return nil, err
 	}

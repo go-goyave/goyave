@@ -1,21 +1,34 @@
 package database
 
-import v "goyave.dev/goyave/v5/validation"
+import (
+	"github.com/XSAM/otelsql"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
+	v "goyave.dev/goyave/v5/validation"
+)
 
-// Config configuration for a single database connection.
-type Config struct {
-	// Dialect the name of the SQL dialect (e.g.: "postgres")
-	Dialect      string
+type DSNConfig struct {
 	Host         string
 	DatabaseName string
 	Username     string
 	Password     string
-	// Options passed to the DSN when creating the connection.
+
+	// Options additional options passed to the DSN when creating the connection.
 	Options string
+
+	Port int
+}
+
+// Config configuration for a single database connection.
+type Config struct {
+
+	// Dialect the name of the SQL dialect (e.g.: "postgres")
+	Dialect string
+
+	DSNConfig
 
 	GORM GORMConfig // TODO support config for other ORMs (create ORM adapters: https://github.com/go-goyave/goyave/discussions/285)
 
-	Port int
 	// MaxOpenConnections the maximum number of open connections to the database.
 	// If equal to 0, there is no limit on the number of connections.
 	// Recommended default value is 20.
@@ -149,5 +162,47 @@ func (GORMConfig) Default() GORMConfig {
 		DisableAutomaticPing:                     false,
 		DisableForeignKeyConstraintWhenMigrating: false,
 		IgnoreRelationshipsWhenMigrating:         false,
+	}
+}
+
+type options struct {
+	otelMeterProvider metric.MeterProvider
+	otelTraceProvier  trace.TracerProvider
+	otelOptions       []otelsql.Option
+}
+
+func (o options) getOTelOptions(dialect Dialect) []otelsql.Option {
+	if dialect == nil {
+		return []otelsql.Option{}
+	}
+	return append([]otelsql.Option{
+		otelsql.WithAttributes(dialect.Attributes()...),
+		otelsql.WithMeterProvider(o.otelMeterProvider),
+		otelsql.WithTracerProvider(o.otelTraceProvier),
+	}, o.otelOptions...)
+}
+
+// Option defines a dynamic DB setting that cannot be set through
+// serializable configuration ([Config]).
+type Option func(o *options)
+
+// WithMeterProvider enables DB stats metrics reporting with OpenTelemetry.
+func WithMeterProvider(p metric.MeterProvider) Option {
+	return func(o *options) {
+		o.otelMeterProvider = p
+	}
+}
+
+// WithTraceProvider enables SQL tracing with OpenTelemetry.
+func WithTraceProvider(p trace.TracerProvider) Option {
+	return func(o *options) {
+		o.otelTraceProvier = p
+	}
+}
+
+// WithOpenTelemetryOptions sets additional options for the OpenTelemetry SQL instrumentation.
+func WithOpenTelemetryOptions(opts ...otelsql.Option) Option {
+	return func(o *options) {
+		o.otelOptions = opts
 	}
 }

@@ -1,10 +1,11 @@
 package database
 
 import (
-	"strconv"
-	"strings"
+	"context"
+	"database/sql/driver"
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v5/util/errwrap"
 )
@@ -12,57 +13,46 @@ import (
 var (
 	mu sync.Mutex
 
-	dialects = map[string]dialect{}
-
-	optionPlaceholders = map[string]func(*Config) string{
-		"{username}": func(dc *Config) string { return dc.Username },
-		"{password}": func(dc *Config) string { return dc.Password },
-		"{host}":     func(dc *Config) string { return dc.Host },
-		"{port}":     func(dc *Config) string { return strconv.Itoa(dc.Port) },
-		"{name}":     func(dc *Config) string { return dc.DatabaseName },
-		"{options}":  func(dc *Config) string { return dc.Options },
-	}
+	dialects = map[string]Dialect{}
 )
 
-// DialectorInitializer function initializing a GORM Dialector using the given
-// data source name (DSN).
-type DialectorInitializer func(dsn string) gorm.Dialector
-
-type dialect struct {
-	initializer DialectorInitializer
-	template    string
+// Dialect provides information and implementations needed to open a database connection pool
+// and interface it with a matching GORM dialector.
+//
+// Thanks to this interface, [New] can automatically setup OpenTelemetry for the SQL driver if
+// trace/meter providers are given as [Option].
+type Dialect interface {
+	Open(conn gorm.ConnPool) gorm.Dialector
+	Driver() driver.Driver
+	// DSN generate a connection string from the provided configuration.
+	DSN(cfg DSNConfig) string
+	// Attributes return the OpenTelemtry attributes the tracer/meters will be initialized with.
+	// It MUST include the "db.system.name" attribute.
+	Attributes() []attribute.KeyValue
 }
 
-func (d dialect) buildDSN(cfg *Config) string {
-	connStr := d.template
-	for k, v := range optionPlaceholders {
-		connStr = strings.Replace(connStr, k, v(cfg), 1)
-	}
-
-	return connStr
-}
-
-// RegisterDialect registers a connection string template for the given dialect.
-//
-// You cannot override a dialect that already exists.
-//
-// Template format accepts the following placeholders, which will be replaced with
-// the corresponding configuration entries automatically:
-//   - "{username}"
-//   - "{password}"
-//   - "{host}"
-//   - "{port}"
-//   - "{name}"
-//   - "{options}"
-//
-// Example template for the "mysql" dialect:
-//
-//	{username}:{password}@({host}:{port})/{name}?{options}
-func RegisterDialect(name, template string, initializer DialectorInitializer) {
+func Register(name string, dialect Dialect) {
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := dialects[name]; ok {
 		panic(errwrap.Errorf("dialect %q already exists", name))
 	}
-	dialects[name] = dialect{initializer, template}
+	dialects[name] = dialect
+}
+
+type connector struct {
+	driver driver.Driver
+	dsn    string
+}
+
+func (c connector) Connect(_ context.Context) (driver.Conn, error) {
+	conn, err := c.driver.Open(c.dsn)
+	if err != nil {
+		return nil, errwrap.New(err)
+	}
+	return conn, nil
+}
+
+func (c connector) Driver() driver.Driver {
+	return c.driver
 }

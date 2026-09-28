@@ -33,9 +33,7 @@ import (
 	"go.opentelemetry.io/otel/semconv/v1.43.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
-	"gorm.io/driver/sqlite"
 	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/database"
 	"goyave.dev/goyave/v5/internal/otel"
 	"goyave.dev/goyave/v5/slog"
 	"goyave.dev/goyave/v5/util/errwrap"
@@ -104,7 +102,6 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("NewWithOptions", func(t *testing.T) {
-		database.RegisterDialect("sqlite3_server_test", "file:{name}?{options}", sqlite.Open)
 		cfg := config.LoadDefault()
 
 		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))

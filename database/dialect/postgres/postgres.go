@@ -48,5 +48,3 @@ func (Dialect) Attributes() []attribute.KeyValue {
 		semconv.DBSystemNamePostgreSQL,
 	}
 }
-
-// TODO test for each dialect

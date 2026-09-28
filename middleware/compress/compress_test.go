@@ -142,7 +142,7 @@ func TestCompressMiddleware(t *testing.T) {
 	})
 
 	t.Run("Rejected encoding", func(t *testing.T) {
-		request := testutil.NewTestRequest(http.MethodGet, "/gzip", nil)
+		request := testutil.NewTestRequest(t.Context(), http.MethodGet, "/gzip", nil)
 		request.Header().Set("Accept-Encoding", "gzip;q=0")
 
 		result := server.TestMiddleware(compressMiddleware, request, handler)

@@ -1,14 +1,20 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
 	"time"
 
+	"go.opentelemetry.io/otel/metric"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
 	"goyave.dev/goyave/v5/util/errwrap"
+
+	"github.com/XSAM/otelsql"
 )
+
+const otelRegistrationKey = "goyave.otel.meter_registration"
 
 // New create a new connection pool using the settings defined in the given configuration.
 //
@@ -21,15 +27,29 @@ import (
 //	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
 //	import _ "goyave.dev/goyave/v5/database/dialect/clickhouse"
 //	import _ "goyave.dev/goyave/v5/database/dialect/bigquery"
-func New(cfg *Config) (*gorm.DB, error) {
+func New(cfg *Config, opts ...Option) (*gorm.DB, error) {
+	o := &options{}
+	for _, opt := range opts {
+		opt(o)
+	}
+
 	dialect, ok := dialects[cfg.Dialect]
 	if !ok {
 		return nil, errwrap.Errorf("DB dialect %q not supported, forgotten import?", cfg.Dialect)
 	}
-	// TODO otel integration
 
-	dsn := dialect.buildDSN(cfg)
-	db, err := gorm.Open(dialect.initializer(dsn), newConfig(cfg))
+	connector := connector{
+		driver: dialect.Driver(),
+		dsn:    dialect.DSN(cfg.DSNConfig),
+	}
+
+	if o.otelTraceProvier != nil {
+		connector.driver = otelsql.WrapDriver(connector.driver, o.getOTelOptions(dialect)...)
+	}
+
+	sqlDB := sql.OpenDB(connector)
+
+	db, err := gorm.Open(dialect.Open(sqlDB), newConfig(cfg))
 	if err != nil {
 		return nil, errwrap.New(err)
 	}
@@ -38,13 +58,16 @@ func New(cfg *Config) (*gorm.DB, error) {
 		return db, errwrap.New(err)
 	}
 
-	return db, initSQLDB(cfg, db)
+	return db, initSQLDB(cfg, db, dialect, o)
 }
 
-// NewFromDialector create a new connection pool from a gorm dialector and using the settings
+// NewFromDialector create a new connection pool from a [gorm.Dialector] and using the settings
 // defined in the given configuration.
 //
 // This can be used in tests to create a mock connection pool.
+//
+// Note that connections opened using this function cannot use OpenTelemetry unless you open the
+// underlying [gorm.ConnPool] manually with [otelsql.Open] or [otelsql.WrapDriver].
 func NewFromDialector(cfg *Config, dialector gorm.Dialector) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, newConfig(cfg))
 	if err != nil {
@@ -55,7 +78,7 @@ func NewFromDialector(cfg *Config, dialector gorm.Dialector) (*gorm.DB, error) {
 		return db, errwrap.New(err)
 	}
 
-	return db, initSQLDB(cfg, db)
+	return db, initSQLDB(cfg, db, nil, nil)
 }
 
 func newConfig(cfg *Config) *gorm.Config {
@@ -95,7 +118,7 @@ func initTimeoutPlugin(cfg *Config, db *gorm.DB) error {
 	return errwrap.New(db.Use(timeoutPlugin))
 }
 
-func initSQLDB(cfg *Config, db *gorm.DB) error {
+func initSQLDB(cfg *Config, db *gorm.DB, dialect Dialect, o *options) error {
 	sqlDB, err := db.DB()
 	if err != nil {
 		if errors.Is(err, gorm.ErrInvalidDB) {
@@ -107,11 +130,30 @@ func initSQLDB(cfg *Config, db *gorm.DB) error {
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime) * time.Second)
 	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.MaxIdleTime) * time.Second)
+
+	if o != nil && o.otelMeterProvider != nil {
+		reg, err := otelsql.RegisterDBStatsMetrics(sqlDB, o.getOTelOptions(dialect)...)
+		if err != nil {
+			return errwrap.New(err)
+		}
+		// Store the registration in the GORM store so we can unregister later.
+		db.Statement.Settings.Store(otelRegistrationKey, reg)
+	}
+
 	return nil
 }
 
-// Close the [*sql.DB] used by the GORM instance.
+// Close the [*sql.DB] used by the GORM instance and unregister
+// the OpenTelemetry metric callback, if any.
 func Close(db *gorm.DB) error {
+	if db == nil || db.Statement == nil || db.Config == nil {
+		return nil
+	}
+	reg, ok := db.Get(otelRegistrationKey)
+	if ok {
+		_ = reg.(metric.Registration).Unregister()
+	}
+
 	sqlDB, err := db.DB()
 	if err != nil {
 		if errors.Is(err, gorm.ErrInvalidDB) {

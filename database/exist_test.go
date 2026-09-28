@@ -40,6 +40,7 @@ func (d CustomDialector) Name() string {
 func prepareExistTest(t *testing.T, dialectorName string) *gorm.DB {
 	db, err := gorm.Open(&CustomDialector{name: dialectorName})
 	require.NoError(t, err)
+	db.Logger = NewDiscardLogger()
 	return db
 }
 
@@ -64,6 +65,7 @@ func prepareMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 
 	db, err := gorm.Open(dialector)
 	require.NoError(t, err)
+	db.Logger = NewDiscardLogger()
 
 	return db, mock
 }

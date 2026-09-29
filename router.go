@@ -568,7 +568,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	handler(response, request)
 
 	if err := r.finalize(match, response, request); err != nil {
-		r.server.logger.Error(err)
+		slog.FromContext(request.Context()).Error(err)
 	}
 
 	if !response.hijacked {

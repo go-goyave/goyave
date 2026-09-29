@@ -112,3 +112,4 @@ TODO docs pass with links
 TODO cleanup resources directory
 TODO document how to use database.New with sqlmock (NewFromDialector)
 TODO deprecation notices for v5.
+TODO update copier lib

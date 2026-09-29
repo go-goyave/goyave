@@ -290,7 +290,9 @@ func isProduction() bool {
 }
 
 // Default returns the default global logger.
-// This logger uses the JSON handler and outputs to [os.Stderr].
+// If not overridden with [SetDefault], this logger outputs to [os.Stderr]. The
+// handler depends on the `ENV` environment variable: if it's equal to "prod" or
+// "production", the JSON handler is used, else the dev mode handler is used.
 func Default() *Logger {
 	return defaultLogger
 }

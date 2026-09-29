@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/validation"
 )
 
 func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder, *bytes.Buffer) {

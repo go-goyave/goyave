@@ -7,7 +7,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v6/lang"
 )
 
 type inTestCase[T comparable] struct {

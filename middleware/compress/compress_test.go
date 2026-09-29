@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
-	"goyave.dev/goyave/v5/util/testutil"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/util/fsutil/osfs"
+	"goyave.dev/goyave/v6/util/testutil"
 )
 
 type testBuf struct {

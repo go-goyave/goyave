@@ -11,10 +11,10 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/testutil"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/testutil"
 )
 
 type testWriter struct {

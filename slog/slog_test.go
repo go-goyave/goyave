@@ -19,8 +19,8 @@ import (
 	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/log/logtest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
-	"goyave.dev/goyave/v5/internal/otel"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/internal/otel"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 type testValuerError struct{}

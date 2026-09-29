@@ -14,7 +14,7 @@ import (
 	otelsemconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/semconv/v1.43.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
-	"goyave.dev/goyave/v5/internal/otel/semconv"
+	"goyave.dev/goyave/v6/internal/otel/semconv"
 )
 
 const LoggerName = "goyave.dev/goyave/v6"

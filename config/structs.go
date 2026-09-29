@@ -1,6 +1,6 @@
 package config
 
-import v "goyave.dev/goyave/v5/validation"
+import v "goyave.dev/goyave/v6/validation"
 
 // Base the base configuration for built-in features.
 // Can be embedded into a custom config structure.

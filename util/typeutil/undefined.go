@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 
 	"goyave.dev/copier"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Undefined utility type wrapping a generic value used to differentiate

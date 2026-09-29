@@ -33,11 +33,11 @@ import (
 	"go.opentelemetry.io/otel/semconv/v1.43.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/internal/otel"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/internal/otel"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/fsutil"
 )
 
 //go:embed resources

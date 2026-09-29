@@ -9,8 +9,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"gorm.io/driver/bigquery"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/database"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/database"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 var dbSystemNameBigquery = semconv.DBSystemNameKey.String("gcp.bigquery")

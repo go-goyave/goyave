@@ -14,9 +14,9 @@ import (
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/fsutil"
 )
 
 var (

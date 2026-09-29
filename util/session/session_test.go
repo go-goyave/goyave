@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/utils/tests"
-	"goyave.dev/goyave/v5/database"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/database"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 var (

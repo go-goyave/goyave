@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // PathType type of the element being explored.

@@ -9,7 +9,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	gormclickhouse "gorm.io/driver/clickhouse"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v6/database"
 )
 
 func init() {

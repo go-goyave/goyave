@@ -15,7 +15,7 @@ import (
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"goyave.dev/goyave/v5/slog"
+	"goyave.dev/goyave/v6/slog"
 )
 
 var regexGormPath = regexp.MustCompile(`gorm.io/(.*?)@`)

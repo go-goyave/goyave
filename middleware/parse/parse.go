@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/util/fsutil"
 )
 
 // Middleware reading the raw request query and body.

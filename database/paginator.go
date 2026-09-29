@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Paginator structure containing pagination information and result records.

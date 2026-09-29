@@ -3,7 +3,7 @@ package database
 import (
 	"gorm.io/gorm"
 	"goyave.dev/copier"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Factory an object used to generate records or seed the database.

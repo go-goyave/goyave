@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"goyave.dev/goyave/v5"
+	"goyave.dev/goyave/v6"
 )
 
 // MetaAuth the authentication middleware will only authenticate the user

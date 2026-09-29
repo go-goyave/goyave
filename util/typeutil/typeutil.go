@@ -4,7 +4,7 @@ import (
 	"encoding/json/v2"
 
 	"goyave.dev/copier"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Convert anything into the desired type using JSON marshaling and unmarshaling.

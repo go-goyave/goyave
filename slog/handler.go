@@ -11,7 +11,7 @@ import (
 
 	"log/slog"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Colors and formats

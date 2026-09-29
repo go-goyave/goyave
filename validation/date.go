@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/walk"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/walk"
 )
 
 // DateValidator validates the field under validation must be a string representing a date.

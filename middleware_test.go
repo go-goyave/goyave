@@ -15,12 +15,12 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/cors"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/cors"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/validation"
 
-	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
+	_ "goyave.dev/goyave/v6/database/dialect/sqlite"
 )
 
 type testCtxKey struct{}

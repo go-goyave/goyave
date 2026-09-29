@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"goyave.dev/goyave/v5/config"
+	"goyave.dev/goyave/v6/config"
 )
 
 func BenchmarkServeHTTP(b *testing.B) {

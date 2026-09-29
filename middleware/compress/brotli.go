@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/andybalholm/brotli"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Brotli encoder for the br compression format

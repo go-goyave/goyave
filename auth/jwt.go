@@ -10,11 +10,11 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/lang"
+	"goyave.dev/goyave/v6/validation"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // TODO feature support for golang-jwt/jwt/v5 + more flexibility (more signing methods, don't assume HS256 would be the default everywhere, OIDC discovery, OAuth compatibility or overkill?)

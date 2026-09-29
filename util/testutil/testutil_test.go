@@ -13,12 +13,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/fsutil"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/lang"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/fsutil"
+	"goyave.dev/goyave/v6/util/fsutil/osfs"
 )
 
 type extraKey struct{}

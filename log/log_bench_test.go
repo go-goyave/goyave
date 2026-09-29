@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/slog"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/slog"
 )
 
 func BenchmarkServeHTTPWithLogs(b *testing.B) {

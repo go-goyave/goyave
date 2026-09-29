@@ -4,7 +4,7 @@ import (
 	"compress/gzip"
 	"io"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Gzip encoder for the gzip format using Go's standard `compress/gzip` package.

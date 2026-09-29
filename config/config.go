@@ -4,10 +4,10 @@ import (
 	"context"
 	"os"
 
-	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/typeutil"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6/lang"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/typeutil"
+	"goyave.dev/goyave/v6/validation"
 )
 
 // Section represents a configuration section like "App" or "Database".
@@ -270,3 +270,5 @@ func expandEnv(v any) any {
 	// For now I don't really see the point since we can use env variables
 	return os.ExpandEnv(str) // TODO document that "environment variable is not set" error doesn't exist anymore
 }
+
+// TODO generate a json schema from the config struct so you get autocomplete when configuring? Automatically enrich the schema from validation RuleSet (probably an entire new project...)

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v6/util/fsutil"
 )
 
 func TestBetweenValidator(t *testing.T) {

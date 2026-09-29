@@ -20,9 +20,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
-	"goyave.dev/goyave/v5/util/typeutil"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/fsutil/osfs"
+	"goyave.dev/goyave/v6/util/typeutil"
 )
 
 func deleteFile(path string) {

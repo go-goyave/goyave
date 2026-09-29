@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 
 	"github.com/XSAM/otelsql"
 )
@@ -21,12 +21,12 @@ const otelRegistrationKey = "goyave.otel.meter_registration"
 // In order to use a specific driver / dialect ("mysql", "sqlite3", ...), you must not
 // forget to blank-import it in your main file.
 //
-//	import _ "goyave.dev/goyave/v5/database/dialect/mysql"
-//	import _ "goyave.dev/goyave/v5/database/dialect/postgres"
-//	import _ "goyave.dev/goyave/v5/database/dialect/sqlite"
-//	import _ "goyave.dev/goyave/v5/database/dialect/mssql"
-//	import _ "goyave.dev/goyave/v5/database/dialect/clickhouse"
-//	import _ "goyave.dev/goyave/v5/database/dialect/bigquery"
+//	import _ "goyave.dev/goyave/v6/database/dialect/mysql"
+//	import _ "goyave.dev/goyave/v6/database/dialect/postgres"
+//	import _ "goyave.dev/goyave/v6/database/dialect/sqlite"
+//	import _ "goyave.dev/goyave/v6/database/dialect/mssql"
+//	import _ "goyave.dev/goyave/v6/database/dialect/clickhouse"
+//	import _ "goyave.dev/goyave/v6/database/dialect/bigquery"
 func New(cfg *Config, opts ...Option) (*gorm.DB, error) {
 	o := &options{}
 	for _, opt := range opts {

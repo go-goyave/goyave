@@ -12,10 +12,10 @@ import (
 	"slices"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/cors"
-	"goyave.dev/goyave/v5/internal/otel"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/cors"
+	"goyave.dev/goyave/v6/internal/otel"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Common route meta keys.

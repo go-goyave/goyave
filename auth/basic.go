@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/validation"
 )
 
 // BasicAuthenticator implementation of Authenticator with the Basic

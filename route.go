@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/cors"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6/cors"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/validation"
 )
 
 // Route stores information for route matching and serving and can be

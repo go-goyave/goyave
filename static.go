@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v6/util/fsutil"
 )
 
 func staticHandler(fs fs.StatFS, download bool) Handler {

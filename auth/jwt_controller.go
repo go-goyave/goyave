@@ -9,10 +9,10 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/middleware/parse"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/middleware/parse"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/validation"
 )
 
 // TokenFunc is the function used by JWTController to generate tokens

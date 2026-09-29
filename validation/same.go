@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/walk"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/walk"
 )
 
 // SameValidator validates the field under validation is strictly equal to the field identified

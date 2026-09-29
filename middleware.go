@@ -5,11 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	"goyave.dev/goyave/v5/cors"
-	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6/cors"
+	"goyave.dev/goyave/v6/lang"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/validation"
 )
 
 // Middleware are special handlers executed in a stack above the controller handler.

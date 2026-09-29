@@ -6,9 +6,9 @@ import (
 	stdslog "log/slog"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Context contains all information needed for a `Formatter`.

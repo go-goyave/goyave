@@ -1,4 +1,4 @@
-module goyave.dev/goyave/v5
+module goyave.dev/goyave/v6
 
 go 1.27
 
@@ -95,9 +95,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect
 	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
-)
-
-retract (
-	v5.5.4 // Introduces another bug in the validation package, 5.5.5 fixes this bug
-	v5.5.3 // Introduces bug in the validation package, 5.5.4 fixes this bug
 )

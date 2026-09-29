@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/klauspost/compress/zstd"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Zstd encoder for the Zstandard compression algorithm

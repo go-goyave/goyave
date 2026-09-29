@@ -13,8 +13,8 @@ import (
 
 	"log/slog"
 
-	"goyave.dev/goyave/v5/internal/otel"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/internal/otel"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 type unwrapper interface {

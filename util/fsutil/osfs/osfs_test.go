@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v6/util/fsutil"
 )
 
 func setRootWorkingDirectory() {

@@ -11,10 +11,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/cors"
-	"goyave.dev/goyave/v5/util/fsutil"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/cors"
+	"goyave.dev/goyave/v6/util/fsutil"
+	"goyave.dev/goyave/v6/util/fsutil/osfs"
 )
 
 type testStatusHandler struct {

@@ -16,10 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/fsutil/osfs"
 )
 
 func newTestReponse() (*Response, *httptest.ResponseRecorder, *bytes.Buffer) {
@@ -29,7 +29,7 @@ func newTestReponse() (*Response, *httptest.ResponseRecorder, *bytes.Buffer) {
 	if err != nil {
 		panic(err)
 	}
-	httpReq := httptest.NewRequest(http.MethodGet, "/test", nil)
+	httpReq := httptest.NewRequestWithContext(server.Context(), http.MethodGet, "/test", nil)
 	req := NewRequest(httpReq)
 	recorder := httptest.NewRecorder()
 	resp := NewResponse(server, req, recorder)

@@ -4,7 +4,7 @@ import (
 	"compress/zlib"
 	"io"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Zlib encoder for the deflate format using Go's standard `compress/zlib` package.

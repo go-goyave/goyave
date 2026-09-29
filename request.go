@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"goyave.dev/goyave/v5/lang"
+	"goyave.dev/goyave/v6/lang"
 )
 
 type (

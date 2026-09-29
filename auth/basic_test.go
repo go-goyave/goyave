@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/util/testutil"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/util/testutil"
 )
 
 func TestBasicAuthenticator(t *testing.T) {

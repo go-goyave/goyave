@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/driver/bigquery"
-	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v6/database"
 )
 
 func TestDialect(t *testing.T) {

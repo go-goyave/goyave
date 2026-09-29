@@ -8,7 +8,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5/util/testutil"
+	"goyave.dev/goyave/v6/util/testutil"
 )
 
 func TestCommonFormatter(t *testing.T) {

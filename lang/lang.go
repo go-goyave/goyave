@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/fsutil"
-	"goyave.dev/goyave/v5/util/httputil"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/fsutil"
+	"goyave.dev/goyave/v6/util/httputil"
 )
 
 // Languages container for all loaded languages.

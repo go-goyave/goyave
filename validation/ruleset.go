@@ -6,8 +6,8 @@ import (
 	"slices"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/walk"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/walk"
 )
 
 // Ruler adapter interface to allow both [RuleSet] and [Rules] to

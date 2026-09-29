@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/walk"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/walk"
 )
 
 func TestErrors(t *testing.T) {

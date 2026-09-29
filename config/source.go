@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/fsutil/osfs"
 )
 
 // UnmarshalFunc generic unmarshal function compatible with most file formats (json, yml, toml, ...)

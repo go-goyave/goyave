@@ -11,7 +11,7 @@ import (
 	stdslog "log/slog"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v5/slog"
+	"goyave.dev/goyave/v6/slog"
 )
 
 func TestLogger(t *testing.T) {

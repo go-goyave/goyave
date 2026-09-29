@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"goyave.dev/goyave/v5/util/typeutil"
-	v "goyave.dev/goyave/v5/validation"
+	"goyave.dev/goyave/v6/util/typeutil"
+	v "goyave.dev/goyave/v6/validation"
 
 	_ "embed"
 )

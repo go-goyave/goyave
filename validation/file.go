@@ -3,7 +3,7 @@ package validation
 import (
 	"strconv"
 
-	"goyave.dev/goyave/v5/util/fsutil"
+	"goyave.dev/goyave/v6/util/fsutil"
 )
 
 // FileValidator validates the field under validation must be a file.

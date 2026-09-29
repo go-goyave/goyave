@@ -3,8 +3,8 @@ package validation
 import (
 	stdslog "log/slog"
 
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/walk"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/walk"
 )
 
 // Errors structure representing the errors associated with an element.

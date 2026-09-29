@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Session aims at facilitating business transactions while abstracting the underlying mechanism,

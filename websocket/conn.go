@@ -10,7 +10,7 @@ import (
 
 	ws "github.com/gorilla/websocket"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // Conn represents a WebSocket connection.

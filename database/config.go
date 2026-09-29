@@ -4,7 +4,7 @@ import (
 	"github.com/XSAM/otelsql"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
-	v "goyave.dev/goyave/v5/validation"
+	v "goyave.dev/goyave/v6/validation"
 )
 
 type DSNConfig struct {

@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"goyave.dev/goyave/v5/util/errwrap"
+	"goyave.dev/goyave/v6/util/errwrap"
 )
 
 // FS implementation of [fsutil.FS] for the local OS file system.

@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 
 	"github.com/samber/lo"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/session"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/session"
 )
 
 const (

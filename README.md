@@ -12,7 +12,7 @@
 
 <p align="center">
     <a href="https://github.com/go-goyave/goyave/blob/master/LICENSE"><img src="https://img.shields.io/dub/l/vibe-d.svg" alt="License"/></a>
-    <a href="https://pkg.go.dev/goyave.dev/goyave/v5"><img src="https://pkg.go.dev/badge/goyave.dev/goyave/v5.svg" alt="Go Reference"></a>
+    <a href="https://pkg.go.dev/goyave.dev/goyave/v6"><img src="https://pkg.go.dev/badge/goyave.dev/goyave/v6.svg" alt="Go Reference"></a>
     <a href="https://discord.gg/mfemDMc"><img src="https://img.shields.io/discord/744264895209537617?logo=discord" alt="Discord"/></a>
 </p>
 

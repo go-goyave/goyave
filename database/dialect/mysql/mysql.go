@@ -9,7 +9,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v6/database"
 )
 
 func init() {

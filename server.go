@@ -19,13 +19,13 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/internal/otel"
-	"goyave.dev/goyave/v5/lang"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/errwrap"
-	"goyave.dev/goyave/v5/util/fsutil"
-	"goyave.dev/goyave/v5/util/fsutil/osfs"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/internal/otel"
+	"goyave.dev/goyave/v6/lang"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/errwrap"
+	"goyave.dev/goyave/v6/util/fsutil"
+	"goyave.dev/goyave/v6/util/fsutil/osfs"
 )
 
 // serverKey is a context key used to store the server instance into its base context.

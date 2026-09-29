@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"gorm.io/driver/sqlite"
-	"goyave.dev/goyave/v5/database"
+	"goyave.dev/goyave/v6/database"
 )
 
 func TestDialect(t *testing.T) {

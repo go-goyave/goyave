@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v5"
-	"goyave.dev/goyave/v5/config"
-	"goyave.dev/goyave/v5/slog"
-	"goyave.dev/goyave/v5/util/testutil"
+	"goyave.dev/goyave/v6"
+	"goyave.dev/goyave/v6/config"
+	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/util/testutil"
 
-	_ "goyave.dev/goyave/v5/database/dialect/sqlite"
+	_ "goyave.dev/goyave/v6/database/dialect/sqlite"
 )
 
 type TestUser struct {

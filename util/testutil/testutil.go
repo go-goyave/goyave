@@ -94,6 +94,7 @@ func NewTestServer(t *testing.T, opts Options) *TestServer {
 // TestRequest execute a request by calling the root Router's `ServeHTTP()` implementation.
 func (s *TestServer) TestRequest(request *http.Request) *http.Response {
 	recorder := httptest.NewRecorder()
+	request = request.WithContext(s.Context())
 	s.Router().ServeHTTP(recorder, request)
 	return recorder.Result()
 }

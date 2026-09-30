@@ -8,6 +8,9 @@ import (
 )
 
 // Convert anything into the desired type using JSON marshaling and unmarshaling.
+//
+// By default, field names matching is case-insensitive. If you want to change this
+// behavior, pass the option [json.MatchCaseInsensitiveNames] with a `false` value.
 func Convert[T any](data any, opts ...json.Options) (T, error) {
 	if v, ok := data.(T); ok {
 		return v, nil
@@ -27,6 +30,9 @@ func Convert[T any](data any, opts ...json.Options) (T, error) {
 
 // MustConvert anything into the desired type using JSON marshaling and unmarshaling.
 // Panics if it fails.
+//
+// By default, field names matching is case-insensitive. If you want to change this
+// behavior, pass the option [json.MatchCaseInsensitiveNames] with a `false` value.
 func MustConvert[T any](data any, opts ...json.Options) T {
 	res, err := Convert[T](data, opts...)
 	if err != nil {

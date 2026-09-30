@@ -12,13 +12,16 @@ func Convert[T any](data any, opts ...json.Options) (T, error) {
 	if v, ok := data.(T); ok {
 		return v, nil
 	}
+	jsonOpts := make([]json.Options, 0, len(opts)+1)
+	jsonOpts = append(jsonOpts, json.MatchCaseInsensitiveNames(true))
+	jsonOpts = append(jsonOpts, opts...)
 
 	var result T
-	buf, err := json.Marshal(data, opts...)
+	buf, err := json.Marshal(data, jsonOpts...)
 	if err != nil {
 		return result, errwrap.NewSkip(err, 3)
 	}
-	err = json.Unmarshal(buf, &result, opts...)
+	err = json.Unmarshal(buf, &result, jsonOpts...)
 	return result, errwrap.NewSkip(err, 3)
 }
 

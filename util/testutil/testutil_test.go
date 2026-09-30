@@ -48,8 +48,11 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("TestRequest", func(t *testing.T) {
-		server := NewTestServer(t, Options{})
-		server.Router().Get("/route", func(resp *goyave.Response, _ *goyave.Request) {
+		type ctxKey struct{}
+		ctx := context.WithValue(t.Context(), ctxKey{}, "value")
+		server := NewTestServer(t, Options{Context: ctx})
+		server.Router().Get("/route", func(resp *goyave.Response, req *goyave.Request) {
+			assert.Equal(t, "value", req.Context().Value(ctxKey{}))
 			resp.String(http.StatusOK, "OK")
 		})
 

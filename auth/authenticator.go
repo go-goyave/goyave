@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 )
 
@@ -45,11 +46,11 @@ type SchemeAuthenticator interface {
 //
 // A username is actually any identifier (an ID, a email, a name, etc). It is the responsibility
 // of the service implementation to check the type of the "username" and either convert it or
-// return an error simulating a non-existing record (`gorm.ErrRecordNotFound`).
+// return an error simulating a non-existing record ([goyave.NotFound]).
 //
-// If the record could not be found, the error returned should be of type `gorm.ErrRecordNotFound`.
+// If the record could not be found, the error returned should be of type [goyave.NotFound].
 type UserService[T any] interface {
-	FindByUsername(ctx context.Context, username any) (*T, error) // TODO think again about this interface so username can be a generic type and rename FindBySubject or something.
+	FindByUsername(ctx context.Context, username any) (*T, error) // TODO think again about this interface so username can be a generic type and rename FindBySubject or something. Also should be GetBy because there's only one record
 }
 
 // Unauthorizer can be implemented by Authenticators to define custom behavior
@@ -168,4 +169,9 @@ func UserFromContext[T any](ctx context.Context) *T {
 		return u
 	}
 	return nil
+}
+
+func isNotFound(err error) bool {
+	_, notFound := errors.AsType[*goyave.NotFoundError](err)
+	return notFound || errors.Is(err, gorm.ErrRecordNotFound)
 }

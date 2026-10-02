@@ -1,14 +1,12 @@
 package auth
 
 import (
-	"errors"
 	"net/http"
 	"reflect"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/samber/lo"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/middleware/parse"
 	"goyave.dev/goyave/v6/util/errwrap"
@@ -96,7 +94,7 @@ func (c *JWTController[T]) Login(response *goyave.Response, request *goyave.Requ
 
 	user, err := c.UserService.FindByUsername(request.Context(), username)
 
-	notFound := errors.Is(err, gorm.ErrRecordNotFound)
+	notFound := isNotFound(err)
 	if err != nil && !notFound {
 		response.Error(errwrap.New(err))
 		return

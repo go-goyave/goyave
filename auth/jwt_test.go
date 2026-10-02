@@ -10,7 +10,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/util/fsutil/osfs"
@@ -363,7 +362,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{
-			err: gorm.ErrRecordNotFound,
+			err: goyave.NotFound(""),
 		}
 		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 

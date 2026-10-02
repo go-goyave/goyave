@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/lang"
 	"goyave.dev/goyave/v6/validation"
@@ -288,7 +287,7 @@ func (a *JWTAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error) 
 			}
 			user, err := a.UserService.FindByUsername(request.Context(), claims[claimName])
 			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
+				if isNotFound(err) {
 					return nil, goyave.Unauthorized(request.Lang.Get("auth.invalid-credentials"))
 				}
 				return nil, errwrap.New(err)

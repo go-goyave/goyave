@@ -96,6 +96,7 @@
   - Response.JSON now uses json v2 and accepts variadic json options. JSON response bodies do not end with \n anymore as a result.
   - If Response.Error receives a ClientError, it won't return 500. Instead it builds a response based on the client error details. If the client error doesn't have a message specified, only set the status and let the status handler manage it (default behavior).
   - Added Response.Size to get the number of bytes written to the body
+  - Removed WriteDBError in favor of response.Error and goyave.ClientError
 - util/errors renamed to errwrap to avoid package name collisions with std and dependency confusion
 - added ClientError which provide a way for services to return standardized client errors without leaking into the presentation / HTTP layer.
 - OpenTelemetry integration:

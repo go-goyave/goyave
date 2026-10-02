@@ -15,7 +15,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v6/config"
 	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
@@ -752,33 +751,6 @@ func TestResponse(t *testing.T) {
 				assert.Nil(t, resp.GetError()) // Should not be considered a response error
 			})
 		}
-	})
-
-	t.Run("WriteDBError", func(t *testing.T) {
-		t.Run("ErrRecordNotFound", func(t *testing.T) {
-			resp, _, _ := newTestReponse()
-			assert.True(t, resp.WriteDBError(fmt.Errorf("%w", gorm.ErrRecordNotFound)))
-			assert.Equal(t, http.StatusNotFound, resp.status)
-		})
-
-		t.Run("DBError", func(t *testing.T) {
-			resp, recorder, _ := newTestReponse()
-			assert.True(t, resp.WriteDBError(fmt.Errorf("random db error")))
-
-			res := recorder.Result()
-			body, err := io.ReadAll(res.Body)
-			assert.NoError(t, res.Body.Close())
-			require.NoError(t, err)
-			assert.Equal(t, http.StatusInternalServerError, resp.status)
-			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-			assert.Equal(t, "application/json; charset=utf-8", res.Header.Get("Content-Type"))
-			assert.Equal(t, "{\"error\":\"random db error\"}", string(body))
-		})
-
-		t.Run("no_error", func(t *testing.T) {
-			resp, _, _ := newTestReponse()
-			assert.False(t, resp.WriteDBError(nil))
-		})
 	})
 
 	t.Run("Flush", func(t *testing.T) {

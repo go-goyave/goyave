@@ -13,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/samber/lo"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/util/fsutil"
@@ -468,32 +467,4 @@ func (r *Response) handleClientError(err any) bool {
 
 	r.JSON(clientErr.Code(), map[string]any{"error": message})
 	return true
-}
-
-// WriteDBError takes an error and automatically writes HTTP status code 404 Not Found
-// if the error is a `gorm.ErrRecordNotFound` error.
-// Calls `Response.Error()` if there is another type of error.
-//
-// Returns true if there is an error. You can then safely `return` in you controller.
-//
-//	func (ctrl *ProductController) Show(response *goyave.Response, request *goyave.Request) {
-//	    product := model.Product{}
-//	    result := ctrl.DB().First(&product, request.RouteParams["id"])
-//	    if response.WriteDBError(result.Error) {
-//	        return
-//	    }
-//	    response.JSON(http.StatusOK, product)
-//	}
-//
-// TODO remove this, this is redundant with NotFoundError (and the docs are incorrect)
-func (r *Response) WriteDBError(err error) bool {
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			r.Status(http.StatusNotFound)
-		} else {
-			r.Error(errwrap.NewSkip(err, 3))
-		}
-		return true
-	}
-	return false
 }

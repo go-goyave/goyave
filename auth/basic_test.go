@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/util/testutil"
 )
@@ -74,7 +73,7 @@ func TestBasicAuthenticator(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		server, user, _ := prepareAuthenticatorTest(t)
-		mockUserService := &MockUserService[TestUser]{err: gorm.ErrRecordNotFound}
+		mockUserService := &MockUserService[TestUser]{err: goyave.NotFound("")}
 		authenticator := Middleware(NewBasicAuthenticator(mockUserService, "Password"))
 
 		request := server.NewTestRequest(http.MethodGet, "/protected", nil)

@@ -2,11 +2,9 @@ package auth
 
 import (
 	"crypto/subtle"
-	"errors"
 	"reflect"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/validation"
@@ -60,7 +58,7 @@ func (a *BasicAuthenticator[T]) Authenticate(request *goyave.Request) (*T, error
 
 	user, err := a.UserService.FindByUsername(request.Context(), username)
 
-	notFound := errors.Is(err, gorm.ErrRecordNotFound)
+	notFound := isNotFound(err)
 	if err != nil && !notFound {
 		return nil, errwrap.New(err)
 	}

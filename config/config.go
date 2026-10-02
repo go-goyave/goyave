@@ -105,7 +105,7 @@ type DefaultValuer[T Section] interface {
 //	//go:embed config.json
 //	var embedCfgJSON []byte
 //
-//	logger := slog.New(slog.NewHandler(true, os.Stderr))
+//	logger := slogx.New(slogx.NewHandler(true, os.Stderr))
 //	cfg, err := Load[CustomConfig](context.Background(), config.FromBytes(embedCfgJSON, config.UnsmarshalJSON()))
 //
 //	if err != nil {
@@ -113,7 +113,7 @@ type DefaultValuer[T Section] interface {
 //		return
 //	}
 //
-// Type T shouldn't be a pointer.
+// Type T should not be a pointer.
 //
 //   - First, an empty struct of type T is initialized. If it implements `DefaultValuer[T]`,
 //     the default values are loaded from there.

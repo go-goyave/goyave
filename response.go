@@ -14,7 +14,7 @@ import (
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/util/fsutil"
 )
@@ -425,7 +425,7 @@ func (r *Response) Error(err any) {
 	}
 
 	e := errwrap.NewSkip(err, 3) // Skipped: runtime.Callers, NewSkip, this func
-	slog.FromContext(r.request.Context()).Error(e)
+	slogx.FromContext(r.request.Context()).Error(e)
 	r.error(e)
 }
 

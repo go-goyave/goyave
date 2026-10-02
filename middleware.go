@@ -7,7 +7,7 @@ import (
 
 	"goyave.dev/goyave/v6/cors"
 	"goyave.dev/goyave/v6/lang"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/validation"
 )
@@ -84,7 +84,7 @@ func (m *recoveryMiddleware) Handle(next Handler) Handler {
 				if e != nil {
 					response.err = e.(*errwrap.Error)
 				}
-				slog.FromContext(ctx).Error(e)
+				slogx.FromContext(ctx).Error(e)
 				if !response.wroteHeader {
 					response.status = http.StatusInternalServerError // Force status override if the header hasn't been written yet.
 				}

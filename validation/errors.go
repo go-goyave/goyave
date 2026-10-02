@@ -1,9 +1,9 @@
 package validation
 
 import (
-	stdslog "log/slog"
+	"log/slog"
 
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/walk"
 )
 
@@ -111,8 +111,8 @@ func (e *Errors) Error() string {
 	return "validation errors"
 }
 
-func (e *Errors) LogValue() stdslog.Value {
-	return slog.StructValue(e)
+func (e *Errors) LogValue() slog.Value {
+	return slogx.StructValue(e)
 }
 
 // Add an error message to the element identified by the given path.

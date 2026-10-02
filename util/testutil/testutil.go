@@ -18,7 +18,7 @@ import (
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/config"
 	"goyave.dev/goyave/v6/lang"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/util/fsutil"
 	"goyave.dev/goyave/v6/util/fsutil/osfs"
@@ -61,7 +61,7 @@ type TestServer struct {
 // The port is replaced with 0 for auto assignment, which allows parallel tests with different
 // instances of [TestServer].
 //
-// By default, if no [slog.Logger] is given in the options, a default logger redirecting the
+// By default, if no [slogx.Logger] is given in the options, a default logger redirecting the
 // output to [io.Discard] is used.
 func NewTestServer(t *testing.T, opts Options) *TestServer {
 	if opts.Config == nil {
@@ -70,7 +70,7 @@ func NewTestServer(t *testing.T, opts Options) *TestServer {
 	}
 
 	if opts.Logger == nil {
-		opts.Logger = slog.DiscardLogger()
+		opts.Logger = slogx.DiscardLogger()
 	}
 
 	if opts.Context == nil {

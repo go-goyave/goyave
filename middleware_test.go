@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v6/config"
 	"goyave.dev/goyave/v6/cors"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/validation"
 
 	_ "goyave.dev/goyave/v6/database/dialect/sqlite"
@@ -81,7 +81,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
+			Logger:  slogx.New(slogx.NewHandler(false, logBuffer)),
 		}
 		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
+			Logger:  slogx.New(slogx.NewHandler(false, logBuffer)),
 		}
 		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
@@ -137,7 +137,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
+			Logger:  slogx.New(slogx.NewHandler(false, logBuffer)),
 		}
 		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
+			Logger:  slogx.New(slogx.NewHandler(false, logBuffer)),
 		}
 		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
@@ -202,7 +202,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 		logBuffer := &bytes.Buffer{}
 		opts := Options{
 			Context: t.Context(),
-			Logger:  slog.New(slog.NewHandler(false, logBuffer)),
+			Logger:  slogx.New(slogx.NewHandler(false, logBuffer)),
 		}
 		server, err := New(config.LoadDefault(), opts)
 		require.NoError(t, err)
@@ -502,7 +502,7 @@ func TestValidateMiddleware(t *testing.T) {
 			logBuffer := &bytes.Buffer{}
 			opts := Options{
 				Context: t.Context(),
-				Logger:  slog.New(slog.NewHandler(false, logBuffer)),
+				Logger:  slogx.New(slogx.NewHandler(false, logBuffer)),
 			}
 			server, err := New(config.LoadDefault(), opts)
 			require.NoError(t, err)

@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	stdslog "log/slog"
+	"log/slog"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 )
 
 func TestLogger(t *testing.T) {
@@ -28,8 +28,8 @@ func TestLogger(t *testing.T) {
 
 	t.Run("Info", func(t *testing.T) {
 		buf := bytes.NewBufferString("")
-		slogger := slog.New(slog.NewHandler(false, buf))
-		ctx := slog.Context(t.Context(), slogger)
+		slogger := slogx.New(slogx.NewHandler(false, buf))
+		ctx := slogx.Context(t.Context(), slogger)
 		l := NewLogger()
 
 		l.Info(ctx, "message %d", 1)
@@ -39,8 +39,8 @@ func TestLogger(t *testing.T) {
 
 	t.Run("Warn", func(t *testing.T) {
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
-		slogger := slog.New(slog.NewHandler(false, buf))
-		ctx := slog.Context(t.Context(), slogger)
+		slogger := slogx.New(slogx.NewHandler(false, buf))
+		ctx := slogx.Context(t.Context(), slogger)
 		l := NewLogger()
 
 		l.Warn(ctx, "message %d", 1)
@@ -50,8 +50,8 @@ func TestLogger(t *testing.T) {
 
 	t.Run("Error", func(t *testing.T) {
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
-		slogger := slog.New(slog.NewHandler(false, buf))
-		ctx := slog.Context(t.Context(), slogger)
+		slogger := slogx.New(slogx.NewHandler(false, buf))
+		ctx := slogx.Context(t.Context(), slogger)
 		l := NewLogger()
 
 		l.Error(ctx, "message %d", 1)
@@ -68,7 +68,7 @@ func TestLogger(t *testing.T) {
 			sql           string
 			slowThreshold time.Duration
 			rowsAffected  int64
-			level         stdslog.Level
+			level         slog.Level
 			wantEmpty     bool
 		}{
 			{
@@ -77,11 +77,11 @@ func TestLogger(t *testing.T) {
 				sql:           "SELECT * FROM some_table",
 				rowsAffected:  4,
 				err:           nil,
-				level:         stdslog.LevelDebug,
+				level:         slog.LevelDebug,
 				slowThreshold: -1,
 				want: regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"DEBUG","msg":"%s"}\n`,
-						fmt.Sprintf(`%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slog.Yellow, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Reset, "\033", `\u001b`))),
+						fmt.Sprintf(`%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slogx.Yellow, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset, "\033", `\u001b`))),
 					),
 				),
 			},
@@ -91,11 +91,11 @@ func TestLogger(t *testing.T) {
 				sql:           "SELECT * FROM some_table",
 				rowsAffected:  4,
 				err:           nil,
-				level:         stdslog.LevelDebug,
+				level:         slog.LevelDebug,
 				slowThreshold: time.Millisecond * 200,
 				want: regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"WARN","msg":"%s"}\n`,
-						fmt.Sprintf(`SLOW SQL >= 200ms\\n%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slog.Reset+slog.Red, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Reset, "\033", `\u001b`))),
+						fmt.Sprintf(`SLOW SQL >= 200ms\\n%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset+slogx.Red, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset, "\033", `\u001b`))),
 					),
 				),
 			},
@@ -105,11 +105,11 @@ func TestLogger(t *testing.T) {
 				sql:           "SELECT * FROM some_table",
 				rowsAffected:  4,
 				err:           nil,
-				level:         stdslog.LevelDebug,
+				level:         slog.LevelDebug,
 				slowThreshold: 0,
 				want: regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"DEBUG","msg":"%s"}\n`,
-						fmt.Sprintf(`%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slog.Yellow, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Reset, "\033", `\u001b`))),
+						fmt.Sprintf(`%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slogx.Yellow, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset, "\033", `\u001b`))),
 					),
 				),
 			},
@@ -119,11 +119,11 @@ func TestLogger(t *testing.T) {
 				sql:           "SELECT * FROM some_table",
 				rowsAffected:  4,
 				err:           nil,
-				level:         stdslog.LevelWarn,
+				level:         slog.LevelWarn,
 				slowThreshold: time.Millisecond * 200,
 				want: regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"WARN","msg":"%s"}\n`,
-						fmt.Sprintf(`SLOW SQL >= 200ms\\n%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slog.Reset+slog.Red, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Reset, "\033", `\u001b`))),
+						fmt.Sprintf(`SLOW SQL >= 200ms\\n%s\[\d+\.\d+ms\] %s\[rows:4\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset+slogx.Red, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset, "\033", `\u001b`))),
 					),
 				),
 			},
@@ -133,7 +133,7 @@ func TestLogger(t *testing.T) {
 				sql:           "SELECT * FROM some_table",
 				rowsAffected:  4,
 				err:           nil,
-				level:         stdslog.LevelError,
+				level:         slog.LevelError,
 				slowThreshold: -1,
 				wantEmpty:     true,
 			},
@@ -143,11 +143,11 @@ func TestLogger(t *testing.T) {
 				sql:           "SELECT * FROM some_table",
 				rowsAffected:  0,
 				err:           fmt.Errorf("no such table: some_table"),
-				level:         stdslog.LevelDebug,
+				level:         slog.LevelDebug,
 				slowThreshold: -1,
 				want: regexp.MustCompile(
 					fmt.Sprintf(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"ERROR","msg":"%s"}\n`,
-						fmt.Sprintf(`no such table: some_table\\n%s\[\d+\.\d+ms\] %s\[rows:0\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slog.Reset+slog.Yellow, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slog.Reset, "\033", `\u001b`))),
+						fmt.Sprintf(`no such table: some_table\\n%s\[\d+\.\d+ms\] %s\[rows:0\]%s SELECT \* FROM some_table`, regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset+slogx.Yellow, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Blue, "\033", `\u001b`)), regexp.QuoteMeta(strings.ReplaceAll(slogx.Reset, "\033", `\u001b`))),
 					),
 				),
 			},
@@ -156,8 +156,8 @@ func TestLogger(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.desc, func(t *testing.T) {
 				buf := bytes.NewBuffer(make([]byte, 0, 1024))
-				slogger := slog.New(stdslog.NewJSONHandler(buf, &stdslog.HandlerOptions{Level: c.level}))
-				ctx := slog.Context(t.Context(), slogger)
+				slogger := slogx.New(slog.NewJSONHandler(buf, &slog.HandlerOptions{Level: c.level}))
+				ctx := slogx.Context(t.Context(), slogger)
 				l := NewLogger()
 
 				if c.slowThreshold > -1 {
@@ -185,8 +185,8 @@ func TestDiscardLogger(t *testing.T) {
 	t.Run("Info", func(t *testing.T) {
 		l := NewDiscardLogger()
 		buf := bytes.NewBufferString("")
-		slogger := slog.New(slog.NewHandler(false, buf))
-		ctx := slog.Context(t.Context(), slogger)
+		slogger := slogx.New(slogx.NewHandler(false, buf))
+		ctx := slogx.Context(t.Context(), slogger)
 		l.Info(ctx, "message")
 		assert.Empty(t, buf.String())
 	})
@@ -194,8 +194,8 @@ func TestDiscardLogger(t *testing.T) {
 	t.Run("Warn", func(t *testing.T) {
 		l := NewDiscardLogger()
 		buf := bytes.NewBufferString("")
-		slogger := slog.New(slog.NewHandler(false, buf))
-		ctx := slog.Context(t.Context(), slogger)
+		slogger := slogx.New(slogx.NewHandler(false, buf))
+		ctx := slogx.Context(t.Context(), slogger)
 		l.Warn(ctx, "message")
 		assert.Empty(t, buf.String())
 	})
@@ -203,8 +203,8 @@ func TestDiscardLogger(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
 		l := NewDiscardLogger()
 		buf := bytes.NewBufferString("")
-		slogger := slog.New(slog.NewHandler(false, buf))
-		ctx := slog.Context(t.Context(), slogger)
+		slogger := slogx.New(slogx.NewHandler(false, buf))
+		ctx := slogx.Context(t.Context(), slogger)
 		l.Error(ctx, "message")
 		assert.Empty(t, buf.String())
 	})

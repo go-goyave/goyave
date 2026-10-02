@@ -14,7 +14,7 @@ import (
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v6/cors"
 	"goyave.dev/goyave/v6/internal/otel"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 )
 
@@ -311,7 +311,7 @@ func (r *Router) startOTel(req *Request) {
 		Propagators: r.server.otelPropagators,
 	}
 	otelCtx := otel.StartSpan(req.Context(), r.server.otelTracer, spanData)
-	req.WithContext(slog.Context(otelCtx, slog.FromContext(otelCtx)))
+	req.WithContext(slogx.Context(otelCtx, slogx.FromContext(otelCtx)))
 	// Span is finished after the [Router.ServeHTTP] method returns.
 }
 
@@ -568,7 +568,7 @@ func (r *Router) requestHandler(match *routeMatch, w http.ResponseWriter, rawReq
 	handler(response, request)
 
 	if err := r.finalize(match, response, request); err != nil {
-		slog.FromContext(request.Context()).Error(err)
+		slogx.FromContext(request.Context()).Error(err)
 	}
 
 	if !response.hijacked {

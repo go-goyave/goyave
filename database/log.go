@@ -10,17 +10,17 @@ import (
 	"strings"
 	"time"
 
-	stdslog "log/slog"
+	"log/slog"
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 )
 
 var regexGormPath = regexp.MustCompile(`gorm.io/(.*?)@`)
 
-// Logger adapter between `*slog.Logger` and GORM's logger.
+// Logger adapter between [*slogx.Logger] and GORM's logger.
 type Logger struct {
 	// SlowThreshold defines the minimum query execution time to be considered "slow".
 	// If a query takes more time than `SlowThreshold`, the query will be logged at the WARN level.
@@ -30,7 +30,7 @@ type Logger struct {
 	SlowThreshold time.Duration
 }
 
-// NewLogger create a new `Logger` adapter between GORM and `*slog.Logger`.
+// NewLogger create a new [Logger] adapter between GORM and [*slogx.Logger].
 // The logger is retrieved automatically from the context.
 func NewLogger() *Logger {
 	return &Logger{
@@ -39,47 +39,47 @@ func NewLogger() *Logger {
 }
 
 // LogMode returns a copy of this logger. The level argument actually has
-// no effect as it is handled by the underlying `*slog.Logger`.
+// no effect as it is handled by the underlying [*slogx.Logger].
 func (l *Logger) LogMode(_ logger.LogLevel) logger.Interface {
 	newlogger := *l
 	return &newlogger
 }
 
-// Info logs at `LevelInfo`.
+// Info logs at [slog.LevelInfo].
 func (l Logger) Info(ctx context.Context, msg string, data ...any) {
-	slog.FromContext(ctx).InfoWithSource(ctx, getSourceCaller(), fmt.Sprintf(msg, data...))
+	slogx.FromContext(ctx).InfoWithSource(ctx, getSourceCaller(), fmt.Sprintf(msg, data...))
 }
 
-// Warn logs at `LevelWarn`.
+// Warn logs at [slog.LevelWarn].
 func (l Logger) Warn(ctx context.Context, msg string, data ...any) {
-	slog.FromContext(ctx).WarnWithSource(ctx, getSourceCaller(), fmt.Sprintf(msg, data...))
+	slogx.FromContext(ctx).WarnWithSource(ctx, getSourceCaller(), fmt.Sprintf(msg, data...))
 }
 
-// Error logs at `LevelError`.
+// Error logs at [slog.LevelError].
 func (l Logger) Error(ctx context.Context, msg string, data ...any) {
-	slog.FromContext(ctx).ErrorWithSource(ctx, getSourceCaller(), fmt.Errorf(msg, data...))
+	slogx.FromContext(ctx).ErrorWithSource(ctx, getSourceCaller(), fmt.Errorf(msg, data...))
 }
 
 // Trace SQL logs at
-//   - `LevelDebug`
-//   - `LevelWarn` if the query is slow
-//   - `LevelError` if the given error is not nil
+//   - [slog.LevelInfo]
+//   - [slog.LevelWarn] if the query is slow
+//   - [slog.LevelError] if the given error is not nil
 func (l Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 	elapsed := time.Since(begin)
 
-	logger := slog.FromContext(ctx)
+	logger := slogx.FromContext(ctx)
 
 	switch {
-	case err != nil && logger.Enabled(ctx, stdslog.LevelError) && !errors.Is(err, gorm.ErrRecordNotFound):
+	case err != nil && logger.Enabled(ctx, slog.LevelError) && !errors.Is(err, gorm.ErrRecordNotFound):
 		sql, rows := fc()
-		logger.ErrorWithSource(ctx, getSourceCaller(), fmt.Errorf("%s\n"+slog.Reset+slog.Yellow+"[%.3fms] "+slog.Blue+"[rows:%s]"+slog.Reset+" %s", err.Error(), float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
-	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && logger.Enabled(ctx, stdslog.LevelWarn):
+		logger.ErrorWithSource(ctx, getSourceCaller(), fmt.Errorf("%s\n"+slogx.Reset+slogx.Yellow+"[%.3fms] "+slogx.Blue+"[rows:%s]"+slogx.Reset+" %s", err.Error(), float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
+	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && logger.Enabled(ctx, slog.LevelWarn):
 		sql, rows := fc()
 		slowLog := fmt.Sprintf("SLOW SQL >= %v", l.SlowThreshold)
-		logger.WarnWithSource(ctx, getSourceCaller(), fmt.Sprintf("%s\n"+slog.Reset+slog.Red+"[%.3fms] "+slog.Blue+"[rows:%s]"+slog.Reset+" %s", slowLog, float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
-	case logger.Enabled(ctx, stdslog.LevelDebug):
+		logger.WarnWithSource(ctx, getSourceCaller(), fmt.Sprintf("%s\n"+slogx.Reset+slogx.Red+"[%.3fms] "+slogx.Blue+"[rows:%s]"+slogx.Reset+" %s", slowLog, float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
+	case logger.Enabled(ctx, slog.LevelDebug):
 		sql, rows := fc()
-		logger.DebugWithSource(ctx, getSourceCaller(), fmt.Sprintf(slog.Yellow+"[%.3fms] "+slog.Blue+"[rows:%s]"+slog.Reset+" %s", float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
+		logger.DebugWithSource(ctx, getSourceCaller(), fmt.Sprintf(slogx.Yellow+"[%.3fms] "+slogx.Blue+"[rows:%s]"+slogx.Reset+" %s", float64(elapsed.Nanoseconds())/1e6, lo.Ternary(rows == -1, "-", strconv.FormatInt(rows, 10)), sql))
 	}
 }
 

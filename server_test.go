@@ -35,7 +35,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 	"goyave.dev/goyave/v6/config"
 	"goyave.dev/goyave/v6/internal/otel"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/util/fsutil"
 )
@@ -89,7 +89,7 @@ func TestServer(t *testing.T) {
 		assert.NotNil(t, s.logger)
 
 		// Logger and Server added to context
-		assert.Equal(t, s.logger, slog.FromContext(s.Context()))
+		assert.Equal(t, s.logger, slogx.FromContext(s.Context()))
 		assert.Same(t, s, ServerFromContext(s.Context()))
 
 		t.Run("ipv6_host", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestServer(t *testing.T) {
 	t.Run("NewWithOptions", func(t *testing.T) {
 		cfg := config.LoadDefault()
 
-		logger := slog.New(slog.NewHandler(false, &bytes.Buffer{}))
+		logger := slogx.New(slogx.NewHandler(false, &bytes.Buffer{}))
 		langEmbed, err := fsutil.NewEmbed(resources).Sub("resources/lang")
 		require.NoError(t, err)
 		opts := Options{
@@ -519,7 +519,7 @@ func TestServer(t *testing.T) {
 		server.Router().Get("/", func(r *Response, req *Request) {
 			ctx := req.Context()
 			assert.Equal(t, server, ServerFromContext(ctx))
-			assert.Equal(t, server.Logger(), slog.FromContext(ctx))
+			assert.Equal(t, server.Logger(), slogx.FromContext(ctx))
 			r.String(http.StatusOK, fmt.Sprintf("%v|%v|%v", ctx.Value(rootContextKey{}), ctx.Value(baseContextKey{}), ctx.Value(connContextKey{})))
 		}).Name("base")
 
@@ -647,7 +647,7 @@ func TestNoServerFromContext(t *testing.T) {
 
 func TestErrLogWriter(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0, 1024))
-	logger := slog.New(slog.NewHandler(false, buf))
+	logger := slogx.New(slogx.NewHandler(false, buf))
 	s, err := New(config.LoadDefault(), Options{Logger: logger})
 	require.NoError(t, err)
 
@@ -1013,7 +1013,7 @@ func prepareOpenTelemetryTest(t *testing.T, url string, handler Handler, traceFi
 			Propagators:    propagator,
 			TraceFilters:   traceFilters,
 		},
-		Logger: slog.DiscardLogger(),
+		Logger: slogx.DiscardLogger(),
 	}
 	server, err := New(config.LoadDefault(), opts)
 	require.NoError(t, err)

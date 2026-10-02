@@ -17,12 +17,13 @@
     - database config is not included in the default config. If you use a database, you can add it with composing `database.Config` in your config struct. Use a `map[string]database.Config` if you need multiple connections.
     - GOYAVE_ENV renamed to ENV. Only effective when using the default source.
 - slog:
+  - package renamed to slogx to avoid package name collisions with std and dependency confusion (x for extension)
   - global default logger. The default handler is json if the ENV variable is equal to "prod" or "production" (case-insensitive), else it's dev mode.
   - context integration. The logger is now stored and distributed through the context. The logger is added to the server's base context.
   - A context is now attached to a logger. This context is used by default for log operations that don't specify a context (`Info`, `Warn`, etc...).
   - Added missing WithGroup method.
   - skip the log earlier if log level not enabled for better performance
-  - slog.New now takes slog.Option variadic parameter. For now it's mostly for OpenTelemetry configuration.
+  - slogx.New now takes slogx.Option variadic parameter. For now it's mostly for OpenTelemetry configuration.
   - generic errwrap.Reason now always displayed as StructValue in logs (better support for rich logs in OpenTelemetry)
 - server:
   - New server take a *config.Base and options. Server doesn't auto load the configuration anymore.

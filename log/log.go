@@ -3,11 +3,11 @@ package log
 import (
 	"io"
 
-	stdslog "log/slog"
+	"log/slog"
 
 	"github.com/samber/lo"
 	"goyave.dev/goyave/v6"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 )
 
@@ -26,7 +26,7 @@ type Context struct {
 // The first returned value is the message, usually formatted using a standard
 // like Common Log Format or Combined Log Format.
 // The second returned value is a slice of structured logging attributes.
-type Formatter func(ctx *Context) (message string, attributes []stdslog.Attr)
+type Formatter func(ctx *Context) (message string, attributes []slog.Attr)
 
 // Writer chained writer keeping response body in memory.
 // Used for loggin in common format.
@@ -63,8 +63,8 @@ func (w *Writer) Close() error {
 	}
 	message, attrs := w.formatter(ctx)
 
-	logger := slog.FromContext(w.request.Context())
-	logger.Info(message, lo.Map(attrs, func(a stdslog.Attr, _ int) any { return a })...) // TODO clutters a lot in dev mode
+	logger := slogx.FromContext(w.request.Context())
+	logger.Info(message, lo.Map(attrs, func(a slog.Attr, _ int) any { return a })...) // TODO clutters a lot in dev mode
 
 	return errwrap.New(w.CommonWriter.Close())
 }

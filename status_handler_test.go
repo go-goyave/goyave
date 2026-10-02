@@ -11,14 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v6/config"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/validation"
 )
 
 func prepareStatusHandlerTest() (*Request, *Response, *httptest.ResponseRecorder, *bytes.Buffer) {
 	logBuffer := &bytes.Buffer{}
-	logger := slog.New(slog.NewHandler(false, logBuffer))
+	logger := slogx.New(slogx.NewHandler(false, logBuffer))
 	server, err := New(config.LoadDefault(), Options{Logger: logger})
 	if err != nil {
 		panic(err)

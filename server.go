@@ -22,7 +22,7 @@ import (
 	"goyave.dev/goyave/v6/config"
 	"goyave.dev/goyave/v6/internal/otel"
 	"goyave.dev/goyave/v6/lang"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/util/fsutil"
 	"goyave.dev/goyave/v6/util/fsutil/osfs"
@@ -61,9 +61,9 @@ type OpenTelemetryOptions struct {
 // Options represent server creation options.
 type Options struct {
 	// Logger used by the server.
-	// If no logger is provided in the options, a new [slog.Logger] outputting
+	// If no logger is provided in the options, a new [slogx.Logger] outputting
 	// to [os.Stderr] is created. The handler used depends on the [config.App.Debug] value.
-	Logger *slog.Logger
+	Logger *slogx.Logger
 
 	// LangFS the file system from which the language files
 	// will be loaded. This file system is expected to contain
@@ -157,7 +157,7 @@ type Server struct {
 
 	// logger the logger for default output
 	// Writes to stderr by default.
-	logger *slog.Logger
+	logger *slogx.Logger
 
 	otelMeters      *otel.HTTPServerMeters
 	otelPropagators propagation.TextMapPropagator
@@ -195,9 +195,9 @@ func New(cfg *config.Base, opts Options) (*Server, error) {
 
 	slogger := opts.Logger
 	if slogger == nil {
-		slogger = slog.New(slog.NewHandler(cfg.App.Debug, os.Stderr)).WithContext(ctx)
+		slogger = slogx.New(slogx.NewHandler(cfg.App.Debug, os.Stderr)).WithContext(ctx)
 	}
-	ctx = slog.Context(ctx, slogger)
+	ctx = slogx.Context(ctx, slogger)
 
 	langFS := opts.LangFS
 	if langFS == nil {
@@ -350,7 +350,7 @@ func (s *Server) Context() context.Context {
 }
 
 // Logger returns the server's logger.
-func (s *Server) Logger() *slog.Logger {
+func (s *Server) Logger() *slogx.Logger {
 	return s.logger
 }
 

@@ -16,7 +16,7 @@ import (
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/config"
 	"goyave.dev/goyave/v6/lang"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/fsutil"
 	"goyave.dev/goyave/v6/util/fsutil/osfs"
 )
@@ -35,7 +35,7 @@ func TestTestServer(t *testing.T) {
 	t.Run("NewTestServer", func(t *testing.T) {
 		server := NewTestServer(t, Options{})
 		assert.Equal(t, "http://[::1]:0", server.BaseURL()) // Check default config loaded
-		assert.Equal(t, slog.DiscardLogger(), server.Logger())
+		assert.Equal(t, slogx.DiscardLogger(), server.Logger())
 		assert.NotNil(t, server.Lang)
 	})
 
@@ -113,7 +113,7 @@ func TestTestServer(t *testing.T) {
 	})
 
 	t.Run("NewTestResponse", func(t *testing.T) {
-		server := NewTestServer(t, Options{Config: config.LoadDefault(), Logger: slog.New(slog.NewHandler(false, &bytes.Buffer{}))})
+		server := NewTestServer(t, Options{Config: config.LoadDefault(), Logger: slogx.New(slogx.NewHandler(false, &bytes.Buffer{}))})
 		req := server.NewTestRequest(http.MethodGet, "/uri", nil)
 		resp, recorder := server.NewTestResponse(req)
 

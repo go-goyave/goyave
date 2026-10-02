@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"goyave.dev/goyave/v6"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 
 	ws "github.com/gorilla/websocket"
@@ -252,7 +252,7 @@ func (u *Upgrader) serve(c *ws.Conn, request *goyave.Request, handler func(*Conn
 			if errorHandler, ok := u.Controller.(ErrorHandler); ok {
 				errorHandler.OnError(request, err)
 			} else {
-				slog.FromContext(request.Context()).Error(err)
+				slogx.FromContext(request.Context()).Error(err)
 			}
 			_ = conn.CloseWithError(err)
 		} else {

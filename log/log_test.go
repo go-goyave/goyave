@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/config"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/testutil"
 )
 
@@ -41,7 +41,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slogx.New(slogx.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -71,7 +71,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slogx.New(slogx.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -101,7 +101,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slogx.New(slogx.NewHandler(false, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -139,7 +139,7 @@ func TestWriter(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slog.New(slog.NewHandler(true, buffer))})
+		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slogx.New(slogx.NewHandler(true, buffer))})
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
 		resp, recorder := server.NewTestResponse(req)
@@ -165,7 +165,7 @@ func TestWriter(t *testing.T) {
 
 		assert.Regexp(t,
 			fmt.Sprintf("\n%s INFO %s \\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}%s \\(.+\\)%s\n192.0.2.1 - - \\[23/Mar/2020:13:58:26 \\+0000\\] \"GET /log HTTP/1.1\" 200 13%s\n",
-				regexp.QuoteMeta(slog.BGGray+slog.WhiteBold), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Gray), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Reset), // Same thing but details are omitted
+				regexp.QuoteMeta(slogx.BGGray+slogx.WhiteBold), regexp.QuoteMeta(slogx.Reset), regexp.QuoteMeta(slogx.Gray), regexp.QuoteMeta(slogx.Reset), regexp.QuoteMeta(slogx.Reset), // Same thing but details are omitted
 			),
 			buffer.String(),
 		)
@@ -179,7 +179,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slog.New(slog.NewHandler(false, buffer))})
+		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slogx.New(slogx.NewHandler(false, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -201,7 +201,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slog.New(slog.NewHandler(true, buffer))})
+		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slogx.New(slogx.NewHandler(true, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -212,7 +212,7 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, httpResponse.StatusCode)
 		assert.Regexp(t,
 			fmt.Sprintf("\n%s INFO %s \\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}%s \\(.+\\)%s\n192.0.2.1 - - \\[23/Mar/2020:13:58:26 \\+0000\\] \"GET /log HTTP/1.1\" 200 11%s\n",
-				regexp.QuoteMeta(slog.BGGray+slog.WhiteBold), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Gray), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Reset), // Same thing but details are omitted
+				regexp.QuoteMeta(slogx.BGGray+slogx.WhiteBold), regexp.QuoteMeta(slogx.Reset), regexp.QuoteMeta(slogx.Gray), regexp.QuoteMeta(slogx.Reset), regexp.QuoteMeta(slogx.Reset), // Same thing but details are omitted
 			),
 			buffer.String(),
 		)
@@ -223,7 +223,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = false
 		buffer := bytes.NewBufferString("")
-		logger := slog.New(slog.NewHandler(false, buffer))
+		logger := slogx.New(slogx.NewHandler(false, buffer))
 		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: logger})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
@@ -255,7 +255,7 @@ func TestMiddleware(t *testing.T) {
 		cfg := config.LoadDefault()
 		cfg.App.Debug = true
 		buffer := bytes.NewBufferString("")
-		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slog.New(slog.NewHandler(true, buffer))})
+		server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: slogx.New(slogx.NewHandler(true, buffer))})
 
 		req := server.NewTestRequest(http.MethodGet, "/log", nil)
 		req.Now = ts
@@ -273,7 +273,7 @@ func TestMiddleware(t *testing.T) {
 
 		assert.Regexp(t,
 			fmt.Sprintf("\n%s INFO %s \\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}%s \\(.+\\)%s\n192.0.2.1 - - \\[23/Mar/2020:13:58:26 \\+0000\\] \"GET /log HTTP/1.1\" 200 11 \"%s\" \"%s\"%s\n",
-				regexp.QuoteMeta(slog.BGGray+slog.WhiteBold), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(slog.Gray), regexp.QuoteMeta(slog.Reset), regexp.QuoteMeta(referrer), regexp.QuoteMeta(userAgent), regexp.QuoteMeta(slog.Reset), // Same thing but details are omitted
+				regexp.QuoteMeta(slogx.BGGray+slogx.WhiteBold), regexp.QuoteMeta(slogx.Reset), regexp.QuoteMeta(slogx.Gray), regexp.QuoteMeta(slogx.Reset), regexp.QuoteMeta(referrer), regexp.QuoteMeta(userAgent), regexp.QuoteMeta(slogx.Reset), // Same thing but details are omitted
 			),
 			buffer.String(),
 		)

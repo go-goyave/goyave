@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/config"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/testutil"
 
 	_ "goyave.dev/goyave/v6/database/dialect/sqlite"
@@ -54,7 +54,7 @@ func prepareAuthenticatorTest(t *testing.T) (*testutil.TestServer, *TestUser, *b
 	cfg := config.LoadDefault()
 	cfg.App.Debug = false
 	logBuffer := &bytes.Buffer{}
-	logger := slog.New(slog.NewHandler(false, logBuffer))
+	logger := slogx.New(slogx.NewHandler(false, logBuffer))
 	server := testutil.NewTestServer(t, testutil.Options{Config: cfg, Logger: logger})
 	password, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 	user := &TestUser{

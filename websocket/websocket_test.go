@@ -14,13 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/config"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/errwrap"
 	"goyave.dev/goyave/v6/util/testutil"
 
 	ws "github.com/gorilla/websocket"
 
-	stdslog "log/slog"
+	"log/slog"
 )
 
 func prepareTestConfig() (testutil.Options, *Config) {
@@ -470,7 +470,7 @@ func TestGracefulClose(t *testing.T) {
 				return errwrap.New("websocket handler error")
 			},
 			errorHandler: func(_ *testControllerWithErrorHandler, req *goyave.Request, _ error) {
-				slog.FromContext(req.Context()).Info("message override")
+				slogx.FromContext(req.Context()).Info("message override")
 			},
 			expectedError: &ws.CloseError{Code: ws.CloseInternalServerErr, Text: http.StatusText(http.StatusInternalServerError)},
 			expectedLogs:  regexp.MustCompile(`{"time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}((\+\d{2}:\d{2})|Z)?","level":"INFO","msg":"message override"}\n`),
@@ -493,7 +493,7 @@ func TestGracefulClose(t *testing.T) {
 			var routeURL string
 			opts, cfg := prepareTestConfig()
 			buf := &bytes.Buffer{}
-			opts.Logger = slog.New(stdslog.NewJSONHandler(buf, &stdslog.HandlerOptions{Level: stdslog.LevelInfo}))
+			opts.Logger = slogx.New(slog.NewJSONHandler(buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
 			server := testutil.NewTestServer(t, opts)
 			var ctrl Controller = &testController{
 				t:     t,

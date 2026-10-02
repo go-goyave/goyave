@@ -8,13 +8,13 @@ import (
 
 	"goyave.dev/goyave/v6"
 	"goyave.dev/goyave/v6/config"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 )
 
 func BenchmarkServeHTTPWithLogs(b *testing.B) {
 	cfg := config.LoadDefault()
 	cfg.App.Debug = false
-	logger := slog.New(slog.NewHandler(false, io.Discard))
+	logger := slogx.New(slogx.NewHandler(false, io.Discard))
 	s, _ := goyave.New(cfg, goyave.Options{Logger: logger})
 
 	r := s.Router()

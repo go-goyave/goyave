@@ -1,4 +1,4 @@
-package slog
+package slogx
 
 import (
 	"bytes"
@@ -193,7 +193,7 @@ func TestLogger(t *testing.T) {
 				desc: "ErrorWithSource",
 				f: func() {
 					// Ignore "do not pass a nil Context" so we know passing a nil context doesn't crash
-					l.ErrorWithSource(nil, pc, fmt.Errorf("err message"), slog.String("attr", "val")) //nolint:staticcheck
+					l.ErrorWithSource(nil, pc, fmt.Errorf("err message"), slog.String("attr", "val")) //nolint:staticcheck // We are purposefully testing what happens when passing a nil value
 				},
 				want: regexp.MustCompile(fmt.Sprintf(`^\n%s ERROR %s \d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d{1,6}%s \(%s\)%s\n%serr message%s\n%sattr: %sval\n$`, regexp.QuoteMeta(BGRed+WhiteBold), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Gray), regexp.QuoteMeta(fmt.Sprintf("%s:%d", file, line)), regexp.QuoteMeta(Reset), regexp.QuoteMeta(Red), regexp.QuoteMeta(Reset), regexp.QuoteMeta(WhiteBold), regexp.QuoteMeta(Reset))),
 			},

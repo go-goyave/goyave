@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"goyave.dev/goyave/v6/slog"
+	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/util/walk"
 )
 
@@ -452,7 +452,7 @@ func TestErrors(t *testing.T) {
 		}
 		assert.Equal(t, "validation errors", e.Error())
 		v := e.LogValue()
-		want := slog.StructValue(e)
+		want := slogx.StructValue(e)
 		assert.Equal(t, want.Group(), v.Group())
 	})
 }

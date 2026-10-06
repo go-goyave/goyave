@@ -14,6 +14,10 @@ import (
 //
 // This interface provides a way for services to return standardized client errors
 // without leaking into the presentation / HTTP layer.
+//
+// When comparing client errors with [errors.Is], [errors.As] or [errors.AsType], the [ClientError.Code]
+// is the deciding factor. The message is carried over with [errors.As]/[errors.AsType] but is not a
+// factor when matching the errors together.
 type ClientError interface {
 	error
 
@@ -52,8 +56,10 @@ func (e clientError) Code() int {
 
 func (e clientError) Is(err error) bool {
 	switch clientErr := err.(type) {
-	case clientError, *clientError:
-		return true
+	case clientError:
+		return clientErr.code == e.code
+	case *clientError:
+		return clientErr != nil && clientErr.code == e.code
 	case ClientError:
 		return clientErr.Code() == e.code
 	}
@@ -136,6 +142,16 @@ func (ConflictError) Code() int {
 	return http.StatusConflict
 }
 
+func (e ConflictError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case ConflictError, *ConflictError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
+}
+
 func Conflict(message string) *ConflictError {
 	return &ConflictError{message: message}
 }
@@ -160,6 +176,16 @@ func (e NotAcceptableError) Message() string {
 
 func (NotAcceptableError) Code() int {
 	return http.StatusNotAcceptable
+}
+
+func (e NotAcceptableError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case NotAcceptableError, *NotAcceptableError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
 }
 
 func NotAcceptable(message string) *NotAcceptableError {
@@ -188,6 +214,16 @@ func (NotFoundError) Code() int {
 	return http.StatusNotFound
 }
 
+func (e NotFoundError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case NotFoundError, *NotFoundError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
+}
+
 func NotFound(message string) *NotFoundError {
 	return &NotFoundError{message: message}
 }
@@ -212,6 +248,16 @@ func (e UnprocessableEntityError) Message() string {
 
 func (UnprocessableEntityError) Code() int {
 	return http.StatusUnprocessableEntity
+}
+
+func (e UnprocessableEntityError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case UnprocessableEntityError, *UnprocessableEntityError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
 }
 
 func UnprocessableEntity(message string) *UnprocessableEntityError {
@@ -240,6 +286,16 @@ func (LockedError) Code() int {
 	return http.StatusLocked
 }
 
+func (e LockedError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case LockedError, *LockedError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
+}
+
 func Locked(message string) *LockedError {
 	return &LockedError{message: message}
 }
@@ -264,6 +320,16 @@ func (e ForbiddenError) Message() string {
 
 func (ForbiddenError) Code() int {
 	return http.StatusForbidden
+}
+
+func (e ForbiddenError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case ForbiddenError, *ForbiddenError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
 }
 
 func Forbidden(message string) *ForbiddenError {
@@ -292,6 +358,16 @@ func (UnauthorizedError) Code() int {
 	return http.StatusUnauthorized
 }
 
+func (e UnauthorizedError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case UnauthorizedError, *UnauthorizedError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
+}
+
 func Unauthorized(message string) *UnauthorizedError {
 	return &UnauthorizedError{message: message}
 }
@@ -316,6 +392,16 @@ func (e BadRequestError) Message() string {
 
 func (BadRequestError) Code() int {
 	return http.StatusBadRequest
+}
+
+func (e BadRequestError) Is(err error) bool {
+	switch clientErr := err.(type) {
+	case BadRequestError, *BadRequestError:
+		return true
+	case ClientError:
+		return clientErr.Code() == e.Code()
+	}
+	return false
 }
 
 func BadRequest(message string) *BadRequestError {

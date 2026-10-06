@@ -42,6 +42,7 @@ jobs:
         with:
           version: v2.13.2
           args: --timeout 5m
+          only-new-issues: true
 
   govulncheck:
     name: Check vulnerabilities

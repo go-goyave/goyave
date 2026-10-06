@@ -18,123 +18,140 @@ func (testError) Error() string {
 func TestClientError(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		desc        string
-		err         error
-		wantError   string
-		wantMessage string
-		wantCode    int
+		desc         string
+		err          error
+		wantError    string
+		wantMessage  string
+		wantCode     int
+		wantSentinel error
 	}{
 		{
-			desc:        "Conflict_empty_message",
-			err:         Conflict(""),
-			wantError:   "client error 409: " + http.StatusText(http.StatusConflict),
-			wantMessage: "",
-			wantCode:    http.StatusConflict,
+			desc:         "Conflict_empty_message",
+			err:          Conflict(""),
+			wantError:    "client error 409: " + http.StatusText(http.StatusConflict),
+			wantMessage:  "",
+			wantCode:     http.StatusConflict,
+			wantSentinel: ErrConflict,
 		},
 		{
-			desc:        "Conflict",
-			err:         Conflict("custom message"),
-			wantError:   "client error 409: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusConflict,
+			desc:         "Conflict",
+			err:          Conflict("custom message"),
+			wantError:    "client error 409: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusConflict,
+			wantSentinel: ErrConflict,
 		},
 		{
-			desc:        "NotAcceptable_empty_message",
-			err:         NotAcceptable(""),
-			wantError:   "client error 406: " + http.StatusText(http.StatusNotAcceptable),
-			wantMessage: "",
-			wantCode:    http.StatusNotAcceptable,
+			desc:         "NotAcceptable_empty_message",
+			err:          NotAcceptable(""),
+			wantError:    "client error 406: " + http.StatusText(http.StatusNotAcceptable),
+			wantMessage:  "",
+			wantCode:     http.StatusNotAcceptable,
+			wantSentinel: ErrNotAcceptable,
 		},
 		{
-			desc:        "NotAcceptable",
-			err:         NotAcceptable("custom message"),
-			wantError:   "client error 406: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusNotAcceptable,
+			desc:         "NotAcceptable",
+			err:          NotAcceptable("custom message"),
+			wantError:    "client error 406: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusNotAcceptable,
+			wantSentinel: ErrNotAcceptable,
 		},
 		{
-			desc:        "NotFound_empty_message",
-			err:         NotFound(""),
-			wantError:   "client error 404: " + http.StatusText(http.StatusNotFound),
-			wantMessage: "",
-			wantCode:    http.StatusNotFound,
+			desc:         "NotFound_empty_message",
+			err:          NotFound(""),
+			wantError:    "client error 404: " + http.StatusText(http.StatusNotFound),
+			wantMessage:  "",
+			wantCode:     http.StatusNotFound,
+			wantSentinel: ErrNotFound,
 		},
 		{
-			desc:        "NotFound",
-			err:         NotFound("custom message"),
-			wantError:   "client error 404: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusNotFound,
+			desc:         "NotFound",
+			err:          NotFound("custom message"),
+			wantError:    "client error 404: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusNotFound,
+			wantSentinel: ErrNotFound,
 		},
 		{
-			desc:        "UnprocessableEntity_empty_message",
-			err:         UnprocessableEntity(""),
-			wantError:   "client error 422: " + http.StatusText(http.StatusUnprocessableEntity),
-			wantMessage: "",
-			wantCode:    http.StatusUnprocessableEntity,
+			desc:         "UnprocessableEntity_empty_message",
+			err:          UnprocessableEntity(""),
+			wantError:    "client error 422: " + http.StatusText(http.StatusUnprocessableEntity),
+			wantMessage:  "",
+			wantCode:     http.StatusUnprocessableEntity,
+			wantSentinel: ErrUnprocessableEntity,
 		},
 		{
-			desc:        "UnprocessableEntity",
-			err:         UnprocessableEntity("custom message"),
-			wantError:   "client error 422: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusUnprocessableEntity,
+			desc:         "UnprocessableEntity",
+			err:          UnprocessableEntity("custom message"),
+			wantError:    "client error 422: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusUnprocessableEntity,
+			wantSentinel: ErrUnprocessableEntity,
 		},
 		{
-			desc:        "Locked_empty_message",
-			err:         Locked(""),
-			wantError:   "client error 423: " + http.StatusText(http.StatusLocked),
-			wantMessage: "",
-			wantCode:    http.StatusLocked,
+			desc:         "Locked_empty_message",
+			err:          Locked(""),
+			wantError:    "client error 423: " + http.StatusText(http.StatusLocked),
+			wantMessage:  "",
+			wantCode:     http.StatusLocked,
+			wantSentinel: ErrLocked,
 		},
 		{
-			desc:        "Locked",
-			err:         Locked("custom message"),
-			wantError:   "client error 423: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusLocked,
+			desc:         "Locked",
+			err:          Locked("custom message"),
+			wantError:    "client error 423: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusLocked,
+			wantSentinel: ErrLocked,
 		},
 		{
-			desc:        "Forbidden_empty_message",
-			err:         Forbidden(""),
-			wantError:   "client error 403: " + http.StatusText(http.StatusForbidden),
-			wantMessage: "",
-			wantCode:    http.StatusForbidden,
+			desc:         "Forbidden_empty_message",
+			err:          Forbidden(""),
+			wantError:    "client error 403: " + http.StatusText(http.StatusForbidden),
+			wantMessage:  "",
+			wantCode:     http.StatusForbidden,
+			wantSentinel: ErrForbidden,
 		},
 		{
-			desc:        "Forbidden",
-			err:         Forbidden("custom message"),
-			wantError:   "client error 403: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusForbidden,
+			desc:         "Forbidden",
+			err:          Forbidden("custom message"),
+			wantError:    "client error 403: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusForbidden,
+			wantSentinel: ErrForbidden,
 		},
 		{
-			desc:        "Unauthorized_empty_message",
-			err:         Unauthorized(""),
-			wantError:   "client error 401: " + http.StatusText(http.StatusUnauthorized),
-			wantMessage: "",
-			wantCode:    http.StatusUnauthorized,
+			desc:         "Unauthorized_empty_message",
+			err:          Unauthorized(""),
+			wantError:    "client error 401: " + http.StatusText(http.StatusUnauthorized),
+			wantMessage:  "",
+			wantCode:     http.StatusUnauthorized,
+			wantSentinel: ErrUnauthorized,
 		},
 		{
-			desc:        "Unauthorized",
-			err:         Unauthorized("custom message"),
-			wantError:   "client error 401: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusUnauthorized,
+			desc:         "Unauthorized",
+			err:          Unauthorized("custom message"),
+			wantError:    "client error 401: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusUnauthorized,
+			wantSentinel: ErrUnauthorized,
 		},
 		{
-			desc:        "BadRequest_empty_message",
-			err:         BadRequest(""),
-			wantError:   "client error 400: " + http.StatusText(http.StatusBadRequest),
-			wantMessage: "",
-			wantCode:    http.StatusBadRequest,
+			desc:         "BadRequest_empty_message",
+			err:          BadRequest(""),
+			wantError:    "client error 400: " + http.StatusText(http.StatusBadRequest),
+			wantMessage:  "",
+			wantCode:     http.StatusBadRequest,
+			wantSentinel: ErrBadRequest,
 		},
 		{
-			desc:        "BadRequest",
-			err:         BadRequest("custom message"),
-			wantError:   "client error 400: custom message",
-			wantMessage: "custom message",
-			wantCode:    http.StatusBadRequest,
+			desc:         "BadRequest",
+			err:          BadRequest("custom message"),
+			wantError:    "client error 400: custom message",
+			wantMessage:  "custom message",
+			wantCode:     http.StatusBadRequest,
+			wantSentinel: ErrBadRequest,
 		},
 		{
 			desc:        "Generic_empty_message",
@@ -161,6 +178,16 @@ func TestClientError(t *testing.T) {
 			assert.Equal(t, c.wantError, clientErr.Error())
 			assert.Equal(t, c.wantMessage, clientErr.Message())
 			assert.Equal(t, c.wantCode, clientErr.Code())
+			if c.wantSentinel != nil {
+				assert.ErrorIs(t, c.err, c.wantSentinel)
+			}
+			// errors.Is with a generic client error should also work
+			genericClientErr := NewClientError(clientErr.Code(), clientErr.Message())
+			assert.ErrorIs(t, c.err, genericClientErr)
+			// Changing the code should drop the compatibility between the two errors
+			genericClientErr.(*clientError).code = 0
+			assert.NotErrorIs(t, c.err, genericClientErr)
+			assert.NotErrorIs(t, c.err, errors.New(clientErr.Message())) // For the sake of coverage...
 		})
 	}
 
@@ -174,10 +201,20 @@ func TestClientError(t *testing.T) {
 			want        bool
 		}{
 			{
-				desc:        "same",
+				desc:        "same_ptr",
 				code:        http.StatusMethodNotAllowed,
 				message:     "custom message",
-				wantErrType: &clientError{},
+				wantErrType: &clientError{code: http.StatusMethodNotAllowed},
+				asFn: func(err error) (ClientError, bool) {
+					return errors.AsType[*clientError](err)
+				},
+				want: true,
+			},
+			{
+				desc:        "same_no_ptr",
+				code:        http.StatusMethodNotAllowed,
+				message:     "custom message",
+				wantErrType: clientError{code: http.StatusMethodNotAllowed},
 				asFn: func(err error) (ClientError, bool) {
 					return errors.AsType[*clientError](err)
 				},
@@ -187,7 +224,7 @@ func TestClientError(t *testing.T) {
 				desc:        "as_interface",
 				code:        http.StatusMethodNotAllowed,
 				message:     "custom message",
-				wantErrType: &clientError{},
+				wantErrType: &clientError{code: http.StatusMethodNotAllowed},
 				asFn: func(err error) (ClientError, bool) {
 					return errors.AsType[ClientError](err)
 				},
@@ -277,9 +314,20 @@ func TestClientError(t *testing.T) {
 				desc:        "as_type_not_matching_code",
 				code:        http.StatusMethodNotAllowed,
 				message:     "custom message",
-				wantErrType: &clientError{},
+				wantErrType: &clientError{code: http.StatusMethodNotAllowed},
 				asFn: func(err error) (ClientError, bool) {
 					return errors.AsType[*BadRequestError](err)
+				},
+				want: false,
+			},
+			{
+				desc:        "is_not_matching_code",
+				code:        http.StatusMethodNotAllowed,
+				message:     "custom message",
+				wantErrType: &clientError{code: http.StatusMethodNotAllowed},
+				asFn: func(err error) (ClientError, bool) {
+					ok := errors.Is(err, &clientError{code: http.StatusForbidden})
+					return nil, ok
 				},
 				want: false,
 			},
@@ -287,7 +335,7 @@ func TestClientError(t *testing.T) {
 				desc:        "unrelated_type",
 				code:        http.StatusMethodNotAllowed,
 				message:     "custom message",
-				wantErrType: &clientError{},
+				wantErrType: &clientError{code: http.StatusMethodNotAllowed},
 				asFn: func(err error) (ClientError, bool) {
 					_, ok := errors.AsType[*testError](err)
 					return nil, ok

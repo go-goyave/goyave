@@ -323,3 +323,15 @@ func BadRequest(message string) *BadRequestError {
 }
 
 // TODO the list is not exhaustive but should largely cover the most common cases.
+
+// Sentinel error with default message
+var (
+	ErrConflict            = Conflict("")
+	ErrNotAcceptable       = NotAcceptable("")
+	ErrNotFound            = NotFound("")
+	ErrUnprocessableEntity = UnprocessableEntity("")
+	ErrLocked              = Locked("")
+	ErrForbidden           = Forbidden("")
+	ErrUnauthorized        = Unauthorized("")
+	ErrBadRequest          = BadRequest("")
+)

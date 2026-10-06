@@ -362,7 +362,7 @@ func TestJWTAuthenticator(t *testing.T) {
 		}
 		jwtService := NewJWTService(config, &osfs.FS{})
 		mockUserService := &MockUserService[TestUser]{
-			err: goyave.NotFound(""),
+			err: goyave.ErrNotFound,
 		}
 		authenticator := Middleware(NewJWTAuthenticator(jwtService, mockUserService, jwt.SigningMethodHS256))
 

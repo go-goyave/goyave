@@ -54,7 +54,7 @@ func New(cfg *Config, opts ...Option) (*gorm.DB, error) {
 		return nil, errwrap.New(err)
 	}
 
-	if err := initTimeoutPlugin(cfg, db); err != nil {
+	if err := initPlugins(cfg, db); err != nil {
 		return db, errwrap.New(err)
 	}
 
@@ -74,7 +74,7 @@ func NewFromDialector(cfg *Config, dialector gorm.Dialector) (*gorm.DB, error) {
 		return nil, errwrap.New(err)
 	}
 
-	if err := initTimeoutPlugin(cfg, db); err != nil {
+	if err := initPlugins(cfg, db); err != nil {
 		return db, errwrap.New(err)
 	}
 
@@ -110,12 +110,19 @@ func newConfig(cfg *Config) *gorm.Config {
 	}
 }
 
-func initTimeoutPlugin(cfg *Config, db *gorm.DB) error {
+func initPlugins(cfg *Config, db *gorm.DB) error {
 	timeoutPlugin := &TimeoutPlugin{
 		ReadTimeout:  time.Duration(cfg.DefaultReadQueryTimeoutMs) * time.Millisecond,
 		WriteTimeout: time.Duration(cfg.DefaultWriteQueryTimeoutMs) * time.Millisecond,
 	}
-	return errwrap.New(db.Use(timeoutPlugin))
+	if err := db.Use(timeoutPlugin); err != nil {
+		return errwrap.New(err)
+	}
+
+	if err := db.Use(&ErrorTranslationPlugin{}); err != nil {
+		return errwrap.New(err)
+	}
+	return nil
 }
 
 func initSQLDB(cfg *Config, db *gorm.DB, dialect Dialect, o *options) error {

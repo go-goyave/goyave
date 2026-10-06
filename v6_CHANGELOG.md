@@ -82,7 +82,8 @@
   - Database Exist/Unique added: helpers to avoid having to implement simple exist/unique queries (especially for checking slices)
   - Added helper Close to close the db used by a GORM instance.
   - Database logs now retrieve the slogger from the context.
-  - Dialects are now structures implementing database.Dialect, giving more options for creating the dialector. This also allows the database package to open the connection itself for open telemetry driver wrapping. The DSN templating system is removed. 
+  - Dialects are now structures implementing database.Dialect, giving more options for creating the dialector. This also allows the database package to open the connection itself for open telemetry driver wrapping. The DSN templating system is removed.
+  - Gorm record not found error is now automatically joined with goyave.NotFoundError (client error).
 - Common/Combined log formatters
   - fix nested quotes for the URL field
   - log.Context.Length is now int64 instead of int. It sources the value from response.Size() instead of counting itself.

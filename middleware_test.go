@@ -19,8 +19,6 @@ import (
 	"goyave.dev/goyave/v6/cors"
 	"goyave.dev/goyave/v6/slogx"
 	"goyave.dev/goyave/v6/validation"
-
-	_ "goyave.dev/goyave/v6/database/dialect/sqlite"
 )
 
 type testCtxKey struct{}

@@ -72,8 +72,8 @@ func TestTimeoutPlugin(t *testing.T) {
 		assert.NotNil(t, callbacks.Update().Get(timeoutCallbackBeforeName))
 		assert.NotNil(t, callbacks.Update().Get(timeoutCallbackAfterName))
 
-		// assert.NotNil(t, callbacks.Row().Get(timeoutCallbackBeforeName))
-		// assert.NotNil(t, callbacks.Row().Get(timeoutCallbackAfterName))
+		assert.NotNil(t, callbacks.Row().Get(timeoutCallbackBeforeName))
+		assert.NotNil(t, callbacks.Row().Get(timeoutCallbackAfterName))
 
 		assert.NotNil(t, callbacks.Raw().Get(timeoutCallbackBeforeName))
 		assert.NotNil(t, callbacks.Raw().Get(timeoutCallbackAfterName))

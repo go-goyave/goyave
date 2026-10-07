@@ -56,19 +56,6 @@ func hasMiddleware[T Middleware](m []Middleware) bool {
 	return false
 }
 
-// routeHasMiddleware returns true if the given route or any of its
-// parents has a middleware of the T type.
-func routeHasMiddleware[T Middleware](route *Route) bool {
-	return hasMiddleware[T](route.middleware)
-}
-
-// routerHasMiddleware returns true if the given route or any of its
-// parents has a middleware of the T type. Also returns true if the middleware
-// is present as global middleware.
-func routerHasMiddleware[T Middleware](router *Router) bool {
-	return hasMiddleware[T](router.globalMiddleware.middleware) || hasMiddleware[T](router.middleware) || (router.parent != nil && routerHasMiddleware[T](router.parent))
-}
-
 // recoveryMiddleware is a middleware that recovers from panic and sends a 500 error code.
 // If debugging is enabled in the config and the default status handler for the 500 status code
 // had not been changed, the error is also written in the response.

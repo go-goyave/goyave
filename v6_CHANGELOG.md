@@ -110,6 +110,7 @@
   - Request.Now is now more accurate because the time is recorded earlier in the lifecycle.
   - NewRequest now sets the Request time to 0 instead of now.
   - New BodySize method to retrieve the request body size in bytes (lazily counted)
+- Added NoOpHandler
 
 TODO docs pass with links
 TODO cleanup resources directory

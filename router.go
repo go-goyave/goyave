@@ -50,6 +50,11 @@ var (
 // a goroutine or used after the finalization step in the request lifecycle.
 type Handler func(response *Response, request *Request)
 
+// NoOpHandler is a [Handler] that does nothing. It will result in an empty response
+// with status [204 No Content].
+// This can be used for healthcheck routes for example.
+func NoOpHandler(_ *Response, _ *Request) {}
+
 type routeMatcher interface {
 	match(method string, match *routeMatch) bool
 }

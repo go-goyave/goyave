@@ -20,18 +20,20 @@ func TestRequiredValidator(t *testing.T) {
 	cases := []struct {
 		value    any
 		nullable bool
+		found    bool
 		want     bool
 	}{
-		{value: "string", want: true},
-		{value: "", want: true},
-		{value: 'a', want: true},
-		{value: 2, want: true},
-		{value: 2.5, want: true},
-		{value: []string{"string"}, want: true},
-		{value: map[string]any{"a": 1}, want: true},
-		{value: true, want: true},
-		{value: nil, want: false},
-		{value: nil, want: true, nullable: true},
+		{value: "string", found: true, want: true},
+		{value: "", found: true, want: true},
+		{value: 'a', found: true, want: true},
+		{value: 2, found: true, want: true},
+		{value: 2.5, found: true, want: true},
+		{value: []string{"string"}, found: true, want: true},
+		{value: map[string]any{"a": 1}, found: true, want: true},
+		{value: true, found: true, want: true},
+		{value: nil, found: true, want: false},
+		{value: nil, found: true, want: true, nullable: true},
+		{value: nil, found: false, want: false, nullable: true},
 	}
 
 	for _, c := range cases {
@@ -42,6 +44,7 @@ func TestRequiredValidator(t *testing.T) {
 				Field: &Field{
 					isNullable: c.nullable,
 				},
+				Found: c.found,
 			}
 
 			assert.Equal(t, c.want, v.Validate(ctx))
@@ -51,6 +54,7 @@ func TestRequiredValidator(t *testing.T) {
 
 func TestRequiredIfValidator(t *testing.T) {
 	alwaysRequired := func(_ *Context) bool { return true }
+	neverRequired := func(_ *Context) bool { return false }
 	t.Run("Constructor", func(t *testing.T) {
 		v := RequiredIf(alwaysRequired)
 		assert.NotNil(t, v)
@@ -63,22 +67,24 @@ func TestRequiredIfValidator(t *testing.T) {
 	cases := []struct {
 		value     any
 		condition func(*Context) bool
+		found     bool
 		nullable  bool
 		want      bool
 	}{
-		{value: "string", want: true, condition: alwaysRequired},
-		{value: "", want: true, condition: alwaysRequired},
-		{value: 'a', want: true, condition: alwaysRequired},
-		{value: 2, want: true, condition: alwaysRequired},
-		{value: 2.5, want: true, condition: alwaysRequired},
-		{value: []string{"string"}, want: true, condition: alwaysRequired},
-		{value: map[string]any{"a": 1}, want: true, condition: alwaysRequired},
-		{value: true, want: true, condition: alwaysRequired},
-		{value: nil, want: false, condition: alwaysRequired},
-		{value: nil, want: true, nullable: true, condition: alwaysRequired},
-		{value: nil, want: true, condition: func(_ *Context) bool {
-			return false
-		}},
+		{value: "string", found: true, want: true, condition: alwaysRequired},
+		{value: "", found: true, want: true, condition: alwaysRequired},
+		{value: 'a', found: true, want: true, condition: alwaysRequired},
+		{value: 2, found: true, want: true, condition: alwaysRequired},
+		{value: 2.5, found: true, want: true, condition: alwaysRequired},
+		{value: []string{"string"}, found: true, want: true, condition: alwaysRequired},
+		{value: map[string]any{"a": 1}, found: true, want: true, condition: alwaysRequired},
+		{value: true, found: true, want: true, condition: alwaysRequired},
+		{value: nil, found: true, want: false, condition: alwaysRequired},
+		{value: nil, found: false, want: false, condition: alwaysRequired},
+		{value: nil, found: true, want: true, nullable: true, condition: alwaysRequired},
+		{value: nil, found: false, want: false, nullable: true, condition: alwaysRequired},
+		{value: nil, found: true, want: true, condition: neverRequired},
+		{value: nil, found: false, want: true, condition: neverRequired},
 	}
 
 	for _, c := range cases {
@@ -89,6 +95,7 @@ func TestRequiredIfValidator(t *testing.T) {
 				Field: &Field{
 					isNullable: c.nullable,
 				},
+				Found: c.found,
 			}
 
 			assert.Equal(t, c.want, v.Validate(ctx))

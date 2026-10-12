@@ -51,6 +51,7 @@
     - route ValidateBody/ValidateQuery now take a validation.Ruler instead of RuleSet to support both use-cases.
     - except for rare and specific use-cases, rulesets are now declared as top-level variables and converted once to Rules. The resulting instance is then re-used for all requests. This is much faster since allocation, generation and conversions are now necessary only once at startup. Overall memory usage of large applications should also be significantly lowered due to this change.
   - Unique/Exist/UniqueArray/ExistArray modified to take a function as parameter (often a service method). Decoupling DB from presentation layer.
+  - added context.Found which indicates if the field is present or not in the request. RequiredValidator and RequiredIfValidator have been updated to only pass if the field is found. This changes the edge case where a required nullable field isn't provided but the validation still passes. 
 - goyave.Registrer doesn't require implementing Composable anymore
 - Composable/Component logics has been removed
 - parse middleware constructor with max upload size parameter

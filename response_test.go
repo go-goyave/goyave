@@ -702,10 +702,11 @@ func TestResponse(t *testing.T) {
 
 	t.Run("ClientError", func(t *testing.T) {
 		cases := []struct {
-			desc       string
-			err        any
-			wantStatus int
-			wantBody   []byte
+			desc            string
+			err             any
+			wantStatus      int
+			wantBody        []byte
+			isInternalError bool
 		}{
 			{
 				desc:       "wrapped",
@@ -724,6 +725,45 @@ func TestResponse(t *testing.T) {
 				err:        BadRequest(""),
 				wantStatus: http.StatusBadRequest,
 				wantBody:   nil, // Nothing written to the body, status handler will take care of it.
+			},
+			{
+				desc:       "error_slice_only_client_errors",
+				err:        []error{errwrap.New(BadRequest("custom message")), errwrap.New(ErrConflict)},
+				wantStatus: http.StatusBadRequest,
+				wantBody:   []byte(`{"error":"custom message"}`), // First one is picked
+			},
+			{
+				desc:            "error_slice_with_internal_error",
+				err:             []error{errwrap.New(BadRequest("custom message")), errwrap.New("test error")},
+				wantStatus:      http.StatusInternalServerError,
+				wantBody:        []byte(`{"error":["client error 400: custom message","test error"]}`),
+				isInternalError: true,
+			},
+			{
+				desc:       "errwrap_slice_only_client_errors",
+				err:        []*errwrap.Error{errwrap.New(BadRequest("custom message")).(*errwrap.Error), errwrap.New(ErrConflict).(*errwrap.Error)},
+				wantStatus: http.StatusBadRequest,
+				wantBody:   []byte(`{"error":"custom message"}`), // First one is picked
+			},
+			{
+				desc:            "errwrap_slice_with_internal_error",
+				err:             []*errwrap.Error{errwrap.New(BadRequest("custom message")).(*errwrap.Error), errwrap.New("test error").(*errwrap.Error)},
+				wantStatus:      http.StatusInternalServerError,
+				wantBody:        []byte(`{"error":["client error 400: custom message","test error"]}`),
+				isInternalError: true,
+			},
+			{
+				desc:       "any_slice_only_client_errors",
+				err:        []any{errwrap.New(BadRequest("custom message")), ErrConflict},
+				wantStatus: http.StatusBadRequest,
+				wantBody:   []byte(`{"error":"custom message"}`), // First one is picked
+			},
+			{
+				desc:            "any_slice_with_internal_error",
+				err:             []any{errwrap.New(BadRequest("custom message")), "test error"},
+				wantStatus:      http.StatusInternalServerError,
+				wantBody:        []byte(`{"error":["client error 400: custom message","test error"]}`),
+				isInternalError: true,
 			},
 		}
 
@@ -747,8 +787,13 @@ func TestResponse(t *testing.T) {
 					assert.Equal(t, c.wantBody, body)
 					assert.Equal(t, c.wantStatus, res.StatusCode)
 				}
-				assert.Empty(t, logBuffer)     // No logs should be written for a client error (4xx)
-				assert.Nil(t, resp.GetError()) // Should not be considered a response error
+				if c.isInternalError {
+					assert.NotEmpty(t, logBuffer)
+					assert.NotNil(t, resp.GetError())
+				} else {
+					assert.Empty(t, logBuffer)     // No logs should be written for a client error (4xx)
+					assert.Nil(t, resp.GetError()) // Should not be considered a response error
+				}
 			})
 		}
 	})

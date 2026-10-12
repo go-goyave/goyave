@@ -409,6 +409,8 @@ func (r *Response) Download(fs fs.StatFS, file string, fileName string) {
 // [ClientError.Message] is available, a JSON response is generated from it. If the message is empty,
 // nothing is written to the response so the status handling corresponding to the [ClientError.Code]
 // can be executed.
+// If the value given is a slice ([]any, []error or []*errwrap.Error), it is considered a client error
+// only if all values in the slice are client errors. In that case, only the first one is picked.
 //
 // For any other type, the given error is wrapped using [errwrap.New].
 // The error and its stacktrace are then written in the logs and a 500 response is generated (or previously
@@ -452,7 +454,7 @@ func (r *Response) error(err any) {
 func (r *Response) handleClientError(err any) bool {
 	e, ok := err.(error)
 	if !ok {
-		return false
+		return r.handleClientErrorSlice(err)
 	}
 	clientErr, ok := errors.AsType[ClientError](e)
 	if !ok {
@@ -467,4 +469,40 @@ func (r *Response) handleClientError(err any) bool {
 
 	r.JSON(clientErr.Code(), map[string]any{"error": message})
 	return true
+}
+
+func isClientError(e any) bool {
+	err, ok := e.(error)
+	if !ok {
+		return false
+	}
+	_, ok = errors.AsType[ClientError](err)
+	return ok
+}
+
+func (r *Response) handleClientErrorSlice(errSlice any) bool {
+	// For slices of errors, we check that ALL errors are client errors
+	// and take the first one. This avoids internal server errors from
+	// being shadowed by a client error.
+	switch errs := errSlice.(type) {
+	case []error:
+		onlyClientErrors := lo.EveryBy(errs, func(e error) bool { return isClientError(e) })
+		if !onlyClientErrors || len(errs) == 0 {
+			return false
+		}
+		return r.handleClientError(errs[0])
+	case []*errwrap.Error:
+		onlyClientErrors := lo.EveryBy(errs, func(e *errwrap.Error) bool { return isClientError(e) })
+		if !onlyClientErrors || len(errs) == 0 {
+			return false
+		}
+		return r.handleClientError(errs[0])
+	case []any:
+		onlyClientErrors := lo.EveryBy(errs, isClientError)
+		if !onlyClientErrors || len(errs) == 0 {
+			return false
+		}
+		return r.handleClientError(errs[0])
+	}
+	return false
 }

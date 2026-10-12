@@ -125,6 +125,10 @@ type Context struct {
 	// Invalid is true if at least one validator prior to the current one didn't pass
 	// on the field under validation. This field is readonly.
 	Invalid bool
+
+	// Found is true if a value was found at the field's path. It is equivalent of saying
+	// that the field is present/provided by the client.
+	Found bool
 }
 
 // AddError adds an error to the validation context. This is NOT supposed
@@ -336,6 +340,7 @@ func (v *validator) validateField(fieldName string, field *Field, walkData any, 
 				Name:      c.Name,
 				path:      errorPath,
 				Invalid:   !valid,
+				Found:     c.Found == walk.Found,
 			}
 			ok := validator.Validate(ctx)
 			if len(ctx.errors) > 0 {
@@ -412,6 +417,7 @@ func (v *validator) isAbsent(field *Field, c *walk.Context, parentPath *walk.Pat
 		Name:    c.Name,
 		path:    field.getErrorPath(parentPath, c),
 		Invalid: false,
+		Found:   c.Found == walk.Found,
 	}
 	return c.Found == walk.ElementNotFound && !field.IsRequired(requiredCtx)
 }

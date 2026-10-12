@@ -185,6 +185,7 @@ func TestValidate(t *testing.T) {
 							assert.NotNil(t, ctx.Field) // Content of the field is tested by RuleSet
 							assert.False(t, ctx.Now.IsZero())
 							assert.False(t, ctx.Invalid)
+							assert.True(t, ctx.Found)
 							assert.Equal(t, walk.MustParse("property"), ctx.Path())
 							assert.Equal(t, testLang.GetLanguage("en-US"), ctx.Lang)
 							return true
@@ -214,7 +215,14 @@ func TestValidate(t *testing.T) {
 				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required()}},
-					{Path: "object", Rules: List{Required()}},
+					{Path: "object", Rules: List{Required(),
+						&testValidator{
+							validateFunc: func(_ Validator, ctx *Context) bool {
+								assert.False(t, ctx.Found)
+								return true
+							},
+						},
+					}},
 					{Path: "object.property", Rules: List{Required()}},
 				},
 			},
@@ -235,7 +243,14 @@ func TestValidate(t *testing.T) {
 				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
 					{Path: "property", Rules: List{Required()}},
-					{Path: "object", Rules: List{Object()}},
+					{Path: "object", Rules: List{Object(),
+						&testValidator{
+							validateFunc: func(_ Validator, ctx *Context) bool {
+								assert.False(t, ctx.Found)
+								return true
+							},
+						},
+					}},
 					{Path: "object.property", Rules: List{Required()}},
 				},
 			},
@@ -261,6 +276,7 @@ func TestValidate(t *testing.T) {
 						assert.NotNil(t, ctx.Field) // Content of the field is tested by RuleSet
 						assert.False(t, ctx.Now.IsZero())
 						assert.False(t, ctx.Invalid)
+						assert.False(t, ctx.Found)
 						assert.Equal(t, walk.MustParse("object.property"), ctx.Path())
 						return true
 					})}},
@@ -295,7 +311,14 @@ func TestValidate(t *testing.T) {
 				Data: nil,
 				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
-					{Path: CurrentElement, Rules: List{Required(), Object()}},
+					{Path: CurrentElement, Rules: List{Required(), Object(),
+						&testValidator{
+							validateFunc: func(_ Validator, ctx *Context) bool {
+								assert.False(t, ctx.Found)
+								return true
+							},
+						},
+					}},
 					{Path: "property", Rules: List{Required()}},
 				},
 			},
@@ -320,7 +343,32 @@ func TestValidate(t *testing.T) {
 				Data: map[string]any{},
 				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
-					{Path: "property", Rules: List{String(), Nullable()}},
+					{Path: "property", Rules: List{String(),
+						&testValidator{
+							validateFunc: func(_ Validator, ctx *Context) bool {
+								assert.False(t, ctx.Found)
+								return true
+							},
+						},
+						Nullable(),
+					}},
+				},
+			},
+		},
+		{
+			desc: "absent_nullable_required",
+			options: &Options{
+				Data: map[string]any{},
+				Lang: lang.New().GetDefault(),
+				Rules: RuleSet{
+					{Path: "property", Rules: List{Required(), String(), Nullable()}},
+				},
+			},
+			wantValidationErrors: &Errors{
+				Fields: FieldsErrors{
+					"property": &Errors{
+						Errors: []string{"The property is required.", "The property must be a string."},
+					},
 				},
 			},
 		},
@@ -330,7 +378,14 @@ func TestValidate(t *testing.T) {
 				Data: map[string]any{"property": nil},
 				Lang: lang.New().GetDefault(),
 				Rules: RuleSet{
-					{Path: "property", Rules: List{Required(), String()}},
+					{Path: "property", Rules: List{Required(), String(),
+						&testValidator{
+							validateFunc: func(_ Validator, ctx *Context) bool {
+								assert.False(t, ctx.Found)
+								return true
+							},
+						},
+					}},
 				},
 			},
 			wantValidationErrors: &Errors{

@@ -18,7 +18,7 @@ require (
 	github.com/microsoft/go-mssqldb v1.11.2
 	github.com/samber/lo v1.53.0
 	github.com/stretchr/testify v1.12.1
-	go.opentelemetry.io/contrib/bridges/otelslog v0.20.1
+	go.opentelemetry.io/contrib/bridges/otelslog v0.21.0
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/log v1.47.0
 	go.opentelemetry.io/otel/log/logtest v0.22.0

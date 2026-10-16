@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"goyave.dev/goyave/v6"
 )
@@ -164,11 +165,11 @@ func ContextWithUser(ctx context.Context, user any) context.Context {
 // stored in the context isn't of type `*T`, nil is returned.
 //
 //	user := UserFromContext[dto.InternalUser](ctx)
-func UserFromContext[T any](ctx context.Context) *T {
-	if u, ok := ctx.Value(userCtxKey{}).(*T); ok {
+func UserFromContext[T any](ctx context.Context) T {
+	if u, ok := ctx.Value(userCtxKey{}).(T); ok {
 		return u
 	}
-	return nil
+	return lo.Empty[T]()
 }
 
 func isNotFound(err error) bool {

@@ -73,6 +73,7 @@
   - test server NewTestRequest uses the server's context
   - NewTestServer takes testutil.Options instead of goyave.Options.
   - TODO document how to test log output and how to output logs to testing.T.Output
+  - UserFromContext now returns T instead of *T, making it compatible with interfaces.
 - Improved documentation by using links
 - Database:
   - Paginator: fetch query isn't executed anymore if the count query returns 0.

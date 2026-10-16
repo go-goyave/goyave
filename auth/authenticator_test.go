@@ -193,12 +193,12 @@ func TestAuthenticator(t *testing.T) {
 
 func TestUserContext(t *testing.T) {
 	ctx := context.Background()
-	assert.Nil(t, UserFromContext[TestUser](ctx))
+	assert.Nil(t, UserFromContext[*TestUser](ctx))
 
 	user := &TestUser{}
 	withUser := ContextWithUser(ctx, user)
-	assert.Same(t, user, UserFromContext[TestUser](withUser))
+	assert.Same(t, user, UserFromContext[*TestUser](withUser))
 
 	withUser = ContextWithUser(ctx, &struct{}{})
-	assert.Nil(t, UserFromContext[TestUser](withUser))
+	assert.Nil(t, UserFromContext[*TestUser](withUser))
 }

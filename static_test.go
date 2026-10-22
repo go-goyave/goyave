@@ -58,7 +58,7 @@ func TestStaticHandler(t *testing.T) {
 			download:  false,
 			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
 				assert.Equal(t, http.StatusOK, response.GetStatus())
-				assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+				assert.Equal(t, "application/json; charset=utf-8", result.Header.Get("Content-Type"))
 				assert.Equal(t, "inline", result.Header.Get("Content-Disposition"))
 				assert.Equal(t, "{\n    \"custom-entry\": \"value\"\n}", string(body))
 			},
@@ -145,7 +145,7 @@ func TestStaticHandler(t *testing.T) {
 			download:  true,
 			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
 				assert.Equal(t, http.StatusOK, response.GetStatus())
-				assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+				assert.Equal(t, "application/json; charset=utf-8", result.Header.Get("Content-Type"))
 				assert.Equal(t, "attachment; filename=\"custom_config.json\"", result.Header.Get("Content-Disposition"))
 				assert.Equal(t, "{\n    \"custom-entry\": \"value\"\n}", string(body))
 			},
@@ -156,7 +156,7 @@ func TestStaticHandler(t *testing.T) {
 			download:  true,
 			expected: func(t *testing.T, response *Response, result *http.Response, body []byte) {
 				assert.Equal(t, http.StatusOK, response.GetStatus())
-				assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+				assert.Equal(t, "application/json; charset=utf-8", result.Header.Get("Content-Type"))
 				assert.Equal(t, "attachment; filename=\"fields.json\"", result.Header.Get("Content-Disposition"))
 				assert.Equal(t, "{\n    \"email\": \"email address\"\n}", string(body))
 			},

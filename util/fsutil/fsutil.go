@@ -180,7 +180,7 @@ func GetMIMEType(filesystem fs.FS, file string) (contentType string, size int64,
 // If the given reader implements `io.Seeker`, the reader's offset is reset to the start.
 func DetectContentType(r io.Reader, fileName string) (string, error) {
 	buffer := make([]byte, 512)
-	_, err := r.Read(buffer)
+	n, err := r.Read(buffer)
 	if err != nil {
 		return "", errors.New(err)
 	}
@@ -191,7 +191,7 @@ func DetectContentType(r io.Reader, fileName string) (string, error) {
 		}
 	}
 
-	contentType := http.DetectContentType(buffer)
+	contentType := http.DetectContentType(buffer[:n])
 	if strings.HasPrefix(contentType, "application/octet-stream") || strings.HasPrefix(contentType, "text/plain") {
 		contentType = detectContentTypeByExtension(fileName, contentType)
 	} else if (strings.HasPrefix(contentType, "text/xml") || strings.HasPrefix(contentType, "application/xml")) && hasSVGSignature(buffer) {

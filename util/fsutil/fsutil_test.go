@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goyave.dev/goyave/v5/util/errors"
@@ -128,12 +129,12 @@ func TestGetMIMEType(t *testing.T) {
 		},
 		{
 			path:     ".gitignore",
-			wantMIME: "application/octet-stream",
+			wantMIME: "text/plain; charset=utf-8",
 			wantErr:  false,
 		},
 		{
 			path:     "config/config.test.json",
-			wantMIME: "application/json",
+			wantMIME: "application/json; charset=utf-8",
 			wantErr:  false,
 		},
 		{
@@ -143,7 +144,7 @@ func TestGetMIMEType(t *testing.T) {
 		},
 		{
 			path:     "util/fsutil/test.css",
-			wantMIME: "text/css",
+			wantMIME: "text/css; charset=utf-8",
 			wantErr:  false,
 		},
 		{
@@ -225,12 +226,22 @@ func TestDetectContentType(t *testing.T) {
 		},
 		{
 			fileName: "file.json",
-			buf:      []byte("non-utf-8 content"),
-			wantMIME: "application/json",
+			buf:      []byte("content without BOM"),
+			wantMIME: "application/json; charset=utf-8",
+		},
+		{
+			fileName: "text",
+			buf:      []byte("text shorter than 512 bytes"),
+			wantMIME: "text/plain; charset=utf-8",
 		},
 		{
 			fileName: "octet-stream",
 			buf:      []byte{1, 2, 3},
+			wantMIME: "application/octet-stream",
+		},
+		{
+			fileName: "long-octet-stream",
+			buf:      lo.RepeatBy(600, func(i int) byte { return byte(i % math.MaxInt8) }),
 			wantMIME: "application/octet-stream",
 		},
 		{
@@ -546,6 +557,22 @@ func TestParseMultipartFiles(t *testing.T) {
 
 		assert.Equal(t, "application/javascript", files[0].Header.Header.Get("Content-Type"))
 		assert.Equal(t, "text/xml; charset=utf-8", files[0].MIMEType)
+	})
+
+	t.Run("small_text_file", func(t *testing.T) {
+		filePath := toAbsolutePath("util/fsutil/test.txt")
+		err := os.WriteFile(filePath, []byte("text shorter than 512 bytes"), 0644)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			deleteFile(filePath)
+		})
+
+		form := createTestForm("util/fsutil/test.txt")
+		files, err := ParseMultipartFiles(form.File["file"])
+
+		require.NoError(t, err)
+		require.Len(t, files, 1)
+		assert.Equal(t, "text/plain; charset=utf-8", files[0].MIMEType)
 	})
 
 	t.Run("empty_file", func(t *testing.T) {

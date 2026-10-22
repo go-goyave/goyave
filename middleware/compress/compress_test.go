@@ -197,7 +197,7 @@ func TestCompressMiddleware(t *testing.T) {
 		assert.Equal(t, "gzip", result.Header.Get("Content-Encoding"))
 		assert.Empty(t, result.Header.Get("Content-Length"))
 		assert.Equal(t, "Accept-Encoding", result.Header.Get("Vary"))
-		assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+		assert.Equal(t, "application/json; charset=utf-8", result.Header.Get("Content-Type"))
 		assert.Equal(t, "{\n    \"custom-entry\": \"value\"\n}", string(body))
 	})
 

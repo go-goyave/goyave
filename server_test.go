@@ -88,6 +88,8 @@ func TestServer(t *testing.T) {
 		assert.NotNil(t, s.server.ConnContext)
 		assert.NotNil(t, s.baseContext)
 		assert.NotNil(t, s.server.BaseContext)
+		assert.NotNil(t, s.Context())
+		assert.NotNil(t, s.AppContext())
 		assert.Same(t, http2Cfg, s.server.HTTP2)
 		assert.Same(t, customListenConfig, s.listenConfig)
 		assert.Equal(t, "http://127.0.0.1:8080", s.BaseURL())
@@ -706,6 +708,148 @@ func TestServer(t *testing.T) {
 		if assert.Error(t, err) {
 			assert.Equal(t, "cannot start the server, context is canceled", err.Error())
 		}
+	})
+
+	t.Run("AppContext", func(t *testing.T) {
+		type appContextKey struct{}
+		appCtx := context.WithValue(context.Background(), appContextKey{}, "app-ctx-value")
+
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		server, err := New(Options{
+			Config:     cfg,
+			AppContext: appCtx,
+		})
+		require.NoError(t, err)
+
+		assert.Equal(t, "app-ctx-value", server.Context().Value(appContextKey{}))
+		assert.Equal(t, "app-ctx-value", server.AppContext().Value(appContextKey{}))
+		assert.Equal(t, server, ServerFromContext(server.Context()))
+		assert.Equal(t, server, ServerFromContext(server.AppContext()))
+		assert.Equal(t, appCtx, AppContextAs[context.Context](server))
+
+		startupHookExecuted := false
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		server.RegisterStartupHook(func(s *Server) {
+			startupHookExecuted = true
+			assert.True(t, server.IsReady())
+
+			res, err := http.Get(s.BaseURL())
+			require.NoError(t, err)
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
+			respBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, "app-ctx-value", string(respBody))
+
+			server.Stop()
+			wg.Done()
+		})
+
+		server.RegisterRoutes(func(_ *Server, router *Router) {
+			router.Get("/", func(r *Response, req *Request) {
+				ctx := req.Context()
+				assert.Equal(t, server, ServerFromContext(ctx))
+				r.String(http.StatusOK, fmt.Sprintf("%v", ctx.Value(appContextKey{})))
+			}).Name("app_context")
+		})
+
+		go func() {
+			err := server.Start()
+			assert.NoError(t, err)
+			wg.Done()
+		}()
+
+		wg.Wait()
+		assert.True(t, startupHookExecuted)
+		assert.False(t, server.IsReady())
+		assert.Equal(t, uint32(3), server.state.Load())
+	})
+
+	t.Run("ContextAlias", func(t *testing.T) {
+		type contextAliasKey struct{}
+		customCtx := context.WithValue(context.Background(), contextAliasKey{}, "alias-value")
+
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		server, err := New(Options{
+			Config:  cfg,
+			Context: customCtx,
+		})
+		require.NoError(t, err)
+
+		assert.Equal(t, "alias-value", server.Context().Value(contextAliasKey{}))
+		assert.Equal(t, "alias-value", server.AppContext().Value(contextAliasKey{}))
+		assert.Equal(t, server, ServerFromContext(server.Context()))
+	})
+
+	t.Run("StartServerWithCanceledAppContext", func(t *testing.T) {
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		server, err := New(Options{
+			Config:     cfg,
+			AppContext: ctx,
+		})
+		require.NoError(t, err)
+
+		err = server.Start()
+		if assert.Error(t, err) {
+			assert.Equal(t, "cannot start the server, context is canceled", err.Error())
+		}
+	})
+
+	t.Run("AppContextWithBaseContextOverride", func(t *testing.T) {
+		type appContextKey struct{}
+		type baseContextKey struct{}
+		appCtx := context.WithValue(context.Background(), appContextKey{}, "app-value")
+
+		cfg := config.LoadDefault()
+		cfg.Set("server.port", 0)
+		server, err := New(Options{
+			Config:     cfg,
+			AppContext: appCtx,
+			BaseContext: func(_ net.Listener) context.Context {
+				return context.WithValue(context.Background(), baseContextKey{}, "base-override")
+			},
+		})
+		require.NoError(t, err)
+
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		server.RegisterStartupHook(func(s *Server) {
+			res, err := http.Get(s.BaseURL())
+			require.NoError(t, err)
+			defer func() {
+				assert.NoError(t, res.Body.Close())
+			}()
+			respBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, "<nil>|base-override", string(respBody))
+
+			server.Stop()
+			wg.Done()
+		})
+
+		server.RegisterRoutes(func(_ *Server, router *Router) {
+			router.Get("/", func(r *Response, req *Request) {
+				ctx := req.Context()
+				r.String(http.StatusOK, fmt.Sprintf("%v|%v", ctx.Value(appContextKey{}), ctx.Value(baseContextKey{})))
+			}).Name("base_override")
+		})
+
+		go func() {
+			err := server.Start()
+			assert.NoError(t, err)
+			wg.Done()
+		}()
+
+		wg.Wait()
 	})
 
 	t.Run("StartWithCustomListenConfig", func(t *testing.T) {

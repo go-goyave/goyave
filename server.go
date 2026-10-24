@@ -62,15 +62,24 @@ type Options struct {
 	// `http.ConnState` type and associated constants for details.
 	ConnState func(net.Conn, http.ConnState)
 
-	// Context optionnally defines a function that returns the base context
+	// AppContext optionally specifies the base application context for the server.
+	// If provided, this context is used as the base context instead of context.Background().
+	// It is propagated to the server instance and to incoming requests (unless overridden by BaseContext).
+	AppContext context.Context
+
+	// Context optionally specifies the base application context for the server.
+	// Alias for AppContext.
+	Context context.Context
+
+	// BaseContext optionally defines a function that returns the base context
 	// for the server. It will be used as base context for all incoming requests.
 	//
 	// The provided `net.Listener` is the specific Listener that's
 	// about to start accepting requests.
 	//
-	// If not given, the default is `context.Background()`.
+	// If not given, the default is `AppContext` if set, otherwise `context.Background()`.
 	//
-	// The context returned then has a the server instance added to it as a value.
+	// The context returned then has the server instance added to it as a value.
 	// The server can thus be retrieved using `goyave.ServerFromContext(ctx)`.
 	//
 	// If the context is canceled, the server won't shut down automatically, you are
@@ -115,6 +124,7 @@ type Server struct {
 	sigChannel  chan os.Signal
 
 	ctx           context.Context
+	appContext    context.Context
 	baseContext   func(net.Listener) context.Context
 	listenConfig  *net.ListenConfig
 	startupHooks  []func(*Server)
@@ -156,6 +166,14 @@ func New(opts Options) (*Server, error) {
 	host := cfg.GetString("server.host")
 	port := cfg.GetInt("server.port")
 
+	appCtx := opts.AppContext
+	if appCtx == nil {
+		appCtx = opts.Context
+	}
+	if appCtx == nil {
+		appCtx = context.Background()
+	}
+
 	server := &Server{
 		server: &http.Server{
 			Addr:              net.JoinHostPort(host, strconv.Itoa(port)),
@@ -169,6 +187,7 @@ func New(opts Options) (*Server, error) {
 			HTTP2:             opts.HTTP2,
 		},
 		ctx:           context.Background(),
+		appContext:    appCtx,
 		baseContext:   opts.BaseContext,
 		listenConfig:  opts.ListenConfig,
 		config:        cfg,
@@ -181,6 +200,7 @@ func New(opts Options) (*Server, error) {
 		port:          port,
 		Logger:        slogger,
 	}
+	server.ctx = context.WithValue(appCtx, serverKey{}, server)
 	server.server.BaseContext = server.internalBaseContext
 	server.refreshURLs()
 	server.server.ErrorLog = log.New(&errLogWriter{server: server}, "", 0)
@@ -442,7 +462,10 @@ func (s *Server) Start() error {
 	if err != nil {
 		return errors.New(err)
 	}
-	baseCtx := context.Background()
+	baseCtx := s.appContext
+	if baseCtx == nil {
+		baseCtx = context.Background()
+	}
 	if s.baseContext != nil {
 		baseCtx = s.baseContext(ln)
 		if baseCtx == nil {
@@ -573,3 +596,24 @@ func ServerFromContext(ctx context.Context) *Server {
 	}
 	return s
 }
+
+// Context returns the server's context.
+// This context contains the server instance and is derived from the configured AppContext.
+func (s *Server) Context() context.Context {
+	return s.ctx
+}
+
+// AppContext returns the server's context.
+// Alias for Context().
+func (s *Server) AppContext() context.Context {
+	return s.ctx
+}
+
+// AppContextAs returns the server's base application context cast to type T.
+func AppContextAs[T any](s *Server) T {
+	if v, ok := s.appContext.(T); ok {
+		return v
+	}
+	return s.ctx.(T)
+}
+

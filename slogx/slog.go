@@ -282,17 +282,17 @@ func DiscardLogger() *Logger {
 	return &Logger{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
 }
 
-var defaultLogger = New(NewHandler(!isProduction(), os.Stderr))
+var defaultLogger = New(NewHandler(isLocal(), os.Stderr))
 
-func isProduction() bool {
+func isLocal() bool {
 	env := strings.ToLower(os.Getenv("ENV"))
-	return env == "prod" || env == "production"
+	return env == "local" || env == "localhost"
 }
 
 // Default returns the default global logger.
 // If not overridden with [SetDefault], this logger outputs to [os.Stderr]. The
-// handler depends on the `ENV` environment variable: if it's equal to "prod" or
-// "production", the JSON handler is used, else the dev mode handler is used.
+// handler depends on the `ENV` environment variable: if it's equal to "local" or
+// "localhost", the dev mode handler is used, else JSON handler is used.
 func Default() *Logger {
 	return defaultLogger
 }

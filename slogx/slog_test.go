@@ -281,9 +281,13 @@ func TestLogger(t *testing.T) {
 		assert.Same(t, logger, Default())
 
 		t.Setenv("ENV", "PROD")
-		assert.True(t, isProduction())
+		assert.False(t, isLocal())
 		t.Setenv("ENV", "staging")
-		assert.False(t, isProduction())
+		assert.False(t, isLocal())
+		t.Setenv("ENV", "local")
+		assert.True(t, isLocal())
+		t.Setenv("ENV", "localhost")
+		assert.True(t, isLocal())
 	})
 
 	t.Run("Context", func(t *testing.T) {

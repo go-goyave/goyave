@@ -81,7 +81,7 @@ func TestAuthenticator(t *testing.T) {
 			assert.Equal(t, user.ID, request.User.(*TestUser).ID)
 			assert.Equal(t, user.Name, request.User.(*TestUser).Name)
 			assert.Equal(t, user.Email, request.User.(*TestUser).Email)
-			assert.Same(t, request.User, UserFromContext[TestUser](request.Context()))
+			assert.Same(t, request.User, UserFromContext[*TestUser](request.Context()))
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -113,7 +113,7 @@ func TestAuthenticator(t *testing.T) {
 		request.Route = &goyave.Route{Meta: map[string]any{MetaAuth: false}}
 		resp := server.TestMiddleware(authenticator, request, func(response *goyave.Response, request *goyave.Request) {
 			assert.Nil(t, request.User)
-			assert.Nil(t, UserFromContext[TestUser](request.Context()))
+			assert.Nil(t, UserFromContext[*TestUser](request.Context()))
 			response.Status(http.StatusOK)
 		})
 		assert.Equal(t, http.StatusOK, resp.StatusCode)

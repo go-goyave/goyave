@@ -235,7 +235,7 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.proxy.protocol", "https")
 			cfg.Set("server.proxy.port", 1234)
 			cfg.Set("server.proxy.base", "/base")
-			server := &Server{config: cfg, port: 1234}
+			server := &Server{config: cfg, port: 8080}
 			assert.Equal(t, "https://proxy.example.org:1234/base", server.getProxyAddress(cfg))
 		})
 
@@ -263,7 +263,7 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.proxy.protocol", "http")
 			cfg.Set("server.proxy.port", 1234)
 			cfg.Set("server.proxy.base", "/base")
-			server := &Server{config: cfg, port: 1234}
+			server := &Server{config: cfg, port: 8080}
 			assert.Equal(t, "http://192.168.1.11:1234/base", server.getProxyAddress(cfg))
 		})
 
@@ -273,7 +273,7 @@ func TestServer(t *testing.T) {
 			cfg.Set("server.proxy.protocol", "http")
 			cfg.Set("server.proxy.port", 1234)
 			cfg.Set("server.proxy.base", "/base")
-			server := &Server{config: cfg, port: 1234}
+			server := &Server{config: cfg, port: 8080}
 			assert.Equal(t, "http://[::ffff:c0a8:10b]:1234/base", server.getProxyAddress(cfg))
 		})
 

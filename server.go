@@ -245,7 +245,7 @@ func (s *Server) getProxyAddress(cfg *config.Config) string {
 	}
 	host := cfg.GetString("server.proxy.host")
 	if shouldShowPort {
-		host = net.JoinHostPort(host, strconv.Itoa(s.port))
+		host = net.JoinHostPort(host, strconv.Itoa(port))
 	} else if s.isIPv6(host) {
 		host = "[" + host + "]"
 	}
